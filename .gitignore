@@ -1,0 +1,11 @@
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Python cache
+__pycache__/
+.pytest_cache/
+venv/
