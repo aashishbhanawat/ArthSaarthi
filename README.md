@@ -1,4 +1,4 @@
-# Personal Portfolio Management System (PMS)
+﻿# Personal Portfolio Management System (PMS)
 
 This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets like stocks, cryptocurrencies, and ETFs, providing performance insights and analytics.
 
@@ -23,21 +23,30 @@ The project is organized into the following main directories:
 
 ## Running the Project
 
-This project is designed to be run with Docker and Docker Compose for a streamlined development experience.
+This project is fully containerized using Docker and Docker Compose for a consistent and streamlined development experience.
 
-1.  **Backend Environment:** In the `backend/` directory, create a file named `.env`. You can copy `backend/.env.example` if it exists. Fill in the required values for the database, JWT secret, and CORS origins.
+1.  **Backend Environment:** In the `backend/` directory, create a file named `.env` (you can copy `backend/.env.example`). Fill in the required values for the database, JWT secret, and CORS origins.
 
-2.  **Frontend Environment:** In the `frontend/` directory, create a file named `.env`. You can copy `frontend/.env.example`. Ensure `VITE_API_BASE_URL` points to the correct backend address (e.g., `http://localhost:8000/api/v1`).
+2.  **Frontend Environment:** In the `frontend/` directory, create a file named `.env` (you can copy `frontend/.env.example`). Ensure `VITE_API_BASE_URL` points to the correct backend address. For access from other machines on your network, use your host's LAN IP (e.g., `http://192.168.1.100:8000/api/v1`).
 
 3.  **Build and Run Containers:** From the root directory of the project (`pms_new/`), run:
     ```bash
-    docker-compose up --build
+    docker-compose up --build db backend frontend
     ```
+    This command starts the main application services. The backend will wait for the database to be healthy before starting.
 
 4.  **Accessing the Services:**
     *   The **Backend API** will be available at `http://localhost:8000`.
     *   The interactive API documentation (Swagger UI) is at `http://localhost:8000/docs`.
     *   The **Frontend Application** will be available at `http://localhost:3000`.
+
+## Running Tests
+
+The backend has a comprehensive test suite using `pytest`. To run the tests, use the following command from the root directory:
+```bash
+docker-compose run --rm test
+```
+This command runs the tests in an isolated container with a temporary database, ensuring no impact on your development data.
 
 ## Contributing
 

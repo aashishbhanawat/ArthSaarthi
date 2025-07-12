@@ -1,3 +1,5 @@
+import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,13 +8,19 @@ from app.db import base  # Import the new base file
 from app.core.config import settings
 from app.db.session import engine
 
-# Create all tables defined in models that are imported in db.base
-# This is suitable for development, for production, a migration tool like Alembic is recommended.
-base.Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # On startup, create database tables if not in a test environment
+    if os.getenv("TESTING") != "1":
+        base.Base.metadata.create_all(bind=engine)
+    yield
+    # On shutdown (can add cleanup logic here if needed)
 
 app = FastAPI(
     title="Personal Portfolio Management System",
-    openapi_url="/api/v1/openapi.json"
+    openapi_url="/api/v1/openapi.json",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

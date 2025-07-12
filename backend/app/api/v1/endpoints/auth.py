@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
  
+from app.schemas.auth import Status
+from app.schemas.user import User, UserCreate
+from app.schemas.token import Token
 from app.crud import crud_user
-from app.schemas import user as user_schema, token as token_schema
 from app.models import user as user_model
 from app.core import security
 from app.core.config import settings
@@ -14,15 +16,15 @@ from app.db.session import get_db
 router = APIRouter()
 
 
-@router.get("/status")
+@router.get("/status", response_model=Status)
 def get_setup_status(db: Session = Depends(get_db)):
     """Check if the initial admin user has been created."""
     user_count = db.query(user_model.User).count()
-    return {"setup_complete": user_count > 0}
+    return {"setup_needed": user_count == 0}
 
 
-@router.post("/setup", response_model=user_schema.User)
-def setup_admin_user(user: user_schema.UserCreate, db: Session = Depends(get_db)):
+@router.post("/setup", response_model=User)
+def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
     """
     Create the first admin user. This will fail if any user already exists.
     """
@@ -36,7 +38,7 @@ def setup_admin_user(user: user_schema.UserCreate, db: Session = Depends(get_db)
     return db_user
 
 
-@router.post("/login", response_model=token_schema.Token)
+@router.post("/login", response_model=Token)
 def login_for_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):

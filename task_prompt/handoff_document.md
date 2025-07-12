@@ -4,6 +4,7 @@
 
 *   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS).
 *   **Current Status:** The initial "Core User Authentication" feature is **complete**. The system can successfully check if an admin user exists, allow the first user to register as an admin with a secure password, and is ready for the login functionality to be implemented. The frontend and backend are communicating successfully within the Docker environment and are accessible over the local network.
+*   **Testing:** A full suite of automated backend tests (`pytest`) has been implemented for the authentication module, covering unit and integration tests. All tests are passing.
 
 ---
 
@@ -45,6 +46,7 @@ The application is fully containerized using Docker and orchestrated with Docker
 
 *   **`docker-compose.yml`:**
     *   Defines three services: `db` (PostgreSQL), `backend` (FastAPI), and `frontend` (React).
+    *   Includes a `test` service for running the backend test suite in an isolated environment.
     *   Uses a custom bridge network `pms_network` to allow services to communicate using their service names (e.g., the backend connects to the database at `db:5432`).
     *   Exposes ports to the host machine: `5432` for the database, `8000` for the backend, and `3000` for the frontend.
     *   Uses `env_file` to inject environment variables into the backend and database containers.
@@ -62,7 +64,7 @@ The application is fully containerized using Docker and orchestrated with Docker
 #### 4. Feature Implementation: Initial Setup
 
 *   **Backend Logic (`/api/v1/auth/status` & `/api/v1/auth/setup`):**
-    *   On startup, the backend uses SQLAlchemy's `create_all` to initialize the database schema based on the `User` model.
+    *   On startup (via FastAPI's `lifespan` event), the backend uses SQLAlchemy's `create_all` to initialize the database schema based on the `User` model. This is skipped in the test environment.
     *   The `GET /status` endpoint checks if any users exist in the database.
     *   The `POST /setup` endpoint allows the creation of the *first* user only. It validates the incoming data using the `UserCreate` Pydantic schema, which includes strong password validation rules (length, uppercase, lowercase, number, special character). If validation passes, it hashes the password and saves the new admin user to the database.
 
@@ -84,7 +86,7 @@ The application is fully containerized using Docker and orchestrated with Docker
     *   In `backend/.env`, add your frontend's network URL to `CORS_ORIGINS` (e.g., `CORS_ORIGINS=...,http://<YOUR_HOST_IP>:3000`).
 4.  **Run the application** from the project's root directory:
     ```bash
-    docker-compose up --build
+    docker-compose up --build db backend frontend
     ```
 5.  **Access the services:**
     *   Frontend: `http://<YOUR_HOST_IP>:3000`
@@ -92,7 +94,19 @@ The application is fully containerized using Docker and orchestrated with Docker
 
 ---
 
-#### 6. Next Steps
+#### 6. How to Run Tests
+
+The project includes a robust backend test suite.
+
+1.  **Run the tests** from the project's root directory:
+    ```bash
+    docker-compose run --rm test
+    ```
+2.  This command starts a dedicated test container, runs `pytest` against an in-memory SQLite database, and then removes the container. This ensures tests are fast, isolated, and do not affect the development database.
+
+---
+
+#### 7. Next Steps
 
 The foundation is solid and well-documented. The immediate next step is to continue with the **User Authentication** module.
 

@@ -12,3 +12,9 @@ frontend/.env
 __pycache__/
 .pytest_cache/
 venv/
+
+# Environment files - do not commit secrets
+**/.env
+
+# Test artifacts
+**/test.db

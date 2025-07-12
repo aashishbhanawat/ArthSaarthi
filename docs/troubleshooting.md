@@ -50,3 +50,20 @@ This document lists common issues encountered during setup and development, alon
 *   **Symptom:** The application crashes when trying to display an error message from the backend.
 *   **Cause:** The backend sends a detailed error object (e.g., `{"detail": [{"msg": "Error message"}]}`), but the React code attempts to render this object directly instead of extracting the message string.
 *   **Solution:** In the frontend's `catch` block for an API call, specifically parse the error response to extract the desired string message (e.g., `error.response?.data?.detail[0]?.msg`) before setting it in the state.
+
+## 8. Backend: `psycopg2.OperationalError: Connection refused` on Startup
+
+*   **Symptom:** The `backend` service fails to start with an error indicating it cannot connect to the `db` service, even with `depends_on` in `docker-compose.yml`.
+*   **Cause:** This is a race condition. The `backend` container starts before the PostgreSQL server inside the `db` container is fully initialized and ready to accept connections.
+*   **Solution:** Use a `healthcheck` in the `db` service in `docker-compose.yml`. This makes the `backend` service wait until the database is not just started, but actually healthy and ready for connections.
+    ```yaml
+    # In docker-compose.yml
+    depends_on:
+      db:
+        condition: service_healthy
+    ```
+
+## 9. Backend: `AttributeError: module 'bcrypt' has no attribute '__about__'`
+*   **Symptom:** The `backend` service fails to start with an `AttributeError` from `passlib` related to `bcrypt`.
+*   **Cause:** A version mismatch between the `passlib` and `bcrypt` libraries.
+*   **Solution:** Pin the `bcrypt` version to a known compatible version in `backend/requirements.txt`. For example: `bcrypt==3.2.2`. Then, rebuild the backend container (`docker-compose build backend`).
