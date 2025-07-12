@@ -4,6 +4,9 @@
 *.swp
 *~
 .DS_Store
+.env
+backend/.env
+frontend/.env
 
 # Python cache
 __pycache__/
