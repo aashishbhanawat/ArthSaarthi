@@ -1,32 +1,52 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
-import LoginForm from '../components/auth/LoginForm';
-import SetupForm from '../components/auth/SetupForm';
-import AuthLayout from '../components/auth/AuthLayout';
+import { useState, useEffect, ReactNode } from "react";
+import { Navigate } from "react-router-dom";
+import { getAuthStatus } from "../services/api";
+import SetupForm from "../components/auth/SetupForm";
+import LoginForm from "../components/LoginForm";
+import { useAuth } from "../context/AuthContext";
 
-export default function AuthPage() {
-  const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null);
+const AuthPage = () => {
+    const { token } = useAuth();
+    const [setupNeeded, setSetupNeeded] = useState<boolean | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const response = await api.get('/auth/status');
-        setIsSetupComplete(response.data.setup_complete);
-      } catch (error) {
-        console.error('Failed to check setup status:', error);
-        // Assume setup is not complete if status check fails
-        setIsSetupComplete(false);
-      }
+    if (token) {
+        return <Navigate to="/" replace />;
+    }
+    useEffect(() => {
+        const checkStatus = async () => {
+            try {
+                const data = await getAuthStatus();
+                setSetupNeeded(data.setup_needed);
+            } catch (err: any) {
+                setError(
+                    err.response?.data?.detail || "Failed to check setup status."
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+        checkStatus();
+    }, []);
+
+    const handleSetupSuccess = () => {
+        setSetupNeeded(false); // Re-render to show the login form
     };
-    checkStatus();
-  }, []);
 
-  // Callback to refresh status after setup is complete
-  const handleSetupSuccess = () => setIsSetupComplete(true);
+    if (loading) {
+        return <div>Loading...</div>;
+    }
 
-  if (isSetupComplete === null) {
-    return <AuthLayout><div>Loading...</div></AuthLayout>;
-  }
+    if (error) {
+        return <div>Error: {error}</div>;
+    }
 
-  return <AuthLayout>{isSetupComplete ? <LoginForm /> : <SetupForm onSuccess={handleSetupSuccess} />}</AuthLayout>;
-}
+    if (setupNeeded) {
+        return <SetupForm onSuccess={handleSetupSuccess} />;
+    }
+
+    return <LoginForm />;
+};
+
+export default AuthPage;

@@ -127,6 +127,7 @@ For each feature, we'll follow these steps:
 **A `.gitignore` file should be created early in the process to exclude virtual environments, `.env` files, and `__pycache__` directories.**
 
 
+You are now ready to start development of new module.
 Let's start with the first core feature: **User Authentication (Registration and Login)**.
 
 Now, invoke the **Backend Developer** and **Database Administrator** to plan for User Authentication."

@@ -8,3 +8,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: str | None = None
+
+
+class TokenPayload(BaseModel):
+    sub: str | None = None

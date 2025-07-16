@@ -1,5 +1,5 @@
 from pydantic import PostgresDsn
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -9,9 +9,7 @@ class Settings(BaseSettings):
     DATABASE_URL: PostgresDsn
     CORS_ORIGINS: str = "http://localhost:3000"
 
-    class Config:
-        # pydantic-settings will automatically read from environment variables
-        # The .env file is loaded by docker-compose
-        pass
+    model_config = SettingsConfigDict(case_sensitive=True)
+
 
 settings = Settings()

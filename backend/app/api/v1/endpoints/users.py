@@ -1,6 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.core.dependencies import get_current_user
+from app.models.user import User as UserModel
+from app.schemas.user import User as UserSchema
 
 router = APIRouter()
 
-# We will add user-related endpoints here later,
-# such as getting a user's profile.
+
+@router.get("/me", response_model=UserSchema)
+def read_users_me(current_user: UserModel = Depends(get_current_user)):
+    """Get current user."""
+    return current_user

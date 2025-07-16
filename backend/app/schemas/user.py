@@ -33,5 +33,4 @@ class User(UserBase):
     id: int
     is_admin: bool
     is_active: bool
-
     model_config = ConfigDict(from_attributes=True)
