@@ -42,11 +42,16 @@ This project is fully containerized using Docker and Docker Compose for a consis
 
 ## Running Tests
 
-The backend has a comprehensive test suite using `pytest`. To run the tests, use the following command from the root directory:
+1. The backend has a comprehensive test suite using `pytest`. To run the tests, use the following command from the root directory:
 ```bash
 docker-compose run --rm test
 ```
 This command runs the tests in an isolated container with a temporary database, ensuring no impact on your development data.
+
+2. To run the frontend test suite, use the following command from the `frontend` directory:
+    ```bash
+    npm test
+    ```
 
 ## Contributing
 

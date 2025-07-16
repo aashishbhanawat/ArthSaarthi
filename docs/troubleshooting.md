@@ -67,3 +67,7 @@ This document lists common issues encountered during setup and development, alon
 *   **Symptom:** The `backend` service fails to start with an `AttributeError` from `passlib` related to `bcrypt`.
 *   **Cause:** A version mismatch between the `passlib` and `bcrypt` libraries.
 *   **Solution:** Pin the `bcrypt` version to a known compatible version in `backend/requirements.txt`. For example: `bcrypt==3.2.2`. Then, rebuild the backend container (`docker-compose build backend`).
+
+## Frontend Testing
+
+1.  **Jest Configuration Errors:** If you encounter errors related to `import.meta` or other syntax issues when running frontend tests, ensure that the Babel configuration in `jest.config.js` is correctly set up to transform Vite-specific syntax. Refer to the configuration section in this document for the correct settings.
