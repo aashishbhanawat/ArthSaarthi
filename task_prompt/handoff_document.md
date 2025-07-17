@@ -2,9 +2,9 @@
 
 #### 1. Project Goal & Current Status
 
-*   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS).
+* **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS).
 *   **Current Status:** The initial "Core User Authentication" feature is **complete**. The system can successfully check if an admin user exists, allow the first user to register as an admin with a secure password, and is ready for the login functionality to be implemented. The frontend and backend are communicating successfully within the Docker environment and are accessible over the local network.
-*   **Testing:** A full suite of automated backend tests (`pytest`) has been implemented for the authentication module, covering unit and integration tests. All tests are passing. A comprehensive set of automated frontend tests using Jest and React Testing Library has also been implemented for the LoginForm component. These tests cover rendering, user input, API calls, and error handling. All tests are passing.
+*   **Testing:** A full suite of automated backend tests (`pytest`) has been implemented for the authentication module, covering unit and integration tests. All tests are passing. A comprehensive set of automated frontend tests using Jest and React Testing Library has also been implemented for the LoginForm component and User Management Feature. These tests cover rendering, user input, API calls, and error handling. All tests are passing.
 *   **Implemented Functionalities:** The core user authentication module is now complete. This includes user registration, login, and basic session management. The system is able to verify if an admin user exists, allow the first user to register as an admin with a secure password, and authenticate subsequent users with login functionality.
 
 
@@ -115,4 +115,7 @@ The foundation is solid and well-documented. The immediate next step is to conti
 The next module to be developed is **User Management**.
 
 1.  **Define the User Management features and backend API endpoints:** This will involve backend development and database administration.
+
+The next module to be developed is **User Management**. The User Management module is now complete. The system can successfully create, read, update and delete users.
+
 2.  **Design the User Management frontend components:** This will involve frontend development and UI/UX design.

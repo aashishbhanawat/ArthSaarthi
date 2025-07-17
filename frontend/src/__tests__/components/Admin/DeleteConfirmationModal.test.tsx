@@ -1,0 +1,32 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import DeleteConfirmationModal from '../../../components/Admin/DeleteConfirmationModal';
+import { User } from '../../../types/user';
+
+const mockUser: User = { id: 1, email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false };
+
+describe('DeleteConfirmationModal', () => {
+  const onConfirm = jest.fn();
+  const onClose = jest.fn();
+
+  beforeEach(() => {
+    render(<DeleteConfirmationModal isOpen={true} onClose={onClose} onConfirm={onConfirm} user={mockUser} />);
+  });
+
+  test('renders the confirmation message with the user name', () => {
+    expect(screen.getByRole('heading', { name: 'Confirm Deletion' })).toBeInTheDocument();
+    expect(screen.getByText(/are you sure you want to delete the user/i)).toBeInTheDocument();
+    expect(screen.getByText('Test User')).toBeInTheDocument();
+  });
+
+  test('calls onConfirm when the Delete button is clicked', () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(onConfirm).toHaveBeenCalled();
+  });
+
+  test('calls onClose when the Cancel button is clicked', () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onClose).toHaveBeenCalled();
+  });
+});

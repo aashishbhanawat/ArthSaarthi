@@ -18,3 +18,5 @@ venv/
 
 # Test artifacts
 **/test.db
+
+frontend/node_modules/

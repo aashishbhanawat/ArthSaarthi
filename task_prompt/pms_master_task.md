@@ -75,7 +75,7 @@ Think about what a user needs from an end-to-end perspective for personal financ
 **For each key feature/screen (e.g., Dashboard, Add Investment, Transaction List, Performance Report, User Profile), provide:**
 1.  **Wireframe/Mockup Description:** Describe the layout, key elements, and user interactions. (Use text-based descriptions, or suggest a simple ASCII art representation if possible.)
 2.  **User Flow:** Explain the typical path a user would take to complete a task (e.g., from login to viewing portfolio performance).
-3.  **Design Considerations:** Explain your choices regarding navigation, data visualization, input forms, and overall aesthetic (e.g., clean, professional).
+3.  **Design Considerations:** Justify your design choices with considerations for usability, accessibility, and responsiveness. Explain your choices regarding navigation, data visualization, input forms, and overall aesthetic (e.g., clean, professional).
 4.  **Key UI Components:** List necessary components (buttons, input fields, charts, tables).
 
 **Example Screens to consider:**
@@ -117,13 +117,14 @@ For each feature, we'll follow these steps:
     * Unit Tests
     * Integration Tests
     * Acceptance Criteria
+    * **If tests fail, invoke the "File a Bug" prompt to log the issue before proceeding with a fix.**
     * Testing for specific HTTP error codes (e.g., 401, 409, 422).
-6.  **Deployment/Environment Updates (DevOps Engineer):**
-    * A plan for database schema initialization (e.g., `create_all` for dev, migrations for prod).
-    * Docker/Deployment Script Updates
-    * Environment Variables
+6.  **Deployment/Environment Updates (DevOps Engineer - To be introduced after first feature):**
+    *   A plan for database schema initialization (e.g., `create_all` for dev, migrations for prod).
+    *   Docker/Deployment Script Updates
+    *   Environment Variables
 7.  **Review and Iteration.**
-8.  **Document Workflow:** Append a detailed entry to `docs/workflow_history.md` summarizing the task, key prompts used, a summary of the AI's output, a list of file changes, verification steps, and the final outcome.
+8.  **Document Workflow:** Append a detailed entry to `docs/workflow_history.md` summarizing the task, key prompts used, a summary of the AI's output, a comprehensive list of file changes, verification steps, and the final outcome.
 
 **A `.gitignore` file should be created early in the process to exclude virtual environments, `.env` files, and `__pycache__` directories.**
 
@@ -154,7 +155,7 @@ Now, invoke the **Backend Developer** and **Database Administrator** to plan for
 2.  **Request/Response Schemas** for these APIs (e.g., JSON structure).
 3.  **Backend Logic Overview:** Describe the steps involved in handling registration (hashing passwords, saving to DB) and login (verifying credentials, generating tokens).
 4.  **Proposed Backend Files/Folders:** List the new files and their purpose (e.g., `routes/auth.js`, `controllers/authController.js`, `models/User.js`).
-5.  **Potential Implementation Approaches for Authentication:** (e.g., JWT, Session-based). Discuss pros and cons, and recommend one.
+5.  **Potential Implementation Approaches for Authentication:** Discuss pros and cons, and recommend one (e.g., JWT, Session-based).
 
 **As Database Administrator, propose:**
 1.  **Database Schema Changes:** Define the `users` table, including columns (e.g., `id`, `username`, `email`, `password_hash`, `created_at`). Specify data types and constraints.
@@ -183,7 +184,6 @@ Now, invoke the **Backend Developer** and **Database Administrator** to plan for
 1.  **Wireframe/Mockup Refinement:** Provide a more detailed description or ASCII art of the Login and Registration forms, focusing on user experience, error handling display, and visual feedback.
 2.  **Accessibility Considerations:** Briefly mention any accessibility features to include.
 
-**Provide potential implementation approaches for frontend aspects with pros and cons (e.g., form validation libraries, state management techniques).**"
 
 #### 4.3. Code Generation Request (for a specific Feature) 🤖
 
@@ -221,6 +221,7 @@ Now, invoke the **Backend Developer** and **Database Administrator** to plan for
 
 **Database (SQL schema - if applicable):**
 * Provide the SQL DDL for the `users` table.
+Please implement the test and documentation steps too.
 
 **Ensure the code is modular, follows best practices, and includes comments where necessary.**"
 
