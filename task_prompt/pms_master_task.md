@@ -123,6 +123,7 @@ For each feature, we'll follow these steps:
     * Docker/Deployment Script Updates
     * Environment Variables
 7.  **Review and Iteration.**
+8.  **Document Workflow:** Append a detailed entry to `docs/workflow_history.md` summarizing the task, key prompts used, a summary of the AI's output, a list of file changes, verification steps, and the final outcome.
 
 **A `.gitignore` file should be created early in the process to exclude virtual environments, `.env` files, and `__pycache__` directories.**
 

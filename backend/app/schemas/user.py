@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
+from typing import Optional
 import re
 
 
@@ -11,6 +12,16 @@ class UserBase(BaseModel):
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     password: str
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "full_name": "Admin User",
+                "email": "admin@example.com",
+                "password": "ValidPassword123!",
+            }
+        }
+    )
 
     @field_validator("password")
     @classmethod
@@ -33,4 +44,33 @@ class User(UserBase):
     id: int
     is_admin: bool
     is_active: bool
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "id": 1,
+                "full_name": "Admin User",
+                "email": "admin@example.com",
+                "is_active": True,
+                "is_admin": True,
+            }
+        },
+    )
+
+
+# Properties to receive via API on update
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "full_name": "John Doe Updated",
+                "email": "johndoe.updated@example.com",
+                "is_active": False,
+                "is_admin": False,
+            }
+        }
+    )

@@ -3,18 +3,38 @@ import string
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app import crud, schemas  # Keeping the existing import style for consistency
 
+
+def random_lower_string() -> str:
+    return "".join(random.choices(string.ascii_lowercase, k=32))
+
+
+def random_email() -> str:
+    return f"{random_lower_string()}@{random_lower_string()}.com"
+
+from app import schemas
+from app.crud import crud_user
 
 
 def create_random_user(db: Session):
     """
     Creates a random user for testing purposes.
     """
-    email = "".join(random.choices(string.ascii_lowercase, k=10)) + "@example.com"
-    password = "".join(random.choices(string.ascii_letters + string.digits, k=12))
+    email = random_email()
+     # Generate a password that meets the validation criteria
+    password_chars = [
+        random.choice(string.ascii_lowercase),
+        random.choice(string.ascii_uppercase),
+        random.choice(string.digits),
+        random.choice("!@#$%^&*()"),
+    ]
+    all_chars = string.ascii_letters + string.digits + "!@#$%^&*()"
+    password_chars.extend(random.choices(all_chars, k=8))
+    random.shuffle(password_chars)
+    password = "".join(password_chars)
+
     user_in = schemas.user.UserCreate(full_name="Test User", email=email, password=password)
-    user = crud.user.create(db, obj_in=user_in)
+    user = crud_user.create_user(db, user=user_in)
     return user, password
 
 

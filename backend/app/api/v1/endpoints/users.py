@@ -1,16 +1,107 @@
-from fastapi import APIRouter, Depends
-import logging
-from app.core.dependencies import get_current_user
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.dependencies import get_current_admin_user, get_current_user
+from app.crud import crud_user
+from app.db.session import get_db
 from app.models.user import User as UserModel
-from app.schemas.user import User as UserSchema
+from app.schemas.user import User, UserCreate, UserUpdate
 
 router = APIRouter()
 
-logger = logging.getLogger(__name__)
 
-
-@router.get("/me", response_model=UserSchema)
-def read_users_me(current_user: UserModel = Depends(get_current_user)):
-    """Get current user."""
-    logger.info(f"Accessed /users/me by user: {current_user.email}")
+@router.get("/me", response_model=User)
+def read_user_me(
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get current user's profile.
+    """
     return current_user
+
+
+@router.get("/", response_model=List[User])
+def list_users(
+    db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_admin_user)
+):
+    """
+    Retrieve a list of all users. (Admin Only)
+    """
+    users = crud_user.get_users(db)
+    return users
+
+
+@router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
+def create_user(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+):
+    """
+    Create a new user. By default, new users are not admins. (Admin Only)
+    """
+    # This call was updated to match the function signature in `crud_user.py`
+    user = crud_user.create_user(db, user=user_in)
+    return user
+
+
+@router.get("/{user_id}", response_model=User)
+def read_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+):
+    """
+    Retrieve a user by ID. (Admin Only)
+    """
+    # Renamed to `get_user` for consistency with `crud_user.py`
+    user = crud_user.get_user(db, id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.put("/{user_id}", response_model=User)
+def update_user(
+    user_id: int,
+    user_in: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+):
+    """
+    Update a user by ID. (Admin Only)
+    """
+    # Add a check to ensure user exists before updating
+    db_user = crud_user.get_user(db, id=user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud_user.update_user(db=db, db_obj=db_user, obj_in=user_in)
+
+
+@router.delete("/{user_id}", response_model=User)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+):
+    """
+    Delete a user by ID. (Admin Only)
+    """
+    # Renamed to `get_user` for consistency with `crud_user.py`
+    user = crud_user.get_user(db, id=user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Prevent deleting the admin who is deleting the user.
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete yourself.",
+        )
+
+    user = crud_user.remove(db, id=user_id)
+    return user

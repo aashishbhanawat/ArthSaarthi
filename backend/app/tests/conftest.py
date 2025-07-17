@@ -1,4 +1,5 @@
 import os
+import pytest
 from typing import Generator
 import logging
 
@@ -16,7 +17,6 @@ from app.core.config import settings
 from app.tests.utils.user import get_access_token
 
 log = logging.getLogger(__name__)
-
 
 def get_test_database_url():
     """
@@ -79,7 +79,6 @@ def create_tables(engine, setup_test_database):
     Base.metadata.drop_all(bind=engine)
 
 
-
 @pytest.fixture(scope="function")
 def client(db: Session) -> Generator[TestClient, None, None]:
     def override_get_db():
@@ -126,5 +125,5 @@ def get_auth_headers(client: TestClient):
     def _get_auth_headers(email: str, password: str) -> dict[str, str]:
         log.info(f"--- Getting auth headers for user: {email} ---")
         return {"Authorization": f"Bearer {get_access_token(client, email, password)}"}
-
+    return _get_auth_headers
     return _get_auth_headers
