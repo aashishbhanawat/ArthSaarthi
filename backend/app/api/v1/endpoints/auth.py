@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
+import logging
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
  
@@ -15,6 +16,8 @@ from app.schemas.user import User, UserCreate
 
 router = APIRouter()
 
+logger = logging.getLogger(__name__)
+
 
 @router.get("/status", response_model=Status)
 def get_setup_status(db: Session = Depends(get_db)):
@@ -28,6 +31,7 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
     """
     Create the first admin user. This will fail if any user already exists.
     """
+    logger.info(f"Attempting to setup admin user: {user.email}")
     user_count = db.query(user_model.User).count()
     if user_count > 0:
         raise HTTPException(
@@ -42,10 +46,12 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
 def login_for_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
+    logger.info(f"Login attempt for user: {form_data.username}")
     user = crud_user.authenticate_user(
         db, email=form_data.username, password=form_data.password
     )
     if not user:
+        logger.warning(f"Login failed for user: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

@@ -16,7 +16,7 @@ export default function SetupForm({ onSuccess }: SetupFormProps) {
     setError('');
 
     try {
-      await api.post('/auth/setup', {
+      await api.post('/api/v1/auth/setup', {
         full_name: fullName,
         email,
         password,

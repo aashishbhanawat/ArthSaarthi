@@ -1,12 +1,22 @@
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+import logging
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_router
 from app.db import base  # Import the new base file
 from app.core.config import settings
 from app.db.session import engine
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def init_db():
+    db_url = str(settings.DATABASE_URL)
+    engine = create_engine(db_url)
+    Base.metadata.create_all(bind=engine)
 
 
 @asynccontextmanager

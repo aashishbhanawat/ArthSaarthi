@@ -1,45 +1,68 @@
 import axios from "axios";
 
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
-});
+const apiClient = axios.create({
+  // The base URL is no longer needed here because we are using a proxy.
+  // The browser will make requests to the same origin (i.e., /api/...),
+  // and Vite's dev server will forward them to the backend.
+}); 
 
-api.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(
+  (config) => {
     const token = localStorage.getItem("authToken");
     if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log("API Request:", config.method?.toUpperCase(), config.url, config.data);
     return config;
-});
+  },
+  (error) => {
+    console.error("API Request Error:", error);
+    return Promise.reject(error);
+  }
+);
 
-export  default api;
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log("API Response:", response.status, response.config.url, response.data);
+    return response;
+  },
+  (error) => {
+    console.error("API Response Error:", error.response?.status, error.config.url, error.response?.data);
+    return Promise.reject(error);
+  }
+);
 
+export default apiClient;
 
-export const getAuthStatus = () => {
-    return api.get("/auth/status").then((response) => response.data);
+export const getAuthStatus = async () => {
+  const response = await apiClient.get("/api/v1/auth/status");
+  return response.data;
 };
 
-export const setupAdmin = (userData: any) => {
-    return api.post("/auth/setup", userData).then((response) => response.data);
+export const setupAdmin = async (userData: any) => {
+  console.log("API call to:", "/api/v1/auth/setup", userData); // Add this line
+  const response = await apiClient.post("/api/v1/auth/setup", userData);
+  return response.data;
 };
 
 export const loginUser = async (email: string, password: string) => {
-    try {
-        const response = await api.post(
-            "/auth/login",
-            new URLSearchParams({ username: email, password: password }),
-            {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-            }
-        );
-        return response.data;
-    } catch (error: any) {
-        throw error;
-    }
+  try {
+    const response = await apiClient.post(
+      "/api/v1/auth/login",
+      new URLSearchParams({ username: email, password: password }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    throw error;
+  }
 };
 
-export const getCurrentUser = () => {
-    return api.get("/users/me").then((response) => response.data);
+export const getCurrentUser = async () => {
+  const response = await apiClient.get("/api/v1/users/me");
+  return response.data;
 };
