@@ -1,49 +1,111 @@
-import pytest
+import os
 from typing import Generator
+import logging
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.engine.url import make_url
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy_utils import create_database, database_exists, drop_database
 
 from app.db.base import Base
 from app.main import app
 from app.db.session import get_db
+from app.core.config import settings
+from app.tests.utils.user import get_access_token
 
-# Use an in-memory SQLite database for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+log = logging.getLogger(__name__)
+
+
+def get_test_database_url():
+    """
+    Generates a unique test database URL.
+    """
+    return str(settings.DATABASE_URL)
+
+
+@pytest.fixture(scope="session")
+def test_database_url() -> str:
+    """
+    Yields the test database URL.
+    """
+    yield get_test_database_url()
 
 
 @pytest.fixture(scope="session", autouse=True)
-def db_setup_and_teardown():
-    # Create tables before any tests run
+def setup_test_database(test_database_url: str):
+    """
+    Creates and drops the test database for the test session.
+    """
+    log.info("*******************************************************************")
+    log.info(f"--- Setting up test database: {test_database_url} ---")
+    if database_exists(test_database_url):
+        log.info("--- Database exists, dropping. ---")
+        drop_database(test_database_url)
+    create_database(test_database_url)
+    log.info("--- Database created successfully. ---")
+    yield
+    log.info("--- Tearing down test database. ---")
+    log.info("*******************************************************************")
+    drop_database(test_database_url)
+
+
+@pytest.fixture(scope="session")
+def engine(test_database_url: str):
+    """
+    Yields a SQLAlchemy engine for the test database.
+    """
+    log.info("--- Creating Engine ---")
+    engine = create_engine(test_database_url)
+    yield engine
+
+
+@pytest.fixture(scope="session")
+def TestingSessionLocal(engine):
+    """
+    Yields a SQLAlchemy session factory for the test database.
+    """
+    log.info("--- Creating TestingSessionLocal ---")
+    yield sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def create_tables(engine, setup_test_database):
+    log.info("--- Creating tables... ---")
     Base.metadata.create_all(bind=engine)
     yield
-    # Drop tables after all tests have run
+    log.info("--- Dropping tables... ---")
     Base.metadata.drop_all(bind=engine)
 
-
-@pytest.fixture(scope="function")
-def db() -> Generator[Session, None, None]:
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = TestingSessionLocal(bind=connection)
-    yield session
-    session.close()
-    transaction.rollback()
-    connection.close()
 
 
 @pytest.fixture(scope="function")
 def client(db: Session) -> Generator[TestClient, None, None]:
     def override_get_db():
         yield db
+
     app.dependency_overrides[get_db] = override_get_db
+    log.info("--- Creating TestClient ---")
     with TestClient(app) as c:
+        log.info("--- TestClient is ready ---")
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def db(TestingSessionLocal: sessionmaker, engine) -> Generator[Session, None, None]:
+    """
+    Yields a SQLAlchemy session for the test database.
+    """
+    log.info("--- Creating Database Session ---")
+    connection = engine.connect()  # Get a connection from the engine
+    transaction = connection.begin()  # Start a transaction
+    session = TestingSessionLocal(bind=connection)  # Bind the session to the connection
+    yield session  # Yield the session to the test
+    session.close()  # Close the session
+    transaction.rollback()  # Rollback the transaction, undoing changes
+    connection.close()  # Return the connection to the pool
 
 
 @pytest.fixture
@@ -53,3 +115,16 @@ def admin_user_data() -> dict:
         "email": "admin@example.com",
         "password": "ValidPassword123!",
     }
+
+
+@pytest.fixture
+def get_auth_headers(client: TestClient):
+    """
+    Returns authentication headers for a given email and password.
+    """
+
+    def _get_auth_headers(email: str, password: str) -> dict[str, str]:
+        log.info(f"--- Getting auth headers for user: {email} ---")
+        return {"Authorization": f"Bearer {get_access_token(client, email, password)}"}
+
+    return _get_auth_headers

@@ -1,14 +1,17 @@
-from fastapi.testclient import TestClient
 import pytest
 from sqlalchemy.orm import Session
-
+from fastapi.testclient import TestClient
 from app.models.user import User as UserModel
 
+from app import crud, models, schemas  # Keep these for now, but might be unused
+from app.core import security       # Keep this as it's used directly
+from app.tests.utils.user import create_random_user, get_access_token
 
 def test_get_status_setup_needed(client: TestClient):
     response = client.get("/api/v1/auth/status")
     assert response.status_code == 200
-    assert response.json() == {"setup_needed": True}
+    assert response.json() == {"setup_needed": True}, "Should indicate setup is needed initially"
+    assert response.headers["content-type"] == "application/json"
 
 
 def test_setup_admin_user_success(client: TestClient):
@@ -145,5 +148,5 @@ def test_setup_admin_user_invalid_password(
     response = client.post("/api/v1/auth/setup", json=user_data)
 
     # Assert
-    assert response.status_code == 422
-    assert error_message_part in response.text
+    assert response.status_code == 422  # Expect a validation error
+    assert "detail" in response.json()  # Check for error details

@@ -19,13 +19,19 @@ services:
 
   test:
     build: ./backend
-    command: ["pytest"]
+    command: ["pytest", "-v"]
     volumes:
       - ./backend:/app
-    env_file:
-      - ./backend/.env
     environment:
-      - TESTING=1
+      - DATABASE_URL=postgresql://myadmin:mysecretpassword@db:5432/pms_db_test
+      - SECRET_KEY=a_super_secret_key_that_should_be_changed
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    networks:
+      - pms_network
+    depends_on:
+      db:
+        condition: service_healthy
 
   backend:
     build: ./backend

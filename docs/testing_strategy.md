@@ -1,5 +1,5 @@
 # Testing Strategy
-
+ 
 This document outlines the testing strategy for the Personal Portfolio Management System to ensure code quality, reliability, and maintainability. We employ a multi-layered testing approach.
 
 ## 1. Backend Testing
@@ -9,18 +9,29 @@ The backend is tested using the `pytest` framework along with `httpx` for asynch
 ### a. Backend Unit Tests
 
 *   **Objective:** Verify that individual, isolated pieces of the backend code work correctly.
-*   **Location:** `backend/app/tests/`
+*   **Location:** `backend/app/tests/` 
 *   **Scope:**
     *   **Core Logic:** Test utility functions like password hashing and verification (`core/security.py`).
     *   **Schemas:** Test Pydantic model validators, especially for complex rules like password strength (`schemas/user.py`).
 
 ### b. Backend Integration Tests
 
-*   **Objective:** Verify that different parts of the backend work together as expected, focusing on API endpoints and their interaction with a test database.
-*   **Location:** `backend/app/tests/api/`
-*   **Scope:**
-    *   **API Endpoints:** Test each endpoint for correct responses with valid data (2xx status codes), invalid client input (4xx status codes), and server errors (5xx status codes).
-    *   **Database Interaction:** Ensure that API calls result in the correct state changes in the database (e.g., creating a user, fetching data).
+    *   **Objective:** Verify that different parts of the backend work together as expected, focusing on API endpoints and their interaction with a test database.
+    *   **Location:** `backend/app/tests/api/`
+    *   **Scope:**
+        *   **API Endpoints:** Test each endpoint for correct responses with valid data (2xx status codes), invalid client input (4xx status codes), and server errors (5xx status codes).
+        *   **Database Interaction:** Ensure that API calls result in the correct state changes in the database (e.g., creating a user, fetching data).
+
+## Core Principles & Standards
+
+These principles are the foundation of our testing approach and were established following a postmortem on test suite stabilization. Adherence is mandatory for all new development.
+
+1.  **Explicit Configuration Over Convention:** Test environment configuration must be explicit. For the backend, the `test` service definition in `docker-compose.yml` is the single source of truth for environment variables like `DATABASE_URL`. We will avoid dynamic generation or modification of configuration values within the test code itself.
+2.  **Test Isolation via Transactions:** Integration tests that interact with the database must be wrapped in a transaction that is rolled back after each test to ensure isolation. The `db` fixture in `backend/app/tests/conftest.py` enforces this.
+3.  **Explicit Fixture Dependencies:** Use pytest's fixture dependency mechanism to explicitly define the order in which fixtures are set up. For example, if fixture `A` depends on fixture `B`, define `A` as `def A(B): ...`.
+4.  **Proactive Logging:** Maintain clear and informative logging in test setup and teardown processes (e.g., in `conftest.py`) to aid in debugging test failures.
+5.  **Align Test Helpers with Application Logic:** Any utility functions used in tests (e.g., for generating test data) must respect all validation rules and constraints enforced by the application itself.
+6.  **Test Environment Sanity Check:** The QA Engineer role includes a "Test Environment Sanity Check" at the beginning of each new module to validate the test environment configuration.
 
 ## 2. Frontend Testing
 
@@ -28,19 +39,20 @@ Frontend testing will be implemented using **Jest** and **React Testing Library*
 
 ### a. Frontend Unit Tests
 
-*   **Objective:** Test individual React components in isolation.
-*   **Scope:**
-    *   Verify that components render correctly with different props.
-    *   Test component state changes and logic.
+    *   **Objective:** Test individual React components in isolation.
+    *   **Scope:**
+        *   Verify that components render correctly with different props.
+        *   Test component state changes and logic.
 
 ### b. Frontend Integration Tests
 
-*   **Objective:** Test how multiple components work together.
-*   **Scope:**
-    *   Simulate user interactions (e.g., filling out a form, clicking buttons).
-    *   Mock API calls to verify that components handle success, error, and loading states correctly.
+    *   **Objective:** Test how multiple components work together.
+    *   **Scope:**
+        *   Simulate user interactions (e.g., filling out a form, clicking buttons).
+        *   Mock API calls to verify that components handle success, error, and loading states correctly.
 
 ## 3. End-to-End (E2E) Testing
+
 
 E2E tests will be implemented using a framework like **Cypress** or **Playwright**.
 

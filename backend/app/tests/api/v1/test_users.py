@@ -1,38 +1,43 @@
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from app.tests.utils.user import create_random_user, get_access_token
+
+
 
 
 def test_get_current_user_unauthorized(client: TestClient):
     response = client.get("/api/v1/users/me")
     assert response.status_code == 401
-    assert response.json()["detail"] == "Not authenticated"
+    assert response.json()["detail"] == "Not authenticated", "Should return 401 for unauthorized access"
 
 
-def get_auth_headers(client: TestClient, email: str, password: str) -> dict[str, str]:
-    login_data = {"username": email, "password": password}
-    response = client.post("/api/v1/auth/login", data=login_data)
-    token = response.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
-
-
-def test_get_current_user_success(client: TestClient, admin_user_data: dict):
-    # Create user first
-    client.post("/api/v1/auth/setup", json=admin_user_data)
-
-    # Get token and create headers
-    headers = get_auth_headers(
-        client, admin_user_data["email"], admin_user_data["password"]
-    )
-
-    # Test the protected endpoint
+def test_get_current_user_success(
+    client: TestClient, db: Session, get_auth_headers
+):
+    """
+    Test successfully retrieving the current user's profile.
+    """
+    # 1. Arrange: Create a user using the utility function and get their access token.
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    # 2. Act: Call the endpoint to get the current user's profile using the obtained token.
     response = client.get("/api/v1/users/me", headers=headers)
     assert response.status_code == 200
-    user = response.json()
-    assert user["email"] == admin_user_data["email"]
-    assert user["full_name"] == admin_user_data["full_name"]
+    returned_user = response.json()  # API response is now correctly assigned to returned_user
+    # 3. Assert: Verify that the returned user data matches the created user's data.
+    assert returned_user["email"] == user.email  # Comparison is now correct.
+    assert returned_user["full_name"] == user.full_name
+    assert returned_user["id"] == user.id
 
 
 def test_get_current_user_invalid_token(client: TestClient):
+    """
+    Test handling of an invalid authentication token.
+    """
     headers = {"Authorization": "Bearer invalidtoken"}
     response = client.get("/api/v1/users/me", headers=headers)
     assert response.status_code == 403
-    assert response.json()["detail"] == "Could not validate credentials"
+    assert (
+        response.json()["detail"] == "Could not validate credentials"
+    ), "Should return 403 for invalid token"
