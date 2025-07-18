@@ -1,0 +1,273 @@
+/* Using a more modern box-sizing model */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Define CSS variables for our dark theme */
+:root {
+  --background-color: #121212;
+  --surface-color: #1e1e1e;
+  --primary-color: #3b82f6;
+  --primary-color-hover: #2563eb;
+  --secondary-color: #4b5563;
+  --secondary-color-hover: #374151;
+  --danger-color: #ef4444;
+  --danger-color-hover: #dc2626;
+  --text-color: #e5e7eb;
+  --text-color-secondary: #9ca3af;
+  --border-color: #374151;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --border-radius: 6px;
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2 {
+  color: var(--text-color);
+  margin-top: 0;
+}
+
+p {
+  line-height: 1.6;
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Page container */
+.page-container {
+  /* max-width is good, but margin is now handled by the layout */
+  margin: 0;
+  padding: 2rem;
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* Auth page specific styles */
+.auth-container {
+  max-width: 400px;
+  margin: 5rem auto;
+  padding: 2rem;
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  text-align: center;
+}
+
+/* Generic form styling */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+form > div {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'] {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--background-color);
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+}
+
+input[type='text']:focus,
+input[type='email']:focus,
+input[type='password']:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+input[type='checkbox'] {
+    margin-right: 0.5rem;
+}
+
+/* Button styles */
+button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  background-color: var(--primary-color);
+  color: white;
+}
+
+button:hover {
+  background-color: var(--primary-color-hover);
+}
+
+button:disabled {
+  background-color: var(--secondary-color);
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+}
+
+.button-secondary:hover {
+  background-color: var(--secondary-color-hover);
+}
+
+.button-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.button-danger:hover {
+  background-color: var(--danger-color-hover);
+}
+
+/* Table styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2rem;
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  border-radius: var(--border-radius);
+}
+
+thead {
+  background-color: #2a2a2a;
+}
+
+th,
+td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+tbody tr:hover {
+  background-color: var(--surface-color);
+}
+
+td > button + button {
+    margin-left: 0.5rem;
+}
+
+/* Modal styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--surface-color);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  width: 100%;
+  max-width: 500px;
+}
+
+.modal-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* Specific component tweaks */
+#DashboardPage nav {
+    margin: 1.5rem 0;
+}
+
+#UserManagementPage > button {
+    margin-bottom: 1rem;
+}
+
+/* --- Main Application Layout --- */
+.app-layout {
+  display: flex;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.main-content {
+  flex-grow: 1;
+  width: 100%;
+}
+
+/* Navigation Bar */
+.navbar {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Prevent navbar from shrinking */
+    width: 200px;
+    background-color: var(--surface-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.navbar nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+.navbar nav li {
+    margin-bottom: 0.5rem;
+}
+
+.navbar nav a {
+    display: block;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+}
+
+.navbar nav a.active {
+    background-color: var(--primary-color);
+    color: var(--background-color); /* Contrasting text color */
+}

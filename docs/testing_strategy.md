@@ -4,7 +4,7 @@ This document outlines the testing strategy for the Personal Portfolio Managemen
 
 ## Core Principles & Standards
 
-These principles are the foundation of our testing approach and were established following a postmortem on test suite stabilization. Adherence is mandatory for all new development.
+These principles are the foundation of our testing approach and were established following postmortems on test suite stabilization. Adherence is mandatory for all new development.
 
 1. **Explicit Configuration Over Convention:** Test environment configuration must be explicit. For the backend, the `test` service definition in `docker-compose.yml` is the single source of truth for environment variables like `DATABASE_URL`. We will avoid dynamic generation or modification of configuration values within the test code itself.
 2.  **Test Isolation via Transactions:** Integration tests that interact with the database must be wrapped in a transaction that is rolled back after each test to ensure isolation. The `db` fixture in `backend/app/tests/conftest.py` enforces this.
@@ -13,11 +13,10 @@ These principles are the foundation of our testing approach and were established
 5.  **Align Test Helpers with Application Logic:** Any utility functions used in tests (e.g., for generating test data) must respect all validation rules and constraints enforced by the application itself.
 6.  **Test Environment Sanity Check:** The QA Engineer role includes a "Test Environment Sanity Check" at the beginning of each new module to validate the test environment configuration.
 
-7.  **AI Assistant Interaction Model**: To ensure accuracy and prevent errors from stale context, the following process is adopted for AI-assisted development:
-    *   **Scoped Context:** Before starting any new feature or major bugfix, the developer will provide the AI with all relevant, up-to-date files for that task.
-    *   **Incremental Verification:** Development will proceed in small, verifiable steps. The AI's suggestions will be tested immediately, and the results (success or failure logs) will be fed back to the AI. This creates a tight feedback loop.
-    *   **Error-Driven Correction:** When an error occurs, the exact error log will be provided to the AI. The focus will be on fixing that specific error before moving on.
-    *   **Developer as Final Verifier:** The developer is the final source of truth. If the AI provides a suggestion that seems incorrect or references non-existent code, the developer will correct the AI with the actual code or state of the file.
+7.  **AI Assistant Interaction Model**: To ensure accuracy and prevent errors from stale context, the following process is adopted for AI-assisted development. The developer is the final verifier.
+    *   **Scoped Context:** Provide the AI with all relevant, up-to-date files for the task.
+    *   **Incremental Verification:** Proceed in small, verifiable steps. Test the AI's suggestions immediately.
+    *   **Error-Driven Correction:** When an error occurs, provide the exact error log to the AI. Focus on fixing that specific error before moving on.
 
 ## 1. Backend Testing
 
@@ -41,21 +40,28 @@ The backend is tested using the `pytest` framework along with `httpx` for asynch
 
 ## 2. Frontend Testing
 
-Frontend testing will be implemented using **Jest** and **React Testing Library**.
+Frontend testing is implemented using **Jest** and **React Testing Library**.
  
 ### a. Frontend Unit Tests
 
-    *   **Objective:** Test individual React components in isolation.
-    *   **Scope:**
-        *   Verify that components render correctly with different props.
-        *   Test component state changes and logic.
+*   **Objective:** Test individual React components in isolation.
+*   **Scope:**
+    *   Verify that components render correctly with different props.
+    *   Test component state changes and internal logic.
 
 ### b. Frontend Integration Tests
 
-    *   **Objective:** Test how multiple components work together.
-    *   **Scope:**
-        *   Simulate user interactions (e.g., filling out a form, clicking buttons).
-        *   Mock API calls to verify that components handle success, error, and loading states correctly.
+*   **Objective:** Test how multiple components work together, often involving user interaction and mocked API calls.
+*   **Scope:**
+    *   Simulate user interactions (e.g., filling out a form, clicking buttons).
+    *   Mock API calls (`services/api.ts`) and custom hooks (`hooks/useUsers.ts`) to verify that components handle loading, success, and error states correctly.
+    *   Ensure components are accessible by using `htmlFor` on labels and `id` on inputs, allowing tests to query elements by their accessible name.
+    *   When testing components that appear in modals or overlays, use scoped queries (`within(screen.getByRole('dialog'))`) to avoid ambiguous matches with elements in the background.
+
+### c. Frontend Manual E2E Smoke Test
+
+*   **Objective:** To ensure that the newly developed feature is correctly integrated into the overall application flow.
+*   **Scope:** After all automated tests pass, the developer will manually test the primary user flow of the new feature within the running application in a browser. This involves navigating through the relevant pages and verifying that all components are correctly connected and that data flows as expected (e.g., user data from `AuthContext` populating the `NavBar`).
 
 ## 3. Bug Tracking and Triage
 

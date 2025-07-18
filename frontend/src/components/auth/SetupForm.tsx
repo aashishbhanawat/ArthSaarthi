@@ -38,7 +38,7 @@ export default function SetupForm({ onSuccess }: SetupFormProps) {
   return (
     <form onSubmit={handleSubmit}>
       <h3>Create Admin Account</h3>
-      <p>Welcome! As the first user, you will be the administrator.</p>
+      <p>Welcome! As the first user, you will create the administrator account.</p>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <div style={{ marginBottom: '15px' }}>
         <label>Full Name</label>
@@ -65,7 +65,7 @@ export default function SetupForm({ onSuccess }: SetupFormProps) {
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
       </div>
       <button type="submit" style={{ width: '100%', padding: '10px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}>
-        Create Account
+        Create Admin Account
       </button>
     </form>
   );

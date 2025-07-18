@@ -31,6 +31,7 @@ Its purpose is to build an experience history that can be used as a reference fo
 *   **Outcome:**
     - The backend for the User Management feature is complete, fully tested, and all 23 tests are passing.
     - A new mitigation plan for AI interaction was documented in `docs/testing_strategy.md` to improve future development workflows.
+    - **Following the discovery of integration bugs, a new "Manual E2E Smoke Test" step has been added to the standard workflow to ensure features are correctly integrated into the application. This test involves manually verifying the main user flow of each new feature in the browser after all automated tests have passed.**
 
 ---
 
@@ -63,3 +64,29 @@ Its purpose is to build an experience history that can be used as a reference fo
 *   **Outcome:**
     - The frontend for the User Management feature is complete and fully functional.
     - The entire frontend test suite (24 tests) is now stable and passing. The "Analyze -> Report -> Fix" workflow proved highly effective at systematically resolving a complex chain of test failures.
+
+---
+
+## 2025-07-18: Frontend Stabilization & Auth Flow Refactor
+
+*   **Task Description:** After the initial implementation of the User Management feature, a series of cascading bugs were discovered during manual E2E testing. This task involved debugging and fixing the entire authentication and navigation flow to ensure the application was stable and behaved as expected after login.
+
+*   **Key Prompts & Interactions:**
+    1.  **Symptom-Based Debugging:** The process began by describing the high-level symptoms to the AI (e.g., "User Management link not showing," "user name not appearing").
+    2.  **Error Log Analysis:** For each subsequent failure (e.g., `404 Not Found` on API calls, `useNavigate is not defined`, `Multiple exports with the same name "default"`), the full error log from the browser console or Vite build process was provided to the AI.
+    3.  **Context Resynchronization:** There were several instances where the AI's suggestions were based on stale file versions. The developer corrected the AI by providing the full, current content of the problematic file (`LoginForm.tsx`), which allowed the AI to resynchronize and provide an accurate patch.
+    4.  **Targeted Fix Requests:** Prompts like "Give me the fix for this error" or "Update this file to resolve the issue" were used to get specific code changes.
+
+*   **File Changes:**
+    *   `frontend/src/context/AuthContext.tsx`: Corrected the API path for fetching user data to `/api/v1/users/me`.
+    *   `frontend/src/services/api.ts`: Corrected the `localStorage` key from `"authToken"` to `"token"` to match what's set on login.
+    *   `frontend/src/App.tsx`: Wrapped the application in a `<QueryClientProvider>` to fix crashes on pages using React Query.
+    *   `frontend/src/components/LoginForm.tsx`: Resolved multiple issues, including incorrect API paths, multiple default exports, and missing `useNavigate` calls.
+    *   `frontend/src/components/NavBar.tsx`: Updated to use the correct `logout` function from the `AuthContext`.
+
+*   **Verification:**
+    - Performed manual E2E testing of the login flow for an admin user. Verified that the user's name and the "User Management" link appeared correctly in the navigation bar.
+    - Verified that logging out successfully cleared the session and UI.
+
+*   **Outcome:**
+    - The application is now stable. The login and authentication flow works correctly, and the UI dynamically updates based on the authenticated user's role and data. All navigation links are functional.

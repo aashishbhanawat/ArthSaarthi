@@ -279,4 +279,60 @@ The test run is aborted with a syntax error during compilation, originating from
 The missing `}` must be added to the `handleSubmit` function in `UserFormModal.tsx` to fix the syntax.
 **Resolution:** Fixed
 
+---
 
+**Bug ID:** 20250718-01
+**Title:** Admin-only "User Management" link is not displayed on the dashboard.
+**Reported By:** Developer via Manual E2E Test
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Frontend)
+**Severity:** High
+**Description:**
+After an administrator successfully logs in, the dashboard page only displays a generic welcome message. It does not provide a navigation link to the User Management page, making the feature inaccessible through the UI. The `DashboardPage.tsx` component fails to check the logged-in user's `is_admin` status to conditionally render the required navigation.
+**Steps to Reproduce:**
+1. Log in to the application as a user with administrator privileges.
+2. Observe the dashboard page.
+**Expected Behavior:**
+The dashboard should display a "User Management" link that navigates to `/admin/users`.
+**Actual Behavior:**
+No "User Management" link is visible.
+**Resolution:** The logic was refactored to place the conditional link in the `NavBar` component and fetch user data centrally in the `AuthContext`. **Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-02
+**Title:** Navigating to `/admin/users` results in a "No routes matched location" error.
+**Reported By:** Developer via Manual E2E Test
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+After programmatically adding the link to the User Management page, clicking it results in a blank page and a `No routes matched location "/admin/users"` error in the console. The main application router in `App.tsx` has not been configured to handle this path.
+**Steps to Reproduce:**
+1. Apply the fix for Bug ID 20250718-01.
+2. Log in as an admin.
+3. Click the "User Management" link.
+**Expected Behavior:**
+The application should navigate to the User Management page and render its content.
+**Actual Behavior:**
+The application renders a blank page, and the routing fails.
+**Resolution:** Create a new `AdminRoute.tsx` protected route component. Update the main router in `App.tsx` to define a nested route for `/admin/users` that is protected by both the standard `ProtectedRoute` and the new `AdminRoute`. **Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-03
+**Title:** User Management page crashes with "No QueryClient set" error.
+**Reported By:** Developer via Manual E2E Test
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+After fixing the routing, the `UserManagementPage` immediately crashes upon loading. The browser console shows the error `Uncaught Error: No QueryClient set, use QueryClientProvider to set one`. The page and its children use React Query hooks, but the root `App.tsx` component is not wrapped in the required `<QueryClientProvider>`.
+**Steps to Reproduce:**
+1. Apply fixes for the previous two bugs.
+2. Log in as an admin and navigate to the User Management page.
+**Expected Behavior:**
+The User Management page should load correctly and begin fetching user data.
+**Actual Behavior:**
+The page crashes, and the application becomes unresponsive.
+**Resolution:** In `App.tsx`, instantiate a new `QueryClient` and wrap the entire `<Router>` component with a `<QueryClientProvider client={queryClient}>`. **Resolution:** Fixed

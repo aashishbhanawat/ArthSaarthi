@@ -130,9 +130,14 @@ For each feature, we'll follow these steps:
 
 
 You are now ready to start development of new module.
-Let's start with the first core feature: **User Authentication (Registration and Login)**.
 
-Now, invoke the **Backend Developer** and **Database Administrator** to plan for User Authentication."
+**The "User Authentication" and "User Management" modules are now complete.**
+
+Let's start with the next core feature from the MVP backlog: **Portfolio & Transaction Management (Core from FR4)**.
+
+This feature will allow users to create portfolios and manually add transactions for Stocks, ETFs, and Mutual Funds.
+
+Now, invoke the **Backend Developer** and **Database Administrator** to plan for Portfolio & Transaction Management."
 
 #### 4.1. Backend Development Planning (for a specific Feature) 💻🗄️
 

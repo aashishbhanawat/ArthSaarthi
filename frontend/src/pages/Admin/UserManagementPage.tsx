@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useUsers, useDeleteUser } from '../../hooks/useUsers';
 import UsersTable from '../../components/Admin/UsersTable'; // Corrected path
 import UserFormModal from '../../components/Admin/UserFormModal'; // Corrected path
@@ -40,7 +41,7 @@ const UserManagementPage: React.FC = () => {
   if (error) return <div>An error occurred: {error.message}</div>;
 
   return (
-    <div>
+    <div className="page-container" id="UserManagementPage">
       <h1>User Management</h1>
       <button onClick={handleCreateUser}>Create New User</button>
 

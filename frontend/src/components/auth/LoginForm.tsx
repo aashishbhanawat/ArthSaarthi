@@ -45,7 +45,7 @@ export default function LoginForm() {
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
       </div>
       <button type="submit" style={{ width: '100%', padding: '10px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}>
-        Sign In
+        Login
       </button>
     </form>
   );

@@ -1,60 +1,69 @@
-﻿# Personal Portfolio Management System (PMS)
+﻿﻿# Personal Portfolio Management System (PMS)
 
-This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets like stocks, cryptocurrencies, and ETFs, providing performance insights and analytics.
+This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets, providing performance insights and analytics.
 
 This project is being developed with the guidance of an AI Master Orchestrator, following an Agile SDLC.
 
-## Technology Stack
+## Features Implemented
 
-The proposed technology stack for this project is:
+*   **Core User Authentication:** Secure user registration and login. The first user registered is automatically designated as an administrator.
+*   **User Management Dashboard:** A dedicated, admin-only interface for performing Create, Read, Update, and Delete (CRUD) operations on all users in the system.
+
+## Technology Stack
 
 -   **Backend:** Python with [FastAPI](https://fastapi.tiangolo.com/)
 -   **Frontend:** JavaScript with [React](https://reactjs.org/)
 -   **Database:** [PostgreSQL](https://www.postgresql.org/)
 -   **Deployment:** [Docker](https://www.docker.com/)
 
-## Project Structure
-
-The project is organized into the following main directories:
-
--   `/app`: Contains the backend FastAPI application source code.
--   `/frontend`: Contains the frontend React application source code.
--   `/docs`: Contains project documentation, including requirements and architecture designs.
-
 ## Running the Project
 
 This project is fully containerized using Docker and Docker Compose for a consistent and streamlined development experience.
 
-1.  **Backend Environment:** In the `backend/` directory, create a file named `.env` (you can copy `backend/.env.example`). Fill in the required values for the database, JWT secret, and CORS origins.
+### Prerequisites
+*   Docker
+*   Docker Compose
 
-2.  **Frontend Environment:** In the `frontend/` directory, create a file named `.env` (you can copy `frontend/.env.example`). Ensure `VITE_API_BASE_URL` points to the correct backend address. For access from other machines on your network, use your host's LAN IP (e.g., `http://192.168.1.100:8000/api/v1`).
+### 1. Environment Configuration
 
-3.  **Build and Run Containers:** From the root directory of the project (`pms_new/`), run:
+The project uses `.env` files for configuration.
+
+*   **Backend:** Create a file at `backend/.env`. You can copy `backend/.env.example` as a template. The default values are suitable for local development.
+*   **Frontend:** The frontend is configured to use a proxy, so no `.env` file is needed for local development.
+
+### 2. Build and Run the Application
+
+From the project's root directory, run:
     ```bash
-    docker-compose up --build db backend frontend
+    docker-compose up --build
     ```
-    This command starts the main application services. The backend will wait for the database to be healthy before starting.
+This command will build the Docker images and start the `db`, `backend`, and `frontend` services. The backend will wait for the database to be healthy before starting.
 
-4.  **Accessing the Services:**
-    *   The **Backend API** will be available at `http://localhost:8000`.
-    *   The interactive API documentation (Swagger UI) is at `http://localhost:8000/docs`.
-    *   The **Frontend Application** will be available at `http://localhost:3000`.
+### 3. Accessing the Services
+
+*   **Frontend Application:** `http://localhost:3000`
+*   **Backend API Docs (Swagger UI):** `http://localhost:8000/docs`
 
 ## Running Tests
 
-1. The backend has a comprehensive test suite using `pytest`. To run the tests, use the following command from the root directory:
+### Backend Tests
+
+The backend has a comprehensive test suite using `pytest`. To run the tests in an isolated container with a dedicated test database, use the following command from the root directory:
+
 ```bash
 docker-compose run --rm test
 ```
-This command runs the tests in an isolated container with a temporary database, ensuring no impact on your development data.
 
-2. To run the frontend test suite, use the following command from the `frontend` directory:
+### Frontend Tests
+
+To run the frontend test suite using Jest and React Testing Library, use the following command from the root directory:
+
     ```bash
-    npm test
+    docker-compose run --rm frontend npm test
     ```
 
 ## Contributing
 
 Please read CONTRIBUTING.md for details on our development process and the roles involved in this project.
 
-See `docs/troubleshooting.md` for solutions to common setup issues.
+See `docs/troubleshooting.md` for solutions to common setup and runtime issues.

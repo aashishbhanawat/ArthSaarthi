@@ -42,11 +42,15 @@ const AuthPage = () => {
         return <div>Error: {error}</div>;
     }
 
-    if (setupNeeded) {
-        return <SetupForm onSuccess={handleSetupSuccess} />;
-    }
-
-    return <LoginForm />;
+    return (
+        <div className="auth-container">
+            {setupNeeded ? (
+                <SetupForm onSuccess={handleSetupSuccess} />
+            ) : (
+                <LoginForm />
+            )}
+        </div>
+    );
 };
 
 export default AuthPage;

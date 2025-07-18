@@ -47,6 +47,36 @@ This guide documents common setup and runtime issues and their solutions.
     *   **Incorrect:** `apiClient.post('/auth/setup', ...)`
     *   **Correct:** `apiClient.post('/api/v1/auth/setup', ...)`
 
+### 4. Admin Features or User Name Not Appearing After Login
+
+*   **Symptom:** After a user logs in, admin-specific UI elements (like a "User Management" link) or the user's full name do not appear in the navigation bar or dashboard.
+
+*   **Cause:** This is typically due to a failure in fetching the user's details after the login is complete. The `AuthContext` likely attempts to fetch user data from an endpoint like `/api/v1/users/me` but the request fails. Common reasons include:
+    1.  **Incorrect API Path:** The path in the `AuthContext`'s `fetchUserData` function is wrong (e.g., `/users/me` instead of `/api/v1/users/me`).
+    2.  **Authentication Token Not Sent:** The API interceptor in `services/api.ts` is not correctly attaching the `Authorization: Bearer <token>` header. This can happen if the key used to retrieve the token from `localStorage` (e.g., `localStorage.getItem("authToken")`) does not match the key used when setting it during login (e.g., `localStorage.setItem("token", ...)`).
+
+*   **Solution:**
+    1.  Verify the API path for fetching user data in `AuthContext.tsx` is correct and includes the `/api/v1` prefix.
+    2.  Ensure the `localStorage` key is consistent across your application for setting and getting the authentication token.
+
+### 5. "No routes matched location" for Admin Pages
+
+*   **Symptom:** Clicking a link to an admin-only section like `/admin/users` results in a blank page and a `No routes matched location` error in the console.
+
+*   **Cause:** The main application router in `App.tsx` has not been configured to handle the specific admin path.
+
+*   **Solution:**
+    1.  Create a dedicated `AdminRoute.tsx` component that checks if the `user` from `AuthContext` has the `is_admin` flag set to true.
+    2.  In `App.tsx`, update the `<Routes>` to include a nested route structure for admin pages, protected by both the standard `ProtectedRoute` (checks for a token) and the new `AdminRoute` (checks for admin privileges).
+
+### 6. User Management Page Crashes with "No QueryClient set"
+
+*   **Symptom:** After fixing routing, navigating to the `UserManagementPage` immediately crashes the application with the error `Uncaught Error: No QueryClient set, use QueryClientProvider to set one`.
+
+*   **Cause:** The page or one of its child components uses React Query hooks (`useQuery`, `useMutation`), but the root of the application is not wrapped in the required `<QueryClientProvider>`.
+
+*   **Solution:** In the main `App.tsx` file, instantiate a new `QueryClient` and wrap the entire application (typically the `<Router>` component) with the `<QueryClientProvider client={queryClient}>`.
+
 ---
 
 *After applying any of these fixes, always remember to rebuild your Docker containers (`docker-compose up --build`) to ensure the changes take effect.*

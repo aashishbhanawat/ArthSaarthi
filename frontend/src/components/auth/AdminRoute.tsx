@@ -3,13 +3,11 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminRoute: React.FC = () => {
-  const { user, isLoading } = useAuth();
+    const { user } = useAuth();
 
-  if (isLoading) {
-    return <div>Loading...</div>; // Or a spinner
-  }
+    if (!user) return null; // Or a loading spinner
 
-  return user && user.is_admin ? <Outlet /> : <Navigate to="/" />;
+    return user.is_admin ? <Outlet /> : <Navigate to="/" replace />;
 };
 
 export default AdminRoute;

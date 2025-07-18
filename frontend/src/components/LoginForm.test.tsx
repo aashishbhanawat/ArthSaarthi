@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useNavigate } from 'react-router-dom';
 import LoginForm from './LoginForm';
 import { AuthContext } from '../context/AuthContext';
 import * as api from '../services/api';
@@ -11,9 +12,9 @@ jest.mock('react-router-dom', () => ({
 }));
 
 jest.mock('../services/api');
-const mockedApi = api as jest.Mocked<typeof api>;
+const mockedApi = api as jest.Mocked<typeof api>; 
 
-const mockSetToken = jest.fn();
+const mockLogin = jest.fn();
 
 const renderWithContext = () => {
   return render(
@@ -24,20 +25,20 @@ const renderWithContext = () => {
 };
 
 describe('LoginForm', () => {
-  beforeEach(() => {
+ beforeEach(() => {
     // Clear mock history before each test
-    mockSetToken.mockClear();
+    mockLogin.mockClear();
     mockedApi.loginUser.mockClear();
   });
 
   it('renders the login form correctly', () => {
     renderWithContext();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument(); 
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
   });
 
-  it('allows the user to enter email and password', async () => {
+ it('allows the user to enter email and password', async () => {
     renderWithContext();
     const user = userEvent.setup();
 
@@ -51,7 +52,7 @@ describe('LoginForm', () => {
     expect(passwordInput).toHaveValue('password123');
   });
 
-  it('calls login api and sets token on successful submission', async () => {
+ it('calls login api and calls login function on successful submission', async () => {
     mockedApi.loginUser.mockResolvedValue({ access_token: 'fake-token' });
     renderWithContext();
     const user = userEvent.setup();
@@ -62,11 +63,11 @@ describe('LoginForm', () => {
 
     await waitFor(() => {
       expect(mockedApi.loginUser).toHaveBeenCalledWith('test@example.com', 'password123');
-      expect(mockSetToken).toHaveBeenCalledWith('fake-token');
+      expect(mockLogin).toHaveBeenCalledWith('fake-token');
     });
   });
 
-  it('shows an error message on failed submission', async () => {
+ it('shows an error message on failed submission', async () => {
     const errorMessage = 'Incorrect email or password';
     mockedApi.loginUser.mockRejectedValue({ response: { data: { detail: errorMessage } } });
     renderWithContext();
@@ -80,4 +81,5 @@ describe('LoginForm', () => {
       expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
   });
+
 });
