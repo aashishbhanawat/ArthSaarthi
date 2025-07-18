@@ -1,4 +1,4 @@
-﻿﻿# Personal Portfolio Management System (PMS)
+﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
 
 This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets, providing performance insights and analytics.
 
@@ -9,6 +9,7 @@ This project is being developed with the guidance of an AI Master Orchestrator, 
 *   **Core User Authentication:** Secure user registration and login. The first user registered is automatically designated as an administrator.
 *   **User Management Dashboard:** A dedicated, admin-only interface for performing Create, Read, Update, and Delete (CRUD) operations on all users in the system.
 
+*   **Portfolio & Transaction Management (Backend):** Backend APIs for creating portfolios and logging transactions for stocks, ETFs, and mutual funds.
 ## Technology Stack
 
 -   **Backend:** Python with [FastAPI](https://fastapi.tiangolo.com/)

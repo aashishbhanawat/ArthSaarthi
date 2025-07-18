@@ -3,12 +3,14 @@
 #### 1. Project Goal & Current Status
 
 *   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS).
-*   **Current Status:** The **"Core User Authentication"** and **"User Management"** features are **complete**. The system is stable, and all core authentication and admin functionalities are working as expected.
-*   **Testing:** A full suite of automated backend tests (`pytest`) and frontend tests (Jest, React Testing Library) are stable and passing. The testing strategy includes unit, integration, and manual E2E smoke tests for each feature.
+*   **Current Status:** The backend for the MVP is **complete**. This includes **"Core User Authentication"**, **"User Management"**, and the core of **"Portfolio & Transaction Management"**. The backend is stable, and all 34 automated tests are passing.
+*   **Testing:** A full suite of automated backend tests (`pytest`) is stable and passing. The frontend test suite is also stable. The testing strategy includes unit, integration, and manual E2E smoke tests for each feature.
 *   **Implemented Functionalities:**
     *   **Authentication:** Initial admin setup, secure user login/logout, and JWT-based session management.
     *   **User Management:** A dedicated, admin-only dashboard for performing Create, Read, Update, and Delete (CRUD) operations on all users.
-
+    *   **Portfolio Management:** Backend endpoints for creating, reading, and deleting portfolios, scoped to the authenticated user.
+    *   **Asset Management:** A backend endpoint for looking up asset details from a (mocked) external financial API.
+    *   **Transaction Management:** Backend endpoints for creating transactions within a portfolio, with logic to handle both new and existing assets.
 
 ---
 
@@ -61,14 +63,14 @@ The application is fully containerized using Docker and orchestrated with Docker
     *   `CORS_ORIGINS`: A comma-separated list of URLs that the backend will accept requests from. This is crucial for allowing the frontend (running in the browser) to communicate with the backend.
 
 *   **Frontend Configuration (`frontend/.env`):**
-    *   `VITE_API_BASE_URL`: The full base URL for the backend API. This must be the **host machine's LAN IP address** (e.g., `http://192.168.1.5:8000/api/v1`) to allow access from other devices on the network, not just `localhost`.
+    *   The frontend uses a **Vite proxy** for API requests in the development environment. This means no `.env` file or `VITE_API_BASE_URL` variable is required for local development, as all requests to `/api` are automatically forwarded to the backend service.
 
 ---
 
 #### 4. Feature Implementation: Initial Setup
 
 *   **Backend Logic (`/api/v1/auth/status` & `/api/v1/auth/setup`):**
-    *   On startup (via FastAPI's `lifespan` event), the backend uses SQLAlchemy's `create_all` to initialize the database schema based on the `User` model. This is skipped in the test environment.
+    *   On startup (via FastAPI's `lifespan` event), the backend uses SQLAlchemy's `create_all` to initialize the database schema based on the defined models. This is skipped in the test environment.
     *   The `GET /status` endpoint checks if any users exist in the database.
     *   The `POST /setup` endpoint allows the creation of the *first* user only. It validates the incoming data using the `UserCreate` Pydantic schema, which includes strong password validation rules (length, uppercase, lowercase, number, special character). If validation passes, it hashes the password and saves the new admin user to the database.
 
@@ -84,17 +86,16 @@ The application is fully containerized using Docker and orchestrated with Docker
 #### 5. How to Run the Project
 
 1.  **Ensure Docker and Docker Compose are installed.**
-2.  **Find your host machine's LAN IP address** (e.g., `192.168.1.100`).
-3.  **Configure Environment Files:**
-    *   In `frontend/.env`, set `VITE_API_BASE_URL=http://<YOUR_HOST_IP>:8000/api/v1`.
-    *   In `backend/.env`, add your frontend's network URL to `CORS_ORIGINS` (e.g., `CORS_ORIGINS=...,http://<YOUR_HOST_IP>:3000`).
+2.  **Configure Environment Files:**
+    *   **Backend:** Create a file at `backend/.env`. You can copy `backend/.env.example` as a template. The default values are suitable for local development and include the correct `CORS_ORIGINS` for the frontend service (`http://localhost:3000`).
+    *   **Frontend:** No `.env` file is needed for local development due to the Vite proxy setup.
 4.  **Run the application** from the project's root directory:
     ```bash
-    docker-compose up --build db backend frontend
+    docker-compose up --build
     ```
 5.  **Access the services:**
-    *   Frontend: `http://<YOUR_HOST_IP>:3000`
-    *   Backend API Docs: `http://<YOUR_HOST_IP>:8000/docs`
+    *   Frontend: `http://localhost:3000`
+    *   Backend API Docs: `http://localhost:8000/docs`
 
 ---
 
@@ -110,9 +111,9 @@ The project includes a robust backend test suite.
 
 ---
 
-#### 7. Next Steps
+#### 7. Next Steps (Frontend Development)
 
-The foundation is solid and well-documented. The next feature to be developed is **Portfolio & Transaction Management**, as outlined in the project's `product_backlog.md` and `pms_master_task.md`.
+The backend foundation is solid and well-documented. The next step is to implement the frontend for the **Portfolio &
 
 1.  **Backend Planning:** Define API endpoints and database schema changes for creating portfolios and logging transactions.
 2.  **Frontend Planning:** Design the UI components for portfolio and transaction management.

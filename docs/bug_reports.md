@@ -336,3 +336,222 @@ The User Management page should load correctly and begin fetching user data.
 **Actual Behavior:**
 The page crashes, and the application becomes unresponsive.
 **Resolution:** In `App.tsx`, instantiate a new `QueryClient` and wrap the entire `<Router>` component with a `<QueryClientProvider client={queryClient}>`. **Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-04
+**Title:** SQLAlchemy ORM mapping fails due to missing relationship back-references in User model.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+After adding `Portfolio`, `Asset`, and `Transaction` models with relationships pointing to the `User` model, the `User` model itself was not updated with the corresponding `back_populates` relationships. This causes SQLAlchemy's mapper configuration to fail whenever any part of the application attempts to query a user, leading to a cascade of `FAILED` tests across the entire test suite.
+**Steps to Reproduce:**
+1. Implement the new models for portfolio management.
+2. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The SQLAlchemy ORM should initialize correctly, and tests should run without mapping errors.
+**Actual Behavior:**
+Tests fail with `sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[User(users)]' has no property 'portfolios'`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-05
+**Title:** Portfolio & Transaction test suite fails due to use of non-existent 'normal_user_token_headers' fixture.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The entire test suite for the new portfolio and transaction endpoints (`test_portfolios_transactions.py`) fails during test collection because it attempts to use a pytest fixture named `normal_user_token_headers`. This fixture is not defined in the project's `conftest.py`, causing every test in the file to `ERROR` out.
+**Steps to Reproduce:**
+1. Implement the new portfolio/transaction endpoints and their corresponding tests.
+2. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The tests in `test_portfolios_transactions.py` should be collected and should run.
+**Actual Behavior:**
+All tests in the file fail with the error: `fixture 'normal_user_token_headers' not found`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-06
+**Title:** Portfolio & Transaction test suite fails due to incorrect usage of `get_auth_headers` fixture.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+All tests in `test_portfolios_transactions.py` fail with a `TypeError` because the `get_auth_headers` fixture is called with only the user's email. The fixture requires both the email and the password to function correctly. The `create_random_user` utility returns the plain-text password, but it is not being captured and passed to the fixture.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The tests in `test_portfolios_transactions.py` should run successfully.
+**Actual Behavior:**
+All tests in the file fail with `TypeError: get_auth_headers.<locals>._get_auth_headers() missing 1 required positional argument: 'password'`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-07
+**Title:** Tests fail due to missing `API_V1_STR` in application settings.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Multiple tests in `test_portfolios_transactions.py` fail with `AttributeError: 'Settings' object has no attribute 'API_V1_STR'`. The tests rely on this configuration variable to construct the API endpoint URLs, but it is not defined in the `Settings` class in `app/core/config.py`.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+Tests should be able to access the API version string from the global settings.
+**Actual Behavior:**
+Tests crash with an `AttributeError`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-08
+**Title:** Test helpers fail due to unexposed Pydantic schemas.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Test utility functions like `create_test_portfolio` fail with `AttributeError: module 'app.schemas' has no attribute 'PortfolioCreate'`. The new Pydantic schemas for Portfolio, Asset, and Transaction were created in their own files but were not imported into the main `app/schemas/__init__.py` file, making them inaccessible to the rest of the application.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+All Pydantic schemas should be importable from the `app.schemas` package.
+**Actual Behavior:**
+Tests crash with an `AttributeError` when trying to access the new schemas.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-09
+**Title:** Test suite collection fails with ImportError for non-existent 'UserInDB' schema.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The entire test suite fails to run because of an `ImportError` during the test collection phase. The `app/schemas/__init__.py` file attempts to import a Pydantic schema named `UserInDB` from `app/schemas/user.py`, but this schema is not defined in that file. This breaks the application's startup and prevents any tests from running.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `ImportError: cannot import name 'UserInDB' from 'app.schemas.user'`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250718-10
+**Title:** Test suite collection fails with ModuleNotFoundError for 'app.schemas.msg'.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of a `ModuleNotFoundError`. The `app/schemas/__init__.py` file attempts to import the `Msg` schema from `app.schemas.msg`, but the `msg.py` file does not exist in the `app/schemas/` directory. This breaks the application's startup and prevents any tests from running.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `ModuleNotFoundError: No module named 'app.schemas.msg'`.
+**Resolution:** Fixed 
+
+---
+
+**Bug ID:** 20250718-11
+**Title:** New portfolio and asset endpoints are not registered, causing 404 errors.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Tests for new endpoints like `POST /api/v1/portfolios/` and `GET /api/v1/assets/lookup/{ticker}` are failing with a `404 Not Found` status code. The FastAPI routers for the portfolio, asset, and transaction features were created but were never included in the main API router in `app/api/v1/api.py`, so the application is unaware of these routes.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+Requests to the new endpoints should be routed correctly.
+**Actual Behavior:**
+Requests to any new portfolio, asset, or transaction endpoint result in a 404 error.
+**Resolution:** Fixed by including the new routers in `app/api/v1/api.py`.
+
+---
+
+**Bug ID:** 20250718-12
+**Title:** Test helpers fail due to unexposed CRUD modules.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Multiple tests in `test_portfolios_transactions.py` fail with `AttributeError: module 'app.crud' has no attribute 'portfolio'`. The new CRUD modules (`crud_portfolio.py`, `crud_asset.py`, `crud_transaction.py`) were created, but their singleton instances were not imported into the main `app/crud/__init__.py` file. This makes them inaccessible to the rest of the application, particularly the test utility functions that rely on them.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+CRUD modules should be importable from the `app.crud` package.
+**Actual Behavior:**
+Tests crash with an `AttributeError` when trying to access any of the new CRUD modules.
+**Resolution:** Fixed by importing the new CRUD singletons into `app/crud/__init__.py`.
+
+---
+
+**Bug ID:** 20250718-13
+**Title:** Test suite collection fails with ModuleNotFoundError for 'app.crud.base'.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of a `ModuleNotFoundError`. The `app/crud/__init__.py` file attempts to import `CRUDBase` from `app.crud.base`, but the `base.py` file containing this essential class does not exist in the `app/crud/` directory. This breaks the application's startup and prevents any tests from running.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `ModuleNotFoundError: No module named 'app.crud.base'`.
+**Resolution:** Fixed by creating the `app/crud/base.py` file.
+
+---
+
+**Bug ID:** 20250718-14
+**Title:** Test suite collection fails with ImportError for 'user' from 'crud_user'.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `ImportError`. The `app/crud/__init__.py` file attempts to import the `user` singleton from `app.crud.crud_user`, but this object is never instantiated within the `crud_user.py` file. The file is a collection of disorganized functions instead of following the established class-based `CRUDBase` pattern.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `ImportError: cannot import name 'user' from 'app.crud.crud_user'`.
+**Resolution:** Fixed by reverting `crud_user.py` to a functional approach and commenting out the problematic import in `crud/__init__.py`.
+
+---
+
+**Bug ID:** 20250718-15
+**Title:** Asset lookup tests fail due to missing financial API configuration.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The tests for the asset lookup endpoint (`/api/v1/assets/lookup/{ticker_symbol}`) are failing with `AttributeError: 'Settings' object has no attribute 'FINANCIAL_API_KEY'`. The `FinancialDataService` requires an API key and URL, but these configuration variables are not defined in the `Settings` class in `app/core/config.py`.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The asset lookup tests should run successfully.
+**Actual Behavior:**
+The tests fail with an `AttributeError` when trying to initialize the `FinancialDataService`.
+**Resolution:** Fixed by adding the required `FINANCIAL_API_KEY` and `FINANCIAL_API_URL` to the `Settings` class.
+
