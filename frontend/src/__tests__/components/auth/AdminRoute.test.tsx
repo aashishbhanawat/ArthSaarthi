@@ -8,44 +8,52 @@ import { useAuth } from '../../../context/AuthContext';
 // Mock the useAuth hook
 jest.mock('../../../context/AuthContext');
 
-const renderWithRouter = (ui: React.ReactNode, initialRoute = '/') => {
-  return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      <Routes>
-        <Route path="/" element={ui} />
-        <Route path="/admin" element={<AdminRoute />}>
-          <Route index element={<div>Admin Content</div>} />
-        </Route>
-        <Route path="/unauthorized" element={<div>Unauthorized</div>} />
-      </Routes>
-    </MemoryRouter>
-  );
-};
+
 
 describe('AdminRoute', () => {
-  test('renders children for admin users', () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      user: { is_admin: true },
-      isLoading: false,
+    const mockUseAuth = useAuth as jest.Mock;
+
+    it('renders child routes for admin users', () => {
+        mockUseAuth.mockReturnValue({ user: { is_admin: true } });
+        render(
+            <MemoryRouter initialEntries={['/admin/dashboard']}>
+                <Routes>
+                    <Route element={<AdminRoute />}>
+                        <Route path="/admin/dashboard" element={<div>Admin Page</div>} />
+                    </Route>
+                </Routes>
+            </MemoryRouter>
+        );
+        expect(screen.getByText('Admin Page')).toBeInTheDocument();
     });
 
-    renderWithRouter(<div>Home</div>, '/admin');
-    expect(screen.getByText('Admin Content')).toBeInTheDocument();
-  });
-
-  test('navigates to home for non-admin users', () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      user: { is_admin: false },
-      isLoading: false,
+    it('redirects non-admin users to the dashboard', () => {
+        mockUseAuth.mockReturnValue({ user: { is_admin: false } });
+        render(
+            <MemoryRouter initialEntries={['/admin/dashboard']}>
+                <Routes>
+                    <Route element={<AdminRoute />}>
+                        <Route path="/admin/dashboard" element={<div>Admin Page</div>} />
+                    </Route>
+                    <Route path="/dashboard" element={<div>User Dashboard</div>} />
+                </Routes>
+            </MemoryRouter>
+        );
+        expect(screen.getByText('User Dashboard')).toBeInTheDocument();
+        expect(screen.queryByText('Admin Page')).not.toBeInTheDocument();
     });
 
-    renderWithRouter(<div>Home</div>, '/admin');
-    expect(screen.getByText('Home')).toBeInTheDocument(); // We are redirected to the home page which renders 'Home'
-  });
-
-  test('renders loading state', () => {
-    (useAuth as jest.Mock).mockReturnValue({ user: null, isLoading: true });
-    renderWithRouter(<div>Home</div>, '/admin');
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
-  });
+    it('renders nothing while user data is loading', () => {
+        mockUseAuth.mockReturnValue({ user: null });
+        const { container } = render(
+            <MemoryRouter initialEntries={['/admin/dashboard']}>
+                <Routes>
+                    <Route element={<AdminRoute />}>
+                        <Route path="/admin/dashboard" element={<div>Admin Page</div>} />
+                    </Route>
+                </Routes>
+            </MemoryRouter>
+        );
+        expect(container).toBeEmptyDOMElement();
+    });
 });

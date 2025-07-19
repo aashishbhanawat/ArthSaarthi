@@ -128,3 +128,32 @@ Its purpose is to build an experience history that can be used as a reference fo
 *   **Outcome:**
     - The backend for the "Portfolio & Transaction Management" feature is complete and fully tested.
     - All 34 backend tests are passing. The "Analyze -> Report -> Fix" workflow proved highly effective at systematically resolving a complex chain of test failures, stabilizing the entire backend.
+
+---
+
+## 2025-07-19: Comprehensive UI Refactor & Stabilization
+
+*   **Task Description:** Overhaul the entire frontend application to establish a consistent, professional, and maintainable design system. This involved fixing numerous UI inconsistencies, layout bugs, and critical functional issues discovered during manual testing.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Analysis & Planning:** The process began by identifying all files that needed to be updated to achieve a consistent UI.
+    2.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `vite` build log or browser console error was provided to the AI. This was crucial for identifying the root cause of the UI not rendering correctly, which was a missing Tailwind CSS build configuration.
+    3.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested. This included issues like missing build configs, use of deprecated CSS classes, incorrect import paths, React hook rule violations, and silent logout on navigation.
+    4.  **Targeted Fix Requests:** After filing a bug, a prompt like "Give me the fix for this bug" or "Refactor this component to use the new design system" was used. This process was repeated for all pages and modals.
+    5.  **Process Improvement:** After the UI was stabilized, a postmortem was conducted to analyze the challenges (especially the AI's truncated responses) and a mitigation plan was documented in `docs/LEARNING_LOG.md`.
+
+*   **File Changes:**
+    *   `frontend/src/index.css`: Established the global design system with reusable component classes.
+    *   `frontend/src/App.tsx`: Refactored the main layout to use a robust CSS Grid.
+    *   `frontend/src/context/AuthContext.tsx`: Implemented a global Axios interceptor to handle expired tokens gracefully.
+    *   `frontend/pages/`: All page components (`DashboardPage`, `AuthPage`, `UserManagementPage`, `PortfolioPage`, etc.) were refactored to use the new design system.
+    *   `frontend/components/`: All UI components (`NavBar`, modals, lists, tables) were refactored for consistency.
+    *   `frontend/package.json`, `tailwind.config.js`, `postcss.config.js`: Added the necessary build configurations and dependencies for Tailwind CSS.
+    *   `docs/bug_reports.md`: Populated with detailed reports for every UI and functional bug discovered and fixed during the refactor.
+    *   `docs/LEARNING_LOG.md`: Created to document the postmortem and future workflow improvements.
+
+*   **Verification:**
+    - Performed manual E2E testing of all application pages and features, including login, dashboard, user management (CRUD), and portfolio management (CRUD).
+
+*   **Outcome:**
+    - The application UI is now stable, professional, and consistent across all pages. All known UI and related functional bugs have been resolved. The project is in a clean state, ready for the next phase of development.

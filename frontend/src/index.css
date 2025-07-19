@@ -1,8 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* A more professional-looking font and background color */
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    @apply bg-gray-50 text-gray-900;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom component classes for a consistent design system */
+@layer components {
+    .card {
+        @apply bg-white rounded-lg shadow-sm p-6;
+    }
+
+    .btn {
+        @apply font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .btn-primary {
+        @apply bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500;
+    }
+
+    .btn-success {
+        @apply bg-green-600 hover:bg-green-700 text-white focus:ring-green-500;
+    }
+
+    .btn-danger {
+        @apply bg-red-600 hover:bg-red-700 text-white focus:ring-red-500;
+    }
+
+    .btn-secondary {
+        @apply bg-gray-500 hover:bg-gray-600 text-white focus:ring-gray-400;
+    }
+
+    .modal-overlay {
+        @apply fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50;
+    }
+
+    .modal-content {
+        @apply bg-white rounded-lg shadow-xl w-full;
+    }
+
+    .modal-header {
+        @apply flex justify-between items-center p-4 border-b;
+    }
+
+    .form-group {
+        @apply mb-4;
+    }
+
+    .form-label {
+        @apply block text-gray-700 text-sm font-bold mb-2;
+    }
+
+    .form-input {
+        @apply shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500;
+    }
 }

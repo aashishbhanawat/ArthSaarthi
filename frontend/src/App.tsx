@@ -1,29 +1,43 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import NavBar from './components/NavBar';
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import UserManagementPage from './pages/Admin/UserManagementPage';
+import PortfolioPage from './pages/Portfolio/PortfolioPage';
+import PortfolioDetailPage from './pages/Portfolio/PortfolioDetailPage';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { token } = useAuth();
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-}
+const AppLayout = () => (
+  <div className="grid grid-cols-[auto_1fr] min-h-screen bg-gray-50">
+    <NavBar />
+    <main className="p-8 overflow-y-auto">
+      <Outlet />
+    </main>
+  </div>
+);
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/login" element={<AuthPage />} />          
-      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />      
-      <Route path="/admin" element={<ProtectedRoute><AdminRoute /></ProtectedRoute>}>
-        <Route path="users" element={<UserManagementPage />} />
+      {/* Public route for login, which will not have the sidebar */}
+      <Route path="/login" element={<AuthPage />} />
+
+      {/* Protected routes are wrapped in the AppLayout to get the sidebar */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/portfolios" element={<PortfolioPage />} />
+          <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/users" element={<UserManagementPage />} />
+          </Route>
+        </Route>
       </Route>
     </Routes>
   );
@@ -33,10 +47,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <div className="app-layout">
-          <NavBar />
-          <main className="main-content"><AppRoutes /></main>
-        </div>
+        <AppRoutes />
       </Router>
     </QueryClientProvider>
   );

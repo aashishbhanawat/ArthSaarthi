@@ -123,6 +123,10 @@ For each feature, we'll follow these steps:
     *   A plan for database schema initialization (e.g., `create_all` for dev, migrations for prod).
     *   Docker/Deployment Script Updates
     *   Environment Variables
+7.  **Code Generation Workflow:**
+    *   **To prevent truncated responses for large, multi-file changes, first provide a list of all files that need to be created or modified.**
+    *   **Then, ask the user which file they would like to see the changes for first.**
+    *   **Proceed with generating the code for one file at a time, as directed by the user.**
 7.  **Review and Iteration.**
 8.  **Document Workflow:** Append a detailed entry to `docs/workflow_history.md` summarizing the task, key prompts used, a summary of the AI's output, a comprehensive list of file changes, verification steps, and the final outcome.
 

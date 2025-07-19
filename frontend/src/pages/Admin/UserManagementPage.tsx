@@ -7,7 +7,7 @@ import DeleteConfirmationModal from '../../components/Admin/DeleteConfirmationMo
 import { User } from '../../types/user';
 
 const UserManagementPage: React.FC = () => {
-  const { data: users, isLoading, error } = useUsers();
+  const { data: users, isLoading, isError, error } = useUsers();
   const deleteUserMutation = useDeleteUser();
 
   const [isFormModalOpen, setFormModalOpen] = useState(false);
@@ -37,13 +37,15 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div>Loading users...</div>;
-  if (error) return <div>An error occurred: {error.message}</div>;
+  if (isLoading) return <div className="text-center p-8">Loading users...</div>;
+  if (isError) return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
 
   return (
-    <div className="page-container" id="UserManagementPage">
-      <h1>User Management</h1>
-      <button onClick={handleCreateUser}>Create New User</button>
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">User Management</h1>
+        <button onClick={handleCreateUser} className="btn btn-primary">Create New User</button>
+      </div>
 
       <UsersTable
         users={users || []}

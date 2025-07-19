@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, UserUpdate } from '../../types/user';
+import { User, UserCreate, UserUpdate } from '../../types/user';
 import { useCreateUser, useUpdateUser } from '../../hooks/useUsers';
 
 interface UserFormModalProps {
@@ -23,7 +23,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
 
-  const isEditing = userToEdit !== null;
+  const isEditing = !!userToEdit;
+  const { isPending } = isEditing ? updateUserMutation : createUserMutation;
 
   useEffect(() => {
     if (isEditing) {
@@ -48,16 +49,16 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     setError('');
 
     try {
-
-     if (isEditing) {
+      if (isEditing) {
         const updateData: UserUpdate = {
           full_name: fullName,
           email,
           is_active: isActive,
           is_admin: isAdmin,
         };
-        // Note: Password update is not part of this form for security/simplicity.
-        // It would typically be a separate "reset password" flow.
+        if (password) {
+          updateData.password = password;
+        }
         await updateUserMutation.mutateAsync({
           userId: userToEdit.id,
           userData: updateData,
@@ -67,6 +68,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           full_name: fullName,
           email,
           password,
+          is_admin: isAdmin, // Assuming new users can be created as admins
         });
       }
       onClose();
@@ -89,67 +91,75 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content">
-        <h2>{isEditing ? 'Edit User' : 'Create New User'}</h2>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="fullName">Full Name</label>
-            <input
-              id="fullName"
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          {!isEditing && (
-            <div>
-              <label htmlFor="password">Password</label>
+    <div className="modal-overlay">
+      <div className="modal-content max-w-md">
+        <div className="modal-header">
+          <h2 className="text-2xl font-bold">{isEditing ? 'Edit User' : 'Create New User'}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <div className="p-6">
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="fullName" className="form-label">Full Name</label>
+              <input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="form-input" disabled={isPending} />
+            </div>
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">Email</label>
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-input" required disabled={isPending} />
+            </div>
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">
+                Password {isEditing && <span className="text-xs text-gray-500">(leave blank to keep current)</span>}
+              </label>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="form-input"
                 required={!isEditing}
+                disabled={isPending}
               />
             </div>
-          )}
-           {isEditing && (
-            <>
-              <div>
-                <label htmlFor="isActive">
-                  <input id="isActive" type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-                  Active
-                </label>
+            <div className="form-group grid grid-cols-2 gap-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                  className="mr-2"
+                  disabled={isPending || !isEditing}
+                />
+                <span className="form-label mb-0">Active</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isAdmin}
+                  onChange={(e) => setIsAdmin(e.target.checked)}
+                  className="mr-2"
+                  disabled={isPending}
+                />
+                <span className="form-label mb-0">Administrator</span>
+              </label>
+            </div>
+
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <span className="block sm:inline">{error}</span>
               </div>
-              <div>
-                <label htmlFor="isAdmin">
-                  <input id="isAdmin" type="checkbox" checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} />
-                  Administrator
-                </label>
-              </div>
-            </>
-          )}
-          <div className="modal-actions">
-            <button type="button" onClick={onClose} className="button-secondary">
-              Cancel
-            </button>
-            <button type="submit" disabled={createUserMutation.isPending || updateUserMutation.isPending}>
-              {isEditing ? 'Save Changes' : 'Create User'}
-            </button>
-          </div>
-        </form>
+            )}
+
+            <div className="flex items-center justify-end pt-4">
+              <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={isPending}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={isPending}>
+                {isPending ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create User')}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

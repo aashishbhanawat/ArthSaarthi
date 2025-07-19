@@ -555,3 +555,486 @@ The asset lookup tests should run successfully.
 The tests fail with an `AttributeError` when trying to initialize the `FinancialDataService`.
 **Resolution:** Fixed by adding the required `FINANCIAL_API_KEY` and `FINANCIAL_API_URL` to the `Settings` class.
 
+---
+
+**Bug ID:** 20250718-16
+**Title:** Portfolio tests crash due to missing `react-hook-form` dependency.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The test suites for `AddTransactionModal` and `PortfolioDetailPage` fail to run with the error `Cannot find module 'react-hook-form'`. The `AddTransactionModal` component, a core part of the feature, depends on this library, but it is not listed in `package.json`.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+All test suites should be collected and run without module resolution errors.
+**Actual Behavior:**
+The test run is interrupted for two suites because a required npm package is missing.
+**Resolution:** Fixed by adding `react-hook-form` to the `dependencies` in `frontend/package.json` and rebuilding the Docker image.
+
+---
+
+**Bug ID:** 20250718-17
+**Title:** `LoginForm` tests crash with TypeError due to missing AuthContext import.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+All tests in `LoginForm.test.tsx` fail with `TypeError: Cannot read properties of undefined (reading 'Provider')`. The test file attempts to wrap the component in an `AuthContext.Provider` but never imports the `AuthContext` object itself.
+**Steps to Reproduce:**
+1. Run the frontend test suite.
+**Expected Behavior:**
+The `LoginForm` tests should run without crashing.
+**Actual Behavior:**
+The entire test suite for `LoginForm.tsx` fails with a `TypeError`.
+**Resolution:** Fixed by adding the missing `AuthContext` import in `LoginForm.test.tsx`.
+
+---
+
+**Bug ID:** 20250718-18
+**Title:** `AdminRoute` tests fail due to incorrect test setup and assertions.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The tests for `AdminRoute.tsx` fail because the test setup does not correctly simulate the application's routing, causing redirect tests to fail. Additionally, the test for the loading state incorrectly asserts that "Loading..." text should be present, when the component is designed to render nothing while waiting for user data.
+**Steps to Reproduce:**
+1. Run the frontend test suite.
+**Expected Behavior:**
+The tests should accurately verify the component's redirect and loading state logic.
+**Actual Behavior:**
+Tests fail with `TestingLibraryElementError` because the DOM state does not match the test's incorrect expectations.
+**Resolution:** Fixed by refactoring the test to use a complete routing structure, which allows redirects to be handled correctly and eliminates console warnings. 
+
+---
+
+**Bug ID:** 20250718-19
+**Title:** `AddTransactionModal` test fails due to ambiguous query for "Type" label.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test case "submits correct data for a new asset" in `AddTransactionModal.test.tsx` fails with `TestingLibraryElementError: Found multiple elements with the text of: /type/i`. The test attempts to select the "Transaction Type" dropdown, but the query `getByLabelText(/type/i)` is ambiguous because it also matches the "Asset Type" input field label.
+**Steps to Reproduce:**
+1. Run the frontend test suite.
+**Expected Behavior:**
+The test should uniquely identify and interact with the "Transaction Type" dropdown.
+**Actual Behavior:**
+The test fails because the query finds two matching elements.
+**Resolution:** Fixed by changing the query to `getByLabelText('Type', { exact: true })` to uniquely identify the correct form element. 
+
+---
+
+**Bug ID:** 20250718-20
+**Title:** `AddTransactionModal` test fails due to incomplete assertion.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test case "submits correct data for a new asset" in `AddTransactionModal.test.tsx` fails because the `expect.objectContaining` assertion is missing properties (`transaction_type`, `transaction_date`) that are correctly being passed to the `createTransaction` mutation.
+**Steps to Reproduce:**
+1. Run the frontend test suite.
+**Expected Behavior:**
+The test assertion should match the shape of the data being sent in the mutation.
+**Actual Behavior:**
+The test fails because the assertion is missing required fields.
+**Resolution:** Fixed by adding the missing properties to the `expect.objectContaining` assertion in the test.
+
+---
+
+**Bug ID:** 20250718-21
+**Title:** `AddTransactionModal` test fails due to incomplete assertion for default fees.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test case "submits correct data for a new asset" in `AddTransactionModal.test.tsx` fails because the `expect.objectContaining` assertion does not account for the `fees: 0` property that the component correctly sends by default when no fee is entered.
+**Steps to Reproduce:**
+1. Run the frontend test suite.
+**Expected Behavior:**
+The test assertion should match the shape of the data being sent in the mutation, including default values.
+**Actual Behavior:**
+The test fails because the assertion is missing the `fees` property.
+**Resolution:** Fixed by adding the `fees: 0` property to the `expect.objectContaining` assertion in the test.
+
+---
+
+**Bug ID:** 20250718-22
+**Title:** `LoginForm` component does not call the correct API service function.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The `LoginForm` component has incorrect submission logic. It does not call the abstracted `loginUser` function from the API service layer, which is what the test suite mocks. This causes all related tests to fail, as the component does not interact with the mocked API correctly.
+**Steps to Reproduce:**
+1. Run the frontend test suite.
+**Expected Behavior:**
+The form should call the `loginUser` service function on submit.
+**Actual Behavior:**
+The `loginUser` function is never called, and tests for both successful and failed submissions fail.
+**Resolution:** Fixed by refactoring `LoginForm.tsx` to call the `api.loginUser` function instead of using `api.post` directly.
+
+---
+
+**Bug ID:** 20250718-23
+**Title:** `AddTransactionModal` test fails due to incorrect assertion for `asset_id`.
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-18
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test case "submits correct data for a new asset" in `AddTransactionModal.test.tsx` fails. The test assertion `expect.objectContaining` includes `asset_id: undefined`, but when a new asset is being created, the component correctly omits the `asset_id` key from the payload entirely. The test should not check for the presence of an undefined key.
+**Steps to Reproduce:**
+1. Run the frontend test suite.
+**Expected Behavior:**
+The test assertion should match the shape of the data being sent, which does not include an `asset_id` key for new assets.
+**Actual Behavior:**
+The test fails because the assertion expects a key that does not exist in the submitted object.
+**Resolution:** Fixed by removing the `asset_id: undefined` check from the test assertion.
+
+---
+
+**Bug ID:** 20250719-01
+**Title:** Login fails with 404 Not Found due to incorrect API endpoint.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The `LoginForm` component makes a `POST` request to `/auth/login` instead of the correct endpoint `/api/v1/auth/login`. This results in a `404 Not Found` error from the server, making it impossible for users to log in.
+**Steps to Reproduce:**
+1. Navigate to the login page.
+2. Enter valid user credentials.
+3. Click the "Sign in" button.
+4. Observe the browser's developer console.
+**Expected Behavior:**
+The user should be successfully authenticated, receive a JWT token, and be redirected to the dashboard.
+**Actual Behavior:**
+The login request fails with a `404 Not Found` error in the console. The user remains on the login page with an error message.
+**Resolution:** The `handleSubmit` function in `LoginForm.tsx` was updated to use the correct API endpoint: `/api/v1/auth/login`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-02
+**Title:** Application-wide UI styling is broken due to missing Tailwind CSS configuration.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+Despite adding custom CSS classes (`.card`, `.btn`, etc.) to `index.css`, none of the styles are being applied across the application. The layout is broken, components are unstyled, and the UI is unusable. This is caused by a missing Tailwind CSS build configuration.
+**Steps to Reproduce:**
+1. Define custom component classes in `index.css` using `@apply`.
+2. Apply these classes to components (e.g., `<div class="card">`).
+3. Launch the frontend application.
+**Expected Behavior:**
+The custom classes should be processed by Tailwind CSS, and the components should render with the correct styling.
+**Actual Behavior:**
+The classes are ignored, and the application appears unstyled. The browser's inspector shows the custom class names but no associated CSS rules.
+**Resolution:** 
+1. Create `tailwind.config.js` and `postcss.config.js` in the frontend root.
+2. Add `tailwindcss`, `postcss`, and `autoprefixer` as dev dependencies to `package.json`.
+3. Rebuild the frontend Docker container.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-03
+**Title:** Frontend build fails due to use of deprecated `focus:shadow-outline` class.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+After correctly setting up the Tailwind CSS build process, the Vite server fails to start. The error message indicates that the `focus:shadow-outline` class, used in the custom `.btn` component style, does not exist. This class is from an older version of Tailwind CSS.
+**Steps to Reproduce:**
+1. Configure Tailwind CSS correctly.
+2. Define a class in `index.css` using `@apply focus:shadow-outline`.
+3. Attempt to start the frontend development server.
+**Expected Behavior:**
+The server should start without errors.
+**Actual Behavior:**
+The build process fails with a PostCSS error: "The `focus:shadow-outline` class does not exist."
+**Resolution:** Replaced `focus:shadow-outline` with modern focus ring utilities (`focus:ring-2 focus:ring-offset-2`) in `index.css` for the `.btn` class and its variants.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-04
+**Title:** Login page is unstyled and inconsistent with the application theme.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+The `AuthPage`, `LoginForm`, and `SetupForm` components do not use the application's global design system. They render with default, unstyled HTML elements, creating a jarring and unprofessional user experience compared to the rest of the application.
+**Steps to Reproduce:**
+1. Navigate to the `/login` route.
+**Expected Behavior:**
+The login page should have a clean, centered layout with styled form inputs and buttons that match the application's theme.
+**Actual Behavior:**
+The login form is unstyled, misaligned, and does not use the `.card`, `.form-input`, or `.btn` classes.
+**Resolution:** Refactored `AuthPage.tsx` to provide a centered layout with a `.card` container. Refactored `LoginForm.tsx` and `SetupForm.tsx` to use the global form styling classes (`.form-group`, `.form-label`, `.form-input`) and button classes.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-05
+**Title:** Frontend crashes due to incorrect relative import paths in form components.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The application crashes when attempting to render the login page. The Vite server throws a `Failed to resolve import` error. The `LoginForm.tsx` and `SetupForm.tsx` components use incorrect relative paths to import the `AuthContext`, causing the module resolution to fail.
+**Steps to Reproduce:**
+1. Navigate to the `/login` route after refactoring the login forms.
+**Expected Behavior:**
+The login page should render correctly.
+**Actual Behavior:**
+The application shows a blank page, and the Vite server logs a fatal error related to module resolution.
+**Resolution:** Corrected the import paths for `useAuth` in both `LoginForm.tsx` (to `../context/AuthContext`) and `SetupForm.tsx` (to `../../context/AuthContext`).
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-06
+**Title:** Login functionality is broken, preventing user authentication.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+After successfully styling the login page, attempting to log in fails. The `LoginForm` component's submission logic is incorrect. It does not properly handle the API request or the resulting authentication token. This leads to a `404 Not Found` error (due to an incorrect URL) and subsequent `403 Forbidden` errors on protected routes because the token is never stored.
+**Steps to Reproduce:**
+1. Navigate to the login page.
+2. Enter valid credentials and submit the form.
+3. Observe the browser console and network requests.
+**Expected Behavior:**
+The user should be logged in, and the auth token should be stored in the `AuthContext`.
+**Actual Behavior:**
+The login API call fails with a 404. The user is not logged in and remains on the login page with an error message.
+**Resolution:** The `handleSubmit` function in `LoginForm.tsx` was completely refactored. It now uses the correct API endpoint (`/api/v1/auth/login`), correctly formats the request payload as `x-www-form-urlencoded`, and upon success, calls the `login` function from `AuthContext` with the received token.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-07
+**Title:** Application crashes after login with "Rendered fewer hooks than expected" error.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+After a user successfully logs in, the application crashes with a React error related to violating the Rules of Hooks. The `AuthPage` component has a conditional return statement (`if (token)`) that executes before all the component's hooks (specifically, a `useEffect`) have been called. This causes an inconsistent number of hooks to be rendered between the pre-login and post-login states, which is a fatal error in React.
+**Steps to Reproduce:**
+1. Navigate to the login page.
+2. Enter valid user credentials and log in.
+3. Observe the application crashes and the browser console shows the "Rendered fewer hooks than expected" error.
+**Expected Behavior:**
+The user should be successfully redirected to the dashboard page without any application errors.
+**Actual Behavior:**
+The application crashes and displays a blank page.
+**Resolution:** Refactored `AuthPage.tsx` to ensure all React hooks are called unconditionally at the top of the component, before any conditional return statements.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-08
+**Title:** User Management page is unstyled and inconsistent with application theme.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+The `UserManagementPage` component uses plain, unstyled HTML elements for its title, buttons, and table. This creates a jarring and unprofessional user experience that is inconsistent with the rest of the application's design system.
+**Steps to Reproduce:**
+1. Log in as an administrator.
+2. Navigate to the `/admin/users` route.
+**Expected Behavior:**
+The User Management page should have a clean layout with a styled header, buttons, and table that match the application's theme.
+**Actual Behavior:**
+The page is unstyled, with misaligned elements and a plain HTML table.
+**Resolution:** Refactored `UserManagementPage.tsx` to style its header. The unstyled `UsersTable.tsx` component was replaced with a fully styled version that uses the application's design system for cards, tables, and buttons.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-09
+**Title:** User Management page crashes with "isError is not defined" ReferenceError.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The `UserManagementPage` component attempts to use a variable `isError` to handle the error state from the `useUsers` hook. However, this variable is never destructured from the hook's return value, leading to a `ReferenceError` that crashes the component.
+**Steps to Reproduce:**
+1. Log in as an administrator.
+2. Navigate to the "User Management" page.
+**Expected Behavior:**
+The page should either display the list of users or, if an error occurs, display a user-friendly error message.
+**Actual Behavior:**
+The page crashes with `Uncaught ReferenceError: isError is not defined`.
+**Resolution:** Updated the destructuring assignment for the `useUsers` hook in `UserManagementPage.tsx` to include the `isError` property.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-10
+**Title:** Navigating away from User Management page logs the user out.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+A faulty `useEffect` cleanup function in the `useDeleteUser` hook calls `logout()` whenever the component using it (`UserManagementPage`) unmounts. This clears the user's authentication token, causing all subsequent API calls to protected routes to fail with a 403 Forbidden error.
+**Steps to Reproduce:**
+1. Log in as an administrator.
+2. Navigate to the "User Management" page.
+3. Navigate to any other page (e.g., "Dashboard").
+4. Observe that the new page fails to load data, and the browser console shows `403 Forbidden` errors.
+**Expected Behavior:**
+The user should remain logged in and be able to navigate between pages without losing their session.
+**Actual Behavior:**
+The user is silently logged out, and the application becomes unusable until the page is refreshed and the user logs in again.
+**Resolution:** The erroneous `useEffect` hook was removed from the `useDeleteUser` custom hook in `src/hooks/useUsers.ts`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-11
+**Title:** Portfolios page is unstyled and inconsistent with application theme.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+The `PortfolioPage` component uses a plain, unstyled `<h1>` and `<button>`, which is inconsistent with the design system used on the Dashboard and User Management pages.
+**Steps to Reproduce:**
+1. Log in to the application.
+2. Navigate to the `/portfolios` page.
+**Expected Behavior:**
+The page should have a clean header with a styled title and "Create New Portfolio" button.
+**Actual Behavior:**
+The page header is unstyled and does not match the rest of the application.
+**Resolution:** Refactored `PortfolioPage.tsx` to use a flexbox header and apply consistent styling to the title and "Create New Portfolio" button.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-12
+**Title:** User Management modal is missing action buttons.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend) 
+**Severity:** High 
+**Description:**
+When an admin clicks "Create New User" or "Edit" on the User Management page, the modal that opens is unstyled and uses deprecated CSS classes. This makes the form difficult to use and visually inconsistent with the rest of the application.
+**Steps to Reproduce:**
+1. Log in as an admin. 
+2. Navigate to User Management.
+3. Click "Create New User" or "Edit" on an existing user.
+**Expected Behavior:**
+The modal should appear with styling consistent with the application's design system, including styled form elements and buttons.
+**Actual Behavior:**
+The modal is unstyled and uses old CSS classes that are no longer defined.
+**Resolution:** The `UserFormModal.tsx` component was refactored to use the new design system classes (`.modal-overlay`, `.modal-content`, `.form-input`, `.btn`, etc.) for all its elements.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-13
+**Title:** Portfolio Detail page is unstyled and inconsistent with application theme.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+The page for viewing a single portfolio's transactions (`/portfolios/:id`) has an unstyled header and layout, which is inconsistent with the rest of the application.
+**Steps to Reproduce:**
+1. Log in and navigate to the "Portfolios" page.
+2. Click on an existing portfolio to view its details.
+**Expected Behavior:**
+The page should have a clean header with the portfolio's name, a "Back to Portfolios" link, and a styled "Add Transaction" button.
+**Actual Behavior:**
+The page header is unstyled and does not match the rest of the application.
+**Resolution:** Refactored `PortfolioDetailPage.tsx` to use a flexbox header, styled components, and add a "Back to Portfolios" link for better navigation.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-14
+**Title:** Application does not handle expired authentication tokens, leading to a broken UI state.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** High
+**Description:**
+When the user's JWT expires, the frontend does not automatically log them out. Instead, all subsequent API calls start failing with `403 Forbidden` errors, leaving the user with a non-functional UI where data fails to load.
+**Steps to Reproduce:**
+1. Log in to the application.
+2. Wait for the JWT token to expire (the default is short for development).
+3. Attempt to navigate to another page or refresh the current page.
+**Expected Behavior:**
+The application should detect the expired token (via a 403 error), automatically log the user out, and redirect them to the login page.
+**Actual Behavior:**
+The application remains on the current page in a broken state, with all data failing to load and console errors.
+**Resolution:** Implemented a global Axios response interceptor within the `AuthContext`. This interceptor checks for `403` status codes on API responses and, if detected, calls the `logout` function to clear the session and redirect the user.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-15
+**Title:** Unstyled browser confirmation used for portfolio deletion.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+When deleting a portfolio from the main portfolio list, the application uses the browser's default `window.confirm()` dialog. This is inconsistent with the application's professional design system and provides a poor user experience.
+**Steps to Reproduce:**
+1. Log in and navigate to the "Portfolios" page.
+2. Click the "Delete" button on any portfolio.
+**Expected Behavior:**
+A styled confirmation modal should appear, matching the application's theme, asking the user to confirm the deletion.
+**Actual Behavior:**
+A plain, unstyled browser-native confirmation dialog appears.
+**Resolution:** The `window.confirm` call in `PortfolioList.tsx` was replaced with a new, styled `DeletePortfolioModal` component. State management was added to `PortfolioList.tsx` to control the modal's visibility.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250719-16
+**Title:** User deletion confirmation modal is unstyled.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-19
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+The confirmation modal for deleting a user is unstyled and inconsistent with the application's design system.
+**Steps to Reproduce:**
+1. Log in as an admin.
+2. Navigate to User Management.
+3. Click "Delete" on any user.
+**Expected Behavior:**
+A styled confirmation modal should appear, matching the application's theme.
+**Actual Behavior:**
+An unstyled or incorrectly styled modal appears.
+**Resolution:** The `DeleteConfirmationModal.tsx` component was created/refactored to use the global design system classes for modals and buttons.
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed

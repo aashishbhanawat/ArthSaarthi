@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from 'react';
 import { Navigate } from "react-router-dom";
 import { getAuthStatus } from "../services/api";
 import SetupForm from "../components/auth/SetupForm";
@@ -11,9 +11,6 @@ const AuthPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    if (token) {
-        return <Navigate to="/" replace />;
-    }
     useEffect(() => {
         const checkStatus = async () => {
             try {
@@ -30,25 +27,36 @@ const AuthPage = () => {
         checkStatus();
     }, []);
 
+    if (token) {
+        return <Navigate to="/" replace />;
+    }
+
     const handleSetupSuccess = () => {
         setSetupNeeded(false); // Re-render to show the login form
     };
 
+    const CenteredMessage = ({ children }: { children: ReactNode }) => (
+        <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+            <p className="text-lg text-gray-600">{children}</p>
+        </div>
+    );
+
     if (loading) {
-        return <div>Loading...</div>;
+        return <CenteredMessage>Loading...</CenteredMessage>;
     }
 
     if (error) {
-        return <div>Error: {error}</div>;
+        return <CenteredMessage>Error: {error}</CenteredMessage>;
     }
 
     return (
-        <div className="auth-container">
-            {setupNeeded ? (
-                <SetupForm onSuccess={handleSetupSuccess} />
-            ) : (
-                <LoginForm />
-            )}
+        <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+            <div className="max-w-md w-full mx-auto">
+                {/* The card styling is applied here to wrap whichever form is active */}
+                <div className="card">
+                    {setupNeeded ? <SetupForm onSuccess={handleSetupSuccess} /> : <LoginForm />}
+                </div>
+            </div>
         </div>
     );
 };

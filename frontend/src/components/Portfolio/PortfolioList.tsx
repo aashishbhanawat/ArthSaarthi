@@ -1,0 +1,58 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Portfolio } from '../../types/portfolio';
+import { useDeletePortfolio } from '../../hooks/usePortfolios';
+import DeletePortfolioModal from './DeletePortfolioModal';
+
+interface PortfolioListProps {
+    portfolios: Portfolio[];
+}
+
+const PortfolioList: React.FC<PortfolioListProps> = ({ portfolios }) => {
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [portfolioToDelete, setPortfolioToDelete] = useState<Portfolio | null>(null);
+    const deletePortfolioMutation = useDeletePortfolio();
+
+    const handleDeleteClick = (portfolio: Portfolio) => {
+        setPortfolioToDelete(portfolio);
+        setModalOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (portfolioToDelete) {
+            deletePortfolioMutation.mutate(portfolioToDelete.id, {
+                onSuccess: () => setModalOpen(false),
+            });
+        }
+    };
+
+    if (portfolios.length === 0) {
+        return <p className="text-center text-gray-500 mt-8">You don't have any portfolios yet. Create one to get started!</p>;
+    }
+
+    return (
+        <>
+            <div className="space-y-4">
+                {portfolios.map((portfolio) => (
+                    <div key={portfolio.id} className="card flex justify-between items-center">
+                        <Link to={`/portfolios/${portfolio.id}`} className="text-xl font-semibold text-blue-600 hover:underline">
+                            {portfolio.name}
+                        </Link>
+                        <button onClick={() => handleDeleteClick(portfolio)} className="btn btn-danger text-sm py-1 px-3" disabled={deletePortfolioMutation.isPending} >
+                            Delete
+                        </button>
+                    </div>
+                ))}
+            </div>
+            <DeletePortfolioModal
+                isOpen={isModalOpen}
+                onClose={() => setModalOpen(false)}
+                onConfirm={handleConfirmDelete}
+                portfolioName={portfolioToDelete?.name || ''}
+                isPending={deletePortfolioMutation.isPending}
+            />
+        </>
+    );
+};
+
+export default PortfolioList;
