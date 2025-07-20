@@ -1,38 +1,32 @@
 from pydantic import BaseModel
-from typing import Optional, List
-from datetime import datetime
-
-from .transaction import Transaction
 
 
-# Shared properties
-class PortfolioBase(BaseModel):
+# Properties to receive on item creation
+class PortfolioCreate(BaseModel):
     name: str
+    description: str | None = None
 
 
-# Properties to receive on portfolio creation
-class PortfolioCreate(PortfolioBase):
-    pass
-
-
-# Properties to receive on portfolio update
+# Properties to receive on item update
 class PortfolioUpdate(BaseModel):
-    name: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
 
 
 # Properties shared by models stored in DB
-class PortfolioInDBBase(PortfolioBase):
+class PortfolioInDBBase(BaseModel):
     id: int
+    name: str
+    description: str | None = None
     user_id: int
-    created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Properties to return to client
 class Portfolio(PortfolioInDBBase):
-    transactions: List[Transaction] = []
+    pass
 
 
 # Properties stored in DB

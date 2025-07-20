@@ -11,3 +11,4 @@ python-multipart
 bcrypt==3.2.2
 pytest
 httpx
+pytest-mock

@@ -11,6 +11,8 @@
     *   **Portfolio Management:** Backend endpoints for creating, reading, and deleting portfolios, scoped to the authenticated user.
     *   **Asset Management:** A backend endpoint for looking up asset details from a (mocked) external financial API.
     *   **Transaction Management:** Backend endpoints for creating transactions within a portfolio, with logic to handle both new and existing assets.
+    *   **Dashboard:** A backend endpoint that provides a summary of the user's total portfolio value.
+
 
 ---
 
@@ -107,7 +109,10 @@ The application is fully containerized using Docker and orchestrated with Docker
     docker-compose run --rm test
     ```
 2.  This command starts a dedicated test container, runs `pytest` against an in-memory SQLite database, and then removes the container. This ensures tests are fast, isolated, and do not affect the development database.
-
+3.  **Run the frontend tests** from the project's root directory:
+    ```bash
+    docker-compose run --rm frontend npm test
+    ```
 ---
 
 #### 7. Next Steps

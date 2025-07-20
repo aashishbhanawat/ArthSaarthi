@@ -157,3 +157,31 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - The application UI is now stable, professional, and consistent across all pages. All known UI and related functional bugs have been resolved. The project is in a clean state, ready for the next phase of development.
+
+---
+
+## 2025-07-20: Backend Stabilization & Dashboard MVP
+
+*   **Task Description:** A comprehensive effort to stabilize the entire backend. This involved fixing a deep cascade of bugs that were preventing the test suite from running and causing multiple features to fail. The MVP for the dashboard summary endpoint was also completed and tested as part of this process.
+
+*   **Key Prompts & Interactions:**
+    1.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI, which allowed for the identification of the root cause, from `ImportError` and `AttributeError` during application startup to `IntegrityError` and `TypeError` in the CRUD layer.
+    2.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
+    3.  **Targeted Fix Requests:** After filing a bug, a prompt like "Give me the fix for this bug" was used. This process was repeated for numerous bugs across the entire backend stack.
+    4.  **Process Improvement:** The bug report log (`bug_reports.md`) had become cluttered with duplicates and incorrect dates. A final cleanup pass was performed to de-duplicate, correct, and consolidate all reports, resulting in a clean and accurate history.
+
+*   **File Changes:**
+    *   `backend/app/models/`: Added `__tablename__` to `portfolio.py` and a `description` column.
+    *   `backend/app/schemas/`: Created `dashboard.py` and `portfolio.py`. Updated `__init__.py` to expose all schemas correctly. Corrected `transaction.py` to remove redundant fields.
+    *   `backend/app/crud/`: Created the entire CRUD layer (`base.py`, `crud_asset.py`, `crud_portfolio.py`, `crud_transaction.py`, `crud_dashboard.py`). Updated `__init__.py` to expose all CRUD objects.
+    *   `backend/app/api/v1/endpoints/`: Corrected imports in `portfolios.py` and `transactions.py`.
+    *   `backend/app/tests/`: Updated `test_dashboard.py` and `test_portfolios_transactions.py` to fix incorrect assertions and align with the latest API responses.
+    *   `docs/bug_reports.md`: Performed a major cleanup and consolidation of all bug reports.
+
+*   **Verification:**
+    - Ran the full backend test suite using `docker-compose run --rm test`.
+
+*   **Outcome:**
+    - The backend is now fully stable and functional.
+    - All 36 backend tests are passing, and 2 are correctly skipped.
+    - The bug report log is clean, accurate, and up-to-date.

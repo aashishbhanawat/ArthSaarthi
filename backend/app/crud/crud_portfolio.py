@@ -10,13 +10,22 @@ class CRUDPortfolio(CRUDBase[Portfolio, PortfolioCreate, PortfolioUpdate]):
     def create_with_owner(
         self, db: Session, *, obj_in: PortfolioCreate, user_id: int
     ) -> Portfolio:
-        db_obj = self.model(**obj_in.dict(), user_id=user_id)
+        db_obj = Portfolio(**obj_in.model_dump(), user_id=user_id)
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
         return db_obj
 
-    def get_multi_by_owner(self, db: Session, *, user_id: int) -> List[Portfolio]:
-        return db.query(self.model).filter(self.model.user_id == user_id).all()
+    def get_multi_by_owner(
+        self, db: Session, *, user_id: int, skip: int = 0, limit: int = 100
+    ) -> List[Portfolio]:
+        return (
+            db.query(self.model)
+            .filter(Portfolio.user_id == user_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
 
 portfolio = CRUDPortfolio(Portfolio)

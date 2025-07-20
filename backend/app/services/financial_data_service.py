@@ -22,3 +22,18 @@ class FinancialDataService:
             return mock_database[ticker_symbol.upper()]
 
         raise HTTPException(status_code=404, detail="Ticker symbol not found in external service")
+
+    def get_asset_price(self, ticker_symbol: str) -> dict:
+        """
+        Gets the current price for a ticker symbol.
+        This is a mock implementation.
+        """
+        # Mock data for demonstration
+        mock_prices = {
+            "AAPL": {"price": 150.0},
+            "GOOG": {"price": 2800.0},
+            "MSFT": {"price": 305.0},
+            "BTC": {"price": 45000.0},
+            "TSLA": {"price": 255.0},
+        }
+        return mock_prices.get(ticker_symbol.upper(), {"price": 0.0})

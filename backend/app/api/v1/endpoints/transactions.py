@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -14,27 +14,20 @@ router = APIRouter()
 def create_transaction(
     *,
     db: Session = Depends(dependencies.get_db),
+    portfolio_id: int,
     transaction_in: schemas.TransactionCreate,
     current_user: User = Depends(dependencies.get_current_user),
-):
+) -> Any:
     """
-    Create new transaction.
-
-    This endpoint handles both creating a transaction for an existing asset
-    and creating a new asset if one is provided in the payload.
+    Create new transaction for a portfolio.
     """
-    # Check if the portfolio belongs to the current user
-    portfolio = crud.portfolio.get(db=db, id=transaction_in.portfolio_id)
-    if not portfolio or portfolio.user_id != current_user.id:
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    # If an existing asset is being used, check if it's valid
-    if transaction_in.asset_id:
-        asset = crud.asset.get(db=db, id=transaction_in.asset_id)
-        if not asset:
-            raise HTTPException(status_code=404, detail="Asset not found")
-
-    transaction = crud.transaction.create_with_asset_handling(
-        db=db, obj_in=transaction_in, user_id=current_user.id
+    transaction = crud.transaction.create_with_portfolio(
+        db=db, obj_in=transaction_in, portfolio_id=portfolio_id
     )
     return transaction

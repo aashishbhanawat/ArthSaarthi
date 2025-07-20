@@ -1,64 +1,53 @@
 from pydantic import BaseModel, validator
-from typing import Optional, List
-from datetime import datetime
 from decimal import Decimal
+from datetime import datetime
 
 from .asset import Asset, AssetCreate
 
 
-# Shared properties
-class TransactionBase(BaseModel):
+# Properties to receive on item creation
+class TransactionCreate(BaseModel):
+    asset_id: int | None = None
+    new_asset: AssetCreate | None = None
     transaction_type: str
     quantity: Decimal
     price_per_unit: Decimal
-    fees: Decimal = 0
+    fees: Decimal | None = 0.0
     transaction_date: datetime
 
-
-# Properties to receive on transaction creation
-class TransactionCreate(TransactionBase):
-    portfolio_id: int
-    asset_id: Optional[int] = None
-    new_asset: Optional[AssetCreate] = None
-
     @validator('new_asset', always=True)
-    def check_asset_provided(cls, v, values):
-        if values.get('asset_id') is None and v is None:
-            raise ValueError('Either asset_id or new_asset must be provided')
-        if values.get('asset_id') is not None and v is not None:
-            raise ValueError('Provide either asset_id or new_asset, not both')
+    def check_asset_info(cls, v, values):
+        if v is not None and values.get('asset_id') is not None:
+            raise ValueError('Cannot provide both asset_id and new_asset')
+        if v is None and values.get('asset_id') is None:
+            raise ValueError('Must provide either asset_id or new_asset')
         return v
 
 
-# This schema is for internal use after validation, ensuring asset_id is present
-class TransactionCreateInternal(TransactionBase):
-    portfolio_id: int
-    asset_id: int
-
-
-# Properties to receive on transaction update
+# Properties to receive on item update
 class TransactionUpdate(BaseModel):
-    transaction_type: Optional[str] = None
-    quantity: Optional[Decimal] = None
-    price_per_unit: Optional[Decimal] = None
-    fees: Optional[Decimal] = None
-    transaction_date: Optional[datetime] = None
+    pass  # Not implemented
 
 
 # Properties shared by models stored in DB
-class TransactionInDBBase(TransactionBase):
+class TransactionInDBBase(BaseModel):
     id: int
-    portfolio_id: int
     asset_id: int
-    user_id: int
+    portfolio_id: int
+    transaction_type: str
+    quantity: Decimal
+    price_per_unit: Decimal
+    fees: Decimal
+    transaction_date: datetime
+    asset: Asset
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Properties to return to client
 class Transaction(TransactionInDBBase):
-    asset: Asset
+    pass
 
 
 # Properties stored in DB

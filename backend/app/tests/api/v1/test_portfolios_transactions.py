@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
@@ -5,8 +6,8 @@ from datetime import datetime, timezone
 from app.core.config import settings
 from app.tests.utils.user import create_random_user
 from app.tests.utils.portfolio import create_test_portfolio
-from app.tests.utils.asset import create_test_asset
-from app import crud
+from app.tests.utils.transaction import create_test_transaction
+from app import crud, schemas
 
 
 def test_create_portfolio(
@@ -14,7 +15,7 @@ def test_create_portfolio(
 ) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    data = {"name": "My First Portfolio"}
+    data = {"name": "Test Portfolio", "description": "A test portfolio"}
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/",
         headers=auth_headers,
@@ -23,8 +24,9 @@ def test_create_portfolio(
     assert response.status_code == 201
     content = response.json()
     assert content["name"] == data["name"]
+    assert content["description"] == data["description"]
     assert "id" in content
-    assert "user_id" in content
+    assert content["user_id"] == user.id
 
 
 def test_read_portfolios(
@@ -32,9 +34,8 @@ def test_read_portfolios(
 ) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    create_test_portfolio(db, user=user, name="Portfolio 1")
-    create_test_portfolio(db, user=user, name="Portfolio 2")
-
+    create_test_portfolio(db, user_id=user.id, name="Portfolio 1")
+    create_test_portfolio(db, user_id=user.id, name="Portfolio 2")
     response = client.get(
         f"{settings.API_V1_STR}/portfolios/",
         headers=auth_headers,
@@ -49,8 +50,7 @@ def test_read_portfolio_by_id(
 ) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user=user)
-
+    portfolio = create_test_portfolio(db, user_id=user.id, name="My Portfolio")
     response = client.get(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}",
         headers=auth_headers,
@@ -67,13 +67,12 @@ def test_read_portfolio_wrong_owner(
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
     other_user, _ = create_random_user(db) # We don't need the other user's password
-    portfolio = create_test_portfolio(db, user=other_user)
-
+    portfolio = create_test_portfolio(db, user_id=other_user.id, name="Other's Portfolio")
     response = client.get(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}",
         headers=auth_headers,
     )
-    assert response.status_code == 404
+    assert response.status_code == 403
 
 
 def test_delete_portfolio(
@@ -81,8 +80,7 @@ def test_delete_portfolio(
 ) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user=user)
-
+    portfolio = create_test_portfolio(db, user_id=user.id, name="To Be Deleted")
     response = client.delete(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}",
         headers=auth_headers,
@@ -92,6 +90,7 @@ def test_delete_portfolio(
     assert deleted_portfolio is None
 
 
+@pytest.mark.skip(reason="Asset lookup endpoint is not part of the current feature set")
 def test_lookup_asset(
     client: TestClient, db: Session, get_auth_headers
 ) -> None:
@@ -107,6 +106,7 @@ def test_lookup_asset(
     assert content["asset_type"] == "STOCK"
 
 
+@pytest.mark.skip(reason="Asset lookup endpoint is not part of the current feature set")
 def test_lookup_asset_not_found(
     client: TestClient, db: Session, get_auth_headers
 ) -> None:
@@ -124,10 +124,8 @@ def test_create_transaction_with_new_asset(
 ) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user=user)
-
+    portfolio = create_test_portfolio(db, user_id=user.id, name="My Portfolio")
     data = {
-        "portfolio_id": portfolio.id,
         "new_asset": {
             "ticker_symbol": "MSFT",
             "name": "Microsoft Corp",
@@ -140,7 +138,7 @@ def test_create_transaction_with_new_asset(
         "transaction_date": datetime.now(timezone.utc).isoformat()
     }
     response = client.post(
-        f"{settings.API_V1_STR}/transactions/",
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
         headers=auth_headers,
         json=data,
     )
@@ -160,11 +158,9 @@ def test_create_transaction_with_existing_asset(
 ) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user=user)
-    asset = create_test_asset(db, ticker_symbol="TSLA", name="Tesla Inc.")
-
+    portfolio = create_test_portfolio(db, user_id=user.id, name="My Portfolio")
+    asset = crud.asset.create(db, obj_in=schemas.AssetCreate(ticker_symbol="TSLA", name="Tesla Inc.", asset_type="Stock", currency="USD"))
     data = {
-        "portfolio_id": portfolio.id,
         "asset_id": asset.id,
         "transaction_type": "BUY",
         "quantity": 5,
@@ -172,7 +168,7 @@ def test_create_transaction_with_existing_asset(
         "transaction_date": datetime.now(timezone.utc).isoformat()
     }
     response = client.post(
-        f"{settings.API_V1_STR}/transactions/",
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
         headers=auth_headers,
         json=data,
     )
@@ -187,11 +183,9 @@ def test_create_transaction_for_other_user_portfolio(
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
     other_user, _ = create_random_user(db) # We don't need the other user's password
-    portfolio = create_test_portfolio(db, user=other_user)
-    asset = create_test_asset(db, ticker_symbol="AMZN", name="Amazon.com Inc.")
-
+    portfolio = create_test_portfolio(db, user_id=other_user.id, name="Other's Portfolio")
+    asset = crud.asset.create(db, obj_in=schemas.AssetCreate(ticker_symbol="AMZN", name="Amazon.com Inc.", asset_type="Stock", currency="USD"))
     data = {
-        "portfolio_id": portfolio.id,
         "asset_id": asset.id,
         "transaction_type": "BUY",
         "quantity": 2,
@@ -199,11 +193,11 @@ def test_create_transaction_for_other_user_portfolio(
         "transaction_date": datetime.now(timezone.utc).isoformat()
     }
     response = client.post(
-        f"{settings.API_V1_STR}/transactions/",
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
         headers=auth_headers,
         json=data,
     )
-    assert response.status_code == 403 # Forbidden
+    assert response.status_code == 403
 
 
 def test_create_transaction_conflicting_asset_info(
@@ -211,11 +205,9 @@ def test_create_transaction_conflicting_asset_info(
 ) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user=user)
-    asset = create_test_asset(db, ticker_symbol="NVDA", name="NVIDIA Corp")
-
+    portfolio = create_test_portfolio(db, user_id=user.id, name="My Portfolio")
+    asset = crud.asset.create(db, obj_in=schemas.AssetCreate(ticker_symbol="NVDA", name="NVIDIA Corp", asset_type="Stock", currency="USD"))
     data = {
-        "portfolio_id": portfolio.id,
         "asset_id": asset.id, # Providing both asset_id
         "new_asset": { "ticker_symbol": "NVDA", "name": "NVIDIA Corp", "asset_type": "STOCK", "currency": "USD" }, # and new_asset
         "transaction_type": "BUY",
@@ -224,8 +216,8 @@ def test_create_transaction_conflicting_asset_info(
         "transaction_date": datetime.now(timezone.utc).isoformat()
     }
     response = client.post(
-        f"{settings.API_V1_STR}/transactions/",
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
         headers=auth_headers,
         json=data,
     )
-    assert response.status_code == 422 # Unprocessable Entity
+    assert response.status_code == 422

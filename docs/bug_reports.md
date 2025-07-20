@@ -827,6 +827,272 @@ The login API call fails with a 404. The user is not logged in and remains on th
 
 ---
 
+**Bug ID:** 20250720-01
+**Title:** Test suite collection fails due to multiple setup and configuration errors.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run due to a cascade of configuration and setup issues that prevent pytest from collecting tests. The issues include:
+1.  `ModuleNotFoundError` because the test helper `app.tests.utils.transaction.py` was never created.
+2.  `Fixture 'mocker' not found` because the `pytest-mock` dependency was missing from `requirements.txt`.
+3.  `AttributeError` because the `FINANCIAL_API_KEY` and `FINANCIAL_API_URL` settings were missing from `app/core/config.py`.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted by various fatal errors.
+**Resolution:**
+1. Created the missing test utility file `app/tests/utils/transaction.py`.
+2. Added `pytest-mock` to `requirements.txt`.
+3. Added the required financial API settings to the `Settings` class.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-02
+**Title:** Test suite fails due to multiple inconsistencies between tests and application code.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Multiple tests are failing due to a drift between the test implementation and the application code. The issues include:
+1.  `test_get_dashboard_summary_unauthorized` asserts for a `403` status code, but the API correctly returns `401`.
+2.  Dashboard tests call `create_test_portfolio` with a `user_id` argument, but the test helper function signature did not include it.
+3.  Portfolio tests call `create_test_portfolio` with a `user` object, but the helper expects a `user_id`.
+4.  The `create_test_transaction` helper did not provide a `currency` when creating a new asset, causing a `ValidationError`.
+**Steps to Reproduce:**
+1. Run the backend test suite after fixing the initial setup issues.
+**Expected Behavior:**
+Tests should pass.
+**Actual Behavior:**
+Tests fail with `AssertionError`, `TypeError`, and `ValidationError`.
+**Resolution:**
+1. Corrected the status code assertion in the unauthorized dashboard test to `401`.
+2. Updated the `create_test_portfolio` helper to accept a `user_id`.
+3. Corrected all calls to `create_test_portfolio` to pass `user_id=user.id`.
+4. Updated the `create_test_transaction` helper to include a default `currency`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-03
+**Title:** Dashboard logic fails due to missing method and incorrect initialization.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The dashboard summary calculation in `crud_dashboard.py` is broken. It attempts to call `financial_data_service.get_asset_price()`, but this method was never defined in the `FinancialDataService` class.
+**Steps to Reproduce:**
+1. Call the `GET /api/v1/dashboard/summary` endpoint.
+**Expected Behavior:**
+The dashboard summary should be calculated correctly.
+**Actual Behavior:**
+The request fails with an `AttributeError`.
+**Resolution:** Added the missing `get_asset_price` mock method to the `FinancialDataService` class.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-04
+**Title:** Portfolio and Transaction tests fail due to incorrect API logic and routing.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend) / Test Suite
+**Severity:** Critical
+**Description:**
+Multiple tests related to portfolios and transactions are failing due to a combination of incorrect API logic, routing, and schema validation.
+1.  `test_create_portfolio` asserts for a `200` status code, but the API correctly returns `201`.
+2.  `test_read_portfolio_wrong_owner` asserts for `403`, but the API returns `404` due to flawed access control logic.
+3.  All transaction tests fail with `404 Not Found` because the transaction router is not correctly nested under the portfolio router.
+4.  Transaction creation tests fail with `422 Unprocessable Entity` because the `TransactionCreate` schema incorrectly includes a `portfolio_id`.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+All portfolio and transaction tests should pass.
+**Actual Behavior:**
+Tests fail with `AssertionError`, `404 Not Found`, and `422 Unprocessable Entity`.
+**Resolution:**
+1. Updated the portfolio creation test to assert for `201`.
+2. Fixed the `read_portfolio` endpoint to correctly return `403` for unauthorized access.
+3. Refactored the API routing to correctly nest the transaction endpoints under `/portfolios/{portfolio_id}/transactions`.
+4. Removed the redundant `portfolio_id` from the `TransactionCreate` schema.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-05
+**Title:** Application fails to start due to multiple configuration and import errors.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+A series of critical errors prevent the application from starting, making it impossible to run the test suite. These include:
+1.  A missing `__tablename__` in the `Portfolio` SQLAlchemy model.
+2.  A missing `crud_dashboard` module and `DashboardSummary` schema.
+3.  Incorrect imports for `models.User` in endpoint files.
+4.  A missing import for the `crud` package in `crud_transaction.py`, causing a `NameError`.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The application should start, and the test suite should run.
+**Actual Behavior:**
+The test suite collection fails with `InvalidRequestError`, `AttributeError`, `ImportError`, and `NameError`.
+**Resolution:**
+1. Added `__tablename__ = "portfolios"` to the `Portfolio` model.
+2. Created the `crud_dashboard.py` module and the `schemas/dashboard.py` file.
+3. Corrected all incorrect imports across the application to use direct imports (e.g., `from app.models.user import User`).
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-06
+**Title:** Data validation and creation fails due to mismatches between Pydantic schemas and SQLAlchemy models.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Multiple features are failing due to inconsistencies between the Pydantic schemas (the API layer) and the SQLAlchemy models (the database layer).
+1.  Portfolio creation fails with a `TypeError` because the `description` field exists in the `PortfolioCreate` schema but not in the `Portfolio` database model.
+2.  Portfolio creation API responses are missing the `description` field because it was not in the `Portfolio` response schema.
+3.  Transaction creation fails with a `422 Unprocessable Entity` error because the `TransactionCreate` schema incorrectly includes a `portfolio_id` field, which should be derived from the URL path.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Data should be validated and saved to the database without errors.
+**Resolution:**
+1. Added the `description` column to the `Portfolio` SQLAlchemy model.
+2. Added the `description` field to the `Portfolio` Pydantic response schema.
+3. Removed the redundant `portfolio_id` field from the `TransactionCreate` schema.
+**Resolution:** Fixed
+
+
+---
+
+**Bug ID:** 20250720-05
+**Title:** Application fails to start due to multiple configuration and import errors.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+A series of critical errors prevent the application from starting, making it impossible to run the test suite. These include:
+1.  A missing `__tablename__` in the `Portfolio` SQLAlchemy model.
+2.  A missing `crud_dashboard` module and `DashboardSummary` schema.
+3.  Incorrect imports for `models.User` in endpoint files.
+4.  A missing import for the `crud` package in `crud_transaction.py`, causing a `NameError`.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The application should start, and the test suite should run.
+**Actual Behavior:**
+The test suite collection fails with `InvalidRequestError`, `AttributeError`, `ImportError`, and `NameError`.
+**Resolution:**
+1. Added `__tablename__ = "portfolios"` to the `Portfolio` model.
+2. Created the `crud_dashboard.py` module and the `schemas/dashboard.py` file.
+3. Corrected all incorrect imports across the application to use direct imports (e.g., `from app.models.user import User`).
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-06
+**Title:** Data validation and creation fails due to mismatches between Pydantic schemas and SQLAlchemy models.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Multiple features are failing due to inconsistencies between the Pydantic schemas (the API layer) and the SQLAlchemy models (the database layer).
+1.  Portfolio creation fails with a `TypeError` because the `description` field exists in the `PortfolioCreate` schema but not in the `Portfolio` database model.
+2.  Portfolio creation API responses are missing the `description` field because it was not in the `Portfolio` response schema.
+3.  Transaction creation fails with a `422 Unprocessable Entity` error because the `TransactionCreate` schema incorrectly includes a `portfolio_id` field, which should be derived from the URL path.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Data should be validated and saved to the database without errors.
+**Resolution:**
+1. Added the `description` column to the `Portfolio` SQLAlchemy model.
+2. Added the `description` field to the `Portfolio` Pydantic response schema.
+3. Removed the redundant `portfolio_id` field from the `TransactionCreate` schema.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-07
+**Title:** Transaction creation fails due to missing user ID and import errors.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The transaction creation logic in `crud_transaction.py` is broken due to two issues:
+1.  It fails with a `NameError` because it attempts to use `crud.portfolio.get` without importing the `crud` package.
+2.  It fails with a database `IntegrityError` because it does not set the `user_id` on the new transaction object, violating a `NOT NULL` constraint.
+**Steps to Reproduce:**
+1. Run any test that creates a transaction.
+**Expected Behavior:**
+Transactions should be created successfully without errors.
+**Actual Behavior:**
+Tests crash with `NameError` and `IntegrityError`.
+**Resolution:**
+1. Added `from app import crud` to `app/crud/crud_transaction.py`.
+2. Updated the `create_with_portfolio` method to fetch the portfolio and pass its `user_id` to the new `Transaction` object.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-08
+**Title:** Dashboard tests fail due to incorrect assertions and data type mismatches.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The dashboard tests in `test_dashboard.py` are failing due to several assertion issues:
+1.  Comparing string decimal values (e.g., `'0.0'`) with integers (e.g., `0`).
+2.  Asserting for outdated schema fields (`asset_allocation`, `portfolio_values`) that are no longer in use.
+3.  Comparing string values with different decimal precision (e.g., `'29600.0'` vs `'29600.000000000'`).
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Dashboard tests should pass by correctly asserting against the API's response.
+**Actual Behavior:**
+Tests fail with `AssertionError`.
+**Resolution:**
+1. Updated tests to assert against the correct string values (e.g., `'0.0'`).
+2. Updated tests to assert against the correct schema fields (`total_unrealized_pnl`, `total_realized_pnl`, `top_movers`).
+3. Updated tests to cast string values from the API to a `float` before comparing them to a numeric value, making the tests robust to formatting differences.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-09
+**Title:** Dashboard calculation crashes when financial data service fails.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The `get_dashboard_summary` function in `crud_dashboard.py` does not handle exceptions from the `FinancialDataService`. If the service fails to fetch a price for an asset, the unhandled exception crashes the entire API request, resulting in a 500 Internal Server Error instead of gracefully calculating the summary with the available data.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+2. Observe the failure in `test_get_dashboard_summary_with_failing_price_lookup`.
+**Expected Behavior:**
+The dashboard summary calculation should continue, treating the value of the asset with the failed price lookup as 0. The API should return a 200 OK response.
+**Actual Behavior:**
+The API request crashes with an unhandled `Exception`.
+**Resolution:** The call to `financial_data_service.get_asset_price` in `crud_dashboard.py` was wrapped in a `try...except` block to catch exceptions and default the asset's price to 0 in case of failure.
+**Resolution:** Fixed
+
+
+---
+
 **Bug ID:** 20250719-07
 **Title:** Application crashes after login with "Rendered fewer hooks than expected" error.
 **Reported By:** Gemini Code Assist
@@ -1029,6 +1295,729 @@ A styled confirmation modal should appear, matching the application's theme.
 **Actual Behavior:**
 An unstyled or incorrectly styled modal appears.
 **Resolution:** The `DeleteConfirmationModal.tsx` component was created/refactored to use the global design system classes for modals and buttons.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-01
+**Title:** Test suite collection fails with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `AttributeError` during test collection. The `dashboard.py` endpoint file uses an incorrect type hint `models.User` for the `current_user` dependency. The `User` model is not directly available under the `app.models` namespace.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Resolution:** The import statement in `app/api/v1/endpoints/dashboard.py` was corrected to import `User` directly from `app.models.user`, and the type hint for `current_user` was updated to use the directly imported `User` class.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-02
+**Title:** Test suite collection fails with `ModuleNotFoundError: No module named 'app.tests.utils.transaction'`.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The test suite fails to run because the new dashboard test file (`test_dashboard.py`) tries to import a test helper function from `app.tests.utils.transaction`, but this utility module was never created.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `ModuleNotFoundError: No module named 'app.tests.utils.transaction'`.
+**Resolution:** Created the missing test utility file `app/tests/utils/transaction.py` and implemented the `create_test_transaction` helper function.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-03
+**Title:** Dashboard tests fail with "fixture 'mocker' not found".
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+Tests in `test_dashboard.py` that use mocking fail because the `mocker` fixture is not available. This is because the `pytest-mock` library, which provides this fixture, is not installed in the test environment.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The tests should be collected and run without fixture errors.
+**Actual Behavior:**
+Tests that depend on the `mocker` fixture error out during test setup.
+**Resolution:** Added `pytest-mock` to the `backend/requirements.txt` file.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-04
+**Title:** Dashboard summary calculation fails with TypeError on `FinancialDataService` initialization.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `get_dashboard_summary` function in `crud_dashboard.py` attempts to instantiate `FinancialDataService()` without providing the required `api_key` and `api_url` arguments, causing a `TypeError`.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+2. Observe the failure in `test_get_dashboard_summary_no_portfolios`.
+**Expected Behavior:**
+The `FinancialDataService` should be initialized correctly with configuration from the application settings.
+**Actual Behavior:**
+The API call fails with `TypeError: FinancialDataService.__init__() missing 2 required positional arguments: 'api_key' and 'api_url'`.
+**Resolution:** Updated `crud_dashboard.py` to import the `settings` object and pass the required API key and URL to the `FinancialDataService` constructor.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-05
+**Title:** Unauthorized dashboard test fails with incorrect status code assertion.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Medium
+**Description:**
+The test `test_get_dashboard_summary_unauthorized` asserts that the status code for an unauthenticated request should be `403 Forbidden`. The API correctly returns `401 Unauthorized`, which is the standard for missing credentials, causing the test to fail.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+The test should pass by asserting the correct `401` status code.
+**Actual Behavior:**
+The test fails with the assertion `assert 401 == 403`.
+**Resolution:** Updated the assertion in `test_dashboard.py` to check for a `401` status code.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-06
+**Title:** Dashboard calculation fails with AttributeError for non-existent 'get_asset_price' method.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `get_dashboard_summary` function in `crud_dashboard.py` calls `financial_data_service.get_asset_price()`. However, this method is not defined in the `FinancialDataService` class, which would cause a runtime `AttributeError`. The tests did not catch this because they directly mocked the non-existent method.
+**Steps to Reproduce:**
+1. Run the application and call the `GET /api/v1/dashboard/summary` endpoint.
+**Expected Behavior:**
+The dashboard summary should be calculated correctly using the mock financial service.
+**Actual Behavior:**
+The request fails with an `AttributeError: 'FinancialDataService' object has no attribute 'get_asset_price'`.
+**Resolution:** Added the missing `get_asset_price` mock method to the `FinancialDataService` class.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-07
+**Title:** Dashboard tests fail with TypeError due to incorrect test helper signature.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The tests for the dashboard summary endpoint fail with `TypeError: create_test_portfolio() got an unexpected keyword argument 'user_id'`. The test helper function `create_test_portfolio` in `app/tests/utils/portfolio.py` does not have `user_id` in its signature, but the tests require it to associate the portfolio with a user. This indicates an inconsistency between the test helper and the CRUD layer it's supposed to wrap.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The dashboard tests should run without `TypeError`.
+**Actual Behavior:**
+The tests fail with a `TypeError` when calling `create_test_portfolio`.
+**Resolution:** The `create_test_portfolio` function in `app/tests/utils/portfolio.py` was updated to accept a `user_id` keyword argument, which is then passed to the `crud.portfolio.create_with_owner` function.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-08
+**Title:** Dashboard tests fail with ValidationError due to missing 'currency' field in test helper.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `create_test_transaction` helper function in `app/tests/utils/transaction.py` fails to provide a `currency` when creating a new asset. The `AssetCreate` schema requires this field, causing a `ValidationError` and failing any test that relies on this helper to create a new asset.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The `create_test_transaction` helper should successfully create assets.
+**Actual Behavior:**
+Tests fail with `pydantic_core._pydantic_core.ValidationError: 1 validation error for AssetCreate\nE currency\nE Field required`.
+**Resolution:** The `create_test_transaction` function in `app/tests/utils/transaction.py` was updated to include a default `currency="USD"` when instantiating `schemas.AssetCreate`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-09
+**Title:** Portfolio tests fail with TypeError due to incorrect argument in `create_test_portfolio` calls.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+Multiple tests in `test_portfolios_transactions.py` fail with `TypeError: create_test_portfolio() got an unexpected keyword argument 'user'`. The test helper function expects a `user_id` argument, but the tests are incorrectly passing a `user` object.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The tests should call the helper function with the correct `user_id` argument.
+**Actual Behavior:**
+Tests fail with a `TypeError`.
+**Resolution:** All calls to `create_test_portfolio` in `app/tests/api/v1/test_portfolios_transactions.py` were updated to pass `user_id=user.id` instead of `user=user`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-12
+**Title:** All transaction-related tests fail with 404 Not Found due to incorrect API routing.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The transaction endpoints are registered at the root level (`/api/v1/transactions`) instead of being properly nested under their respective portfolios (`/api/v1/portfolios/{portfolio_id}/transactions`). This causes all test requests to these nested routes to fail with a 404 error.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Transaction endpoints should be accessible via their nested routes (e.g., `POST /api/v1/portfolios/1/transactions/`).
+**Actual Behavior:**
+All requests to transaction endpoints return `404 Not Found`.
+**Resolution:**
+1. Removed the top-level transaction router from `app/api/v1/api.py`.
+2. Included the transaction router within the `app/api/v1/endpoints/portfolios.py` file, nesting it correctly under the portfolio path with a `{portfolio_id}` parameter.
+3. Updated the `create_transaction` endpoint in `transactions.py` to accept the `portfolio_id` from the path and use it for validation and creation.
+**Resolution:** Fixed
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-10
+**Title:** Dashboard tests fail with AttributeError due to incorrect CRUD method call in test helper.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `create_test_transaction` helper function in `app/tests/utils/transaction.py` calls `crud.transaction.create_with_owner`, but this method does not exist on the `CRUDTransaction` class.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+The dashboard tests should pass.
+**Actual Behavior:**
+Tests fail with `AttributeError: 'CRUDTransaction' object has no attribute 'create_with_owner'`.
+**Resolution:** The `create_test_transaction` function in `app/tests/utils/transaction.py` was updated to call the correct `crud.transaction.create` method, which is inherited from the base CRUD class.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-11
+**Title:** Portfolio tests fail due to incorrect status code assertions and flawed access control logic.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** High
+**Description:**
+1. `test_create_portfolio` fails because it asserts a `200 OK` status code, but the API correctly returns `201 Created`.
+2. `test_read_portfolio_wrong_owner` fails because it asserts a `403 Forbidden` status, but the API incorrectly returns `404 Not Found` due to flawed access control logic that doesn't distinguish between a non-existent resource and an unauthorized one.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Tests should pass. The API should return 403 for unauthorized access to an existing resource and 201 for successful creation.
+**Actual Behavior:**
+Multiple tests fail with `AssertionError`.
+**Resolution:**
+1. Updated `test_create_portfolio` to assert for a `201` status code.
+2. Updated the `read_portfolio` endpoint in `portfolios.py` to check for ownership and return a 403 if the user is not the owner of an existing portfolio.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-12
+**Title:** All transaction-related tests fail with 404 Not Found due to incorrect API routing.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The transaction endpoints are registered at the root level (`/api/v1/transactions`) instead of being properly nested under their respective portfolios (`/api/v1/portfolios/{portfolio_id}/transactions`). This causes all test requests to these nested routes to fail with a 404 error.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Transaction endpoints should be accessible via their nested routes (e.g., `POST /api/v1/portfolios/1/transactions/`).
+**Actual Behavior:**
+All requests to transaction endpoints return `404 Not Found`.
+**Resolution:**
+1. Created the `app/api/v1/endpoints/transactions.py` router file with the correct endpoint logic.
+2. Removed the top-level transaction router from `app/api/v1/api.py`.
+3. Included the transaction router within the `app/api/v1/endpoints/portfolios.py` file, nesting it correctly under the portfolio path.
+**Resolution:** Fixed
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-10
+**Title:** Dashboard tests fail with AttributeError due to incorrect CRUD method call in test helper.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `create_test_transaction` helper function in `app/tests/utils/transaction.py` calls `crud.transaction.create_with_portfolio`, but this method does not exist on the `CRUDTransaction` class. The correct method is `create_with_owner`.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+The dashboard tests should pass.
+**Actual Behavior:**
+Tests fail with `AttributeError: 'CRUDTransaction' object has no attribute 'create_with_portfolio'`.
+**Resolution:** The `create_test_transaction` function in `app/tests/utils/transaction.py` was updated to call the correct `crud.transaction.create_with_owner` method.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-11
+**Title:** Portfolio tests fail due to incorrect status code assertions and flawed access control logic.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** High
+**Description:**
+1. `test_create_portfolio` fails because it asserts a `200 OK` status code, but the API correctly returns `201 Created`.
+2. `test_read_portfolio_wrong_owner` fails because it asserts a `403 Forbidden` status, but the API incorrectly returns `404 Not Found` due to flawed access control logic that doesn't distinguish between a non-existent resource and an unauthorized one.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Tests should pass. The API should return 403 for unauthorized access to an existing resource and 201 for successful creation.
+**Actual Behavior:**
+Multiple tests fail with `AssertionError`.
+**Resolution:**
+1. Updated `test_create_portfolio` to assert for a `201` status code.
+2. Updated the `read_portfolio` endpoint in `portfolios.py` to check for ownership and return a 403 if the user is not the owner of an existing portfolio.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-12
+**Title:** All transaction-related tests fail with 404 Not Found due to incorrect API routing.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The transaction endpoints are registered at the root level (`/api/v1/transactions`) instead of being properly nested under their respective portfolios (`/api/v1/portfolios/{portfolio_id}/transactions`). This causes all test requests to these nested routes to fail with a 404 error.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Transaction endpoints should be accessible via their nested routes (e.g., `POST /api/v1/portfolios/1/transactions/`).
+**Actual Behavior:**
+All requests to transaction endpoints return `404 Not Found`.
+**Resolution:**
+1. Created the `app/api/v1/endpoints/transactions.py` router file with the correct endpoint logic.
+2. Removed the top-level transaction router from `app/api/v1/api.py`.
+3. Included the transaction router within the `app/api/v1/endpoints/portfolios.py` file, nesting it correctly under the portfolio path.
+**Resolution:** Fixed
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-10
+**Title:** Dashboard tests fail with ValidationError due to mismatched TransactionCreate schema in test helper.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `create_test_transaction` helper function in `app/tests/utils/transaction.py` is incompatible with the `TransactionCreate` schema. The schema expects `price_per_unit` and `portfolio_id`, but the helper provides `price` and does not pass the `portfolio_id` to the schema constructor.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+The dashboard tests should pass.
+**Actual Behavior:**
+Tests fail with `pydantic_core._pydantic_core.ValidationError: 2 validation errors for TransactionCreate\nE price_per_unit\nE   Field required`.
+**Resolution:** The `create_test_transaction` function in `app/tests/utils/transaction.py` was updated to pass the correct field names (`price_per_unit`) and include the `portfolio_id` when instantiating `schemas.TransactionCreate`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-01
+**Title:** Test suite collection fails with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `AttributeError` during test collection. The `portfolios.py` endpoint file uses an incorrect type hint `models.User` for the `current_user` dependency. The `User` model is not directly available under the `app.models` namespace.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Resolution:** The import statement in `app/api/v1/endpoints/portfolios.py` was corrected to import `User` directly from `app.models.user`, and the type hint for `current_user` was updated to use the directly imported `User` class.
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+---
+
+**Bug ID:** 20250720-11
+**Title:** Portfolio tests fail due to incorrect status code assertions and flawed access control logic.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** High
+**Description:**
+1. `test_create_portfolio` fails because it asserts a `200 OK` status code, but the API correctly returns `201 Created`.
+2. `test_read_portfolio_wrong_owner` fails because it asserts a `403 Forbidden` status, but the API incorrectly returns `404 Not Found` due to flawed access control logic that doesn't distinguish between a non-existent resource and an unauthorized one.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Tests should pass. The API should return 403 for unauthorized access to an existing resource and 201 for successful creation.
+**Actual Behavior:**
+Multiple tests fail with `AssertionError`.
+**Resolution:**
+1. Updated `test_create_portfolio` to assert for a `201` status code.
+2. Updated the `read_portfolio` endpoint in `portfolios.py` to check for ownership and return a 403 if the user is not the owner of an existing portfolio.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250720-12
+**Title:** All transaction-related tests fail with 404 Not Found due to incorrect API routing.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-20
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The transaction endpoints are registered at the root level (`/api/v1/transactions`) instead of being properly nested under their respective portfolios (`/api/v1/portfolios/{portfolio_id}/transactions`). This causes all test requests to these nested routes to fail with a 404 error.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Transaction endpoints should be accessible via their nested routes (e.g., `POST /api/v1/portfolios/1/transactions/`).
+**Actual Behavior:**
+All requests to transaction endpoints return `404 Not Found`.
+**Resolution:**
+1. Created the `app/api/v1/endpoints/transactions.py` router file with the correct endpoint logic.
+2. Removed the top-level transaction router from `app/api/v1/api.py`.
+3. Included the transaction router within the `app/api/v1/endpoints/portfolios.py` file, nesting it correctly under the portfolio path.
+**Resolution:** Fixed
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-01
+**Title:** Test suite collection fails with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `AttributeError` during test collection. The `portfolios.py` endpoint file uses an incorrect type hint `models.User` for the `current_user` dependency. The `User` model is not directly available under the `app.models` namespace.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Resolution:** The import statement in `app/api/v1/endpoints/portfolios.py` was corrected to import `User` directly from `app.models.user`, and the type hint for `current_user` was updated to use the directly imported `User` class.
+**Resolution:** Fixed
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-02
+**Title:** Portfolio creation test fails with `KeyError` due to missing `description` in response schema.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The `test_create_portfolio` test fails with a `KeyError: 'description'` because the `schemas.Portfolio` Pydantic model, which is used as the response model for the creation endpoint, does not include the `description` field. The API correctly saves the description to the database, but it is not included in the JSON response sent back to the client.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+2. Observe the failure in `test_create_portfolio`.
+**Expected Behavior:**
+The JSON response for a newly created portfolio should include the `description` field.
+**Actual Behavior:**
+The `description` field is missing from the response, causing the test assertion to fail with a `KeyError`.
+**Resolution:** The `description` field was added to the `schemas.PortfolioInDBBase` Pydantic model in `app/schemas/portfolio.py`, ensuring it is included in all derived response schemas.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-03
+**Title:** Transaction creation tests fail with 422 Unprocessable Entity due to schema mismatch.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+Tests for creating transactions fail with a `422 Unprocessable Entity` error. This is because the `TransactionCreate` Pydantic schema incorrectly includes a `portfolio_id` field. This field is redundant, as the portfolio ID is already provided in the URL path parameter of the API endpoint. The API expects the `portfolio_id` in the request body, but the tests do not provide it, leading to a validation failure.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Transaction creation requests should be validated successfully, and tests should pass.
+**Actual Behavior:**
+Tests fail with `assert 422 == 201` or `assert 422 == 403`.
+**Resolution:** The `portfolio_id` field was removed from the `schemas.TransactionCreate` model in `app/schemas/transaction.py`. The API endpoint and CRUD layer correctly handle associating the transaction with the portfolio using the ID from the URL path.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-04
+**Title:** Test suite collection fails with `ImportError` for non-existent 'TransactionCreateInternal' schema.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `ImportError` during the test collection phase. The `app/schemas/__init__.py` file attempts to import a Pydantic schema named `TransactionCreateInternal` from `app.schemas.transaction`, but this schema is not defined in that file. This breaks the application's startup and prevents any tests from running.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `ImportError: cannot import name 'TransactionCreateInternal' from 'app.schemas.transaction'`.
+**Resolution:** The `app/schemas/__init__.py` file was corrected to only import schemas that actually exist in their respective modules, removing the reference to the non-existent `TransactionCreateInternal`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-05
+**Title:** Test helper `create_test_transaction` fails with `ValidationError` and uses incorrect CRUD method.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test utility function `create_test_transaction` in `app/tests/utils/transaction.py` is implemented incorrectly. It attempts to pass a `portfolio_id` to the `schemas.TransactionCreate` Pydantic model, which does not have this field, leading to a `ValidationError`. Furthermore, it calls the generic `crud.transaction.create` method instead of the correct `crud.transaction.create_with_portfolio` method, which is necessary to associate the transaction with its portfolio.
+**Steps to Reproduce:**
+1. Fix the `ImportError` from Bug ID 20250721-04.
+2. Run a test that uses the `create_test_transaction` helper.
+**Expected Behavior:**
+The test helper should create a transaction successfully without validation errors.
+**Actual Behavior:**
+The test helper will crash with a `ValidationError` or the created transaction will not be correctly linked to a portfolio.
+**Resolution:** The `create_test_transaction` helper was refactored to instantiate `schemas.TransactionCreate` without the `portfolio_id` and to call the correct `crud.transaction.create_with_portfolio` method, passing the `portfolio_id` as a separate argument.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-06
+**Title:** Test suite collection fails with `ImportError` for non-existent 'TransactionCreateInternal' schema in CRUD layer.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `ImportError` during the test collection phase. The `app/crud/crud_transaction.py` file attempts to import a Pydantic schema named `TransactionCreateInternal` from `app.schemas.transaction`, but this schema is not defined. This breaks the application's startup and prevents any tests from running. This was caused by an incomplete implementation of the CRUD layer.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `ImportError: cannot import name 'TransactionCreateInternal' from 'app.schemas.transaction'`.
+**Resolution:** The entire CRUD layer for portfolio management (`base.py`, `crud_asset.py`, `crud_portfolio.py`, `crud_transaction.py`, and `__init__.py`) was created with the correct logic and imports, resolving the `ImportError` and completing the feature.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-07
+**Title:** Test suite collection fails with `AttributeError` for missing 'DashboardSummary' schema.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `AttributeError` during test collection. The `dashboard.py` endpoint file attempts to use a Pydantic schema named `DashboardSummary` as its `response_model`, but this schema is not defined or exposed in the `app.schemas` package. This breaks the application's startup and prevents any tests from running.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `AttributeError: module 'app.schemas' has no attribute 'DashboardSummary'`.
+**Resolution:** Created `app/schemas/dashboard.py` to define the `DashboardSummary` model. Updated `app/schemas/__init__.py` to import and expose the new schema.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-08
+**Title:** Dashboard tests fail with `AttributeError` due to missing `crud_dashboard` module.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+All tests for the dashboard summary endpoint fail with an `AttributeError`. The API endpoint (`app/api/v1/endpoints/dashboard.py`) and the tests (`app/tests/api/v1/test_dashboard.py`) attempt to call functions from `app.crud.dashboard` and `app.crud.crud_dashboard`, but this module was never created.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Dashboard tests should be collected and run without `AttributeError`.
+**Actual Behavior:**
+Tests fail with `AttributeError: module 'app.crud' has no attribute 'dashboard'` or `AttributeError: module 'app.crud' has no attribute 'crud_dashboard'`.
+**Resolution:** Created `app/crud/crud_dashboard.py` with the `get_dashboard_summary` function and a `CRUDDashboard` class. Updated `app/crud/__init__.py` to expose the new `dashboard` CRUD object.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-09
+**Title:** All portfolio and transaction tests fail with `TypeError` due to missing `description` field in `Portfolio` model.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Any test that attempts to create a portfolio fails with `TypeError: 'description' is an invalid keyword argument for Portfolio`. The `PortfolioCreate` Pydantic schema correctly includes a `description` field, and the tests pass this data. However, the underlying `Portfolio` SQLAlchemy model in `app/models/portfolio.py` is missing the corresponding `description` column, causing the ORM to raise a `TypeError` on object creation.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Portfolios should be created successfully in the database without errors.
+**Actual Behavior:**
+All tests that create portfolios crash with a `TypeError`.
+**Resolution:** Added the `description = Column(String, nullable=True)` field to the `Portfolio` model in `app/models/portfolio.py`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-10
+**Title:** Test suite collection fails with `InvalidRequestError` due to missing `__tablename__` in `Portfolio` model.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of a SQLAlchemy `InvalidRequestError`. The `Portfolio` model in `app/models/portfolio.py` inherits from the declarative `Base` but is missing the required `__tablename__` attribute. This prevents the ORM from mapping the class to a database table and breaks the application startup.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `sqlalchemy.exc.InvalidRequestError: Class <class 'app.models.portfolio.Portfolio'> does not have a __table__ or __tablename__ specified...`.
+**Resolution:** Added `__tablename__ = "portfolios"` to the `Portfolio` model class in `app/models/portfolio.py`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-11
+**Title:** Dashboard test `test_get_dashboard_summary_no_portfolios` fails with `AssertionError` due to incorrect type comparison.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Test Suite
+**Severity:** Medium
+**Description:**
+The test `test_get_dashboard_summary_no_portfolios` in `app/tests/api/v1/test_dashboard.py` fails because it compares the string value `'0.0'` from the API response with the integer `0`. The test expects an integer, but the API returns a string representation of a decimal.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+2. Observe the failure in `test_get_dashboard_summary_no_portfolios`.
+**Expected Behavior:**
+The test should correctly handle the string representation of the decimal value.
+**Actual Behavior:**
+The test fails with `AssertionError: assert '0.0' == 0`.
+**Resolution:** Updated the assertion in `test_get_dashboard_summary_no_portfolios` to compare `data["total_value"]` with the string `'0.0'`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-12
+**Title:** Transaction creation fails with `IntegrityError` due to missing `user_id` in `transactions` table.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+Tests that create transactions fail with `IntegrityError: (psycopg2.errors.NotNullViolation) null value in column "user_id" of relation "transactions" violates not-null constraint`. The `transactions` table in the database has a `NOT NULL` constraint on the `user_id` column, but the backend logic for creating transactions does not associate the transaction with the portfolio's owner.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+2. Observe the failures in tests related to transaction creation.
+**Expected Behavior:**
+Transactions should be created successfully with the correct `user_id` associated with the portfolio's owner.
+**Actual Behavior:**
+Tests fail with `sqlalchemy.exc.IntegrityError`.
+**Resolution:** Updated the `create_with_portfolio` method in `CRUDTransaction` to include the `user_id` of the portfolio's owner when creating a transaction.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-13
+**Title:** Dashboard tests fail with `AssertionError` and outdated assertions.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The tests for the dashboard summary endpoint in `app/tests/api/v1/test_dashboard.py` are failing for two reasons. First, they compare the string value `'0.0'` from the API response with the integer `0`. Second, they assert for keys (`asset_allocation`, `portfolio_values`) that are no longer part of the `DashboardSummary` schema, which now uses `total_unrealized_pnl`, `total_realized_pnl`, and `top_movers`.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+The tests should correctly handle the string representation of decimal values and assert against the correct schema fields.
+**Actual Behavior:**
+Tests fail with `AssertionError: assert '0.0' == 0` and would also fail with `KeyError` if the first assertion passed.
+**Resolution:** Updated the dashboard tests to assert against the correct string values (e.g., `'0.0'`) and the correct schema fields (`total_unrealized_pnl`, `total_realized_pnl`, `top_movers`).
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-14
+**Title:** Transaction creation fails with `NameError` due to missing import in `crud_transaction.py`.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+All tests that create transactions fail with `NameError: name 'crud' is not defined`. The `create_with_portfolio` method in `app/crud/crud_transaction.py` attempts to use the `crud` package to fetch the portfolio (`crud.portfolio.get(...)`) but does not import it. This causes a cascade of failures in any test that creates a transaction.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+Transactions should be created successfully without a `NameError`.
+**Actual Behavior:**
+All tests that create transactions crash with a `NameError`.
+**Resolution:** Added `from app import crud` to the top of `app/crud/crud_transaction.py`.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-15
+**Title:** Dashboard calculation crashes when financial data service fails.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The `get_dashboard_summary` function in `crud_dashboard.py` does not handle exceptions from the `FinancialDataService`. If the service fails to fetch a price for an asset, the unhandled exception crashes the entire API request, resulting in a 500 Internal Server Error instead of gracefully calculating the summary with the available data.
+**Steps to Reproduce:**
+1. Run the backend test suite.
+2. Observe the failure in `test_get_dashboard_summary_with_failing_price_lookup`.
+**Expected Behavior:**
+The dashboard summary calculation should continue, treating the value of the asset with the failed price lookup as 0. The API should return a 200 OK response.
+**Actual Behavior:**
+The API request crashes with an unhandled `Exception`.
+**Resolution:** The call to `financial_data_service.get_asset_price` in `crud_dashboard.py` was wrapped in a `try...except` block to catch exceptions and default the asset's price to 0 in case of failure.
+**Resolution:** Fixed
+
+---
+
+**Bug ID:** 20250721-16
+**Title:** Dashboard summary test fails due to decimal precision mismatch in assertion.
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-21
+**Classification:** Test Suite
+**Severity:** Medium
+**Description:**
+The test `test_get_dashboard_summary_success` fails with an `AssertionError` because it compares the `total_value` from the API response to a hardcoded string. The API returns a `Decimal` value serialized as a string with high precision (e.g., `'29600.000000000'`), while the test expects a less precise string (`'29600.0'`).
+**Steps to Reproduce:**
+1. Run the backend test suite.
+**Expected Behavior:**
+The test should pass regardless of the number of trailing zeros in the decimal representation.
+**Actual Behavior:**
+The test fails with `AssertionError: assert '29600.000000000' == '29600.0'`.
+**Resolution:** The assertion in `test_get_dashboard_summary_success` was updated to cast the string value from the API to a `float` before comparing it to a numeric value, making the test robust to formatting differences.
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
+**Resolution:** Fixed
 **Resolution:** Fixed
 **Resolution:** Fixed
 **Resolution:** Fixed
