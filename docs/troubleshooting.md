@@ -79,4 +79,51 @@ This guide documents common setup and runtime issues and their solutions.
 
 ---
 
+### 7. Docker Compose fails with "unhealthy" container error
+
+*   **Symptom:** Running `docker-compose up` or `docker-compose run` fails immediately with an error similar to:
+
+    ```
+    ERROR: for backend  Container "..." is unhealthy.
+    ```
+
+*   **Cause:** This typically happens when a previous `docker-compose up` command was interrupted or included a service that is designed to exit (like our `test` service). This leaves behind a stopped container that Docker marks as "unhealthy". Subsequent commands are trying to attach to this stale container instead of creating a new one.
+
+*   **Solution:** Perform a clean reset of the Docker environment for the project.
+
+    1.  **Stop and remove all containers, networks, and volumes** associated with the project by running the following command from the project root:
+        ```bash
+        docker-compose down
+        ```
+    2.  You can now start the application fresh with `docker-compose up --build db backend frontend`.
+
+*   **If the error persists,** you may need to perform a more aggressive system-wide prune to remove all unused Docker data (stopped containers, networks, and build cache). **Warning:** This will affect all projects on your machine, not just this one.
+
+    ```bash
+    # This is a more forceful cleanup
+    docker system prune -a -f
+    ```
+
+    After running the prune command, try starting the application again.
+
+---
+
+### 8. Backend crashes with `UndefinedColumn` or `ProgrammingError`
+
+*   **Symptom:** The backend starts but then crashes when you try to access a page. The logs show an error like:
+
+    ```
+    sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column "..." does not exist
+    ```
+
+*   **Cause:** The application's database models (in `backend/app/models/`) have been updated, but the actual database schema is out of sync. This happens because the project does not yet have a database migration tool (like Alembic).
+
+*   **Solution:** The only way to fix this without a migration tool is to completely reset the database. **Warning:** This will delete all data in your local development database.
+    ```bash
+    docker-compose down -v
+    ```
+    The `-v` flag is crucial as it removes the named volume where the PostgreSQL data is stored. After running this, you can start the application again, and it will create a fresh database with the correct schema.
+
+---
+
 *After applying any of these fixes, always remember to rebuild your Docker containers (`docker-compose up --build`) to ensure the changes take effect.*

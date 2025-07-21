@@ -27,3 +27,5 @@ We follow an Agile Software Development Life Cycle (SDLC), developing features i
 5.  **Stage 5: Deployment**: The DevOps Engineer prepares the application for release.
 
 All decisions and plans at each stage require confirmation from the project owner before proceeding.
+
+For a detailed breakdown of our AI-assisted development workflow and testing standards, please see `docs/testing_strategy.md`.

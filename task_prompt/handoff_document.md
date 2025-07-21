@@ -94,7 +94,7 @@ The application is fully containerized using Docker and orchestrated with Docker
     *   **Frontend:** No `.env` file is needed for local development due to the Vite proxy setup.
 4.  **Run the application** from the project's root directory:
     ```bash
-    docker-compose up --build
+    docker-compose up --build db backend frontend
     ```
 5.  **Access the services:**
     *   Frontend: `http://localhost:3000`

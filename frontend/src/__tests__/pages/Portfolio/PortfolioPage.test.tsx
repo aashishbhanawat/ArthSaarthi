@@ -42,7 +42,7 @@ describe('PortfolioPage', () => {
         } as any);
 
         render(<PortfolioPage />, { wrapper });
-        expect(screen.getByText(/error fetching portfolios: failed to fetch/i)).toBeInTheDocument();
+        expect(screen.getByText(/error: failed to fetch/i)).toBeInTheDocument();
     });
 
     it('renders a list of portfolios on successful fetch', () => {

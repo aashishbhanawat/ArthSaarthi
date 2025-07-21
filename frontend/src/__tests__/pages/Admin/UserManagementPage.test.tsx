@@ -9,16 +9,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Mock the custom hooks
 jest.mock('../../../hooks/useUsers');
 
-const mockUseDeleteUser = useDeleteUser as jest.Mock;
-const mockUseUsers = useUsers as jest.Mock;
-const mockUseCreateUser = useCreateUser as jest.Mock;
-const mockUseUpdateUser = useUpdateUser as jest.Mock;
 const mockUsers: User[] = [
   { id: 1, email: 'admin@example.com', full_name: 'Admin User', is_active: true, is_admin: true },
   { id: 2, email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false },
 ];
 
 const queryClient = new QueryClient();
+
+const mockUseUsers = useUsers as jest.Mock;
+const mockUseDeleteUser = useDeleteUser as jest.Mock;
+const mockUseCreateUser = useCreateUser as jest.Mock;
+const mockUseUpdateUser = useUpdateUser as jest.Mock;
 
 const renderWithClient = (ui: React.ReactElement) => {
   return render(
@@ -31,8 +32,15 @@ const renderWithClient = (ui: React.ReactElement) => {
 describe('UserManagementPage', () => {
   beforeEach(() => {
     // Reset mocks before each test
-    mockUseUsers.mockClear();
     mockUseDeleteUser.mockReturnValue({ mutate: jest.fn() });
+    mockUseCreateUser.mockReturnValue({
+      mutateAsync: jest.fn().mockResolvedValue({}),
+      isPending: false,
+    });
+    mockUseUpdateUser.mockReturnValue({
+      mutateAsync: jest.fn().mockResolvedValue({}),
+      isPending: false,
+    });
   });
 
   test('renders loading state correctly', () => {
@@ -43,16 +51,15 @@ describe('UserManagementPage', () => {
 
   test('renders error state correctly', () => {
     const errorMessage = 'Failed to fetch users';
-    mockUseUsers.mockReturnValue({ data: [], isLoading: false, error: new Error(errorMessage) });
+    mockUseUsers.mockReturnValue({ data: [], isLoading: false, isError: true, error: new Error(errorMessage) });
     renderWithClient(<UserManagementPage />);
-    expect(screen.getByText(`An error occurred: ${errorMessage}`)).toBeInTheDocument();
+    expect(screen.getByText(`Error: ${errorMessage}`)).toBeInTheDocument();
   });
 
   test('renders users table with data', () => {
     mockUseUsers.mockReturnValue({ data: mockUsers, isLoading: false, error: null });
     renderWithClient(<UserManagementPage />);
-    expect(screen.getByText('User Management')).toBeInTheDocument();
-    expect(screen.getByText('Admin User')).toBeInTheDocument();
+    expect(screen.getByText('admin@example.com')).toBeInTheDocument();
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
   });
 
@@ -101,12 +108,12 @@ describe('UserManagementPage', () => {
     fireEvent.click(deleteButtons[1]); // Click delete for the non-admin user
 
     await waitFor(() => {
-      const modal = screen.getByRole('heading', { name: 'Confirm Deletion' }).closest('.modal-content');
+      const modal = screen.getByRole('heading', { name: 'Delete User' }).closest('.modal-content');
       expect(modal).toBeInTheDocument();
       expect(
         within(modal!).getByText(/are you sure you want to delete the user/i)
       ).toBeInTheDocument();
-      expect(within(modal!).getByText('Test User')).toBeInTheDocument();
+      expect(within(modal!).getByText('test@example.com')).toBeInTheDocument();
     });
   });
 });

@@ -1,62 +1,62 @@
-import { useState, useEffect, ReactNode } from 'react';
-import { Navigate } from "react-router-dom";
-import { getAuthStatus } from "../services/api";
-import SetupForm from "../components/auth/SetupForm";
-import LoginForm from "../components/LoginForm";
-import { useAuth } from "../context/AuthContext";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import LoginForm from '../components/auth/LoginForm';
+import SetupForm from '../components/auth/SetupForm';
+import * as api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-const AuthPage = () => {
+const AuthPage: React.FC = () => {
     const { token } = useAuth();
+    const navigate = useNavigate();
     const [setupNeeded, setSetupNeeded] = useState<boolean | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const checkStatus = async () => {
-            try {
-                const data = await getAuthStatus();
-                setSetupNeeded(data.setup_needed);
-            } catch (err: any) {
-                setError(
-                    err.response?.data?.detail || "Failed to check setup status."
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
-        checkStatus();
+        // If the user is already logged in, redirect them away from the auth page.
+        if (token) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [token, navigate]);
+
+    const checkStatus = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const status = await api.getAuthStatus();
+            setSetupNeeded(status.setup_needed);
+        } catch (err) {
+            setError('Failed to check setup status.');
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
-    if (token) {
-        return <Navigate to="/" replace />;
-    }
+    useEffect(() => {
+        checkStatus();
+    }, [checkStatus]);
 
     const handleSetupSuccess = () => {
-        setSetupNeeded(false); // Re-render to show the login form
+        // After setup, we know we no longer need it, so just switch to the login form.
+        setSetupNeeded(false);
     };
 
-    const CenteredMessage = ({ children }: { children: ReactNode }) => (
-        <div className="min-h-screen bg-gray-50 flex justify-center items-center">
-            <p className="text-lg text-gray-600">{children}</p>
-        </div>
-    );
-
-    if (loading) {
-        return <CenteredMessage>Loading...</CenteredMessage>;
-    }
-
-    if (error) {
-        return <CenteredMessage>Error: {error}</CenteredMessage>;
-    }
+    const renderContent = () => {
+        if (isLoading) {
+            return <p className="text-center">Loading...</p>;
+        }
+        if (error) {
+            return <p className="text-center text-red-500">{error}</p>;
+        }
+        if (setupNeeded) {
+            return <SetupForm onSuccess={handleSetupSuccess} />;
+        }
+        return <LoginForm />;
+    };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
-            <div className="max-w-md w-full mx-auto">
-                {/* The card styling is applied here to wrap whichever form is active */}
-                <div className="card">
-                    {setupNeeded ? <SetupForm onSuccess={handleSetupSuccess} /> : <LoginForm />}
-                </div>
-            </div>
+        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md card">{renderContent()}</div>
         </div>
     );
 };

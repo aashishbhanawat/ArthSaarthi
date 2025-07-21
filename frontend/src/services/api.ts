@@ -39,8 +39,12 @@ export const getAuthStatus = async () => {
   return response.data;
 };
 
-export const setupAdmin = async (userData: any) => {
-  console.log("API call to:", "/api/v1/auth/setup", userData); // Add this line
+export const setupAdminUser = async (full_name: string, email: string, password: string) => {
+  const userData = {
+    full_name,
+    email,
+    password,
+  };
   const response = await apiClient.post("/api/v1/auth/setup", userData);
   return response.data;
 };

@@ -13,10 +13,24 @@ These principles are the foundation of our testing approach and were established
 5.  **Align Test Helpers with Application Logic:** Any utility functions used in tests (e.g., for generating test data) must respect all validation rules and constraints enforced by the application itself.
 6.  **Test Environment Sanity Check:** The QA Engineer role includes a "Test Environment Sanity Check" at the beginning of each new module to validate the test environment configuration.
 
-7.  **AI Assistant Interaction Model**: To ensure accuracy and prevent errors from stale context, the following process is adopted for AI-assisted development. The developer is the final verifier.
-    *   **Scoped Context:** Provide the AI with all relevant, up-to-date files for the task.
-    *   **Incremental Verification:** Proceed in small, verifiable steps. Test the AI's suggestions immediately.
-    *   **Error-Driven Correction:** When an error occurs, provide the exact error log to the AI. Focus on fixing that specific error before moving on.
+## AI-Assisted Development Workflow
+
+To ensure accuracy, improve code quality, and prevent recurring issues, the following rigorous process is adopted for all AI-assisted development. The developer (Master Orchestrator) is the final verifier.
+
+1.  **Context-Aware Scaffolding:**
+    *   Before generating a new feature, the AI will request a full project file listing (`ls -R`) to build an accurate context map and prevent code duplication.
+
+2.  **Rigorous Root Cause Analysis (RCA):**
+    *   When an error occurs, the AI must analyze the **full stack trace**, not just the final error line.
+    *   The AI must validate dependencies. Before suggesting a fix, it will ask to see the contents of imported files to verify function names, class definitions, and other contracts.
+    *   The AI will state its debugging hypothesis clearly before proposing a solution.
+
+3.  **Formal Bug Triage:**
+    *   Before filing a new bug, the AI must first search `docs/bug_reports.md` for existing, related issues.
+    *   If a related bug is found, the AI will propose updating it. A new bug will only be created if the issue is genuinely new.
+
+4.  **Stale Context Mitigation:**
+    *   The developer is the **source of truth**. If the AI appears to be working with outdated file information, the developer will provide the full, current content of the relevant file(s) to resynchronize the AI's context.
 
 ## 1. Backend Testing
 

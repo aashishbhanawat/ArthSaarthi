@@ -1,55 +1,44 @@
-from pydantic import BaseModel, validator
-from decimal import Decimal
+from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
-
+from typing import Optional, Any
+from decimal import Decimal
 from .asset import Asset, AssetCreate
 
 
-# Properties to receive on item creation
-class TransactionCreate(BaseModel):
+# Shared properties
+class TransactionBase(BaseModel):
+    transaction_type: str
+    quantity: Decimal
+    price_per_unit: Decimal
+    transaction_date: datetime
+    fees: Decimal = Decimal("0.0")
+
+
+# Properties to receive on transaction creation
+class TransactionCreate(TransactionBase):
     asset_id: int | None = None
-    new_asset: AssetCreate | None = None
-    transaction_type: str
-    quantity: Decimal
-    price_per_unit: Decimal
-    fees: Decimal | None = 0.0
-    transaction_date: datetime
+    new_asset: "AssetCreate | None" = None
 
-    @validator('new_asset', always=True)
-    def check_asset_info(cls, v, values):
-        if v is not None and values.get('asset_id') is not None:
-            raise ValueError('Cannot provide both asset_id and new_asset')
-        if v is None and values.get('asset_id') is None:
-            raise ValueError('Must provide either asset_id or new_asset')
-        return v
+    @model_validator(mode='before')
+    @classmethod
+    def check_asset_info(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if data.get('new_asset') and data.get('asset_id'):
+                raise ValueError('Cannot provide both asset_id and new_asset')
+            if not data.get('new_asset') and not data.get('asset_id'):
+                raise ValueError('Must provide either asset_id or new_asset')
+        return data
 
-
-# Properties to receive on item update
+# Properties to receive on transaction update
 class TransactionUpdate(BaseModel):
-    pass  # Not implemented
-
-
-# Properties shared by models stored in DB
-class TransactionInDBBase(BaseModel):
-    id: int
-    asset_id: int
-    portfolio_id: int
-    transaction_type: str
-    quantity: Decimal
-    price_per_unit: Decimal
-    fees: Decimal
-    transaction_date: datetime
-    asset: Asset
-
-    class Config:
-        from_attributes = True
+    fees: Optional[Decimal] = None
 
 
 # Properties to return to client
-class Transaction(TransactionInDBBase):
-    pass
+class Transaction(TransactionBase):
+    id: int
+    asset: Asset
+    model_config = ConfigDict(from_attributes=True)
 
-
-# Properties stored in DB
-class TransactionInDB(TransactionInDBBase):
-    pass
+from .asset import AssetCreate
+TransactionCreate.model_rebuild()

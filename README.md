@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
 
 This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets, providing performance insights and analytics.
 
@@ -35,11 +35,11 @@ The project uses `.env` files for configuration.
 
 ### 2. Build and Run the Application
 
-From the project's root directory, run:
-    ```bash
-    docker-compose up --build
-    ```
-This command will build the Docker images and start the `db`, `backend`, and `frontend` services. The backend will wait for the database to be healthy before starting.
+From the project's root directory, run the following command to start the application services:
+```bash
+docker-compose up --build db backend frontend
+```
+This command will build the Docker images and start only the necessary services for the application to run. The backend will wait for the database to be healthy before starting.
 
 ### 3. Accessing the Services
 
@@ -66,6 +66,6 @@ To run the frontend test suite using Jest and React Testing Library, use the fol
 
 ## Contributing
 
-Please read CONTRIBUTING.md for details on our development process and the roles involved in this project.
+Please read `CONTRIBUTING.md` for details on our development process. Our rigorous development process, including our AI-assisted workflow and testing standards, is detailed in `docs/testing_strategy.md` and `docs/workflow_history.md`.
 
 See `docs/troubleshooting.md` for solutions to common setup and runtime issues.

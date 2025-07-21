@@ -100,26 +100,23 @@ This stage will be repeated for each module/feature identified in the requiremen
 "We are now entering **Stage 4: Module Development**. We will develop features one by one in an Agile manner. I will specify the feature, and you will invoke the relevant AI roles to plan, implement, and test it.
 
 For each feature, we'll follow these steps:
-1.  **Feature Definition:** Define the current feature to be developed.
-2.  **Backend Development Planning (Backend Developer, Database Administrator):**
+1.  **Feature Definition & Context Scaffolding:**
+    *   Define the current feature to be developed.
+    *   Request a full project file listing (`ls -R`) to build an accurate context map and prevent code duplication.
+2.  **Backend Development Planning (Backend Developer & Database Administrator):**
     * API Endpoints (new/updated)
     * Database Schema Changes (new tables, columns, relationships)
     * Proposed Backend Files/Folders
-    * Potential Implementation Approaches (Pros/Cons)
-3.  **Frontend Development Planning (Frontend Developer, UI/UX Designer):**
+3.  **Frontend Development Planning (Frontend Developer & UI/UX Designer):**
     * UI Components
     * Proposed Frontend Files/Folders
     * User Interactions
-    * A plan for handling structured error responses (e.g., parsing validation error messages from a `422` response).
-    * Potential Implementation Approaches (Pros/Cons)
-4.  **Code Generation Request:** Once plans are confirmed, request the AI (Gemini-CLI or equivalent) to generate the code.
-5.  **Testing Plan (QA Engineer):**
-    * Unit Tests
-    * Integration Tests
-    * Acceptance Criteria
-    * **If tests fail, invoke the "File a Bug" prompt to log the issue before proceeding with a fix.**
-    * Testing for specific HTTP error codes (e.g., 401, 409, 422).
-6.  **Deployment/Environment Updates (DevOps Engineer - To be introduced after first feature):**
+4.  **Code Generation Request:** Once plans are confirmed, request the AI to generate the code.
+5.  **Testing & Debugging Workflow (QA Engineer & All Roles):**
+    *   **Testing Plan:** The QA Engineer will define unit tests, integration tests, and acceptance criteria.
+    *   **Rigorous RCA:** When an error occurs, the AI must analyze the **full stack trace**, validate dependencies by requesting to see imported files, and state its hypothesis before proposing a fix.
+    *   **Formal Bug Triage:** Before filing a new bug, the AI must search `docs/bug_reports.md` for existing issues. It will propose updating an existing bug before creating a new one.
+6.  **Deployment/Environment Updates (DevOps Engineer):**
     *   A plan for database schema initialization (e.g., `create_all` for dev, migrations for prod).
     *   Docker/Deployment Script Updates
     *   Environment Variables

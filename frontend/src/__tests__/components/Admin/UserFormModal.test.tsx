@@ -54,6 +54,7 @@ describe('UserFormModal', () => {
             full_name: 'New User',
           email: 'new@example.com',
           password: 'Password123!',
+          is_admin: false,
         });
       });
 

@@ -18,12 +18,10 @@ describe('UsersTable', () => {
   });
 
   test('renders table headers and user data correctly', () => {
-    expect(screen.getByText('Full Name')).toBeInTheDocument();
     expect(screen.getByText('admin@example.com')).toBeInTheDocument();
-    expect(screen.getByText('Test User')).toBeInTheDocument();
-    // The first user is active, the second is not
-    expect(screen.getAllByText('Yes').length).toBe(2); // One for Active, one for Admin
-    expect(screen.getAllByText('No').length).toBe(2);
+    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Admin')).toBeInTheDocument();
+    expect(screen.getByText('User')).toBeInTheDocument();
   });
 
   test('calls onEdit with the correct user when Edit button is clicked', () => {

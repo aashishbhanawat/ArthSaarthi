@@ -1,9 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from  '../../context/AuthContext';
 import LoginForm from './LoginForm';
-import * as api from '../services/api';
+import * as api from '../../services/api';
+
 
 // Mock dependencies
 jest.mock('react-router-dom', () => ({
@@ -11,7 +12,7 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => jest.fn(),
 }));
 
-jest.mock('../services/api');
+jest.mock('../../services/api');
 const mockedApi = api as jest.Mocked<typeof api>; 
 
 const mockLogin = jest.fn();
@@ -20,7 +21,7 @@ const mockLogin = jest.fn();
 const renderWithContext = () => {
   return render(
     <MemoryRouter>
-      <AuthContext.Provider value={{ login: mockLogin, logout: jest.fn(), token: null, user: null, loading: false }}>
+      <AuthContext.Provider value={{ login: mockLogin, logout: jest.fn(), token: null, user: null, isLoading: false, error: null, register: jest.fn() }}>
         <LoginForm />
       </AuthContext.Provider>
     </MemoryRouter>
@@ -38,7 +39,7 @@ describe('LoginForm', () => {
     renderWithContext();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('allows the user to enter email and password', async () => {
@@ -62,7 +63,7 @@ describe('LoginForm', () => {
 
     await user.type(screen.getByLabelText(/email/i), 'test@example.com');
     await user.type(screen.getByLabelText(/password/i), 'password123');
-    await user.click(screen.getByRole('button', { name: /login/i }));
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(mockedApi.loginUser).toHaveBeenCalledWith('test@example.com', 'password123');
@@ -78,7 +79,7 @@ describe('LoginForm', () => {
 
     await user.type(screen.getByLabelText(/email/i), 'wrong@example.com');
     await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
-    await user.click(screen.getByRole('button', { name: /login/i }));
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(screen.getByText(errorMessage)).toBeInTheDocument();

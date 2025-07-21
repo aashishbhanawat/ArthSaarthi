@@ -185,3 +185,108 @@ Its purpose is to build an experience history that can be used as a reference fo
     - The backend is now fully stable and functional.
     - All 36 backend tests are passing, and 2 are correctly skipped.
     - The bug report log is clean, accurate, and up-to-date.
+
+---
+
+## 2025-07-20: Frontend Plan for Dashboard Visualization
+
+*   **Task Description:** With the backend stable, the next step is to build the frontend for the Dashboard Visualization feature. This entry documents the planning phase for this feature.
+
+*   **Key Prompts & Interactions:**
+    1.  **Course Correction:** The user correctly pointed out that the previously planned feature (Portfolio Management) was already implemented.
+    2.  **Planning:** The AI pivoted to the next logical feature and was prompted to act as a Frontend Developer and UI/UX Designer to create a detailed implementation plan for the Dashboard Visualization.
+
+*   **File Changes:**
+    *   `docs/features/03_dashboard_visualization.md`: Created a new feature plan document to formalize the implementation strategy for the dashboard frontend.
+
+*   **Outcome:**
+    - A clear and comprehensive plan is in place for the dashboard frontend implementation, ensuring alignment before any code is written.
+
+---
+
+## 2025-07-20: Add Charting Dependencies
+
+*   **Task Description:** Install the necessary charting libraries (`chart.js`, `react-chartjs-2`) for the frontend in preparation for future dashboard visualization enhancements.
+
+*   **File Changes:**
+    *   `frontend/package.json`: Added `chart.js` and `react-chartjs-2` to the dependencies.
+
+*   **Outcome:**
+    - The project is now equipped with the necessary libraries for building data visualizations.
+
+---
+
+## 2025-07-20: Add Test for Dashboard Hook
+
+*   **Task Description:** Create a new test suite for the `useDashboardSummary` React Query hook to ensure it correctly handles both successful data fetching and error states.
+
+*   **File Changes:**
+    *   `frontend/src/__tests__/hooks/useDashboard.test.ts`: Created a new test file. The tests mock the `dashboardApi` service and verify that the hook returns the correct data on success and the correct error object on failure.
+
+*   **Outcome:**
+    - The data-fetching logic for the dashboard summary is now covered by automated tests, improving the robustness of the frontend.
+
+---
+
+## 2025-07-21: Implement Dashboard UI
+
+*   **Task Description:** Refactor the `DashboardPage` to use the new `useDashboardSummary` hook and display the fetched data using the `SummaryCard` and `TopMoversTable` components. This replaces the old frontend-only calculation logic with a live connection to the backend API.
+
+*   **Key Prompts & Interactions:**
+    1.  **Test Suite Verification:** The user provided the test log. The AI confirmed that all 38 tests were passing and that the console warnings from React Router were non-blocking deprecation notices.
+    2.  **Code Generation:** With the test suite stable, the AI was prompted to refactor the `DashboardPage.tsx` component according to the established feature plan.
+
+*   **File Changes:**
+    *   `frontend/src/pages/DashboardPage.tsx`: Refactored to remove the old `usePortfolios` hook and `calculatePortfolioMetrics` function. It now uses `useDashboardSummary` to fetch data and renders the `SummaryCard` and `TopMoversTable` components.
+
+*   **Outcome:**
+    - The dashboard is now a dynamic component that displays live data from the backend API, completing the MVP for this feature.
+
+---
+
+## 2025-07-21: Fix Frontend Build Failure for Dashboard
+
+*   **Task Description:** The frontend build was failing because the `DashboardPage` was trying to import components (`SummaryCard`, `TopMoversTable`) that had not been created. This task involved creating the missing component files in their planned directory and correcting the import paths.
+
+*   **Key Prompts & Interactions:**
+    1.  **Error Identification:** The user pointed out that the components were missing from the `src/components` directory.
+    2.  **Code Generation:** The AI analyzed the feature plan, confirmed the intended location of the components, and generated the missing files (`SummaryCard.tsx`, `TopMoversTable.tsx`) in a new `src/components/Dashboard/` directory. It also corrected the import paths in `DashboardPage.tsx`.
+
+*   **File Changes:**
+    *   `frontend/src/components/Dashboard/SummaryCard.tsx`, `frontend/src/components/Dashboard/TopMoversTable.tsx`: Created the missing component files.
+    *   `frontend/src/pages/DashboardPage.tsx`: Corrected the import paths to point to the new components.
+
+*   **Outcome:**
+    - The frontend application now builds and runs successfully, with the dashboard page correctly rendering its child components.
+
+---
+
+## 2025-07-21: Enhance Dashboard Top Movers Table
+
+*   **Task Description:** The `TopMoversTable` component was a placeholder. This task involved implementing the full UI for the table to correctly render asset data, including data formatting and conditional styling for price changes.
+
+*   **File Changes:**
+    *   `frontend/src/components/Dashboard/TopMoversTable.tsx`: Replaced the placeholder `div` with a full HTML `table`. Added helper functions to format currency and apply green/red colors for positive/negative price movements.
+
+*   **Outcome:**
+    - The `TopMoversTable` component is now fully functional from a UI perspective and is ready to display data as soon as the backend API provides it.
+
+---
+
+## 2025-07-21: Process Improvement & Workflow Refinement
+
+*   **Task Description:** Following a review of the project's history, the Master Orchestrator raised several valid concerns about the development process. This task involved analyzing those concerns and formalizing a new, more rigorous workflow to address them.
+
+*   **Key Concerns Raised:**
+    1.  **Code Quality:** The AI was generating code with missing paths, variables, and significant duplication.
+    2.  **Bug Filing Process:** The bug log was becoming messy with duplicates and out-of-order entries.
+    3.  **Stale Context:** The AI was frequently working with outdated file information.
+    4.  **Root Cause Analysis:** The AI's debugging was often superficial, focusing on symptoms rather than the underlying cause.
+
+*   **File Changes:**
+    *   `docs/testing_strategy.md`: Updated with a new "AI-Assisted Development Workflow" section to codify the solutions to the concerns raised. This includes new standards for Context-Aware Scaffolding, Rigorous Root Cause Analysis (RCA), Formal Bug Triage, and Stale Context Mitigation.
+    *   `task_prompt/pms_master_task.md`: The master prompt was updated to incorporate these new, stricter workflow steps.
+    *   `README.md` & `CONTRIBUTING.md`: Updated to link to the detailed process documentation.
+
+*   **Outcome:**
+    - A new, world-class engineering process has been adopted for all future development. This process prioritizes quality, context-awareness, and rigorous analysis to improve efficiency and reduce bugs.

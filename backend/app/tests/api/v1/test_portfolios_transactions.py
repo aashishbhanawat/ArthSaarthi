@@ -144,7 +144,7 @@ def test_create_transaction_with_new_asset(
     )
     assert response.status_code == 201
     content = response.json()
-    assert content["quantity"] == "10.00000000"
+    assert float(content["quantity"]) == 10.0
     assert content["asset"]["ticker_symbol"] == "MSFT"
 
     # Verify asset was created in DB

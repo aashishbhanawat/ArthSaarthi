@@ -15,13 +15,13 @@ describe('DeleteConfirmationModal', () => {
   });
 
   test('renders the confirmation message with the user name', () => {
-    expect(screen.getByRole('heading', { name: 'Confirm Deletion' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Delete User' })).toBeInTheDocument();
     expect(screen.getByText(/are you sure you want to delete the user/i)).toBeInTheDocument();
-    expect(screen.getByText('Test User')).toBeInTheDocument();
+    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
   });
 
   test('calls onConfirm when the Delete button is clicked', () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Delete' }));
     expect(onConfirm).toHaveBeenCalled();
   });
 
