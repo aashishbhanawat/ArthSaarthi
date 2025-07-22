@@ -94,8 +94,7 @@ Our development history revealed several critical patterns that this workflow is
 ---
 
 ## 5. Known Architectural Risks
-
-*   **No Database Migration Tool:** The project currently uses SQLAlchemy's `create_all` to initialize the schema. This is not suitable for production and means that any change to a `models.py` file requires a full database reset (`docker-compose down -v`). Implementing a migration tool like **Alembic** is the highest-priority architectural improvement needed.
+*   **Database Migrations Complete:** The project has fully transitioned to **Alembic** for schema management. The old `create_all` mechanism has been removed. All database models are now managed through versioned migration scripts, eliminating the risk of schema drift between the application and the database.
 
 ---
 
@@ -103,10 +102,9 @@ Our development history revealed several critical patterns that this workflow is
 
 The application is stable and ready for further development. Potential next steps include:
 
-1.  **Implement Database Migrations:** Introduce Alembic to manage schema changes gracefully.
-2.  **Data Visualization:** Enhance the dashboard with charting libraries (e.g., Chart.js) to visualize portfolio allocation and performance history.
-3.  **End-to-End Testing:** Implement a suite of E2E tests using a framework like Cypress or Playwright to automate full user-flow verification.
-4.  **Feature Enhancement:** Add more advanced features, such as detailed performance analytics, dividend tracking, or multi-currency support.
+1.  **Data Visualization:** Enhance the dashboard with charting libraries (e.g., Chart.js) to visualize portfolio allocation and performance history.
+2.  **End-to-End Testing:** Implement a suite of E2E tests using a framework like Cypress or Playwright to automate full user-flow verification.
+3.  **Feature Enhancement:** Add more advanced features, such as detailed performance analytics, dividend tracking, or multi-currency support.
 
 ---
 

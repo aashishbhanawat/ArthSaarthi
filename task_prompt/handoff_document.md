@@ -71,9 +71,8 @@ The application is fully containerized using Docker and orchestrated with Docker
 ---
 
 #### 4. Feature Implementation: Initial Setup
-
+*   **Database Schema Management:** The project uses **Alembic** for database schema migrations. On startup, the `docker-compose.yml` configuration automatically runs `alembic upgrade head` to ensure the database schema is up-to-date with the latest versioned migration scripts. The old `create_all` mechanism has been removed.
 *   **Backend Logic (`/api/v1/auth/status` & `/api/v1/auth/setup`):**
-    *   On startup (via FastAPI's `lifespan` event), the backend uses SQLAlchemy's `create_all` to initialize the database schema based on the defined models. This is skipped in the test environment.
     *   The `GET /status` endpoint checks if any users exist in the database.
     *   The `POST /setup` endpoint allows the creation of the *first* user only. It validates the incoming data using the `UserCreate` Pydantic schema, which includes strong password validation rules (length, uppercase, lowercase, number, special character). If validation passes, it hashes the password and saves the new admin user to the database.
 

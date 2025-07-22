@@ -118,11 +118,22 @@ This guide documents common setup and runtime issues and their solutions.
 
 *   **Cause:** The application's database models (in `backend/app/models/`) have been updated, but the actual database schema is out of sync. This happens because the project does not yet have a database migration tool (like Alembic).
 
-*   **Solution:** The only way to fix this without a migration tool is to completely reset the database. **Warning:** This will delete all data in your local development database.
-    ```bash
-    docker-compose down -v
-    ```
-    The `-v` flag is crucial as it removes the named volume where the PostgreSQL data is stored. After running this, you can start the application again, and it will create a fresh database with the correct schema.
+*   **Solution:** The project now uses Alembic for database migrations. You need to generate a new migration script to align the database schema with your model changes.
+
+    1.  **Make sure the `alembic/env.py` file imports the model you changed.** For example, if you changed `app/models/portfolio.py`, ensure this line exists in `env.py`:
+        ```python
+        from app.models import portfolio
+        ```
+
+    2.  **Generate a new migration script.** Run the following command from the project root, replacing the message with a description of your change:
+        ```bash
+        docker-compose run --rm backend alembic revision --autogenerate -m "Describe your model change here"
+        ```
+
+    3.  **Apply the migration.** Restart the application. The new command in `docker-compose.yml` will automatically apply the new migration script.
+        ```bash
+        docker-compose up --build backend
+        ```
 
 ---
 
