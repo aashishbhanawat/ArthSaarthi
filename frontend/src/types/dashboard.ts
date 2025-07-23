@@ -1,13 +1,32 @@
 export interface DashboardAsset {
     ticker_symbol: string;
-    current_price: string;
-    price_change_24h: string;
-    price_change_percentage_24h: string;
+    current_price: number;
+    price_change_24h: number;
+    price_change_percentage_24h: number;
 }
 
 export interface DashboardSummary {
-    total_value: string;
-    total_unrealized_pnl: string;
-    total_realized_pnl: string;
+    total_value: number;
+    total_unrealized_pnl: number;
+    total_realized_pnl: number;
     top_movers: DashboardAsset[];
+    asset_allocation: AssetAllocation[];
+}
+
+export interface PortfolioHistoryPoint {
+    date: string;
+    value: number;
+}
+
+export interface PortfolioHistoryResponse {
+    history: PortfolioHistoryPoint[];
+}
+
+export interface AssetAllocation {
+    ticker: string;
+    value: number;
+}
+
+export interface AssetAllocationResponse {
+    allocation: AssetAllocation[];
 }

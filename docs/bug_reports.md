@@ -2407,3 +2407,94 @@ Tests fail with `KeyError` and unhandled `Exception`.
 **Resolution:**
 1. Add `asset_allocation: List[AssetAllocation]` to the `DashboardSummary` schema in `app/schemas/dashboard.py`.
 2. Wrap the `get_asset_price` call in `app/crud/crud_dashboard.py` in a `try...except` block to handle potential failures.
+
+---
+
+**Bug ID:** 2025-07-23-06
+**Title:** Dashboard hook test suite fails to run due to incorrect file extension.
+**Module:** Dashboard (Test Suite)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-23
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test suite for the new dashboard hooks (`useDashboard.test.ts`) fails to run with multiple TypeScript syntax errors. The file contains JSX for the `QueryClientProvider` wrapper but has a `.ts` extension instead of `.tsx`. This causes the TypeScript compiler to fail, preventing the entire suite from being tested.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test suite for the dashboard hooks should run successfully.
+**Actual Behavior:**
+The test suite fails to compile with syntax errors.
+**Resolution:**
+The old test file `frontend/src/__tests__/hooks/useDashboard.test.ts` was deleted, and its content was moved to a new file with the correct `.tsx` extension: `frontend/src/__tests__/hooks/useDashboard.test.tsx`.
+
+---
+
+**Bug ID:** 2025-07-23-07
+**Title:** Frontend tests fail due to Jest mock factory limitations and incomplete hook mocking.
+**Module:** Dashboard (Test Suite)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-23
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Multiple test suites related to the new dashboard charts are failing.
+1.  The test suites for `PortfolioHistoryChart` and `AssetAllocationChart` fail with a `ReferenceError` because the `jest.mock` factory for `react-chartjs-2` uses JSX, which conflicts with Jest's module hoisting.
+2.  The test suite for `DashboardPage` fails with a `TypeError` because it does not mock the `useDashboardHistory` and `useDashboardAllocation` hooks, which are used by its child components.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+All dashboard-related test suites should pass.
+**Actual Behavior:**
+Tests fail with `ReferenceError` and `TypeError`.
+**Resolution:**
+1. Refactor the `jest.mock` factory in the chart component tests to use a standard function declaration to avoid the scoping issue.
+2. Update `DashboardPage.test.tsx` to provide default mocks for all three dashboard hooks (`useDashboardSummary`, `useDashboardHistory`, `useDashboardAllocation`).
+The old test file `frontend/src/__tests__/hooks/useDashboard.test.ts` was deleted, and its content was moved to a new file with the correct `.tsx` extension: `frontend/src/__tests__/hooks/useDashboard.test.tsx`.
+
+---
+
+**Bug ID:** 2025-07-23-07
+**Title:** Frontend tests fail due to Jest mock factory limitations and incomplete hook mocking.
+**Module:** Dashboard (Test Suite)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-23
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Multiple test suites related to the new dashboard charts are failing.
+1.  The test suites for `PortfolioHistoryChart` and `AssetAllocationChart` fail with a `ReferenceError` because the `jest.mock` factory for `react-chartjs-2` uses JSX, which conflicts with Jest's module hoisting.
+2.  The test suite for `DashboardPage` fails with a `TypeError` because it does not mock the `useDashboardHistory` and `useDashboardAllocation` hooks, which are used by its child components.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+All dashboard-related test suites should pass.
+**Actual Behavior:**
+Tests fail with `ReferenceError` and `TypeError`.
+**Resolution:**
+1. Refactor the `jest.mock` factory in the chart component tests to use a standard function declaration to avoid the scoping issue.
+2. Update `DashboardPage.test.tsx` to provide default mocks for all three dashboard hooks (`useDashboardSummary`, `useDashboardHistory`, `useDashboardAllocation`).
+
+---
+
+**Bug ID:** 2025-07-23-08
+**Title:** Frontend chart tests fail due to Jest mock scoping and unmocked canvas dependencies.
+**Module:** Dashboard (Test Suite)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-23
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Multiple test suites related to the new dashboard charts are failing or producing errors.
+1.  The test suites for `PortfolioHistoryChart` and `AssetAllocationChart` fail with a `ReferenceError`. This is caused by using JSX syntax directly inside the `jest.mock` factory for `react-chartjs-2`, which conflicts with Jest's module hoisting and variable scoping.
+2.  The test suite for `DashboardPage` passes but floods the console with `Not implemented: HTMLCanvasElement.prototype.getContext` errors. This is because the test renders the real chart components, which attempt to use the `<canvas>` API, an API that is not implemented in the JSDOM test environment.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+All dashboard-related test suites should pass without errors.
+**Actual Behavior:**
+Two test suites fail with `ReferenceError`, and one produces multiple console errors.
+**Resolution:**
+1. Refactor the `jest.mock` factory in all affected test suites (`PortfolioHistoryChart.test.tsx`, `AssetAllocationChart.test.tsx`, `DashboardPage.test.tsx`) to avoid using JSX directly. Instead, the mock will use `React.createElement` after lazily requiring the `react` module inside the factory. This resolves a variable scoping issue with Jest's module hoisting.
+2. The mock in `DashboardPage.test.tsx` also serves to prevent the real chart components from being rendered, which would otherwise cause `<canvas>` API errors in the JSDOM test environment.
+The old test file `frontend/src/__tests__/hooks/useDashboard.test.ts` was deleted, and its content was moved to a new file with the correct `.tsx` extension: `frontend/src/__tests__/hooks/useDashboard.test.tsx`.

@@ -244,32 +244,6 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
-## 2025-07-23: Backend for Dashboard Visualization Charts
-
-*   **Task Description:** Implement the backend for the "Dashboard Visualization Charts" feature. This involved creating new API endpoints (`/history`, `/allocation`) and the underlying business logic to calculate portfolio history and asset allocation. A significant part of this task was a deep debugging and stabilization effort to resolve numerous application startup errors.
-
-*   **Key Prompts & Interactions:**
-    1.  **Feature Implementation:** A series of prompts were used to generate the new CRUD logic in `crud_dashboard.py`, the new API endpoints in `endpoints/dashboard.py`, and the corresponding Pydantic schemas.
-    2.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI. This was critical for identifying and fixing a cascade of `ImportError` and `AttributeError` issues related to missing singleton instances, incorrect model imports, and schema mismatches.
-    3.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
-    4.  **Context Resynchronization:** The AI's context for several files was outdated. The user provided the full, current content of the problematic files, which allowed the AI to resynchronize and provide accurate patches.
-
-*   **File Changes:**
-    *   `backend/app/crud/crud_dashboard.py`: Refactored to a class-based structure and added `get_history` and `get_allocation` logic.
-    *   `backend/app/schemas/dashboard.py`: Added `PortfolioHistoryResponse` and `AssetAllocationResponse` schemas. Updated `DashboardSummary` to include `asset_allocation`.
-    *   `backend/app/api/v1/endpoints/dashboard.py`: Added the `/history` and `/allocation` endpoints.
-    *   `backend/app/services/financial_data_service.py`: Created the `financial_data_service` singleton instance to resolve an `ImportError`.
-    *   `backend/app/tests/api/v1/test_dashboard.py`: Added comprehensive tests for the new `/history` and `/allocation` endpoints and refactored existing tests.
-    *   `backend/app/tests/utils/transaction.py`: Updated to better handle `date` objects for testing.
-    *   `docs/bug_reports.md`: Populated with detailed reports for every bug discovered and fixed during this task.
-
-*   **Verification:**
-    - Ran the full backend test suite using `docker-compose run --rm test`.
-
-*   **Outcome:**
-    - The backend for the "Dashboard Visualization Charts" feature is complete, stable, and fully tested. All 40 backend tests are passing. The application is now ready for the corresponding frontend implementation.
----
-
 ## 2025-07-21: Fix Frontend Build Failure for Dashboard
 
 *   **Task Description:** The frontend build was failing because the `DashboardPage` was trying to import components (`SummaryCard`, `TopMoversTable`) that had not been created. This task involved creating the missing component files in their planned directory and correcting the import paths.
@@ -316,3 +290,81 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - A new, world-class engineering process has been adopted for all future development. This process prioritizes quality, context-awareness, and rigorous analysis to improve efficiency and reduce bugs.
+
+---
+
+## 2025-07-23: Backend for Dashboard Visualization Charts
+
+*   **Task Description:** Implement the backend for the "Dashboard Visualization Charts" feature. This involved creating new API endpoints (`/history`, `/allocation`) and the underlying business logic to calculate portfolio history and asset allocation. A significant part of this task was a deep debugging and stabilization effort to resolve numerous application startup errors.
+
+*   **Key Prompts & Interactions:**
+    1.  **Feature Implementation:** A series of prompts were used to generate the new CRUD logic in `crud_dashboard.py`, the new API endpoints in `endpoints/dashboard.py`, and the corresponding Pydantic schemas.
+    2.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI. This was critical for identifying and fixing a cascade of `ImportError` and `AttributeError` issues related to missing singleton instances, incorrect model imports, and schema mismatches.
+    3.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
+    4.  **Context Resynchronization:** The AI's context for several files was outdated. The user provided the full, current content of the problematic files, which allowed the AI to resynchronize and provide accurate patches.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_dashboard.py`: Refactored to a class-based structure and added `get_history` and `get_allocation` logic.
+    *   `backend/app/schemas/dashboard.py`: Added `PortfolioHistoryResponse` and `AssetAllocationResponse` schemas. Updated `DashboardSummary` to include `asset_allocation`.
+    *   `backend/app/api/v1/endpoints/dashboard.py`: Added the `/history` and `/allocation` endpoints.
+    *   `backend/app/services/financial_data_service.py`: Created the `financial_data_service` singleton instance to resolve an `ImportError`.
+    *   `backend/app/tests/api/v1/test_dashboard.py`: Added comprehensive tests for the new `/history` and `/allocation` endpoints and refactored existing tests.
+    *   `backend/app/tests/utils/transaction.py`: Updated to better handle `date` objects for testing.
+    *   `docs/bug_reports.md`: Populated with detailed reports for every bug discovered and fixed during this task.
+
+*   **Verification:**
+    - Ran the full backend test suite using `docker-compose run --rm test`.
+
+*   **Outcome:**
+    - The backend for the "Dashboard Visualization Charts" feature is complete, stable, and fully tested. All 40 backend tests are passing. The application is now ready for the corresponding frontend implementation.
+
+---
+
+## 2025-07-23: Frontend Data Layer for Dashboard Visualization
+
+*   **Task Description:** Implement the frontend data-fetching layer for the new dashboard visualization charts. This involved creating new React Query hooks, API service functions, and corresponding type definitions to consume the new backend endpoints (`/history`, `/allocation`).
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Generation:** A series of prompts were used to generate the new React Query hooks in `useDashboard.ts`, the API service functions in `dashboardApi.ts`, and the corresponding type definitions.
+    2.  **Test Generation:** "Let's add tests for the new dashboard hooks and API functions."
+    3.  **Systematic Debugging via Log Analysis:** The user provided a failing test log. The AI analyzed the log, identified the root cause (JSX syntax in a `.ts` file), filed a bug report, and provided the fix (renaming the file to `.tsx`). This was an iterative process to fully resolve the issue.
+
+*   **File Changes:**
+    *   `frontend/src/hooks/useDashboard.ts`: Added `useDashboardHistory` and `useDashboardAllocation` hooks.
+    *   `frontend/src/services/dashboardApi.ts`: Added `getDashboardHistory` and `getDashboardAllocation` functions.
+    *   `frontend/src/types/dashboard.ts`: Added `PortfolioHistoryResponse` and `AssetAllocationResponse` interfaces.
+    *   `frontend/src/__tests__/hooks/useDashboard.test.tsx`: Created a new test suite to cover all dashboard hooks.
+    *   `docs/bug_reports.md`: Added a report for the failing test suite due to incorrect file extension.
+
+*   **Verification:**
+    - Ran the full frontend test suite using `docker-compose run --rm frontend npm test`.
+
+*   **Outcome:**
+    - The data-fetching layer for the dashboard charts is complete and fully tested. All 12 frontend test suites (46 tests) are passing. The application is ready for the UI components to be built on top of this data layer.
+
+---
+
+## 2025-07-23: Frontend UI for Dashboard Visualization
+
+*   **Task Description:** Implement the user interface for the "Dashboard Visualization Charts" feature. This involved creating the chart components, integrating the `react-chartjs-2` library, and resolving a series of complex test failures related to mocking.
+
+*   **Key Prompts & Interactions:**
+    1.  **Component Generation:** A series of prompts were used to create the `PortfolioHistoryChart` and `AssetAllocationChart` components and integrate them into the `DashboardPage`.
+    2.  **Library Integration:** "Let's implement the line chart for portfolio history" and "Let's implement the pie chart for asset allocation" were used to add the `react-chartjs-2` logic.
+    3.  **Test Generation:** "Let's add tests for the new chart components."
+    4.  **Systematic Debugging via Log Analysis:** The user provided failing test logs. The AI analyzed the logs, identified the root cause of `ReferenceError`s (JSX in `jest.mock` factories) and canvas errors, filed a bug report, and provided the correct mocking pattern (`React.createElement`) to resolve the issues.
+
+*   **File Changes:**
+    *   `frontend/src/components/Dashboard/PortfolioHistoryChart.tsx`: Created and implemented the line chart.
+    *   `frontend/src/components/Dashboard/AssetAllocationChart.tsx`: Created and implemented the pie chart.
+    *   `frontend/src/pages/DashboardPage.tsx`: Updated to render the new chart components.
+    *   `frontend/src/__tests__/components/Dashboard/PortfolioHistoryChart.test.tsx`: Created a new test suite.
+    *   `frontend/src/__tests__/components/Dashboard/AssetAllocationChart.test.tsx`: Created a new test suite.
+    *   `frontend/src/__tests__/pages/DashboardPage.test.tsx`: Updated to mock the chart components to prevent canvas errors.
+    *   `docs/bug_reports.md`: Added reports for the test suite failures.
+
+*   **Verification:**
+    - Ran the full frontend test suite using `docker-compose run --rm frontend npm test`.
+
+*   **Outcome:**
+    - The "Dashboard Visualization Charts" feature is now fully implemented and tested. All 14 frontend test suites (54 tests) are passing.
