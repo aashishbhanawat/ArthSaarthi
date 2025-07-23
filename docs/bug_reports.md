@@ -2299,6 +2299,111 @@ The test suite fails with `Cannot find module '../services/api' from 'src/compon
 **Resolution:**
 Corrected the mock path in `src/__tests__/components/auth/LoginForm.test.tsx` to `../../services/api`.
 
+**Resolution:**
+Renamed the `setupAdmin` function in `src/services/api.ts` to `setupAdminUser` to match the function call in the `SetupForm` component.
+
 ---
 
+**Bug ID:** 2025-07-23-01
+**Title:** Backend test suite fails to run due to missing singleton instance in FinancialDataService.
+**Module:** Core Backend, Services
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The entire backend test suite fails during the collection phase with a fatal `ImportError`. The `crud_dashboard.py` module, which is imported by the API layer, attempts to import a singleton instance named `financial_data_service` from `app.services.financial_data_service`. However, this instance is not defined in the service file, which only contains the class definition. This prevents the application from initializing correctly and blocks all backend testing.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+The test collection is interrupted with the error: `ImportError: cannot import name 'financial_data_service' from 'app.services.financial_data_service'`.
+**Resolution:**
+Instantiate the `FinancialDataService` class at the end of `app/services/financial_data_service.py` to create the required `financial_data_service` singleton instance, making it available for import by other modules.
 
+**Resolution:**
+Renamed the `setupAdmin` function in `src/services/api.ts` to `setupAdminUser` to match the function call in the `SetupForm` component.
+
+---
+
+**Bug ID:** 2025-07-23-02
+**Title:** Backend test suite fails to run due to missing singleton instance in FinancialDataService.
+**Module:** Core Backend, Services
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The entire backend test suite fails during the collection phase with a fatal `ImportError`. The `crud_dashboard.py` module, which is imported by the API layer, attempts to import a singleton instance named `financial_data_service` from `app.services.financial_data_service`. However, this instance is not defined in the service file, which only contains the class definition. This prevents the application from initializing correctly and blocks all backend testing.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+The test collection is interrupted with the error: `ImportError: cannot import name 'financial_data_service' from 'app.services.financial_data_service'`.
+**Resolution:**
+Instantiate the `FinancialDataService` class at the end of `app/services/financial_data_service.py` to create the required `financial_data_service` singleton instance, making it available for import by other modules.
+
+---
+
+**Bug ID:** 2025-07-23-03
+**Title:** Test suite collection fails with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Module:** Core Backend, CRUD
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `AttributeError` during test collection. The `crud_dashboard.py` module uses an incorrect type hint `models.User` for function parameters. The `User` model is not directly available under the `app.models` namespace, which causes a fatal error during application startup.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Resolution:**
+Correct the import in `app/crud/crud_dashboard.py` to `from app.models.user import User` and update the type hints accordingly.
+
+---
+
+**Bug ID:** 2025-07-23-04
+**Title:** Test suite collection fails with `AttributeError` in `dashboard.py`.
+**Module:** Dashboard (Backend), API Integration
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an `AttributeError` during test collection. The `dashboard.py` endpoint file uses an incorrect type hint `models.User` for the `current_user` dependency. The `User` model is not directly available under the `app.models` namespace, which causes a fatal error during application startup.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `AttributeError: module 'app.models' has no attribute 'User'`.
+**Resolution:**
+Correct the import in `app/api/v1/endpoints/dashboard.py` to `from app.models.user import User` and update the type hints accordingly.
+
+---
+
+**Bug ID:** 2025-07-23-05
+**Title:** Dashboard summary tests fail due to schema mismatch and unhandled exceptions.
+**Module:** Dashboard (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend) / Test Suite
+**Severity:** High
+**Description:**
+Three tests for the `/dashboard/summary` endpoint are failing.
+1. Tests expecting an `asset_allocation` field fail with a `KeyError` because the `DashboardSummary` Pydantic schema is missing this field, causing FastAPI to strip it from the response.
+2. The test for handling financial service failures crashes with an unhandled `Exception` because the price lookup in `crud_dashboard.py` is not wrapped in a `try...except` block.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+All dashboard tests should pass. The summary endpoint should always include `asset_allocation` and should handle external service failures gracefully.
+**Actual Behavior:**
+Tests fail with `KeyError` and unhandled `Exception`.
+**Resolution:**
+1. Add `asset_allocation: List[AssetAllocation]` to the `DashboardSummary` schema in `app/schemas/dashboard.py`.
+2. Wrap the `get_asset_price` call in `app/crud/crud_dashboard.py` in a `try...except` block to handle potential failures.

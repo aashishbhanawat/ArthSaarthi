@@ -244,6 +244,32 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-07-23: Backend for Dashboard Visualization Charts
+
+*   **Task Description:** Implement the backend for the "Dashboard Visualization Charts" feature. This involved creating new API endpoints (`/history`, `/allocation`) and the underlying business logic to calculate portfolio history and asset allocation. A significant part of this task was a deep debugging and stabilization effort to resolve numerous application startup errors.
+
+*   **Key Prompts & Interactions:**
+    1.  **Feature Implementation:** A series of prompts were used to generate the new CRUD logic in `crud_dashboard.py`, the new API endpoints in `endpoints/dashboard.py`, and the corresponding Pydantic schemas.
+    2.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI. This was critical for identifying and fixing a cascade of `ImportError` and `AttributeError` issues related to missing singleton instances, incorrect model imports, and schema mismatches.
+    3.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
+    4.  **Context Resynchronization:** The AI's context for several files was outdated. The user provided the full, current content of the problematic files, which allowed the AI to resynchronize and provide accurate patches.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_dashboard.py`: Refactored to a class-based structure and added `get_history` and `get_allocation` logic.
+    *   `backend/app/schemas/dashboard.py`: Added `PortfolioHistoryResponse` and `AssetAllocationResponse` schemas. Updated `DashboardSummary` to include `asset_allocation`.
+    *   `backend/app/api/v1/endpoints/dashboard.py`: Added the `/history` and `/allocation` endpoints.
+    *   `backend/app/services/financial_data_service.py`: Created the `financial_data_service` singleton instance to resolve an `ImportError`.
+    *   `backend/app/tests/api/v1/test_dashboard.py`: Added comprehensive tests for the new `/history` and `/allocation` endpoints and refactored existing tests.
+    *   `backend/app/tests/utils/transaction.py`: Updated to better handle `date` objects for testing.
+    *   `docs/bug_reports.md`: Populated with detailed reports for every bug discovered and fixed during this task.
+
+*   **Verification:**
+    - Ran the full backend test suite using `docker-compose run --rm test`.
+
+*   **Outcome:**
+    - The backend for the "Dashboard Visualization Charts" feature is complete, stable, and fully tested. All 40 backend tests are passing. The application is now ready for the corresponding frontend implementation.
+---
+
 ## 2025-07-21: Fix Frontend Build Failure for Dashboard
 
 *   **Task Description:** The frontend build was failing because the `DashboardPage` was trying to import components (`SummaryCard`, `TopMoversTable`) that had not been created. This task involved creating the missing component files in their planned directory and correcting the import paths.

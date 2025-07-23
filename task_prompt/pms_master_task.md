@@ -116,6 +116,8 @@ For each feature, we'll follow these steps:
     *   **Testing Plan:** The QA Engineer will define unit tests, integration tests, and acceptance criteria.
     *   **Rigorous RCA:** When an error occurs, the AI must analyze the **full stack trace**, validate dependencies by requesting to see imported files, and state its hypothesis before proposing a fix.
     *   **Formal Bug Triage:** Before filing a new bug, the AI must search `docs/bug_reports.md` for existing issues. It will propose updating an existing bug before creating a new one.
+    *   **No Debugging Loops:** If a proposed fix does not work, the AI must not suggest the same fix again. It must re-evaluate its hypothesis, ask for more information (e.g., different logs, file contents), and propose a new, distinct path forward.
+
 6.  **Deployment/Environment Updates (DevOps Engineer):**
     *   A plan for database schema initialization (e.g., `create_all` for dev, migrations for prod).
     *   Docker/Deployment Script Updates
@@ -132,13 +134,13 @@ For each feature, we'll follow these steps:
 
 You are now ready to start development of new module.
 
-**The "User Authentication" and "User Management" modules are now complete.**
+**The "User Authentication", "User Management", "Portfolio & Transaction Management", and the backend for "Dashboard Visualization" are now complete.**
 
-Let's start with the next core feature from the MVP backlog: **Portfolio & Transaction Management (Core from FR4)**.
+Let's start with the next core feature from the MVP backlog: **Frontend for Dashboard Visualization Charts**.
 
-This feature will allow users to create portfolios and manually add transactions for Stocks, ETFs, and Mutual Funds.
+This feature will allow users to see charts of their portfolio history and asset allocation.
 
-Now, invoke the **Backend Developer** and **Database Administrator** to plan for Portfolio & Transaction Management."
+Now, invoke the **Frontend Developer** and **UI/UX Designer** to plan for the Dashboard Visualization frontend."
 
 #### 4.1. Backend Development Planning (for a specific Feature) 💻🗄️
 

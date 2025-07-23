@@ -1,21 +1,57 @@
-from fastapi import APIRouter, Depends
+from enum import Enum
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
-from app.models.user import User
-from app.core import dependencies
+from app.models.user import User as UserModel
+from app.core import dependencies as deps
 
 router = APIRouter()
+
+class HistoryRange(str, Enum):
+    d7 = "7d"
+    d30 = "30d"
+    y1 = "1y"
+    all = "all"
 
 
 @router.get("/summary", response_model=schemas.DashboardSummary)
 def get_dashboard_summary(
     *,
-    db: Session = Depends(dependencies.get_db),
-    current_user: User = Depends(dependencies.get_current_user),
+    db: Session = Depends(deps.get_db),
+    current_user: UserModel = Depends(deps.get_current_user),
 ):
     """
     Retrieve a summary of the user's dashboard data, including total value,
     asset allocation, and value per portfolio.
     """
-    return crud.dashboard.get_dashboard_summary(db=db, user=current_user)
+    summary = crud.dashboard.get_summary(db=db, user=current_user)
+    return summary
+
+
+@router.get("/history", response_model=schemas.PortfolioHistoryResponse)
+def get_portfolio_history(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: UserModel = Depends(deps.get_current_user),
+    range: HistoryRange = Query(HistoryRange.d30, description="Time range for the history data")
+):
+    """
+    Retrieve historical portfolio value data for a specified time range.
+    """
+    history = crud.dashboard.get_history(db=db, user=current_user, range_str=range.value)
+    return {"history": history}
+
+
+@router.get("/allocation", response_model=schemas.AssetAllocationResponse)
+def get_asset_allocation(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: UserModel = Depends(deps.get_current_user),
+):
+    """
+    Retrieve asset allocation for the current user.
+    """
+    allocation = crud.dashboard.get_allocation(db=db, user=current_user)
+    return {"allocation": allocation}
