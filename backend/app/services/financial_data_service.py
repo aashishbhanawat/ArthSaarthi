@@ -15,6 +15,8 @@ class FinancialDataService:
             return Decimal("150.0")
         if ticker_symbol.upper() == "GOOGL":
             return Decimal("2800.0")
+        if ticker_symbol.upper() == "AAPL":
+            return Decimal("175.0")
         raise Exception(f"Could not retrieve price for {ticker_symbol}")
 
     def get_asset_details(self, ticker_symbol: str) -> dict | None:

@@ -69,7 +69,7 @@ const PortfolioHistoryChart: React.FC = () => {
               onClick={() => setRange(r.value)}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${
                 range === r.value
-                  ? 'bg-primary text-white'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >

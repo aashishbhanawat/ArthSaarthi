@@ -368,3 +368,33 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - The "Dashboard Visualization Charts" feature is now fully implemented and tested. All 14 frontend test suites (54 tests) are passing.
+
+---
+
+## 2025-07-23: Final E2E Testing & Stabilization
+
+*   **Task Description:** Perform a full end-to-end smoke test of the application to verify all features work together seamlessly. This involved a highly iterative process of testing, analyzing logs, filing bug reports, and fixing issues across the entire stack. A final code quality review was also performed to add missing test coverage and improve code consistency.
+
+*   **Key Prompts & Interactions:**
+    1.  **E2E Testing & Log Analysis:** The process was driven by prompts like "Let's run the final E2E smoke test" followed by "analyse log.txt" when an issue was found.
+    2.  **Bug Triage & Fixing:** For each issue, the "report a bug" and "apply the fix" prompts were used to systematically document and resolve bugs. This included backend validation logic, frontend error display, mock data inconsistencies, and UI styling issues.
+    3.  **Code Quality Review:** The final step was a proactive review requested via "Any code or test suits need to update, after recent bug fixes?", which led to adding critical test coverage and refactoring the frontend transaction creation flow for better maintainability.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_transaction.py`: Added validation to prevent selling more assets than owned.
+    *   `backend/app/crud/crud_dashboard.py`: Added error handling for price lookups in history calculation.
+    *   `backend/app/api/v1/endpoints/assets.py`: Corrected logic to ensure new assets found via external services are saved to the local DB.
+    *   `backend/app/services/financial_data_service.py`: Added missing mock prices to support E2E testing.
+    *   `backend/app/tests/api/v1/test_transaction_validation.py`: Added a new test suite to cover the new transaction validation logic.
+    *   `frontend/src/components/Portfolio/AddTransactionModal.tsx`: Refactored to display specific error messages from the backend and to align with the new API service signature.
+    *   `frontend/src/components/Dashboard/PortfolioHistoryChart.tsx`: Fixed a UI styling bug on the active button.
+    *   `frontend/src/hooks/usePortfolios.ts`, `frontend/src/services/portfolioApi.ts`, `frontend/src/types/portfolio.ts`: Refactored for better code quality and consistency.
+    *   `frontend/src/__tests__/components/Portfolio/AddTransactionModal.test.tsx`: Updated test assertions to match the refactored code.
+    *   `docs/bug_reports.md`: Added detailed reports for all bugs discovered and fixed during this phase (2025-07-23-09 to 2025-07-23-19).
+
+*   **Verification:**
+    - Performed a full E2E smoke test of the application, verifying all user flows.
+    - Ran the full backend test suite (41 passed, 2 skipped) and frontend test suite (54 passed).
+
+*   **Outcome:**
+    - The application is stable, fully tested, and all MVP features are complete and working correctly end-to-end.

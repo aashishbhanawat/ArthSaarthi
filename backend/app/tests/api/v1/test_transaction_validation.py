@@ -1,0 +1,47 @@
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+from datetime import date, timedelta
+
+from app.core.config import settings
+from app.tests.utils.user import create_random_user
+from app.tests.utils.portfolio import create_test_portfolio
+from app.tests.utils.transaction import create_test_transaction
+
+
+def test_sell_transaction_before_buy_date_fails(
+    client: TestClient, db: Session, get_auth_headers
+):
+    """
+    Test that a user cannot create a SELL transaction on a date before they owned the asset.
+    """
+    user, password = create_random_user(db)
+    auth_headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Validation Test Portfolio")
+
+    # 1. Buy GOOGL on a specific date
+    buy_date = date(2024, 11, 6)
+    create_test_transaction(
+        db, portfolio_id=portfolio.id, ticker="GOOGL", quantity=10, asset_type="Stock", transaction_date=buy_date
+    )
+
+    # 2. Attempt to sell GOOGL *before* the buy date
+    sell_date = date(2024, 1, 2)
+    sell_transaction_data = {
+        "asset_id": 1, # Assuming GOOGL is the first asset created in this test context
+        "transaction_type": "SELL",
+        "quantity": 5,
+        "price_per_unit": 3000,
+        "transaction_date": sell_date.isoformat(),
+    }
+
+    response = client.post(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
+        headers=auth_headers,
+        json=sell_transaction_data,
+    )
+
+    # 3. Assert that the API returns a 400 Bad Request with the correct error
+    assert response.status_code == 400
+    data = response.json()
+    assert "Insufficient holdings to sell" in data["detail"]
+    assert "Current holdings: 0" in data["detail"]

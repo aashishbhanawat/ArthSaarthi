@@ -2,15 +2,15 @@
 
 **Date:** 2025-07-21
 
-## 1. Project Overview
+## 1. Project Overview & Status
 
 *   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS) that allows users to manage their investment portfolios.
-*   **Current Status:** The Minimum Viable Product (MVP) is **complete and stable**. The application has been through a rigorous stabilization phase, and all core features are functional. The UI is consistent, and the backend is fully tested.
+*   **Current Status:** The Minimum Viable Product (MVP) is **complete and stable**. The application has been through a rigorous E2E testing and stabilization phase. All core features are functional, the UI is consistent, and the backend and frontend are fully covered by automated tests.
 *   **Key Implemented Features:**
     *   **Authentication:** Secure initial admin setup, user login/logout, and JWT-based session management.
     *   **User Management:** A dedicated, admin-only dashboard for performing CRUD operations on all users.
-    *   **Portfolio & Transaction Management:** A stable and fully tested set of backend APIs for creating, reading, and deleting portfolios and transactions, scoped to the authenticated user.
-    *   **Dashboard:** A dynamic dashboard that displays a summary of the user's total portfolio value, powered by a backend endpoint.
+    *   **Portfolio & Transaction Management:** A stable and fully tested set of APIs and UI components for creating portfolios and transactions, with validation to ensure data integrity.
+    *   **Dashboard:** A dynamic dashboard that displays a summary of the user's total portfolio value, an interactive portfolio history chart, and an asset allocation pie chart.
 
 ---
 
@@ -100,11 +100,11 @@ Our development history revealed several critical patterns that this workflow is
 
 ## 6. Next Steps
 
-The application is stable and ready for further development. Potential next steps include:
+The application is stable and ready for further development. The next logical step is to begin planning for the next major feature from the requirements backlog.
 
-1.  **Data Visualization:** Enhance the dashboard with charting libraries (e.g., Chart.js) to visualize portfolio allocation and performance history.
-2.  **End-to-End Testing:** Implement a suite of E2E tests using a framework like Cypress or Playwright to automate full user-flow verification.
-3.  **Feature Enhancement:** Add more advanced features, such as detailed performance analytics, dividend tracking, or multi-currency support.
+1.  **Advanced Goal Planning & Tracking (FR13):** Allow users to define financial goals and track their progress.
+2.  **Advanced Analytics (FR6):** Implement calculations for XIRR, Sharpe Ratio, and other performance metrics.
+3.  **Data Import (FR7):** Implement the functionality to import transactions from broker statements.
 
 ---
 

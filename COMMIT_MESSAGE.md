@@ -1,16 +1,15 @@
-fix(backend): Stabilize entire backend and complete dashboard MVP
+feat: Complete MVP and stabilize application
 
-This commit represents a major stabilization effort for the entire backend, resolving a deep cascade of bugs that prevented the test suite from running and broke core features. The MVP for the dashboard summary endpoint was also completed and tested as part of this process.
+This commit marks the completion of the Minimum Viable Product (MVP). It includes the final implementation of the dashboard visualization charts and a comprehensive stabilization pass that resolved numerous bugs found during end-to-end testing.
 
 Key Changes:
-*   **Database Models:** Corrected SQLAlchemy ORM mapping errors (e.g., missing `__tablename__`, columns).
-*   **Pydantic Schemas:** Ensured consistency between schemas, models, and API responses.
-*   **CRUD Layer:** Implemented missing modules (`crud_dashboard`) and fixed critical logic errors (e.g., missing `user_id` on transactions, `NameError` from missing imports).
-*   **API Routing:** Correctly nested transaction routes under portfolios.
-*   **Test Suite:** Fixed numerous incorrect assertions, data type mismatches, and unhandled exceptions in tests.
-*   **Documentation:** Performed a major cleanup and consolidation of all bug reports in `docs/bug_reports.md` to ensure an accurate history.
+-   **Backend Validation:** Added critical validation to the transaction creation logic to prevent selling assets before they are owned.
+-   **Frontend Error Handling:** Refactored the "Add Transaction" modal to display specific, user-friendly error messages from the backend API.
+-   **Code Quality:** Refactored the frontend transaction creation flow for better maintainability and type safety.
+-   **Test Coverage:** Added a new backend test suite to cover the new transaction validation logic.
+-   **Bug Fixes:** Resolved multiple bugs related to mock data, API logic, and UI styling that were discovered during E2E testing.
 
 Bug Fixes:
-*   This commit resolves all backend bugs logged on 2025-07-20.
+-   Resolves bugs 2025-07-23-09 through 2025-07-23-19.
 
-The result is a fully stable backend where all 36 tests pass, providing a solid foundation for future development.
+All backend and frontend tests are passing. The application is stable and all MVP features are complete.

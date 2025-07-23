@@ -1,13 +1,10 @@
-from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
-from app.models import user as user_model
-from app.core.dependencies import get_current_user
-from app.db.session import get_db
-from app.core.config import settings
-from app.services.financial_data_service import FinancialDataService
+from app.core import dependencies as deps
+from app.models.user import User
+from app.services.financial_data_service import financial_data_service
 
 router = APIRouter()
 
@@ -15,29 +12,27 @@ router = APIRouter()
 @router.get("/lookup/{ticker_symbol}", response_model=schemas.Asset)
 def lookup_ticker_symbol(
     ticker_symbol: str,
-    db: Session = Depends(get_db),
-    current_user: user_model.User = Depends(get_current_user),
-) -> Any:
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
+):
     """
-    Look up an asset. First in the local DB, then from the external service.
+    Lookup an asset by its ticker symbol.
+    1. Check local DB.
+    2. If not found, check external service.
+    3. If found externally, create it in local DB and return it.
+    4. If not found anywhere, return 404.
     """
-    # 1. Check local database first (case-insensitive)
-    asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol.upper())
+    asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
     if asset:
         return asset
 
-    # 2. If not found, check the external service
     try:
-        financial_data_service = FinancialDataService(
-            api_key=settings.FINANCIAL_API_KEY, api_url=settings.FINANCIAL_API_URL
-        )
-        asset_details = financial_data_service.get_asset_details(ticker_symbol)
-        if asset_details:
-            asset_details["id"] = -1  # Sentinel ID for assets not yet in our DB
-            asset_details["ticker_symbol"] = ticker_symbol.upper()
-            return schemas.Asset(**asset_details)
+        details = financial_data_service.get_asset_details(ticker_symbol)
+        if details:
+            details["ticker_symbol"] = ticker_symbol
+            asset_in = schemas.AssetCreate(**details)
+            return crud.asset.create(db=db, obj_in=asset_in)
     except Exception:
-        pass  # Fall through to the final error if external service fails
+        raise HTTPException(status_code=503, detail="Error communicating with financial data service")
 
-    # 3. If not found in either place, raise 404
-    raise HTTPException(status_code=404, detail="Ticker symbol not found in external service")
+    raise HTTPException(status_code=404, detail="Ticker symbol not found")

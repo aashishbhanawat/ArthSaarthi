@@ -46,10 +46,11 @@ export const useLookupAsset = () => {
 export const useCreateTransaction = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data: TransactionCreate) => portfolioApi.createTransaction(data),
+        mutationFn: (variables: { portfolioId: number; data: TransactionCreate }) =>
+            portfolioApi.createTransaction(variables.portfolioId, variables.data),
         onSuccess: (_data, variables) => {
             // Invalidate the specific portfolio query to refetch its details
-            queryClient.invalidateQueries({ queryKey: ['portfolio', variables.portfolio_id] });
+            queryClient.invalidateQueries({ queryKey: ['portfolio', variables.portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['portfolios'] });
         },
     });

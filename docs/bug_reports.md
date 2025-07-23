@@ -2497,4 +2497,222 @@ Two test suites fail with `ReferenceError`, and one produces multiple console er
 **Resolution:**
 1. Refactor the `jest.mock` factory in all affected test suites (`PortfolioHistoryChart.test.tsx`, `AssetAllocationChart.test.tsx`, `DashboardPage.test.tsx`) to avoid using JSX directly. Instead, the mock will use `React.createElement` after lazily requiring the `react` module inside the factory. This resolves a variable scoping issue with Jest's module hoisting.
 2. The mock in `DashboardPage.test.tsx` also serves to prevent the real chart components from being rendered, which would otherwise cause `<canvas>` API errors in the JSDOM test environment.
+
+---
+
+**Bug ID:** 2025-07-23-09
+**Title:** Dashboard history endpoint crashes with 500 error on asset price lookup failure.
+**Module:** Dashboard (Backend)
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The `GET /api/v1/dashboard/history` endpoint fails with a 500 Internal Server Error if any asset in the user's historical holdings does not have a price available from the financial data service. The price lookup call in `crud_dashboard.py` is not wrapped in a `try...except` block, causing any exception to crash the request.
+**Steps to Reproduce:**
+1. Log in to the application.
+2. Create a portfolio and add a transaction for an asset whose price is not available (e.g., 'AAPL' in the current mock).
+3. Navigate to the Dashboard page.
+**Expected Behavior:**
+The history chart should render, treating the value of the asset with the failed price lookup as 0 for the days it was held.
+**Actual Behavior:**
+The API request fails with a 500 error, and the history chart does not load.
+**Resolution:**
+Wrap the call to `financial_data_service.get_asset_price` within the `_get_portfolio_history` function in a `try...except` block to handle exceptions gracefully and default the price to 0.
 The old test file `frontend/src/__tests__/hooks/useDashboard.test.ts` was deleted, and its content was moved to a new file with the correct `.tsx` extension: `frontend/src/__tests__/hooks/useDashboard.test.tsx`.
+
+---
+
+**Bug ID:** 2025-07-23-10
+**Title:** Adding a transaction fails with 500 Internal Server Error.
+**Module:** Portfolio Management (Backend)
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend), API Integration
+**Severity:** Critical
+**Description:**
+When a user adds a transaction for an asset that exists in the external financial service but not in the local database (e.g., 'GOOGL'), the operation fails with a `500 Internal Server Error`. This is caused by a `ForeignKeyViolation` in the database. The asset lookup endpoint (`GET /api/v1/assets/lookup/{ticker}`) correctly finds the asset externally but instead of creating it in the local database, it returns a placeholder object with `id: -1`. The frontend then attempts to create a transaction using this invalid `asset_id`, causing the database to reject the transaction.
+**Steps to Reproduce:**
+1. Log in to the application.
+2. Attempt to add a transaction for a known ticker like 'GOOGL'.
+**Expected Behavior:**
+The asset should be created in the local database during the lookup, and the subsequent transaction creation should succeed.
+**Actual Behavior:**
+The API request fails with a 500 Internal Server Error.
+**Resolution:**
+The `lookup_ticker_symbol` endpoint in `backend/app/api/v1/endpoints/assets.py` must be updated. If an asset is found via the external service but not in the local database, the endpoint must first create the asset locally using `crud.asset.create` and then return the newly created, persisted asset object with its valid database ID.
+
+---
+
+**Bug ID:** 2025-07-23-11
+**Title:** Backend crashes on startup with ImportError for 'deps' module.
+**Module:** Core Backend, API Integration
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The backend application fails to start due to a fatal `ImportError`. The file `app/api/v1/endpoints/assets.py` attempts to import the `deps` module from `app.api.v1` instead of the correct path `app.core.dependencies`. This incorrect import path prevents the application from starting.
+**Steps to Reproduce:**
+1. Run `docker-compose up --build`.
+**Expected Behavior:**
+The backend service should start successfully.
+**Actual Behavior:**
+The backend container crashes immediately with an `ImportError: cannot import name 'deps' from 'app.api.v1'`.
+**Resolution:**
+Correct the import path in `app/api/v1/endpoints/assets.py` to `from app.core import dependencies as deps`.
+
+---
+
+**Bug ID:** 2025-07-23-12
+**Title:** Asset lookup for new assets fails with 503 Service Unavailable.
+**Module:** Portfolio Management (Backend), API Integration
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+When adding a transaction for an asset that exists externally but not locally (e.g., 'GOOGL'), the asset lookup endpoint (`GET /api/v1/assets/lookup/{ticker}`) fails with a 503 error. The backend logic fetches the asset details from the external service but fails to add the `ticker_symbol` to the details dictionary before passing it to the `AssetCreate` Pydantic schema. This causes a `ValidationError` which is incorrectly caught and re-raised as a 503 error.
+**Steps to Reproduce:**
+1. Log in and attempt to add a transaction for a known ticker like 'GOOGL'.
+2. Observe the network request to the lookup endpoint fails.
+**Expected Behavior:**
+The asset should be created in the local database, and its details returned with a 200 OK status.
+**Actual Behavior:**
+The API returns a 503 Service Unavailable error.
+**Resolution:**
+Update the `lookup_ticker_symbol` endpoint in `backend/app/api/v1/endpoints/assets.py` to add the `ticker_symbol` to the `details` dictionary before creating the `AssetCreate` schema.
+
+---
+
+**Bug ID:** 2025-07-23-13
+**Title:** Dashboard charts do not display all assets due to incomplete mock financial data.
+**Module:** Dashboard (Backend), Mock Services
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+When a user adds transactions for multiple assets (e.g., 'GOOGL' and 'AAPL'), the dashboard charts and summary only display data for assets that have a hardcoded price in the mock `FinancialDataService`. Assets without a mock price are silently skipped by the error handling, leading to an incomplete and incorrect dashboard view.
+**Steps to Reproduce:**
+1. Log in.
+2. Add a transaction for 'GOOGL'.
+3. Add a transaction for 'AAPL'.
+4. Navigate to the Dashboard.
+**Expected Behavior:**
+The dashboard summary and charts should reflect the total value and allocation of both 'GOOGL' and 'AAPL'.
+**Actual Behavior:**
+The dashboard only shows data for 'GOOGL'.
+**Resolution:**
+Update the `get_asset_price` method in `backend/app/services/financial_data_service.py` to include a mock price for 'AAPL'.
+
+---
+
+**Bug ID:** 2025-07-23-14
+**Title:** Active time range button in Portfolio History chart is invisible.
+**Module:** Dashboard (Frontend), UI/Styling
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+When a time range button (e.g., "1Y") is selected on the Portfolio History chart, its background becomes white and its text becomes white, making it invisible against the card background. This is caused by the use of an undefined or misconfigured `bg-primary` CSS class.
+**Steps to Reproduce:**
+1. Navigate to the Dashboard.
+2. Click on any of the time range buttons ("7D", "30D", "1Y", "All") on the "Portfolio History" chart.
+**Expected Behavior:**
+The active button should have a distinct background color (e.g., blue) with contrasting text (white) to clearly indicate the active state.
+**Actual Behavior:**
+The active button becomes invisible, appearing as a gap in the button group.
+**Resolution:**
+Replace the `bg-primary` class in `PortfolioHistoryChart.tsx` with a standard, visible Tailwind CSS class like `bg-blue-600`.
+
+---
+
+**Bug ID:** 2025-07-23-15
+**Title:** Dashboard shows "0" for Unrealized and Realized P/L.
+**Module:** Dashboard (Backend)
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Unimplemented Feature
+**Severity:** Medium
+**Description:**
+The dashboard summary cards for "Unrealized P/L" and "Realized P/L" always display "0.0". This is the expected behavior for the current MVP, as the backend logic to calculate these metrics is a placeholder.
+**Resolution:**
+This is not a bug but a planned future enhancement. The business logic to calculate realized and unrealized profit and loss needs to be implemented in `crud_dashboard.py`.
+
+---
+
+**Bug ID:** 2025-07-23-16
+**Title:** "Top Movers" table is always empty.
+**Module:** Dashboard (Backend)
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Unimplemented Feature
+**Severity:** Medium
+**Description:**
+The "Top Movers" table on the dashboard always shows "No market data available". This is the expected behavior for the current MVP, as the backend logic to identify top-moving assets is a placeholder and always returns an empty list.
+**Resolution:**
+This is not a bug but a planned future enhancement. The logic to calculate top movers needs to be implemented in `crud_dashboard.py`. This will likely require enhancing the `FinancialDataService` to provide 24-hour price change data.
+
+---
+
+**Bug ID:** 2025-07-23-17
+**Title:** Users can create a SELL transaction for an asset on a date before they owned it.
+**Module:** Portfolio Management (Backend)
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The transaction creation endpoint lacks validation to prevent a user from creating a SELL transaction for a quantity of an asset that is greater than the quantity they held on the specified transaction date. This allows for negative holdings and breaks data integrity. For example, a user can buy a stock in November but sell it in January of the same year.
+**Steps to Reproduce:**
+1. Create a BUY transaction for any asset with a future date.
+2. Create a SELL transaction for the same asset with a past date.
+**Expected Behavior:**
+The API should return a 400 Bad Request error, preventing the creation of the SELL transaction.
+**Actual Behavior:**
+The transaction is created successfully, leading to incorrect portfolio data.
+**Resolution:**
+Add validation logic to the `create_with_portfolio` method in `crud_transaction.py`. Before creating a SELL transaction, the logic must calculate the user's holdings for that asset up to the transaction date and raise a 400 Bad Request error if the sell quantity is greater than the available holdings.
+
+---
+
+**Bug ID:** 2025-07-23-18
+**Title:** Frontend displays a generic error message instead of the specific validation error from the backend.
+**Module:** Portfolio Management (Frontend), Error Handling
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-23
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+When the backend correctly rejects a transaction with a 400 Bad Request and a specific error message (e.g., "Insufficient holdings to sell..."), the frontend `AddTransactionModal` does not display this specific message. Instead, it shows a generic "An unexpected error occurred" message, which provides no useful feedback to the user.
+**Steps to Reproduce:**
+1.  Attempt to create a SELL transaction for an asset with insufficient holdings.
+2.  Submit the form.
+**Expected Behavior:**
+The modal should display the specific error message from the backend, e.g., "Insufficient holdings to sell. Current holdings: 0, trying to sell: 100."
+**Actual Behavior:**
+The modal displays "Error: An unexpected error occurred while adding the transaction".
+**Resolution:**
+The `AddTransactionModal.tsx` component must be updated. A new state variable should be added to hold the specific API error message. The `mutate` function call for creating a transaction needs an `onError` handler to parse the detailed error message from the Axios error response (`error.response.data.detail`) and set it in the new state variable for display in the UI.
+
+---
+
+**Bug ID:** 2025-07-23-19
+**Title:** `AddTransactionModal` test fails due to outdated assertion after refactoring.
+**Module:** Portfolio Management (Test Suite)
+**Reported By:** User via Test Log
+**Date Reported:** 2025-07-23
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test case "submits correct data for a new asset" in `AddTransactionModal.test.tsx` is failing. The test's assertion expects a flat object to be passed to the `createTransaction` mutation. However, after a recent refactoring to improve code quality, the mutation now expects a nested object: `{ portfolioId: number, data: TransactionCreate }`. The test was not updated to reflect this change.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test should pass.
+**Actual Behavior:**
+The test fails with an `expect(jest.fn()).toHaveBeenCalledWith(...)` error due to a payload mismatch.
+**Resolution:**
+Update the `toHaveBeenCalledWith` assertion in `AddTransactionModal.test.tsx` to match the new, correct call signature of the `useCreateTransaction` mutation hook.

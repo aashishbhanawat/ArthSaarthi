@@ -25,8 +25,7 @@ export const lookupAsset = async (ticker: string): Promise<Asset> => {
     return response.data;
 };
 
-export const createTransaction = async (data: TransactionCreate): Promise<Transaction> => {
-    const { portfolio_id, ...transactionData } = data;
-    const response = await apiClient.post(`/api/v1/portfolios/${portfolio_id}/transactions/`, transactionData);
+export const createTransaction = async (portfolioId: number, data: TransactionCreate): Promise<Transaction> => {
+    const response = await apiClient.post(`/api/v1/portfolios/${portfolioId}/transactions/`, data);
     return response.data;
 };

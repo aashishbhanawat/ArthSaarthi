@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useLookupAsset, useCreateTransaction } from '../../hooks/usePortfolios';
 import { Asset, TransactionCreate, NewAsset } from '../../types/portfolio';
+import axios from 'axios';
 
 interface AddTransactionModalProps {
     isOpen: boolean;
@@ -24,6 +25,7 @@ type FormInputs = {
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, portfolioId }) => {
     const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormInputs>();
     const [foundAsset, setFoundAsset] = useState<Asset | null>(null);
+    const [apiError, setApiError] = useState<string | null>(null);
     const [isManualEntry, setIsManualEntry] = useState(false);
 
     const lookupAssetMutation = useLookupAsset();
@@ -33,13 +35,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
 
     useEffect(() => {
         if (createTransactionMutation.isSuccess) {
+            setApiError(null);
             reset();
             setFoundAsset(null);
             setIsManualEntry(false);
             onClose();
             createTransactionMutation.reset();
         }
-    }, [createTransactionMutation.isSuccess, onClose, reset, createTransactionMutation]);
+    }, [createTransactionMutation.isSuccess, onClose, reset]);
 
     const handleTickerBlur = async () => {
         if (tickerValue) {
@@ -58,8 +61,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
     };
 
     const onSubmit: SubmitHandler<FormInputs> = (data) => {
+        setApiError(null);
         const transactionData: TransactionCreate = {
-            portfolio_id: portfolioId,
             transaction_type: data.transaction_type,
             quantity: data.quantity,
             price_per_unit: data.price_per_unit,
@@ -78,7 +81,15 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
             };
             transactionData.new_asset = newAsset;
         }
-        createTransactionMutation.mutate(transactionData);
+        createTransactionMutation.mutate({ portfolioId, data: transactionData }, {
+            onError: (error) => {
+                if (axios.isAxiosError(error) && error.response?.data?.detail) {
+                    setApiError(error.response.data.detail);
+                } else {
+                    setApiError('An unexpected error occurred while adding the transaction.');
+                }
+            },
+        });
     };
 
     if (!isOpen) return null;
@@ -163,14 +174,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
                             </div>
                         </div>
 
-                        {createTransactionMutation.isError && (
+                        {apiError && (
                             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                                <span className="block sm:inline">Error: An unexpected error occurred while adding the transaction.</span>
+                                <span className="block sm:inline">{apiError}</span>
                             </div>
                         )}
 
                         <div className="flex items-center justify-end pt-4">
-                            <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={createTransactionMutation.isPending}>
+                            <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={createTransactionMutation.isPending || lookupAssetMutation.isPending}>
                                 Cancel
                             </button>
                             <button type="submit" className="btn btn-primary" disabled={createTransactionMutation.isPending}>

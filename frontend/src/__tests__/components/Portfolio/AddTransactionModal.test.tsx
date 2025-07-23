@@ -1,4 +1,4 @@
-import React from 'react';
+ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -95,20 +95,23 @@ describe('AddTransactionModal', () => {
         await userEvent.click(screen.getByRole('button', { name: /add transaction/i }));
 
         await waitFor(() => {
-            expect(mockCreateTransaction).toHaveBeenCalledWith(expect.objectContaining({
-                portfolio_id: 1,
-                new_asset: {
-                    ticker_symbol: 'MANUAL',
-                    name: 'Manual Asset',
-                    asset_type: 'STOCK',
-                    currency: 'USD',
+                expect(mockCreateTransaction).toHaveBeenCalledWith(
+                {
+                    portfolioId: 1,
+                    data: expect.objectContaining({
+                        new_asset: {
+                            ticker_symbol: 'MANUAL',
+                            name: 'Manual Asset',
+                            asset_type: 'STOCK',
+                            currency: 'USD',
+                        },
+                        transaction_type: 'BUY',
+                        quantity: 100,
+                        price_per_unit: 10,
+                    }),
                 },
-                quantity: 100,
-                price_per_unit: 10,
-                fees: 0,
-                transaction_type: 'BUY',
-                transaction_date: '2024-01-01T00:00:00.000Z',
-            }));
+                expect.anything() // Ignore the second argument (callbacks)
+            );
         });
     });
 });

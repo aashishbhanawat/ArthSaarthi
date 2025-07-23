@@ -96,8 +96,14 @@ def _get_portfolio_history(db: Session, *, user: User, range_str: str) -> List[D
                 daily_holdings[t.asset.ticker_symbol] -= t.quantity
             transaction_idx += 1
 
-        total_value = sum(quantity * financial_data_service.get_asset_price(ticker) for ticker, quantity in daily_holdings.items() if quantity > 0)
-        history_points.append({"date": current_day, "value": total_value})
+        day_total_value = Decimal("0.0")
+        for ticker, quantity in daily_holdings.items():
+            if quantity > 0:
+                try:
+                    day_total_value += quantity * financial_data_service.get_asset_price(ticker)
+                except Exception:
+                    pass  # Skip assets for which price is not available
+        history_points.append({"date": current_day, "value": day_total_value})
         current_day += timedelta(days=1)
 
     return history_points

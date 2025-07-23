@@ -8,10 +8,12 @@ export interface Asset {
 
 export interface Transaction {
   id: number;
+  asset_id: number;
+  portfolio_id: number;
   transaction_type: 'BUY' | 'SELL';
-  quantity: string; // Comes as a string from backend (Numeric)
-  price_per_unit: string; // Comes as a string from backend (Numeric)
-  fees: string; // Comes as a string from backend (Numeric)
+  quantity: number;
+  price_per_unit: number;
+  fees: number;
   transaction_date: string; // ISO 8601 date string
   asset: Asset;
 }
@@ -19,12 +21,13 @@ export interface Transaction {
 export interface Portfolio {
   id: number;
   name: string;
-  user_id: number;
+  description: string | null;
   transactions: Transaction[];
 }
 
 export interface PortfolioCreate {
   name: string;
+  description?: string | null;
 }
 
 export interface NewAsset {
@@ -35,7 +38,6 @@ export interface NewAsset {
 }
 
 export interface TransactionCreate {
-    portfolio_id: number;
     asset_id?: number;
     new_asset?: NewAsset;
     transaction_type: 'BUY' | 'SELL';

@@ -134,13 +134,11 @@ For each feature, we'll follow these steps:
 
 You are now ready to start development of new module.
 
-**The "User Authentication", "User Management", "Portfolio & Transaction Management", and the backend for "Dashboard Visualization" are now complete.**
+**All planned MVP features, including "Dashboard Visualization Charts", are now complete and stable.**
 
-Let's start with the next core feature from the MVP backlog: **Frontend for Dashboard Visualization Charts**.
+Let's start planning the next feature from the backlog: **Advanced Goal Planning & Tracking (FR13)**.
 
-This feature will allow users to see charts of their portfolio history and asset allocation.
-
-Now, invoke the **Frontend Developer** and **UI/UX Designer** to plan for the Dashboard Visualization frontend."
+Now, invoke the **Backend Developer** and **Database Administrator** to plan for this new feature."
 
 #### 4.1. Backend Development Planning (for a specific Feature) 💻🗄️
 
