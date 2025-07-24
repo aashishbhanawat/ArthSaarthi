@@ -43,11 +43,12 @@ def test_get_dashboard_summary_success(
     auth_headers = get_auth_headers(user.email, password)
 
     # 2. Mock financial data service
-    def mock_price_side_effect(ticker):
-        prices = {"AAPL": Decimal("150.0"), "GOOG": Decimal("2800.0"), "BTC": Decimal("45000.0")}
-        return prices.get(ticker, Decimal("0.0"))
-
-    mocker.patch.object(financial_data_service, "get_asset_price", side_effect=mock_price_side_effect)
+    mock_prices = {
+        "AAPL": Decimal("150.0"),
+        "GOOG": Decimal("2800.0"),
+        "BTC": Decimal("45000.0"),
+    }
+    mocker.patch.object(financial_data_service, "get_current_prices", return_value=mock_prices)
 
     # 3. Create test data
     portfolio1 = create_test_portfolio(db, user_id=user.id, name="Tech Stocks")
@@ -77,7 +78,7 @@ def test_get_dashboard_summary_with_failing_price_lookup(
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
 
-    mocker.patch.object(financial_data_service, "get_asset_price", side_effect=Exception("API lookup failed"))
+    mocker.patch.object(financial_data_service, "get_current_prices", return_value={})
 
     portfolio = create_test_portfolio(db, user_id=user.id, name="Failing Portfolio")
     create_test_transaction(db, portfolio_id=portfolio.id, ticker="FAIL", quantity=10, asset_type="Stock")
@@ -104,11 +105,8 @@ def test_get_asset_allocation_success(client: TestClient, db: Session, get_auth_
     create_test_transaction(db, portfolio_id=portfolio.id, ticker="TSLA", quantity=10, asset_type="Stock")
     create_test_transaction(db, portfolio_id=portfolio.id, ticker="MSFT", quantity=5, asset_type="Stock")
 
-    def mock_price_side_effect(ticker):
-        prices = {"TSLA": Decimal("200.0"), "MSFT": Decimal("300.0")}
-        return prices.get(ticker, Decimal("0.0"))
-
-    mocker.patch.object(financial_data_service, "get_asset_price", side_effect=mock_price_side_effect)
+    mock_prices = {"TSLA": Decimal("200.0"), "MSFT": Decimal("300.0")}
+    mocker.patch.object(financial_data_service, "get_current_prices", return_value=mock_prices)
 
     response = client.get(f"{settings.API_V1_STR}/dashboard/allocation", headers=auth_headers)
     assert response.status_code == 200
@@ -139,7 +137,12 @@ def test_get_portfolio_history_success(client: TestClient, db: Session, get_auth
     # Transaction inside the 7d range
     create_test_transaction(db, portfolio_id=portfolio.id, ticker="NVDA", quantity=5, asset_type="Stock", transaction_date=today - timedelta(days=5))
 
-    mocker.patch.object(financial_data_service, "get_asset_price", return_value=Decimal("500.0"))
+    mock_history = {}
+    for i in range(8):
+        d = today - timedelta(days=i)
+        mock_history[d] = Decimal("500.0")
+
+    mocker.patch.object(financial_data_service, "get_historical_prices", return_value={"NVDA": mock_history})
 
     response = client.get(f"{settings.API_V1_STR}/dashboard/history?range=7d", headers=auth_headers)
     assert response.status_code == 200

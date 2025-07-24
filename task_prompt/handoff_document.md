@@ -3,15 +3,15 @@
 #### 1. Project Goal & Current Status
 
 *   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS).
-*   **Current Status:** The backend for the MVP is **complete**. The frontend UI has been **completely refactored** and is now stable, professional, and consistent across all pages. The application is fully functional and ready for the next phase of feature development.
-*   **Testing:** A full suite of automated backend tests (`pytest`) and frontend tests (`jest`) is stable and passing. The testing strategy includes unit, integration, and manual E2E smoke tests for each feature.
+*   **Current Status:** The backend is **fully stable and tested**. The frontend UI has been **completely refactored** and is now stable, professional, and consistent across all pages. The application is fully functional and ready for the next phase of feature development.
+*   **Testing:** A full suite of automated backend tests (`pytest`) and frontend tests (`jest`) is stable and passing. The backend has 51 passing tests. The testing strategy includes unit, integration, and manual E2E smoke tests for each feature.
 *   **Implemented Functionalities:**
     *   **Authentication:** Initial admin setup, secure user login/logout, and JWT-based session management.
     *   **User Management:** A dedicated, admin-only dashboard for performing Create, Read, Update, and Delete (CRUD) operations on all users.
     *   **Portfolio Management:** Backend endpoints for creating, reading, and deleting portfolios, scoped to the authenticated user.
     *   **Asset Management:** A backend endpoint for looking up asset details from a (mocked) external financial API.
     *   **Transaction Management:** Backend endpoints for creating transactions within a portfolio, with logic to handle both new and existing assets.
-    *   **Dashboard:** A backend endpoint that provides a summary of the user's total portfolio value.
+    *   **Dashboard:** Backend endpoints that provide a full dashboard summary, including total value, asset allocation, and portfolio history.
 
 
 ---

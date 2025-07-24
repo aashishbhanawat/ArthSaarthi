@@ -2716,3 +2716,74 @@ The test should pass.
 The test fails with an `expect(jest.fn()).toHaveBeenCalledWith(...)` error due to a payload mismatch.
 **Resolution:**
 Update the `toHaveBeenCalledWith` assertion in `AddTransactionModal.test.tsx` to match the new, correct call signature of the `useCreateTransaction` mutation hook.
+
+---
+
+**Bug ID:** 2025-07-24-01
+**Title:** Test suite collection fails with `AttributeError` due to incorrect model imports.
+**Module:** Core Backend, Test Suite
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-24
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The test suite fails during the collection phase with `AttributeError: module 'app.models' has no attribute 'Asset'`. This is caused by test utility files (`app/tests/utils/asset.py`) and test files (`app/tests/api/v1/test_portfolios_transactions.py`) attempting to import SQLAlchemy models from the `app.models` package namespace. The project's architecture requires direct imports from the model's specific file.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should be collected and should run without import errors.
+**Actual Behavior:**
+Test collection is interrupted with `AttributeError: module 'app.models' has no attribute 'Asset'`.
+**Resolution:**
+Update the import statements in `app/tests/utils/asset.py` and `app/tests/api/v1/test_portfolios_transactions.py` to use direct imports (e.g., `from app.models.asset import Asset`) and remove the unused `app.models` import.
+**Resolution:**
+Update the import statements in `app/tests/utils/asset.py` and `app/tests/api/v1/test_portfolios_transactions.py` to use direct imports (e.g., `from app.models.asset import Asset`) and remove the unused `app.models` import.
+The old test file `frontend/src/__tests__/hooks/useDashboard.test.ts` was deleted, and its content was moved to a new file with the correct `.tsx` extension: `frontend/src/__tests__/hooks/useDashboard.test.tsx`.
+
+---
+
+**Bug ID:** 2025-07-24-02
+**Title:** Backend test suite has multiple failures due to incomplete FinancialDataService and outdated test helpers.
+**Module:** Core Backend, Test Suite, Services
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-24
+**Classification:** Implementation (Backend) / Test Suite
+**Severity:** Critical
+**Description:**
+A large portion of the test suite (11 tests) is failing due to two primary root causes:
+1. The `FinancialDataService` class is missing the `get_asset_price` and `get_asset_details` methods, causing `AttributeError` in any test that tries to mock them.
+2. The `AssetCreate` Pydantic schema was updated to require an `exchange` field, but numerous test helpers (`create_test_transaction`) and direct test setups have not been updated to provide this field, leading to `ValidationError` and `422 Unprocessable Entity` errors.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+All backend tests should pass.
+**Actual Behavior:**
+11 tests fail with `AttributeError`, `ValidationError`, or `AssertionError`.
+**Resolution:**
+1. Implement the missing `get_asset_price` and `get_asset_details` methods in `app/services/financial_data_service.py`.
+2. Update the test utility `app/tests/utils/transaction.py` and all direct instantiations of `schemas.AssetCreate` within the test files to include the required `exchange` field.
+
+2. Update the test utility `app/tests/utils/transaction.py` and all direct instantiations of `schemas.AssetCreate` within the test files to include the required `exchange` field.
+The old test file `frontend/src/__tests__/hooks/useDashboard.test.ts` was deleted, and its content was moved to a new file with the correct `.tsx` extension: `frontend/src/__tests__/hooks/useDashboard.test.tsx`.
+The old test file `frontend/src/__tests__/hooks/useDashboard.test.ts` was deleted, and its content was moved to a new file with the correct `.tsx` extension: `frontend/src/__tests__/hooks/useDashboard.test.tsx`.
+
+---
+
+**Bug ID:** 2025-07-24-03
+**Title:** Dashboard tests fail due to mocking incorrect FinancialDataService methods.
+**Module:** Test Suite, Dashboard
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-24
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The tests in `test_dashboard.py` are failing with `AssertionError`. The root cause is that the tests are mocking the `get_asset_price` method, but the dashboard's business logic actually calls `get_current_prices` (for summary/allocation) and `get_historical_prices` (for history). This causes the tests to use real data from `yfinance` instead of the intended mock data, leading to assertion failures.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+All dashboard tests should pass by using the mocked price data.
+**Actual Behavior:**
+Four dashboard tests fail because they use live market data instead of the mocked data.
+**Resolution:**
+Update the tests in `app/tests/api/v1/test_dashboard.py` to mock the correct methods (`get_current_prices` and `get_historical_prices`) with the appropriate return structures.
+

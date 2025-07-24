@@ -1,4 +1,4 @@
-from .asset import Asset, AssetCreate
+from .asset import Asset, AssetCreate, AssetUpdate
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,

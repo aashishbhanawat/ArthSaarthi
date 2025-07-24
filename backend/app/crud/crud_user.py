@@ -1,18 +1,13 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional, Any
 
-from ..models.user import User
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User
-from ..schemas.user import UserCreate, UserUpdate
-
+from app.schemas.user import UserCreate, UserUpdate
 
 
 def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
-
-def get_users(db: Session, skip: int = 0, limit: int = 1):
-    return db.query(User).offset(skip).limit(limit).all()
 
 def create_user(db: Session, user: UserCreate, is_admin: bool = False):
     hashed_password = get_password_hash(user.password)
@@ -69,7 +64,7 @@ def update_user(db: Session, *, db_obj: User, obj_in: UserUpdate) -> User:
     return db_obj
 
 def remove(db: Session, *, id: int) -> User:
-    obj = db.query(User).get(id)
+    obj = db.get(User, id)
     db.delete(obj)
     db.commit()
     return obj

@@ -371,6 +371,29 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-07-24: Final Backend Stabilization & Testing
+
+*   **Task Description:** A final, comprehensive effort to stabilize the entire backend test suite. This involved fixing a cascade of bugs related to incomplete service implementations, outdated test helpers, and incorrect test mocks.
+
+*   **Key Prompts & Interactions:**
+    1.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI. This was critical for identifying and fixing a cascade of `AttributeError`, `ValidationError`, and `AssertionError` issues.
+    2.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
+    3.  **Targeted Fix Requests:** After filing a bug, a prompt like "Give me the fix for this bug" or "Update this file" was used to apply targeted changes to the correct files.
+
+*   **File Changes:**
+    *   `backend/app/services/financial_data_service.py`: Implemented missing mock methods (`get_asset_price`, `get_asset_details`).
+    *   `backend/app/tests/utils/transaction.py`: Updated test helper to provide required `exchange` field.
+    *   `backend/app/tests/api/v1/test_portfolios_transactions.py`: Corrected test payloads to include the `exchange` field.
+    *   `backend/app/tests/api/v1/test_dashboard.py`: Updated tests to mock the correct batch methods (`get_current_prices`, `get_historical_prices`) instead of the simple ones.
+    *   `backend/app/crud/base.py` & `crud_user.py`: Refactored to use modern `db.get()` method, removing deprecation warnings.
+
+*   **Verification:**
+    - Ran the full backend test suite using `docker-compose run --rm test`.
+
+*   **Outcome:**
+    - The backend is now fully stable and functional.
+    - All 51 backend tests are passing. The application is ready for the next phase of development.
+
 ## 2025-07-23: Final E2E Testing & Stabilization
 
 *   **Task Description:** Perform a full end-to-end smoke test of the application to verify all features work together seamlessly. This involved a highly iterative process of testing, analyzing logs, filing bug reports, and fixing issues across the entire stack. A final code quality review was also performed to add missing test coverage and improve code consistency.

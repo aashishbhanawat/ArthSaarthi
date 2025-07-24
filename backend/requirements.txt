@@ -10,6 +10,9 @@ pytest
 pytest-mock
 python-jose[cryptography]
 python-multipart
+redis
 sqlalchemy==2.0.30
 sqlalchemy-utils
+typer
 uvicorn[standard]==0.29.0
+yfinance

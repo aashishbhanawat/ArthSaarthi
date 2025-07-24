@@ -27,10 +27,13 @@ services:
       - SECRET_KEY=a_super_secret_key_that_should_be_changed
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - REDIS_URL=redis://redis:6379/0
     networks:
       - pms_network
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   backend:
@@ -45,6 +48,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - pms_network
 
@@ -57,6 +62,17 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    networks:
+      - pms_network
+
+  redis:
+    image: redis:alpine
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - pms_network
 

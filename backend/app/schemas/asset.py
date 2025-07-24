@@ -8,6 +8,9 @@ class AssetBase(BaseModel):
     name: str
     asset_type: str
     currency: str
+    exchange: str
+    isin: str | None = None
+
 
 # Properties to receive on asset creation
 class AssetCreate(AssetBase):
@@ -24,3 +27,5 @@ class AssetUpdate(BaseModel):
     name: Optional[str] = None
     asset_type: Optional[str] = None
     currency: Optional[str] = None
+    exchange: Optional[str] = None
+    isin: Optional[str] = None

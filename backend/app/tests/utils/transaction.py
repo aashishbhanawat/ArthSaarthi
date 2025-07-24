@@ -39,7 +39,11 @@ def create_test_transaction(
         )
     else:
         new_asset_in = schemas.AssetCreate(
-            ticker_symbol=ticker, asset_type=asset_type, name=f"{ticker} Asset", currency="USD"
+            ticker_symbol=ticker,
+            asset_type=asset_type,
+            name=f"{ticker} Asset",
+            currency="USD",
+            exchange="NASDAQ",  # Provide a default exchange
         )
         transaction_in = schemas.TransactionCreate(
             new_asset=new_asset_in,
