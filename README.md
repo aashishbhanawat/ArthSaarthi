@@ -6,17 +6,24 @@ This project is being developed with the guidance of an AI Master Orchestrator, 
 
 ## Features Implemented
 
-*   **Core User Authentication:** Secure user registration and login. The first user registered is automatically designated as an administrator.
-*   **User Management Dashboard:** A dedicated, admin-only interface for performing Create, Read, Update, and Delete (CRUD) operations on all users in the system.
-
-*   **Portfolio & Transaction Management (Backend):** A stable and fully tested set of backend APIs for creating portfolios and logging transactions.
-*   **Dashboard (Backend):** A backend endpoint that provides a summary of the user's total portfolio value, handling external data service failures gracefully.
+*   **Authentication:** Secure initial admin setup, user login/logout, and JWT-based session management.
+*   **User Management:** A dedicated, admin-only dashboard for performing CRUD operations on all users.
+*   **Portfolio & Transaction Management:** A stable and fully tested set of APIs and UI components for creating portfolios and transactions, with validation to ensure data integrity.
+*   **Dashboard:** A dynamic dashboard that displays a summary of the user's total portfolio value, an interactive portfolio history chart, and an asset allocation pie chart.
 ## Technology Stack
 
 -   **Backend:** Python with [FastAPI](https://fastapi.tiangolo.com/)
 -   **Frontend:** JavaScript with [React](https://reactjs.org/)
 -   **Database:** [PostgreSQL](https://www.postgresql.org/)
 -   **Deployment:** [Docker](https://www.docker.com/)
+
+## Data Source Disclaimer
+
+This application retrieves financial data from publicly available sources via the `yfinance` library, which is not an official API from Yahoo Finance.
+
+-   **For Informational Purposes Only:** All data is provided for personal, informational, and non-commercial use only. It should not be considered professional financial advice.
+-   **No Guarantees:** The availability, accuracy, and timeliness of the data are not guaranteed. The underlying public APIs may change or become unavailable at any time.
+-   **Not for Trading:** Do not use the data provided by this application to make financial trading decisions. Always consult official sources or a qualified financial advisor.
 
 ## Running the Project
 

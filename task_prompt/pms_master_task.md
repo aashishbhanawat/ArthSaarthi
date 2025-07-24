@@ -134,11 +134,11 @@ For each feature, we'll follow these steps:
 
 You are now ready to start development of new module.
 
-**All planned MVP features, including "Dashboard Visualization Charts", are now complete and stable.**
+**All planned MVP features are now complete and stable.**
 
-Let's start planning the next feature from the backlog: **Advanced Goal Planning & Tracking (FR13)**.
+Let's start planning the next feature: **Real Data Integration (FR5)**. This will replace our mock financial data service with a real one to prepare for a pilot release.
 
-Now, invoke the **Backend Developer** and **Database Administrator** to plan for this new feature."
+Now, invoke the **Solution Architect** and **Backend Developer** to plan for this new feature."
 
 #### 4.1. Backend Development Planning (for a specific Feature) 💻🗄️
 
