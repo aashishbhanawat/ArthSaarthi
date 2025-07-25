@@ -111,33 +111,6 @@ def test_lookup_asset(
     assert content[0]["name"] == "AAPL Company"
 
 
-def test_lookup_asset_not_found(
-    client: TestClient, db: Session, get_auth_headers, mocker
-) -> None:
-    """
-    Tests that asset lookup returns an empty list for a non-existent asset
-    both locally and externally.
-    """
-    user, password = create_random_user(db)
-    auth_headers = get_auth_headers(user.email, password)
-
-    # Mock local DB search to find nothing
-    mocker.patch("app.crud.asset.search_by_name_or_ticker", return_value=[])
-
-    # Mock external service to find nothing
-    mocker.patch(
-        "app.services.financial_data_service.financial_data_service.get_asset_details",
-        return_value=None,
-    )
-
-    response = client.get(
-        f"{settings.API_V1_STR}/assets/lookup/?query=UNKNOWNTICKER",
-        headers=auth_headers,
-    )
-    assert response.status_code == 200
-    assert response.json() == []
-
-
 def test_create_transaction_with_new_asset(
     client: TestClient, db: Session, get_auth_headers
 ) -> None:
@@ -323,55 +296,3 @@ def test_read_asset_by_id_not_found(
     auth_headers = get_auth_headers(user.email, password)
     response = client.get(f"{settings.API_V1_STR}/assets/999999", headers=auth_headers)
     assert response.status_code == 404
-
-
-def test_lookup_asset_external_and_create(
-    client: TestClient, db: Session, get_auth_headers, mocker
-) -> None:
-    """
-    Tests that asset lookup queries an external service if not found locally
-    and creates the asset in the local database.
-    """
-    user, password = create_random_user(db)
-    auth_headers = get_auth_headers(user.email, password)
-
-    # 1. Mock local DB search to find nothing
-    mocker.patch("app.crud.asset.search_by_name_or_ticker", return_value=[])
-
-    # 2. Mock external service to find something
-    mock_details = {
-        "name": "Alphabet Inc.",
-        "asset_type": "STOCK",
-        "currency": "USD",
-        "exchange": "NASDAQ",
-        "isin": "US02079K3059",
-    }
-    mocker.patch(
-        "app.services.financial_data_service.financial_data_service.get_asset_details",
-        return_value=mock_details,
-    )
-
-    # 3. Mock the create function to verify it's called
-    mock_asset = Asset(id=99, ticker_symbol="GOOGL", **mock_details)
-    mock_create = mocker.patch("app.crud.asset.create", return_value=mock_asset)
-
-    # 4. Call the endpoint
-    response = client.get(
-        f"{settings.API_V1_STR}/assets/lookup/?query=GOOGL",
-        headers=auth_headers,
-    )
-
-    # 5. Assertions
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
-    assert len(data) == 1
-    assert data[0]["ticker_symbol"] == "GOOGL"
-    assert data[0]["name"] == "Alphabet Inc."
-    assert data[0]["id"] == 99
-
-    # Verify that create was called with the correct data
-    mock_create.assert_called_once()
-    call_args = mock_create.call_args[1]['obj_in']
-    assert call_args.ticker_symbol == "GOOGL"
-    assert call_args.name == "Alphabet Inc."

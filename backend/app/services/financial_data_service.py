@@ -25,45 +25,6 @@ class FinancialDataService:
             print(f"WARNING: Could not connect to Redis: {e}. Caching will be disabled.")
             self.redis_client = None
 
-    def get_asset_price(self, ticker: str) -> Decimal:
-        """
-        Mocked function to get the current price of an asset.
-        In a real implementation, this would call an external API.
-        """
-        # This is a mock implementation for demonstration purposes
-        mock_prices = {
-            "AAPL": Decimal("150.00"),
-            "GOOGL": Decimal("2800.00"),
-            "BTC": Decimal("45000.00"),
-            "TSLA": Decimal("250.00"),
-            "NVDA": Decimal("450.00"),
-        }
-        return mock_prices.get(ticker.upper(), Decimal("0.0"))
-
-    def get_asset_details(self, ticker: str) -> Optional[Dict[str, Any]]:
-        """
-        Mocked function to get details of an asset.
-        In a real implementation, this would call an external API.
-        """
-        # This is a mock implementation for demonstration purposes
-        mock_details = {
-            "AAPL": {
-                "name": "Apple Inc.",
-                "asset_type": "STOCK",
-                "currency": "USD",
-                "exchange": "NASDAQ",
-                "isin": "US0378331005",
-            },
-            "GOOGL": {
-                "name": "Alphabet Inc.",
-                "asset_type": "STOCK",
-                "currency": "USD",
-                "exchange": "NASDAQ",
-                "isin": "US02079K3059",
-            },
-        }
-        return mock_details.get(ticker.upper())
-
     def _get_yfinance_ticker(self, ticker_symbol: str, exchange: str) -> str:
         """Constructs the correct ticker for yfinance."""
         if exchange == "NSE":

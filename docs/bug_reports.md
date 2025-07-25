@@ -2787,3 +2787,22 @@ Four dashboard tests fail because they use live market data instead of the mocke
 **Resolution:**
 Update the tests in `app/tests/api/v1/test_dashboard.py` to mock the correct methods (`get_current_prices` and `get_historical_prices`) with the appropriate return structures.
 
+---
+
+**Bug ID:** 2025-07-24-04
+**Title:** Asset lookup tests fail due to testing obsolete external service logic.
+**Module:** Test Suite, Portfolio Management
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-24
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Two tests in `test_portfolios_transactions.py` (`test_lookup_asset_not_found` and `test_lookup_asset_external_and_create`) are failing with an `AttributeError`. This is because they attempt to mock the `get_asset_details` method on the `FinancialDataService`, which was intentionally removed during the refactoring to a local-database-only asset lookup strategy. The tests are now obsolete and need to be removed as they are testing a feature that no longer exists.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+All tests should pass.
+**Actual Behavior:**
+Two tests fail with `AttributeError` because they are trying to mock a method that has been deleted.
+**Resolution:**
+Remove the two obsolete tests from `app/tests/api/v1/test_portfolios_transactions.py`.
