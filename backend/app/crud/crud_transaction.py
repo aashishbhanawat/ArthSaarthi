@@ -1,76 +1,47 @@
-from decimal import Decimal
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
+from sqlalchemy import func
+from decimal import Decimal
 
-from app import crud
 from app.crud.base import CRUDBase
-from app.crud import crud_asset
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
+from app import crud, schemas
+from fastapi import HTTPException, status
 
 
 class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate]):
+    def get_holdings_on_date(self, db: Session, *, user_id: int, asset_id: int, on_date: str) -> Decimal:
+        # Calculate total buys up to the date
+        total_buys = db.query(func.sum(Transaction.quantity)).filter(
+            Transaction.user_id == user_id,
+            Transaction.asset_id == asset_id,
+            Transaction.transaction_type == 'BUY',
+            Transaction.transaction_date <= on_date
+        ).scalar() or Decimal('0')
+
+        # Calculate total sells up to the date
+        total_sells = db.query(func.sum(Transaction.quantity)).filter(
+            Transaction.user_id == user_id,
+            Transaction.asset_id == asset_id,
+            Transaction.transaction_type == 'SELL',
+            Transaction.transaction_date <= on_date
+        ).scalar() or Decimal('0')
+
+        return total_buys - total_sells
+
     def create_with_portfolio(
-        self, db: Session, *, obj_in: TransactionCreate, portfolio_id: int
+        self, db: Session, *, obj_in: schemas.TransactionCreate, portfolio_id: int
     ) -> Transaction:
         portfolio = crud.portfolio.get(db=db, id=portfolio_id)
         if not portfolio:
             raise HTTPException(status_code=404, detail="Portfolio not found")
 
-        user_id = portfolio.user_id
-
-        # --- New Validation Logic ---
-        if obj_in.transaction_type.lower() == "sell":
-            if obj_in.new_asset:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Cannot execute a 'SELL' transaction for a new, unrecorded asset.",
-                )
-
-            if not obj_in.asset_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="asset_id is required for a 'SELL' transaction.",
-                )
-
-            transactions = (
-                db.query(Transaction)
-                .filter(
-                    Transaction.user_id == user_id,
-                    Transaction.asset_id == obj_in.asset_id,
-                    Transaction.transaction_date < obj_in.transaction_date,
-                )
-                .all()
-            )
-
-            current_holdings = sum(
-                t.quantity if t.transaction_type.lower() == "buy" else -t.quantity
-                for t in transactions
-            )
-
+        if obj_in.transaction_type.upper() == 'SELL':
+            current_holdings = self.get_holdings_on_date(db, user_id=portfolio.user_id, asset_id=obj_in.asset_id, on_date=obj_in.transaction_date.isoformat())
             if obj_in.quantity > current_holdings:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Insufficient holdings to sell. Current holdings: {current_holdings}, trying to sell: {obj_in.quantity}.",
-                )
-        # --- End Validation Logic ---
-        asset_id = obj_in.asset_id
-        if obj_in.new_asset:
-            existing_asset = crud_asset.asset.get_by_ticker(
-                db, ticker_symbol=obj_in.new_asset.ticker_symbol
-            )
-            if existing_asset:
-                asset_id = existing_asset.id
-            else:
-                new_asset = crud_asset.asset.create(db, obj_in=obj_in.new_asset)
-                asset_id = new_asset.id
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Insufficient holdings to sell. Current holdings: {current_holdings}, trying to sell: {obj_in.quantity}")
 
-        db_obj = Transaction(
-            **obj_in.model_dump(exclude={"new_asset", "asset_id"}),
-            portfolio_id=portfolio_id,
-            asset_id=asset_id,
-            user_id=user_id
-        )
+        db_obj = self.model(**obj_in.model_dump(), user_id=portfolio.user_id, portfolio_id=portfolio_id)
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)

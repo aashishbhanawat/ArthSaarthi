@@ -1,16 +1,16 @@
 # Project Handoff Summary: Personal Portfolio Management System
 
-**Date:** 2025-07-21
+**Date:** 2025-07-26
 
 ## 1. Project Overview & Status
 
 *   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS) that allows users to manage their investment portfolios.
-*   **Current Status:** The Minimum Viable Product (MVP) is **complete and stable**. The application has been through a rigorous E2E testing and stabilization phase. All core features are functional, the UI is consistent, and the backend and frontend are fully covered by automated tests.
+*   **Current Status:** The application is **stable and feature-complete for its pilot release**. It has been through a rigorous E2E testing and stabilization phase. All core features are functional, the UI is consistent, and the backend and frontend are fully covered by automated tests.
 *   **Key Implemented Features:**
-    *   **Authentication:** Secure initial admin setup, user login/logout, and JWT-based session management.
+    *   **Authentication:** Secure initial admin setup, user login/logout, and a robust "sliding session" implementation using JWT access and refresh tokens.
     *   **User Management:** A dedicated, admin-only dashboard for performing CRUD operations on all users.
-    *   **Portfolio & Transaction Management:** A stable and fully tested set of APIs and UI components for creating portfolios and transactions, with validation to ensure data integrity.
-    *   **Dashboard:** A dynamic dashboard that displays a summary of the user's total portfolio value, an interactive portfolio history chart, and an asset allocation pie chart.
+    *   **Portfolio & Transaction Management:** A stable and fully tested set of APIs and UI components for creating portfolios and transactions. Includes on-the-fly asset creation and validation to prevent invalid data entry (e.g., selling unowned assets).
+    *   **Dashboard:** A dynamic dashboard that displays a summary of the user's total portfolio value, realized and unrealized P/L, top daily movers, an interactive portfolio history chart, and an asset allocation pie chart.
 
 ---
 

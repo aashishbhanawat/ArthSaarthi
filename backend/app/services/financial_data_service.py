@@ -25,7 +25,7 @@ class FinancialDataService:
             print(f"WARNING: Could not connect to Redis: {e}. Caching will be disabled.")
             self.redis_client = None
 
-    def _get_yfinance_ticker(self, ticker_symbol: str, exchange: str) -> str:
+    def _get_yfinance_ticker(self, ticker_symbol: str, exchange: Optional[str]) -> str:
         """Constructs the correct ticker for yfinance."""
         if exchange == "NSE":
             return f"{ticker_symbol}.NS"
@@ -33,24 +33,28 @@ class FinancialDataService:
             return f"{ticker_symbol}.BO"
         return ticker_symbol
 
-    def get_current_prices(self, assets: List[Dict[str, Any]]) -> Dict[str, Decimal]:
-        prices = {}
+    def get_current_prices(self, assets: List[Dict[str, Any]]) -> Dict[str, Dict[str, Decimal]]:
+        prices_data = {}
         tickers_to_fetch = []
 
         if self.redis_client:
             for asset in assets:
                 ticker = asset["ticker_symbol"]
-                cache_key = f"price:{ticker}"
-                cached_price = self.redis_client.get(cache_key)
-                if cached_price:
-                    prices[ticker] = Decimal(cached_price)
+                cache_key = f"price_details:{ticker}"
+                cached_data = self.redis_client.get(cache_key)
+                if cached_data:
+                    data = json.loads(cached_data)
+                    prices_data[ticker] = {
+                        "current_price": Decimal(data["current_price"]),
+                        "previous_close": Decimal(data["previous_close"]),
+                    }
                 else:
                     tickers_to_fetch.append(asset)
         else:
             tickers_to_fetch = assets
 
         if not tickers_to_fetch:
-            return prices
+            return prices_data
 
         yfinance_tickers_str = " ".join(
             [self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"]) for a in tickers_to_fetch]
@@ -59,21 +63,40 @@ class FinancialDataService:
         try:
             yf_data = yf.Tickers(yfinance_tickers_str)
             for ticker_obj in yf_data.tickers.values():
-                info = ticker_obj.info
-                price = info.get("currentPrice") or info.get("regularMarketPrice")
-                if price and info.get("symbol"):
-                    # yfinance symbol can be like 'TCS.NS', we want to map back to 'TCS'
-                    original_ticker = info.get("symbol").split('.')[0]
-                    prices[original_ticker] = Decimal(str(price))
+                # Using history is more reliable for price data than .info
+                hist = ticker_obj.history(period="2d", auto_adjust=True)
+
+                # yfinance symbol can be like 'TCS.NS', we want to map back to 'TCS'
+                yf_symbol = ticker_obj.ticker
+                original_ticker = yf_symbol.split('.')[0]
+
+                if not hist.empty and len(hist) >= 2:
+                    current_price = Decimal(str(hist['Close'].iloc[-1]))
+                    previous_close = Decimal(str(hist['Close'].iloc[-2]))
+                    prices_data[original_ticker] = {
+                        "current_price": current_price,
+                        "previous_close": previous_close,
+                    }
+                elif not hist.empty and len(hist) == 1:
+                    current_price = Decimal(str(hist['Close'].iloc[-1]))
+                    prices_data[original_ticker] = {
+                        "current_price": current_price,
+                        "previous_close": current_price, # Fallback
+                    }
+
         except (Exception, ValidationError) as e:
             print(f"WARNING: Error fetching batch data from yfinance: {e}")
 
         if self.redis_client:
-            for ticker, price in prices.items():
+            for ticker, data in prices_data.items():
                 if any(t['ticker_symbol'] == ticker for t in tickers_to_fetch):
-                    self.redis_client.set(f"price:{ticker}", str(price), ex=CACHE_TTL_CURRENT_PRICE)
+                    serializable_data = {
+                        "current_price": str(data["current_price"]),
+                        "previous_close": str(data["previous_close"]),
+                    }
+                    self.redis_client.set(f"price_details:{ticker}", json.dumps(serializable_data), ex=CACHE_TTL_CURRENT_PRICE)
 
-        return prices
+        return prices_data
 
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
@@ -125,6 +148,38 @@ class FinancialDataService:
 
         return historical_data
 
+    def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetches details for a single asset from yfinance.
+        Tries to find the asset on NSE, then BSE, then as-is.
+        """
+        # Prioritize Indian exchanges
+        potential_tickers = [
+            f"{ticker_symbol}.NS",
+            f"{ticker_symbol}.BO",
+            ticker_symbol
+        ]
+        for yf_ticker_str in potential_tickers:
+            try:
+                ticker_obj = yf.Ticker(yf_ticker_str)
+                info = ticker_obj.info
+                
+                # Check for enough info to be considered valid
+                if info and info.get("shortName"):
+                    asset_type_map = {
+                        "EQUITY": "Stock", "MUTUALFUND": "Mutual Fund",
+                        "ETF": "ETF", "CRYPTOCURRENCY": "Crypto"
+                    }
+                    return {
+                        "name": info.get("shortName") or info.get("longName"),
+                        "asset_type": asset_type_map.get(info.get("quoteType"), "Stock"),
+                        "exchange": info.get("exchange"),
+                        "currency": info.get("currency", "INR"),
+                    }
+            except Exception:
+                # yfinance often raises generic exceptions for invalid tickers
+                continue
+        return None
 
 # Create a singleton instance to be used throughout the application
 financial_data_service = FinancialDataService(redis_url=settings.REDIS_URL)

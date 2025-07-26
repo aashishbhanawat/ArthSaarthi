@@ -4,6 +4,7 @@ import SummaryCard from '../components/Dashboard/SummaryCard';
 import TopMoversTable from '../components/Dashboard/TopMoversTable';
 import PortfolioHistoryChart from '../components/Dashboard/PortfolioHistoryChart';
 import AssetAllocationChart from '../components/Dashboard/AssetAllocationChart';
+import { formatCurrency } from '../utils/formatting';
 
 const DashboardPage: React.FC = () => {
   const { data: summary, isLoading, isError, error } = useDashboardSummary();
@@ -15,15 +16,6 @@ const DashboardPage: React.FC = () => {
   if (isError) {
     return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
   }
-
-  const formatCurrency = (value: number | string) => {
-    const number = Number(value);
-    const formatted = Math.abs(number).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-    return number < 0 ? `-$${formatted}` : `$${formatted}`;
-  };
 
   const getPnlColor = (value: number | string) => {
     const number = Number(value);

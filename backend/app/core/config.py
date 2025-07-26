@@ -5,7 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     SECRET_KEY: str = "a_super_secret_key_that_should_be_changed"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     API_V1_STR: str = "/api/v1"
     DATABASE_URL: PostgresDsn
     REDIS_URL: str = "redis://redis:6379/0"

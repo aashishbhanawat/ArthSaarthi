@@ -1,10 +1,4 @@
-export interface Asset {
-  id: number;
-  ticker_symbol: string;
-  name: string;
-  asset_type: string;
-  currency: string;
-}
+import { Asset } from './asset';
 
 export interface Transaction {
   id: number;
