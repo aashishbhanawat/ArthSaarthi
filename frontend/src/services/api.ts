@@ -70,13 +70,3 @@ export const getCurrentUser = async () => {
   const response = await apiClient.get("/api/v1/users/me");
   return response.data;
 };
-
-export const refreshToken = async (): Promise<{ access_token: string }> => {
-    // The refresh token is sent automatically by the browser as an HttpOnly cookie
-    const response = await apiClient.post('/api/v1/auth/refresh');
-    return response.data;
-};
-
-export const logoutUser = async (): Promise<void> => {
-    await apiClient.post('/api/v1/auth/logout');
-};

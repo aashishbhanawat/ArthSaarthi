@@ -1,98 +1,152 @@
-from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy.orm import Session
+from fastapi.testclient import TestClient
+from app.models.user import User as UserModel
 
-from app.core.config import settings
-from app.tests.utils.user import create_random_user
-from app.core import security
+from app import crud, models, schemas  # Keep these for now, but might be unused
+from app.core import security       # Keep this as it's used directly
+from app.tests.utils.user import create_random_user, get_access_token
 
-
-def test_refresh_token_success(client: TestClient, db: Session):
-    """
-    Test successfully getting a new access token using a valid refresh token.
-    """
-    user, password = create_random_user(db)
-
-    # First, log in to get the refresh token cookie
-    login_response = client.post(
-        f"{settings.API_V1_STR}/auth/login",
-        data={"username": user.email, "password": password},
-    )
-    assert login_response.status_code == 200
-    refresh_cookie = login_response.cookies.get("refresh_token")
-    assert refresh_cookie is not None
-
-    # Now, use the cookie to call the refresh endpoint
-    client.cookies.set("refresh_token", refresh_cookie)
-    refresh_response = client.post(f"{settings.API_V1_STR}/auth/refresh")
-    assert refresh_response.status_code == 200
-    data = refresh_response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-
-
-def test_refresh_token_no_cookie(client: TestClient):
-    """
-    Test that the refresh endpoint fails with 401 if no cookie is provided.
-    """
-    response = client.post(f"{settings.API_V1_STR}/auth/refresh")
-    assert response.status_code == 401
-    assert "no refresh token found" in response.json()["detail"]
-
-
-def test_refresh_token_invalid_cookie(client: TestClient):
-    """
-    Test that the refresh endpoint fails with 401 if the cookie is invalid.
-    """
-    client.cookies.set("refresh_token", "invalid-token")
-    response = client.post(f"{settings.API_V1_STR}/auth/refresh")
-    assert response.status_code == 401
-    assert "token is invalid or expired" in response.json()["detail"]
-
-
-def test_refresh_token_with_access_token(client: TestClient, db: Session):
-    """
-    Test that the refresh endpoint fails if an access token is used instead of a refresh token.
-    """
-    user, _ = create_random_user(db)
-    access_token = security.create_access_token(subject=user.id)
-
-    client.cookies.set("refresh_token", access_token)
-    response = client.post(f"{settings.API_V1_STR}/auth/refresh")
-    assert response.status_code == 401
-    assert "Invalid token type" in response.json()["detail"]
-
-
-def test_logout_success(client: TestClient, db: Session):
-    """
-    Test that logout successfully clears the refresh token cookie.
-    """
-    user, password = create_random_user(db)
-
-    # Log in to set the cookie
-    login_response = client.post(
-        f"{settings.API_V1_STR}/auth/login",
-        data={"username": user.email, "password": password},
-    )
-    assert login_response.cookies.get("refresh_token") is not None
-
-    # Call logout
-    client.cookies.set("refresh_token", login_response.cookies.get("refresh_token"))
-    logout_response = client.post(f"{settings.API_V1_STR}/auth/logout")
-    assert logout_response.status_code == 200
-    assert logout_response.json()["message"] == "Successfully logged out"
-
-    # Check that the cookie is cleared in the response headers
-    set_cookie_header = logout_response.headers.get("set-cookie")
-    assert set_cookie_header is not None
-    # A cleared cookie has Max-Age=0 and an empty value
-    assert 'refresh_token=""' in set_cookie_header
-    assert "Max-Age=0" in set_cookie_header
-
-
-def test_logout_no_cookie(client: TestClient):
-    """
-    Test that logout succeeds even if no cookie is present.
-    """
-    response = client.post(f"{settings.API_V1_STR}/auth/logout")
+def test_get_status_setup_needed(client: TestClient):
+    response = client.get("/api/v1/auth/status")
     assert response.status_code == 200
-    assert response.json()["message"] == "Successfully logged out"
+    assert response.json() == {"setup_needed": True}, "Should indicate setup is needed initially"
+    assert response.headers["content-type"] == "application/json"
+
+
+def test_setup_admin_user_success(client: TestClient):
+    user_data = {
+        "full_name": "Admin User",
+        "email": "admin@example.com",
+        "password": "ValidPassword123!",
+    }
+    response = client.post("/api/v1/auth/setup", json=user_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == user_data["email"]
+    assert data["full_name"] == user_data["full_name"]
+    assert "id" in data
+
+
+def test_get_status_setup_not_needed(client: TestClient):
+    # Arrange: Create a user first to ensure setup is not needed.
+    user_data = {
+        "full_name": "Admin User",
+        "email": "admin@example.com",
+        "password": "ValidPassword123!",
+    }
+    client.post("/api/v1/auth/setup", json=user_data)
+
+    # Act
+    response = client.get("/api/v1/auth/status")
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == {"setup_needed": False}
+
+
+def test_setup_admin_user_fails_if_user_exists(client: TestClient):
+    # Arrange: Create the first admin user.
+    first_user_data = {
+        "full_name": "Admin User",
+        "email": "admin@example.com",
+        "password": "ValidPassword123!",
+    }
+    client.post("/api/v1/auth/setup", json=first_user_data)
+
+    # Act: Attempt to create a second user.
+    second_user_data = {
+        "full_name": "Another User",
+        "email": "another@example.com",
+        "password": "ValidPassword123!",
+    }
+    response = client.post("/api/v1/auth/setup", json=second_user_data)
+
+    # Assert
+    assert response.status_code == 409
+    assert response.json() == {"detail": "An admin account already exists."}
+
+
+def test_login_success(client: TestClient, admin_user_data: dict):
+    # First, create the user via the setup endpoint
+    client.post("/api/v1/auth/setup", json=admin_user_data)
+
+    # Then, attempt to log in
+    login_data = {
+        "username": admin_user_data["email"],
+        "password": admin_user_data["password"],
+    }
+    response = client.post("/api/v1/auth/login", data=login_data)
+
+    assert response.status_code == 200
+    token = response.json()
+    assert "access_token" in token
+    assert token["token_type"] == "bearer"
+
+
+def test_login_wrong_password(client: TestClient, admin_user_data: dict):
+    client.post("/api/v1/auth/setup", json=admin_user_data)
+    login_data = {"username": admin_user_data["email"], "password": "wrongpassword!1"}
+    response = client.post("/api/v1/auth/login", data=login_data)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect email or password"
+
+
+def test_login_nonexistent_user(client: TestClient):
+    login_data = {
+        "username": "nonexistent@example.com",
+        "password": "Password123!",
+    }
+    response = client.post("/api/v1/auth/login", data=login_data)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect email or password"
+
+
+def test_login_inactive_user(client: TestClient, db: Session, admin_user_data: dict):
+    # Arrange: Create a user
+    response = client.post("/api/v1/auth/setup", json=admin_user_data)
+    user_email = response.json()["email"]
+
+    # Manually set the user to inactive in the database
+    user_in_db = db.query(UserModel).filter(UserModel.email == user_email).first()
+    assert user_in_db is not None
+    user_in_db.is_active = False
+    db.commit()
+
+    # Act: Attempt to log in
+    login_data = {
+        "username": admin_user_data["email"],
+        "password": admin_user_data["password"],
+    }
+    response = client.post("/api/v1/auth/login", data=login_data)
+
+    # Assert
+    assert response.status_code == 401
+
+
+@pytest.mark.parametrize(
+    "password, error_message_part",
+    [
+        ("weak", "at least 8 characters long"),
+        ("NoNumber!", "at least one number"),
+        ("nonumber1", "at least one uppercase letter"),
+        ("NONUMBER1", "at least one lowercase letter"),
+        ("NoSpecial1", "at least one special character"),
+    ],
+)
+def test_setup_admin_user_invalid_password(
+    client: TestClient, password: str, error_message_part: str
+):
+    # Arrange
+    user_data = {
+        "full_name": "Test User",
+        "email": "test@example.com",
+        "password": password,
+    }
+
+    # Act
+    response = client.post("/api/v1/auth/setup", json=user_data)
+
+    # Assert
+    assert response.status_code == 422  # Expect a validation error
+    assert "detail" in response.json()  # Check for error details

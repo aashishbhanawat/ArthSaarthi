@@ -1,168 +1,191 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { useCreateTransaction, useCreateAsset } from '../../hooks/usePortfolios';
-import { lookupAsset } from '../../services/portfolioApi';
-import { Asset } from '../../types/asset';
-import { TransactionCreate } from '../../types/portfolio';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { useLookupAsset, useCreateTransaction } from '../../hooks/usePortfolios';
+import { Asset, TransactionCreate, NewAsset } from '../../types/portfolio';
+import axios from 'axios';
 
 interface AddTransactionModalProps {
-    portfolioId: number;
+    isOpen: boolean;
     onClose: () => void;
+    portfolioId: number;
 }
 
-const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, onClose }) => {
-    const { register, handleSubmit, setValue, formState: { errors } } = useForm<Omit<TransactionCreate, 'asset_id'>>();
-    const createTransactionMutation = useCreateTransaction();
-    const createAssetMutation = useCreateAsset();
+type FormInputs = {
+    ticker_symbol: string;
+    name: string;
+    asset_type: string;
+    currency: string;
+    transaction_type: 'BUY' | 'SELL';
+    quantity: number;
+    price_per_unit: number;
+    transaction_date: string;
+    fees?: number;
+};
+
+const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, portfolioId }) => {
+    const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormInputs>();
+    const [foundAsset, setFoundAsset] = useState<Asset | null>(null);
     const [apiError, setApiError] = useState<string | null>(null);
+    const [isManualEntry, setIsManualEntry] = useState(false);
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchResults, setSearchResults] = useState<Asset[]>([]);
-    const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+    const lookupAssetMutation = useLookupAsset();
+    const createTransactionMutation = useCreateTransaction();
 
-    // Debounce search term
+    const tickerValue = watch('ticker_symbol');
+
     useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            if (searchTerm.length > 1 && !selectedAsset) {
-                lookupAsset(searchTerm)
-                    .then(data => setSearchResults(data))
-                    .catch(() => setSearchResults([]));
-            } else {
-                setSearchResults([]);
-            }
-        }, 300);
-
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm, selectedAsset]);
-
-    const handleSelectAsset = (asset: Asset) => {
-        setSelectedAsset(asset);
-        setSearchTerm(asset.name);
-        setSearchResults([]);
-    };
-
-    const handleClearSelectedAsset = () => {
-        setSelectedAsset(null);
-        setSearchTerm('');
-    };
-
-    const onSubmit = (data: Omit<TransactionCreate, 'asset_id'>) => {
-        if (!selectedAsset) {
-            setApiError("Please select an asset.");
-            return;
+        if (createTransactionMutation.isSuccess) {
+            setApiError(null);
+            reset();
+            setFoundAsset(null);
+            setIsManualEntry(false);
+            onClose();
+            createTransactionMutation.reset();
         }
+    }, [createTransactionMutation.isSuccess, onClose, reset]);
 
-        const payload: TransactionCreate = {
-            ...data,
-            asset_id: selectedAsset.id,
-            quantity: Number(data.quantity),
-            price_per_unit: Number(data.price_per_unit),
-            fees: data.fees ? Number(data.fees) : 0,
+    const handleTickerBlur = async () => {
+        if (tickerValue) {
+            try {
+                const asset = await lookupAssetMutation.mutateAsync(tickerValue.toUpperCase());
+                setFoundAsset(asset);
+                setValue('name', asset.name);
+                setValue('asset_type', asset.asset_type);
+                setValue('currency', asset.currency);
+                setIsManualEntry(false);
+            } catch (error) {
+                setFoundAsset(null);
+                setIsManualEntry(true);
+            }
+        }
+    };
+
+    const onSubmit: SubmitHandler<FormInputs> = (data) => {
+        setApiError(null);
+        const transactionData: TransactionCreate = {
+            transaction_type: data.transaction_type,
+            quantity: data.quantity,
+            price_per_unit: data.price_per_unit,
             transaction_date: new Date(data.transaction_date).toISOString(),
+            fees: data.fees || 0,
         };
 
-        createTransactionMutation.mutate({ portfolioId, data: payload }, {
-            onSuccess: () => onClose(),
-            onError: (error: any) => {
-                const message = error.response?.data?.detail || 'An unexpected error occurred while adding the transaction';
-                setApiError(message);
-            }
+        if (foundAsset) {
+            transactionData.asset_id = foundAsset.id;
+        } else {
+            const newAsset: NewAsset = {
+                ticker_symbol: data.ticker_symbol.toUpperCase(),
+                name: data.name,
+                asset_type: data.asset_type,
+                currency: data.currency.toUpperCase(),
+            };
+            transactionData.new_asset = newAsset;
+        }
+        createTransactionMutation.mutate({ portfolioId, data: transactionData }, {
+            onError: (error) => {
+                if (axios.isAxiosError(error) && error.response?.data?.detail) {
+                    setApiError(error.response.data.detail);
+                } else {
+                    setApiError('An unexpected error occurred while adding the transaction.');
+                }
+            },
         });
     };
 
-    const handleCreateAsset = () => {
-        setApiError(null);
-        createAssetMutation.mutate(searchTerm, {
-            onSuccess: (newAsset) => {
-                handleSelectAsset(newAsset);
-            },
-            onError: (error: any) => {
-                setApiError(error.response?.data?.detail || 'Failed to create asset.');
-            }
-        });
-    };
+    if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay z-30">
-            <div className="modal-content overflow-visible w-11/12 md:w-3/4 lg:max-w-2xl p-6">
-                <h2 className="text-2xl font-bold mb-4">Add Transaction</h2>
-                <div className="max-h-[70vh] overflow-y-auto px-2 -mr-2">
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        {/* Asset Search */}
+        <div className="modal-overlay">
+            <div className="modal-content max-w-lg">
+                <div className="modal-header">
+                    <h2 className="text-2xl font-bold">Add New Transaction</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+                <div className="p-6">
+                    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                        {/* Ticker Symbol */}
                         <div className="form-group">
-                            <label htmlFor="asset-search" className="form-label">Asset</label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    id="asset-search"
-                                    className="form-input"
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setApiError(null);
-                                        if (selectedAsset) handleClearSelectedAsset();
-                                        setSearchTerm(e.target.value);
-                                    }}
-                                    placeholder="Search by ticker or name..."
-                                    autoComplete="off"
-                                />
-                                {selectedAsset && (
-                                    <button type="button" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 text-xl font-bold">
-                                        &times;
-                                    </button>
-                                )}
-                                {searchResults.length > 0 && !selectedAsset && (
-                                    <ul className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
-                                        {searchResults.map(asset => (
-                                            <li key={asset.id} onClick={() => handleSelectAsset(asset)} className="p-2 hover:bg-gray-100 cursor-pointer">
-                                                {asset.name} ({asset.ticker_symbol})
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                                {searchResults.length === 0 && searchTerm.length > 1 && !selectedAsset && (
-                                    <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">
-                                        <p className="text-sm text-gray-500 mb-2">No asset found. You can create it.</p>
-                                        <button type="button" onClick={handleCreateAsset} className="btn btn-secondary btn-sm w-full" disabled={createAssetMutation.isPending}>
-                                            {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${searchTerm.toUpperCase()}"`}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                            <label htmlFor="ticker_symbol" className="form-label">Ticker Symbol</label>
+                            <input
+                                id="ticker_symbol"
+                                {...register('ticker_symbol', { required: 'Ticker is required' })}
+                                onBlur={handleTickerBlur}
+                                className="form-input"
+                                disabled={lookupAssetMutation.isPending}
+                            />
+                            {lookupAssetMutation.isPending && <p className="text-sm text-blue-500">Looking up asset...</p>}
+                            {errors.ticker_symbol && <p className="text-red-500 text-xs italic">{errors.ticker_symbol.message}</p>}
                         </div>
+
+                        {/* Asset Details */}
+                        {(foundAsset || isManualEntry) && (
+                            <>
+                                <div className="form-group">
+                                    <label htmlFor="name" className="form-label">Asset Name</label>
+                                    <input id="name" {...register('name', { required: 'Name is required' })} className="form-input" disabled={!isManualEntry} />
+                                    {errors.name && <p className="text-red-500 text-xs italic">{errors.name.message}</p>}
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="asset_type" className="form-label">Asset Type</label>
+                                        <input id="asset_type" {...register('asset_type', { required: 'Type is required' })} className="form-input" disabled={!isManualEntry} />
+                                        {errors.asset_type && <p className="text-red-500 text-xs italic">{errors.asset_type.message}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="currency" className="form-label">Currency</label>
+                                        <input id="currency" {...register('currency', { required: 'Currency is required' })} className="form-input" disabled={!isManualEntry} />
+                                        {errors.currency && <p className="text-red-500 text-xs italic">{errors.currency.message}</p>}
+                                    </div>
+                                </div>
+                                {isManualEntry && <p className="text-sm text-yellow-600 bg-yellow-100 p-2 rounded mt-4">Asset not found. Please enter details manually.</p>}
+                            </>
+                        )}
 
                         {/* Transaction Details */}
-                        <div className="grid grid-cols-2 gap-4 pt-4">
-                            <div className="form-group">
+                        <div className="grid grid-cols-2 gap-4 form-group">
+                            <div>
                                 <label htmlFor="transaction_type" className="form-label">Type</label>
-                                <select id="transaction_type" {...register('transaction_type')} className="form-input">
-                                    <option value="BUY">Buy</option>
-                                    <option value="SELL">Sell</option>
+                                <select id="transaction_type" {...register('transaction_type', { required: true })} className="form-input">
+                                    <option value="BUY">BUY</option>
+                                    <option value="SELL">SELL</option>
                                 </select>
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="quantity" className="form-label">Quantity</label>
-                                <input id="quantity" type="number" step="any" {...register('quantity', { required: true, valueAsNumber: true })} className="form-input" />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
-                                <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: true, valueAsNumber: true })} className="form-input" />
-                            </div>
-                            <div className="form-group">
+                            <div>
                                 <label htmlFor="transaction_date" className="form-label">Date</label>
-                                <input id="transaction_date" type="date" {...register('transaction_date', { required: true })} className="form-input" />
+                                <input type="date" id="transaction_date" {...register('transaction_date', { required: 'Date is required' })} className="form-input" />
+                                {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                             </div>
-                            <div className="form-group col-span-2">
-                                <label htmlFor="fees" className="form-label">Fees (optional)</label>
-                                <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true })} className="form-input" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 form-group">
+                            <div>
+                                <label htmlFor="quantity" className="form-label">Quantity</label>
+                                <input type="number" step="any" id="quantity" {...register('quantity', { required: 'Quantity is required', valueAsNumber: true, min: { value: 0, message: "Must be positive" } })} className="form-input" />
+                                {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
+                            </div>
+                            <div>
+                                <label htmlFor="price_per_unit" className="form-label">Price/Unit</label>
+                                <input type="number" step="any" id="price_per_unit" {...register('price_per_unit', { required: 'Price is required', valueAsNumber: true, min: { value: 0, message: "Must be positive" } })} className="form-input" />
+                                {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
+                            </div>
+                            <div>
+                                <label htmlFor="fees" className="form-label">Fees</label>
+                                <input type="number" step="any" id="fees" {...register('fees', { valueAsNumber: true, min: { value: 0, message: "Must be positive" } })} className="form-input" />
+                                {errors.fees && <p className="text-red-500 text-xs italic">{errors.fees.message}</p>}
                             </div>
                         </div>
 
-                        {apiError && <p className="text-red-500 text-sm mt-2">{apiError}</p>}
+                        {apiError && (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                                <span className="block sm:inline">{apiError}</span>
+                            </div>
+                        )}
 
-                        <div className="flex justify-end space-x-4 pt-4">
-                            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
-                            <button type="submit" className="btn btn-primary" disabled={createTransactionMutation.isPending || !selectedAsset}>
-                                {createTransactionMutation.isPending ? 'Saving...' : 'Save Transaction'}
+                        <div className="flex items-center justify-end pt-4">
+                            <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={createTransactionMutation.isPending || lookupAssetMutation.isPending}>
+                                Cancel
+                            </button>
+                            <button type="submit" className="btn btn-primary" disabled={createTransactionMutation.isPending}>
+                                {createTransactionMutation.isPending ? 'Adding...' : 'Add Transaction'}
                             </button>
                         </div>
                     </form>

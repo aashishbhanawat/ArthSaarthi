@@ -1,19 +1,18 @@
 import apiClient from './api';
-import { Portfolio, PortfolioCreate, Transaction, TransactionCreate } from '../types/portfolio';
-import { Asset } from '../types/asset';
+import { Portfolio, PortfolioCreate, Transaction, TransactionCreate, Asset } from '../types/portfolio';
 
 export const getPortfolios = async (): Promise<Portfolio[]> => {
-    const response = await apiClient.get<Portfolio[]>('/api/v1/portfolios/');
+    const response = await apiClient.get('/api/v1/portfolios/');
     return response.data;
 };
 
 export const getPortfolio = async (id: number): Promise<Portfolio> => {
-    const response = await apiClient.get<Portfolio>(`/api/v1/portfolios/${id}`);
+    const response = await apiClient.get(`/api/v1/portfolios/${id}`);
     return response.data;
 };
 
 export const createPortfolio = async (data: PortfolioCreate): Promise<Portfolio> => {
-    const response = await apiClient.post<Portfolio>('/api/v1/portfolios/', data);
+    const response = await apiClient.post('/api/v1/portfolios/', data);
     return response.data;
 };
 
@@ -21,27 +20,12 @@ export const deletePortfolio = async (id: number): Promise<void> => {
     await apiClient.delete(`/api/v1/portfolios/${id}`);
 };
 
-export const lookupAsset = async (query: string): Promise<Asset[]> => {
-    const response = await apiClient.get<Asset[]>('/api/v1/assets/lookup/', {
-        params: { query },
-    });
+export const lookupAsset = async (ticker: string): Promise<Asset> => {
+    const response = await apiClient.get(`/api/v1/assets/lookup/${ticker}`);
     return response.data;
 };
 
-export const createAsset = async (ticker: string): Promise<Asset> => {
-    const response = await apiClient.post<Asset>('/api/v1/assets/', {
-        ticker_symbol: ticker,
-    });
-    return response.data;
-};
-
-export const createTransaction = async (
-    portfolioId: number,
-    transactionData: TransactionCreate
-): Promise<Transaction> => {
-    const response = await apiClient.post<Transaction>(
-        `/api/v1/portfolios/${portfolioId}/transactions/`,
-        transactionData
-    );
+export const createTransaction = async (portfolioId: number, data: TransactionCreate): Promise<Transaction> => {
+    const response = await apiClient.post(`/api/v1/portfolios/${portfolioId}/transactions/`, data);
     return response.data;
 };

@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
 import { PortfolioCreate, TransactionCreate } from '../types/portfolio';
-import { Asset } from '../types/asset';
 
 export const usePortfolios = () => {
     return useQuery({
@@ -14,7 +13,7 @@ export const usePortfolio = (id: number) => {
     return useQuery({
         queryKey: ['portfolio', id],
         queryFn: () => portfolioApi.getPortfolio(id),
-        enabled: !!id,
+        enabled: !!id, // Only run query if id is truthy
     });
 };
 
@@ -38,21 +37,21 @@ export const useDeletePortfolio = () => {
     });
 };
 
-export const useCreateAsset = () => {
-    const queryClient = useQueryClient();
-    return useMutation<Asset, Error, string>({
-        mutationFn: (ticker: string) => portfolioApi.createAsset(ticker),
+export const useLookupAsset = () => {
+    return useMutation({
+        mutationFn: (ticker: string) => portfolioApi.lookupAsset(ticker),
     });
 };
 
 export const useCreateTransaction = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ portfolioId, data }: { portfolioId: number; data: TransactionCreate }) =>
-            portfolioApi.createTransaction(portfolioId, data),
-        onSuccess: (_, variables) => {
+        mutationFn: (variables: { portfolioId: number; data: TransactionCreate }) =>
+            portfolioApi.createTransaction(variables.portfolioId, variables.data),
+        onSuccess: (_data, variables) => {
+            // Invalidate the specific portfolio query to refetch its details
             queryClient.invalidateQueries({ queryKey: ['portfolio', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['portfolios'] });
         },
     });
 };
