@@ -38,8 +38,7 @@ export interface NewAsset {
 }
 
 export interface TransactionCreate {
-    asset_id?: number;
-    new_asset?: NewAsset;
+    asset_id: number;
     transaction_type: 'BUY' | 'SELL';
     quantity: number;
     price_per_unit: number;

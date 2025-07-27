@@ -41,35 +41,49 @@ def test_get_dashboard_summary_success(
     # 1. Setup User and Auth
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="P&L Test Portfolio")
 
-    # 2. Mock financial data service
+    # 2. Create a more complex transaction history to test P/L
+    # Scenario:
+    # - Buy 10 AAPL @ $100
+    # - Buy 10 AAPL @ $120 -> Avg cost is now $110
+    # - Sell 5 AAPL @ $130 -> Realized P/L = 5 * (130 - 110) = $100
+    # - Buy 2 GOOG @ $2500
+    # Current holdings: 15 AAPL, 2 GOOG
+    create_test_transaction(db, portfolio_id=portfolio.id, ticker="AAPL", quantity=10, price_per_unit=100, transaction_type="BUY", transaction_date=date(2023, 1, 1))
+    create_test_transaction(db, portfolio_id=portfolio.id, ticker="AAPL", quantity=10, price_per_unit=120, transaction_type="BUY", transaction_date=date(2023, 1, 2))
+    create_test_transaction(db, portfolio_id=portfolio.id, ticker="AAPL", quantity=5, price_per_unit=130, transaction_type="SELL", transaction_date=date(2023, 1, 3))
+    create_test_transaction(db, portfolio_id=portfolio.id, ticker="GOOG", quantity=2, price_per_unit=2500, transaction_type="BUY", transaction_date=date(2023, 1, 4))
+
+    # 3. Mock financial data service for current prices
     mock_prices = {
-        "AAPL": Decimal("150.0"),
-        "GOOG": Decimal("2800.0"),
-        "BTC": Decimal("45000.0"),
+        "AAPL": {"current_price": Decimal("150.0"), "previous_close": Decimal("145.0")},
+        "GOOG": {"current_price": Decimal("2800.0"), "previous_close": Decimal("2750.0")},
     }
     mocker.patch.object(financial_data_service, "get_current_prices", return_value=mock_prices)
-
-    # 3. Create test data
-    portfolio1 = create_test_portfolio(db, user_id=user.id, name="Tech Stocks")
-    create_test_transaction(db, portfolio_id=portfolio1.id, ticker="AAPL", quantity=10, asset_type="Stock")
-    create_test_transaction(db, portfolio_id=portfolio1.id, ticker="GOOG", quantity=2, asset_type="Stock")
-
-    portfolio2 = create_test_portfolio(db, user_id=user.id, name="Crypto")
-    create_test_transaction(db, portfolio_id=portfolio2.id, ticker="BTC", quantity=0.5, asset_type="Crypto")
 
     # 4. Make API call
     response = client.get(f"{settings.API_V1_STR}/dashboard/summary", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
 
-    # 5. Assertions - The total value is 10 * 150.0 + 2 * 2800.0 + 0.5 * 45000.0 = 1500 + 5600 + 22500 = 29600
-    assert Decimal(data["total_value"]) == Decimal("29600.0")
-    # Assert placeholder values from the current implementation
-    assert data["total_unrealized_pnl"] == "0.0"
-    assert data["total_realized_pnl"] == "0.0"
-    assert len(data["asset_allocation"]) == 3
+    # 5. Assertions
+    # Total Value = (15 AAPL * 150) + (2 GOOG * 2800) = 2250 + 5600 = 7850
+    assert Decimal(data["total_value"]).quantize(Decimal("0.01")) == Decimal("7850.00")
 
+    # Unrealized P/L for AAPL = (150 - 110) * 15 = 600
+    # Unrealized P/L for GOOG = (2800 - 2500) * 2 = 600
+    # Total Unrealized P/L = 600 + 600 = 1200
+    assert Decimal(data["total_unrealized_pnl"]).quantize(Decimal("0.01")) == Decimal("1200.00")
+
+    # Realized P/L was calculated in the scenario above as 100
+    assert Decimal(data["total_realized_pnl"]).quantize(Decimal("0.01")) == Decimal("100.00")
+
+    assert len(data["asset_allocation"]) == 2
+    assert len(data["top_movers"]) == 2
+    aapl_mover = next(m for m in data["top_movers"] if m["ticker_symbol"] == "AAPL")
+    assert Decimal(aapl_mover["daily_change"]) == Decimal("5.0")
+    
 
 def test_get_dashboard_summary_with_failing_price_lookup(
     client: TestClient, db: Session, get_auth_headers, mocker
@@ -105,7 +119,10 @@ def test_get_asset_allocation_success(client: TestClient, db: Session, get_auth_
     create_test_transaction(db, portfolio_id=portfolio.id, ticker="TSLA", quantity=10, asset_type="Stock")
     create_test_transaction(db, portfolio_id=portfolio.id, ticker="MSFT", quantity=5, asset_type="Stock")
 
-    mock_prices = {"TSLA": Decimal("200.0"), "MSFT": Decimal("300.0")}
+    mock_prices = {
+        "TSLA": {"current_price": Decimal("200.0"), "previous_close": Decimal("190.0")},
+        "MSFT": {"current_price": Decimal("300.0"), "previous_close": Decimal("295.0")},
+    }
     mocker.patch.object(financial_data_service, "get_current_prices", return_value=mock_prices)
 
     response = client.get(f"{settings.API_V1_STR}/dashboard/allocation", headers=auth_headers)

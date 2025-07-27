@@ -60,7 +60,7 @@ def read_portfolio(
     return portfolio
 
 
-@router.delete("/{id}", response_model=schemas.Portfolio)
+@router.delete("/{id}")
 def delete_portfolio(
     *,
     db: Session = Depends(dependencies.get_db),
@@ -75,5 +75,5 @@ def delete_portfolio(
         raise HTTPException(status_code=404, detail="Portfolio not found")
     if not current_user.is_admin and (portfolio.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    portfolio = crud.portfolio.remove(db=db, id=id)
-    return portfolio
+    crud.portfolio.remove(db=db, id=id)
+    return {"message": "Portfolio deleted successfully"}

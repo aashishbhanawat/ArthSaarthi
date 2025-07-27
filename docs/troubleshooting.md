@@ -116,7 +116,7 @@ This guide documents common setup and runtime issues and their solutions.
     sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column "..." does not exist
     ```
 
-*   **Cause:** The application's database models (in `backend/app/models/`) have been updated, but the actual database schema is out of sync. This happens because the project does not yet have a database migration tool (like Alembic).
+*   **Cause:** The application's database models (in `backend/app/models/`) have been updated, but the corresponding Alembic migration has not been generated or applied, causing the database schema to be out of sync with the application's expectations.
 
 *   **Solution:** The project now uses Alembic for database migrations. You need to generate a new migration script to align the database schema with your model changes.
 

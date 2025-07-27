@@ -4,7 +4,9 @@ This document outlines the prioritized list of features for the Personal Portfol
 
 ## Release 1: Minimum Viable Product (MVP)
 
-The goal of the MVP is to deliver a functional core product that allows a user to set up an account, create a portfolio, manually add common assets, and track their value.
+**Status: ✅ COMPLETE (as of 2025-07-27)**
+
+The goal of the MVP was to deliver a functional core product that allows a user to set up an account, create a portfolio, manually add common assets, and track their value. All planned features are now implemented and stable.
 
 **Features:**
 
@@ -12,23 +14,29 @@ The goal of the MVP is to deliver a functional core product that allows a user t
     -   Initial admin setup if no users exist.
     -   Standard user login.
     -   Secure JWT-based authentication.
+    -   **Status: ✅ Complete**
 
 2.  **Basic Administration (FR2):**
     -   Admin can create and delete standard users from a simple dashboard.
+    -   **Status: ✅ Complete**
 
 3.  **Portfolio & Transaction Management (Core from FR4):**
     -   Users can create, edit, and delete multiple, named portfolios.
     -   Users can manually add, edit, and delete transactions for **Stocks, ETFs, and Mutual Funds** within a portfolio.
     -   Support for different currencies on transactions.
+    -   **Status: ✅ Complete**
 
 4.  **Dashboard (Core from FR3):**
     -   Consolidated view of total portfolio value.
     -   Overall Profit/Loss calculation.
     -   Asset allocation pie chart.
     -   Historical value line chart.
+    -   Top daily market movers table.
+    -   **Status: ✅ Complete**
 
 5.  **Data Integration (FR5):**
     -   Integrate with a third-party financial data API to fetch current market prices for tracked assets.
+    -   **Status: ✅ Complete**
 
 ## Release 2: Advanced Asset Management & Analytics
 

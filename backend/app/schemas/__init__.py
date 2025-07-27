@@ -1,8 +1,7 @@
-from .asset import Asset, AssetCreate, AssetUpdate
+from .asset import Asset, AssetCreate, AssetUpdate, AssetCreateIn
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,
-    DashboardAsset,
     DashboardSummary,
     PortfolioHistoryPoint,
     PortfolioHistoryResponse,

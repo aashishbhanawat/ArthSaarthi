@@ -11,7 +11,7 @@ from app.services.financial_data_service import financial_data_service
 
 def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
     """
-    Calculates the dashboard summary metrics for a given user.
+    Calculates the dashboard summary metrics for a given user, including P/L.
     """
     portfolios = crud.portfolio.get_multi_by_owner(db=db, user_id=user.id)
     if not portfolios:
@@ -23,36 +23,75 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
             "asset_allocation": [],
         }
 
-    holdings = defaultdict(lambda: {"quantity": Decimal("0.0"), "exchange": "N/A"})
+    # 1. Get all transactions across all portfolios and sort them by date
+    all_transactions = []
     for portfolio in portfolios:
-        for transaction in portfolio.transactions:
-            asset = transaction.asset
-            if transaction.transaction_type.lower() == 'buy':
-                holdings[asset.ticker_symbol]["quantity"] += transaction.quantity
-            else:
-                holdings[asset.ticker_symbol]["quantity"] -= transaction.quantity
-            holdings[asset.ticker_symbol]["exchange"] = asset.exchange
+        all_transactions.extend(portfolio.transactions)
+    all_transactions.sort(key=lambda t: t.transaction_date)
 
+    # 2. Calculate cost basis and realized P/L by iterating through transactions
+    live_holdings = defaultdict(lambda: {
+        "quantity": Decimal("0.0"),
+        "total_cost": Decimal("0.0"),
+        "name": "N/A",
+        "exchange": "N/A"
+    })
+    total_realized_pnl = Decimal("0.0")
+
+    for t in all_transactions:
+        ticker = t.asset.ticker_symbol
+        live_holdings[ticker]["name"] = t.asset.name
+        live_holdings[ticker]["exchange"] = t.asset.exchange
+
+        if t.transaction_type.lower() == 'buy':
+            live_holdings[ticker]["quantity"] += t.quantity
+            live_holdings[ticker]["total_cost"] += t.quantity * t.price_per_unit
+        elif t.transaction_type.lower() == 'sell':
+            if live_holdings[ticker]["quantity"] > 0:
+                average_cost = live_holdings[ticker]["total_cost"] / live_holdings[ticker]["quantity"]
+                realized_pnl_for_sale = (t.price_per_unit - average_cost) * t.quantity
+                total_realized_pnl += realized_pnl_for_sale
+                live_holdings[ticker]["total_cost"] -= t.quantity * average_cost
+                live_holdings[ticker]["quantity"] -= t.quantity
+
+    # 3. Get current prices for all currently held assets
     assets_to_price = [
         {"ticker_symbol": ticker, "exchange": data["exchange"]}
-        for ticker, data in holdings.items() if data["quantity"] > 0
+        for ticker, data in live_holdings.items() if data["quantity"] > 0
     ]
+    current_prices_details = financial_data_service.get_current_prices(assets_to_price) if assets_to_price else {}
 
-    current_prices = financial_data_service.get_current_prices(assets_to_price) if assets_to_price else {}
-
-    asset_allocation = []
+    # 4. Calculate final summary metrics (Total Value, Unrealized P/L, etc.)
     total_value = Decimal("0.0")
-    for ticker, data in holdings.items():
-        if data["quantity"] > 0 and ticker in current_prices:
-            value = data["quantity"] * current_prices[ticker]
+    total_unrealized_pnl = Decimal("0.0")
+    asset_allocation = []
+    top_movers = []
+
+    for ticker, data in live_holdings.items():
+        if data["quantity"] > 0 and ticker in current_prices_details:
+            price_info = current_prices_details[ticker]
+            current_price = price_info["current_price"]
+            previous_close = price_info["previous_close"]
+
+            value = data["quantity"] * current_price
             total_value += value
             asset_allocation.append({"ticker": ticker, "value": value})
 
+            if data["quantity"] > 0: # Avoid division by zero for sold-off assets
+                average_cost = data["total_cost"] / data["quantity"]
+                total_unrealized_pnl += (current_price - average_cost) * data["quantity"]
+
+            daily_change = current_price - previous_close
+            daily_change_percentage = (daily_change / previous_close) * 100 if previous_close else 0
+            top_movers.append({"ticker_symbol": ticker, "name": data["name"], "current_price": current_price, "daily_change": daily_change, "daily_change_percentage": daily_change_percentage})
+
+    top_movers.sort(key=lambda x: abs(x["daily_change_percentage"]), reverse=True)
+
     return {
         "total_value": total_value,
-        "total_unrealized_pnl": Decimal("0.0"),  # Placeholder
-        "total_realized_pnl": Decimal("0.0"),  # Placeholder
-        "top_movers": [],  # Placeholder
+        "total_unrealized_pnl": total_unrealized_pnl,
+        "total_realized_pnl": total_realized_pnl,
+        "top_movers": top_movers[:5],
         "asset_allocation": asset_allocation,
     }
 
@@ -94,6 +133,7 @@ def _get_portfolio_history(db: Session, *, user: User, range_str: str) -> List[D
     current_day = start_date
     transaction_idx = 0
     daily_holdings = defaultdict(Decimal)
+    last_known_prices = {}
 
     # Calculate initial holdings up to the start_date
     initial_transactions = [t for t in transactions if t.transaction_date.date() < start_date]
@@ -103,6 +143,15 @@ def _get_portfolio_history(db: Session, *, user: User, range_str: str) -> List[D
             daily_holdings[ticker] += t.quantity
         else:
             daily_holdings[ticker] -= t.quantity
+
+    # Pre-fill last known prices for the day before the window starts
+    day_before_start = start_date - timedelta(days=1)
+    for ticker in daily_holdings:
+        if ticker in historical_prices:
+            # Find the most recent price on or before the day before the window
+            relevant_dates = [d for d in historical_prices[ticker] if d <= day_before_start]
+            if relevant_dates:
+                last_known_prices[ticker] = historical_prices[ticker][max(relevant_dates)]
     transaction_idx = len(initial_transactions)
 
     while current_day <= end_date:
@@ -117,8 +166,12 @@ def _get_portfolio_history(db: Session, *, user: User, range_str: str) -> List[D
 
         day_total_value = Decimal("0.0")
         for ticker, quantity in daily_holdings.items():
-            if quantity > 0 and ticker in historical_prices and current_day in historical_prices[ticker]:
-                day_total_value += quantity * historical_prices[ticker][current_day]
+            if quantity > 0:
+                if ticker in historical_prices and current_day in historical_prices[ticker]:
+                    last_known_prices[ticker] = historical_prices[ticker][current_day]
+                
+                if ticker in last_known_prices:
+                    day_total_value += quantity * last_known_prices[ticker]
         history_points.append({"date": current_day, "value": day_total_value})
         current_day += timedelta(days=1)
 

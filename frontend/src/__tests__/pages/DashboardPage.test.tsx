@@ -82,9 +82,9 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Asset Allocation')).toBeInTheDocument();
 
     // Check for formatted values
-    expect(screen.getByText('$12,345.67')).toBeInTheDocument();
-    expect(screen.getByText('$123.45')).toBeInTheDocument();
-    expect(screen.getByText('-$50.00')).toBeInTheDocument();
+    expect(screen.getByText('₹12,345.67')).toBeInTheDocument();
+    expect(screen.getByText('₹123.45')).toBeInTheDocument();
+    expect(screen.getByText('-₹50.00')).toBeInTheDocument()
   });
 
   it('should render top movers table with no data message when top_movers is empty', () => {
@@ -92,6 +92,6 @@ describe('DashboardPage', () => {
       isLoading: false, isError: false, error: null, data: { total_value: 1000, total_unrealized_pnl: 0, total_realized_pnl: 0, top_movers: [], asset_allocation: [] }
     });
     render(<DashboardPage />);
-    expect(screen.getByText('No market data available.')).toBeInTheDocument();
+    expect(screen.getByText('No market data available')).toBeInTheDocument();
   });
 });

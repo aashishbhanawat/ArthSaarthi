@@ -6,47 +6,35 @@ This document outlines the high-level architecture for the Personal Portfolio Ma
 
 The following diagram illustrates the components of the system and the flow of information.
 
+```mermaid
+graph TD
+    subgraph "Deployment Host (e.g., Local Machine / Server)"
+        subgraph "Docker Environment"
+            direction LR
+            subgraph "User Interaction"
+                direction TB
+                User_Browser["User's Browser (React SPA)"]
+            end
+            subgraph "Application Services"
+                direction TB
+                Frontend["Frontend (React + Vite)"]
+                Backend["Backend (FastAPI)"]
+                Database["Database (PostgreSQL)"]
+                Redis["Redis (Cache)"]
+            end
+            subgraph "External Services"
+                direction TB
+                yfinance["External APIs (yfinance)"]
+            end
+            User_Browser -- HTTPS --> Frontend
+            Frontend -- "API Requests (Vite Proxy to /api/*)" --> Backend
+            Backend -- "DB Queries (SQLAlchemy) & Alembic Migrations" --> Database
+            Backend -- "Cache R/W" --> Redis
+            Backend -- "Cache Miss" --> yfinance
+        end
+    end
 ```
 
-  +------------------+      +-----------------+      +--------------------------------------------------+
-  |   User's Browser |      |    Internet     |      |  Deployment Host (e.g., Raspberry Pi / Local PC) |
-  |   (React SPA)    |----->| (Cloudflare     |----->|                                                  |
-  +------------------+      |  Tunnel Opt.)   |      |  +--------------------------------------------+  |
-                            +-----------------+      |  |             Docker Environment             |  |
-                                                     |  |                                            |  |
-                                                     |  |  +----------------+   +------------------+  |  |
-                                                     |  |  |                |   | External APIs    |  |  |
-                                                     |  |  |                |   | - Financial Data |  |  |
-                                                     |  |  |                |<->| - AI (Gemini)    |  |  |
-                                                     |  |  |                |   +------------------+  |  |
-                                                     |  |  |  +-----------+ |                         |  |
-                                                     |  |  |  | Backend   | |                         |  |
-                                                     |  |  |  | (FastAPI) | |                         |  |
-                                                     |  |  |  +-----+-----+ |                         |  |
-                                                     |  |  |        ^       |                         |  |
-                                                     |  |  |        |       |                         |  |
-                                                     |  |  |        v       |                         |  |
-  +----------------------------------------------------------+  |  +-----+-----+ |                         |  |
-  | Request Path                                       |  |  |  | Database  | |                         |  |
-  +----------------------------------------------------------+  |  | (PostgreSQL)| |                         |  |
-       |                                               |  |  |  +-----------+ |                         |  |
-       |                                               |  |  |      |         |                         |  |
-       |                                               |  |  |  (Persistent   |                         |  |
-       |                                               |  |  |    Volume)     |                         |  |
-       v                                               |  |  +--------------+                         |  |
-  +----------------+      /api/*      +---------------+|  |                                            |  |
-  | Reverse Proxy  |----------------->| Backend Svc   ||  |                                            |  |
-  | (e.g., Nginx)  |                  +---------------+|  |                                            |  |
-  +----------------+      /*          +---------------+|  |                                            |  |
-       |           ----------------->| Frontend Svc  ||  |                                            |  |
-       +---------------------------->| (React Build) ||  |                                            |  |
-                                     +---------------+|  |                                            |  |
-                                                     |  |                                            |  |
-                                                     |  +--------------------------------------------+  |
-                                                     |                                                  |
-                                                     +--------------------------------------------------+
-
-```
 
 ## 2. Architectural Decisions
 

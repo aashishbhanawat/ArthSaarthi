@@ -371,29 +371,6 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
-## 2025-07-24: Final Backend Stabilization & Testing
-
-*   **Task Description:** A final, comprehensive effort to stabilize the entire backend test suite. This involved fixing a cascade of bugs related to incomplete service implementations, outdated test helpers, and incorrect test mocks.
-
-*   **Key Prompts & Interactions:**
-    1.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI. This was critical for identifying and fixing a cascade of `AttributeError`, `ValidationError`, and `AssertionError` issues.
-    2.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
-    3.  **Targeted Fix Requests:** After filing a bug, a prompt like "Give me the fix for this bug" or "Update this file" was used to apply targeted changes to the correct files.
-
-*   **File Changes:**
-    *   `backend/app/services/financial_data_service.py`: Implemented missing mock methods (`get_asset_price`, `get_asset_details`).
-    *   `backend/app/tests/utils/transaction.py`: Updated test helper to provide required `exchange` field.
-    *   `backend/app/tests/api/v1/test_portfolios_transactions.py`: Corrected test payloads to include the `exchange` field.
-    *   `backend/app/tests/api/v1/test_dashboard.py`: Updated tests to mock the correct batch methods (`get_current_prices`, `get_historical_prices`) instead of the simple ones.
-    *   `backend/app/crud/base.py` & `crud_user.py`: Refactored to use modern `db.get()` method, removing deprecation warnings.
-
-*   **Verification:**
-    - Ran the full backend test suite using `docker-compose run --rm test`.
-
-*   **Outcome:**
-    - The backend is now fully stable and functional.
-    - All 51 backend tests are passing. The application is ready for the next phase of development.
-
 ## 2025-07-23: Final E2E Testing & Stabilization
 
 *   **Task Description:** Perform a full end-to-end smoke test of the application to verify all features work together seamlessly. This involved a highly iterative process of testing, analyzing logs, filing bug reports, and fixing issues across the entire stack. A final code quality review was also performed to add missing test coverage and improve code consistency.
@@ -421,3 +398,54 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - The application is stable, fully tested, and all MVP features are complete and working correctly end-to-end.
+
+---
+
+## 2025-07-24: Final Backend Stabilization & Testing
+
+*   **Task Description:** A final, comprehensive effort to stabilize the entire backend test suite. This involved fixing a cascade of bugs related to incomplete service implementations, outdated test helpers, and incorrect test mocks.
+
+*   **Key Prompts & Interactions:**
+    1.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI. This was critical for identifying and fixing a cascade of `AttributeError`, `ValidationError`, and `AssertionError` issues.
+    2.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
+    3.  **Targeted Fix Requests:** After filing a bug, a prompt like "Give me the fix for this bug" or "Update this file" was used to apply targeted changes to the correct files.
+
+*   **File Changes:**
+    *   `backend/app/services/financial_data_service.py`: Implemented missing mock methods (`get_asset_price`, `get_asset_details`).
+    *   `backend/app/tests/utils/transaction.py`: Updated test helper to provide required `exchange` field.
+    *   `backend/app/tests/api/v1/test_portfolios_transactions.py`: Corrected test payloads to include the `exchange` field.
+    *   `backend/app/tests/api/v1/test_dashboard.py`: Updated tests to mock the correct batch methods (`get_current_prices`, `get_historical_prices`) instead of the simple ones.
+    *   `backend/app/crud/base.py` & `crud_user.py`: Refactored to use modern `db.get()` method, removing deprecation warnings.
+
+*   **Verification:**
+    - Ran the full backend test suite using `docker-compose run --rm test`.
+
+*   **Outcome:**
+    - The backend is now fully stable and functional.
+    - All 51 backend tests are passing. The application is ready for the next phase of development.
+
+---
+
+## 2025-07-27: Final UI Polish & Code Quality Refactor
+
+*   **Task Description:** Perform a final review of the application to identify and fix remaining UI bugs and to refactor components for better code quality and maintainability before the pilot release.
+
+*   **Key Prompts & Interactions:**
+    1.  **E2E Testing & Bug Identification:** The process was driven by manual end-to-end testing of the application's user flows, which uncovered several UI and logic bugs.
+    2.  **Bug Triage & Fixing:** For each issue, the "report a bug" and "apply the fix" prompts were used to systematically document and resolve the bugs. This included fixing an unconditionally rendered modal, correcting currency symbols, and updating outdated test assertions.
+    3.  **Proactive Code Review:** A final review was requested via "Let's review all code whether any clean up needed". This led to a beneficial refactoring of the `DashboardPage` and `SummaryCard` components to improve encapsulation and code quality.
+
+*   **File Changes:**
+    *   `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx`: Fixed a critical bug where the "Add Transaction" modal was rendered unconditionally.
+    *   `frontend/src/components/Portfolio/TransactionList.tsx`: Corrected the currency symbol from `$` to `₹`.
+    *   `frontend/src/pages/DashboardPage.tsx`: Refactored to delegate presentational logic to the `SummaryCard` component.
+    *   `frontend/src/components/Dashboard/SummaryCard.tsx`: Refactored to handle its own P/L color logic, making it more reusable.
+    *   `frontend/src/__tests__/pages/DashboardPage.test.tsx`: Updated outdated test assertions to match the corrected UI.
+    *   `docs/bug_reports.md`: Added detailed reports for all bugs discovered and fixed during this phase.
+
+*   **Verification:**
+    - Performed a full E2E smoke test of the application.
+    - Ran the full backend and frontend test suites to ensure no regressions were introduced.
+
+*   **Outcome:**
+    - The application is stable, visually polished, and all known MVP-related bugs have been resolved. The codebase has been improved for better maintainability. The project is now ready for the pilot release.

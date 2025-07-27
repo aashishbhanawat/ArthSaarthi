@@ -66,3 +66,34 @@ We undertook a major stabilization of the backend test suite, which was failing 
 ### 3. Outcome
 
 The new workflow proved highly effective. By focusing on root causes and fixing foundational issues first, we were able to resolve a complex cascade of 11 test failures efficiently and methodically. This validates our new process and gives us a solid playbook for future development.
+### 3. Outcome
+
+The new workflow proved highly effective. By focusing on root causes and fixing foundational issues first, we were able to resolve a complex cascade of 11 test failures efficiently and methodically. This validates our new process and gives us a solid playbook for future development.
+
+---
+
+
+---
+
+## 2025-07-27: Pilot Release Stabilization
+
+### 1. What Happened?
+
+We implemented two major, inter-dependent features simultaneously to prepare for the pilot release:
+1.  **P/L Calculations:** Complex business logic was added to the dashboard to calculate realized and unrealized profit and loss.
+2.  **On-the-fly Asset Creation:** A new user flow was created, touching both frontend and backend, to allow users to add assets not present in the pre-seeded database.
+
+This phase involved a high volume of changes across the entire stack and required careful coordination between backend and frontend development.
+
+### 2. How Did the Process Help?
+
+*   **Feature Planning:** Creating separate, clear feature plans (e.g., `06_pl_calculation.md`) for each major piece of work was crucial for keeping the development focused, even when the work was happening concurrently.
+*   **Test-Driven Development:** Adding dedicated test suites for new backend endpoints (`test_assets.py`) and updating existing ones (`test_dashboard.py`) was essential. It allowed us to isolate and verify the complex business logic of each feature before full integration.
+*   **Rigorous RCA:** The workflow helped identify subtle bugs, such as the `KeyError` in dashboard tests when the mock data structure for `get_current_prices` changed to support the "Top Movers" feature. A rigorous RCA correctly identified the test mock as the root cause, not the application code.
+
+### 3. Outcome & New Learning
+
+*   The "Analyze -> Report -> Fix" workflow scales well even for complex, concurrent feature development. The discipline of creating feature plans and writing tests first prevents chaos.
+*   **Test Mocks Must Evolve with Application Code:** This phase highlighted the importance of keeping test mocks in sync with application code. When a service's response structure changes (like `FinancialDataService`), the corresponding test mocks must be updated immediately to prevent misleading test failures.
+
+

@@ -18,8 +18,9 @@ The implementation uses a two-part strategy to ensure a robust and performant us
 
 ### 2.1. Asset Discovery & Local Database
 
-*   **Asset Seeding:** The application includes a command-line script (`backend/app/cli.py`) to seed the local `assets` table with a master list of securities from a public data source. This provides a definitive, local source of truth for all assets.
-*   **Asset Lookup:** The `GET /api/v1/assets/lookup/` endpoint was refactored to search *only* the local `assets` table. This makes asset lookups extremely fast and reliable, removing the need for an external API call during the user's workflow.
+*   **Asset Seeding:** The application includes a command-line script (`backend/app/cli.py`) to seed the local `assets` table with a master list of securities.
+*   **Asset Search:** The `GET /api/v1/assets/lookup/` endpoint searches *only* the local `assets` table. This makes searching for already-known assets extremely fast.
+*   **New Asset Creation:** To add an asset not in the local DB, the frontend uses the `POST /api/v1/assets/` endpoint. This endpoint validates the ticker against `yfinance` and, if successful, creates the new asset in the local database before returning it. This two-step process (search local, then create if needed) ensures data integrity and a good user experience.
 
 ### 2.2. Real-time Price Fetching
 

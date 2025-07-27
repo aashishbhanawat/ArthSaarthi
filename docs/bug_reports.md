@@ -2806,3 +2806,328 @@ All tests should pass.
 Two tests fail with `AttributeError` because they are trying to mock a method that has been deleted.
 **Resolution:**
 Remove the two obsolete tests from `app/tests/api/v1/test_portfolios_transactions.py`.
+
+---
+
+**Bug ID:** 2025-07-27-01
+**Title:** Portfolio history chart shows a value of 0 on non-trading days.
+**Module:** Dashboard (Backend)
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The `_get_portfolio_history` function in `crud_dashboard.py` incorrectly calculates the daily portfolio value. If a price is not available for a specific day (e.g., a weekend or holiday), it defaults the value to 0 for that day. This creates an inaccurate "wave" effect on the history chart. The logic should instead carry forward the last known price.
+**Resolution:**
+Refactor the history calculation loop in `crud_dashboard.py`. The new logic will maintain a dictionary of the last known price for each asset. On non-trading days, this last known price will be used for valuation, ensuring a continuous and accurate portfolio history.
+
+---
+
+**Bug ID:** 2025-07-27-02
+**Title:** Top Movers table is a placeholder and does not show data.
+**Module:** Dashboard (Backend)
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Backend) / New Feature
+**Severity:** Medium
+**Description:**
+The "Top Movers" table on the dashboard is currently a placeholder and always shows "No market data available". The backend logic in `crud_dashboard.py` returns an empty list for the `top_movers` field. This feature needs to be implemented to provide users with meaningful data about their assets' daily performance.
+**Resolution:**
+Enhance `FinancialDataService` to fetch the previous day's close price along with the current price. Update `_calculate_dashboard_summary` in `crud_dashboard.py` to calculate the daily change for each asset, identify the top 5 movers based on percentage change, and return this data in the `/summary` endpoint.
+
+---
+
+**Bug ID:** 2025-07-27-03
+**Title:** Dashboard tests fail with `TypeError` due to outdated mock data structure.
+**Module:** Test Suite, Dashboard
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-27
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The tests for the dashboard summary and allocation endpoints (`test_get_dashboard_summary_success`, `test_get_asset_allocation_success`) are failing with `TypeError: 'decimal.Decimal' object is not subscriptable`. This is because the tests provide mock data for `financial_data_service.get_current_prices` in an old format (`Dict[str, Decimal]`). The application logic in `crud_dashboard.py` was updated to handle a new, nested data structure (`Dict[str, Dict[str, Decimal]]`) to support the "Top Movers" feature, but the test mocks were not updated accordingly.
+**Resolution:**
+Update the mock data in `app/tests/api/v1/test_dashboard.py` to match the new, expected nested dictionary structure for the `get_current_prices` method.
+
+---
+
+**Bug ID:** 2025-07-27-04
+**Title:** Dashboard summary endpoint fails with `ResponseValidationError` due to schema mismatch for `top_movers`.
+**Module:** Dashboard (Backend), Schemas
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The `test_get_dashboard_summary_success` test fails with a `fastapi.exceptions.ResponseValidationError`. This is because the business logic in `crud_dashboard.py` calculates and returns a `top_movers` list with keys like `daily_change` and `daily_change_percentage`. However, the `DashboardSummary` response schema in `schemas/dashboard.py` is expecting a list of `DashboardAsset` objects, which have different field names (`price_change_24h`, `price_change_percentage_24h`). This mismatch causes FastAPI's response validation to fail.
+**Resolution:**
+Create a new `TopMover` Pydantic schema in `schemas/dashboard.py` that accurately reflects the data structure returned by the CRUD layer (with `daily_change`, etc.). Update the `DashboardSummary` schema to use `List[TopMover]` for its `top_movers` field, replacing the outdated `DashboardAsset`.
+
+---
+
+**Bug ID:** 2025-07-27-05
+**Title:** Test suite collection fails with `ImportError` for 'DashboardAsset' schema.
+**Module:** Core Backend, Schemas
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of a fatal `ImportError` during test collection. The `app/schemas/__init__.py` file attempts to import `DashboardAsset` from `app/schemas/dashboard.py`, but this schema was removed and replaced by the `TopMover` schema during the implementation of the "Top Movers" feature. This breaks the application's startup and prevents any tests from running.
+**Resolution:**
+Update `app/schemas/__init__.py` to remove the import for the non-existent `DashboardAsset` schema.
+
+---
+
+**Bug ID:** 2025-07-27-06
+**Title:** [Feature] Implement Unrealized and Realized P/L calculations.
+**Module:** Dashboard (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-27
+**Classification:** New Feature
+**Severity:** High
+**Description:**
+The dashboard currently displays placeholder values of "0" for "Unrealized P/L" and "Realized P/L". This feature will implement the backend business logic to calculate these critical metrics.
+**Resolution:**
+Refactor the `_calculate_dashboard_summary` function in `crud_dashboard.py` to implement the Average Cost Basis method. The logic will track the cost basis for each asset and calculate realized P/L on sell transactions and unrealized P/L for all current holdings. The corresponding tests in `test_dashboard.py` will be updated to verify the calculations.
+
+---
+
+**Bug ID:** 2025-07-27-07
+**Title:** Test suite fails with `TypeError` due to outdated `create_test_transaction` test utility.
+**Module:** Test Suite
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-27
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test `test_get_dashboard_summary_success` fails with `TypeError: create_test_transaction() got an unexpected keyword argument 'price_per_unit'`. The test was updated to use the correct `price_per_unit` argument to test the P/L feature, but the test utility function `create_test_transaction` in `app/tests/utils/transaction.py` was not updated and still expects the old argument name `price`.
+**Resolution:**
+Update the function signature of `create_test_transaction` in `app/tests/utils/transaction.py` to accept `price_per_unit` instead of `price` and use it correctly when creating the transaction schema.
+
+---
+
+**Bug ID:** 2025-07-27-08
+**Title:** [Feature] Users cannot add transactions for unlisted assets.
+**Module:** Portfolio Management (Frontend & Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-27
+**Classification:** New Feature / User Experience
+**Severity:** High
+**Description:**
+The application relies on a pre-seeded asset database. A user has no way to add a new asset if it's not in the list, as the asset lookup will find no results. This blocks them from adding valid transactions and makes the application unusable for any asset not in the master list.
+**Resolution:**
+1.  **Backend:** Create a new endpoint `POST /api/v1/assets/` that accepts a ticker symbol. This endpoint will validate the ticker against `yfinance`. If valid, it creates the asset in the local database and returns it. A new `get_asset_details` method will be added to `FinancialDataService`.
+2.  **Frontend:** Refactor `AddTransactionModal.tsx`: When the asset search returns no results, display a "Create new asset" button. Clicking this button will call the new mutation. On success, the new asset is automatically selected in the form.
+
+---
+
+**Bug ID:** 2025-07-27-09
+**Title:** All transaction creation tests fail with `NameError: name 'crud' is not defined`.
+**Module:** Portfolio Management (Backend), CRUD
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+All tests that involve creating a transaction (dashboard tests, portfolio tests, validation tests) are failing with a `NameError`. The `create_with_portfolio` method in `app/crud/crud_transaction.py` attempts to call `crud.portfolio.get()` to fetch the associated portfolio, but it never imports the `crud` package itself. This prevents any transaction from being created and breaks a large portion of the test suite.
+**Resolution:**
+Add the import statement `from app import crud` to the top of `app/crud/crud_transaction.py`.
+
+---
+
+**Bug ID:** 2025-07-27-10
+**Title:** Transaction creation fails with `TypeError` due to outdated schema supporting deprecated `new_asset` flow.
+**Module:** Portfolio Management (Backend), Schemas
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+All tests that create transactions are failing with `TypeError: 'new_asset' is an invalid keyword argument for Transaction`. This is because the `TransactionCreate` Pydantic schema still contains the `new_asset` field, which was part of a deprecated workflow. The `crud_transaction.create_with_portfolio` function calls `model_dump()` on this schema, which includes `new_asset: None` in the dictionary passed to the SQLAlchemy model constructor, causing the crash.
+**Resolution:**
+1.  Refactor `backend/app/schemas/transaction.py` to remove the `new_asset` field and its associated validator from the `TransactionCreate` schema.
+2.  Remove the obsolete tests (`test_create_transaction_with_new_asset`, `test_create_transaction_conflicting_asset_info`) from `backend/app/tests/api/v1/test_portfolios_transactions.py` that were designed to test the deprecated workflow.
+
+---
+
+**Bug ID:** 2025-07-27-11
+**Title:** `DELETE /portfolios/{id}` endpoint returns an incorrect response body.
+**Module:** Portfolio Management (Backend)
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Backend)
+**Severity:** Medium
+**Description:**
+The test `test_delete_portfolio` fails with a `KeyError: 'message'`. The test expects a JSON response `{"message": "Portfolio deleted successfully"}`, but the endpoint is returning a different payload (likely the deleted object or an empty body), which does not match the test's assertion.
+**Resolution:**
+Update the `delete_portfolio` endpoint in `app/api/v1/endpoints/portfolios.py` to return the correct JSON message object upon successful deletion, consistent with other delete endpoints in the application.
+
+---
+
+**Bug ID:** 2025-07-27-12
+**Title:** Tests fail with `TypeError` due to outdated `create_test_asset` test utility.
+**Module:** Test Suite
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-27
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Multiple tests in `test_portfolios_transactions.py` fail with `TypeError: create_test_asset() got an unexpected keyword argument 'name'`. The test utility function does not accept a `name` argument, but the tests require it to create assets with specific names. This prevents testing of any feature that relies on pre-seeded assets.
+**Resolution:**
+Update the `create_test_asset` function in `app/tests/utils/asset.py` to accept an optional `name` argument and use it when creating the asset.
+
+---
+
+**Bug ID:** 2025-07-27-13
+**Title:** `AddTransactionModal` test suite is outdated and fails due to non-existent hook.
+**Module:** Portfolio Management (Test Suite)
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-27
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The tests for `AddTransactionModal.tsx` are based on an old implementation and are failing because they attempt to mock `useLookupAsset`, a hook that was removed. The component has been refactored to use a debounced search and a dedicated "Create Asset" button, making the existing tests obsolete.
+**Resolution:**
+Rewrite the entire test suite for `AddTransactionModal.test.tsx`. The new tests will mock the new hooks (`useCreateAsset`) and API calls (`lookupAsset`). The tests will cover the debounced search, selecting an asset, creating a new asset, and submitting the form with a selected asset.
+
+---
+
+**Bug ID:** 2025-07-27-14
+**Title:** `PortfolioDetailPage` test fails due to incorrect text assertion and unmocked hooks.
+**Module:** Portfolio Management (Test Suite)
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-27
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test for opening the `AddTransactionModal` from the `PortfolioDetailPage` fails because it asserts for the heading "add new transaction", but the modal's actual heading is "Add Transaction". Additionally, the test does not mock the `useCreateTransaction` and `useCreateAsset` hooks, which are used by the modal it renders, which would cause a crash.
+**Resolution:**
+Update `src/__tests__/pages/Portfolio/PortfolioDetailPage.test.tsx` to assert for the correct heading text ("Add Transaction") and to mock all necessary hooks from `usePortfolios`.
+
+---
+
+**Bug ID:** 2025-07-27-15
+**Title:** `AddTransactionModal.test.tsx` fails to run due to a fatal syntax error.
+**Module:** Portfolio Management (Test Suite)
+**Reported By:** QA Engineer
+**Date Reported:** 2025-07-27
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The test suite for `AddTransactionModal` crashes during test collection with `SyntaxError: Missing initializer in const declaration`. The test file contains an uninitialized constant (`const mockMutateTransaction;`), which is a fatal syntax error that prevents the test from running.
+**Resolution:**
+Replace the entire content of `frontend/src/__tests__/components/Portfolio/AddTransactionModal.test.tsx` with the correct, modern test suite that is syntactically valid and accurately tests the component's current functionality.
+
+---
+
+**Bug ID:** 2025-07-27-16
+**Title:** TopMoversTable component has a fatal syntax error. 
+**Module:** Dashboard (Frontend) 
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-27 
+**Classification:** Implementation (Frontend) 
+**Severity:** Critical 
+**Description:** 
+The TopMoversTable.tsx component has a fatal syntax error (Filimport instead of import) that prevents the frontend application from compiling and running. 
+**Steps to Reproduce:**
+Run docker-compose up --build db backend frontend. 
+**Expected Behavior:** The frontend application should build and run successfully. 
+**Actual Behavior:** The Vite server crashes with a syntax error originating from TopMoversTable.tsx. 
+**Resolution:** Correct the syntax error in the import statement in frontend/src/components/Dashboard/TopMoversTable.tsx.
+
+---
+
+**Bug ID:** 2025-07-27-17
+**Title:** SummaryCard component displays incorrect currency symbol ($ instead of ₹).
+**Module:** Dashboard (Frontend), UI/Styling
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+The `SummaryCard` component on the dashboard incorrectly displays currency values with a dollar sign (`$`) instead of the Indian Rupee symbol (`₹`). This is because the parent `DashboardPage` component was performing its own incorrect currency formatting and passing a pre-formatted string as a prop, rather than a raw number. The `SummaryCard` was not using the centralized `formatCurrency` utility.
+**Steps to Reproduce:**
+1. View the dashboard.
+**Expected Behavior:**
+All currency values on the dashboard should be displayed with the correct INR symbol (e.g., `₹1,23,456.78`).
+**Actual Behavior:**
+The summary cards display values with a dollar sign (e.g., `$123456.78`).
+**Resolution:**
+Refactored `DashboardPage.tsx` to pass raw numeric values to `SummaryCard`. Updated `SummaryCard.tsx` to accept a `number` and use the centralized `formatCurrency` utility to ensure the correct `₹` symbol is displayed.
+
+---
+
+**Bug ID:** 2025-07-27-18
+**Title:** `AddTransactionModal` opens automatically on `PortfolioDetailPage` load and cannot be closed.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** User
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+When the `PortfolioDetailPage` loads, the `AddTransactionModal` is rendered immediately and overlays the page content. The modal cannot be closed by clicking the "Cancel" or "Save" buttons because the parent component renders it unconditionally, ignoring the `isModalOpen` state. This makes the portfolio detail page unusable.
+**Steps to Reproduce:**
+1.  Log in.
+2.  Navigate to the "Portfolios" page.
+3.  Click on any portfolio to view its detail page.
+**Expected Behavior:**
+The portfolio detail page should display the portfolio's information. The "Add Transaction" modal should only appear after the user clicks the "Add Transaction" button.
+**Actual Behavior:**
+The "Add Transaction" modal is open by default and cannot be closed.
+**Resolution:**
+Refactor `PortfolioDetailPage.tsx` to conditionally render the `AddTransactionModal` component based on the `isModalOpen` state. Remove the unused `isOpen` prop from the component call.
+
+---
+
+**Bug ID:** 2025-07-27-19
+**Title:** `TransactionList` component displays incorrect currency symbol ($ instead of ₹).
+**Module:** Portfolio Management (Frontend), UI/Styling
+**Reported By:** User via E2E Test
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+The `TransactionList` component on the portfolio detail page incorrectly displays currency values with a dollar sign (`$`) instead of the Indian Rupee symbol (`₹`). The component was using hardcoded `$` symbols and `parseFloat` for formatting instead of the centralized `formatCurrency` utility.
+**Steps to Reproduce:**
+1. Navigate to any portfolio detail page.
+**Expected Behavior:**
+All currency values in the transaction list should be displayed with the correct INR symbol (e.g., `₹1,23,456.78`).
+**Actual Behavior:**
+The "Price/Unit" and "Total Value" columns display values with a dollar sign (e.g., `$150.00`).
+**Resolution:**
+Refactored `TransactionList.tsx` to import and use the centralized `formatCurrency` utility from `src/utils/formatting.ts` for all currency values. Also improved the overall styling to match the application's design system.
+
+---
+
+**Bug ID:** 2025-07-27-20
+**Title:** `DashboardPage` tests fail due to outdated currency and text assertions.
+**Module:** Dashboard (Test Suite)
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-27
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Tests for `DashboardPage.tsx` are failing because the assertions do not match the rendered output. The tests assert for the wrong currency symbol (`$`) and incorrect text for the "no data" message in the Top Movers table. This happened after the UI was fixed to use the correct INR symbol and text.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test assertions should match the component's current output.
+**Actual Behavior:**
+Tests fail with `TestingLibraryElementError` because they cannot find the outdated text.
+**Resolution:**
+Update the assertions in `src/__tests__/pages/DashboardPage.test.tsx` to use the correct INR currency symbol (`₹`) and to match the exact text rendered in the component.
+
+---
+
+**Bug ID:** 2025-07-27-21
+**Title:** `DashboardPage` contains presentational logic that belongs in `SummaryCard`.
+**Module:** Dashboard (Frontend), Code Quality
+**Reported By:** Code Review
+**Date Reported:** 2025-07-27
+**Classification:** Implementation (Frontend)
+**Severity:** Low
+**Description:**
+The `DashboardPage` component contains a `getPnlColor` helper function and passes the resulting CSS class as a prop to the `SummaryCard` component. This tightly couples the components and violates the principle of encapsulation. The `SummaryCard` should be responsible for its own presentation logic.
+**Resolution:**
+Move the `getPnlColor` logic into the `SummaryCard` component. Refactor `SummaryCard` to accept a raw `value` number and an `isPnl` boolean prop to determine its own text color. Update `DashboardPage` to pass only the raw numeric value.

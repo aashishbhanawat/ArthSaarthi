@@ -1,52 +1,57 @@
 import React from 'react';
 import { Transaction } from '../../types/portfolio';
+import { formatCurrency } from '../../utils/formatting';
 
 interface TransactionListProps {
-    transactions: Transaction[];
+  transactions: Transaction[];
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
-    if (transactions.length === 0) {
-        return <p className="text-center text-gray-500 mt-8">No transactions found for this portfolio.</p>;
-    }
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString();
-    };
-
+  if (!transactions || transactions.length === 0) {
     return (
-        <div className="overflow-x-auto card">
-            <table className="min-w-full bg-white">
-                <thead className="bg-gray-200">
-                    <tr>
-                        <th className="text-left py-3 px-4 uppercase font-semibold text-sm">Date</th>
-                        <th className="text-left py-3 px-4 uppercase font-semibold text-sm">Type</th>
-                        <th className="text-left py-3 px-4 uppercase font-semibold text-sm">Asset</th>
-                        <th className="text-right py-3 px-4 uppercase font-semibold text-sm">Quantity</th>
-                        <th className="text-right py-3 px-4 uppercase font-semibold text-sm">Price/Unit</th>
-                        <th className="text-right py-3 px-4 uppercase font-semibold text-sm">Total Value</th>
-                    </tr>
-                </thead>
-                <tbody className="text-gray-700">
-                    {transactions.map((tx) => (
-                        <tr key={tx.id} className="border-b odd:bg-gray-50">
-                            <td className="text-left py-3 px-4">{formatDate(tx.transaction_date)}</td>
-                            <td className={`text-left py-3 px-4 font-bold ${tx.transaction_type === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
-                                {tx.transaction_type}
-                            </td>
-                            <td className="text-left py-3 px-4">
-                                <div className="font-semibold">{tx.asset.name}</div>
-                                <div className="text-xs text-gray-500">{tx.asset.ticker_symbol}</div>
-                            </td>
-                            <td className="text-right py-3 px-4">{parseFloat(tx.quantity).toFixed(4)}</td>
-                            <td className="text-right py-3 px-4">${parseFloat(tx.price_per_unit).toFixed(2)}</td>
-                            <td className="text-right py-3 px-4 font-semibold">${(parseFloat(tx.quantity) * parseFloat(tx.price_per_unit)).toFixed(2)}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+      <div className="card text-center p-8">
+        <p className="text-gray-500">No transactions found for this portfolio.</p>
+      </div>
     );
+  }
+
+  return (
+    <div className="card">
+      <h2 className="text-xl font-bold mb-4">Transactions</h2>
+      <div className="overflow-x-auto">
+        <table className="table-auto w-full">
+          <thead>
+            <tr className="text-left text-gray-600">
+              <th className="p-2">Date</th>
+              <th className="p-2">Asset</th>
+              <th className="p-2">Type</th>
+              <th className="p-2 text-right">Quantity</th>
+              <th className="p-2 text-right">Price</th>
+              <th className="p-2 text-right">Total Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((tx) => (
+              <tr key={tx.id} className="border-t">
+                <td className="p-2">{new Date(tx.transaction_date).toLocaleDateString()}</td>
+                <td className="p-2">
+                  <div className="font-bold">{tx.asset.ticker_symbol}</div>
+                  <div className="text-sm text-gray-500">{tx.asset.name}</div>
+                </td>
+                <td className={`p-2 font-bold ${tx.transaction_type === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
+                  {tx.transaction_type}
+                </td>
+                <td className="p-2 text-right font-mono">{Number(tx.quantity).toLocaleString()}</td>
+                <td className="p-2 text-right font-mono">{formatCurrency(Number(tx.price_per_unit))}</td>
+                <td className="p-2 text-right font-mono">{formatCurrency(Number(tx.quantity) * Number(tx.price_per_unit))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 };
 
 export default TransactionList;
+

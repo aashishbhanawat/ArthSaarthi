@@ -25,6 +25,7 @@ This document outlines the initial database schema required to support the featu
 | Column Name | Data Type           | Constraints                               |
 | ----------- | ------------------- | ----------------------------------------- |
 | `id`        | `Integer`           | `PRIMARY KEY`                             |
+| `description`| `String`           | `NULLABLE`                                |
 | `name`      | `String`            | `NOT NULL`                                |
 | `user_id`   | `Integer`           | `FOREIGN KEY (users.id)`, `NOT NULL`      |
 | `created_at`| `TIMESTAMP(timezone)` | `NOT NULL`, `SERVER_DEFAULT(now())`       |
@@ -37,9 +38,11 @@ This document outlines the initial database schema required to support the featu
 | Column Name     | Data Type | Constraints                   |
 | --------------- | --------- | ----------------------------- |
 | `id`            | `Integer` | `PRIMARY KEY`                 |
-| `ticker_symbol` | `String`  | `UNIQUE`, `NOT NULL`          |
+| `ticker_symbol` | `String`  | `UNIQUE`, `NOT NULL`, `INDEX` |
 | `name`          | `String`  | `NOT NULL`                    |
+| `isin`          | `String`  | `UNIQUE`, `NULLABLE`, `INDEX` |
 | `asset_type`    | `String`  | `NOT NULL` (e.g., 'STOCK')    |
+| `exchange`      | `String`  | `NULLABLE` (e.g., 'NSE')      |
 | `currency`      | `String`  | `NOT NULL` (e.g., 'USD')      |
 
 ## 4. `transactions` Table

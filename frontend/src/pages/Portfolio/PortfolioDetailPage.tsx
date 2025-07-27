@@ -31,11 +31,12 @@ const PortfolioDetailPage: React.FC = () => {
 
             <TransactionList transactions={portfolio.transactions || []} />
 
-            <AddTransactionModal
-                isOpen={isModalOpen}
-                onClose={() => setModalOpen(false)}
-                portfolioId={portfolioId}
-            />
+            {isModalOpen && (
+                <AddTransactionModal
+                    onClose={() => setModalOpen(false)}
+                    portfolioId={portfolioId}
+                />
+            )}
         </div>
     );
 };

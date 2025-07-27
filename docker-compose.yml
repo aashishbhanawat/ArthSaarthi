@@ -3,6 +3,8 @@ version: '3.8'
 services:
   db:
     image: postgres:13
+    container_name: pms-db
+    restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
@@ -19,15 +21,12 @@ services:
 
   test:
     build: ./backend
+    container_name: pms-test
     command: ["pytest", "-v"]
+    env_file:
+      - ./backend/.env.test
     volumes:
       - ./backend:/app
-    environment:
-      - DATABASE_URL=postgresql://myadmin:mysecretpassword@db:5432/pms_db_test
-      - SECRET_KEY=a_super_secret_key_that_should_be_changed
-      - ALGORITHM=HS256
-      - ACCESS_TOKEN_EXPIRE_MINUTES=30
-      - REDIS_URL=redis://redis:6379/0
     networks:
       - pms_network
     depends_on:
@@ -38,7 +37,9 @@ services:
 
   backend:
     build: ./backend
-    command: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    container_name: pms-backend
+    restart: unless-stopped
+    command: /app/entrypoint.sh
     volumes:
       - ./backend:/app
     env_file:
@@ -55,6 +56,8 @@ services:
 
   frontend:
     build: ./frontend
+    container_name: pms-frontend
+    restart: unless-stopped
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -67,7 +70,8 @@ services:
 
   redis:
     image: redis:alpine
-    restart: always
+    container_name: pms-redis
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
