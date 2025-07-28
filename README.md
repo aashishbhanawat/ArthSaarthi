@@ -71,7 +71,7 @@ The project uses `.env` files for configuration.
 
 From the project's root directory, run the following command to start the application services:
 ```bash
-docker-compose up --build db backend frontend
+docker-compose up --build db backend frontend redis
 ```
 This command will build the Docker images and start only the necessary services for the application to run. The backend will wait for the database to be healthy before starting.
 

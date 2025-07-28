@@ -1,22 +1,45 @@
 # IDE and OS files
 .idea/
 .vscode/
+.DS_Store
+
+# Editor files
 *.swp
 *~
-.DS_Store
+
+# Environment files - do not commit secrets
+# These are loaded by docker-compose but should never be in version control.
 .env
 backend/.env
 frontend/.env
+.env.test
+.env.local
+.env.*.local
 
 # Python cache
 __pycache__/
 .pytest_cache/
 venv/
+.mypy_cache/
+.tox/
+*.pyc
+*.pyo
 
-# Environment files - do not commit secrets
-**/.env
+# Python build artifacts
+build/
+dist/
+*.egg-info/
 
 # Test artifacts
 **/test.db
+.coverage
 
+# Frontend
+frontend/dist/
+frontend/coverage/
 frontend/node_modules/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

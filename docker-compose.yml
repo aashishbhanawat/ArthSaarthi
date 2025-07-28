@@ -1,5 +1,6 @@
 version: '3.8'
 
+
 services:
   db:
     image: postgres:13
@@ -11,6 +12,7 @@ services:
       - ./backend/.env
     ports:
       - "5432:5432"
+    command: postgres -c log_statement=all
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -57,6 +59,7 @@ services:
   frontend:
     build: ./frontend
     container_name: pms-frontend
+    command: npm run dev -- --debug
     restart: unless-stopped
     volumes:
       - ./frontend:/app
@@ -71,6 +74,7 @@ services:
   redis:
     image: redis:alpine
     container_name: pms-redis
+    command: redis-server --loglevel debug
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]

@@ -105,4 +105,19 @@ You can now access the application in your browser at `http://localhost:3000`.
 
 ---
 
+## 5. Enabling Debug Logs (Optional)
+
+To get more detailed logs for troubleshooting, you can start the services with debug flags.
+
+*   **PostgreSQL:**
+    *   You will need to edit your local `postgresql.conf` file and set `log_statement = 'all'`. The location of this file varies by operating system.
+
+*   **Redis:**
+    *   Start the Redis server with the `loglevel` flag: `redis-server --loglevel debug`
+
+*   **Frontend (Vite):**
+    *   Start the frontend dev server with the `--debug` flag: `npm run dev -- --debug`
+
+---
+
 For troubleshooting common issues, please refer to the main Troubleshooting Guide.
