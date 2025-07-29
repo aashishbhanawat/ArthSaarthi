@@ -1,4 +1,4 @@
-﻿﻿# Personal Portfolio Management System (PMS)
+﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
 
 This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets, providing performance insights and analytics.
 
@@ -102,6 +102,14 @@ To run the frontend test suite using Jest and React Testing Library, use the fol
     ```bash
     docker-compose run --rm frontend npm test
     ```
+
+### End-to-End (E2E) Tests
+
+The E2E test suite runs using Playwright in a dedicated Docker environment. This command starts all necessary services (`db`, `redis`, `backend`, `frontend`, `e2e-tests`), runs the tests, and then automatically shuts down.
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit db redis backend frontend e2e-tests
+```
 
 ## Contributing
 

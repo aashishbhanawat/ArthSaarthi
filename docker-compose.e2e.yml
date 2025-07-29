@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    env_file:
+      - ./backend/.env
+      - ./backend/.env.test
+    command: /app/e2e_entrypoint.sh
+    environment:
+      - ENVIRONMENT=test
+      - CORS_ORIGINS=http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000,http://frontend:3000,http://backend:8000
+
+  db:
+    env_file:
+      - ./backend/.env
+      - ./backend/.env.test
+
+  frontend:
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  e2e-tests:
+    build:
+      context: ./e2e
+    container_name: pms-e2e-tests
+    command: ["npx", "playwright", "test"]
+    env_file:
+      - ./backend/.env
+      - ./backend/.env.test
+    volumes:
+      - ./e2e:/app
+    networks:
+      - pms_network
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy

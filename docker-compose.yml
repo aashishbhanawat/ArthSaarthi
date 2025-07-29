@@ -12,7 +12,7 @@ services:
       - ./backend/.env
     ports:
       - "5432:5432"
-    command: postgres -c log_statement=all
+    #command: postgres -c log_statement=all
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -53,13 +53,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s   # Give it a full minute before counting failures
     networks:
       - pms_network
 
   frontend:
     build: ./frontend
     container_name: pms-frontend
-    command: npm run dev -- --debug
+    #command: npm run dev -- --debug
     restart: unless-stopped
     volumes:
       - ./frontend:/app
@@ -74,7 +80,7 @@ services:
   redis:
     image: redis:alpine
     container_name: pms-redis
-    command: redis-server --loglevel debug
+    #command: redis-server --loglevel debug
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]

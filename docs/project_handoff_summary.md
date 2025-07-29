@@ -7,7 +7,7 @@
 *   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS) that allows users to manage their investment portfolios.
 *   **Current Status:** The application is **stable and feature-complete for its pilot release**. It has been through a rigorous E2E testing and stabilization phase. All core features are functional, the UI is consistent, and the backend and frontend are fully covered by automated tests.
 *   **Key Implemented Features:**
-    *   **Authentication:** Secure initial admin setup, user login/logout, and a robust "sliding session" implementation using JWT access and refresh tokens.
+    *   **Authentication:** Secure initial admin setup, user login/logout, and secure session management using JSON Web Tokens (JWT).
     *   **User Management:** A dedicated, admin-only dashboard for performing CRUD operations on all users.
     *   **Portfolio & Transaction Management:** A stable and fully tested set of APIs and UI components for creating portfolios and transactions. Includes on-the-fly asset creation and validation to prevent invalid data entry (e.g., selling unowned assets).
     *   **Dashboard:** A dynamic dashboard that displays a summary of the user's total portfolio value, realized and unrealized P/L, top daily movers, an interactive portfolio history chart, and an asset allocation pie chart.
@@ -31,6 +31,7 @@
     *   **Containerization:** The entire application is orchestrated via `docker-compose.yml`, ensuring a consistent development environment.
     *   **Backend Design:** The backend follows a clean, layered architecture. FastAPI is used for routing, Pydantic for data validation, and SQLAlchemy for ORM interaction. A repository pattern is implemented in the `crud` layer.
     *   **Frontend Design:** The frontend uses React Query for server state management, React Context for global UI state (e.g., authentication), and Tailwind CSS for styling.
+    *   **Optimized External API Usage:** To manage reliance on the external financial data service (`yfinance`), the backend implements caching and request batching to minimize API calls, improve performance, and reduce the risk of rate-limiting.
 
 ---
 
@@ -61,6 +62,10 @@
     ```bash
     docker-compose run --rm frontend npm test
     ```
+*   **End-to-End (E2E) Tests:** This command starts all necessary services, runs the tests, and then automatically shuts down.
+    ```bash
+    docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests
+    ```
 
 ---
 
@@ -87,6 +92,10 @@ Our development history revealed several critical patterns that this workflow is
     *   **History:** The most common source of application-breaking bugs was a mismatch between the frontend and backend contracts (e.g., incorrect API URLs, mismatched data types like `float` vs. `Decimal`, inconsistent `localStorage` keys).
     *   **Mitigation:** The RCA process now requires validating the "contract" between components (e.g., checking the backend schema before fixing a frontend data handling issue).
 
+3.  **Risk: E2E Environment Complexity.**
+    *   **History:** A significant portion of the project was dedicated to debugging the E2E test environment. Issues arose from Docker networking, CORS policies, Vite proxy settings, and environment variable inheritance.
+    *   **Mitigation:** The E2E test setup is now treated as a core feature. Any changes to the build system, Docker configuration, or environment variables must be validated against the E2E test suite.
+
 3.  **Risk: Stale AI Context.**
     *   **History:** The AI assistant would occasionally work with outdated file information, leading to incorrect suggestions.
     *   **Mitigation:** The developer is the **source of truth**. The established process requires providing the AI with the latest file content to resynchronize its context when necessary.
@@ -96,6 +105,7 @@ Our development history revealed several critical patterns that this workflow is
 ## 5. Known Architectural Risks
 *   **Database Migrations:** The project uses **Alembic** for schema management. The old `create_all` mechanism has been removed from the production startup command. All database model changes must be accompanied by a new, versioned migration script to prevent schema drift.
 
+*   **Flexible Configuration Management:** A strategy for managing secrets (e.g., `SECRET_KEY`, `DATABASE_URL`) that supports both Docker and standalone (non-containerized) deployments has not yet been finalized. This will be a key consideration for production readiness.
 ---
 
 ## 6. Next Steps

@@ -2157,6 +2157,9 @@ The correct code from `src/components/SetupForm.tsx` was moved to `src/component
 
 ---
 
+
+
+
 **Bug ID:** 2025-07-21-49
 **Title:** Initial admin setup fails due to function name mismatch in API service.
 **Module:** Authentication (Frontend), API Integration
@@ -2719,6 +2722,11 @@ Update the `toHaveBeenCalledWith` assertion in `AddTransactionModal.test.tsx` to
 
 ---
 
+
+
+---
+
+
 **Bug ID:** 2025-07-24-01
 **Title:** Test suite collection fails with `AttributeError` due to incorrect model imports.
 **Module:** Core Backend, Test Suite
@@ -2732,9 +2740,7 @@ The test suite fails during the collection phase with `AttributeError: module 'a
 1. Run `docker-compose run --rm test`.
 **Expected Behavior:**
 The test suite should be collected and should run without import errors.
-**Actual Behavior:**
-Test collection is interrupted with `AttributeError: module 'app.models' has no attribute 'Asset'`.
-**Resolution:**
+
 Update the import statements in `app/tests/utils/asset.py` and `app/tests/api/v1/test_portfolios_transactions.py` to use direct imports (e.g., `from app.models.asset import Asset`) and remove the unused `app.models` import.
 **Resolution:**
 Update the import statements in `app/tests/utils/asset.py` and `app/tests/api/v1/test_portfolios_transactions.py` to use direct imports (e.g., `from app.models.asset import Asset`) and remove the unused `app.models` import.
@@ -3131,3 +3137,554 @@ Update the assertions in `src/__tests__/pages/DashboardPage.test.tsx` to use the
 The `DashboardPage` component contains a `getPnlColor` helper function and passes the resulting CSS class as a prop to the `SummaryCard` component. This tightly couples the components and violates the principle of encapsulation. The `SummaryCard` should be responsible for its own presentation logic.
 **Resolution:**
 Move the `getPnlColor` logic into the `SummaryCard` component. Refactor `SummaryCard` to accept a raw `value` number and an `isPnl` boolean prop to determine its own text color. Update `DashboardPage` to pass only the raw numeric value.
+
+---
+
+**Bug ID:** 2025-07-28-01
+**Title:** E2E tests fail with `net::ERR_CONNECTION_REFUSED` due to incorrect `baseURL`.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-28
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The E2E test suite is not runnable. When executed, all tests fail with a `net::ERR_CONNECTION_REFUSED` error. This is because the Playwright configuration (`playwright.config.ts`) uses `baseURL: 'http://localhost:3000'`. Inside the `e2e-tests` Docker container, `localhost` refers to the container itself, not the `frontend` service.
+**Steps to Reproduce:**
+1. Run the E2E test suite with `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The Playwright tests should successfully connect to the frontend service, and the tests should run.
+**Actual Behavior:**
+The tests fail immediately with a connection refused error because they cannot reach the frontend service at `localhost`.
+**Resolution:**
+Update `e2e/playwright.config.ts` to use the Docker service name for the `baseURL`. The correct URL is `http://frontend:3000`, which is resolvable within the Docker network.
+
+---
+
+**Bug ID:** 2025-07-28-02
+**Title:** Backend crashes on startup due to incorrect import path in `testing.py`.
+**Module:** Core Backend, E2E Testing
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-28
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The backend application fails to start due to a fatal `ImportError`. The `app/api/v1/endpoints/testing.py` file, added to support E2E tests, uses an incorrect import path (`from app.api import deps`) to get its dependencies. The correct path is `from app.api.v1 import deps`. This prevents the application from starting and breaks the E2E test environment.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build backend`.
+**Expected Behavior:**
+The backend service should start successfully.
+**Actual Behavior:**
+The backend container crashes with `ImportError: cannot import name 'deps' from 'app.api'`.
+**Resolution:**
+Correct the import path in `backend/app/api/v1/endpoints/testing.py`.
+
+---
+
+**Bug ID:** 2025-07-28-03
+**Title:** Backend crashes on startup due to incorrect dependency import path in `testing.py`.
+**Module:** Core Backend, E2E Testing
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-28
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The backend application fails to start due to a fatal `ImportError`. The `app/api/v1/endpoints/testing.py` file, added to support E2E tests, uses an incorrect import path (`from app.api.v1 import deps`) to get its dependencies. The correct path is `from app.core import dependencies as deps`. This prevents the application from starting and breaks the E2E test environment.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build backend`.
+**Expected Behavior:**
+The backend service should start successfully.
+**Actual Behavior:**
+The backend container crashes with `ImportError: cannot import name 'deps' from 'app.api.v1'`.
+**Resolution:**
+Correct the import path in `backend/app/api/v1/endpoints/testing.py` to `from app.core import dependencies as deps`.
+
+---
+
+**Bug ID:** 2025-07-29-01
+**Title:** Backend container is unhealthy because `curl` is not installed in the base image.
+**Module:** Build/Deployment, E2E Testing
+**Reported By:** User via `docker inspect` log
+**Date Reported:** 2025-07-29
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `docker-compose` healthcheck for the `backend` service uses `curl` to check if the API is responsive. However, the `python:3.11-slim` base image used for the backend does not include the `curl` utility by default. This causes the healthcheck to fail continuously with the error `exec: "curl": executable file not found in $PATH`, marking the container as unhealthy and preventing the E2E test suite from running.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build`.
+**Expected Behavior:**
+The backend container should become healthy, allowing dependent services to start.
+**Actual Behavior:**
+The backend container is marked as `unhealthy`, and the E2E test run fails to start.
+**Resolution:**
+Update the `backend/Dockerfile` to install the `curl` package using `apt-get`.
+
+---
+
+**Bug ID:** 2025-07-29-02
+**Title:** E2E tests fail with "Executable doesn't exist" due to Playwright version mismatch.
+**Module:** E2E Testing, Build/Deployment
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The E2E test suite fails to run any browser-based tests with the error `Error: browserType.launch: Executable doesn't exist`. The error log explicitly states that the Playwright npm package version is newer than the base Docker image (`mcr.microsoft.com/playwright:v1.40.0-jammy`). This mismatch means the test runner cannot find the browser binaries it expects.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+Playwright should be able to launch the browser and run tests.
+**Actual Behavior:**
+Tests crash immediately with an executable not found error.
+**Resolution:**
+Update the `FROM` line in `e2e/Dockerfile` to use the newer image version required by the installed Playwright package.
+
+---
+
+**Bug ID:** 2025-07-29-03
+**Title:** E2E test setup fails with 403 Forbidden on `/testing/reset-db`.
+**Module:** E2E Testing, Configuration
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `beforeAll` hook in the E2E test suite fails with a `403 Forbidden` error when trying to reset the database. This is because the `docker-compose.e2e.yml` file incorrectly loads the production `.env` file for the `backend` service. The backend correctly rejects the request because the `ENVIRONMENT` variable is not set to "test".
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The database reset endpoint should be accessible, returning a 204 status code.
+**Actual Behavior:**
+The request is denied with a 403 status code, and the test suite fails.
+**Resolution:**
+Update `docker-compose.e2e.yml` to configure the `backend` service to use the `./backend/.env.test` environment file.
+
+---
+
+**Bug ID:** 2025-07-29-04
+**Title:** E2E environment fails because `backend` and `db` services use mismatched .env files.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+After configuring the `backend` service to use `.env.test` in `docker-compose.e2e.yml`, the entire test environment fails to start. The `backend` container is unable to connect to the database because the `db` service is still using the default `.env` file. This credential mismatch causes the backend's healthcheck to fail, which in turn prevents the `frontend` container from starting, leading to a cascade failure.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The backend and db services should start with a consistent configuration, allowing the backend to become healthy.
+**Actual Behavior:**
+The backend container fails its healthcheck, and the `frontend` container is marked as unhealthy.
+**Resolution:**
+Update `docker-compose.e2e.yml` to also override the `env_file` for the `db` service, ensuring both the database and the backend use the same `./backend/.env.test` file.
+
+---
+
+**Bug ID:** 2025-07-29-05
+**Title:** E2E environment fails due to incomplete configuration from `env_file` override.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+After configuring the `backend` and `db` services to use `.env.test`, the E2E environment fails to start. This is because the `env_file` directive in `docker-compose.e2e.yml` replaces the original configuration instead of merging with it. As a result, the backend container is missing essential configuration variables (like `SECRET_KEY`) that are defined in the base `.env` file, causing it to crash on startup. This leads to a healthcheck failure and a cascade failure of the `frontend` container.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The backend service should start with a complete and correct configuration for the test environment.
+**Actual Behavior:**
+The backend container crashes, and the `frontend` container is marked as unhealthy.
+**Resolution:**
+Update `docker-compose.e2e.yml` to load both the base `.env` and the overriding `.env.test` files for the `backend` and `db` services. This ensures a complete configuration. Also, update the `e2e-tests` service to use the test environment file for consistency.
+
+---
+
+**Bug ID:** 2025-07-29-06
+**Title:** E2E backend service crashes because it does not ensure the test database exists before running migrations.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** User via E2E Test Log
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `backend` service in the E2E environment fails on startup with `FATAL: database "pms_db_test" does not exist`. Unlike the `pytest` environment which uses `conftest.py` to programmatically create the test database, the E2E environment's `backend` service directly attempts to run migrations, assuming the database already exists. This assumption fails if the database volume persists from a previous development run, as the `postgres` container will not automatically create the test database on a non-empty volume.
+**Steps to Reproduce:**
+1. Run `docker-compose up db backend` to create the development database.
+2. Run `docker-compose down`.
+3. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The E2E `backend` service should start successfully, creating the test database if necessary.
+**Actual Behavior:**
+The `backend` container crashes because the test database does not exist.
+**Resolution:**
+Create a dedicated entrypoint script for the E2E `backend` service (`e2e_entrypoint.sh`). This script will wait for the PostgreSQL server to be available, then run a Python script (`init_db.py`) to programmatically create the test database if it doesn't exist, before proceeding with migrations and starting the application. This makes the E2E environment robust and self-contained, mirroring the setup logic of the `pytest` environment.
+
+---
+
+**Bug ID:** 2025-07-29-07
+**Title:** E2E backend service crashes with `ModuleNotFoundError: No module named 'tenacity'`.
+**Module:** E2E Testing, Build/Deployment
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `backend` container fails to start in the E2E environment. The `e2e_entrypoint.sh` script calls `app/db/init_db.py` to ensure the test database exists. This script requires the `tenacity` package for its retry logic, but this package is not listed in `backend/requirements.txt`. This causes a fatal `ModuleNotFoundError` that crashes the container.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit backend`.
+**Expected Behavior:**
+The backend service should start successfully.
+**Actual Behavior:**
+The backend container crashes with `ModuleNotFoundError: No module named 'tenacity'`.
+**Resolution:**
+Add `tenacity` to the `backend/requirements.txt` file.
+
+**Resolution:**
+Add `tenacity` to the `backend/requirements.txt` file.
+
+---
+
+**Bug ID:** 2025-07-29-08
+**Title:** E2E tests fail with "Executable doesn't exist" due to unpinned Playwright library version.
+**Module:** E2E Testing, Build/Deployment
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The E2E test suite fails because `npm install` in the Docker build process installs a newer version of `@playwright/test` than is supported by the base `mcr.microsoft.com/playwright` image. This is caused by a floating version specifier (e.g., `^1.45.1`) in `e2e/package.json`. This is a recurring issue because the library version and image version are not pinned together.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The Playwright library version and the Docker base image version should be synchronized and fixed, leading to a stable build.
+**Actual Behavior:**
+Tests crash immediately with an executable not found error.
+**Resolution:**
+Update the Docker image in `e2e/Dockerfile` to the latest required version (`v1.54.1-jammy`) and pin the `@playwright/test` version in `e2e/package.json` to match it exactly (`1.54.1`).
+
+---
+
+**Bug ID:** 2025-07-29-09
+**Title:** E2E test setup fails with 403 Forbidden because backend is not in test mode.
+**Module:** E2E Testing, Configuration
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `beforeAll` hook fails to reset the database because the `/api/v1/testing/reset-db` endpoint returns a 403. This indicates the `backend` service is not running with `ENVIRONMENT=test`. The `env_file` override in `docker-compose.e2e.yml` is not sufficient to guarantee the correct environment is set.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The database reset endpoint should be accessible, returning a 204 status code.
+**Actual Behavior:**
+The request is denied with a 403 status code, and the test suite fails.
+**Resolution:**
+Update `docker-compose.e2e.yml` to explicitly set `ENVIRONMENT=test` in the `environment` block for the `backend` service, which has higher precedence than `env_file`.
+
+---
+
+**Bug ID:** 2025-07-29-10
+**Title:** E2E test setup fails with 403 Forbidden despite `ENVIRONMENT=test` being set.
+**Module:** E2E Testing, Configuration
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `/testing/reset-db` endpoint returns a 403, indicating the `ENVIRONMENT` variable is not being correctly interpreted as "test" by the backend application, even though it is set in `docker-compose.e2e.yml`. The root cause is currently unknown.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The database reset endpoint should be accessible, returning a 204 status code.
+**Actual Behavior:**
+The request is denied with a 403 status code.
+**Resolution:**
+Add debug logging to the endpoint to inspect the value of `config.settings.ENVIRONMENT` at runtime to diagnose the configuration issue.
+
+---
+
+**Bug ID:** 2025-07-29-11
+**Title:** E2E test command hides backend logs, preventing debugging.
+**Module:** Documentation, E2E Testing
+**Reported By:** User
+**Date Reported:** 2025-07-29
+**Classification:** Documentation / Test Suite
+**Severity:** High
+**Description:**
+The documented command for running E2E tests (`... up ... e2e-tests`) attaches the console output only to the `e2e-tests` container. This completely hides the logs from the `backend` service, making it impossible to debug issues like the persistent `403 Forbidden` error on the `/testing/reset-db` endpoint. The current command prevents us from seeing the output of diagnostic logs added to the backend.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests`.
+**Expected Behavior:**
+The console should display an aggregated stream of logs from all services started by the command (`backend`, `frontend`, `e2e-tests`, etc.) to facilitate debugging.
+**Actual Behavior:**
+Only logs from the `e2e-tests` container are displayed.
+**Resolution:**
+Update the E2E test command in all documentation (`README.md`, `e2e/README.md`) to remove the specific `e2e-tests` service name from the `up` command. The new command (`... up --build --abort-on-container-exit`) will start all services defined in the compose files and show aggregated logs, which is essential for debugging.
+
+---
+
+**Bug ID:** 2025-07-29-12
+**Title:** E2E test environment is shut down prematurely because the `test` service is incorrectly started.
+**Module:** Documentation, E2E Testing
+**Reported By:** User
+**Date Reported:** 2025-07-29
+**Classification:** Documentation / Test Suite
+**Severity:** Critical
+**Description:**
+The command `docker-compose ... up --build --abort-on-container-exit` incorrectly starts all services, including the `test` service which is intended only for backend unit tests. The `test` service runs `pytest`, exits successfully, and the `--abort-on-container-exit` flag then terminates the entire test environment before the E2E tests can complete.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit`.
+**Expected Behavior:**
+Only the services required for E2E testing (`db`, `redis`, `backend`, `frontend`, `e2e-tests`) should be started, and they should remain running until the tests are complete.
+**Actual Behavior:**
+The `test` service also starts, and its successful exit causes the entire environment to be torn down.
+**Resolution:**
+Update the E2E test command in all documentation to explicitly list the services required for the E2E run, which excludes the `test` service.
+
+---
+
+**Bug ID:** 2025-07-29-13
+**Title:** E2E tests fail with 403 on `/testing/reset-db` due to environment variable issue with uvicorn reloader.
+**Module:** Core Backend, E2E Testing, Docker Configuration
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The E2E test suite fails because the `POST /api/v1/testing/reset-db` request returns a `403 Forbidden` error. Debug logs placed in the endpoint function are never executed. The root cause is a combination of two issues:
+1. The `uvicorn --reload` flag in the `e2e_entrypoint.sh` script is preventing the `ENVIRONMENT=test` variable from being correctly inherited by the application process. This causes the internal check in the endpoint to fail.
+2. The `testing` router is included unconditionally in `api.py`, which is a security risk.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The `/testing/reset-db` endpoint should be accessible in the test environment.
+**Actual Behavior:**
+The request fails, and the test suite aborts.
+**Resolution:**
+1. Update `api.py` to conditionally include the `testing.router` only when `settings.ENVIRONMENT` is "test".
+2. Remove the `--reload` flag from the `uvicorn` command in `backend/e2e_entrypoint.sh`.
+
+---
+
+**Bug ID:** 2025-07-29-14
+**Title:** Backend crashes on startup with `AttributeError` for missing `ENVIRONMENT` setting.
+**Module:** Core Backend, Configuration
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The backend application fails to start in the E2E environment with the error `AttributeError: 'Settings' object has no attribute 'ENVIRONMENT'`. This occurs because the `ENVIRONMENT` variable, while correctly set in `docker-compose.e2e.yml`, is not defined as a field in the Pydantic `Settings` class in `app/core/config.py`. Pydantic only loads environment variables for explicitly declared fields.
+**Steps to Reproduce:**
+1. Run the E2E test suite command.
+**Expected Behavior:**
+The backend service should start successfully by loading all required environment variables.
+**Actual Behavior:**
+The backend container crashes immediately.
+**Resolution:**
+Add the `ENVIRONMENT` field to the `Settings` class in `app/core/config.py`.
+
+---
+
+**Bug ID:** 2025-07-29-15
+**Title:** E2E tests fail with 403 Forbidden due to CORS misconfiguration for proxied requests.
+**Module:** E2E Testing, Docker Configuration, API Integration
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The E2E test suite fails with a `403 Forbidden` error when trying to reset the database. The Playwright test runner sends requests to the `frontend` container, which then proxies them to the `backend`. The Vite proxy is configured with `changeOrigin: true`, which sets the `Origin` header of the proxied request to the target's origin (`http://backend:8000`). The backend's `CORSMiddleware` sees this origin, which is not in the allowed `CORS_ORIGINS` list, and correctly rejects the request before it reaches the endpoint logic.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The backend should accept the proxied request from the frontend container.
+**Actual Behavior:**
+The request is rejected with a 403 error.
+**Resolution:**
+Update `docker-compose.e2e.yml` to override the `CORS_ORIGINS` environment variable for the `backend` service, adding `http://backend:8000` to the list of allowed origins for the E2E test environment.
+
+---
+
+**Bug ID:** 2025-07-29-16
+**Title:** E2E tests fail with 403 Forbidden due to Vite proxy's `changeOrigin` setting.
+**Module:** E2E Testing, Frontend Configuration
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The E2E test suite fails with a `403 Forbidden` error when trying to reset the database. The request is proxied through the Vite dev server, which is configured with `changeOrigin: true`. This setting alters the request's `Host` and potentially `Origin` headers in a way that causes the backend's `CORSMiddleware` to reject the request, even when the apparent origins are added to the allowlist.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The backend should accept the proxied request from the frontend container.
+**Actual Behavior:**
+The request is rejected with a 403 error.
+**Resolution:**
+Remove the `changeOrigin: true` setting from the proxy configuration in `frontend/vite.config.ts`.
+
+**Bug ID:** 2025-07-29-17
+**Title:** E2E tests fail with 403 Forbidden due to Vite proxy's `changeOrigin` setting.
+**Module:** E2E Testing, Frontend Configuration
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The E2E test suite fails with a `403 Forbidden` error when trying to reset the database. The request is proxied through the Vite dev server, which is configured with `changeOrigin: true`. This setting alters the request's `Host` and potentially `Origin` headers in a way that causes the backend's `CORSMiddleware` to reject the request, even when the apparent origins are added to the allowlist.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The backend should accept the proxied request from the frontend container.
+**Actual Behavior:**
+The request is rejected with a 403 error.
+**Resolution:**
+Remove the `changeOrigin: true` setting from the proxy configuration in `frontend/vite.config.ts`.
+
+---
+
+**Bug ID:** 2025-07-29-18
+**Title:** E2E tests fail with 403 Forbidden due to Vite's `allowedHosts` misconfiguration.
+**Module:** E2E Testing, Frontend Configuration
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The E2E test suite fails with a `403 Forbidden` error when trying to reset the database. The request from the Playwright container (`e2e-tests`) to the Vite dev server (`frontend`) is rejected because the request's `Host` header (`frontend:3000`) is not in the `server.allowedHosts` list in `vite.config.ts`. This security feature in Vite prevents the request from ever being proxied to the backend, which explains the lack of backend logs for the failed request.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The Vite dev server should accept requests from other containers on the same Docker network.
+**Actual Behavior:**
+The request is rejected with a 403 error by the Vite server itself.
+**Resolution:**
+Add `'frontend'` to the `allowedHosts` array in `frontend/vite.config.ts`.
+
+---
+
+**Bug ID:** 2025-07-29-19
+**Title:** E2E tests fail with `TypeError` in `reset_db` due to incorrect method binding.
+**Module:** E2E Testing, Core Backend (CRUD)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The E2E test suite fails with a `500 Internal Server Error` because the backend crashes with a `TypeError: reset_database() takes 1 positional argument but 2 were given`. This happens because the `crud.testing` object is an *instance* of a class created dynamically with `type()`. When calling `crud.testing.reset_database(db)`, Python implicitly passes the instance (`self`) as the first argument, but the function signature was not defined to accept it.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The `reset_db` and `seed_database` functions should be called correctly.
+**Actual Behavior:**
+The backend crashes with a `TypeError`.
+**Resolution:**
+Refactor `crud_testing.py` to use a standard Python class definition for `TestingCRUD` instead of the dynamic `type()` constructor. The methods `reset_database` and `seed_database` will be defined as proper instance methods with `self` as the first parameter.
+
+---
+
+**Bug ID:** 2025-07-29-20
+**Title:** E2E tests time out due to incorrect database seeding and reset logic.
+**Module:** E2E Testing, Core Backend (CRUD)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `admin-user-management` E2E test fails with a 30-second timeout. The root cause is that the `/api/v1/testing/reset-db` endpoint does not correctly prepare the database for the test run. The `crud_testing.py` module has two issues: 1) The `seed_database` function is empty and does not create the necessary admin user for the test to log in. 2) The `reset_database` function uses a less-robust method of deleting rows instead of dropping and recreating tables. The test attempts to compensate by performing the initial admin setup via the UI, but this process fails, leading to the timeout.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The test environment should be correctly seeded with an admin user, and the test should log in and run successfully.
+**Actual Behavior:**
+The test times out during the UI-based setup phase in the `beforeAll` hook.
+**Resolution:**
+1. Refactor `crud_testing.py` to use `Base.metadata.drop_all/create_all` for a robust database reset.
+2. Ensure the `seed_database` function is empty, as the E2E test is responsible for validating the UI-based setup flow. The test should not be simplified; its current implementation is correct.
+
+---
+
+**Bug ID:** 2025-07-29-21
+**Title:** E2E test for admin setup fails due to incorrect button text assertion.
+**Module:** E2E Testing
+**Reported By:** Master Orchestrator
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `admin-user-management.spec.ts` test fails with a timeout because it queries for a button with the name "Create Admin User". The `SetupForm.tsx` component, however, renders this button with the text "Create Admin Account". The test is incorrect and needs to be updated to match the component's actual rendered output.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The test should find the setup submission button and click it.
+**Actual Behavior:**
+The test query fails to find the button and times out.
+**Resolution:**
+Update the `getByRole` query in `admin-user-management.spec.ts` to use the correct name, "Create Admin Account".
+
+---
+
+**Bug ID:** 2025-07-29-22
+**Title:** E2E test for admin setup fails due to incorrect form field label in test script.
+**Module:** E2E Testing
+**Reported By:** Master Orchestrator
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `admin-user-management.spec.ts` test fails with a timeout when trying to verify the initial admin setup. The test attempts to fill the user's name using `page.getByLabel('Name')`, but the actual label in the `SetupForm.tsx` component is "Full Name". Because this required field is not filled, the form submission fails, the page does not navigate to the login form, and the test times out waiting for the "Login" heading to appear.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The test should correctly fill all required fields in the setup form.
+**Actual Behavior:**
+The test fails to find the "Full Name" input field by its label, causing the test to time out.
+**Resolution:**
+Update the `getByLabel` query in `admin-user-management.spec.ts` to use the correct label, "Full Name".
+
+---
+
+**Bug ID:** 2025-07-29-23
+**Title:** E2E test for admin setup fails due to incorrect heading/button text assertion for Login form.
+**Module:** E2E Testing
+**Reported By:** Master Orchestrator
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+After successfully creating the initial admin user, the E2E test fails with a timeout because it cannot find the `LoginForm`. The test asserts for a heading with the text "Login" and later a button with the text "Login". However, the `LoginForm` component was likely updated to use the text "Sign in" for both its heading and button, but the E2E test was not updated to match.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The test should find the login form after the setup is complete.
+**Actual Behavior:**
+The test times out waiting for a heading with the text "Login".
+**Resolution:**
+Update the queries in `admin-user-management.spec.ts` to use the correct text, "Sign in", for both the heading and the button.
+
+---
+
+**Bug ID:** 2025-07-29-24
+**Title:** E2E test suite is out of sync with frontend components, causing multiple failures.
+**Module:** E2E Testing
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-29
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `admin-user-management.spec.ts` E2E test is failing because it contains numerous assertions and selectors that do not match the current state of the frontend components (`LoginForm.tsx`, `UserFormModal.tsx`, `UsersTable.tsx`). Specific issues include:
+1.  Asserting for an incorrect heading ("Sign in") on the login form.
+2.  Using an incorrect label ("Email") to find the email input on the login form.
+3.  Using an incorrect label ("Name") to find the full name input in the user creation/edit modal.
+4.  Asserting for an incorrect button text ("Update User") when saving an edited user.
+5.  Asserting for the presence of a user's name in the `UsersTable`, which only contains "Email" and "Role" columns.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The E2E test should accurately reflect the UI and pass.
+**Actual Behavior:**
+The test fails with multiple timeout and assertion errors.
+**Resolution:**
+Update `admin-user-management.spec.ts` to use the correct selectors and assertions that match the rendered HTML of the components.

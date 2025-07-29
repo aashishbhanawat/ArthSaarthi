@@ -449,3 +449,32 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - The application is stable, visually polished, and all known MVP-related bugs have been resolved. The codebase has been improved for better maintainability. The project is now ready for the pilot release.
+
+---
+
+## 2025-07-29: E2E Test Suite Foundation
+
+*   **Task Description:** Build the foundational end-to-end (E2E) test suite using Playwright to automate user flow verification. This was a major undertaking that involved not just writing tests, but also building and stabilizing the entire Docker Compose E2E environment from the ground up.
+
+*   **Key Prompts & Interactions:**
+    1.  **Systematic Debugging via Log Analysis:** The entire process was driven by analyzing `docker-compose` logs. At each step, the failing log was provided to the AI to identify the root cause of the failure.
+    2.  **Bug Filing & Fixing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested. This covered a wide range of issues, including:
+        *   **Docker Configuration:** Incorrect `baseURL`s, missing `curl` in base images, Playwright version mismatches, incorrect `.env` file loading order, and healthcheck failures.
+        *   **CORS & Proxy Issues:** Complex interactions between the Playwright test runner, the Vite dev server proxy, and the backend's CORS policy.
+        *   **Backend Startup Logic:** The backend was not correctly entering "test" mode, and the database reset logic was not robust.
+        *   **Test Script Logic:** Aligning test selectors and assertions with the actual frontend component rendering.
+
+*   **File Changes:**
+    *   `e2e/`: Created the entire directory for Playwright tests, including `playwright.config.ts` and test files.
+    *   `docker-compose.e2e.yml`: Created to define the specific services and overrides for the E2E environment.
+    *   `backend/e2e_entrypoint.sh`, `backend/app/db/init_db.py`: Created to ensure the test database is created and ready before the backend starts.
+    *   `backend/app/api/v1/endpoints/testing.py`, `backend/app/crud/crud_testing.py`: Created the backend API for resetting the database state.
+    *   `backend/Dockerfile`, `e2e/Dockerfile`: Updated to install necessary dependencies (`curl`) and use pinned versions.
+    *   `frontend/vite.config.ts`: Updated with correct proxy and server settings for the Docker environment.
+    *   `docs/bug_reports.md`: Populated with detailed reports for every bug discovered and fixed during this phase.
+
+*   **Verification:**
+    - Ran the full E2E test suite using `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit db redis backend frontend e2e-tests`.
+
+*   **Outcome:**
+    - A stable and reliable E2E test suite is now in place. All tests are passing, validating the core admin and user flows of the application. This provides a critical safety net for all future development.

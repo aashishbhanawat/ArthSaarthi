@@ -4,7 +4,7 @@
 
 *   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS).
 *   **Current Status:** The backend is **fully stable and tested**. The frontend UI has been **completely refactored** and is now stable, professional, and consistent across all pages. The application is fully functional and ready for the next phase of feature development.
-*   **Testing:** A full suite of automated backend tests (`pytest`) and frontend tests (`jest`) is stable and passing. The backend has 51 passing tests. The testing strategy includes unit, integration, and manual E2E smoke tests for each feature.
+*   **Testing:** The project has a multi-layered testing strategy. A full suite of automated backend tests (`pytest`), frontend tests (`jest`), and **end-to-end tests (`Playwright`)** is stable and passing. This ensures reliability from individual components to complete user flows.
 *   **Implemented Functionalities:**
     *   **Authentication:** Initial admin setup, secure user login/logout, and JWT-based session management.
     *   **User Management:** A dedicated, admin-only dashboard for performing Create, Read, Update, and Delete (CRUD) operations on all users.
@@ -116,8 +116,8 @@ The application is fully containerized using Docker and orchestrated with Docker
 
 #### 7. Next Steps
 
-The application is now stable and has a consistent UI. The next steps could include:
+The application is now stable and has a consistent UI. The next logical step is to begin planning for the next major feature from the requirements backlog.
 
-1.  **Data Visualization:** Replace the placeholder components on the dashboard with actual data visualization libraries (e.g., Chart.js, Recharts) to display asset allocation and portfolio history.
-2.  **End-to-End Testing:** Implement a suite of end-to-end tests using a framework like Cypress or Playwright to automate user flow verification.
-3.  **Feature Enhancement:** Add more advanced features, such as detailed performance analytics, dividend tracking, or multi-currency support.
+1.  **Advanced Goal Planning & Tracking (FR13):** Allow users to define financial goals and track their progress.
+2.  **Advanced Analytics (FR6):** Implement calculations for XIRR, Sharpe Ratio, and other performance metrics.
+3.  **Data Import (FR7):** Implement the functionality to import transactions from broker statements.

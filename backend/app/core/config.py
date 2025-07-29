@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     DATABASE_URL: PostgresDsn
     REDIS_URL: str = "redis://redis:6379/0"
+    ENVIRONMENT: str = "production"
 
     #CORS_ORIGINS: str = "http://localhost:3000"
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000"

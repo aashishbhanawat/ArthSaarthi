@@ -16,3 +16,4 @@ sqlalchemy-utils
 typer
 uvicorn[standard]==0.29.0
 yfinance
+tenacity

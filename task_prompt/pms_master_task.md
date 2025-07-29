@@ -114,6 +114,7 @@ For each feature, we'll follow these steps:
 4.  **Code Generation Request:** Once plans are confirmed, request the AI to generate the code.
 5.  **Testing & Debugging Workflow (QA Engineer & All Roles):**
     *   **Testing Plan:** The QA Engineer will define unit tests, integration tests, and acceptance criteria.
+    *   **E2E Test Plan:** The QA Engineer will also define a high-level E2E test case to be added for the feature.
     *   **Rigorous RCA:** When an error occurs, the AI must analyze the **full stack trace**, validate dependencies by requesting to see imported files, and state its hypothesis before proposing a fix.
     *   **Formal Bug Triage:** Before filing a new bug, the AI must search `docs/bug_reports.md` for existing issues. It will propose updating an existing bug before creating a new one.
     *   **No Debugging Loops:** If a proposed fix does not work, the AI must not suggest the same fix again. It must re-evaluate its hypothesis, ask for more information (e.g., different logs, file contents), and propose a new, distinct path forward.
@@ -134,7 +135,7 @@ For each feature, we'll follow these steps:
 
 You are now ready to start development of new module.
 
-**All planned MVP features are now complete and stable.**
+**All planned MVP features are now complete, stable, and covered by a foundational E2E test suite.**
 
 Let's start planning the next feature: **Real Data Integration (FR5)**. This will replace our mock financial data service with a real one to prepare for a pilot release.
 

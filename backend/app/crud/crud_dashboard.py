@@ -3,8 +3,6 @@ from datetime import date, timedelta
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List
-
-from app import crud
 from app.models.user import User
 from app.services.financial_data_service import financial_data_service
 
@@ -13,6 +11,7 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
     """
     Calculates the dashboard summary metrics for a given user, including P/L.
     """
+    from app import crud  # Local import to break circular dependency
     portfolios = crud.portfolio.get_multi_by_owner(db=db, user_id=user.id)
     if not portfolios:
         return {
@@ -100,6 +99,7 @@ def _get_portfolio_history(db: Session, *, user: User, range_str: str) -> List[D
     """
     Calculates the portfolio's total value over a specified time range.
     """
+    from app import crud  # Local import to break circular dependency
     end_date = date.today()
     if range_str == "7d":
         start_date = end_date - timedelta(days=7)

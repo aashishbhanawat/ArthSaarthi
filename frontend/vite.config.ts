@@ -9,11 +9,11 @@ export default defineConfig({
     port: 3000,      // Explicitly set the port to 3000
     allowedHosts: [
       "librephotos.aashish.ai.in",
+      "frontend",
     ],
     proxy: {
       "/api": {
         target: "http://backend:8000",
-        changeOrigin: true,
       },
     },
   },

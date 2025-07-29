@@ -72,9 +72,6 @@ The new workflow proved highly effective. By focusing on root causes and fixing 
 
 ---
 
-
----
-
 ## 2025-07-27: Pilot Release Stabilization
 
 ### 1. What Happened?
@@ -96,4 +93,22 @@ This phase involved a high volume of changes across the entire stack and require
 *   The "Analyze -> Report -> Fix" workflow scales well even for complex, concurrent feature development. The discipline of creating feature plans and writing tests first prevents chaos.
 *   **Test Mocks Must Evolve with Application Code:** This phase highlighted the importance of keeping test mocks in sync with application code. When a service's response structure changes (like `FinancialDataService`), the corresponding test mocks must be updated immediately to prevent misleading test failures.
 
+## 2025-07-29: E2E Test Suite Implementation
 
+### 1. What Happened?
+
+We built the foundational end-to-end (E2E) test suite from scratch using Playwright. This was not a simple task and involved a deep, iterative debugging process across the entire application stack.
+
+### 2. How Did the Process Help?
+
+*   **Systematic Debugging:** The "Analyze -> Report -> Fix" workflow was absolutely critical. The E2E environment is the most complex part of the system, as it involves the interaction of every service (`db`, `redis`, `backend`, `frontend`, `e2e-tests`). We faced a cascade of issues, including:
+    *   **Docker Configuration:** Incorrect `baseURL`s, missing `curl` in base images, Playwright version mismatches, incorrect `.env` file loading order, and healthcheck failures.
+    *   **CORS & Proxy Issues:** Complex interactions between the Playwright test runner, the Vite dev server proxy, and the backend's CORS policy.
+    *   **Backend Startup Logic:** The backend was not correctly entering "test" mode, and the database reset logic was not robust.
+*   **Rigorous RCA:** By methodically analyzing the logs from each container, we were able to pinpoint the root cause of each failure, from a single line in a `Dockerfile` to a specific setting in `vite.config.ts`. This prevented us from getting stuck in an endless loop of "it's not working."
+
+### 3. Outcome & New Learning
+
+*   **A Stable E2E Suite:** We now have a reliable, automated E2E test suite that validates our most critical user flows. This is a massive asset for future development and regression testing.
+*   **E2E Testing is a Feature:** The most important lesson is that the E2E test environment is a feature in its own right. It requires the same level of planning, implementation, and debugging as any user-facing feature.
+*   **Configuration is King:** In a containerized environment, a single misconfigured environment variable or network setting can cause a cascade of failures that appear unrelated to the root cause. A deep understanding of the full-stack configuration is non-negotiable for E2E testing.
