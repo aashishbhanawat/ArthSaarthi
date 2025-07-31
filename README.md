@@ -49,6 +49,55 @@ For a more detailed breakdown, please see the [System Architecture Document](./d
 > **Data Source Disclaimer**
 > This application is for informational and personal use only and is not intended for financial trading. See the full [Disclaimer](./docs/DISCLAIMER.md).
 
+---
+
+## 🚀 How to Self-Host (Pilot Release)
+
+This guide is for users who want to run their own instance of the application using Docker.
+
+### Prerequisites
+
+*   [Docker](https://docs.docker.com/get-docker/)
+*   [Docker Compose](https://docs.docker.com/compose/install/)
+
+### Step 1: Download the Release
+
+Download the `pms-pilot-vX.Y.Z.zip` or `.tar.gz` file from the latest GitHub Release and unzip it.
+
+### Step 2: Configure Your Instance
+
+Run the configuration script. This will create your unique production environment file.
+
+```bash
+chmod +x *.sh
+./configure.sh
+```
+
+The script will create a file at `backend/.env.prod`. **You must edit this file** and set the `CORS_ORIGINS` variable to the domain name or IP address you will use to access the application.
+
+### Step 3: Start the Application
+
+Run the start script. This will build the Docker images and start all the necessary services in the background.
+
+```bash
+./start.sh
+```
+
+### Step 4: Initial Admin Setup
+
+1.  Open your web browser and navigate to `http://localhost` (or the IP/domain you configured in Step 2).
+2.  You will be presented with an "Initial Setup" screen to create your admin account.
+3.  After setup, you will be redirected to the login page. Log in with the credentials you just created.
+
+### Managing Your Instance
+
+*   **To stop the application:** `./stop.sh`
+*   **To view live logs:** `./logs.sh`
+*   **To update to a new version:** Stop the app, overwrite the files with the new release, and run `./start.sh` again. Your data is stored in a Docker volume and will be preserved.
+*   **To learn how to use the application's features, see the User Guide.**
+
+---
+
 ## Running the Project
 
 This project is fully containerized using Docker and Docker Compose for a consistent and streamlined development experience.
@@ -111,9 +160,6 @@ The E2E test suite runs using Playwright in a dedicated Docker environment. This
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests
 ```
-**Note:** The E2E tests use a separate database and will not delete your development data. You only need to run docker-compose down -v when you want to completely reset your development environment.
-
-
 
 ## Contributing
 

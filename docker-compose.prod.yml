@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    # In production, we don't mount the source code. The code is copied in the Dockerfile.
+    # We also override the command to run uvicorn without the --reload flag.
+    volumes: []
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    env_file:
+      - ./backend/.env.prod # Use a dedicated production environment file
+    healthcheck:
+      # The healthcheck in the base file is fine, but we ensure it's here.
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  frontend:
+    # The production frontend is a multi-stage build that uses Nginx.
+    # We remove the development volume mount.
+    volumes: []
+    ports:
+      - "80:80" # Serve on standard HTTP port
+
+  db:
+    env_file:
+      - ./backend/.env.prod # Ensure DB uses the same prod environment file

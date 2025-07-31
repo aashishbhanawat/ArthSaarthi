@@ -1,0 +1,21 @@
+# Exclude development and documentation files from release archives
+.git*               export-ignore
+.github/            export-ignore
+docs/               export-ignore
+e2e/                export-ignore
+task_prompt/        export-ignore
+backend/app/tests/  export-ignore
+backend/.env        export-ignore
+backend/.env.test   export-ignore
+frontend/src/__tests__/ export-ignore
+frontend/node_modules/ export-ignore
+frontend/.env*      export-ignore
+*.pyc               export-ignore
+__pycache__/        export-ignore
+.DS_Store           export-ignore
+
+# We want to include the README in the release
+/README.md          !export-ignore
+
+# We also want to include the user guide in the release
+/docs/user_guide.md !export-ignore
