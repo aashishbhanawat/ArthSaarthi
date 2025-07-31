@@ -115,3 +115,68 @@ The newly created `Transaction` object is returned from the CRUD layer, serializ
 ---
 
 This end-to-end flow demonstrates the separation of concerns and the clear path a request takes through the system, from user interaction to database persistence.
+
+---
+
+## 2. Frontend/Backend Flow: Displaying Portfolio Analytics
+
+This trace follows the user journey for viewing advanced analytics (XIRR, Sharpe Ratio) on the `PortfolioDetailPage`.
+
+### Step 1: The View & Data Hook (`PortfolioDetailPage.tsx`)
+
+The page uses the `usePortfolioAnalytics` custom React Query hook to fetch the analytics data. The hook's state (`analytics`, `isAnalyticsLoading`, `analyticsError`) is passed directly to the `AnalyticsCard` component for rendering.
+
+```typescriptreact
+// frontend/src/pages/Portfolio/PortfolioDetailPage.tsx
+
+const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
+
+// ... later in the JSX
+<AnalyticsCard analytics={analytics} isLoading={isAnalyticsLoading} error={analyticsError} />
+```
+
+### Step 2: The API Service Layer (`usePortfolios.ts` & `portfolioApi.ts`)
+
+*   `usePortfolios.ts`: The `usePortfolioAnalytics` hook wraps the actual API call. It uses `useQuery` to handle caching, loading, and error states.
+*   `portfolioApi.ts`: The `getPortfolioAnalytics` function makes the actual `GET` request to the backend endpoint.
+
+```typescript
+// frontend/src/hooks/usePortfolios.ts
+export const usePortfolioAnalytics = (id: number) => {
+    return useQuery<PortfolioAnalytics, Error>({
+        queryKey: ['portfolioAnalytics', id],
+        queryFn: () => portfolioApi.getPortfolioAnalytics(id),
+        enabled: !!id,
+    });
+};
+```
+
+---
+
+## 3. Backend Flow: Calculating Analytics
+
+The frontend's `GET` request to `/api/v1/portfolios/{portfolio_id}/analytics` is handled by the FastAPI backend.
+
+### Step 1: Routing & Dependencies (`endpoints/portfolios.py`)
+
+The request hits the router in `portfolios.py`. FastAPI validates the path parameter (`portfolio_id`), gets the `current_user` from the JWT token, and checks that the user owns the requested portfolio.
+
+### Step 2: Business Logic (`crud/crud_analytics.py`)
+
+The endpoint calls the `get_portfolio_analytics` function. This is where the core business logic resides.
+
+1.  **XIRR Calculation:** The `_calculate_xirr` helper function fetches all transactions and the portfolio's current market value to construct a series of cash flows, which are then passed to the `pyxirr` library.
+2.  **Sharpe Ratio Calculation:** The `_calculate_sharpe_ratio` helper function fetches the portfolio's daily value history, calculates the daily returns, and then computes the Sharpe Ratio.
+
+```python
+# backend/app/crud/crud_analytics.py
+
+def get_portfolio_analytics(db: Session, portfolio_id: int) -> AnalyticsResponse:
+    xirr_value = _calculate_xirr(db=db, portfolio_id=portfolio_id)
+    sharpe_ratio_value = _calculate_sharpe_ratio(db=db, portfolio_id=portfolio_id)
+    return AnalyticsResponse(xirr=xirr_value, sharpe_ratio=sharpe_ratio_value)
+```
+
+### Step 3: Response & Schema Validation (`schemas/analytics.py`)
+
+The calculated values are packaged into an `AnalyticsResponse` Pydantic model. FastAPI uses this model to serialize the data into a JSON response and send it back to the frontend with a `200 OK` status code.

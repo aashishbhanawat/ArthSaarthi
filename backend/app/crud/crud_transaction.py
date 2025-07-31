@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func 
+from sqlalchemy import func
 from decimal import Decimal
 
 from app.crud.base import CRUDBase
@@ -7,6 +7,7 @@ from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 from app import crud, schemas
 from fastapi import HTTPException, status
+from typing import List
 
 class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate]):
     def get_holdings_on_date(self, db: Session, *, user_id: int, asset_id: int, on_date: str) -> Decimal:
@@ -47,6 +48,13 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         db.commit()
         db.refresh(db_obj)
         return db_obj
+
+    def get_multi_by_portfolio(
+        self, db: Session, *, portfolio_id: int
+    ) -> List[Transaction]:
+        return (
+            db.query(self.model).filter(self.model.portfolio_id == portfolio_id).all()
+        )
 
 
 transaction = CRUDTransaction(Transaction)

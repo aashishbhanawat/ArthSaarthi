@@ -17,3 +17,5 @@ typer
 uvicorn[standard]==0.29.0
 yfinance
 tenacity
+pyxirr==0.10.7
+numpy==1.26.4

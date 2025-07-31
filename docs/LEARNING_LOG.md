@@ -112,3 +112,24 @@ We built the foundational end-to-end (E2E) test suite from scratch using Playwri
 *   **A Stable E2E Suite:** We now have a reliable, automated E2E test suite that validates our most critical user flows. This is a massive asset for future development and regression testing.
 *   **E2E Testing is a Feature:** The most important lesson is that the E2E test environment is a feature in its own right. It requires the same level of planning, implementation, and debugging as any user-facing feature.
 *   **Configuration is King:** In a containerized environment, a single misconfigured environment variable or network setting can cause a cascade of failures that appear unrelated to the root cause. A deep understanding of the full-stack configuration is non-negotiable for E2E testing.
+
+---
+
+## 2025-07-31: Full-Stack Test Suite Stabilization & Final Feature
+
+### 1. What Happened?
+
+A final, intensive effort was made to stabilize all test suites (E2E, backend, frontend) and implement the last MVP feature (Advanced Analytics). This process uncovered a critical race condition in the E2E tests and revealed that the entire frontend unit test suite had become obsolete and was failing after numerous component refactors.
+
+### 2. How Did the Process Help?
+
+*   **RCA for Flaky Tests:** Analyzing the E2E test logs was instrumental in diagnosing the root cause of intermittent failures. The key insight was that Playwright's default parallel execution model was causing multiple test files to reset the same shared database simultaneously, leading to a race condition.
+*   **Process Refinement:** The solution was to enforce serial execution by configuring Playwright to run with a single worker (`workers: 1`). This eliminated the race condition while allowing the test files to remain modular.
+*   **Systematic Test Suite Overhaul:** After stabilizing the E2E tests, we discovered the frontend unit test suite was completely broken. Instead of patching individual tests, a "rewrite" approach was taken. For each failing component test, a prompt was used to generate a new, correct test suite from scratch, which proved to be much more efficient.
+*   **Full-Stack Debugging:** The "Analyze -> Report -> Fix" cycle was applied across the full stack to implement and stabilize the new analytics feature, catching bugs in the backend logic, the frontend component, and the frontend test mocks.
+
+### 3. Outcome & New Learning
+
+*   The entire project is now in a fully stable, "green" state. All E2E, backend, and frontend tests are passing.
+*   **E2E Test Execution Strategy:** For tests that mutate shared state (like a database), parallel execution is a significant risk. Enforcing serial execution is a valid and often necessary strategy to ensure reliability and eliminate flakiness.
+*   **Unit Test Debt is Real:** Component refactoring creates test debt. It's crucial to budget time to update or rewrite unit tests to keep them valuable. The "rewrite from scratch" approach for a broken suite can be more efficient than trying to patch dozens of individual failures.

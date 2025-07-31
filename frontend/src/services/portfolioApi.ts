@@ -1,6 +1,7 @@
 import apiClient from './api';
 import { Portfolio, PortfolioCreate, Transaction, TransactionCreate } from '../types/portfolio';
 import { Asset } from '../types/asset';
+import { PortfolioAnalytics } from '../types/analytics';
 
 export const getPortfolios = async (): Promise<Portfolio[]> => {
     const response = await apiClient.get<Portfolio[]>('/api/v1/portfolios/');
@@ -43,5 +44,10 @@ export const createTransaction = async (
         `/api/v1/portfolios/${portfolioId}/transactions/`,
         transactionData
     );
+    return response.data;
+};
+
+export const getPortfolioAnalytics = async (id: number): Promise<PortfolioAnalytics> => {
+    const response = await apiClient.get<PortfolioAnalytics>(`/api/v1/portfolios/${id}/analytics`);
     return response.data;
 };

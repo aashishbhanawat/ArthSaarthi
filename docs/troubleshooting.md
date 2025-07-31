@@ -168,4 +168,31 @@ This guide documents common setup and runtime issues and their solutions.
 
 ---
 
+### 11. E2E tests are "flaky" or fail with database errors
+
+*   **Symptom:** The E2E test suite fails intermittently with errors like `relation "users" does not exist` or other database-related issues. The failures might not happen on every run, and a re-run might pass.
+
+*   **Cause:** This is a race condition. By default, Playwright runs test files in parallel. Both of our E2E test files (`admin-user-management.spec.ts` and `portfolio-and-dashboard.spec.ts`) have a `beforeAll` hook that resets the same shared database. When run in parallel, one test's setup can wipe the database while the other is in the middle of its run, causing unpredictable failures.
+
+*   **Solution:** The project has been configured to force serial execution for E2E tests to prevent this race condition.
+
+    1.  Open the Playwright config file: `e2e/playwright.config.ts`.
+    2.  Ensure that the `workers` property is set to `1`. This forces all test files to run one after another in the same process.
+        ```typescript
+        import { defineConfig } from '@playwright/test';
+
+        export default defineConfig({
+          // ...
+          /* Run tests in files in parallel */
+          fullyParallel: false,
+          /* Fail the build on CI if you accidentally left test.only in the source code. */
+          forbidOnly: !!process.env.CI,
+          /* Opt out of parallel tests on CI. */
+          workers: 1,
+          // ...
+        });
+        ```
+
+---
+
 *After applying any of these fixes, always remember to rebuild your Docker containers (`docker-compose up --build`) to ensure the changes take effect.*

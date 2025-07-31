@@ -46,7 +46,9 @@ The goal of this release is to broaden the asset types supported and introduce m
 
 -   **Advanced Asset Support (FR4):** Add support for FDs, RDs, PPF, NPS, Bonds, RSUs, ESPPs.
 -   **Automated Data Import (FR7):** Implement file parsers for broker statements (Zerodha, ICICI) and MF CAS.
--   **Advanced Reporting & Analytics (FR6):** Implement TWR, MWR, Sharpe Ratio, Volatility, and other risk metrics.
+-   **Advanced Reporting & Analytics (FR6):**
+    -   Implement XIRR and Sharpe Ratio for portfolios.
+    -   **Status: ✅ Complete**
 -   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
 -   **Goal Planning & Tracking (FR13):** Implement the goal definition and progress tracking module.
 

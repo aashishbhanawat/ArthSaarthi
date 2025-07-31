@@ -22,7 +22,7 @@ services:
       - pms_network
 
   test:
-    build: ./backend
+    image: pms_backend:latest
     container_name: pms-test
     command: ["pytest", "-v"]
     env_file:
@@ -39,6 +39,7 @@ services:
 
   backend:
     build: ./backend
+    image: pms_backend:latest
     container_name: pms-backend
     restart: unless-stopped
     command: /app/entrypoint.sh

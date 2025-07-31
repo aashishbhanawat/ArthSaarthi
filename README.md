@@ -17,6 +17,9 @@ This project is being developed with the guidance of an AI Master Orchestrator, 
     *   Realized and Unrealized Profit/Loss calculations.
     *   Top daily market movers.
     *   Interactive portfolio history and asset allocation charts.
+*   **Advanced Portfolio Analytics:**
+    *   Calculation and display of **XIRR (Extended Internal Rate of Return)**.
+    *   Calculation and display of the **Sharpe Ratio**.
 *   **Full Portfolio & Transaction Tracking:**
     *   Create and manage multiple portfolios.
     *   Add transactions with on-the-fly asset creation for unlisted tickers.
@@ -25,7 +28,7 @@ This project is being developed with the guidance of an AI Master Orchestrator, 
 ## Technology Stack
 
 -   **Backend:** Python with [FastAPI](https://fastapi.tiangolo.com/)
--   **Frontend:** JavaScript with [React](https://reactjs.org/)
+-   **Frontend:** TypeScript with [React](https://reactjs.org/)
 -   **Database:** [PostgreSQL](https://www.postgresql.org/)
 -   **Deployment:** [Docker](https://www.docker.com/)
 
@@ -94,7 +97,7 @@ Run the start script. This will build the Docker images and start all the necess
 *   **To stop the application:** `./stop.sh`
 *   **To view live logs:** `./logs.sh`
 *   **To update to a new version:** Stop the app, overwrite the files with the new release, and run `./start.sh` again. Your data is stored in a Docker volume and will be preserved.
-*   **To learn how to use the application's features, see the User Guide.**
+*   **To learn how to use the application's features, see the ➡️ User Guide.**
 
 ---
 
@@ -159,6 +162,16 @@ The E2E test suite runs using Playwright in a dedicated Docker environment. This
 
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests
+```
+[!IMPORTANT]
+The E2E tests use a separate database (pms_db_test) and will not delete your development data. You only need to run docker-compose down -v when you want to completely reset your development environment. 
+
+## Development Utilities
+### Seeding Sample Data
+To populate the database with sample transactions for development and testing purposes, you can run the seeding script. This is particularly useful for testing features like the dashboard and advanced analytics. 
+Note: This script will add data for the first user it finds in the database (typically the initial admin user). It is safe to run multiple times. 
+```bashh 
+docker-compose run --rm backend python -m app.scripts.seed_transactions 
 ```
 
 ## Contributing

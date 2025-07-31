@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usePortfolio } from '../../hooks/usePortfolios';
+import { usePortfolio, usePortfolioAnalytics } from '../../hooks/usePortfolios';
 import TransactionList from '../../components/Portfolio/TransactionList';
 import AddTransactionModal from '../../components/Portfolio/AddTransactionModal';
+import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 
 const PortfolioDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const portfolioId = parseInt(id || '0', 10);
 
     const { data: portfolio, isLoading, isError, error } = usePortfolio(portfolioId);
+    const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
     const [isModalOpen, setModalOpen] = useState(false);
 
     if (isLoading) return <div className="text-center p-8">Loading portfolio details...</div>;
@@ -29,7 +31,11 @@ const PortfolioDetailPage: React.FC = () => {
                 </div>
             </div>
 
-            <TransactionList transactions={portfolio.transactions || []} />
+            <AnalyticsCard analytics={analytics} isLoading={isAnalyticsLoading} error={analyticsError} />
+
+            <div className="mt-8">
+                <TransactionList transactions={portfolio.transactions || []} />
+            </div>
 
             {isModalOpen && (
                 <AddTransactionModal

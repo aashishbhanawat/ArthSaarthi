@@ -4437,3 +4437,186 @@ A full rewrite of the affected test suites was performed. This included:
 - Wrapping components that use navigation hooks in a `<MemoryRouter>`.
 - Correcting all outdated mocks, props, and assertions.
 - Using fake timers (`jest.useFakeTimers()`) to correctly test components with debounced functionality.
+
+---
+
+**Bug ID:** 2025-07-31-51
+**Title:** Backend test suite collection fails with `NameError: name 'deps' is not defined`.
+**Module:** Core Backend, API Integration
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-31
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of a `NameError` during test collection. The `portfolios.py` endpoint file uses `deps` for dependency injection in the new analytics endpoint, but the module was imported as `dependencies`. This prevents the application from starting and blocks all testing.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `NameError: name 'deps' is not defined`.
+**Resolution:**
+Correct the usage of the dependencies module in `app/api/v1/endpoints/portfolios.py` to use the imported name `dependencies` instead of the alias `deps`.
+
+---
+
+**Bug ID:** 2025-07-31-52
+**Title:** Analytics test suite fails due to use of non-existent 'normal_user_token_headers' fixture.
+**Module:** Analytics (Test Suite)
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-31
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+All tests in `app/tests/api/v1/test_analytics.py` fail during test collection because they attempt to use a pytest fixture named `normal_user_token_headers`. This fixture is not defined in the project's `conftest.py`, causing every test in the file to `ERROR` out and blocking all testing for the new analytics feature.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The tests in `test_analytics.py` should be collected and should run.
+**Actual Behavior:**
+All tests in the file fail with the error: `fixture 'normal_user_token_headers' not found`.
+**Resolution:**
+Updated `app/tests/api/v1/test_analytics.py` to use the `get_auth_headers` fixture factory instead of the non-existent `normal_user_token_headers` fixture. This involved refactoring each test to create a user and generate authentication headers dynamically.
+---
+
+**Bug ID:** 2025-07-31-53
+**Title:** Analytics test suite fails with `TypeError` due to missing `name` argument in `create_test_portfolio`.
+**Module:** Analytics (Test Suite)
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-31
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Multiple tests in `app/tests/api/v1/test_analytics.py` fail with `TypeError: create_test_portfolio() missing 1 required keyword-only argument: 'name'`. The test helper function `create_test_portfolio` was updated to require a `name` argument, but the calls within the analytics test suite were not updated to provide it. This blocks all testing for the new analytics feature.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The tests in `test_analytics.py` should run successfully.
+**Actual Behavior:**
+Three tests fail with a `TypeError`.
+**Resolution:**
+Update all calls to `create_test_portfolio` in `app/tests/api/v1/test_analytics.py` to include a `name` argument.
+
+---
+
+**Bug ID:** 2025-07-31-54
+**Title:** Analytics feature tests fail due to missing CRUD method and import error.
+**Module:** Analytics (Backend), Test Suite
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-31
+**Classification:** Implementation (Backend) / Test Suite
+**Severity:** Critical
+**Description:**
+Two tests for the new analytics feature are failing, blocking its validation.
+1.  `test_get_portfolio_analytics_success` fails with `AttributeError: 'CRUDTransaction' object has no attribute 'get_multi_by_portfolio'`. The analytics calculation logic requires a method to fetch all transactions for a portfolio, but this method was not implemented in the `CRUDTransaction` class.
+2.  `test_get_portfolio_analytics_calculation` fails with `NameError: name 'financial_data_service' is not defined`. The test attempts to mock the financial data service but never imports the service object.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The analytics tests should pass.
+**Actual Behavior:**
+The tests fail with `AttributeError` and `NameError`.
+**Resolution:**
+1. Implement the `get_multi_by_portfolio` method in `app/crud/crud_transaction.py`.
+2. Add the missing import for `financial_data_service` in `app/tests/api/v1/test_analytics.py`.
+
+---
+
+**Bug ID:** 2025-07-31-55
+**Title:** Backend test suite collection fails with `NameError: name 'List' is not defined`.
+**Module:** Core Backend, CRUD
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-31
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of a `NameError` during test collection. The `crud_transaction.py` module uses the `List` type hint for the return value of `get_multi_by_portfolio` but does not import it from the `typing` module. This breaks the application's startup and prevents any tests from running.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with `NameError: name 'List' is not defined`.
+**Resolution:**
+Add `from typing import List` to `app/crud/crud_transaction.py`.
+
+---
+
+**Bug ID:** 2025-07-31-56
+**Title:** Analytics feature crashes due to incorrect CRUD method names.
+**Module:** Analytics (Backend), Dashboard (Backend)
+**Reported By:** QA Engineer via Test Log
+**Date Reported:** 2025-07-31
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `crud_analytics.py` module attempts to call `get_dashboard_summary` and `get_portfolio_history` on the `crud_dashboard` object. However, the actual public methods are named `get_summary` and `get_history`, respectively. This causes a fatal `AttributeError` that breaks the analytics feature.
+**Steps to Reproduce:**
+1. Run the backend test suite: `docker-compose run --rm test`.
+**Expected Behavior:**
+The analytics calculation logic should call the correct public methods on the dashboard CRUD object.
+**Actual Behavior:**
+The tests fail with `AttributeError: 'CRUDDashboard' object has no attribute 'get_dashboard_summary'`.
+**Resolution:**
+Update the method calls in `crud_analytics.py` to use the correct names (`get_summary` and `get_history`).
+
+---
+
+**Bug ID:** 2025-07-31-57
+**Title:** `PortfolioDetailPage` test suite crashes with TypeError due to unmocked `usePortfolioAnalytics` hook.
+**Module:** Analytics (Frontend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-31
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The test suite for `PortfolioDetailPage.tsx` fails with a `TypeError: Cannot destructure property 'data' of '(0 , usePortfolios_1.usePortfolioAnalytics)(...)' as it is undefined.`. This occurs because the test file does not provide a mock for the `usePortfolioAnalytics` hook. When the component is rendered in the test environment, it calls the real hook, which returns `undefined` and causes the component to crash.
+**Steps to Reproduce:**
+1. Run the frontend test suite with `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The tests for `PortfolioDetailPage.tsx` should run without crashing.
+**Actual Behavior:**
+The test suite for this component crashes with a `TypeError`.
+**Resolution:**
+The test setup for `PortfolioDetailPage.test.tsx` must be updated to provide a mock for the `usePortfolioAnalytics` hook, ensuring it returns a defined object that can be destructured by the component.
+
+---
+
+**Bug ID:** 2025-07-31-58
+**Title:** Frontend Crash in Analytics Card due to undefined values
+**Module:** Analytics (Frontend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-07-31
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The `AnalyticsCard` component in the frontend crashes when the `analytics` prop contains an object where `xirr` or `sharpe_ratio` are not defined. The component tries to call `.toFixed()` on an `undefined` value, leading to a `TypeError`. This typically happens when the data is still loading or the backend returns incomplete analytics data.
+
+**Steps to Reproduce:**
+1. Navigate to the Portfolio Detail page.
+2. The `usePortfolioAnalytics` hook returns data where the `analytics` object does not contain `xirr` or `sharpe_ratio`.
+3. The `AnalyticsCard` component attempts to render these values.
+4. The application crashes. The failing test `PortfolioDetailPage.test.tsx` reliably reproduces this issue.
+
+**Expected Behavior:**
+The `AnalyticsCard` component should gracefully handle cases where analytics values are missing and display a fallback value like "N/A" instead of crashing.
+
+**Actual Behavior:**
+The component crashes with a `TypeError: Cannot read properties of undefined (reading 'toFixed')`.
+
+**Impact:**
+High - This bug crashes a key view in the application, preventing users from seeing their portfolio details and analytics.
+
+**Logs/Screenshots:**
+TypeError: Cannot read properties of undefined (reading 'toFixed')
+
+31 | 32 | Sharpe Ratio
+
+33 | {analytics.sharpe_ratio.toFixed(2)} | ^ 34 | 35 | 36 |
+
+at toFixed (src/components/Portfolio/AnalyticsCard.tsx:33:78)
+**Resolution:**
+The `AnalyticsCard.tsx` component has been updated to check for the existence of `xirr` and `sharpe_ratio` before calling `.toFixed()`. If the values are `null` or `undefined`, it now displays "N/A". This prevents the crash and provides a better user experience when data is incomplete.
+
+**Status:**
+Resolved

@@ -8,7 +8,7 @@ import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Portfolio } from '../../../types/portfolio';
 
 jest.mock('../../../hooks/usePortfolios');
-const { usePortfolio, useCreateTransaction, useCreateAsset } = portfolioHooks as jest.Mocked<typeof portfolioHooks>;
+const { usePortfolio, useCreateTransaction, useCreateAsset, usePortfolioAnalytics } = portfolioHooks as jest.Mocked<typeof portfolioHooks>;
 
 // Default mocks for hooks used by the modal
 const mockMutateTransaction = jest.fn();
@@ -59,6 +59,11 @@ describe('PortfolioDetailPage', () => {
         useCreateTransaction.mockReturnValue({ mutate: mockMutateTransaction, isPending: false });
         // @ts-ignore
         useCreateAsset.mockReturnValue({ mutate: mockMutateAsset, isPending: false });
+        usePortfolioAnalytics.mockReturnValue({
+            data: { total_value: 1505, total_gain_loss: 5, total_gain_loss_percentage: 0.33 },
+            isLoading: false,
+            isError: false,
+        } as any);
     });
 
     it('opens the add transaction modal when the button is clicked', async () => {

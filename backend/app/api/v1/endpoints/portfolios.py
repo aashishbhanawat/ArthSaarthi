@@ -7,6 +7,8 @@ from app import crud, models, schemas
 from app.core import dependencies
 from app.models.user import User
 from . import transactions
+from app.crud import crud_analytics
+
 
 router = APIRouter()
 router.include_router(transactions.router, prefix="/{portfolio_id}/transactions", tags=["transactions"])
@@ -77,3 +79,22 @@ def delete_portfolio(
         raise HTTPException(status_code=403, detail="Not enough permissions")
     crud.portfolio.remove(db=db, id=id)
     return {"message": "Portfolio deleted successfully"}
+
+@router.get("/{portfolio_id}/analytics", response_model=schemas.AnalyticsResponse)
+def get_portfolio_analytics(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: int,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get advanced analytics for a specific portfolio.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    analytics = crud_analytics.get_portfolio_analytics(db=db, portfolio_id=portfolio_id)
+    return analytics

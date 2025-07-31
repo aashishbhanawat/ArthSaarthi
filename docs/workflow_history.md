@@ -505,3 +505,40 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - The entire project is now in a fully stable, "green" state. All E2E, backend, and frontend tests are passing. The project is robust, maintainable, and ready for handoff or future development.
+
+---
+
+## 2025-07-31: Implement & Stabilize Advanced Analytics Feature
+
+*   **Task Description:** Implement the "Advanced Portfolio Analytics" feature (FR6), which includes calculating and displaying XIRR and Sharpe Ratio for portfolios. This was a full-stack task that involved implementing the backend logic, creating the frontend components, and then performing a rapid debugging and stabilization cycle to fix issues discovered during testing.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the backend logic in `crud_analytics.py`, the new API endpoint in `portfolios.py`, and the corresponding frontend components (`AnalyticsCard.tsx`) and hooks (`usePortfolioAnalytics`).
+    2.  **Systematic Debugging via Log Analysis:** The process was driven by analyzing failing test logs from both the backend (`pytest`) and frontend (`npm test`).
+    3.  **Bug Triage & Fixing:** For each issue, the "report a bug" and "apply the fix" prompts were used to systematically document and resolve bugs. This included:
+        *   Backend `AttributeError` due to incorrect CRUD method names in `crud_analytics.py`.
+        *   Frontend `TypeError` in `PortfolioDetailPage.test.tsx` due to an unmocked React Query hook.
+        *   Frontend `TypeError` in `AnalyticsCard.tsx` due to rendering `undefined` values.
+    4.  **Documentation Update:** "Let's update all relevant document before triggering git commit". The AI identified and updated the feature plan, product backlog, and release notes to reflect the completion of the feature.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_analytics.py`: Implemented XIRR and Sharpe Ratio calculations. Corrected method calls to align with the `crud_dashboard` module.
+    *   `backend/app/api/v1/endpoints/portfolios.py`: Added the `/analytics` endpoint.
+    *   `backend/app/tests/api/v1/test_analytics.py`: Added a test suite for the new analytics endpoint.
+    *   `frontend/src/components/Portfolio/AnalyticsCard.tsx`: Created the UI component and added defensive code to handle potentially null or undefined analytics values.
+    *   `frontend/src/hooks/usePortfolios.ts`: Added the `usePortfolioAnalytics` hook.
+    *   `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx`: Integrated the `AnalyticsCard`.
+    *   `frontend/src/__tests__/pages/Portfolio/PortfolioDetailPage.test.tsx`: Added a mock for the `usePortfolioAnalytics` hook to stabilize the test suite.
+    *   `docs/features/07_advanced_analytics.md`: Updated status from "Planned" to "Done".
+    *   `docs/product_backlog.md`: Updated the status of the analytics feature to reflect its completion.
+    *   `docs/bug_reports.md`: Added detailed reports for all bugs discovered and fixed during this phase (2025-07-31-56, 2025-07-31-57, 2025-07-31-58).
+
+*   **Verification:**
+    - Ran the full backend test suite (53 passed).
+    - Ran the full frontend test suite (56 passed).
+    - Ran the full E2E test suite to validate the new feature and ensure no regressions.
+
+*   **Outcome:**
+    - The Advanced Analytics feature is now fully implemented, tested, and documented. The application is stable and provides users with valuable new portfolio performance metrics. The project is ready for a pilot release.
+
+---

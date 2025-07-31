@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
 import { PortfolioCreate, TransactionCreate } from '../types/portfolio';
 import { Asset } from '../types/asset';
+import { PortfolioAnalytics } from '../types/analytics';
 
 export const usePortfolios = () => {
     return useQuery({
@@ -54,5 +55,13 @@ export const useCreateTransaction = () => {
             queryClient.invalidateQueries({ queryKey: ['portfolio', variables.portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         },
+    });
+};
+
+export const usePortfolioAnalytics = (id: number) => {
+    return useQuery<PortfolioAnalytics, Error>({
+        queryKey: ['portfolioAnalytics', id],
+        queryFn: () => portfolioApi.getPortfolioAnalytics(id),
+        enabled: !!id,
     });
 };
