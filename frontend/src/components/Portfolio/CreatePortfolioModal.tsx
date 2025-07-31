@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCreatePortfolio } from '../../hooks/usePortfolios';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CreatePortfolioModalProps {
     isOpen: boolean;
@@ -8,20 +10,22 @@ interface CreatePortfolioModalProps {
 
 const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ isOpen, onClose }) => {
     const [name, setName] = useState('');
+    const queryClient = useQueryClient();
     const createPortfolioMutation = useCreatePortfolio();
-
-    useEffect(() => {
-        if (createPortfolioMutation.isSuccess) {
-            onClose();
-            createPortfolioMutation.reset();
-            setName('');
-        }
-    }, [createPortfolioMutation.isSuccess, onClose, createPortfolioMutation]);
+    const navigate = useNavigate();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (name.trim()) {
-            createPortfolioMutation.mutate({ name });
+            createPortfolioMutation.mutate({ name }, {
+                onSuccess: async (data) => {
+                    const newPortfolioId = data.id;
+                    await queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+                    onClose();
+                    setName('');
+                    navigate(`/portfolios/${newPortfolioId}`);
+                },
+            });
         }
     };
 

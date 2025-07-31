@@ -11,6 +11,7 @@ These principles are the foundation of our testing approach and were established
 3.  **Explicit Fixture Dependencies:** Use pytest's fixture dependency mechanism to explicitly define the order in which fixtures are set up. For example, if fixture `A` depends on fixture `B`, define `A` as `def A(B): ...`.
 4.  **Proactive Logging:** Maintain clear and informative logging in test setup and teardown processes (e.g., in `conftest.py`) to aid in debugging test failures.
 5.  **Align Test Helpers with Application Logic:** Any utility functions used in tests (e.g., for generating test data) must respect all validation rules and constraints enforced by the application itself.
+6.  **Define UX Patterns for E2E Tests:** Critical user experience (UX) patterns must be documented before E2E tests are written. For example, a standard pattern is that after a user successfully creates a new resource (e.g., a portfolio), the application should automatically navigate to that resource's detail page.
 6.  **Test Environment Sanity Check:** The QA Engineer role includes a "Test Environment Sanity Check" at the beginning of each new module to validate the test environment configuration.
 
 ## AI-Assisted Development Workflow
@@ -100,8 +101,25 @@ For this project, we will maintain a bug log in `docs/bug_reports.md`. All bugs 
 
 ## 4. End-to-End (E2E) Testing
 
-E2E tests will be implemented using a framework like **Cypress** or **Playwright**.
+The E2E test suite is implemented using **Playwright**. It is the final and most critical layer of our testing strategy, designed to validate complete user flows in an environment that closely mirrors production.
 
 *   **Objective:** Simulate a real user's journey through the live application, interacting with both the frontend and the real backend.
 *   **Scope:**
     *   Test critical user flows, such as user registration, login, and core feature interactions.
+*   **Environment:**
+    *   The E2E environment is defined in `docker-compose.e2e.yml`.
+    *   It uses a dedicated test database (`pms_db_test`) to isolate test data from development data.
+    *   A special backend endpoint (`/api/v1/testing/reset-db`) is exposed *only* in the test environment to allow for programmatic database resets between test runs.
+
+### E2E Test Development Principles
+
+The following principles were established after a rigorous E2E test suite stabilization phase and are mandatory for all new E2E tests:
+
+1.  **Serial Execution:** Tests are executed serially (`workers: 1` in `playwright.config.ts`) to prevent race conditions. Since tests share a single database instance, parallel execution would lead to one test's setup interfering with another's.
+2.  **Use Service Names for Networking:** When running inside Docker, tests must use Docker's service names for network requests (e.g., `baseURL: 'http://frontend:3000'`), not `localhost`.
+3.  **Prefer User-Facing Locators:** Use locators that a user would see, such as `getByRole`, `getByLabel`, and `getByText`. This makes tests more resilient to code refactoring.
+4.  **Scope Queries for Uniqueness:** When multiple identical elements exist (e.g., a "Delete" button in a list and another in a modal), scope the locator to a unique parent element (e.g., `page.getByRole('dialog').getByRole(...)`).
+5.  **Rely on Auto-Waiting:** Prefer Playwright's built-in auto-waiting on assertions (`expect(locator).toBeVisible()`) over manual waits like `waitForTimeout`. This makes tests faster and more reliable.
+6.  **Wait for Network Responses for State Changes:** When an action triggers an asynchronous data fetch (e.g., after creating a portfolio, the list re-fetches), use `page.waitForResponse()` to explicitly wait for the relevant API call to complete before asserting the UI has updated. This prevents race conditions.
+7.  **Ensure Accessibility for Testability:** Frontend components, especially modals, must be accessible. A modal should have `role="dialog"` and `aria-modal="true"` so that it can be reliably located by the test runner.
+8.  **Isolate Test Logic:** Each test file (`.spec.ts`) should be self-contained and perform its own setup in a `beforeAll` or `beforeEach` hook.

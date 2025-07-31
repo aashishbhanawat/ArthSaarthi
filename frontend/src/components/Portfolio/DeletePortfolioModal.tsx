@@ -13,9 +13,9 @@ const DeletePortfolioModal: React.FC<DeletePortfolioModalProps> = ({ isOpen, onC
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content max-w-md">
+            <div className="modal-content max-w-md" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
                 <div className="modal-header">
-                    <h2 className="text-2xl font-bold text-red-600">Delete Portfolio</h2>
+                    <h2 id="delete-modal-title" className="text-2xl font-bold text-red-600">Delete Portfolio</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
                 </div>
                 <div className="p-6">

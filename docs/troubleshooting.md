@@ -116,24 +116,55 @@ This guide documents common setup and runtime issues and their solutions.
     sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column "..." does not exist
     ```
 
-*   **Cause:** The application's database models (in `backend/app/models/`) have been updated, but the corresponding Alembic migration has not been generated or applied, causing the database schema to be out of sync with the application's expectations.
+*   **Cause:** The application's SQLAlchemy models (in `backend/app/models/`) have been updated, but the corresponding Alembic migration has not been generated or applied. This causes the database schema to be out of sync with the application's expectations.
 
-*   **Solution:** The project now uses Alembic for database migrations. You need to generate a new migration script to align the database schema with your model changes.
+*   **Solution:** You need to generate a new migration script to align the database schema with your model changes.
 
-    1.  **Make sure the `alembic/env.py` file imports the model you changed.** For example, if you changed `app/models/portfolio.py`, ensure this line exists in `env.py`:
-        ```python
-        from app.models import portfolio
-        ```
-
-    2.  **Generate a new migration script.** Run the following command from the project root, replacing the message with a description of your change:
+    1.  **Generate a new migration script.** Run the following command from the project root, replacing the message with a description of your change. This command executes Alembic inside a temporary backend container.
         ```bash
         docker-compose run --rm backend alembic revision --autogenerate -m "Describe your model change here"
         ```
-
-    3.  **Apply the migration.** Restart the application. The new command in `docker-compose.yml` will automatically apply the new migration script.
+    2.  **Apply the migration.** Restart the application. The `entrypoint.sh` script will automatically apply the new migration script on startup.
         ```bash
-        docker-compose up --build backend
+        docker-compose up --build -d backend
         ```
+
+---
+
+### 9. E2E tests fail with `net::ERR_CONNECTION_REFUSED`
+
+*   **Symptom:** The Playwright E2E test suite fails immediately with a connection error.
+
+    ```
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/
+    ```
+
+*   **Cause:** The E2E tests run inside a Docker container (`e2e-tests`). From within this container, `localhost` refers to the container itself, not the `frontend` service. The test runner is trying to connect to a web server that doesn't exist at that address.
+
+*   **Solution:** The `baseURL` in the Playwright configuration must be updated to use the Docker service name, which is resolvable on the shared Docker network.
+
+    1.  Open the Playwright config file: `e2e/playwright.config.ts`.
+    2.  Change the `baseURL` from `http://localhost:3000` to `http://frontend:3000`.
+
+---
+
+### 10. How to Reset the Database
+
+*   **Symptom:** You need to completely wipe all data and start with a fresh, empty database. This is often necessary after major schema changes or to clear out test data.
+
+*   **Cause:** The database data is stored in a persistent Docker volume (`postgres_data`). Simply stopping and starting the containers with `docker-compose down` and `docker-compose up` will not delete this data.
+
+*   **Solution:** Use the `-v` flag with `docker-compose down` to remove the volumes along with the containers.
+
+    1.  **Stop and remove all containers, networks, and volumes:**
+        ```bash
+        docker-compose down -v
+        ```
+    2.  **Start the application fresh:**
+        ```bash
+        docker-compose up --build db backend frontend
+        ```
+    3.  **Perform initial setup:** Since the database is now empty, you will need to go to `http://localhost:3000` and create the initial admin user again.
 
 ---
 

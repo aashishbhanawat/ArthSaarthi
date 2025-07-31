@@ -6,31 +6,41 @@ const testUser = {
   password: 'Password123!',
 };
 
+const adminUser = {
+  email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
+  password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
+};
+
 test.describe('Admin User Management Flow', () => {
   let page: Page;
 
   test.beforeAll(async ({ browser, request }) => {
-    // Reset the database before all tests
+    // Reset the database before all tests in this file
     const resetResponse = await request.post('/api/v1/testing/reset-db');
     expect(resetResponse.status()).toBe(204);
 
-    // Create a page and perform the initial admin setup once for all tests in this file.
-    page = await browser.newPage();
-    await page.goto('/');
-    await page.getByLabel('Full Name').fill('Admin User');
-    await page.getByLabel('Email').fill(process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com');
-    await page.getByLabel('Password', { exact: true }).fill(process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!');
-    await page.getByRole('button', { name: 'Create Admin Account' }).click();
-    await expect(page.getByRole('heading', { name: 'Sign in to your account' })).toBeVisible();
+    // Create Admin User via API for a faster, more reliable setup
+    const adminSetupResponse = await request.post('/api/v1/auth/setup', {
+      data: {
+        full_name: 'Admin User',
+        email: adminUser.email,
+        password: adminUser.password,
+      },
+    });
+    expect(adminSetupResponse.ok()).toBeTruthy();
+  });
 
-    // Login as Admin
-    await page.getByLabel('Email address').fill(process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com');
-    await page.getByLabel('Password').fill(process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!');
+  test.beforeEach(async ({ browser }) => {
+    page = await browser.newPage();
+    // Login as Admin before each test
+    await page.goto('/');
+    await page.getByLabel('Email address').fill(adminUser.email);
+    await page.getByLabel('Password').fill(adminUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByRole('link', { name: 'User Management' })).toBeVisible();
   });
 
-  test.afterAll(async () => {
+  test.afterEach(async () => {
     await page.close();
   });
 
@@ -45,22 +55,30 @@ test.describe('Admin User Management Flow', () => {
     await page.getByLabel('Email').fill(testUser.email);
     await page.getByLabel('Password', { exact: true }).fill(testUser.password);
     await page.getByRole('button', { name: 'Create User' }).click();
-    await expect(page.getByRole('cell', { name: testUser.email })).toBeVisible();
 
-    const userRow = page.getByRole('row', { name: new RegExp(testUser.email) });
-    await expect(userRow).toBeVisible();
+    // Verify creation
+    await expect(page.getByRole('row', { name: new RegExp(testUser.email) })).toBeVisible();
 
     // UPDATE User
-    await userRow.getByRole('button', { name: 'Edit' }).click();
-    await page.getByLabel('Full Name').fill(`${testUser.name} (Updated)`);
+    const updatedName = `${testUser.name} (Updated)`;
+    // Re-query for the row to ensure we have a fresh reference before clicking
+    await page.getByRole('row', { name: new RegExp(testUser.email) }).getByRole('button', { name: 'Edit' }).click();
+    await expect(page.getByRole('heading', { name: 'Edit User' })).toBeVisible();
+    await page.getByLabel('Full Name').fill(updatedName);
     await page.getByRole('button', { name: 'Save Changes' }).click();
-    // The modal should close, and the user row should still be visible.
-    // We can't check for the name update in the table as it's not displayed.
-    await expect(page.getByRole('cell', { name: testUser.email })).toBeVisible();
+    
+    // Verify update
+    // The name is not in the table, so verify the update by re-opening the edit modal
+    await page.getByRole('row', { name: new RegExp(testUser.email) }).getByRole('button', { name: 'Edit' }).click();
+    await expect(page.getByRole('heading', { name: 'Edit User' })).toBeVisible();
+    await expect(page.getByLabel('Full Name')).toHaveValue(updatedName);
+    await page.getByRole('button', { name: 'Cancel' }).click(); // Close the modal to continue
 
     // DELETE User
-    await userRow.getByRole('button', { name: 'Delete' }).click();
+    await page.getByRole('row', { name: new RegExp(testUser.email) }).getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('button', { name: 'Confirm Delete' }).click();
-    await expect(page.getByRole('cell', { name: testUser.email })).not.toBeVisible();
+    
+    // Verify deletion
+    await expect(page.getByRole('row', { name: new RegExp(testUser.email) })).not.toBeVisible();
   });
 });

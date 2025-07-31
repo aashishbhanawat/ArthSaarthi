@@ -21,49 +21,42 @@ const mockPortfolios: Portfolio[] = [
     { id: 2, name: 'Vacation Fund', user_id: 1, transactions: [] },
 ];
 
-describe('PortfolioPage', () => {
-    it('shows a loading state initially', () => {
-        jest.spyOn(usePortfoliosHook, 'usePortfolios').mockReturnValue({
-            data: undefined,
-            isLoading: true,
-            isError: false,
-        } as any);
+const mockUsePortfolios = (data: Partial<ReturnType<typeof usePortfoliosHook.usePortfolios>>) => {
+    return jest.spyOn(usePortfoliosHook, 'usePortfolios').mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: false,
+        error: null,
+        ...data,
+    } as ReturnType<typeof usePortfoliosHook.usePortfolios>);
+};
 
+describe('PortfolioPage', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('shows a loading state initially', () => {
+        mockUsePortfolios({ data: undefined, isLoading: true });
         render(<PortfolioPage />, { wrapper });
         expect(screen.getByText(/loading portfolios.../i)).toBeInTheDocument();
     });
 
     it('shows an error message if fetching fails', () => {
-        jest.spyOn(usePortfoliosHook, 'usePortfolios').mockReturnValue({
-            data: undefined,
-            isLoading: false,
-            isError: true,
-            error: new Error('Failed to fetch'),
-        } as any);
-
+        mockUsePortfolios({ isError: true, error: new Error('Failed to fetch') });
         render(<PortfolioPage />, { wrapper });
         expect(screen.getByText(/error: failed to fetch/i)).toBeInTheDocument();
     });
 
     it('renders a list of portfolios on successful fetch', () => {
-        jest.spyOn(usePortfoliosHook, 'usePortfolios').mockReturnValue({
-            data: mockPortfolios,
-            isLoading: false,
-            isError: false,
-        } as any);
-
+        mockUsePortfolios({ data: mockPortfolios });
         render(<PortfolioPage />, { wrapper });
         expect(screen.getByText('Retirement Fund')).toBeInTheDocument();
         expect(screen.getByText('Vacation Fund')).toBeInTheDocument();
     });
 
     it('opens the create portfolio modal when the "Create New Portfolio" button is clicked', async () => {
-        jest.spyOn(usePortfoliosHook, 'usePortfolios').mockReturnValue({
-            data: [],
-            isLoading: false,
-            isError: false,
-        } as any);
-
+        mockUsePortfolios({ data: [] });
         render(<PortfolioPage />, { wrapper });
         
         await userEvent.click(screen.getByRole('button', { name: /create new portfolio/i }));

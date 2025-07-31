@@ -1,6 +1,6 @@
 # Project Handoff Summary: Personal Portfolio Management System
 
-**Date:** 2025-07-27
+**Date:** 2025-07-31
 
 ## 1. Project Overview & Status
 
@@ -46,7 +46,7 @@
 1.  **Configure Environment:** Create a `backend/.env` file (copy from `backend/.env.example`). The defaults are suitable for local development. No frontend `.env` is needed due to the Vite proxy.
 2.  **Build and Run:** From the project root, run the following command to start the application services:
     ```bash
-    docker-compose up --build db backend frontend redis
+    docker-compose up --build db backend frontend
     ```
 3.  **Access Services:**
     *   **Frontend:** `http://localhost:3000`
@@ -63,9 +63,12 @@
     docker-compose run --rm frontend npm test
     ```
 *   **End-to-End (E2E) Tests:** This command starts all necessary services, runs the tests, and then automatically shuts down.
+    It returns the exit code from the test runner, which is essential for CI/CD pipelines. It also automatically stops and removes the test containers, so a separate `docker-compose down` is not required after a successful run.
     ```bash
-    docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit e2e-tests
+    docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests
     ```
+    > [!IMPORTANT]  
+    > The E2E test suite runs against a dedicated test database (`pms_db_test`) and **will not affect your development database** (`pms_db`). You do not need to run `docker-compose down -v` after running E2E tests. The `down -v` command is a destructive action that should only be used when you intentionally want to reset your development database.
 
 ---
 
@@ -96,16 +99,15 @@ Our development history revealed several critical patterns that this workflow is
     *   **History:** A significant portion of the project was dedicated to debugging the E2E test environment. Issues arose from Docker networking, CORS policies, Vite proxy settings, and environment variable inheritance.
     *   **Mitigation:** The E2E test setup is now treated as a core feature. Any changes to the build system, Docker configuration, or environment variables must be validated against the E2E test suite.
 
-3.  **Risk: Stale AI Context.**
+4.  **Risk: Stale AI Context.**
     *   **History:** The AI assistant would occasionally work with outdated file information, leading to incorrect suggestions.
     *   **Mitigation:** The developer is the **source of truth**. The established process requires providing the AI with the latest file content to resynchronize its context when necessary.
 
 ---
 
-## 5. Known Architectural Risks
-*   **Database Migrations:** The project uses **Alembic** for schema management. The old `create_all` mechanism has been removed from the production startup command. All database model changes must be accompanied by a new, versioned migration script to prevent schema drift.
-
-*   **Flexible Configuration Management:** A strategy for managing secrets (e.g., `SECRET_KEY`, `DATABASE_URL`) that supports both Docker and standalone (non-containerized) deployments has not yet been finalized. This will be a key consideration for production readiness.
+## 5. Known Architectural Risks & Future Work
+*   **Database Migrations:** The project uses **Alembic** for schema management. The entrypoint script for the backend service automatically runs `alembic upgrade head` on startup to apply the latest migrations. All database model changes must be accompanied by a new, versioned migration script to prevent schema drift.
+*   **Configuration Management:** A strategy for managing secrets (e.g., `SECRET_KEY`) that supports both Docker and standalone deployments needs to be finalized for production readiness.
 ---
 
 ## 6. Next Steps

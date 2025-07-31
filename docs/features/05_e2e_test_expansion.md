@@ -34,17 +34,17 @@ A new test file, `e2e/tests/portfolio-and-dashboard.spec.ts`, will be created to
 
 *   The `beforeAll` hook will be responsible for setting up a clean state for the entire test file run. This includes:
     1.  Resetting the database via an API call to `/testing/reset-db`.
-    2.  Creating the initial Admin user via the UI.
-    3.  Logging in as the Admin user.
-    4.  Creating a new Standard User via the User Management UI.
-    5.  Logging out.
+    2.  Creating the initial Admin user via an API call to `/auth/setup`.
+    3.  Logging in as the Admin user via an API call to get an auth token.
+    4.  Creating a new Standard User via an API call to `/users/` using the admin's token.
 *   The `beforeEach` hook will log in as the newly created Standard User, ensuring each test starts from the dashboard as an authenticated user.
 
 ### b. Test Cases
 
 The following tests will be implemented sequentially:
 
-1.  **`should allow a user to create, view, and delete a portfolio`**: This test will cover the full lifecycle of a portfolio.
-2.  **`should allow a user to add various types of transactions`**: This test will verify that BUY and SELL transactions can be added successfully for both new and existing assets.
-3.  **`should prevent a user from creating an invalid SELL transaction`**: This test will specifically check the business logic that prevents a user from selling more shares than they hold.
-4.  **`should display correct data on the dashboard after transactions`**: This test will add transactions and then navigate to the dashboard to verify that the summary cards and charts update accordingly.
+- [x] **`should allow a user to create, view, and delete a portfolio`**: This test will cover the full lifecycle of a portfolio.
+- [ ] **`should allow a user to add various types of transactions`**: This test will verify that BUY and SELL transactions can be added successfully for both new and existing assets.
+- [x] **`should allow a user to add various types of transactions`**: This test will verify that BUY and SELL transactions can be added successfully for both new and existing assets.
+- [ ] **`should prevent a user from creating an invalid SELL transaction`**: This test will specifically check the business logic that prevents a user from selling more shares than they hold.
+- [ ] **`should display correct data on the dashboard after transactions`**: This test will add transactions and then navigate to the dashboard to verify that the summary cards and charts update accordingly.

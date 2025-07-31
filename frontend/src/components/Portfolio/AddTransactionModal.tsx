@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useCreateTransaction, useCreateAsset } from '../../hooks/usePortfolios';
+import { useQueryClient } from '@tanstack/react-query';
 import { lookupAsset } from '../../services/portfolioApi';
 import { Asset } from '../../types/asset';
 import { TransactionCreate } from '../../types/portfolio';
@@ -15,42 +16,50 @@ type TransactionFormInputs = Omit<TransactionCreate, 'asset_id'>;
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, onClose }) => {
     const { register, handleSubmit, formState: { errors } } = useForm<TransactionFormInputs>();
+    const queryClient = useQueryClient();
     const createTransactionMutation = useCreateTransaction();
     const createAssetMutation = useCreateAsset();
     const [apiError, setApiError] = useState<string | null>(null);
-
-    const [searchTerm, setSearchTerm] = useState('');
+    
+    const [inputValue, setInputValue] = useState('');
+    const [searchTerm, setSearchTerm] = useState(''); // Debounced value
     const [searchResults, setSearchResults] = useState<Asset[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
     const [isSearching, setIsSearching] = useState(false);
 
     // Debounce search term
     useEffect(() => {
-        if (searchTerm.length < 2 || selectedAsset) {
+        const handler = setTimeout(() => {
+            setSearchTerm(inputValue);
+        }, 300);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [inputValue]);
+
+    useEffect(() => {
+        if (searchTerm.length < 2 || selectedAsset) { // Use debounced term
             setSearchResults([]);
             return;
         }
 
         setIsSearching(true);
-        const delayDebounceFn = setTimeout(() => {
-            lookupAsset(searchTerm)
-                .then(data => setSearchResults(data))
-                .catch(() => setSearchResults([]))
-                .finally(() => setIsSearching(false));
-        }, 300);
-
-        return () => clearTimeout(delayDebounceFn);
+        lookupAsset(searchTerm)
+            .then(data => setSearchResults(data))
+            .catch(() => setSearchResults([]))
+            .finally(() => setIsSearching(false));
     }, [searchTerm, selectedAsset]);
 
     const handleSelectAsset = (asset: Asset) => {
         setSelectedAsset(asset);
-        setSearchTerm(asset.name);
+        setInputValue(asset.name);
         setSearchResults([]);
     };
 
     const handleClearSelectedAsset = () => {
         setSelectedAsset(null);
-        setSearchTerm('');
+        setInputValue('');
     };
 
     const onSubmit = (data: TransactionFormInputs) => {
@@ -69,7 +78,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
         };
 
         createTransactionMutation.mutate({ portfolioId, data: payload }, {
-            onSuccess: () => onClose(),
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+                onClose();
+            },
             onError: (error: any) => {
                 const message = error.response?.data?.detail || 'An unexpected error occurred while adding the transaction';
                 setApiError(message);
@@ -79,7 +91,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
 
     const handleCreateAsset = () => {
         setApiError(null);
-        createAssetMutation.mutate(searchTerm, {
+        createAssetMutation.mutate(inputValue.toUpperCase(), {
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },
@@ -103,11 +115,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
                                     type="text"
                                     id="asset-search"
                                     className="form-input"
-                                    value={searchTerm}
+                                    value={inputValue}
                                     onChange={(e) => {
                                         setApiError(null);
                                         if (selectedAsset) handleClearSelectedAsset();
-                                        setSearchTerm(e.target.value);
+                                        setInputValue(e.target.value);
                                     }}
                                     placeholder="Search by ticker or name..."
                                     autoComplete="off"
@@ -127,11 +139,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
                                         ))}
                                     </ul>
                                 )}
-                                {!isSearching && searchResults.length === 0 && searchTerm.length > 1 && !selectedAsset && (
+                                {!isSearching && searchResults.length === 0 && inputValue.length > 1 && !selectedAsset && (
                                     <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">
                                         <p className="text-sm text-gray-500 mb-2">No asset found. You can create it.</p>
                                         <button type="button" onClick={handleCreateAsset} className="btn btn-secondary btn-sm w-full" disabled={createAssetMutation.isPending}>
-                                            {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${searchTerm.toUpperCase()}"`}
+                                            {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${inputValue.toUpperCase()}"`}
                                         </button>
                                     </div>
                                 )}
@@ -169,7 +181,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
                             </div>
                         </div>
 
-                        {apiError && <p className="text-red-500 text-sm mt-2">{apiError}</p>}
+                        {apiError && (
+                            <div className="alert alert-error mt-2">
+                                <p>{apiError}</p>
+                            </div>
+                        )}
 
                         <div className="flex justify-end space-x-4 pt-4">
                             <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>

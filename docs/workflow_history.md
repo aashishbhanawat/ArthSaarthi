@@ -478,3 +478,30 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - A stable and reliable E2E test suite is now in place. All tests are passing, validating the core admin and user flows of the application. This provides a critical safety net for all future development.
+
+---
+
+## 2025-07-31: Final E2E & Unit Test Suite Stabilization
+
+*   **Task Description:** A final, intensive effort to stabilize the entire project's test suites. This involved debugging complex race conditions in the E2E tests and then performing a full rewrite of the frontend unit tests, which had become outdated and were failing after numerous component refactors.
+
+*   **Key Prompts & Interactions:**
+    1.  **E2E Debugging & RCA:** The process was driven by analyzing E2E test logs. The AI was instrumental in diagnosing a critical race condition caused by Playwright's default parallel execution model. The key insight was that multiple test files were resetting the same shared database simultaneously.
+    2.  **Process Refinement:** The solution involved two key changes:
+        *   Refactoring the E2E tests into a more modular file structure.
+        *   Configuring Playwright to run with a single worker (`workers: 1`) to enforce serial execution and eliminate the race condition.
+    3.  **Frontend Test Suite Overhaul:** After stabilizing the E2E tests, a prompt was used to run the frontend unit tests, revealing that the entire suite was broken. A series of prompts were then used to rewrite each failing test suite, addressing issues like missing router context, outdated mocks, and incorrect props.
+
+*   **File Changes:**
+    *   `e2e/playwright.config.ts`: Created to enforce serial test execution (`workers: 1`).
+    *   `e2e/tests/`: Refactored into a modular structure with `admin-user-management.spec.ts` and `portfolio-and-dashboard.spec.ts`.
+    *   `frontend/src/__tests__/`: All test suites (`UserFormModal.test.tsx`, `UserManagementPage.test.tsx`, `CreatePortfolioModal.test.tsx`, `DeleteConfirmationModal.test.tsx`, `AddTransactionModal.test.tsx`, etc.) were rewritten to align with the latest component implementations.
+    *   `docs/bug_reports.md`: Populated with consolidated reports summarizing the complex E2E and unit test failures.
+
+*   **Verification:**
+    - Ran the full E2E test suite.
+    - Ran the full backend test suite.
+    - Ran the full frontend test suite.
+
+*   **Outcome:**
+    - The entire project is now in a fully stable, "green" state. All E2E, backend, and frontend tests are passing. The project is robust, maintainable, and ready for handoff or future development.

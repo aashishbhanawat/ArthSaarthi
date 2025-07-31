@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
+﻿﻿﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
 
 This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets, providing performance insights and analytics.
 
@@ -70,8 +70,9 @@ The project uses `.env` files for configuration.
 ### 2. Build and Run the Application
 
 From the project's root directory, run the following command to start the application services:
+
 ```bash
-docker-compose up --build db backend frontend redis
+docker-compose up --build db backend frontend
 ```
 This command will build the Docker images and start only the necessary services for the application to run. The backend will wait for the database to be healthy before starting.
 
@@ -105,11 +106,14 @@ To run the frontend test suite using Jest and React Testing Library, use the fol
 
 ### End-to-End (E2E) Tests
 
-The E2E test suite runs using Playwright in a dedicated Docker environment. This command starts all necessary services (`db`, `redis`, `backend`, `frontend`, `e2e-tests`), runs the tests, and then automatically shuts down.
+The E2E test suite runs using Playwright in a dedicated Docker environment. This command starts all necessary services, runs the tests, propagates the test exit code, and then automatically stops and removes the test containers.
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit db redis backend frontend e2e-tests
+docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests
 ```
+**Note:** The E2E tests use a separate database and will not delete your development data. You only need to run docker-compose down -v when you want to completely reset your development environment.
+
+
 
 ## Contributing
 

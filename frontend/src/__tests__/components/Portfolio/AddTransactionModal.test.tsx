@@ -5,10 +5,9 @@ import AddTransactionModal from '../../../components/Portfolio/AddTransactionMod
 import * as portfolioApi from '../../../services/portfolioApi';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Asset } from '../../../types';
-
 const mockLookupAsset = jest.spyOn(portfolioApi, 'lookupAsset');
-const mockUseCreateTransaction = jest.spyOn(portfolioHooks, 'useCreateTransaction');
-const mockUseCreateAsset = jest.spyOn(portfolioHooks, 'useCreateAsset');
+const mockUseCreateTransaction = jest.spyOn(portfolioHooks, 'useCreateTransaction') as jest.Mock;
+const mockUseCreateAsset = jest.spyOn(portfolioHooks, 'useCreateAsset') as jest.Mock;
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -38,10 +37,18 @@ const renderComponent = () => {
 describe('AddTransactionModal', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        // @ts-ignore
-        mockUseCreateTransaction.mockReturnValue({ mutate: mockMutateTransaction, isPending: false });
-        // @ts-ignore
-        mockUseCreateAsset.mockReturnValue({ mutate: mockMutateAsset, isPending: false });
+        mockUseCreateTransaction.mockReturnValue({
+            mutate: mockMutateTransaction,
+            isPending: false, isSuccess: false, isError: false, error: null, reset: jest.fn()
+        });
+        mockUseCreateAsset.mockReturnValue({
+            mutate: mockMutateAsset,
+            isPending: false,
+            isSuccess: false,
+            isError: false,
+            error: null,
+            reset: jest.fn()
+        });
     });
 
     it('renders the modal with all form fields', () => {
