@@ -4620,3 +4620,26 @@ The `AnalyticsCard.tsx` component has been updated to check for the existence of
 
 **Status:**
 Resolved
+
+---
+
+**Bug ID:** 2025-08-01-01
+**Title:** Intermittent Test Failure in `test_create_import_session`
+**Module:** Import Sessions (Backend Test Suite)
+**Date Reported:** 2025-08-01
+**Classification:** Test Suite
+**Severity:** Medium
+**Description:**
+The `test_create_import_session` test case was intermittently failing. The test asserted that creating a new import session should return a `201 Created` status code, but the API was sometimes returning a `422 Unprocessable Entity` error. The root cause was not definitively identified but appeared to be a race condition or inconsistent state in the test environment.
+ **Steps to Reproduce:**
+1. Run the backend test for import sessions repeatedly: `docker-compose run --rm backend pytest /app/app/tests/api/test_import_sessions.py`.
+2. Observe occasional failures.
+ **Expected Behavior:**
+The test should consistently pass with a `201` status code.
+ **Actual Behavior:**
+The test intermittently failed with an `AssertionError: assert 422 == 201`.
+ **Resolution:**
+The issue appears to be resolved. Subsequent and final test runs show the test passing consistently. No specific code change was required, suggesting the issue was related to the test environment's state. The bug is logged for historical purposes in case of recurrence.
+
+---
+

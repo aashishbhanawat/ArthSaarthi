@@ -34,7 +34,7 @@ def create_random_user(db: Session):
     password = "".join(password_chars)
 
     user_in = schemas.user.UserCreate(full_name="Test User", email=email, password=password)
-    user = crud_user.create_user(db, user=user_in)
+    user = crud_user.user.create(db, obj_in=user_in)
     return user, password
 
 

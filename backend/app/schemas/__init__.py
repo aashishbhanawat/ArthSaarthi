@@ -6,7 +6,8 @@ from .dashboard import (
     PortfolioHistoryPoint,
     PortfolioHistoryResponse,
 )
-from .msg import Msg
+from .import_session import ImportSession, ImportSessionCreate, ImportSessionUpdate
+from .import_file import ImportFile
 from .portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
 from .token import Token, TokenPayload
 from .transaction import (

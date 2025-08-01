@@ -29,12 +29,20 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    user = crud_user.get_user_by_email(db, email=token_data.sub)
+    user = crud_user.user.get_user_by_email(db, email=token_data.sub)
     if not user:
         logger.warning(
             f"User not found for email in token: {token_data.sub}")
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if not crud_user.is_active(current_user):
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
 
 
 def get_current_admin_user(current_user: User = Depends(get_current_user)):

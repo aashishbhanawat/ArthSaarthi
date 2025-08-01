@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     DATABASE_URL: PostgresDsn
     REDIS_URL: str = "redis://redis:6379/0"
     ENVIRONMENT: str = "production"
+    IMPORT_UPLOAD_DIR: str = "/app/uploads"
+
+    ICICI_BREEZE_API_KEY: str = ""
+    ZERODHA_KITE_API_KEY: str = ""
 
     #CORS_ORIGINS: str = "http://localhost:3000"
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000"

@@ -47,7 +47,7 @@ def login_for_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
     logger.info(f"Login attempt for user: {form_data.username}")
-    user = crud_user.authenticate_user(
+    user = crud_user.user.authenticate(
         db, email=form_data.username, password=form_data.password
     )
     if not user:

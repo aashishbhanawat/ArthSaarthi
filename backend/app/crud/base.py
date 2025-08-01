@@ -57,3 +57,17 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.delete(obj)
             db.commit()
         return obj
+
+    def create_with_owner(
+        self,
+        db: Session,
+        *,
+        obj_in: CreateSchemaType,
+        owner_id: int
+    ) -> ModelType:
+        obj_in_data = jsonable_encoder(obj_in)
+        db_obj = self.model(**obj_in_data, user_id=owner_id)
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj

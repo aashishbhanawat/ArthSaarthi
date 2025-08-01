@@ -149,7 +149,7 @@ Its purpose is to build an experience history that can be used as a reference fo
     *   `frontend/pages/`: All page components (`DashboardPage`, `AuthPage`, `UserManagementPage`, `PortfolioPage`, etc.) were refactored to use the new design system.
     *   `frontend/components/`: All UI components (`NavBar`, modals, lists, tables) were refactored for consistency.
     *   `frontend/package.json`, `tailwind.config.js`, `postcss.config.js`: Added the necessary build configurations and dependencies for Tailwind CSS.
-    *   `docs/bug_reports.md`: Populated with detailed reports for every UI and functional bug discovered and fixed during the refactor.
+    *   `docs/bug_reports.md`: Populated with detailed reports for every UI and functional bug discovered and fixed.
     *   `docs/LEARNING_LOG.md`: Created to document the postmortem and future workflow improvements.
 
 *   **Verification:**
@@ -352,7 +352,7 @@ Its purpose is to build an experience history that can be used as a reference fo
     1.  **Component Generation:** A series of prompts were used to create the `PortfolioHistoryChart` and `AssetAllocationChart` components and integrate them into the `DashboardPage`.
     2.  **Library Integration:** "Let's implement the line chart for portfolio history" and "Let's implement the pie chart for asset allocation" were used to add the `react-chartjs-2` logic.
     3.  **Test Generation:** "Let's add tests for the new chart components."
-    4.  **Systematic Debugging via Log Analysis:** The user provided failing test logs. The AI analyzed the logs, identified the root cause of `ReferenceError`s (JSX in `jest.mock` factories) and canvas errors, filed a bug report, and provided the correct mocking pattern (`React.createElement`) to resolve the issues.
+    4.  **Systematic Debugging via Log Analysis:** The user provided failing test logs. The AI analyzed the log, identified the root cause of `ReferenceError`s (JSX in `jest.mock` factories) and canvas errors, filed a bug report, and provided the correct mocking pattern (`React.createElement`) to resolve the issues.
 
 *   **File Changes:**
     *   `frontend/src/components/Dashboard/PortfolioHistoryChart.tsx`: Created and implemented the line chart.
@@ -542,3 +542,42 @@ Its purpose is to build an experience history that can be used as a reference fo
     - The Advanced Analytics feature is now fully implemented, tested, and documented. The application is stable and provides users with valuable new portfolio performance metrics. The project is ready for a pilot release.
 
 ---
+
+## 2025-07-31: Financial Data Service Refactoring Discussion
+
+*   **Task Description:** Discussed the refactoring of the financial data service to support multiple providers.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Proposal:** The AI proposed replacing `yfinance` with a new provider and implementing a Strategy Pattern.
+    2.  **Clarification:** The user clarified that `yfinance` should not be replaced immediately, but the architecture should allow for future integration of other providers like ICICI Breeze or Zerodha Kite, and potentially use `yfinance` for supplementary data (e.g., corporate actions).
+    3.  **Revised Plan:** The AI presented a revised plan to refactor `yfinance` into a `YFinanceProvider` adhering to a `FinancialDataProvider` interface, setting up the Strategy Pattern for future expansion.
+    4.  **Decision:** The user decided to defer the implementation of this refactoring for now, focusing on other features, but acknowledged the validity of the proposed architectural approach for future use.
+
+*   **File Changes:** None (discussion only).
+
+*   **Verification:** N/A.
+
+*   **Outcome:**
+    - The architectural approach for supporting multiple financial data providers has been discussed and agreed upon for future implementation. The immediate refactoring is deferred.
+
+---
+
+## 2025-07-31: Planning for Automated Data Import (FR7)
+
+*   **Task Description:** Detailed planning for the "Automated Data Import (FR7)" feature, including functional and non-functional requirements, and high-level technical design for backend and frontend.
+
+*   **Key Prompts & Interactions:**
+    1.  **Feature Selection:** User selected "Automated Data Import (FR7)" as the next feature.
+    2.  **Requirement Elicitation:** The AI, acting as Requirement Analyst, elicited detailed functional and non-functional requirements.
+    3.  **Duplicate/Conflict Handling:** User inquired about handling duplicate/conflict transactions, leading to a detailed strategy for user-controlled resolution.
+    4.  **Column Mapping:** User suggested interactive column mapping for parse errors, which was incorporated into the plan.
+    5.  **Backend Planning (Initial):** The AI, acting as Backend Developer and Database Administrator, proposed API endpoints, backend logic, and database schema changes for file upload and initial processing.
+
+*   **File Changes:**
+    *   `docs/features/07_automated_data_import.md`: New file created with the detailed feature plan.
+    *   `docs/product_backlog.md`: Updated to mark FR7 as "In Progress".
+
+*   **Verification:** N/A.
+
+*   **Outcome:**
+    - A comprehensive plan for the "Automated Data Import (FR7)" feature has been documented, covering requirements, technical design, and user flow. The product backlog has been updated.

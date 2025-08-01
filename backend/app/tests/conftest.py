@@ -13,8 +13,9 @@ from sqlalchemy_utils import create_database, database_exists, drop_database
 from app.db.base import Base
 from app.main import app
 from app.db.session import get_db
+from app.models.user import User
 from app.core.config import settings
-from app.tests.utils.user import get_access_token
+from app.tests.utils.user import get_access_token, create_random_user
 
 log = logging.getLogger(__name__)
 
@@ -126,4 +127,19 @@ def get_auth_headers(client: TestClient):
         log.info(f"--- Getting auth headers for user: {email} ---")
         return {"Authorization": f"Bearer {get_access_token(client, email, password)}"}
     return _get_auth_headers
-    return _get_auth_headers
+
+
+@pytest.fixture
+def superuser_token_headers(client: TestClient, db: Session) -> dict[str, str]:
+    admin_user, admin_password = create_random_user(db)
+    admin_user.is_admin = True
+    db.add(admin_user)
+    db.commit()
+    db.refresh(admin_user)
+    return {"Authorization": f"Bearer {get_access_token(client, admin_user.email, admin_password)}"}
+
+
+@pytest.fixture
+def test_user_token_headers(client: TestClient, db: Session) -> dict[str, str]:
+    user, password = create_random_user(db)
+    return {"Authorization": f"Bearer {get_access_token(client, user.email, password)}"}
