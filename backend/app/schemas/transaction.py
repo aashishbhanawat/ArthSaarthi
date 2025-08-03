@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from decimal import Decimal
+import uuid
 from .asset import Asset
 
 
@@ -15,7 +16,7 @@ class TransactionBase(BaseModel):
 
 # Properties to receive on transaction creation
 class TransactionCreate(TransactionBase):
-    asset_id: int
+    asset_id: uuid.UUID
 
 # Properties to receive on transaction update
 class TransactionUpdate(BaseModel):
@@ -24,6 +25,6 @@ class TransactionUpdate(BaseModel):
 
 # Properties to return to client
 class Transaction(TransactionBase):
-    id: int
+    id: uuid.UUID
     asset: Asset
     model_config = ConfigDict(from_attributes=True)

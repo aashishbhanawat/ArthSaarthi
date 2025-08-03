@@ -1,4 +1,5 @@
 from datetime import timedelta
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 import logging
@@ -6,9 +7,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
  
 from app.models import user as user_model
+from app import crud
 from app.core import security
 from app.core.config import settings
-from app.crud import crud_user
 from app.db.session import get_db
 from app.schemas.auth import Status
 from app.schemas import token as token_schema
@@ -38,7 +39,8 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail="An admin account already exists.",
         )
-    db_user = crud_user.create_user(db=db, user=user, is_admin=True)
+    db_user = crud.user.create(db=db, obj_in=user, is_admin=True)
+    db.commit()
     return db_user
 
 
@@ -47,7 +49,7 @@ def login_for_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
     logger.info(f"Login attempt for user: {form_data.username}")
-    user = crud_user.user.authenticate(
+    user = crud.user.authenticate(
         db, email=form_data.username, password=form_data.password
     )
     if not user:

@@ -1,4 +1,5 @@
 from typing import List
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -25,15 +26,15 @@ def read_assets(
 
 
 @router.get("/{asset_id}", response_model=schemas.Asset)
-def read_asset_by_id(
-    asset_id: int,
+def read_asset(
+    asset_id: uuid.UUID,
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user),
 ):
     """
     Get a specific asset by its ID.
     """
-    asset = crud.asset.get(db, id=asset_id)
+    asset = crud.asset.get(db, id=str(asset_id))
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     return asset

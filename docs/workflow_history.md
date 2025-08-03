@@ -562,6 +562,103 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-08-02: Implement & Stabilize Automated Data Import (FR7)
+
+*   **Task Description:** Implement the full-stack functionality for the "Automated Data Import" feature. This allows users to upload a CSV file of transactions, preview the parsed data, and commit the transactions to a selected portfolio.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the backend models, schemas, CRUD methods, and API endpoints for handling file uploads and creating import sessions.
+    2.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI. This was critical for identifying and fixing a cascade of issues, including:
+        *   Database schema errors (`DatatypeMismatch`, missing foreign keys).
+        *   SQLAlchemy ORM mapping errors (`ArgumentError` for missing `back_populates`).
+        *   Pydantic `ValidationError`s due to incorrect schema definitions.
+        *   Python `NameError` and `ImportError` due to incorrect references.
+        *   Incorrect test fixture setup and usage.
+        *   A critical transactional integrity bug where a premature `db.commit()` in a child CRUD method was causing the parent object to become stale.
+    3.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/import_sessions.py`: Created endpoints for creating sessions, previewing data, and committing transactions.
+    *   `backend/app/models/`: Updated `import_session.py`, `portfolio.py`, `asset.py`, and `transaction.py` to use UUIDs consistently and establish correct relationships.
+    *   `backend/app/schemas/`: Updated `import_session.py` and `transaction.py` to align with model changes and allow for partial updates.
+    *   `backend/app/crud/crud_transaction.py`: Refactored to ensure transactional integrity by removing premature `db.commit()` calls.
+    *   `backend/app/tests/api/test_import_sessions.py`: Created a comprehensive test suite covering the entire import and commit workflow, including success paths and all error conditions.
+    *   `docs/bug_reports.md`: Populated with detailed reports for every bug discovered and fixed during this task (2025-08-01-01 to 2025-08-02-10).
+
+*   **Verification:**
+    - Ran the full backend test suite for the feature using `docker-compose run --rm backend pytest /app/app/tests/api/test_import_sessions.py`.
+
+*   **Outcome:**
+    - The "Automated Data Import" feature is now fully implemented, tested, and documented. All 11 backend tests for this feature are passing.
+
+---
+
+## 2025-08-03: Backend Test Suite Stabilization
+
+*   **Task Description:** Stabilize the backend test suite after the "Automated Data Import" feature implementation. The suite was failing with 8 errors.
+
+*   **Key Prompts & Interactions:**
+    1.  **Log Analysis:** The user provided the failing `pytest` log to the AI.
+    2.  **Root Cause Analysis:** The AI analyzed the log and identified two distinct root causes for the 8 failures:
+        *   A `TypeError` in a test helper function (`create_test_transaction`) due to an outdated function call signature.
+        *   A `422 Unprocessable Entity` error in the transaction creation endpoint due to a data type mismatch (`int` vs `uuid.UUID`) in a path parameter.
+    3.  **Targeted Fixes:** The AI provided targeted code changes for both issues, which resolved all failing tests in two steps.
+    4.  **Bug Filing:** The AI generated formal bug reports for the two identified issues, which were added to `docs/bug_reports.md`.
+
+*   **File Changes:**
+    *   `backend/app/tests/utils/transaction.py`: Removed an incorrect argument from a function call.
+    *   `backend/app/api/v1/endpoints/transactions.py`: Corrected a path parameter type hint from `int` to `uuid.UUID`.
+    *   `docs/bug_reports.md`: Added two new bug reports (2025-08-03-13, 2025-08-03-14).
+    *   `docs/LEARNING_LOG.md`: Added an entry summarizing the stabilization effort and its outcome.
+
+*   **Verification:**
+    - Ran the full backend test suite using `docker-compose run --rm test`.
+
+*   **Outcome:**
+    - The backend test suite is now fully stable, with all 67 tests passing.
+---
+
+## 2025-08-03: Backend Test Suite Stabilization
+
+*   **Task Description:** Stabilize the backend test suite after the "Automated Data Import" feature implementation. The suite was failing with 8 errors.
+
+*   **Key Prompts & Interactions:**
+    1.  **Log Analysis:** The user provided the failing `pytest` log to the AI.
+    2.  **Root Cause Analysis:** The AI analyzed the log and identified two distinct root causes for the 8 failures:
+        *   A `TypeError` in a test helper function (`create_test_transaction`) due to an outdated function call signature.
+        *   A `422 Unprocessable Entity` error in the transaction creation endpoint due to a data type mismatch (`int` vs `uuid.UUID`) in a path parameter.
+    3.  **Targeted Fixes:** The AI provided targeted code changes for both issues, which resolved all failing tests in two steps.
+    4.  **Bug Filing:** The AI generated formal bug reports for the two identified issues, which were added to `docs/bug_reports.md`.
+
+*   **File Changes:**
+    *   `backend/app/tests/utils/transaction.py`: Removed an incorrect argument from a function call.
+    *   `backend/app/api/v1/endpoints/transactions.py`: Corrected a path parameter type hint from `int` to `uuid.UUID`.
+    *   `docs/bug_reports.md`: Added two new bug reports (2025-08-03-13, 2025-08-03-14).
+    *   `docs/LEARNING_LOG.md`: Added an entry summarizing the stabilization effort and its outcome.
+
+*   **Verification:**
+    - Ran the full backend test suite using `docker-compose run --rm test`.
+
+*   **Outcome:**
+    - The backend test suite is now fully stable, with all 67 tests passing.
+
+---
+
+## 2025-08-03: Documentation Update & Final Review
+
+*   **Task Description:** Update all relevant project documentation to reflect the completion of the "Automated Data Import" backend and the overall stabilization of the project.
+
+*   **Key Prompts & Interactions:**
+    1.  **Consolidation Request:** The user requested a cleanup of a temporary bug report file (`bug_reports_temp.md`) to consolidate and de-duplicate entries.
+    2.  **Documentation Update Request:** The user requested a full update of the `handoff_document.md` and all other relevant project documents.
+
+*   **File Changes:**
+    *   `docs/bug_reports_temp.md`: Cleaned up and consolidated bug reports from the recent backend development sprint.
+    *   `docs/handoff_document.md`: Updated the project status and list of implemented functionalities to reflect the current state.
+    *   `docs/workflow_history.md`: Added this entry to log the documentation update task.
+
+*   **Outcome:**
+    - All project documentation is now up-to-date, providing an accurate and comprehensive overview of the project's status, features, and history.
 ## 2025-07-31: Planning for Automated Data Import (FR7)
 
 *   **Task Description:** Detailed planning for the "Automated Data Import (FR7)" feature, including functional and non-functional requirements, and high-level technical design for backend and frontend.

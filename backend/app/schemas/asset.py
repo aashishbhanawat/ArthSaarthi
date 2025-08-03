@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+import uuid
 
 # Properties to receive on asset creation via API
 # This is a special schema for the POST /assets/ endpoint
@@ -22,7 +23,7 @@ class AssetUpdate(BaseModel):
 
 # Properties shared by models stored in DB
 class AssetInDBBase(AssetCreate):
-    id: int
+    id: uuid.UUID
     model_config = ConfigDict(from_attributes=True)
 
 # Properties to return to client

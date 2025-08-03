@@ -1,5 +1,6 @@
 from typing import Any, List
 
+import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -44,17 +45,17 @@ def create_portfolio(
     return portfolio
 
 
-@router.get("/{id}", response_model=schemas.Portfolio)
+@router.get("/{portfolio_id}", response_model=schemas.Portfolio)
 def read_portfolio(
     *,
     db: Session = Depends(dependencies.get_db),
-    id: int,
+    portfolio_id: uuid.UUID,
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
     Get portfolio by ID.
     """
-    portfolio = crud.portfolio.get(db=db, id=id)
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     if not current_user.is_admin and (portfolio.user_id != current_user.id):
@@ -62,29 +63,29 @@ def read_portfolio(
     return portfolio
 
 
-@router.delete("/{id}")
+@router.delete("/{portfolio_id}", response_model=schemas.Msg)
 def delete_portfolio(
     *,
     db: Session = Depends(dependencies.get_db),
-    id: int,
+    portfolio_id: uuid.UUID,
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
     Delete a portfolio.
     """
-    portfolio = crud.portfolio.get(db=db, id=id)
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     if not current_user.is_admin and (portfolio.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    crud.portfolio.remove(db=db, id=id)
-    return {"message": "Portfolio deleted successfully"}
+    crud.portfolio.remove(db=db, id=portfolio_id)    
+    return {"msg": "Portfolio deleted successfully"}
 
 @router.get("/{portfolio_id}/analytics", response_model=schemas.AnalyticsResponse)
 def get_portfolio_analytics(
     *,
     db: Session = Depends(dependencies.get_db),
-    portfolio_id: int,
+    portfolio_id: uuid.UUID,
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """

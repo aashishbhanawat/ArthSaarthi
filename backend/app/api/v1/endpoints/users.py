@@ -1,10 +1,11 @@
 from typing import List
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_admin_user, get_current_user
-from app.crud import crud_user
+from app import crud
 from app.db.session import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import User, UserCreate, UserUpdate
@@ -29,7 +30,7 @@ def list_users(
     """
     Retrieve a list of all users. (Admin Only)
     """
-    users = crud_user.get_users(db)
+    users = crud.user.get_multi(db)
     return users
 
 
@@ -42,22 +43,21 @@ def create_user(
     """
     Create a new user. By default, new users are not admins. (Admin Only)
     """
-    # This call was updated to match the function signature in `crud_user.py`
-    user = crud_user.create_user(db, user=user_in)
+    user = crud.user.create(db, obj_in=user_in)
+    db.commit()
     return user
 
 
 @router.get("/{user_id}", response_model=User)
 def read_user(
-    user_id: int,
+    user_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_admin_user),
 ):
     """
     Retrieve a user by ID. (Admin Only)
     """
-    # Renamed to `get_user` for consistency with `crud_user.py`
-    user = crud_user.get_user(db, id=user_id)
+    user = crud.user.get(db, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -65,7 +65,7 @@ def read_user(
 
 @router.put("/{user_id}", response_model=User)
 def update_user(
-    user_id: int,
+    user_id: uuid.UUID,
     user_in: UserUpdate,
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_admin_user),
@@ -73,24 +73,22 @@ def update_user(
     """
     Update a user by ID. (Admin Only)
     """
-    # Add a check to ensure user exists before updating
-    db_user = crud_user.get_user(db, id=user_id)
+    db_user = crud.user.get(db, id=user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    return crud_user.update_user(db=db, db_obj=db_user, obj_in=user_in)
+    return crud.user.update(db=db, db_obj=db_user, obj_in=user_in)
 
 
 @router.delete("/{user_id}", response_model=User)
 def delete_user(
-    user_id: int,
+    user_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_admin_user),
 ):
     """
     Delete a user by ID. (Admin Only)
     """
-    # Renamed to `get_user` for consistency with `crud_user.py`
-    user = crud_user.get_user(db, id=user_id)
+    user = crud.user.get(db, id=user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
@@ -103,5 +101,5 @@ def delete_user(
             detail="Cannot delete yourself.",
         )
 
-    user = crud_user.remove(db, id=user_id)
+    user = crud.user.remove(db, id=user_id)
     return user

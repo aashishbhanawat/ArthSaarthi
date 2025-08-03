@@ -133,3 +133,5 @@ A final, intensive effort was made to stabilize all test suites (E2E, backend, f
 *   The entire project is now in a fully stable, "green" state. All E2E, backend, and frontend tests are passing.
 *   **E2E Test Execution Strategy:** For tests that mutate shared state (like a database), parallel execution is a significant risk. Enforcing serial execution is a valid and often necessary strategy to ensure reliability and eliminate flakiness.
 *   **Unit Test Debt is Real:** Component refactoring creates test debt. It's crucial to budget time to update or rewrite unit tests to keep them valuable. The "rewrite from scratch" approach for a broken suite can be more efficient than trying to patch dozens of individual failures.
+
+---

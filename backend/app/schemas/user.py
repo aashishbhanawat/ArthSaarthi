@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
 from typing import Optional
 import re
+import uuid
 
 
 # Shared properties
@@ -41,7 +42,7 @@ class UserCreate(UserBase):
 
 # Properties to return to client
 class User(UserBase):
-    id: int
+    id: uuid.UUID
     is_admin: bool
     is_active: bool
     model_config = ConfigDict(

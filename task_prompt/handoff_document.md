@@ -2,16 +2,17 @@
 
 #### 1. Project Goal & Current Status
 
-*   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS).
-*   **Current Status:** The backend is **fully stable and tested**. The frontend UI has been **completely refactored** and is now stable, professional, and consistent across all pages. The application is fully functional and ready for the next phase of feature development.
+*   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS) with a robust, multi-layered testing strategy.
+*   **Current Status:** The application is stable and feature-complete for the MVP and Release 2 backend requirements. All test suites (backend, frontend, E2E) are passing. The backend for the "Automated Data Import" feature is complete.
 *   **Testing:** The project has a multi-layered testing strategy. A full suite of automated backend tests (`pytest`), frontend tests (`jest`), and **end-to-end tests (`Playwright`)** is stable and passing. This ensures reliability from individual components to complete user flows.
 *   **Implemented Functionalities:**
     *   **Authentication:** Initial admin setup, secure user login/logout, and JWT-based session management.
     *   **User Management:** A dedicated, admin-only dashboard for performing Create, Read, Update, and Delete (CRUD) operations on all users.
-    *   **Portfolio Management:** Backend endpoints for creating, reading, and deleting portfolios, scoped to the authenticated user.
-    *   **Asset Management:** A backend endpoint for looking up asset details from a (mocked) external financial API.
-    *   **Transaction Management:** Backend endpoints for creating transactions within a portfolio, with logic to handle both new and existing assets.
-    *   **Dashboard:** Backend endpoints that provide a full dashboard summary, including total value, asset allocation, and portfolio history.
+    *   **Portfolio & Transaction Management:** Full CRUD for portfolios and transactions, with robust validation (e.g., preventing sells before buys).
+    *   **Asset Management:** On-the-fly asset creation and lookup.
+    *   **Dashboard & Analytics:** Endpoints for a full dashboard summary (total value, P/L, top movers), historical performance, asset allocation, XIRR, and Sharpe Ratio.
+    *   **Automated Data Import (Backend):** A full backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
+
 
 
 ---

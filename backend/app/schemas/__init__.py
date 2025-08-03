@@ -1,4 +1,4 @@
-from .asset import Asset, AssetCreate, AssetUpdate, AssetCreateIn
+from .asset import Asset, AssetCreate, AssetCreateIn, AssetUpdate
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,
@@ -8,6 +8,7 @@ from .dashboard import (
 )
 from .import_session import ImportSession, ImportSessionCreate, ImportSessionUpdate
 from .import_file import ImportFile
+from .msg import Msg
 from .portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
 from .token import Token, TokenPayload
 from .transaction import (

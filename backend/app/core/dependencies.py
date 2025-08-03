@@ -5,7 +5,7 @@ from jose import jwt, JWTError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app.crud import crud_user
+from app import crud
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.token import TokenPayload
@@ -29,7 +29,7 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    user = crud_user.user.get_user_by_email(db, email=token_data.sub)
+    user = crud.user.get_by_email(db, email=token_data.sub)
     if not user:
         logger.warning(
             f"User not found for email in token: {token_data.sub}")
@@ -40,7 +40,7 @@ def get_current_user(
 def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    if not crud_user.is_active(current_user):
+    if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 

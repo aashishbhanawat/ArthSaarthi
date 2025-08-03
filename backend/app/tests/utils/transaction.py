@@ -1,9 +1,11 @@
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Any
 
 from app import crud, schemas
+from app.models.transaction import Transaction
+from app.tests.utils.asset import create_test_asset
 
 
 def create_test_transaction(
@@ -16,7 +18,8 @@ def create_test_transaction(
     asset_type: str = "Stock",
     transaction_type: str = "buy",
     transaction_date: Optional[date] = None,
-) -> None:
+    fees: float = 0.0,
+) -> Transaction:
     """
     Test utility to create a transaction.
     It will create the associated asset if it doesn't exist.
@@ -26,10 +29,7 @@ def create_test_transaction(
 
     asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
     if not asset:
-        asset_in = schemas.AssetCreate(
-            ticker_symbol=ticker, asset_type=asset_type, name=f"{ticker} Asset", currency="USD", exchange="NASDAQ"
-        )
-        asset = crud.asset.create(db, obj_in=asset_in)
+        asset = create_test_asset(db, ticker_symbol=ticker)
 
     transaction_in = schemas.TransactionCreate(
         asset_id=asset.id,
@@ -37,5 +37,6 @@ def create_test_transaction(
         price_per_unit=Decimal(str(price_per_unit)),
         transaction_date=final_datetime,
         transaction_type=transaction_type.upper(),
+        fees=Decimal(str(fees)),
     )
-    crud.transaction.create_with_portfolio(db, obj_in=transaction_in, portfolio_id=portfolio_id)
+    return crud.transaction.create_with_portfolio(db=db, obj_in=transaction_in, portfolio_id=portfolio_id)

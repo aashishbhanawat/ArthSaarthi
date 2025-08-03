@@ -4623,10 +4623,11 @@ Resolved
 
 ---
 
-**Bug ID:** 2025-08-01-01
+**Bug ID:** 2025-08-02-01
 **Title:** Intermittent Test Failure in `test_create_import_session`
 **Module:** Import Sessions (Backend Test Suite)
-**Date Reported:** 2025-08-01
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
 **Classification:** Test Suite
 **Severity:** Medium
 **Description:**
@@ -4643,3 +4644,433 @@ The issue appears to be resolved. Subsequent and final test runs show the test p
 
 ---
 
+**Bug ID:** 2025-08-02-02
+**Title:** Backend crashes on startup with NameError in import_sessions.py. 
+**Module:** Core Backend, API Integration
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** 
+The backend application fails to start because import_sessions.py uses incorrect references for imported Pydantic schemas and SQLAlchemy models. It attempts to use names like ImportSession and User directly, instead of prefixing them with their imported module names (schemas.ImportSession, models.User). This causes a fatal NameError during application startup, preventing any tests from running.
+**Steps to Reproduce:**
+
+Run the backend test suite: docker-compose run --rm test.
+**Expected Behavior:** 
+The test suite should collect and run successfully.
+**Actual Behavior:** 
+Test collection is interrupted with NameError: name 'ImportSession' is not defined.
+**Resolution:**
+Update backend/app/api/v1/endpoints/import_sessions.py to correctly prefix all schema and model references.
+
+---
+
+**Bug ID:** 2025-08-02-03
+**Title:** test_import_sessions.py test suite fails due to use of non-existent fixtures. 
+**Module:** Import Sessions (Test Suite)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** 
+The entire test suite for the import sessions feature fails during test collection because it attempts to use pytest fixtures named normal_user_token_headers and other_user_token_headers. These fixtures are not defined in the project's conftest.py, causing every test in the file to ERROR out. The tests need to be refactored to follow the established pattern of creating a user, capturing the password, and using the get_auth_headers fixture factory to generate authentication headers dynamically.
+**Steps to Reproduce:**
+
+Run the test suite for the import sessions feature: docker-compose run --rm backend pytest /app/app/tests/api/test_import_sessions.py.
+**Expected Behavior:** 
+The tests should be collected and should run successfully.
+**Actual Behavior:** 
+All tests in the file fail with the error: fixture '...' not found.
+**Resolution:** 
+Refactor all tests in test_import_sessions.py to dynamically generate auth headers. This involves updating the normal_user and other_user fixtures to return the user's password and then updating each test to use the get_auth_headers fixture.
+
+---
+
+**Bug ID:** 2025-08-02-04
+**Title:** Backend crashes with ValidationError when creating an import session due to incorrect ImportSessionUpdate schema. 
+**Module:** Import Sessions (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** 
+The create_import_session endpoint fails with a pydantic_core.ValidationError when attempting to update the session's status after parsing a file. The schemas.ImportSessionUpdate Pydantic model incorrectly inherits from a base class with required fields (file_name, file_path). The endpoint only provides the fields being updated (parsed_file_path, status), causing the validation to fail because the required fields are missing. This blocks the entire file import feature.
+**Steps to Reproduce:**
+
+Run the backend test suite for import sessions: docker-compose run --rm backend pytest /app/app/tests/api/test_import_sessions.py.
+Observe the ValidationError in the test logs for test_create_import_session.
+**Expected Behavior:** 
+The ImportSessionUpdate schema should allow for partial updates, and the endpoint should successfully create and update the import session, returning a 201 status.
+**Actual Behavior:** 
+The endpoint crashes with a ValidationError, causing the tests to fail.
+**Resolution:** 
+Refactor backend/app/schemas/import_session.py. The ImportSessionUpdate schema must be updated to have all its fields optional, allowing for partial updates. Additionally, the deprecated orm_mode in the Pydantic config should be updated to from_attributes.
+
+---
+
+**Bug ID:*** 2025-08-02-05
+**Title:** Test suite collection fails with NameError in test_import_sessions.py. 
+**Module:** Import Sessions (Test Suite)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The test suite for the import sessions feature fails during the collection phase with a NameError: name 'models' is not defined. This is caused by the test file using a type hint models.ImportSession for a fixture without importing the app.models module. This prevents the test suite from running and blocks all testing for the import/commit feature.
+**Steps to Reproduce:**
+
+Run the backend test suite for import sessions: docker-compose run --rm backend pytest /app/app/tests/api/test_import_sessions.py.
+**Expected Behavior:** 
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with a NameError.
+**Resolution:**
+Add the missing from app import models import statement to the top of backend/app/tests/api/test_import_sessions.py.
+
+---
+
+**Bug ID:** 2025-08-02-06
+Title: Data type inconsistencies in Transaction CRUD and Schema layers. 
+**Module:** Portfolio Management (Backend), Data Layer
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+A proactive code review has identified two critical data type mismatches related to the migration from integer to UUID primary keys.
+
+In crud_transaction.py, the get_multi_by_portfolio method incorrectly expects portfolio_id as an int, while the application now uses uuid.UUID. This would cause a TypeError during test execution.
+In schemas/transaction.py, the Transaction Pydantic response model incorrectly defines the id field as an int, while the Transaction SQLAlchemy model uses a uuid.UUID. This would cause a Pydantic ValidationError during API response serialization. These inconsistencies will prevent the new commit endpoint tests from passing.
+**Steps to Reproduce:**
+Apply the fix for the previous NameError.
+Run the test suite for test_import_sessions.py.
+Observe the TypeError or ValidationError.
+**Expected Behavior:**
+All data types across the application layers should be consistent.
+**Actual Behavior:**
+The application would crash with a TypeError or ValidationError when testing the transaction commit functionality.
+**Resolution:**
+Update the type hint for portfolio_id in get_multi_by_portfolio to uuid.UUID.
+Update the type hint for id in the Transaction schema to uuid.UUID.
+
+---
+
+**Bug ID:** 2025-08-02-07
+**Title:** commit_import_session endpoint crashes with InvalidRequestError during error handling. 
+**Module:** Import Sessions (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The commit_import_session endpoint has incorrect error-handling logic. In scenarios where the commit should fail (e.g., an asset is not found), the code calls db.rollback() before attempting to update the ImportSession status to 'FAILED'. The rollback() call expels the session object from the current session, making it a detached instance. The subsequent call to crud.import_session.update() then fails internally when it tries to call db.refresh() on this detached instance, leading to an sqlalchemy.exc.InvalidRequestError and a 500 Internal Server Error. This prevents the application from correctly recording the reason for the import failure.
+**Steps to Reproduce:**
+
+Run the test_commit_import_session_asset_not_found test.
+**Expected Behavior:**
+The API should gracefully handle the error, update the import session's status to 'FAILED' in the database, and return a 400 Bad Request response.
+**Actual Behavior:**
+The API crashes with a 500 Internal Server Error due to the InvalidRequestError.
+**Resolution:**
+Remove the db.rollback() calls from the error-handling paths within the commit_import_session endpoint in backend/app/api/v1/endpoints/import_sessions.py. The state update should be committed, and then the HTTPException should be raised.
+
+---
+
+**Bug ID:** 2025-08-02-08
+**Title:** Commit endpoint tests fail with fixture not found error. 
+**Module:** Import Sessions (Test Suite)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The tests for the commit_import_session endpoint are failing during test collection because they depend on the parsed_import_session fixture, which is not defined in the test_import_sessions.py file. This fixture, along with its dependency test_asset, is required to set up the necessary pre-conditions for testing the commit logic.
+**Steps to Reproduce:**
+
+Run pytest on app/tests/api/test_import_sessions.py.
+**Expected Behavior:**
+Tests should be collected and run successfully.
+**Actual Behavior:**
+Tests error out with fixture 'parsed_import_session' not found.
+**Resolution:**
+Add the missing test_asset and parsed_import_session fixture definitions to backend/app/tests/api/test_import_sessions.py.
+
+---
+
+**Bug ID:** 2025-08-02-09
+**Title:** commit_import_session endpoint crashes with NameError for Decimal. 
+**Module:** Import Sessions (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The commit_import_session endpoint fails with a 500 Internal Server Error when processing a valid import file. The logic attempts to cast numeric string values to the Decimal type for precision, but it fails to import the Decimal class from the decimal module. This results in a NameError that crashes the request and prevents the entire commit feature from working.
+**Steps to Reproduce:**
+
+Run the test_commit_import_session_success test.
+**Expected Behavior:**
+The endpoint should successfully create transactions and return a 200 OK status.
+**Actual Behavior:**
+The endpoint crashes with a NameError, returning a 500 Internal Server Error.
+**Resolution:**
+Add the import statement from decimal import Decimal to the top of backend/app/api/v1/endpoints/import_sessions.py.
+
+---
+
+**Bug ID:** 2025-08-02-10
+**Title:** commit_import_session fails to update status due to premature commit in child CRUD method. 
+**Module:** Portfolio Management (Backend), Import Sessions (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-02
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The commit_import_session endpoint fails to update the session's status to COMPLETED. The root cause is that the crud.transaction.create_with_portfolio method incorrectly performs a db.commit() within the transaction creation loop. This premature commit makes the parent import_session object stale and detached from the session. Consequently, the final call to crud.import_session.update to change the status to COMPLETED operates on a stale object, and the change is never persisted to the database. This violates the principle of atomic transactions for the commit operation.
+**Steps to Reproduce:**
+
+Run the test_commit_import_session_success test.
+**Expected Behavior:**
+The endpoint should create all transactions and update the session status to COMPLETED in a single, atomic transaction. The test should pass.
+**Actual Behavior:**
+The test fails with AssertionError: assert 'PARSED' == 'COMPLETED'.
+**Resolution:**
+Remove the db.commit() and db.refresh() calls from crud.transaction.create_with_portfolio.
+Remove the redundant db.commit() call from the commit_import_session endpoint to align with the established pattern where the update CRUD method handles the final commit.
+
+---
+
+**Bug ID:** 2025-08-03-11
+**Title:** System-wide test suite regression due to incomplete refactoring. 
+**Module:** Core Backend, Auth, Users, Portfolios, Assets, Analytics, Dashboard, Test Suite
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend) / Test Suite
+**Severity:** Critical
+**Description:**
+A recent migration to UUIDs and a refactoring of the CRUD layer were not fully propagated throughout the codebase, leading to 30 test failures. The failures are caused by four main issues:
+
+Data Type Mismatches (UUID vs. int): Pydantic schemas, API endpoint path parameters, and database queries are inconsistent. Many still expect int for IDs, while the database now uses UUID. This causes ResponseValidationError and psycopg2.errors.CannotCoerce errors.
+Stale CRUD Function Calls: The crud_user.py module was refactored to a class-based pattern, but the API endpoints in auth.py and users.py were not updated. They are still calling old, non-existent standalone functions, causing AttributeError.
+Broken Transactional Integrity: The base CRUD create method performs a db.commit(), which breaks the atomicity of operations that create multiple objects. This causes tests to fail as only a subset of the intended data is persisted before the test transaction is rolled back.
+Incorrect Date Comparison: The get_holdings_on_date function compares a DateTime database column with a string literal, causing the query to fail and return incorrect holdings information. This breaks transaction validation logic.
+**Resolution:**
+Fix Data Types: Update all Pydantic schemas (user.py, portfolio.py) and CRUD methods (crud_transaction.py) to use uuid.UUID for all ID fields. Update API endpoints (users.py) to expect UUIDs in path parameters.
+Fix CRUD Calls: Refactor crud_user.py to a proper class-based singleton. Update all API endpoints in auth.py and users.py to call the new class-based methods (e.g., crud.user.get(...)).
+Fix Transactional Integrity: Remove the db.commit() call from the base create method in crud/base.py. Add explicit db.commit() calls in the API endpoints after successful creation operations.
+Fix Date Comparison: Update the get_holdings_on_date method to accept a datetime object instead of a string to ensure type-safe database queries.
+
+---
+
+**Bug ID:** 2025-08-03-12
+**Title:** Widespread test failure due to NameError in authentication endpoint. 
+**Module:** Authentication (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+A system-wide regression with 48 failing tests has been identified. The root cause for all failures is a NameError: name 'crud' is not defined within the /api/v1/auth/login and /api/v1/auth/setup endpoints. The auth.py file incorrectly imports from app.crud import crud_user instead of from app import crud. Since almost all tests rely on the get_auth_headers utility, which calls the login endpoint, this single import error breaks the setup for the entire test suite, causing a cascade of failures.
+**Steps to Reproduce:**
+
+Run the full backend test suite: docker-compose run --rm test.
+**Expected Behavior:**
+All tests should pass.
+**Actual Behavior:**
+48 tests fail with a NameError originating from app/api/v1/endpoints/auth.py.
+**Resolution:**
+Update backend/app/api/v1/endpoints/auth.py to use the correct import statement: from app import crud.
+
+---
+
+**Bug ID:** 2025-08-03-13
+**Title:** System-wide DatatypeMismatch due to incomplete UUID migration in database models. 
+**Module:** Core Backend, Database Models
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The application fails to start, and all 67 tests fail because the database schema cannot be created. The migration from integer to UUID primary keys on the users table was incomplete. Other models (Portfolio, Transaction, ImportSession) that have a foreign key relationship to users.id still define their user_id column as an Integer instead of a UUID. This causes a psycopg2.errors.DatatypeMismatch when SQLAlchemy attempts to create the foreign key constraints during the Base.metadata.create_all() call in the test setup.
+**Steps to Reproduce:**
+
+Run the backend test suite: docker-compose run --rm test.
+**Expected Behavior:**
+The test database schema should be created successfully, and tests should run.
+**Actual Behavior:**
+The test suite crashes during setup with a sqlalchemy.exc.ProgrammingError.
+**Resolution:**
+Update the user_id column definition in portfolio.py, transaction.py, and import_session.py models to use the UUID type, consistent with the users.id primary key.
+
+---
+
+**Bug ID:** 2025-08-03-14
+**Title:** System-wide test failure due to critical authentication and dependency bugs. 
+**Module:** Core Backend (Auth, CRUD, Dependencies)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+A major regression with 42 failing tests has been identified. The failures stem from two critical bugs in the authentication and authorization layer:
+
+Authentication Dependency Failure (UnboundLocalError): The core get_current_user dependency in app/core/dependencies.py has a fatal scoping error. The user lookup from the database is incorrectly placed inside an except block and after a raise statement, making it unreachable. This causes an UnboundLocalError on every successful token validation. Since almost every API endpoint relies on this dependency, this single bug causes a cascade failure across the entire test suite.
+Inactive User Login: The crud.user.authenticate method does not check if a user is active (is_active flag) before authenticating them. This allows inactive users to successfully log in, which is a security flaw and causes test_login_inactive_user to fail with an incorrect status code.
+Resolution:
+
+Fix get_current_user: Move the user lookup logic out of the except block in app/core/dependencies.py to the correct scope.
+Fix authenticate: Add a check for user.is_active in the authenticate method in app/crud/crud_user.py.
+
+---
+
+**Bug ID:** 2025-08-03-15
+**Title:** System-wide test failures due to incomplete UUID migration across schemas, endpoints, and tests. 
+**Module:** Core Backend (Schemas, API Endpoints), Test Suite
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend) / Test Suite
+**Severity:** Critical
+**Description:**
+A major regression with 20 failing tests has been identified. The failures are a direct result of an incomplete migration from integer to UUID primary keys. The database models were updated, but the changes were not fully propagated.
+
+Pydantic Schema Mismatch: Multiple Pydantic response models (Asset, ImportSession, Portfolio) still define id or user_id fields as int instead of uuid.UUID. This causes ResponseValidationError when FastAPI attempts to serialize the API response.
+API Endpoint Path Parameter Mismatch: Multiple API endpoints (/portfolios/{id}, /assets/{id}) still define their path parameters as int instead of uuid.UUID. This causes 422 Unprocessable Entity errors when a UUID is passed.
+Incorrect Test Payloads/Parameters: A test is passing a hardcoded integer ID (99999) to an endpoint that now expects a uuid.UUID, causing a psycopg2.errors.CannotCoerce error at the database level. Another test passes an integer asset_id in a JSON payload where a UUID is expected.
+Incorrect Test Assertions: Several tests compare a string UUID from a JSON response directly with a uuid.UUID object from a SQLAlchemy model, leading to AssertionError.
+Resolution:
+
+Fix Schemas: Update all affected Pydantic schemas to use uuid.UUID for all ID fields.
+Fix Endpoints: Update all API endpoint path parameters to expect uuid.UUID instead of int.
+Fix Tests (Data): Update all tests to use valid UUIDs instead of hardcoded integers.
+Fix Tests (Assertions): Update all tests to compare UUIDs by their string representation.
+
+---
+
+**Bug ID:** 2025-08-03-16
+**Title:** Test suite collection fails with AttributeError: module 'app.schemas' has no attribute 'Msg'. 
+**Module:** Core Backend, Schemas, API Endpoints
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an AttributeError during test collection. The portfolios.py endpoint file uses schemas.Msg as a response_model, but this schema is not defined or exposed in the app.schemas package. This is because the app/schemas/msg.py file is missing and app/schemas/__init__.py does not import and expose the Msg schema. This breaks the application's startup and prevents any tests from running.
+**Steps to Reproduce:**
+
+Run the backend test suite: docker-compose run --rm test.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with AttributeError: module 'app.schemas' has no attribute 'Msg'.
+**Resolution:**
+Create the missing app/schemas/msg.py file and update app/schemas/__init__.py to expose the Msg schema along with all other necessary schemas for the application.
+
+---
+
+**Bug ID:** 2025-08-03-17
+**Title:** Test suite collection fails with ImportError for non-existent 'PortfolioInDB' schema. 
+**Module:** Core Backend, Schemas
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The test suite fails to run because of an ImportError during the test collection phase. The app/schemas/__init__.py file attempts to import a Pydantic schema named PortfolioInDB from app.schemas.portfolio, but this schema is not defined. This breaks the application's startup and prevents any tests from running. The same file also contains duplicate imports and references to other non-existent schemas.
+**Steps to Reproduce:**
+
+Run the backend test suite: docker-compose run --rm test.
+**Expected Behavior:**
+The test suite should collect and run successfully.
+**Actual Behavior:**
+Test collection is interrupted with ImportError: cannot import name 'PortfolioInDB' from 'app.schemas.portfolio'.
+**Resolution:**
+Update app/schemas/__init__.py to remove the import for the non-existent PortfolioInDB schema and clean up all other duplicate or invalid imports.
+
+---
+
+**Bug ID:** 2025-08-03-18
+**Title:** System-wide test failures due to incomplete UUID migration across schemas, endpoints, and tests. 
+**Module:** Core Backend (Schemas, API Endpoints), Test Suite
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend) / Test Suite
+**Severity:** Critical
+**Description:**
+A major regression with 11 failing tests has been identified. The failures are a direct result of an incomplete migration from integer to UUID primary keys. The database models were updated, but the changes were not fully propagated to all related application layers.
+
+Pydantic Schema Mismatch: The ImportSession response model in schemas/import_session.py still defines user_id as an int instead of uuid.UUID. This causes ResponseValidationError when FastAPI attempts to serialize the API response.
+API Endpoint Path Parameter Mismatch: The GET /assets/{asset_id} endpoint in endpoints/assets.py still defines its path parameter as an int instead of uuid.UUID. This causes 422 Unprocessable Entity errors when a UUID is passed.
+Incorrect Test Payloads: The transaction creation tests in test_portfolios_transactions.py and test_transaction_validation.py are sending asset_id as an integer in the JSON payload where a UUID string is now expected, causing 422 Unprocessable Entity errors.
+Incorrect Test Assertions: Several tests (test_delete_portfolio, test_get_current_user_success, test_update_user) are using outdated assertions. They are either checking for an incorrect JSON key ("message" instead of "msg") or comparing a string UUID from a JSON response directly with a uuid.UUID object from a SQLAlchemy model, leading to KeyError or AssertionError.
+Resolution:
+
+Fix Schemas: Update the ImportSession Pydantic schema to use uuid.UUID for the user_id field.
+Fix Endpoints: Update the /assets/{asset_id} API endpoint path parameter to expect uuid.UUID instead of int.
+Fix Tests (Data): Update all transaction creation tests to fetch a real asset and pass its stringified UUID in the request payload.
+Fix Tests (Assertions): Update all affected tests to assert for the correct JSON keys and to compare UUIDs by their string representation.
+
+---
+
+**Bug ID:** 2025-08-03-19
+**Title:** Multiple transaction-related tests fail due to missing 'fees' field in payloads. 
+**Module:** Test Suite (Portfolio Management, Import Sessions)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+After fixing previous issues, a new set of failures has been identified in the test suite. Multiple tests that create transactions are failing because they do not include the required fees field in their payloads. This causes Pydantic validation to fail with a 422 Unprocessable Entity error, preventing the tests from correctly verifying the intended business logic. The affected tests are:
+
+test_sell_transaction_before_buy_date_fails in test_transaction_validation.py.
+test_commit_import_session_asset_not_found in test_import_sessions.py.
+**Steps to Reproduce:**
+Run the backend test suite: docker-compose run --rm test.
+**Expected Behavior:**
+The tests should pass by sending valid payloads.
+**Actual Behavior:**
+The tests fail with assertion errors (e.g., assert 422 == 400) because the API returns a validation error instead of the expected business logic error.
+**Resolution:**
+Add a default fees value to the test payloads in both test_transaction_validation.py and test_import_sessions.py.
+
+---
+**Bug ID:** 2025-08-03-20
+**Title:** Widespread test failures due to TypeError in transaction test helper.
+**
+**Module:**** Test Suite
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+A large number of tests (6 out of 8 failures) across `test_analytics.py`, `test_dashboard.py`, and `test_transaction_validation.py` were failing with `TypeError: create_test_asset() got an unexpected keyword argument 'asset_type'`. This was caused by the `create_test_transaction` helper function in `app/tests/utils/transaction.py` attempting to pass an `asset_type` argument to `create_test_asset`. The `create_test_asset` function signature had been updated and no longer accepts this argument, causing a cascade of failures in any test that creates a transaction.
+**Steps to Reproduce:**
+1. Run the backend test suite after the UUID migration.
+**Expected Behavior:**
+Tests that create transactions should pass.
+**Actual Behavior:**
+Tests fail with a `TypeError`.
+**Resolution:**
+Removed the `asset_type` argument from the call to `create_test_asset` within `app/tests/utils/transaction.py`.
+
+---
+
+**Bug ID:** 2025-08-03-21
+**Title:** Transaction creation tests fail with 422 Unprocessable Entity due to incorrect path parameter type.
+**
+**Module:**** API (Transactions), Test Suite
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-03
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Tests for creating transactions (`test_create_transaction_with_existing_asset`, `test_create_transaction_for_other_user_portfolio`) were failing with an `AssertionError: assert 422 == 201` (or 403). The API response was a `422 Unprocessable Entity` with the detail `{'type': 'int_parsing', 'loc': ['path', 'portfolio_id'], ...}`. This was because the transaction creation endpoint in `app/api/v1/endpoints/transactions.py` incorrectly defined the `portfolio_id` path parameter as an `int`, while the tests were correctly passing a `uuid.UUID`.
+**Steps to Reproduce:**
+1. Run the backend test suite after fixing the `TypeError` in the test helper.
+**Expected Behavior:**
+The transaction creation endpoint should accept a UUID for the portfolio ID.
+**Actual Behavior:**
+The endpoint expected an integer, causing a validation error.
+**Resolution:**
+Updated the type hint for `portfolio_id` in the `create_transaction` function signature in `app/api/v1/endpoints/transactions.py` from `int` to `uuid.UUID`.
+
+---

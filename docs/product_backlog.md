@@ -46,7 +46,7 @@ The goal of this release is to broaden the asset types supported and introduce m
 
 -   **Advanced Asset Support (FR4):** Add support for FDs, RDs, PPF, NPS, Bonds, RSUs, ESPPs.
 -   **Automated Data Import (FR7):** Implement file parsers for broker statements (Zerodha, ICICI) and MF CAS.
-    -   **Status: 🚧 In Progress**
+    -   **Status: ✅ Backend Complete**
 -   **Advanced Reporting & Analytics (FR6):**
     -   Implement XIRR and Sharpe Ratio for portfolios.
     -   **Status: ✅ Complete**

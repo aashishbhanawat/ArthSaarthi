@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from decimal import Decimal
+import uuid
 from typing import Dict
 
 import pytest
@@ -45,18 +46,18 @@ def test_get_portfolio_analytics_not_found(
     """
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(email=user.email, password=password)
-    portfolio_id = 99999
+    portfolio_id = uuid.uuid4()
     response = client.get(
         f"{settings.API_V1_STR}/portfolios/{portfolio_id}/analytics", headers=auth_headers
     )
     assert response.status_code == 404
 
 
-def test_get_portfolio_analytics_unauthorized(client: TestClient) -> None:
+def test_get_portfolio_analytics_unauthorized(client: TestClient, db: Session) -> None:
     """
     Test getting analytics without authentication.
     """
-    response = client.get(f"{settings.API_V1_STR}/portfolios/1/analytics")
+    response = client.get(f"{settings.API_V1_STR}/portfolios/{uuid.uuid4()}/analytics")
     assert response.status_code == 401
 
 

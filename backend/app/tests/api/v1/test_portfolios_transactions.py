@@ -1,3 +1,4 @@
+import uuid
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
@@ -40,7 +41,7 @@ def test_read_portfolio_by_id(client: TestClient, db: Session, get_auth_headers)
     assert response.status_code == 200
     content = response.json()
     assert content["name"] == portfolio.name
-    assert content["id"] == portfolio.id
+    assert content["id"] == str(portfolio.id)
 
 
 def test_read_portfolio_wrong_owner(client: TestClient, db: Session, get_auth_headers):
@@ -59,7 +60,7 @@ def test_delete_portfolio(client: TestClient, db: Session, get_auth_headers):
     portfolio = create_test_portfolio(db, user_id=user.id, name="To Be Deleted")
     response = client.delete(f"{settings.API_V1_STR}/portfolios/{portfolio.id}", headers=headers)
     assert response.status_code == 200
-    assert response.json()["message"] == "Portfolio deleted successfully"
+    assert response.json()["msg"] == "Portfolio deleted successfully"
     db_portfolio = crud.portfolio.get(db, id=portfolio.id)
     assert db_portfolio is None
 
@@ -83,17 +84,19 @@ def test_create_transaction_with_existing_asset(
     portfolio = create_test_portfolio(db, user_id=user.id, name="My Portfolio")
     asset = create_test_asset(db, ticker_symbol="GOOGL", name="Alphabet Inc.")
     data = {
-        "asset_id": asset.id,
+        "asset_id": str(asset.id),
         "transaction_type": "BUY",
         "quantity": 10,
         "price_per_unit": 150.00,
         "transaction_date": datetime.now(timezone.utc).isoformat(),
+        "fees": 0.0,  # This line was missing
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
         headers=auth_headers,
         json=data,
     )
+    print(f"DEBUG (test_create_transaction_with_existing_asset): STATUS={response.status_code}, RESPONSE={response.json()}")
     assert response.status_code == 201
     content = response.json()
     assert content["asset"]["ticker_symbol"] == "GOOGL"
@@ -111,17 +114,19 @@ def test_create_transaction_for_other_user_portfolio(
 
     asset = create_test_asset(db, ticker_symbol="TSLA", name="Tesla Inc.")
     data = {
-        "asset_id": asset.id,
+        "asset_id": str(asset.id),
         "transaction_type": "BUY",
         "quantity": 5,
         "price_per_unit": 250.00,
         "transaction_date": datetime.now(timezone.utc).isoformat(),
+        "fees": 0.0,  # This line was missing
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio1.id}/transactions/",
         headers=auth_headers2,
         json=data,
     )
+    print(f"DEBUG (test_create_transaction_for_other_user_portfolio): STATUS={response.status_code}, RESPONSE={response.json()}")
     assert response.status_code == 403
 
 
@@ -149,5 +154,6 @@ def test_read_asset_by_id(client: TestClient, db: Session, get_auth_headers):
 def test_read_asset_by_id_not_found(client: TestClient, db: Session, get_auth_headers):
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
-    response = client.get(f"{settings.API_V1_STR}/assets/99999", headers=headers)
+    non_existent_uuid = uuid.uuid4()
+    response = client.get(f"{settings.API_V1_STR}/assets/{non_existent_uuid}", headers=headers)
     assert response.status_code == 404

@@ -27,9 +27,8 @@ def test_get_current_user_success(
     returned_user = response.json()  # API response is now correctly assigned to returned_user
     # 3. Assert: Verify that the returned user data matches the created user's data.
     assert returned_user["email"] == user.email  # Comparison is now correct.
-    assert returned_user["full_name"] == user.full_name
-    assert returned_user["id"] == user.id
-
+    assert returned_user["full_name"] == user.full_name        
+    assert returned_user["id"] == str(user.id)
 
 def test_get_current_user_invalid_token(client: TestClient):
     """

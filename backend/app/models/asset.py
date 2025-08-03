@@ -1,4 +1,7 @@
+import uuid
+
 from sqlalchemy import Column, Integer, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -7,7 +10,7 @@ from app.db.base_class import Base
 class Asset(Base):
     __tablename__ = "assets"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     ticker_symbol = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     asset_type = Column(String, nullable=False)  # e.g., 'STOCK', 'ETF'

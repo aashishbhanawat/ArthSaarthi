@@ -1,7 +1,8 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List
-from typing import Optional
+from typing import List, Optional
+import uuid
 from .transaction import Transaction
+import uuid
 
 
 # Shared properties
@@ -22,7 +23,7 @@ class PortfolioUpdate(BaseModel):
 
 # Properties to return to client
 class Portfolio(PortfolioBase):
-    id: int
-    user_id: int
+    id: uuid.UUID
+    user_id: uuid.UUID
     transactions: List[Transaction] = []
     model_config = ConfigDict(from_attributes=True)

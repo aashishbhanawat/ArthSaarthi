@@ -103,7 +103,7 @@ def test_update_user(client: TestClient, db: Session) -> None:
     # Assert the response status and data
     assert response.status_code == 200
     content = response.json()
-    assert content["id"] == user_id
+    assert content["id"] == str(user_id)
     assert content["full_name"] == update_data["full_name"]
     assert content["is_active"] == update_data["is_active"]
 
