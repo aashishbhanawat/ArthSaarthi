@@ -7,10 +7,9 @@ import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 
 const PortfolioDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const portfolioId = parseInt(id || '0', 10);
 
-    const { data: portfolio, isLoading, isError, error } = usePortfolio(portfolioId);
-    const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
+    const { data: portfolio, isLoading, isError, error } = usePortfolio(id);
+    const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(id);
     const [isModalOpen, setModalOpen] = useState(false);
 
     if (isLoading) return <div className="text-center p-8">Loading portfolio details...</div>;
@@ -40,7 +39,7 @@ const PortfolioDetailPage: React.FC = () => {
             {isModalOpen && (
                 <AddTransactionModal
                     onClose={() => setModalOpen(false)}
-                    portfolioId={portfolioId}
+                    portfolioId={portfolio.id}
                 />
             )}
         </div>

@@ -6,8 +6,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
-from app import crud, schemas
-from app.crud import crud_user
+from app import crud, models, schemas
 from app.db.session import SessionLocal
 
 logging.basicConfig(level=logging.INFO)
@@ -20,8 +19,8 @@ def seed_transactions(db: Session) -> None:
     """
     logger.info("--- Starting to seed transaction data ---")
 
-    # 1. Get the first user (usually the admin)
-    user = crud_user.get_user(db, id=1)
+    # 1. Get the first user from the database (usually the admin)
+    user = db.query(models.user.User).first()
     if not user:
         logger.error("No users found in the database. Please create an admin user first.")
         return
@@ -42,6 +41,7 @@ def seed_transactions(db: Session) -> None:
                 exchange="CRYPTO" if "-USD" in ticker else "NSE",
             )
             asset = crud.asset.create(db=db, obj_in=asset_in)
+            db.commit() # Commit after creating a new asset
         assets[ticker] = asset
     logger.info("Assets are ready.")
 
@@ -53,6 +53,7 @@ def seed_transactions(db: Session) -> None:
         logger.info(f"Creating portfolio '{portfolio_name}' for user {user.email}")
         portfolio_in = schemas.PortfolioCreate(name=portfolio_name, description="Portfolio with auto-seeded sample data.")
         portfolio = crud.portfolio.create_with_owner(db=db, obj_in=portfolio_in, user_id=user.id)
+        db.commit() # Commit after creating a new portfolio
     else:
         logger.info(f"Using existing portfolio '{portfolio_name}'")
 
@@ -102,6 +103,7 @@ def seed_transactions(db: Session) -> None:
                 # This will likely fail if holdings are insufficient. We can just log it and move on.
                 logger.info(f"Skipping SELL for {ticker} due to insufficient holdings.")
 
+    db.commit() # Final commit for all created transactions
     logger.info(f"Successfully created {transactions_to_create} transactions for portfolio ID {portfolio.id}.")
     logger.info("--- Seeding complete ---")
 

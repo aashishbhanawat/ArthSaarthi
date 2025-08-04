@@ -1,97 +1,96 @@
-﻿﻿# Project Handoff Document: Personal Portfolio Management System
+﻿﻿﻿﻿﻿﻿﻿# Project Handoff Document: Personal Portfolio Management System
 
-**Date:** 2025-08-03
-**Prepared By:** Gemini Code Assist
+**Version:** 1.0.0 (Pilot Release)
+**Date:** 2025-08-04
+**Author:** Gemini Code Assist
 
 ---
 
 ## 1. Project Overview
 
-The Personal Portfolio Management System (PMS) is a full-stack web application designed to help users track and analyze their investment portfolios. It provides a consolidated view of assets, calculates performance metrics, and offers data visualizations to help users make informed financial decisions.
+This document marks the successful completion and handoff of the Personal Portfolio Management System (PMS) pilot release. The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
 
-The application is built with a modern tech stack, featuring a FastAPI backend and a React/TypeScript frontend, all containerized with Docker for easy setup and deployment.
-
----
-
-## 2. Current Status: Pilot Release Complete
-
-The project has successfully completed its **Pilot Release (v0.2.0)** and the backend for the **Automated Data Import (v0.3.0)** feature. All Minimum Viable Product (MVP) and initial advanced features are implemented and stable.
-
-*   **All test suites are passing:**
-    *   Backend (Pytest): 67/67 passed
-    *   Frontend (Jest/RTL): 56/56 passed
-    *   End-to-End (Playwright): All critical user flows are validated and passing.
-*   The application is considered stable and ready for the frontend implementation of the data import feature.
+The project was developed following a rigorous, AI-assisted Agile SDLC, with a strong emphasis on automated testing, comprehensive documentation, and iterative feature implementation.
 
 ---
 
-## 3. Key Implemented Features
+## 2. Final Status
 
-*   **Core User Authentication:** Secure JWT-based login for standard users and an initial administrator setup flow.
-*   **Basic Administration:** Admins can perform CRUD operations on users.
+*   **Overall Status:** **Complete & Stable**
+*   **Backend Test Suite:** **100% Passing** (67/67 tests)
+*   **Frontend Test Suite:** **100% Passing** (56/56 tests)
+*   **E2E Test Suite:** **100% Passing** (6/6 tests)
+
+All planned MVP features have been implemented and validated through a combination of unit, integration, and end-to-end tests. The application is stable and ready for pilot deployment or the next phase of development.
+
+---
+
+## 3. Key Features Implemented
+
+*   **Secure Authentication:** Initial admin setup, JWT-based login/logout, and automatic session termination on token expiration.
+*   **Comprehensive User Management:** Admin-only dashboard for full CRUD operations on all users.
+*   **Dynamic Dashboard:** Consolidated view of total portfolio value, realized/unrealized P/L, top daily market movers, and interactive charts for portfolio history and asset allocation.
+*   **Advanced Portfolio Analytics:** Calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio**.
 *   **Portfolio & Transaction Management:** Users can create multiple portfolios and manually add transactions for Stocks, ETFs, and Mutual Funds.
-*   **On-the-fly Asset Creation:** Users can add new assets not present in the pre-seeded database directly from the transaction modal.
-*   **Dynamic Dashboard:**
-    *   Consolidated view of total portfolio value.
-    *   Calculation of Realized and Unrealized Profit/Loss.
-    *   Asset allocation pie chart.
-    *   Historical portfolio value line chart.
-    *   Top daily market movers table.
-*   **Advanced Portfolio Analytics (New in v0.2.0):**
-    *   The Portfolio Detail page now includes an "Advanced Analytics" card.
-    *   Calculates and displays the **XIRR (Extended Internal Rate of Return)**.
-    *   Calculates and displays the **Sharpe Ratio**.
-*   **Automated Data Import (Backend Only):** A full backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
+*   **Full Portfolio & Transaction Tracking:** Create and manage multiple portfolios, add transactions, and perform on-the-fly asset creation for unlisted tickers.
+*   **Business Logic Validation:** The system prevents invalid transactions, such as selling more assets than are held on a given date.
+*   **Automated Data Import (Backend):** A full backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files. The frontend for this feature is the next development priority.
 
 ---
 
-## 4. Technology Stack
+## 4. How to Run the Application
 
-*   **Backend:** Python, FastAPI, SQLAlchemy (ORM), Pydantic, PostgreSQL, Redis (for caching, if implemented).
-*   **Frontend:** React, TypeScript, Vite, Tailwind CSS, React Query (for state management), Chart.js (for visualizations).
-*   **Testing:**
-    *   **Backend:** `pytest`
-    *   **Frontend:** `jest`, `react-testing-library`
-    *   **End-to-End:** `playwright`
-*   **Infrastructure:** Docker, Docker Compose.
+The application is fully containerized. Please refer to the main **README.md** for detailed instructions on environment setup and running the application using Docker Compose.
 
----
+### Key Commands
 
-## 5. Getting Started
-
-1.  **Prerequisites:** Docker and Docker Compose must be installed.
-2.  **Run the application:** From the project root, run:
+*   **Start the Application:**
     ```bash
     docker-compose up --build db backend frontend
     ```
-3.  **Initial Setup:** Navigate to `http://localhost:3000`. If it's the first run, you will be prompted to create an initial administrator account.
-
----
-
-## 6. Running the Test Suites
-
-*   **Backend Unit Tests:**
+*   **Run Backend Unit Tests:**
     ```bash
     docker-compose run --rm test
     ```
-*   **Frontend Unit Tests:**
+*   **Run Frontend Unit Tests:**
     ```bash
     docker-compose run --rm frontend npm test
     ```
-*   **End-to-End Tests:**
+*   **Run E2E Tests:**
     ```bash
-    docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit db redis backend frontend e2e-tests
+    docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests db redis backend frontend e2e-tests
     ```
 
 ---
 
-## 7. Key Documentation
+## 5. Codebase & Documentation
 
-All project documentation is located in the `/docs` directory. Key files for new team members include:
+*   **Source Code:** The full source code is available in the `backend/` and `frontend/` directories.
+*   **System Architecture:** See docs/architecture.md.
+*   **Feature Plans:** All implemented features have detailed plans in docs/features/.
+*   **Bug Reports:** A comprehensive log of all bugs discovered and fixed is available in docs/bug_reports.md.
+*   **Development History:** A detailed, chronological log of the AI-assisted development process is available in docs/workflow_history.md.
+*   **Troubleshooting:** For common issues, please refer to the docs/troubleshooting.md.
+*   **Debugging:** For instructions on enabling dynamic debug logs, see the docs/debugging_guide.md.
 
-*   `README.md`: High-level overview and setup instructions.
-*   `product_backlog.md`: The official source of truth for feature requirements.
-*   `code_flow_guide.md`: A deep dive into the application's data flow for key features.
-*   `troubleshooting.md`: Solutions for common setup and runtime issues.
-*   `LEARNING_LOG.md`: A log of key architectural decisions and lessons learned.
-*   `bug_reports.md`: The complete history of all bugs filed and resolved.
+---
+
+## 6. Known Issues & Technical Debt
+
+*   **External API Dependency in E2E Tests:** The E2E tests have a dependency on the live `yfinance` API for the "create new asset" flow. For future hardening, this should be mocked to create a more hermetic test environment. (See Bug ID: `2025-07-30-30`).
+*   **Limited Mock Financial Data:** The mock `FinancialDataService` only contains data for a few specific tickers. This may need to be expanded for more comprehensive manual testing.
+
+---
+
+## 7. Recommended Next Steps
+
+The application is in a strong position for future development. The following are recommended next steps based on the product backlog:
+
+1.  **UI/UX for Data Import:** Implement the frontend components for the "Automated Data Import" feature, allowing users to upload files and see the preview/commit UI.
+2.  **Expand Data Import Parsers:** Add specific parsers for other common broker statements (e.g., ICICI) and Mutual Fund CAS statements.
+3.  **Implement User Profile Management (FR1.5):** Allow users to change their password and update their profile information.
+4.  **Refactor Financial Data Service:** Implement the planned Strategy Pattern to allow for multiple financial data providers.
+
+---
+
+This concludes the handoff for the pilot release. The project is stable, well-documented, and ready for the next phase.

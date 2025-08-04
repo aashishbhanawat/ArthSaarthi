@@ -5074,3 +5074,285 @@ The endpoint expected an integer, causing a validation error.
 Updated the type hint for `portfolio_id` in the `create_transaction` function signature in `app/api/v1/endpoints/transactions.py` from `int` to `uuid.UUID`.
 
 ---
+
+**Bug ID:** 2025-08-04-01 
+**Title:** E2E tests fail with 422 Unprocessable Entity due to incomplete UUID migration in Portfolio endpoints. 
+**Module:** Portfolio Management (Backend), E2E Testing 
+**Reported By:** Gemini Code Assist 
+**Date Reported:** 2025-08-04 
+**Classification:** Implementation (Backend) 
+**Severity:** Critical 
+**Description:** 
+The E2E tests for portfolio creation and analytics are failing with timeouts. The root cause is a 422 Unprocessable Entity error from the backend. The POST /api/v1/portfolios/ endpoint incorrectly serializes the new portfolio's UUID as an integer in its response. The frontend then uses this incorrect integer ID to navigate to the detail page. The GET /api/v1/portfolios/{id} and GET /api/v1/portfolios/{id}/analytics endpoints, also incorrectly expecting an integer, fail path validation. This is due to an incomplete migration from integer to UUID primary keys in the Pydantic schemas and FastAPI endpoint definitions for portfolios. 
+**Steps to Reproduce:**
+
+Run the E2E test suite.
+Observe the 422 errors in the backend logs and the timeout failures in the Playwright logs. **Expected Behavior:** The portfolio endpoints should consistently use uuid.UUID for both path parameters and response models, allowing the E2E tests to pass. 
+**Actual Behavior:** The tests fail due to a data type mismatch between the application layers. **Resolution:**
+Added d8b5e3d7f2c1_migrate_all_pks_and_fks_to_uuid migration script
+
+---
+
+**Bug ID:** 2025-08-04-03
+**Title:** E2E environment fails with database password authentication failure.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** The `backend` service fails to connect to the `db` service with `FATAL: password authentication failed for user "testuser"`. This is because the `docker-compose.e2e.yml` override file correctly configures the `backend` service to use `.env.test`, but fails to apply the same configuration to the `db` service. The `db` service therefore starts with the default development credentials, while the `backend` attempts to connect with the test credentials, causing a mismatch.
+**Steps to Reproduce:**
+1. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up`.
+**Expected Behavior:**
+The backend and db services should start with a consistent configuration, allowing the backend to become healthy.
+**Actual Behavior:**
+The backend container crashes because it cannot authenticate with the database.
+**Resolution:**
+Update `docker-compose.e2e.yml` to apply the `./backend/.env.test` `env_file` to both the `backend` and `db` services. Before running the E2E tests, ensure a clean environment by running `docker-compose down -v`.
+
+---
+
+**Bug ID:** 2025-08-04-05
+**Title:** E2E tests crash with `Cannot find module '@playwright/test'`.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** The `e2e-tests` container crashes because it cannot find the Playwright module. The `docker-compose.e2e.yml` file mounts the local `./e2e` directory into the container at `/app`, which overwrites the `node_modules` directory that was created during the `docker build` step.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The test runner should find all its required npm packages.
+**Actual Behavior:**
+The container crashes with a `MODULE_NOT_FOUND` error.
+**Resolution:**
+Add a named volume for `/app/node_modules` in the `e2e-tests` service definition in `docker-compose.e2e.yml` to prevent the host mount from overwriting it.
+
+---
+
+**Bug ID:** 2025-08-04-06
+**Title:** Backend crashes during database migration on a fresh database.
+**Module:** Database, Migrations
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** After cleaning the database volume (`docker-compose down -v`), the backend crashes on startup while running Alembic migrations. The log shows `psycopg2.errors.DatatypeMismatch: default for column "id" cannot be cast automatically to type uuid`. This is because the UUID migration script (`d8b5e3d7f2c1...`) attempts to change the column type from `INTEGER` to `UUID` without first dropping the old `nextval()` sequence default associated with the integer primary key.
+**Steps to Reproduce:**
+1. Run `docker-compose down -v`.
+2. Run `docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build`.
+**Expected Behavior:**
+The database migrations should run successfully on a fresh database.
+**Actual Behavior:**
+The backend container crashes during the migration process.
+**Resolution:**
+Update the `d8b5e3d7f2c1_migrate_all_pks_and_fks_to_uuid.py` migration script to execute raw SQL to `DROP DEFAULT` on all primary key columns before attempting to alter their type to UUID.
+
+---
+
+**Bug ID:** 2025-08-04-10
+**Title:** UUID migration script is unstable due to inconsistent foreign key existence on `import_sessions` table.
+**Module:** Database, Migrations
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The `d8b5e3d7f2c1` migration script is failing in a loop. The `import_sessions_user_id_fkey` constraint exists and must be dropped to prevent a `DatatypeMismatch` error. However, the `import_sessions_portfolio_id_fkey` constraint does *not* exist, and attempting to drop it causes an `UndefinedObject` error. This indicates an inconsistency in the preceding migration history. The migration script must be made more precise to handle this specific state.
+**Steps to Reproduce:**
+1. Run `docker-compose down -v`.
+2. Run the E2E test suite.
+**Expected Behavior:**
+The database migrations should run successfully on a fresh database.
+**Actual Behavior:**
+The backend container crashes during the migration process with either a `DatatypeMismatch` or `UndefinedObject` error, depending on which `drop_constraint` call is present.
+**Resolution:**
+Update the `d8b5e3d7f2c1` migration script to *only* drop the `import_sessions_user_id_fkey` constraint, as it is the only one that is confirmed to exist on a fresh database build.
+
+---
+
+**Bug ID:** 2025-08-04-11
+**Title:** UUID migration script fails with "column does not exist" error for `import_sessions.portfolio_id`.
+**Module:** Database, Migrations
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The `d8b5e3d7f2c1` migration script fails with a `psycopg2.errors.UndefinedColumn` error because it attempts to `ALTER` the `portfolio_id` column on the `import_sessions` table. This is due to a flaw in the migration history: an earlier migration created the `import_sessions` table but failed to include the `portfolio_id` column. The current migration script incorrectly assumes the column exists.
+**Steps to Reproduce:**
+1. Run `docker-compose down -v`.
+2. Run the E2E test suite.
+**Expected Behavior:**
+The database migrations should run successfully on a fresh database.
+**Actual Behavior:**
+The backend container crashes during the migration process.
+**Resolution:**
+Update the `d8b5e3d7f2c1` migration script to use `op.add_column` to create the missing `portfolio_id` column instead of attempting to `op.alter_column` it.
+
+---
+
+**Bug ID:** 2025-08-04-12
+**Title:** E2E tests fail due to missing database commits in API endpoints.
+**Module:** Core Backend (API Endpoints), Transaction Management
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** Multiple E2E tests are failing with cascading errors (422 Unprocessable Entity, timeouts) because the API endpoints for creating, updating, and deleting resources (users, portfolios) are not committing their database transactions. The CRUD layer correctly modifies the session, but the API endpoint layer fails to call `db.commit()`, causing all changes to be rolled back at the end of the request. This leads to silent failures on write operations and subsequent failures on read operations.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+All create, update, and delete operations should be persisted to the database.
+**Actual Behavior:**
+Database changes are rolled back, causing tests to fail with stale data and invalid ID errors.
+**Resolution:**
+Add `db.commit()` and `db.refresh()` calls to the `create_user`, `update_user`, `create_portfolio`, and `delete_portfolio` endpoints to ensure transactional integrity.
+
+---
+
+**Bug ID:** 2025-08-04-13
+**Title:** E2E tests fail due to `UnboundLocalError` and missing commit in user management endpoints.
+**Module:** User Management (Backend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The E2E test suite is failing. The `admin-user-management` test fails with a `500 Internal Server Error` when updating a user. The root cause is an `UnboundLocalError` in the `update_user` endpoint in `users.py`, where the code attempts to use a variable `user` that has not been assigned. Additionally, the `delete_user` endpoint is missing a `db.commit()` call, which would cause deletions to be rolled back. These bugs break core admin functionality.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+2. Observe the `500 Internal Server Error` in the backend logs for the `PUT /api/v1/users/{user_id}` request.
+**Expected Behavior:**
+User update and delete operations should complete successfully with a `200 OK` status.
+**Actual Behavior:**
+The update endpoint crashes with an `UnboundLocalError`. The delete endpoint fails to persist the deletion.
+**Resolution:**
+1. Correct the variable name in `update_user` from `user` to `db_user`.
+2. Add a `db.commit()` call to the `delete_user` endpoint after the `crud.user.remove()` call.
+
+---
+
+**Bug ID:** 2025-08-04-15
+**Title:** E2E tests fail due to incorrect transaction management patterns in API endpoints.
+**Module:** Core Backend (API Endpoints), Transaction Management
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** E2E tests are failing with stale data and "not found" errors. The root cause is incorrect transaction management in the API endpoints. 1) Write endpoints (`POST`, `PUT`) incorrectly call `db.refresh()` *after* `db.commit()`, which raises an exception on the detached object and likely causes the transaction to be rolled back. 2) The `GET /portfolios/` endpoint incorrectly contains `db.commit()` and a broken `db.refresh()` call, which should not be present in a read-only operation.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+All create, update, and delete operations should be persisted to the database.
+**Actual Behavior:**
+Database changes are rolled back, causing tests to fail.
+**Resolution:**
+1. Remove the erroneous `db.refresh()` calls from all `POST` and `PUT` endpoints in `users.py` and `portfolios.py`.
+2. Remove the erroneous `db.commit()` and `db.refresh()` calls from the `GET /portfolios/` endpoint.
+
+---
+
+**Bug ID:** 2025-08-04-17
+**Title:** Frontend incorrectly parses UUIDs as integers, causing API requests to fail.
+**Module:** Portfolio Management (Frontend), API Integration
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:** The E2E test for portfolio creation fails with a "Portfolio not found" error. The root cause is that the frontend is still typed to handle numeric IDs after the backend's migration to UUIDs. Specifically, `PortfolioDetailPage.tsx` calls `parseInt()` on the UUID from the URL, which results in an invalid ID being passed to the API. This causes the `GET /api/v1/portfolios/{id}` request to fail with a `422 Unprocessable Entity` error.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The frontend should make an API call to `GET /api/v1/portfolios/{uuid}`.
+**Actual Behavior:**
+The frontend makes an API call to `GET /api/v1/portfolios/{integer}`, which fails validation.
+**Resolution:**
+Refactor the entire frontend data layer (`types/portfolio.ts`, `services/portfolioApi.ts`, `hooks/usePortfolios.ts`, and `pages/Portfolio/PortfolioDetailPage.tsx`) to consistently handle all ID fields as strings (UUIDs) instead of numbers.
+
+---
+
+**Bug ID:** 2025-08-04-18
+**Title:** Transaction creation fails with Foreign Key violation due to missing commit in asset creation.
+**Module:** Asset Management (Backend), Transaction Management (Backend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The `POST /api/v1/assets/` endpoint returns a `201 Created` status but fails to commit the new asset to the database. This causes a silent failure. Subsequent API calls to create a transaction for this new asset fail with a `psycopg2.errors.ForeignKeyViolation` because the asset does not exist in the database.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+A newly created asset should be persisted to the database, allowing subsequent transactions to be created for it.
+**Actual Behavior:**
+The asset creation is rolled back, causing transaction creation to fail with a 400 Bad Request.
+**Resolution:**
+Add `db.commit()` to the `create_asset` endpoint in `backend/app/api/v1/endpoints/assets.py` after the `crud.asset.create()` call.
+Refactor the entire frontend data layer (`types/portfolio.ts`, `services/portfolioApi.ts`, `hooks/usePortfolios.ts`, and `pages/Portfolio/PortfolioDetailPage.tsx`) to consistently handle all ID fields as strings (UUIDs) instead of numbers.
+Refactor the frontend data-fetching pipeline (`portfolioApi.ts`, `usePortfolios.ts`, `PortfolioDetailPage.tsx`) to consistently handle the `portfolioId` as a string (UUID) without converting it to a number.
+1. Remove the erroneous `db.refresh()` calls from all `POST` and `PUT` endpoints in `users.py` and `portfolios.py`.
+2. Remove the erroneous `db.commit()` and `db.refresh()` calls from the `GET /portfolios/` endpoint.
+1. Remove the erroneous `db.refresh()` calls from all `POST` and `PUT` endpoints in `users.py` and `portfolios.py`.
+2. Remove the erroneous `db.commit()` and `db.refresh()` calls from the `GET /portfolios/` endpoint.
+Add `db.commit()` and `db.refresh()` calls to the `create_user`, `update_user`, `create_portfolio`, and `delete_portfolio` endpoints to ensure transactional integrity.
+Add `db.commit()` and `db.refresh()` calls to the `create_user`, `update_user`, `create_portfolio`, and `delete_portfolio` endpoints to ensure transactional integrity.
+Update the `d8b5e3d7f2c1` migration script to use `op.add_column` to create the missing `portfolio_id` column instead of attempting to `op.alter_column` it.
+Update the `d8b5e3d7f2c1` migration script to *only* drop the `import_sessions_user_id_fkey` constraint, as it is the only one that is confirmed to exist on a fresh database build.
+Update the `d8b5e3d7f2c1_migrate_all_pks_and_fks_to_uuid.py` migration script to also drop the foreign keys on the `import_sessions` table before altering any column types.
+Remove the erroneous `op.drop_constraint` calls for the `import_sessions` table from the `d8b5e3d7f2c1` migration script. The script will correctly create these constraints later in the `upgrade` function.
+Update the `d8b5e3d7f2c1_migrate_all_pks_and_fks_to_uuid.py` migration script to also drop, alter, and recreate the foreign keys on the `import_sessions` table.
+Update the `d8b5e3d7f2c1_migrate_all_pks_and_fks_to_uuid.py` migration script to execute raw SQL to `DROP DEFAULT` on all primary key columns before attempting to alter their type to UUID.
+Add a named volume for `/app/node_modules` in the `e2e-tests` service definition in `docker-compose.e2e.yml` to prevent the host mount from overwriting it.
+Update the schemas.Portfolio Pydantic model in backend/app/schemas/portfolio.py to define the id field as uuid.UUID.
+Update the read_portfolio_by_id and get_portfolio_analytics endpoint functions in backend/app/api/v1/endpoints/portfolios.py to accept a portfolio_id: uuid.UUID path parameter instead of an int.
+
+---
+
+**Resolution:**
+Updated the type hint for `portfolio_id` in the `create_transaction` function signature in `app/api/v1/endpoints/transactions.py` from `int` to `uuid.UUID`.
+
+---
+
+**Bug ID:** 2025-08-04-19
+**Title:** Asset lookup fails during manual testing, returning no results or crashing.
+**Module:** Asset Management (Backend)
+**Reported By:** User via Manual E2E Test
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** During manual E2E testing, the asset lookup in the "Add Transaction" modal consistently failed to find any assets, even though the database was seeded on startup. The debugging process revealed three root causes in sequence:
+1. A `NameError` in `assets.py` due to a missing import for the `settings` object, which crashed the endpoint with a 500 error.
+2. After fixing the import, a second `NameError` occurred in `crud_asset.py` due to a missing import for SQLAlchemy's `func`.
+3. After fixing both imports, the search logic in `crud_asset.py` was found to be performing an incorrect query, causing it to return no results.
+**Steps to Reproduce:**
+1. Start the application.
+2. Navigate to a portfolio and open the "Add Transaction" modal.
+3. Type a known asset name or ticker (e.g., "coal").
+**Expected Behavior:**
+A list of matching assets should be displayed.
+**Actual Behavior:**
+The API endpoint either crashed with a 500 error or returned an empty list.
+**Resolution:**
+1. Added the missing `settings` import to `backend/app/api/v1/endpoints/assets.py`.
+2. Added the missing `func` import to `backend/app/crud/crud_asset.py`.
+3. Corrected the method name called by the API endpoint to use the correct `search_by_name_or_ticker` function.
+
+---
+
+**Bug ID:** 2025-08-04-20
+**Title:** E2E test environment shares the same database volume as the development environment.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** User
+**Date Reported:** 2025-08-04
+**Classification:** Architecture / Test Suite
+**Severity:** Critical
+**Description:** The `docker-compose.e2e.yml` file does not define its own database volume. It inherits the `postgres_data` volume from the base `docker-compose.yml`. This means that the E2E tests run against the main development database, which is a major issue. It also means that running `docker-compose down -v` after an E2E test run would destroy the development data.
+**Steps to Reproduce:**
+1. Run the development environment and add data.
+2. Run the E2E test suite, which resets the database.
+3. Observe that the development data is now gone.
+**Expected Behavior:**
+The E2E test environment should use a completely isolated database volume to prevent data loss and ensure test isolation.
+**Actual Behavior:**
+Both environments share the same database volume, leading to data corruption and risk of data loss.
+**Resolution:**
+Update `docker-compose.e2e.yml` to define and use a dedicated volume named `postgres_data_test` for the `db` service.
+3. Corrected the method name called by the API endpoint to use the correct `search_by_name_or_ticker` function.

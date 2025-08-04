@@ -1,39 +1,37 @@
 version: '3.8'
 
 services:
-  backend:
-    env_file:
-      - ./backend/.env
-      - ./backend/.env.test
-    command: /app/e2e_entrypoint.sh
-    environment:
-      - ENVIRONMENT=test
-      - CORS_ORIGINS=http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000,http://frontend:3000,http://backend:8000
-
   db:
     env_file:
-      - ./backend/.env
-      - ./backend/.env.test
-
-  frontend:
-    depends_on:
-      backend:
-        condition: service_healthy
-
-  e2e-tests:
-    build:
-      context: ./e2e
-    container_name: pms-e2e-tests
-    command: ["npx", "playwright", "test"]
-    env_file:
-      - ./backend/.env
       - ./backend/.env.test
     volumes:
+      - postgres_data_test:/var/lib/postgresql/data/ # Use a dedicated volume for test data
+    ports:
+      - "5433:5432" # Use a different external port to avoid conflict with dev db
+
+  backend:
+    env_file:
+      - ./backend/.env.test
+    command: /app/e2e_entrypoint.sh # Use a dedicated entrypoint for E2E
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  e2e-tests:
+    build: ./e2e
+    container_name: pms-e2e-tests
+    command: ["npx", "playwright", "test"]
+    volumes:
       - ./e2e:/app
+      - /app/node_modules
     networks:
       - pms_network
     depends_on:
-      frontend:
-        condition: service_started
-      backend:
-        condition: service_healthy
+      - frontend
+      - backend
+
+volumes:
+  postgres_data_test: # Define the dedicated test volume

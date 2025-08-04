@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from collections import defaultdict
 from typing import Any, Dict, List
-
+import uuid
 import numpy as np
 from sqlalchemy.orm import Session
 from pyxirr import xirr
@@ -15,7 +15,7 @@ from app.services.financial_data_service import financial_data_service
 logger = logging.getLogger(__name__)
 
 
-def _get_portfolio_current_value(db: Session, portfolio_id: int) -> Decimal:
+def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decimal:
     """Calculates the current market value of a single portfolio."""
     transactions = crud.transaction.get_multi_by_portfolio(db=db, portfolio_id=portfolio_id)
     if not transactions:
@@ -50,7 +50,7 @@ def _get_portfolio_current_value(db: Session, portfolio_id: int) -> Decimal:
     return total_value
 
 
-def _get_single_portfolio_history(db: Session, portfolio_id: int, time_range: str) -> List[Dict[str, Any]]:
+def _get_single_portfolio_history(db: Session, portfolio_id: uuid.UUID, time_range: str) -> List[Dict[str, Any]]:
     """Calculates the total value of a single portfolio over a specified time range."""
     end_date = date.today()
     
@@ -135,7 +135,7 @@ def _get_single_portfolio_history(db: Session, portfolio_id: int, time_range: st
     return history_points
 
 
-def _calculate_xirr(db: Session, portfolio_id: int) -> float:
+def _calculate_xirr(db: Session, portfolio_id: uuid.UUID) -> float:
     """
     Calculates the Extended Internal Rate of Return (XIRR) for a portfolio.
     """
@@ -176,7 +176,7 @@ def _calculate_xirr(db: Session, portfolio_id: int) -> float:
         return 0.0
 
 
-def _calculate_sharpe_ratio(db: Session, portfolio_id: int) -> float:
+def _calculate_sharpe_ratio(db: Session, portfolio_id: uuid.UUID) -> float:
     """Calculates the Sharpe Ratio for a portfolio."""
     history_points = _get_single_portfolio_history(
         db=db, portfolio_id=portfolio_id, time_range="all"
@@ -198,7 +198,7 @@ def _calculate_sharpe_ratio(db: Session, portfolio_id: int) -> float:
     return sharpe_ratio
 
 
-def get_portfolio_analytics(db: Session, portfolio_id: int) -> AnalyticsResponse:
+def get_portfolio_analytics(db: Session, portfolio_id: uuid.UUID) -> AnalyticsResponse:
     """
     Calculates advanced analytics for a given portfolio.
     """

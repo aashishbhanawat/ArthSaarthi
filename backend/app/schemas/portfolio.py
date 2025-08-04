@@ -2,7 +2,6 @@ from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 import uuid
 from .transaction import Transaction
-import uuid
 
 
 # Shared properties

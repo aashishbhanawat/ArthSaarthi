@@ -21,6 +21,10 @@ def create_transaction(
     """
     Create new transaction for a portfolio.
     """
+    print(f"--- BACKEND DEBUG: Create Transaction Request ---")
+    print(f"Portfolio ID: {portfolio_id}")
+    print(f"Transaction Payload: {transaction_in.model_dump_json(indent=2)}")
+    print(f"---------------------------------------------")
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -37,4 +41,5 @@ def create_transaction(
         # Catch potential database or other internal errors
         raise HTTPException(status_code=400, detail=str(e))
 
+    db.commit()
     return transaction

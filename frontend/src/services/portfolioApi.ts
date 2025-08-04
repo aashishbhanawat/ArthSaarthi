@@ -8,7 +8,7 @@ export const getPortfolios = async (): Promise<Portfolio[]> => {
     return response.data;
 };
 
-export const getPortfolio = async (id: number): Promise<Portfolio> => {
+export const getPortfolio = async (id: string): Promise<Portfolio> => {
     const response = await apiClient.get<Portfolio>(`/api/v1/portfolios/${id}`);
     return response.data;
 };
@@ -18,7 +18,7 @@ export const createPortfolio = async (data: PortfolioCreate): Promise<Portfolio>
     return response.data;
 };
 
-export const deletePortfolio = async (id: number): Promise<void> => {
+export const deletePortfolio = async (id: string): Promise<void> => {
     await apiClient.delete(`/api/v1/portfolios/${id}`);
 };
 
@@ -37,7 +37,7 @@ export const createAsset = async (ticker: string): Promise<Asset> => {
 };
 
 export const createTransaction = async (
-    portfolioId: number,
+    portfolioId: string,
     transactionData: TransactionCreate
 ): Promise<Transaction> => {
     const response = await apiClient.post<Transaction>(
@@ -47,7 +47,7 @@ export const createTransaction = async (
     return response.data;
 };
 
-export const getPortfolioAnalytics = async (id: number): Promise<PortfolioAnalytics> => {
+export const getPortfolioAnalytics = async (id: string): Promise<PortfolioAnalytics> => {
     const response = await apiClient.get<PortfolioAnalytics>(`/api/v1/portfolios/${id}/analytics`);
     return response.data;
 };

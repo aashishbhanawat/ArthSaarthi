@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.core.config import settings
 from app.core import dependencies as deps
 from app.services.financial_data_service import financial_data_service
 from app.models.user import User
@@ -51,8 +52,14 @@ def lookup_ticker_symbol(
     The database is expected to be seeded with a master list of assets.
     """
     assets = crud.asset.search_by_name_or_ticker(db, query=query)
-    return assets
-
+    if settings.DEBUG:
+        print(f"--- BACKEND DEBUG: Asset Lookup ---")
+        print(f"Received query: '{query}'")
+        print(f"Found {len(assets)} assets.")
+        print(f"---------------------------------")
+    if assets:
+        return assets
+    return []
 
 @router.post("/", response_model=schemas.Asset, status_code=201)
 def create_asset(
@@ -85,4 +92,6 @@ def create_asset(
         ticker_symbol=ticker, **details
     )
     
-    return crud.asset.create(db=db, obj_in=new_asset_data)
+    asset = crud.asset.create(db=db, obj_in=new_asset_data)
+    db.commit()
+    return asset

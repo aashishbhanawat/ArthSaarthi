@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ImportSessionBase(BaseModel):
@@ -25,16 +25,10 @@ class ImportSessionUpdate(BaseModel):
     status: Optional[str] = None
 
 
-class ImportSessionInDBBase(ImportSessionBase):
+class ImportSession(ImportSessionBase):
     id: uuid.UUID
     user_id: uuid.UUID
     portfolio_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class ImportSession(ImportSessionInDBBase):
-    pass
+    model_config = ConfigDict(from_attributes=True)

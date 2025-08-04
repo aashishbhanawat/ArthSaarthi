@@ -11,11 +11,12 @@ export const usePortfolios = () => {
     });
 };
 
-export const usePortfolio = (id: number) => {
+export const usePortfolio = (id: string | undefined) => {
     return useQuery({
         queryKey: ['portfolio', id],
-        queryFn: () => portfolioApi.getPortfolio(id),
-        enabled: !!id,
+        // The '!' asserts that id is not undefined, which is safe because of the 'enabled' flag.
+        queryFn: () => portfolioApi.getPortfolio(id!),
+        enabled: !!id, // The query will not run if the id is undefined.
     });
 };
 
@@ -32,7 +33,7 @@ export const useCreatePortfolio = () => {
 export const useDeletePortfolio = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => portfolioApi.deletePortfolio(id),
+        mutationFn: (id: string) => portfolioApi.deletePortfolio(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['portfolios'] });
         },
@@ -49,7 +50,7 @@ export const useCreateAsset = () => {
 export const useCreateTransaction = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ portfolioId, data }: { portfolioId: number; data: TransactionCreate }) =>
+        mutationFn: ({ portfolioId, data }: { portfolioId: string; data: TransactionCreate }) =>
             portfolioApi.createTransaction(portfolioId, data),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['portfolio', variables.portfolioId] });
@@ -58,10 +59,10 @@ export const useCreateTransaction = () => {
     });
 };
 
-export const usePortfolioAnalytics = (id: number) => {
+export const usePortfolioAnalytics = (id: string | undefined) => {
     return useQuery<PortfolioAnalytics, Error>({
         queryKey: ['portfolioAnalytics', id],
-        queryFn: () => portfolioApi.getPortfolioAnalytics(id),
-        enabled: !!id,
+        queryFn: () => portfolioApi.getPortfolioAnalytics(id!),
+        enabled: !!id, // The query will not run if the id is undefined.
     });
 };

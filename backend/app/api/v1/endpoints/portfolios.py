@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.core.config import settings
 from app.core import dependencies
 from app.models.user import User
 from . import transactions
@@ -42,6 +43,12 @@ def create_portfolio(
     portfolio = crud.portfolio.create_with_owner(
         db=db, obj_in=portfolio_in, user_id=current_user.id
     )
+    db.commit()
+    if settings.DEBUG:
+        print(f"--- BACKEND DEBUG: Portfolio Created ---")
+        print(f"Portfolio Name: {portfolio.name}")
+        print(f"Portfolio ID (UUID): {portfolio.id}")
+        print(f"------------------------------------")
     return portfolio
 
 
@@ -55,6 +62,11 @@ def read_portfolio(
     """
     Get portfolio by ID.
     """
+    if settings.DEBUG:
+        print(f"--- BACKEND DEBUG: Get Portfolio by ID ---")
+        print(f"Received request for portfolio_id: {portfolio_id}")
+        print(f"Type of portfolio_id: {type(portfolio_id)}")
+        print(f"------------------------------------")
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -79,6 +91,7 @@ def delete_portfolio(
     if not current_user.is_admin and (portfolio.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     crud.portfolio.remove(db=db, id=portfolio_id)    
+    db.commit()
     return {"msg": "Portfolio deleted successfully"}
 
 @router.get("/{portfolio_id}/analytics", response_model=schemas.AnalyticsResponse)

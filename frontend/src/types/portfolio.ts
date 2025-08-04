@@ -1,5 +1,5 @@
 export interface Asset {
-  id: number;
+  id: string;
   ticker_symbol: string;
   name: string;
   asset_type: string;
@@ -7,9 +7,9 @@ export interface Asset {
 }
 
 export interface Transaction {
-  id: number;
-  asset_id: number;
-  portfolio_id: number;
+  id: string;
+  asset_id: string;
+  portfolio_id: string;
   transaction_type: 'BUY' | 'SELL';
   quantity: number;
   price_per_unit: number;
@@ -19,7 +19,7 @@ export interface Transaction {
 }
 
 export interface Portfolio {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   transactions: Transaction[];
@@ -38,7 +38,7 @@ export interface NewAsset {
 }
 
 export interface TransactionCreate {
-    asset_id: number;
+    asset_id: string;
     transaction_type: 'BUY' | 'SELL';
     quantity: number;
     price_per_unit: number;

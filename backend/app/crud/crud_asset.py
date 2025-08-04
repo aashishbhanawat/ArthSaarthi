@@ -1,6 +1,6 @@
 from typing import List
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from app.crud.base import CRUDBase
 from app.models.asset import Asset
@@ -16,19 +16,17 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
     def get_by_isin(self, db: Session, *, isin: str) -> Asset | None:
         return db.query(self.model).filter(self.model.isin == isin).first()
 
-    def search_by_name_or_ticker(
-        self, db: Session, *, query: str, limit: int = 10
-    ) -> List[Asset]:
-        query_str = f"%{query.lower()}%"
+    def search_by_name_or_ticker(self, db: Session, *, query: str) -> List[Asset]:
+        search = f"%{query.lower()}%"  # Use wildcards and ensure lowercase for case-insensitive search
         return (
             db.query(self.model)
             .filter(
                 or_(
-                    self.model.ticker_symbol.ilike(query_str),
-                    self.model.name.ilike(query_str),
+                    func.lower(self.model.name).like(search),
+                    func.lower(self.model.ticker_symbol).like(search),
                 )
             )
-            .limit(limit)
+            .limit(10)
             .all()
         )
 

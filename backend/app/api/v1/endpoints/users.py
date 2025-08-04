@@ -73,11 +73,12 @@ def update_user(
     """
     Update a user by ID. (Admin Only)
     """
-    db_user = crud.user.get(db, id=user_id)
-    if not db_user:
+    user = crud.user.get(db, id=user_id)
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return crud.user.update(db=db, db_obj=db_user, obj_in=user_in)
-
+    user = crud.user.update(db=db, db_obj=user, obj_in=user_in)
+    db.commit()
+    return user
 
 @router.delete("/{user_id}", response_model=User)
 def delete_user(
@@ -101,5 +102,6 @@ def delete_user(
             detail="Cannot delete yourself.",
         )
 
-    user = crud.user.remove(db, id=user_id)
-    return user
+    deleted_user = crud.user.remove(db, id=user_id)
+    db.commit()
+    return deleted_user

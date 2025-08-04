@@ -116,7 +116,7 @@ For each feature, we'll follow these steps:
     *   **Testing Plan:** The QA Engineer will define unit tests, integration tests, and acceptance criteria.
     *   **E2E Test Plan:** The QA Engineer will also define a high-level E2E test case to be added for the feature.
     *   **Rigorous RCA:** When an error occurs, the AI must analyze the **full stack trace**, validate dependencies by requesting to see imported files, and state its hypothesis before proposing a fix.
-    *   **Formal Bug Triage:** Before filing a new bug, the AI must search `docs/bug_reports.md` for existing issues. It will propose updating an existing bug before creating a new one.
+    *   **Formal Bug Triage:** Before filing a new bug, the AI must search the temporary bug log (`docs/bug_report_temp.md`) for existing issues. It will propose updating an existing bug before creating a new one. The main `docs/bug_reports.md` file is for historical context only.
     *   **No Debugging Loops:** If a proposed fix does not work, the AI must not suggest the same fix again. It must re-evaluate its hypothesis, ask for more information (e.g., different logs, file contents), and propose a new, distinct path forward.
 
 6.  **Deployment/Environment Updates (DevOps Engineer):**
@@ -135,11 +135,13 @@ For each feature, we'll follow these steps:
 
 You are now ready to start development of new module.
 
-**All planned MVP features are now complete, stable, and covered by a foundational E2E test suite.**
+**All planned MVP features are now complete, stable, and covered by a foundational E2E test suite. "Real Data Integration (FR5)" was completed in a previous release.**
 
-Let's start planning the next feature: **Real Data Integration (FR5)**. This will replace our mock financial data service with a real one to prepare for a pilot release.
+The next priority is to complete the **Automated Data Import (FR7)** feature. The backend for this feature is partially implemented but contains stubs.
 
-Now, invoke the **Solution Architect** and **Backend Developer** to plan for this new feature."
+Before we proceed with development, we will first run all test suites (backend, frontend, E2E) to ensure there has been no regression. After confirming the stability of the application, we will begin completing the backend implementation for FR7.
+
+Now, let's proceed with the full test suite execution.
 
 #### 4.1. Backend Development Planning (for a specific Feature) 💻🗄️
 

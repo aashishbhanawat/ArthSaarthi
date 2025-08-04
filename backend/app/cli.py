@@ -235,6 +235,7 @@ def seed_assets_command(
                 typer.echo(f"Series '{series}': {count} rows skipped due to filtering")
 
         typer.echo("-----------------------")
+        db.commit()
 
     except Exception as e:
         typer.echo(f"An unexpected error occurred: {e}", err=True)

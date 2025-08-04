@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
 
 This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets, providing performance insights and analytics.
 
@@ -7,23 +7,25 @@ This project is being developed with the guidance of an AI Master Orchestrator, 
 ## Features Implemented
 
 *   **Secure Authentication:**
-    *   Initial admin setup for the first user.
-    *   Standard user login/logout with JWT-based session management.
-    *   Automatic logout on token expiration.
+    -   Initial admin setup for the first user.
+    -   Standard user login/logout with JWT-based session management.
+    -   Automatic logout on token expiration.
 *   **Comprehensive User Management:**
-    *   Admin-only dashboard for full CRUD operations on all users.
+    -   Admin-only dashboard for full CRUD operations on all users.
 *   **Dynamic Dashboard:**
-    *   Consolidated view of total portfolio value.
-    *   Realized and Unrealized Profit/Loss calculations.
-    *   Top daily market movers.
-    *   Interactive portfolio history and asset allocation charts.
+    -   Consolidated view of total portfolio value.
+    -   Realized and Unrealized Profit/Loss calculations.
+    -   Top daily market movers.
+    -   Interactive portfolio history and asset allocation charts.
 *   **Advanced Portfolio Analytics:**
-    *   Calculation and display of **XIRR (Extended Internal Rate of Return)**.
-    *   Calculation and display of the **Sharpe Ratio**.
+    -   Calculation and display of **XIRR (Extended Internal Rate of Return)**.
+    -   Calculation and display of the **Sharpe Ratio**.
 *   **Full Portfolio & Transaction Tracking:**
-    *   Create and manage multiple portfolios.
-    *   Add transactions with on-the-fly asset creation for unlisted tickers.
-    *   Business logic validation to prevent invalid transactions (e.g., selling more than you own).
+    -   Create and manage multiple portfolios.
+    -   Add transactions with on-the-fly asset creation for unlisted tickers.
+    -   Business logic validation to prevent invalid transactions (e.g., selling more than you own).
+*   **Automated Data Import (Backend):**
+    -   A full backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files. The frontend for this feature is the next development priority.
 
 ## Technology Stack
 
@@ -161,7 +163,7 @@ To run the frontend test suite using Jest and React Testing Library, use the fol
 The E2E test suite runs using Playwright in a dedicated Docker environment. This command starts all necessary services, runs the tests, propagates the test exit code, and then automatically stops and removes the test containers.
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests
+docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests db redis backend frontend e2e-tests
 ```
 [!IMPORTANT]
 The E2E tests use a separate database (pms_db_test) and will not delete your development data. You only need to run docker-compose down -v when you want to completely reset your development environment. 
@@ -173,6 +175,11 @@ Note: This script will add data for the first user it finds in the database (typ
 ```bashh 
 docker-compose run --rm backend python -m app.scripts.seed_transactions 
 ```
+
+### Dynamic Debugging
+
+The application includes a dynamic debugging feature that can be enabled via environment variables to provide more verbose logging without changing the code. For detailed instructions on how to enable this for the backend and frontend, please see the Debugging Guide.
+
 
 ## Contributing
 
