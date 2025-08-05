@@ -78,6 +78,7 @@ def update_user(
         raise HTTPException(status_code=404, detail="User not found")
     user = crud.user.update(db=db, db_obj=user, obj_in=user_in)
     db.commit()
+    db.refresh(user)
     return user
 
 @router.delete("/{user_id}", response_model=User)

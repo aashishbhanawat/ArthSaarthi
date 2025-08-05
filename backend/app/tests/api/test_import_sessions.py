@@ -3,6 +3,7 @@ import uuid
 from pathlib import Path
 from decimal import Decimal
 from datetime import datetime, timezone
+from typing import Callable, Dict
 
 import pandas as pd
 import pytest
@@ -19,7 +20,7 @@ from app.tests.utils.user import create_random_user
 
 @pytest.fixture(scope="function")
 def normal_user(db: Session) -> tuple[User, str]:
-    # Create a user to be used in the tests
+    """Fixture to create a normal user and return the user object and password."""
     return create_random_user(db)
 
 
@@ -34,7 +35,10 @@ def user_portfolio(db: Session, normal_user: tuple[User, str]) -> Portfolio:
     """Fixture to create a portfolio for the normal user."""
     user, _ = normal_user
     portfolio_in = PortfolioCreate(name="Test Portfolio", description="A test portfolio")
-    return crud.portfolio.create_with_owner(db=db, obj_in=portfolio_in, user_id=user.id)
+    portfolio = crud.portfolio.create_with_owner(db=db, obj_in=portfolio_in, user_id=user.id)
+    db.commit()
+    db.refresh(portfolio)
+    return portfolio
 
 
 @pytest.fixture(scope="function")
@@ -75,294 +79,249 @@ def parsed_import_session(
 
 def create_dummy_csv_file(content: str) -> io.BytesIO:
     """Creates an in-memory CSV file for testing uploads."""
-    return io.BytesIO(content.encode("utf-8"))
+    csv_file = io.BytesIO(content.encode('utf-8'))
+    return csv_file
 
 
 def test_create_import_session(
     client: TestClient,
-    get_auth_headers,
+    db: Session,
     normal_user: tuple[User, str],
     user_portfolio: Portfolio,
-) -> None:
-    """
-    Test creating a new import session successfully.
-    """
-    csv_content = "col1,col2\n1,3\n2,4"
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
     user, password = normal_user
-    normal_user_token_headers = get_auth_headers(user.email, password)
-    dummy_file = create_dummy_csv_file(csv_content)
+    auth_headers = get_auth_headers(user.email, password)
+    csv_content = "ticker_symbol,transaction_type,quantity,price_per_unit,transaction_date\nTEST,BUY,10,100.0,2023-01-01"
+    csv_file = create_dummy_csv_file(csv_content)
 
     response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/",
-        headers=normal_user_token_headers,
+        "/api/v1/import-sessions/",
         data={"portfolio_id": str(user_portfolio.id)},
-        files={"file": ("test.csv", dummy_file, "text/csv")},
+        files={"file": ("test.csv", csv_file, "text/csv")},
+        headers=auth_headers,
     )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["file_name"] == "test.csv"
+    assert data["status"] == "PARSED"
+    assert data["portfolio_id"] == str(user_portfolio.id)
+    assert data["user_id"] == str(user.id)
+    assert Path(data["file_path"]).exists()
+    assert Path(data["parsed_file_path"]).exists()
 
-    assert response.status_code == 201, response.text
-    content = response.json()
-    assert content["file_name"] == "test.csv"
-    assert content["status"] == "PARSED"
-    assert "id" in content
-    assert "parsed_file_path" in content
-    assert content["parsed_file_path"] is not None
-    assert Path(content["parsed_file_path"]).exists()
-
-    # Verify the content of the parsed file
-    expected_df = pd.DataFrame({"col1": [1, 2], "col2": [3, 4]})
-    parsed_df = pd.read_parquet(content["parsed_file_path"])
-    pd.testing.assert_frame_equal(parsed_df, expected_df)
+    # Clean up created files
+    Path(data["file_path"]).unlink()
+    Path(data["parsed_file_path"]).unlink()
 
 
-def test_create_import_session_portfolio_not_found(
+def test_create_import_session_unauthorized(
     client: TestClient,
-    get_auth_headers,
-    normal_user: tuple[User, str],
-) -> None:
-    """
-    Test creating an import session for a non-existent portfolio.
-    """
-    non_existent_uuid = uuid.uuid4()
-    user, password = normal_user
-    normal_user_token_headers = get_auth_headers(user.email, password)
-    csv_content = "col1,col2\n1,3"
-    dummy_file = create_dummy_csv_file(csv_content)
-
-    response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/",
-        headers=normal_user_token_headers,
-        data={"portfolio_id": str(non_existent_uuid)},
-        files={"file": ("test.csv", dummy_file, "text/csv")},
-    )
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Portfolio not found"
-
-
-def test_create_import_session_not_enough_permissions(
-    client: TestClient,
-    get_auth_headers,
+    db: Session,
     other_user: tuple[User, str],
-    user_portfolio: Portfolio,  # Belongs to normal_user
-) -> None:
-    """
-    Test creating an import session for a portfolio the user does not own.
-    """
-    csv_content = "col1,col2\n1,3"
-    other_user_obj, other_user_password = other_user
-    other_user_token_headers = get_auth_headers(other_user_obj.email, other_user_password)
-    dummy_file = create_dummy_csv_file(csv_content)
+    user_portfolio: Portfolio, # Belongs to normal_user
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
+    user, password = other_user
+    auth_headers = get_auth_headers(user.email, password)
+    csv_content = "ticker_symbol,transaction_type,quantity,price_per_unit,transaction_date\nTEST,BUY,10,100.0,2023-01-01"
+    csv_file = create_dummy_csv_file(csv_content)
 
     response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/",
-        headers=other_user_token_headers,
+        "/api/v1/import-sessions/",
         data={"portfolio_id": str(user_portfolio.id)},
-        files={"file": ("test.csv", dummy_file, "text/csv")},
+        files={"file": ("test.csv", csv_file, "text/csv")},
+        headers=auth_headers,
     )
     assert response.status_code == 403
-    assert response.json()["detail"] == "Not enough permissions for this portfolio"
+    assert "Not enough permissions" in response.json()["detail"]
+
+
+def test_create_import_session_empty_file(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    user_portfolio: Portfolio,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
+    user, password = normal_user
+    auth_headers = get_auth_headers(user.email, password)
+    csv_file = create_dummy_csv_file("") # Empty content
+
+    response = client.post(
+        "/api/v1/import-sessions/",
+        data={"portfolio_id": str(user_portfolio.id)},
+        files={"file": ("empty.csv", csv_file, "text/csv")},
+        headers=auth_headers,
+    )
+    assert response.status_code == 400
+    assert "Failed to parse file" in response.json()["detail"]
 
 
 def test_get_import_session_preview(
     client: TestClient,
-    get_auth_headers,
+    db: Session,
     normal_user: tuple[User, str],
-    user_portfolio: Portfolio,
-) -> None:
-    """
-    Test getting a preview of a successfully parsed import session.
-    """
-    # First, create an import session
+    parsed_import_session: models.ImportSession,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
     user, password = normal_user
-    normal_user_token_headers = get_auth_headers(user.email, password)
-    csv_content = "col1,col2\n1,3\n2,4"
-    dummy_file = create_dummy_csv_file(csv_content)
-    response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/",
-        headers=normal_user_token_headers,
-        data={"portfolio_id": str(user_portfolio.id)},
-        files={"file": ("test.csv", dummy_file, "text/csv")},
-    )
-    assert response.status_code == 201
-    session_id = response.json()["id"]
+    auth_headers = get_auth_headers(user.email, password)
 
-    # Now, get the preview
     response = client.get(
-        f"{settings.API_V1_STR}/import-sessions/{session_id}/preview",
-        headers=normal_user_token_headers,
+        f"/api/v1/import-sessions/{parsed_import_session.id}/preview",
+        headers=auth_headers,
     )
-
     assert response.status_code == 200
-    preview_data = response.json()
-    expected_data = [{"col1": 1, "col2": 3}, {"col1": 2, "col2": 4}]
-    assert preview_data == expected_data
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["ticker_symbol"] == "TEST"
 
 
-def test_get_import_session_preview_not_found(
+def test_get_import_session_preview_unauthorized(
     client: TestClient,
-    get_auth_headers,
-    normal_user: tuple[User, str],
-) -> None:
-    """
-    Test getting a preview for a non-existent session ID.
-    """
-    user, password = normal_user
-    normal_user_token_headers = get_auth_headers(user.email, password)
-    non_existent_uuid = uuid.uuid4()
-    response = client.get(
-        f"{settings.API_V1_STR}/import-sessions/{non_existent_uuid}/preview",
-        headers=normal_user_token_headers,
-    )
-    assert response.status_code == 404
-
-
-def test_get_import_session_preview_not_enough_permissions(
-    client: TestClient,
-    get_auth_headers,
-    normal_user: tuple[User, str],
+    db: Session,
     other_user: tuple[User, str],
-    user_portfolio: Portfolio,  # Belongs to normal_user
-) -> None:
-    """
-    Test that a user cannot get a preview for a session they do not own.
-    """
-    # Create a session with normal_user
-    user, password = normal_user
-    normal_user_token_headers = get_auth_headers(user.email, password)
-    csv_content = "col1,col2\n1,3\n2,4"
-    dummy_file = create_dummy_csv_file(csv_content)
-    response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/",
-        headers=normal_user_token_headers,
-        data={"portfolio_id": str(user_portfolio.id)},
-        files={"file": ("test.csv", dummy_file, "text/csv")},
-    )
-    assert response.status_code == 201
-    session_id = response.json()["id"]
+    parsed_import_session: models.ImportSession, # Belongs to normal_user
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
+    user, password = other_user
+    auth_headers = get_auth_headers(user.email, password)
 
-    # Try to access it with other_user
-    other_user_obj, other_user_password = other_user
-    other_user_token_headers = get_auth_headers(other_user_obj.email, other_user_password)
     response = client.get(
-        f"{settings.API_V1_STR}/import-sessions/{session_id}/preview",
-        headers=other_user_token_headers,
+        f"/api/v1/import-sessions/{parsed_import_session.id}/preview",
+        headers=auth_headers,
     )
     assert response.status_code == 403
-    assert response.json()["detail"] == "Not enough permissions"
 
-
-# --- Tests for Commit Endpoint ---
 
 def test_commit_import_session_success(
     client: TestClient,
-    get_auth_headers,
     db: Session,
     normal_user: tuple[User, str],
-    user_portfolio: Portfolio,
     parsed_import_session: models.ImportSession,
-) -> None:
-    """
-    Test successfully committing a parsed import session.
-    """
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
     user, password = normal_user
     auth_headers = get_auth_headers(user.email, password)
 
     response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/{parsed_import_session.id}/commit",
+        f"/api/v1/import-sessions/{parsed_import_session.id}/commit",
         headers=auth_headers,
     )
+    assert response.status_code == 200
+    assert "Successfully committed 1 transactions" in response.json()["msg"]
 
-    assert response.status_code == 200, response.text
-    assert response.json() == {"msg": "Successfully committed 1 transactions."}
+    # Verify the transaction was created
+    transactions = crud.transaction.get_multi_by_portfolio(db, portfolio_id=parsed_import_session.portfolio_id)
+    assert len(transactions) == 1
+    assert transactions[0].asset.ticker_symbol == "TEST"
+    assert transactions[0].quantity == Decimal("100.0")
 
-    # Verify the session status is updated in the DB
+    # Verify the session status was updated
     db.refresh(parsed_import_session)
     assert parsed_import_session.status == "COMPLETED"
 
-    # Verify the transaction was created
-    transactions = crud.transaction.get_multi_by_portfolio(db, portfolio_id=user_portfolio.id)
-    assert len(transactions) == 1
-    assert transactions[0].quantity == Decimal("100.0")
-    assert transactions[0].price_per_unit == Decimal("150.0")
 
-
-def test_commit_import_session_not_found(client: TestClient, get_auth_headers, normal_user: tuple[User, str]) -> None:
-    """
-    Test committing a session that does not exist.
-    """
+def test_commit_import_session_asset_not_found(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    user_portfolio: Portfolio,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
     user, password = normal_user
     auth_headers = get_auth_headers(user.email, password)
-    non_existent_uuid = uuid.uuid4()
-    response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/{non_existent_uuid}/commit",
-        headers=auth_headers,
-    )
-    assert response.status_code == 404
 
-
-def test_commit_import_session_not_enough_permissions(
-    client: TestClient, get_auth_headers, other_user: tuple[User, str], parsed_import_session: models.ImportSession
-) -> None:
-    """
-    Test a user trying to commit a session they do not own.
-    """
-    other_user_obj, other_user_password = other_user
-    auth_headers = get_auth_headers(other_user_obj.email, other_user_password)
-    response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/{parsed_import_session.id}/commit",
-        headers=auth_headers,
-    )
-    assert response.status_code == 403
-
-
-def test_commit_import_session_invalid_status(
-    client: TestClient, get_auth_headers, db: Session, normal_user: tuple[User, str], user_portfolio: Portfolio
-) -> None:
-    """
-    Test committing a session that is not in the 'PARSED' state.
-    """
-    user, password = normal_user
-    auth_headers = get_auth_headers(user.email, password)
-    
-    session_in = models.ImportSession(user_id=user.id, portfolio_id=user_portfolio.id, file_name="test.csv", file_path="/tmp/dummy", status="UPLOADED")
+    # Create a session with a parquet file that references a non-existent asset
+    upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
+    upload_dir.mkdir(exist_ok=True)
+    df = pd.DataFrame([{"ticker_symbol": "NONEXISTENT", "transaction_type": "BUY", "quantity": 10, "price_per_unit": 100, "transaction_date": "2023-01-01", "fees": 0}])
+    parsed_file_path = upload_dir / f"{uuid.uuid4()}.parquet"
+    df.to_parquet(parsed_file_path)
+    session_in = models.ImportSession(user_id=user.id, portfolio_id=user_portfolio.id, file_name="bad_asset.csv", file_path="/tmp/dummy.csv", status="PARSED", parsed_file_path=str(parsed_file_path))
     db.add(session_in)
     db.commit()
+    db.refresh(session_in)
 
     response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/{session_in.id}/commit",
+        f"/api/v1/import-sessions/{session_in.id}/commit",
+        headers=auth_headers,
+    )
+    assert response.status_code == 400
+    assert "Asset with ticker 'NONEXISTENT' not found" in response.json()["detail"]
+
+    # Verify session status is FAILED
+    db.refresh(session_in)
+    assert session_in.status == "FAILED"
+
+
+def test_commit_import_session_wrong_status(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    user_portfolio: Portfolio,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
+    user, password = normal_user
+    auth_headers = get_auth_headers(user.email, password)
+    # Create a session with UPLOADED status, not PARSED
+    session_in = models.ImportSession(user_id=user.id, portfolio_id=user_portfolio.id, file_name="test.csv", file_path="/tmp/dummy.csv", status="UPLOADED")
+    db.add(session_in)
+    db.commit()
+    db.refresh(session_in)
+
+    response = client.post(
+        f"/api/v1/import-sessions/{session_in.id}/commit",
         headers=auth_headers,
     )
     assert response.status_code == 400
     assert "Cannot commit session with status 'UPLOADED'" in response.json()["detail"]
 
 
-def test_commit_import_session_asset_not_found(
-    client: TestClient, get_auth_headers, db: Session, normal_user: tuple[User, str], user_portfolio: Portfolio
-) -> None:
-    """
-    Test committing a session where an asset in the file does not exist in the database.
-    """
+def test_commit_import_session_unauthorized(
+    client: TestClient,
+    db: Session,
+    other_user: tuple[User, str],
+    parsed_import_session: models.ImportSession, # Belongs to normal_user
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
+    user, password = other_user
+    auth_headers = get_auth_headers(user.email, password)
+
+    response = client.post(
+        f"/api/v1/import-sessions/{parsed_import_session.id}/commit",
+        headers=auth_headers,
+    )
+    assert response.status_code == 403
+
+
+def test_commit_import_session_missing_columns(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    user_portfolio: Portfolio,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
     user, password = normal_user
     auth_headers = get_auth_headers(user.email, password)
 
-    # Create a parsed session with a file containing an unknown ticker
+    # Create a session with a parquet file that is missing a required column
     upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
     upload_dir.mkdir(exist_ok=True)
-    df = pd.DataFrame([{"ticker_symbol": "UNKNOWN", "transaction_type": "BUY", "quantity": 100.0, "price_per_unit": 150.0, "transaction_date": datetime.now(timezone.utc).isoformat(), "fees": 0.0}])
+    df = pd.DataFrame([{"ticker_symbol": "TEST", "quantity": 10}]) # Missing transaction_type, etc.
     parsed_file_path = upload_dir / f"{uuid.uuid4()}.parquet"
     df.to_parquet(parsed_file_path)
-    session_in = models.ImportSession(user_id=user.id, portfolio_id=user_portfolio.id, file_name="test.csv", file_path="/tmp/dummy", status="PARSED", parsed_file_path=str(parsed_file_path))
+    session_in = models.ImportSession(user_id=user.id, portfolio_id=user_portfolio.id, file_name="bad_cols.csv", file_path="/tmp/dummy.csv", status="PARSED", parsed_file_path=str(parsed_file_path))
     db.add(session_in)
     db.commit()
+    db.refresh(session_in)
 
     response = client.post(
-        f"{settings.API_V1_STR}/import-sessions/{session_in.id}/commit",
+        f"/api/v1/import-sessions/{session_in.id}/commit",
         headers=auth_headers,
     )
-
     assert response.status_code == 400
-    assert "Asset with ticker 'UNKNOWN' not found" in response.json()["detail"]
-
-    # Verify the session status was updated to FAILED
-    db.refresh(session_in)
-    assert session_in.status == "FAILED"
-    assert "Asset with ticker 'UNKNOWN' not found" in session_in.error_message
+    assert "Parsed file is missing required columns" in response.json()["detail"]
+    

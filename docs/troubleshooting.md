@@ -196,3 +196,32 @@ This guide documents common setup and runtime issues and their solutions.
 ---
 
 *After applying any of these fixes, always remember to rebuild your Docker containers (`docker-compose up --build`) to ensure the changes take effect.*
+
+### 12. Frontend tests fail with "Cannot find module" for libraries like Heroicons.
+
+*   **Symptom:** The Jest test suite fails with errors like `Cannot find module '@heroicons/react/24/solid' from 'src/...'`. This happens even if the library is correctly installed.
+
+*   **Cause:** This is a complex issue with multiple potential causes, often related to how Jest's module resolver interacts with modern JavaScript packages, especially in a Vite + TypeScript + Docker environment. Common causes include:
+    1.  **Jest's `moduleNameMapper` is not configured:** Jest doesn't know how to handle non-JavaScript imports (like SVGs from an icon library) by default.
+    2.  **ES Module (ESM) vs. CommonJS (CJS) Conflict:** The project's `package.json` may have `"type": "module"`, which tells Node.js to treat `.js` files as ES Modules. However, Jest's configuration files (`jest.config.js`) and mock files often use the older CommonJS syntax (`module.exports`). This conflict can break module resolution.
+
+*   **Solution:** A robust, multi-step solution is required to stabilize the test environment.
+
+    1.  **Use a dedicated Jest config file.** Move all Jest configuration out of `package.json` and into a dedicated `frontend/jest.config.cjs` file. **Note the `.cjs` extension**, which explicitly tells Node.js to treat this file as a CommonJS module, resolving the ESM/CJS conflict.
+    2.  **Configure `moduleNameMapper` in `jest.config.cjs`.** Add a `moduleNameMapper` to intercept imports from problematic libraries and redirect them to a manual mock.
+        ```javascript
+        // frontend/jest.config.cjs
+        module.exports = {
+          // ... other config
+          moduleNameMapper: {
+            '^@heroicons/react/24/(outline|solid)$': '<rootDir>/src/__mocks__/heroicons.cjs',
+          },
+        };
+        ```
+    3.  **Create a robust mock file.** Create a mock file at `frontend/src/__mocks__/heroicons.cjs`. **Note the `.cjs` extension.** This file should also use CommonJS syntax. Using a JavaScript `Proxy` is a robust way to mock any named export from the library.
+        ```javascript
+        // frontend/src/__mocks__/heroicons.cjs
+        const React = require('react');
+        module.exports = new Proxy({}, { get: () => () => React.createElement('div') });
+        ```
+    4.  **Update `package.json`.** Ensure the `test` script points to the new configuration file: `"test": "jest --config jest.config.cjs"`.

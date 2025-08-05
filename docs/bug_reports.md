@@ -5356,3 +5356,361 @@ Both environments share the same database volume, leading to data corruption and
 **Resolution:**
 Update `docker-compose.e2e.yml` to define and use a dedicated volume named `postgres_data_test` for the `db` service.
 3. Corrected the method name called by the API endpoint to use the correct `search_by_name_or_ticker` function.
+
+**Resolution:**
+Update `app/schemas/__init__.py` to remove the import for the non-existent `DashboardAsset` schema.
+
+---
+
+**Bug ID:** 2025-08-04-21
+**Title:** All frontend test suites fail with "Cannot find module @heroicons/react/...".
+**Module:** Test Suite (Frontend), Jest Configuration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+After fixing previous issues with mock implementations, all 17 frontend test suites began failing with a new error: `Cannot find module '@heroicons/react/24/outline' from 'src/setupTests.ts'`. This indicates that Jest's module resolver cannot find the icon library's sub-paths within the Docker test environment. This is a fatal error that blocks the entire frontend test suite.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The Jest test suite should run without module resolution errors.
+**Actual Behavior:**
+All 17 test suites fail to run.
+**Resolution:**
+The `jest.mock()` calls in `setupTests.ts` were removed. Instead, Jest's `moduleNameMapper` configuration was added to `frontend/package.json`. This new configuration maps all imports from `@heroicons/react/...` to a single, simple mock file (`src/__mocks__/heroicons.js`), providing a more robust solution to the module resolution issue.
+
+---
+
+**Bug ID:** 2025-08-04-22
+**Title:** Frontend tests for Data Import feature fail with "Cannot find module './apiClient'".
+**Module:** Data Import (Frontend), API Integration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:** The test suites for `DataImportPage` and `ImportPreviewPage` are failing because the `importApi.ts` service file uses an incorrect relative path to import the shared `apiClient`. It uses `./apiClient` when the file is located one directory level up. This causes a fatal module resolution error that prevents the tests from running.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The tests for the Data Import feature should run successfully.
+**Actual Behavior:**
+The two test suites fail with `Cannot find module './apiClient' from 'src/services/importApi.ts'`.
+**Resolution:**
+Update the import path in `frontend/src/services/importApi.ts` from `./apiClient` to `../apiClient` to correctly locate the shared Axios instance.
+
+---
+
+**Bug ID:** 2025-08-04-23
+**Title:** Frontend tests for Data Import feature fail with "Cannot find module '../apiClient'".
+**Module:** Data Import (Frontend), API Integration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:** After a previous incorrect fix, the test suites for `DataImportPage` and `ImportPreviewPage` are still failing. The error is now `Cannot find module '../apiClient' from 'src/services/importApi.ts'`. The root cause is that the import path is still incorrect. The shared API client is located at `src/services/api.ts`, not `src/apiClient.ts`.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The tests for the Data Import feature should run successfully.
+**Actual Behavior:**
+The two test suites fail with `Cannot find module '../apiClient' from 'src/services/importApi.ts'`.
+**Resolution:**
+Update the import path in `frontend/src/services/importApi.ts` from `../apiClient` to `./api` to correctly locate the shared Axios instance.
+
+---
+
+**Bug ID:** 2025-08-04-24
+**Title:** Frontend test for DataImportPage fails with "Cannot find module @heroicons/react/24/solid".
+**Module:** Test Suite (Frontend), Jest Configuration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** After fixing previous Jest configuration issues, a single test suite for `DataImportPage.tsx` remains failing. The error `Cannot find module '@heroicons/react/24/solid'` indicates that the `moduleNameMapper` configuration in `package.json` is not correctly resolving the import for the solid variant of Heroicons. The mock file (`src/__mocks__/heroicons.js`) uses ES module `export` syntax, which can be problematic in Jest's default CommonJS environment.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test suite for `DataImportPage` should run successfully.
+**Actual Behavior:**
+The test suite fails with a `Cannot find module` error.
+**Resolution:**
+The mock file `src/__mocks__/heroicons.js` will be updated to use CommonJS `module.exports` syntax to ensure compatibility with Jest's module resolution and mocking system.
+
+---
+
+**Bug ID:** 2025-08-04-25
+**Title:** Final frontend test for DataImportPage fails with "Cannot find module @heroicons/react/24/solid".
+**Module:** Test Suite (Frontend), Jest Configuration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** After a series of fixes, a single test suite for `DataImportPage.tsx` remains failing with a module resolution error for `@heroicons/react/24/solid`. This indicates that the current static object mock in `src/__mocks__/heroicons.js` is not robust enough to be handled correctly by Jest's resolver in all cases.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+All 17 test suites should pass.
+**Actual Behavior:**
+The test suite for `DataImportPage` fails with a `Cannot find module` error.
+**Resolution:**
+Update the mock file `src/__mocks__/heroicons.js` to use a JavaScript `Proxy`. This will dynamically provide a mock for any icon requested from the module, making the mock more robust and resolving the final test failure.
+
+---
+
+**Bug ID:** 2025-08-04-26 (Consolidated)
+**Title:** Frontend test suite fails with "Cannot find module" for Heroicons due to Jest configuration issue.
+**Module:** Test Suite (Frontend), Jest Configuration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** After implementing the Data Import feature, a single test suite for `DataImportPage.tsx` consistently failed with `Cannot find module '@heroicons/react/24/solid'`. A series of attempts to fix this using different mocking strategies (`jest.mock` in `setupTests.ts`, `moduleNameMapper` in `package.json` with static and proxy mocks) were unsuccessful. This indicates a fundamental issue with how Jest was loading or interpreting its configuration from `package.json` in this project's environment.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+All 17 test suites should pass.
+**Actual Behavior:**
+The test suite for `DataImportPage` fails with a `Cannot find module` error.
+**Resolution:**
+The Jest configuration was moved from `package.json` into a dedicated `frontend/jest.config.js` file. This provides a more explicit and reliable configuration for Jest, resolving the module mapping issue. The `test` script in `package.json` was also updated to point to this new config file.
+
+---
+
+**Bug ID:** 2025-08-04-27 (Consolidated)
+**Title:** Frontend test suite fails with "Cannot find module" for Heroicons due to incomplete Jest configuration.
+**Module:** Test Suite (Frontend), Jest Configuration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+After implementing the Data Import feature, a single test suite for `DataImportPage.tsx` consistently failed with `Cannot find module '@heroicons/react/24/solid'`. A series of attempts to fix this using different mocking strategies (`jest.mock` in `setupTests.ts`, `moduleNameMapper` in `package.json`, moving to `jest.config.js`) were unsuccessful. The root cause was an incomplete or incorrectly interpreted Jest configuration. The final `jest.config.js` was missing the necessary `moduleNameMapper` entry for the icon library, even though it had other configurations for CSS and TypeScript transforms.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+All 17 test suites should pass.
+**Actual Behavior:**
+The test suite for `DataImportPage` fails with a `Cannot find module` error.
+**Resolution:**
+The `jest.config.js` file was updated to include a `moduleNameMapper` entry for both the `solid` and `outline` variants of `@heroicons/react/24`. This ensures that any import from these packages is correctly redirected to the manual mock file, resolving the module resolution error. The configuration was also switched from ES Module `export default` to CommonJS `module.exports` for better compatibility with Jest.
+
+---
+
+**Bug ID:** 2025-08-04-28 (Consolidated)
+**Title:** Frontend test suite fails with "ReferenceError: module is not defined" due to ES Module/CommonJS conflict.
+**Module:** Test Suite (Frontend), Jest Configuration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite / Configuration
+**Severity:** Critical
+**Description:**
+After moving the Jest configuration to a dedicated `jest.config.js` file, the test suite fails to run. The error `ReferenceError: module is not defined in ES module scope` occurs because the project's `package.json` specifies `"type": "module"`, which forces Node.js to treat `.js` files as ES Modules. However, the `jest.config.js` file uses CommonJS syntax (`module.exports`), which is incompatible. This prevents Jest from loading its configuration and blocks all frontend tests.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The Jest test suite should run successfully.
+**Actual Behavior:**
+The test runner crashes immediately with a `ReferenceError`.
+**Resolution:**
+1. Rename `frontend/jest.config.js` to `frontend/jest.config.cjs` to explicitly mark it as a CommonJS module.
+2. Update the `test` script in `frontend/package.json` to point to the new configuration file: `jest --config jest.config.cjs`.
+
+---
+
+**Bug ID:** 2025-08-04-29 (Consolidated)
+**Title:** Frontend test suite fails with "Can't find a root directory" due to ES Module/CommonJS conflict in mock file.
+**Module:** Test Suite (Frontend), Jest Configuration
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-04
+**Classification:** Test Suite / Configuration
+**Severity:** Critical
+**Description:**
+After moving the Jest configuration to `jest.config.cjs` to resolve a module format conflict, the test suite now fails with a new error: `Error: Can't find a root directory while resolving a config file path.`. This error is caused by a secondary module format conflict. The `jest.config.cjs` file correctly uses CommonJS, but its `moduleNameMapper` points to a mock file (`src/__mocks__/heroicons.js`). Because the project's `package.json` specifies `"type": "module"`, this `.js` mock file is treated as an ES Module, but it contains CommonJS syntax (`module.exports`), causing Jest's configuration parser to fail.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The Jest test suite should run successfully.
+**Actual Behavior:**
+The test runner crashes immediately with a `Can't find a root directory` error.
+**Resolution:**
+1. Rename `frontend/src/__mocks__/heroicons.js` to `frontend/src/__mocks__/heroicons.cjs` to explicitly mark it as a CommonJS module.
+2. Update the `moduleNameMapper` in `frontend/jest.config.cjs` to point to the new `.cjs` mock file.
+
+---
+
+**Bug ID:** 2025-08-05-01
+**Title:** Backend crashes on startup with ImportError in schemas `__init__.py`.
+**Module:** Core Backend, Schemas
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-05
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The backend fails to start because `schemas/__init__.py` attempts to import `ParsedTransaction` from the wrong module (`.transaction` instead of `.import_session`). This breaks application startup and prevents the new "Data Import" tests from running.
+**Steps to Reproduce:**
+1. Implement the new `ParsedTransaction` schema in `schemas/import_session.py`.
+2. Incorrectly add the import to `schemas/__init__.py` pointing to the wrong file.
+3. Run the backend test suite.
+**Expected Behavior:**
+The application should start, and tests should run.
+**Actual Behavior:**
+The test suite crashes during collection with `ImportError: cannot import name 'ParsedTransaction' from 'app.schemas.transaction'`.
+**Resolution:**
+Corrected the import path in `backend/app/schemas/__init__.py` to import `ParsedTransaction` from `.import_session`.
+
+---
+
+**Bug ID:** 2025-08-05-02
+**Title:** Backend tests fail with "password authentication failed" due to stale Docker volume.
+**Module:** Test Suite, Docker Configuration
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-05
+**Classification:** Test Suite / Configuration
+**Severity:** Critical
+**Description:**
+The test suite fails with `FATAL: password authentication failed for user "testuser"`. This happens because `docker-compose run test` re-uses the existing `postgres_data` volume from a previous development run. The database is initialized with development credentials, but the test container tries to connect with test credentials, causing an authentication failure.
+**Steps to Reproduce:**
+1. Run the development environment with `docker-compose up`.
+2. Stop the environment with `docker-compose down`.
+3. Run the test suite with `docker-compose -f ... run test`.
+**Expected Behavior:**
+The test suite should start a fresh, isolated database and connect successfully.
+**Actual Behavior:**
+The test suite fails to connect to the database.
+**Resolution:**
+Isolated the test database by defining and using a dedicated volume (`postgres_data_test`) in `docker-compose.test.yml`. This prevents any state conflict between development and test environments.
+
+---
+
+**Bug ID:** 2025-08-05-03
+**Title:** Frontend fails to build due to missing @heroicons/react dependency.
+**Module:** Frontend Build, Dependencies
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-05
+**Classification:** Configuration (Frontend)
+**Severity:** Critical
+**Description:**
+The application fails to load in the browser, and the Vite build process throws an error: `Failed to resolve import "@heroicons/react/24/solid"` (and/or `outline`). This is because the `@heroicons/react` package, which is used for UI icons in multiple components (`NavBar.tsx`, `DataImportPage.tsx`), was never added to the project's `package.json` dependencies.
+**Resolution:**
+Added `@heroicons/react` to the frontend dependencies. This exposed a deeper configuration issue (see Bug ID: 2025-08-05-04).
+
+---
+
+**Bug ID:** 2025-08-05-04
+**Title:** Frontend build fails because host volume mount overwrites `node_modules`.
+**Module:** Docker Configuration, Frontend Build
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-05
+**Classification:** Configuration (Docker)
+**Severity:** Critical
+**Description:**
+Even after adding a dependency to `package.json` and rebuilding, the frontend fails with `Failed to resolve import`. This is because the `docker-compose.yml` configuration for the `frontend` service mounts the entire local `./frontend` directory into `/app`, which overwrites the `node_modules` directory that was correctly installed during the `docker build` step.
+**Resolution:**
+Updated `docker-compose.yml` to use an anonymous volume for `/app/node_modules` to prevent it from being overwritten by the host mount, ensuring the built `node_modules` is always used.
+
+---
+
+**Bug ID:** 2025-08-05-05
+**Title:** Frontend build fails because Docker COPY command overwrites `node_modules`.
+**Module:** Docker Configuration, Frontend Build
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-05
+**Classification:** Configuration (Docker)
+**Severity:** Critical
+**Description:**
+The `COPY . .` command in the `frontend/Dockerfile` copies the local `node_modules` directory from the host into the Docker image, overwriting the dependencies that were correctly installed by the `RUN npm install` step. This leads to module resolution failures at runtime.
+**Resolution:**
+Created a `.dockerignore` file in the `frontend` directory to exclude `node_modules` from the Docker build context, ensuring the dependencies installed inside the container are preserved.
+
+---
+
+**Bug ID:** 2025-08-05-06
+**Title:** Data import fails with 500 Internal Server Error due to missing `error_message` column in database.
+**Module:** Database, Migrations, Data Import (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-05
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+When uploading a file, the API request fails with a 500 error. The backend log shows a `sqlalchemy.exc.ProgrammingError` because the `import_sessions` table in the database is missing the `error_message` column. The application's data model is out of sync with the database schema.
+**Resolution:**
+A new Alembic migration script was generated and applied to add the missing `error_message` column to the `import_sessions` table.
+
+---
+
+**Bug ID:** 2025-08-05-07
+**Title:** Data import preview fails with 404 Not Found due to missing database commit.
+**Module:** Data Import (Backend), API Integration
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-05
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+After successfully uploading a file, the user is redirected to a preview page that immediately fails with a "404 Not Found" error. The `POST /api/v1/import-sessions/` endpoint returns a `201 Created` status, but subsequent `GET` requests for that session ID fail. This is because the `create_import_session` endpoint function does not call `db.
+
+---
+
+**Bug ID:** 2025-08-05-01
+**Title:** E2E test suite was unstable due to flawed database reset logic.
+**Module:** E2E Testing, Core Backend (Database)
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The E2E test suite was highly unstable, with tests failing intermittently with timeouts and "relation does not exist" errors. The root cause was a series of issues with the `/api/v1/testing/reset-db` endpoint. Initially, it was missing a `db.commit()` call, causing the reset to be rolled back. Later, it was discovered that using SQLAlchemy's `Base.metadata.drop_all/create_all` was not robust enough.
+**Resolution:**
+The `/testing/reset-db` endpoint was refactored to use Alembic to programmatically downgrade the database to `base` and then upgrade to `head`. This ensures a consistent, clean schema for every test run. A final regression was fixed by re-adding a missing `db.commit()` call to this new Alembic-based endpoint.
+
+---
+
+**Bug ID:** 2025-08-05-02
+**Title:** Critical data loss bug in Data Import and User Update due to flawed base CRUD methods.
+**Module:** Core Backend (CRUD), Data Import, User Management
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+A critical data loss bug was discovered where committed data import transactions and user updates were not being saved to the database. The root cause was a violation of the "Unit of Work" pattern in the core CRUD layer. The base `update` and `create` methods in `crud/base.py` and `crud/crud_transaction.py` incorrectly contained `db.flush()` and `db.refresh()` calls. These premature flushes interfered with the larger transaction managed by the API endpoints, leading to data being discarded from the session before the final `db.commit()` was called.
+**Resolution:**
+All `db.flush()` and `db.refresh()` calls were removed from the base CRUD methods. The responsibility for transaction management (committing and refreshing) was moved to the API endpoint layer, where it belongs. This involved adding explicit `db.commit()` and `db.refresh()` calls to the `update_user` endpoint and verifying the `commit_import_session` endpoint's transaction logic.
+
+---
+
+**Bug ID:** 2025-08-05-03
+**Title:** E2E test for Data Import failed with cascading issues, from data loss to incorrect UI locators.
+**Module:** E2E Testing, Data Import
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The primary E2E test for the data import feature failed with a long series of cascading issues that required systematic, full-stack debugging.
+1.  **Initial Failure:** The test failed because imported transactions were not being saved to the database. This was traced back to the critical transactional integrity flaw in the backend CRUD layer (see Bug ID: 2025-08-05-02).
+2.  **Second Failure:** After fixing the backend, the test still failed because it could not find the new transactions in the UI. Debugging logs were added to the backend, which confirmed the data was being prepared correctly.
+3.  **Third Failure:** Debugging logs were then added to the E2E test to dump the page's HTML content. This revealed that the transactions *were* being rendered, but the test was using an incorrect CSS selector (`.table` instead of `.table-auto`).
+4.  **Final Failure:** After correcting the selector, the test failed with a `strict mode violation` because the text locator (`getByText('NTPC')`) was ambiguous, matching both the ticker and the full company name.
+**Resolution:**
+The final fix was to make the text locator unambiguous by using an exact match (`getByText('NTPC', { exact: true })`). This multi-step
+
+---
+
+**Bug ID:** 2025-08-05-04
+**Title:** Backend unit tests for analytics and dashboard were failing due to un-flushed database session state.
+**Module:** Test Suite (Backend), Data Layer
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Multiple backend unit tests were failing because queries could not see data that had been created moments earlier within the same test function. This was because the `crud.transaction.create_with_portfolio` method added new objects to the session but did not `flush` them to the database. Subsequent queries within the same transaction could not see these pending objects, leading to incorrect calculations.
+**Resolution:**
+Added `db.flush()` to the `create_with_portfolio` method in `backend/app/crud/crud_transaction.py`. This ensures that new transactions are available for querying within the same database transaction, making the test setup reliable.
+
+---
+
+**Bug ID:** 2025-08-05-05
+**Title:** E2E tests pass but backend logs show 500 Internal Server Error.
+**Module:** E2E Testing, Core Backend
+**Classification:** Test Suite
+**Severity:** Medium
+**Description:**
+The E2E test suite passes all 7 tests. However, the backend logs during the test run show a `500 Internal Server Error` for the `GET /api/v1/auth/status` endpoint, caused by a `psycopg2.errors.UndefinedTable: relation "users" does not exist`. This indicates a race condition where one test's `reset-db` call is wiping the database while another test's frontend is trying to check the auth status. The current tests are not designed to fail under this specific condition, but it points to a potential source of flakiness.
+**Resolution:**
+TBD. This needs further investigation into the test runner's lifecycle and potential race conditions between the `beforeAll` hooks of different test files. For now, the issue is documented, and the test suite is considered stable enough for a commit.
+
+---

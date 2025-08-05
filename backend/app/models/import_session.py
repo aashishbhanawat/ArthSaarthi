@@ -1,5 +1,5 @@
-from datetime import datetime
 import uuid
+from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,12 +15,14 @@ class ImportSession(Base):
     portfolio_id = Column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     file_name = Column(String, nullable=False)
-    file_path = Column(String, nullable=False)  # Path to the temporarily stored file
-    parsed_file_path = Column(String, nullable=True) # Path to the parsed data file
-    error_message = Column(String, nullable=True) # To store reasons for failure
-    status = Column(String, nullable=False, default="UPLOADED")  # e.g., 'UPLOADED', 'PARSED', 'REVIEW', 'COMPLETED', 'FAILED'
+    file_path = Column(String, nullable=False)
+    parsed_file_path = Column(String, nullable=True)
+    error_message = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="UPLOADED")
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", back_populates="import_sessions")
     portfolio = relationship("Portfolio", back_populates="import_sessions")
+    parsed_transactions = relationship("ParsedTransaction", back_populates="session", cascade="all, delete-orphan")
+

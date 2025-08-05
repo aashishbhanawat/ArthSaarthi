@@ -19,8 +19,6 @@ def reset_db(
     This endpoint is only available in a test environment and will raise a
     403 Forbidden error otherwise.
     """
-    # Add a debug log to verify the environment variable
-    logger.warning(f"Attempting to reset DB. Current ENVIRONMENT: '{config.settings.ENVIRONMENT}'")
 
     if config.settings.ENVIRONMENT != 'test':
         raise HTTPException(
@@ -29,4 +27,4 @@ def reset_db(
         )
 
     crud.testing.reset_database(db)
-    crud.testing.seed_database(db)
+    db.commit()

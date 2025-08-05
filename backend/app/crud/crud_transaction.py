@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, cast, Date
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 import uuid
 
 from app.crud.base import CRUDBase
@@ -48,7 +48,6 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         db_obj = self.model(**obj_in.model_dump(), user_id=portfolio.user_id, portfolio_id=portfolio_id)
         db.add(db_obj)
         db.flush()
-        db.refresh(db_obj)
         return db_obj
 
     def get_multi_by_portfolio(
@@ -58,5 +57,28 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             db.query(self.model).filter(self.model.portfolio_id == portfolio_id).all()
         )
 
+    def get_by_details(
+        self,
+        db: Session,
+        *,
+        portfolio_id: uuid.UUID,
+        asset_id: uuid.UUID,
+        transaction_date: date,
+        transaction_type: str,
+        quantity: Decimal,
+        price_per_unit: Decimal,
+    ) -> Transaction | None:
+        return (
+            db.query(self.model)
+            .filter(
+                self.model.portfolio_id == portfolio_id,
+                self.model.asset_id == asset_id,
+                cast(self.model.transaction_date, Date) == transaction_date,
+                self.model.transaction_type == transaction_type,
+                self.model.quantity == quantity,
+                self.model.price_per_unit == price_per_unit,
+            )
+            .first()
+        )
 
 transaction = CRUDTransaction(Transaction)

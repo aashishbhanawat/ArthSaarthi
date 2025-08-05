@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
+﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
 
 This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets, providing performance insights and analytics.
 
@@ -147,7 +147,7 @@ For users who cannot or prefer not to use Docker, a detailed guide for setting u
 The backend has a comprehensive test suite using `pytest`. To run the tests in an isolated container with a dedicated test database, use the following command from the root directory:
 
 ```bash
-docker-compose run --rm test
+docker-compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
 ```
 
 ### Frontend Tests
@@ -166,7 +166,7 @@ The E2E test suite runs using Playwright in a dedicated Docker environment. This
 docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests db redis backend frontend e2e-tests
 ```
 [!IMPORTANT]
-The E2E tests use a separate database (pms_db_test) and will not delete your development data. You only need to run docker-compose down -v when you want to completely reset your development environment. 
+The E2E and backend test suites use dedicated, isolated database volumes (`postgres_data_test`). They will **not** affect your development database. You only need to run `docker-compose down -v` when you want to completely reset your **development** environment.
 
 ## Development Utilities
 ### Seeding Sample Data

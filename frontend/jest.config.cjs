@@ -1,8 +1,11 @@
-export default {
+module.exports = {
   testEnvironment: 'jest-environment-jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   moduleNameMapper: {
-    "^.+\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    // Handle CSS imports (e.g., for CSS modules)
+    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    // Mock heroicons to prevent SVG rendering issues in Jest
+    '^@heroicons/react/24/(outline|solid)$': '<rootDir>/src/__mocks__/heroicons.cjs',
   },
   transform: {
     '^.+\\.tsx?$': [
@@ -23,3 +26,4 @@ export default {
     ],
   },
 };
+

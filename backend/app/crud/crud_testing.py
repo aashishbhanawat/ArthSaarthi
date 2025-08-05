@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
@@ -8,8 +9,8 @@ class TestingCRUD:
         """
         Drops all tables and recreates them for a clean test environment.
         """
-        Base.metadata.drop_all(bind=engine)
-        Base.metadata.create_all(bind=engine)
+        Base.metadata.drop_all(bind=db.get_bind())
+        Base.metadata.create_all(bind=db.get_bind())
 
 
     def seed_database(self, db: Session) -> None:

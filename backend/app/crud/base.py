@@ -47,8 +47,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
         db.add(db_obj)
-        db.flush()
-        db.refresh(db_obj)
         return db_obj
 
     def remove(self, db: Session, *, id: Any) -> Optional[ModelType]:

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  db:
+    env_file:
+      - ./backend/.env.test
+    volumes:
+      - postgres_data_test:/var/lib/postgresql/data/ # Use a dedicated volume for test data
+    ports:
+      - "5433:5432" # Use a different external port to avoid conflict with dev db
+
+volumes:
+  postgres_data_test: # Define the dedicated test volume

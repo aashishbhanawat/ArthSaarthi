@@ -721,3 +721,102 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - A comprehensive plan for the "Automated Data Import (FR7)" feature has been documented, covering requirements, technical design, and user flow. The product backlog has been updated.
+
+---
+
+## 2025-08-04: Frontend Test Suite Stabilization for Data Import Feature
+
+*   **Task Description:** After implementing the frontend for the "Automated Data Import" feature, the entire frontend test suite was failing. This task involved a deep and iterative debugging process to identify and resolve a cascade of configuration issues.
+
+*   **Key Prompts & Interactions:**
+    1.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `npm test` log was provided to the AI.
+    2.  **Bug Filing & Fixing:** For each distinct class of error, the "File a Bug" and "Apply the fix" prompts were used to systematically document and resolve the issues. This covered a wide range of problems, including:
+        *   Incorrect relative import paths in API service files.
+        *   Module resolution failures for the `@heroicons/react` library due to Jest's `moduleNameMapper` not being correctly configured.
+        *   A complex and persistent series of failures related to the ES Module (`"type": "module"` in `package.json`) vs. CommonJS module format conflict. This required moving the Jest configuration to a dedicated `jest.config.cjs` file and ensuring all related mock files also used the `.cjs` extension to be correctly interpreted by Node.js in the test environment.
+
+*   **File Changes:**
+    *   `frontend/jest.config.cjs`: Created a dedicated, explicit configuration file for Jest to resolve module mapping issues.
+    *   `frontend/src/__mocks__/heroicons.cjs`: Renamed from `.js` to `.cjs` to resolve a module format conflict.
+    *   `frontend/package.json`: Updated to remove the inline Jest configuration and point the `test` script to the new `.cjs` config file.
+    *   `frontend/src/services/importApi.ts`: Corrected an import path.
+    *   `docs/bug_reports.md`: Populated with detailed, consolidated reports for every bug discovered and fixed during this phase.
+
+*   **Outcome:**
+    - The frontend test suite is now fully stable, with all 17 test suites passing. This completes the stabilization of all automated tests for the project.
+
+---
+
+## 2025-08-05: Backend Implementation for Automated Data Import (CSV Workflow)
+
+*   **Task Description:** Implement the backend foundation for the "Automated Data Import" feature, focusing on the initial workflow for handling CSV file uploads.
+
+*   **Key Prompts & Interactions:**
+    1.  **Feature Review:** The process began by reviewing the existing feature plan for "Automated Data Import (FR7)".
+    2.  **Backend Planning:** Acting as the Backend Developer and Database Administrator, the AI was prompted to create a detailed implementation plan. This included:
+        *   **Database Schema:** Defining two new SQLAlchemy models, `ImportSession` and `ParsedTransaction`, to manage the state of file uploads and their parsed content.
+        *   **API Endpoints:** Designing a new set of API endpoints under `/api/v1/import-sessions/` to handle file creation, previewing parsed data, and committing transactions.
+        *   **Business Logic:** Outlining the logic for a new `CsvParser` service and the transaction commit process.
+        *   **File Structure:** Proposing a list of all new backend files required for the feature, including models, schemas, CRUD modules, API endpoints, services, and tests.
+
+*   **File Changes (Planned):**
+    *   `backend/app/models/import_session.py` & `parsed_transaction.py`: **New** SQLAlchemy models.
+    *   `backend/app/schemas/import_session.py`: **New** Pydantic schemas.
+    *   `backend/app/crud/crud_import_session.py`: **New** CRUD module.
+    *   `backend/app/api/v1/endpoints/import_sessions.py`: **New** API router.
+    *   `backend/app/services/csv_parser.py`: **New** service for CSV parsing logic.
+    *   `backend/app/api/v1/api.py`: **Update** to include the new router.
+    *   `backend/app/tests/api/test_import_sessions.py`: **New** test suite for the feature.
+
+*   **Outcome:**
+    - A comprehensive backend plan for the CSV data import feature is complete and documented. The project is now ready for the code generation phase.
+
+---
+
+## 2025-08-05: Backend Implementation & Stabilization for Data Import
+
+*   **Task Description:** Implement the backend for the "Automated Data Import" feature and stabilize the test suite.
+
+*   **Key Prompts & Interactions:**
+    1.  **Code Generation:** The AI was prompted to generate all necessary backend code based on the approved plan. This included models, schemas, CRUD modules, API endpoints, and tests.
+    2.  **Systematic Debugging via Log Analysis:** The initial implementation introduced several bugs. The process involved a highly iterative debugging loop where the failing `pytest` log was provided to the AI.
+    3.  **Root Cause Analysis:** The AI identified and fixed multiple issues, including:
+        *   An `ImportError` due to an incorrect schema import in `schemas/__init__.py`.
+        *   A critical Docker volume caching issue that caused `password authentication failed` errors. The fix involved isolating the test database volume in `docker-compose.test.yml` to prevent state conflicts with the development environment.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/import_sessions.py`: **New** API router for the import workflow.
+    *   `backend/app/tests/api/test_import_sessions.py`: **New** test suite for the feature.
+    *   `docker-compose.test.yml`: **Updated** to use an isolated `postgres_data_test` volume.
+    *   `README.md`: **Updated** to clarify the testing process and database isolation.
+
+*   **Outcome:**
+    - The backend for the "Automated Data Import" feature is complete and stable.
+    - All 66 backend tests are passing, confirming the stability of the entire backend. The project is ready for the corresponding frontend implementation.
+
+---
+
+## 2025-08-05: Final E2E & Unit Test Suite Stabilization
+
+*   **Task Description:** A final, intensive effort to stabilize the entire project's test suites. This involved debugging complex race conditions in the E2E tests and then performing a full rewrite of the frontend unit tests, which had become outdated and were failing after numerous component refactors.
+
+*   **Key Prompts & Interactions:**
+    1.  **E2E Debugging & RCA:** The process was driven by analyzing E2E test logs. The AI was instrumental in diagnosing a critical race condition caused by Playwright's default parallel execution model. The key insight was that multiple test files were resetting the same shared database simultaneously.
+    2.  **Process Refinement:** The solution involved two key changes:
+        *   Refactoring the E2E tests into a more modular file structure.
+        *   Configuring Playwright to run with a single worker (`workers: 1`) to enforce serial execution and eliminate the race condition.
+    3.  **Frontend Test Suite Overhaul:** After stabilizing the E2E tests, a prompt was used to run the frontend unit tests, revealing that the entire suite was broken. A series of prompts were then used to rewrite each failing test suite, addressing issues like missing router context, outdated mocks, and incorrect props.
+
+*   **File Changes:**
+    *   `e2e/playwright.config.ts`: Created to enforce serial test execution (`workers: 1`).
+    *   `e2e/tests/`: Refactored into a modular structure with `admin-user-management.spec.ts` and `portfolio-and-dashboard.spec.ts`.
+    *   `frontend/src/__tests__/`: All test suites (`UserFormModal.test.tsx`, `UserManagementPage.test.tsx`, `CreatePortfolioModal.test.tsx`, `DeleteConfirmationModal.test.tsx`, `AddTransactionModal.test.tsx`, etc.) were rewritten to align with the latest component implementations.
+    *   `docs/bug_reports.md`: Populated with consolidated reports summarizing the complex E2E and unit test failures.
+
+*   **Verification:**
+    - Ran the full E2E test suite.
+    - Ran the full backend test suite.
+    - Ran the full frontend test suite.
+
+*   **Outcome:**
+    - The entire project is now in a fully stable, "green" state. All E2E, backend, and frontend tests are passing. The project is robust, maintainable, and ready for handoff or future development.

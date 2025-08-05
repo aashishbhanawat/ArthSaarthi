@@ -14,4 +14,4 @@ class ZerodhaParser(BaseParser):
         :return: A pandas DataFrame with the transaction data.
         """
         # TODO: Implement Zerodha-specific parsing logic
-        return pd.DataFrame()
+        raise NotImplementedError("Zerodha parser is not yet implemented.")

@@ -14,4 +14,4 @@ class MfCasParser(BaseParser):
         :return: A pandas DataFrame with the transaction data.
         """
         # TODO: Implement MF CAS-specific parsing logic
-        return pd.DataFrame()
+        raise NotImplementedError("MF CAS parser is not yet implemented.")

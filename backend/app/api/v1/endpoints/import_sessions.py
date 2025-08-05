@@ -108,6 +108,26 @@ async def create_import_session(
     )
     import_session = crud.import_session.update(db, db_obj=import_session, obj_in=import_session_update)
 
+    db.commit()
+    db.refresh(import_session)
+
+    return import_session
+
+
+@router.get("/{session_id}", response_model=schemas.ImportSession)
+def get_import_session(
+    session_id: uuid.UUID,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user),
+):
+    """
+    Get an import session by ID.
+    """
+    import_session = crud.import_session.get(db=db, id=session_id)
+    if not import_session:
+        raise HTTPException(status_code=404, detail="Import session not found")
+    if import_session.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     return import_session
 
 
@@ -174,26 +194,41 @@ def commit_import_session(
 
         transactions_created = 0
         for _, row in df.iterrows():
-            # 1. Find the asset by its ticker symbol
+            # 1. Find the asset by its ticker symbol.
             asset = crud.asset.get_by_ticker(db, ticker_symbol=row['ticker_symbol'])
             if not asset:
                 crud.import_session.update(db, db_obj=import_session, obj_in={"status": "FAILED", "error_message": f"Asset with ticker '{row['ticker_symbol']}' not found."})
+                db.commit()
                 raise HTTPException(
                     status_code=400,
                     detail=f"Commit failed: Asset with ticker '{row['ticker_symbol']}' not found. Please create it first."
                 )
 
-            # 2. Prepare the transaction data from the row
+            # 2. Check for existing transaction to prevent duplicates.
+            existing_transaction = crud.transaction.get_by_details(
+                db,
+                portfolio_id=import_session.portfolio_id,
+                asset_id=asset.id,
+                transaction_date=pd.to_datetime(row['transaction_date']).date(),
+                transaction_type=row['transaction_type'].upper(),
+                quantity=Decimal(str(row['quantity'])),
+                price_per_unit=Decimal(str(row['price_per_unit']))
+            )
+            if existing_transaction:
+                log.info(f"Skipping duplicate transaction for asset {asset.ticker_symbol} on date {row['transaction_date']}")
+                continue
+
+            # 3. Prepare the transaction data from the row.
             transaction_in = schemas.TransactionCreate(
                 asset_id=asset.id,
-                transaction_type=row['transaction_type'],
+                transaction_type=row['transaction_type'].upper(),
                 quantity=Decimal(str(row['quantity'])),
                 price_per_unit=Decimal(str(row['price_per_unit'])),
                 transaction_date=pd.to_datetime(row['transaction_date']),
                 fees=Decimal(str(row.get('fees', '0.0'))) # Handle optional fees column
             )
 
-            # 3. Create the transaction using the existing CRUD method
+            # 4. Create the transaction using the existing CRUD method.
             crud.transaction.create_with_portfolio(
                 db=db, obj_in=transaction_in, portfolio_id=import_session.portfolio_id
             )
@@ -202,11 +237,20 @@ def commit_import_session(
         # Update session status to COMPLETED
         crud.import_session.update(db, db_obj=import_session, obj_in={"status": "COMPLETED", "error_message": None})
 
+        db.commit()
+
+        if transactions_created == 0 and len(df) > 0:
+            return {"msg": f"No new transactions were committed. {len(df)} duplicate(s) were skipped."}
+
         return {"msg": f"Successfully committed {transactions_created} transactions."}
     except HTTPException as http_exc:
-        # Re-raise HTTP exceptions to be handled by FastAPI
+        # Re-raise controlled HTTP exceptions (like 400 for validation)
+        # so FastAPI can handle them correctly.
         raise http_exc
     except Exception as e:
+        # For any other unexpected error, rollback, log the failure, and return a 500.
+        db.rollback()
         log.error(f"Failed to commit import session {session_id}: {e}")
         crud.import_session.update(db, db_obj=import_session, obj_in={"status": "FAILED", "error_message": f"An unexpected error occurred during commit: {str(e)}"})
+        db.commit()
         raise HTTPException(status_code=500, detail=f"Could not commit transactions: {e}")

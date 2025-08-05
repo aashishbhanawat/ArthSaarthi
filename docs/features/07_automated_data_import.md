@@ -150,3 +150,78 @@ To enable users to efficiently import their financial transaction and holding da
 *   **Error Reporting:** How detailed should the error reporting be to the user? (e.g., "Line 15: Invalid date format" vs. "Parsing error in 'Date' column").
 
 ---
+
+## 7. Implementation Plan (MVP - CSV Import)
+
+This section outlines the concrete implementation plan for the Minimum Viable Product (MVP) version of this feature, which focuses on the "Upload -> Preview -> Commit" workflow for generic CSV files.
+
+### 7.1. Backend Development
+
+**Status: ✅ Done**
+
+The backend is complete. It provides endpoints to:
+1.  Create an import session by uploading a file (`POST /api/v1/import-sessions/`).
+2.  Parse the file and store the results.
+3.  Provide a preview of the parsed data (`GET /api/v1/import-sessions/{session_id}/preview`).
+4.  Commit the parsed transactions to a user's portfolio (`POST /api/v1/import-sessions/{session_id}/commit`).
+
+### 7.2. Frontend Development
+
+This plan was created by the **Frontend Developer** and **UI/UX Designer**.
+
+#### 7.2.1. UI/UX Flow
+
+**Status: ✅ Done**
+
+The user workflow will be a guided, two-step process to ensure clarity and prevent errors.
+
+1.  **Step 1: Upload (`/import`)**
+    *   The user navigates to a new "Import Transactions" page.
+    *   The page presents a form with two fields: a dropdown to select the target portfolio and a file input for the CSV file.
+    *   Upon submission, the file is sent to the backend. On success, the user is redirected to the preview page.
+    *   **Error Handling:** If the backend returns an error during upload or parsing (e.g., invalid file format), the UI will display the specific error message on the upload page, allowing the user to correct the issue and retry.
+
+
+2.  **Step 2: Preview & Commit (`/import/:sessionId/preview`)**
+    *   The application fetches the parsed data for the session and displays it in a table.
+    *   The user can review the data to ensure it is correct.
+    *   A "Commit Transactions" button is available. Clicking this button sends the final commit request to the backend.
+    *   The UI will show loading indicators and provide clear success or error feedback. On success, the user is redirected to their main portfolio list.
+
+#### 7.2.2. Proposed Frontend File Structure
+
+*   **Pages (`frontend/src/pages/Import/`):** `DataImportPage.tsx`, `ImportPreviewPage.tsx`
+*   **Hooks (`frontend/src/hooks/`):** `useImport.ts` (for React Query hooks)
+*   **Services (`frontend/src/services/`):** `importApi.ts`
+*   **Types (`frontend/src/types/`):** `import.ts`
+*   **Routing & Navigation:** Updates to `App.tsx` and `NavBar.tsx`.
+
+---
+
+## 8. Implementation Plan (Phase 2 - Advanced Reconciliation & UI)
+
+Based on user feedback from the MVP, this phase will enhance the import feature to provide more control, better feedback, and more robust error handling.
+
+### 8.1. Backend Enhancements
+
+*   **Smarter Preview Endpoint:** The `GET /preview` endpoint will be refactored. Instead of returning a flat list of transactions, it will return a structured object that categorizes transactions:
+    ```json
+    {
+      "valid_new": [...],
+      "duplicates": [...],
+      "invalid": [...]
+    }
+    ```
+*   The `duplicates` category will be enhanced to detect transactions that exist in *other* portfolios, providing a cross-portfolio conflict warning.
+*   **Selective Commit Endpoint:** The `POST /commit` endpoint will be updated to accept a payload containing a list of transaction identifiers to commit. This allows the user to select which transactions to import. It will also include a flag to force-commit duplicates.
+*   **Improved Commit Response:** The commit response will be more detailed, indicating how many transactions were successfully created, skipped, or failed.
+
+### 8.2. Frontend UI/UX Overhaul
+
+*   **Grouped Transaction View:** The `ImportPreviewPage` will be redesigned to display transactions in collapsible groups based on the new API response (e.g., "New Transactions", "Potential Duplicates", "Invalid Rows").
+*   **Selective Committing:** Each valid transaction will have a checkbox, allowing the user to select which ones to import. A "Select All" option will be available.
+*   **Clear User Warnings:**
+    *   A clear warning will be shown for duplicate transactions, with an option for the user to "force commit" them.
+    *   A specific warning will be shown for transactions that are duplicates of entries in *other* portfolios (e.g., "Warning: This transaction already exists in 'Portfolio A'.")
+    *   Invalid rows will be displayed with clear error messages (e.g., "Asset 'XYZ' not found", "Invalid date format").
+*   **Accurate Final Summary:** After committing, a summary message will accurately reflect the outcome (e.g., "Committed 15 transactions, skipped 3 duplicates."). The user will no longer be redirected if no transactions were committed.

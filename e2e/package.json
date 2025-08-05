@@ -9,5 +9,11 @@
   "license": "ISC",
   "devDependencies": {
     "@playwright/test": "1.54.1"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^@heroicons/react/24/outline$": "<rootDir>/src/__mocks__/heroicons.js",
+      "^@heroicons/react/24/solid$": "<rootDir>/src/__mocks__/heroicons.js"
+    }
   }
 }
