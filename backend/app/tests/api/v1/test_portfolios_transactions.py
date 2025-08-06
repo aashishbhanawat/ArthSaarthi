@@ -157,3 +157,77 @@ def test_read_asset_by_id_not_found(client: TestClient, db: Session, get_auth_he
     non_existent_uuid = uuid.uuid4()
     response = client.get(f"{settings.API_V1_STR}/assets/{non_existent_uuid}", headers=headers)
     assert response.status_code == 404
+
+
+def test_update_transaction(client: TestClient, db: Session, get_auth_headers):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Update Portfolio")
+    transaction = create_test_transaction(
+        db, portfolio_id=portfolio.id, ticker="UPDATE", quantity=10, price_per_unit=100.0
+    )
+
+    update_data = {"quantity": 15.5}
+    response = client.put(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/{transaction.id}",
+        headers=headers,
+        json=update_data,
+    )
+
+    assert response.status_code == 200
+    content = response.json()
+    assert float(content["quantity"]) == 15.5
+    assert content["id"] == str(transaction.id)
+
+
+def test_update_transaction_not_found(client: TestClient, db: Session, get_auth_headers):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Dummy Portfolio")
+    non_existent_uuid = uuid.uuid4()
+    update_data = {"quantity": 15}
+
+    response = client.put(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/{non_existent_uuid}",
+        headers=headers,
+        json=update_data,
+    )
+    assert response.status_code == 404
+
+
+def test_update_transaction_wrong_owner(client: TestClient, db: Session, get_auth_headers):
+    user1, _ = create_random_user(db)
+    portfolio1 = create_test_portfolio(db, user_id=user1.id, name="User1 Portfolio")
+    transaction1 = create_test_transaction(
+        db, portfolio_id=portfolio1.id, ticker="OWNED", quantity=10
+    )
+
+    user2, password2 = create_random_user(db)
+    headers2 = get_auth_headers(user2.email, password2)
+    update_data = {"quantity": 20}
+
+    response = client.put(
+        f"{settings.API_V1_STR}/portfolios/{portfolio1.id}/transactions/{transaction1.id}",
+        headers=headers2,
+        json=update_data,
+    )
+    assert response.status_code == 403
+
+
+def test_delete_transaction(client: TestClient, db: Session, get_auth_headers):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Delete Portfolio")
+    transaction = create_test_transaction(
+        db, portfolio_id=portfolio.id, ticker="DELETE", quantity=5
+    )
+    transaction_id = transaction.id
+
+    response = client.delete(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/{transaction_id}", headers=headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["msg"] == "Transaction deleted successfully"
+    db_transaction = crud.transaction.get(db, id=transaction_id)
+    assert db_transaction is None

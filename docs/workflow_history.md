@@ -843,3 +843,39 @@ Its purpose is to build an experience history that can be used as a reference fo
 *   **Outcome:**
     - A clear, documented plan for the next development cycle has been established, directly addressing user feedback from the pilot.
     - The project's official documentation now reflects the new priorities and detailed requirements.
+
+---
+
+## 2025-08-06: Implement Edit/Delete Transactions & Context-Sensitive Help
+
+*   **Task Description:** Implemented two high-priority features based on pilot feedback: the backend for editing/deleting transactions and a frontend enhancement for context-sensitive help. Both implementations involved significant, iterative debugging of their respective test suites.
+
+*   **Key Prompts & Interactions (Backend):**
+    1.  **Initial Implementation:** Generated the `PUT` and `DELETE` endpoints in `transactions.py` and corresponding tests in `test_portfolios_transactions.py`.
+    2.  **Systematic Debugging via Log Analysis:** The backend test suite failed with a cascade of errors. The "Analyze -> Report -> Fix" workflow was used to resolve them:
+        *   `TypeError` due to incorrect test helper function signatures (`create_test_transaction`).
+        *   `404 Not Found` errors due to tests calling incorrect, non-nested API URLs.
+        *   `AssertionError` due to the update endpoint returning stale data, which was fixed by adding `db.refresh()`.
+        *   A final `AssertionError` was traced to an empty `TransactionUpdate` Pydantic schema, which was then correctly defined.
+        *   A final `NameError` on startup was fixed by moving a misplaced import in `schemas/transaction.py`.
+
+*   **Key Prompts & Interactions (Frontend):**
+    1.  **Initial Implementation:** Generated the `HelpLink.tsx` component and integrated it into `DashboardPage.tsx`.
+    2.  **Systematic Debugging via Log Analysis:** The frontend test suite failed after the changes. The "Analyze -> Report -> Fix" workflow was used to resolve them:
+        *   `AssertionError` due to an outdated error message in the test.
+        *   `TestingLibraryElementError` due to ambiguous text queries, which was fixed by making test queries more specific.
+        *   A final `ReferenceError` related to Jest's module hoisting and JSX syntax in mock factories. This was resolved by refactoring the mocks to use `React.createElement` explicitly.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/transactions.py`: Added `PUT` and `DELETE` endpoints with debug logging.
+    *   `backend/app/schemas/transaction.py`: Correctly defined the `TransactionUpdate` schema and fixed a misplaced import.
+    *   `backend/app/tests/api/v1/test_portfolios_transactions.py`: Added comprehensive tests for the new endpoints.
+    *   `frontend/src/components/HelpLink.tsx`: **New** reusable component for help icons.
+    *   `frontend/src/pages/DashboardPage.tsx`: Integrated the `HelpLink` component.
+    *   `frontend/src/__tests__/pages/DashboardPage.test.tsx`: Fixed multiple test failures related to UI changes and Jest mock limitations.
+    *   `docs/bug_reports_temp.md`: Populated with reports for all bugs discovered and fixed.
+
+*   **Outcome:**
+    - The backend for editing and deleting transactions is complete and fully tested.
+    - The context-sensitive help feature is implemented on the dashboard.
+    - Both backend and frontend test suites are stable and passing.

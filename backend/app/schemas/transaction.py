@@ -2,8 +2,8 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from decimal import Decimal
 import uuid
+from typing import Optional
 from .asset import Asset
-
 
 # Shared properties
 class TransactionBase(BaseModel):
@@ -18,9 +18,14 @@ class TransactionBase(BaseModel):
 class TransactionCreate(TransactionBase):
     asset_id: uuid.UUID
 
+
 # Properties to receive on transaction update
 class TransactionUpdate(BaseModel):
-    pass
+    transaction_type: Optional[str] = None
+    quantity: Optional[Decimal] = None
+    price_per_unit: Optional[Decimal] = None
+    transaction_date: Optional[datetime] = None
+    fees: Optional[Decimal] = None
 
 
 # Properties to return to client

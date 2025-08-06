@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# Project Handoff Document: Personal Portfolio Management System
+﻿﻿﻿﻿﻿﻿﻿﻿# Project Handoff Document: Personal Portfolio Management System
 
 **Version:** 1.0.0 (Pilot Release)
 **Date:** 2025-08-05
@@ -17,7 +17,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 ## 2. Final Status
 
 *   **Overall Status:** **Complete & Stable**
-*   **Backend Test Suite:** **100% Passing** (67/67 tests)
+*   **Backend Test Suite:** **100% Passing** (71/71 tests)
 *   **Frontend Test Suite:** **100% Passing** (17/17 suites)
 *   **E2E Test Suite:** **100% Passing** (7/7 tests)
 
@@ -35,6 +35,8 @@ All planned MVP features have been implemented and validated through a combinati
 *   **Full Portfolio & Transaction Tracking:** Create and manage multiple portfolios, add transactions, and perform on-the-fly asset creation for unlisted tickers.
 *   **Business Logic Validation:** The system prevents invalid transactions, such as selling more assets than are held on a given date.
 *   **Automated Data Import:** A full-stack feature with a complete backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files. The MVP frontend is implemented and the entire flow is validated by a stable E2E test.
+*   **Transaction Editing & Deletion (Backend):** The backend is complete for editing and deleting transactions, a critical feature based on pilot feedback.
+*   **Context-Sensitive Help:** The frontend now includes on-page help icons that link to specific sections of the user guide.
 
 ---
 
@@ -86,10 +88,9 @@ The application is fully containerized. Please refer to the main **README.md** f
 
 The application is in a strong position for future development. The following are the recommended next steps, prioritized based on direct feedback from the pilot release:
 
-1.  **Implement Edit/Delete Transactions:** Address the critical functional gap by allowing users to edit and delete their existing transactions to correct mistakes.
-2.  **Redesign Portfolio Detail Page:** Overhaul the portfolio page to replace the raw transaction list with a consolidated holdings view, summary metrics, and transaction drill-downs, as per detailed user feedback.
-3.  **Implement Context-Sensitive Help:** Add on-page help icons that link to specific sections of the user guide to improve usability.
-4.  **Create Dedicated Transaction History Page:** Move the full, raw transaction list to its own dedicated page with filtering capabilities.
+1.  **Redesign Portfolio Detail Page:** Overhaul the portfolio page to replace the raw transaction list with a consolidated holdings view, summary metrics, and transaction drill-downs, as per detailed user feedback.
+2.  **Create Dedicated Transaction History Page:** Move the full, raw transaction list to its own dedicated page with filtering capabilities.
+3.  **Implement Frontend for Edit/Delete Transactions:** Build the UI modals and connect them to the completed backend endpoints.
 
 ---
 

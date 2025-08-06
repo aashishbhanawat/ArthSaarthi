@@ -5714,3 +5714,49 @@ The E2E test suite passes all 7 tests. However, the backend logs during the test
 TBD. This needs further investigation into the test runner's lifecycle and potential race conditions between the `beforeAll` hooks of different test files. For now, the issue is documented, and the test suite is considered stable enough for a commit.
 
 ---
+
+**Bug ID:** 2025-08-06-01
+**Title:** Frontend tests fail with ReferenceError due to Jest mock factory limitations.
+**Module:** Test Suite (Frontend), Jest Configuration
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The test suite for `DashboardPage.tsx` was failing with a `ReferenceError: ... is not allowed to reference any out-of-scope variables`. This occurred because the mock factories for the chart and help components used JSX syntax (`<div />`). The modern JSX transform converts this into a function call that uses a helper variable (e.g., `jsx_runtime_1`). This helper variable is not available in the special, isolated scope where Jest executes the `jest.mock()` factory, leading to the `ReferenceError` and preventing the test suite from running.
+**Resolution:**
+The mock factories in `frontend/src/__tests__/pages/DashboardPage.test.tsx` were refactored to avoid using JSX directly. Instead, they now use `React.createElement` after requiring the `react` module inside the factory. This bypasses the problematic JSX transformation and resolves the scoping issue.
+
+---
+
+**Bug ID:** 2025-08-06-02
+**Title:** Transaction update endpoint fails to persist and return updated data.
+**Module:** Portfolio Management (Backend), API Endpoints
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `PUT /api/v1/portfolios/{portfolio_id}/transactions/{transaction_id}` endpoint was not returning the updated transaction data. The test `test_update_transaction` failed with `AssertionError: assert 10.0 == 15.5`. The root cause was that after committing the change to the database with `db.commit()`, the SQLAlchemy object in memory was stale and did not reflect the committed state.
+**Resolution:**
+Added `db.refresh(updated_transaction)` after the `db.commit()` call in the `update_transaction` endpoint function in `backend/app/api/v1/endpoints/transactions.py`. This ensures the object is reloaded from the database before being returned, providing the up-to-date data.
+
+---
+
+**Bug ID:** 2025-08-06-03
+**Title:** Transaction update endpoint fails because `TransactionUpdate` schema is empty.
+**Module:** Portfolio Management (Backend), Schemas
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `PUT /api/v1/portfolios/{portfolio_id}/transactions/{transaction_id}` endpoint fails to update any data. The test `test_update_transaction` fails with `AssertionError: assert 10.0 == 15.5`. The root cause is that the `schemas.TransactionUpdate` Pydantic model is an empty class (`pass`). As a result, it does not parse any fields from the incoming JSON payload. The `crud.transaction.update` method receives an empty data object and therefore does not modify the database record.
+**Resolution:**
+Updated the `TransactionUpdate` schema in `backend/app/schemas/transaction.py` to include all updatable fields from `TransactionBase` as optional fields. This allows the endpoint to correctly parse and apply partial updates to a transaction.
+---
+
+**Bug ID:** 2025-08-06-04
+**Title:** Backend crashes on startup with NameError due to misplaced import.
+**Module:** Core Backend, Schemas
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The application fails to start, and the test suite cannot be collected. The root cause is a `NameError: name 'Asset' is not defined` in `backend/app/schemas/transaction.py`. The `Transaction` schema uses the `Asset` class as a type hint, but the `from .asset import Asset` statement was incorrectly placed at the bottom of the file, after the `Asset` name had already been referenced.
+**Resolution:**
+Moved the `from .asset import Asset` import statement to the top of `backend/app/schemas/transaction.py` along with the other imports. This ensures the `Asset` class is defined before it is used.
+---

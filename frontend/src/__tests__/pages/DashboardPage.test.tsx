@@ -10,14 +10,24 @@ import {
 
 // Mock the hook
 jest.mock('../../hooks/useDashboard');
-jest.mock('react-chartjs-2', () => {
+jest.mock('../../components/Dashboard/PortfolioHistoryChart', () => {
   const React = require('react');
-  return {
-    Line: () => React.createElement('div', { 'data-testid': 'line-chart-mock' }),
-    Pie: () => React.createElement('div', { 'data-testid': 'pie-chart-mock' }),
+  return function DummyPortfolioHistoryChart() {
+    return React.createElement('div', { 'data-testid': 'portfolio-history-chart-mock' });
   };
 });
-
+jest.mock('../../components/Dashboard/AssetAllocationChart', () => {
+  const React = require('react');
+  return function DummyAssetAllocationChart() {
+    return React.createElement('div', { 'data-testid': 'asset-allocation-chart-mock' });
+  };
+});
+jest.mock('../../components/HelpLink', () => {
+  const React = require('react');
+  return function DummyHelpLink({ sectionId }: { sectionId: string }) {
+    return React.createElement('a', { href: `/user_guide.md#${sectionId}` }, '?');
+  };
+});
 const mockUseDashboardSummary = useDashboardSummary as jest.Mock;
 const mockUseDashboardHistory = useDashboardHistory as jest.Mock;
 const mockUseDashboardAllocation = useDashboardAllocation as jest.Mock;
@@ -70,21 +80,29 @@ describe('DashboardPage', () => {
       data: null,
     });
     render(<DashboardPage />);
-    expect(screen.getByText('Error: Failed to fetch dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Error loading dashboard data.')).toBeInTheDocument();
   });
 
   it('should render dashboard with data on success', () => {
     render(<DashboardPage />);
 
-    // Check for titles
+    // Check for main title
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Portfolio History')).toBeInTheDocument();
-    expect(screen.getByText('Asset Allocation')).toBeInTheDocument();
+
+    // Check for section titles. Use getAllByText because some child components might also have titles.
+    // We just care that the titles rendered by DashboardPage are present.
+    expect(screen.getAllByText('Portfolio History')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Asset Allocation')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Top Movers')[0]).toBeInTheDocument();
 
     // Check for formatted values
     expect(screen.getByText('₹12,345.67')).toBeInTheDocument();
     expect(screen.getByText('₹123.45')).toBeInTheDocument();
-    expect(screen.getByText('-₹50.00')).toBeInTheDocument()
+    expect(screen.getByText('-₹50.00')).toBeInTheDocument();
+
+    // Check that chart mocks are rendered
+    expect(screen.getByTestId('portfolio-history-chart-mock')).toBeInTheDocument();
+    expect(screen.getByTestId('asset-allocation-chart-mock')).toBeInTheDocument();
   });
 
   it('should render top movers table with no data message when top_movers is empty', () => {
