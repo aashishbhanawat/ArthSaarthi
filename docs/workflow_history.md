@@ -820,3 +820,26 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **Outcome:**
     - The entire project is now in a fully stable, "green" state. All E2E, backend, and frontend tests are passing. The project is robust, maintainable, and ready for handoff or future development.
+
+---
+
+## 2025-08-06: Pilot Feedback Triage & Planning
+
+*   **Task Description:** Received and analyzed detailed feedback from the pilot release. The primary goal was to understand user needs, triage new requirements, and update the project's roadmap and documentation to reflect the new priorities.
+
+*   **Key Prompts & Interactions:**
+    1.  **Feedback Analysis:** The user provided a comprehensive list of feedback points, including the critical need for transaction editing/deletion and a complete redesign of the portfolio detail page to show a consolidated holdings view instead of a raw transaction list.
+    2.  **Documentation Triage:** The AI was prompted to analyze the feedback, cross-reference it with existing requirements, and propose a plan for updating the project's documentation.
+    3.  **Roadmap Update:** The `product_backlog.md` was updated to prioritize the pilot feedback, creating a new "Release 2" plan and moving previously planned items to "Future Releases".
+    4.  **Requirements Update:** The `requirements.md` file was updated with new, detailed functional requirements (FR4.7, FR4.8) that capture the specific user requests for the portfolio page redesign.
+
+*   **File Changes:**
+    *   `docs/product_backlog.md`: Restructured to create a new "Release 2" focused on addressing pilot feedback.
+    *   `docs/requirements.md`: Added detailed functional requirements for the portfolio page redesign, including the summary header, consolidated holdings view, and drill-down functionality.
+    *   `docs/features/15_edit_delete_transactions.md`: Planned for creation.
+    *   `docs/features/16_portfolio_page_redesign.md`: Planned for creation.
+    *   `docs/workflow_history.md`: This entry was added to log the planning session.
+
+*   **Outcome:**
+    - A clear, documented plan for the next development cycle has been established, directly addressing user feedback from the pilot.
+    - The project's official documentation now reflects the new priorities and detailed requirements.

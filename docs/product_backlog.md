@@ -40,21 +40,37 @@ The goal of the MVP was to deliver a functional core product that allows a user 
 
 ## Release 2: Advanced Asset Management & Analytics
 
-The goal of this release is to broaden the asset types supported and introduce more powerful analytics and data import features.
+**Status: 🚧 In Progress**
+
+The goal of this release is to act on the critical feedback from the pilot release, focusing on core usability enhancements and a major redesign of the portfolio detail page to better meet user needs.
 
 **Features:**
 
--   **Advanced Asset Support (FR4):** Add support for FDs, RDs, PPF, NPS, Bonds, RSUs, ESPPs.
--   **Automated Data Import (FR7):** Implement file parsers for broker statements (Zerodha, ICICI) and MF CAS.
-    -   **Status: ✅ Backend Complete**
+-   **Edit/Delete Transactions (FR4.4.1):** Implement the ability for users to edit and delete their existing transactions.
+    -   **Status: 📝 Planned**
+
+-   **Portfolio Page Redesign (FR4 Enhancement):** A complete overhaul of the portfolio detail page based on user feedback.
+    -   **Portfolio Summary:** Display key metrics (Total Value, P&L, etc.) at the top of the page.
+    -   **Consolidated Holdings View:** Replace the transaction list with a consolidated view of current holdings, showing quantity, average price, current value, and P&L for each stock.
+    -   **Transaction Drill-Down:** Allow users to click on a holding to see its detailed transaction history.
+    -   **Status: 📝 Planned**
+
+-   **Dedicated Transaction History Page (FR4 Enhancement):** Move the full transaction list to a separate, filterable page.
+    -   **Status: 📝 Planned**
+
 -   **Advanced Reporting & Analytics (FR6):**
     -   Implement XIRR and Sharpe Ratio for portfolios.
     -   **Status: ✅ Complete**
--   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
--   **Goal Planning & Tracking (FR13):** Implement the goal definition and progress tracking module.
+
+-   **Context-Sensitive User Guide (FR11 Enhancement):** Make the user guide accessible from within the application via context-sensitive help icons.
+    -   **Status: 📝 Planned**
 
 ## Future Releases
 
+-   **Advanced Asset Support (FR4):** Add support for FDs, RDs, PPF, NPS, Bonds, RSUs, ESPPs.
+-   **Automated Data Import - Phase 2 (FR7):** Implement file parsers for specific broker statements (Zerodha, ICICI) and MF CAS.
+-   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
+-   **Goal Planning & Tracking (FR13):** Implement the goal definition and progress tracking module.
 -   **Market Insights & Research (FR8):** Watchlists, news feeds.
 -   **Notifications & Alerts (FR9):** Price alerts, due date reminders via Telegram/Push.
 -   **AI-Powered Insights (FR10):** Tax-saving suggestions, risk analysis.

@@ -1,14 +1,14 @@
 # Personal Portfolio Management System - User Guide
 
-Welcome to the Personal Portfolio Management System (PMS)! This guide will walk you through setting up and using your self-hosted instance of the application.
+Welcome to the Personal Portfolio Management System (PMS)! This guide will walk you through setting up and using the application.
 
 ---
 
 ## 1. Initial Installation & Setup
 
-Before you can use the application, you need to install it on your own server using Docker.
+This application is designed to be self-hosted, giving you full control over your data.
 
-➡️ **For detailed installation instructions, please follow the ["How to Self-Host (Pilot Release)"](../README.md#🚀-how-to-self-host-pilot-release) section in the main README file.**
+➡️ **For detailed installation instructions, please follow the ["How to Run the Project"](../README.md#🚀-how-to-run-the-project) section in the main README file.**
 
 ### First-Time Admin Account Creation
 
@@ -18,34 +18,44 @@ You **must** complete this form to create the first **administrator** account. T
 
 ---
 
-## 2. The Dashboard
+## 2. The Dashboard {#dashboard}
 
 After logging in, you will land on your main dashboard. This is your central hub for viewing the overall health of your investment portfolios.
 
 Here's what each section means:
 
-*   **Summary Cards:**
-    *   **Total Value:** The current market value of all assets across all your portfolios.
-    *   **Unrealized P/L:** The total paper profit or loss for assets you still hold.
-    *   **Realized P/L:** The total profit or loss you have locked in from selling assets.
-*   **Top Movers:** A table showing the assets that have had the largest price change over the last 24 hours.
-*   **Portfolio History:** An interactive line chart showing the total value of your portfolios over time. You can select different time ranges (7D, 30D, 1Y, All).
-*   **Asset Allocation:** A pie chart showing the distribution of your investments across different assets.
+### Summary Cards {#dashboard-summary-cards}
+
+*   **Total Value:** The current market value of all assets across all your portfolios.
+*   **Unrealized P/L:** The total paper profit or loss for assets you still hold.
+*   **Realized P/L:** The total profit or loss you have locked in from selling assets.
+
+### Top Movers {#dashboard-top-movers}
+
+A table showing the assets that have had the largest price change over the last 24 hours.
+
+### Portfolio History {#dashboard-portfolio-history}
+
+An interactive line chart showing the total value of your portfolios over time. You can select different time ranges (7D, 30D, 1Y, All).
+
+### Asset Allocation {#dashboard-asset-allocation}
+
+A pie chart showing the distribution of your investments across different assets.
 
 ---
 
-## 3. Managing Your Portfolios
+## 3. Managing Your Portfolios {#managing-portfolios}
 
 You can create multiple portfolios to track different investment strategies or accounts.
 
-### Creating a Portfolio
+### Creating a Portfolio {#creating-portfolio}
 
 1.  Navigate to the **Portfolios** page from the main menu.
 2.  Click the **"Create New Portfolio"** button.
 3.  A modal will appear. Enter a unique name for your portfolio.
 4.  Click **"Create"**. You will be automatically taken to the detail page for your new portfolio.
 
-### Viewing and Deleting a Portfolio
+### Viewing and Deleting a Portfolio {#deleting-portfolio}
 
 *   From the **Portfolios** page, you can see a list of all your portfolios.
 *   Click on any portfolio's name to go to its **Detail Page**, where you can see its transaction history.
@@ -53,11 +63,11 @@ You can create multiple portfolios to track different investment strategies or a
 
 ---
 
-## 4. Managing Transactions
+## 4. Managing Transactions {#managing-transactions}
 
 The core of the application is tracking your individual buy and sell transactions.
 
-### Adding a Transaction
+### Adding a Transaction {#adding-transaction}
 
 1.  Navigate to the detail page of the portfolio where you want to add a transaction.
 2.  Click the **"Add Transaction"** button.
@@ -74,9 +84,22 @@ The core of the application is tracking your individual buy and sell transaction
 
 The backend includes validation to prevent you from selling more of an asset than you own on a given date. If you attempt this, you will see a specific error message.
 
+### Importing Transactions from a CSV File {#importing-transactions}
+
+Instead of adding transactions one by one, you can use the data import feature to upload a CSV file.
+
+1.  Navigate to the **"Import"** page from the main menu.
+2.  Select the portfolio you want to import the transactions into.
+3.  Choose the CSV file from your computer. The CSV file must have the following columns: `ticker_symbol`, `transaction_type`, `quantity`, `price_per_unit`, `transaction_date`, `fees`.
+4.  Click **"Upload and Preview"**.
+5.  The system will show you a preview of the transactions it has parsed from the file.
+6.  If everything looks correct, click **"Commit Transactions"** to save them to your portfolio.
+
+**Note:** For the import to succeed, the assets (e.g., 'NTPC') must already exist in the system. You can add them manually via the "Add Transaction" flow if needed.
+
 ---
 
-## 5. User Management (Admin Only)
+## 5. User Management (Admin Only) {#user-management}
 
 If you are logged in as an administrator, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
 
@@ -86,6 +109,6 @@ If you are logged in as an administrator, you will see a **"User Management"** l
 
 ---
 
-## 6. Getting Help
+## 6. Getting Help & Reporting Bugs {#getting-help}
 
-If you encounter a bug or have a feature request, please **open an issue on our GitHub repository**. Your feedback is essential for improving the application!
+If you encounter a bug or have a feature request, please **open an issue on the project's GitHub repository**. Your feedback is essential for improving the application!

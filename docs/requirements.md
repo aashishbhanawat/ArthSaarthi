@@ -49,6 +49,17 @@ This document outlines the functional and non-functional requirements for the PM
     -   **FR4.4.2:** Transaction details must include: type (buy/sell), symbol/ticker, quantity, price, date, currency, and any associated fees.
 -   **FR4.5: Income Tracking.** The system must track dividends, interest payments, and other distributions, with an option to mark them as reinvested.
 -   **FR4.6: Corporate Actions.** The system must automatically track and apply corporate actions like dividends, bonuses, splits, mergers, and demergers for stocks in portfolios.
+-   **FR4.7: Portfolio Detail Page View (Pilot Feedback).** The portfolio detail page must be redesigned to provide a consolidated, analytical view.
+    -   **FR4.7.1: Portfolio Summary Header.** The top of the page must display a summary card with key metrics for that portfolio: Total Value, Invested Amount, Day's P&L (Absolute & %), Unrealized P&L (Absolute & %), and Realized P&L.
+    -   **FR4.7.2: Consolidated Holdings View.** The primary view must be a table of consolidated current holdings, replacing the raw transaction list. Each row must represent a single asset and display: Asset Name, Quantity, Average Buy Price, Invested Amount, LTP, Day's Change (%), Day's P&L, Current Value, and Unrealized P&L (Absolute & %).
+    -   **FR4.7.3: Holdings Drill-Down View.** Clicking on a holding row must reveal a detailed view for that specific asset.
+        -   **FR4.7.3.1: Asset Summary.** The drill-down must show a summary for the asset, including ISIN, current price, and on-demand calculation buttons for XIRR.
+        -   **FR4.7.3.2: Buy Transaction History.** The drill-down must list all *buy* transactions that constitute the current holding. Each transaction row must include: Buy Date, Quantity, Buy Price, Fees, Invested Amount, Overall Gain (%), Current Value, and CAGR %.
+        -   **FR4.7.3.3: Transaction Actions.** Each transaction row in the drill-down view must provide options to Edit or Delete the transaction. This links to requirement **FR4.4.1**.
+-   **FR4.8: Dedicated Transaction History Page (Pilot Feedback).**
+    -   **FR4.8.1:** A separate, dedicated page must be created to display the full, raw transaction list for a portfolio.
+    -   **FR4.8.2:** By default, this page must only show transactions for the current financial year.
+    -   **FR4.8.3:** The page must include filters to view historical transactions by date range, transaction type, and asset.
 
 ### FR5: Data Integration & Real-time Updates
 

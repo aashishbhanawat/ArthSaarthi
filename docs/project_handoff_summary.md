@@ -1,4 +1,4 @@
-﻿﻿﻿﻿# Project Handoff Document: Personal Portfolio Management System
+﻿﻿﻿﻿﻿﻿# Project Handoff Document: Personal Portfolio Management System
 
 **Version:** 1.0.0 (Pilot Release)
 **Date:** 2025-08-05
@@ -84,12 +84,12 @@ The application is fully containerized. Please refer to the main **README.md** f
 
 ## 7. Recommended Next Steps
 
-The application is in a strong position for future development. The following are recommended next steps based on the product backlog:
+The application is in a strong position for future development. The following are the recommended next steps, prioritized based on direct feedback from the pilot release:
 
-1.  **UI/UX for Data Import:** Implement the frontend components for the "Automated Data Import" feature, allowing users to upload files and see the preview/commit UI.
-2.  **Expand Data Import Parsers:** Add specific parsers for other common broker statements (e.g., ICICI) and Mutual Fund CAS statements.
-3.  **Implement User Profile Management (FR1.5):** Allow users to change their password and update their profile information.
-4.  **Refactor Financial Data Service:** Implement the planned Strategy Pattern to allow for multiple financial data providers.
+1.  **Implement Edit/Delete Transactions:** Address the critical functional gap by allowing users to edit and delete their existing transactions to correct mistakes.
+2.  **Redesign Portfolio Detail Page:** Overhaul the portfolio page to replace the raw transaction list with a consolidated holdings view, summary metrics, and transaction drill-downs, as per detailed user feedback.
+3.  **Implement Context-Sensitive Help:** Add on-page help icons that link to specific sections of the user guide to improve usability.
+4.  **Create Dedicated Transaction History Page:** Move the full, raw transaction list to its own dedicated page with filtering capabilities.
 
 ---
 
