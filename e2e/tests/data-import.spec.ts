@@ -30,21 +30,8 @@ test.describe.serial('Automated Data Import E2E Test', () => {
     });
 
     test.beforeAll(async ({ request }) => {
-        // 1. Reset the database
-        const resetResponse = await request.post('/api/v1/testing/reset-db');
-        expect(resetResponse.status()).toBe(204);
-
-        // 2. Create Admin User via API for a faster, more reliable setup
-        const adminSetupResponse = await request.post('/api/v1/auth/setup', {
-          data: {
-            full_name: 'Admin User',
-            email: adminUser.email,
-            password: adminUser.password,
-          },
-        });
-        expect(adminSetupResponse.ok()).toBeTruthy();
-
-        // 3. Login as Admin to get token for creating the standard user
+        // The global setup has already created the admin user.
+        // We just need to log in as admin to create our test-specific standard user and assets.
         const adminLoginResponse = await request.post('/api/v1/auth/login', {
           form: { username: adminUser.email, password: adminUser.password },
         });
@@ -52,14 +39,14 @@ test.describe.serial('Automated Data Import E2E Test', () => {
         const { access_token } = await adminLoginResponse.json();
         const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
 
-        // 4. Create Standard User via API (as Admin)
+        // Create Standard User via API (as Admin)
         const standardUserCreateResponse = await request.post('/api/v1/users/', {
           headers: adminAuthHeaders,
           data: { ...standardUser, is_admin: false },
         });
         expect(standardUserCreateResponse.ok()).toBeTruthy();
 
-        // 5. Create necessary assets for the import test (as Admin)
+        // Create necessary assets for the import test (as Admin)
         const assetsToCreate = [
             { ticker_symbol: 'NTPC', name: 'NTPC Ltd', asset_type: 'Stock', currency: 'INR', exchange: 'NSE' },
             { ticker_symbol: 'SCI', name: 'Shipping Corporation of India', asset_type: 'Stock', currency: 'INR', exchange: 'NSE' },
@@ -77,7 +64,7 @@ test.describe.serial('Automated Data Import E2E Test', () => {
       test.beforeEach(async ({ page }) => {
         // Login as the standard user before each test
         await page.goto('/');
-        await page.getByLabel('Email Address').fill(standardUser.email);
+        await page.getByLabel('Email address').fill(standardUser.email);
         await page.getByLabel('Password').fill(standardUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();

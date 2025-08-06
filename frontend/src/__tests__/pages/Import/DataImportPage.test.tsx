@@ -23,7 +23,7 @@ const queryClient = new QueryClient();
 const renderComponent = () => {
     return render(
         <QueryClientProvider client={queryClient}>
-            <MemoryRouter>
+            <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <DataImportPage />
             </MemoryRouter>
         </QueryClientProvider>

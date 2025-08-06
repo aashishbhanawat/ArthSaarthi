@@ -1,5 +1,8 @@
 # Feature Plan: Edit & Delete Transactions (FR4.4.1)
 
+**Status: ✅ Done**
+---
+
 ## 1. Objective
 
 To provide users with the critical ability to edit and delete existing transactions. This feature directly addresses pilot feedback where users reported needing a way to correct data entry mistakes (e.g., incorrect transaction type, quantity, or price) to maintain the accuracy of their portfolio data.

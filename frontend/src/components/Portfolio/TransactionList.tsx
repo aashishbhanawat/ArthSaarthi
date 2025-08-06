@@ -1,12 +1,15 @@
 import React from 'react';
 import { Transaction } from '../../types/portfolio';
-import { formatCurrency } from '../../utils/formatting';
+import { formatCurrency, formatDate } from '../../utils/formatting';
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface TransactionListProps {
   transactions: Transaction[];
+  onEdit: (transaction: Transaction) => void;
+  onDelete: (transaction: Transaction) => void;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit, onDelete }) => {
   if (!transactions || transactions.length === 0) {
     return (
       <div className="card text-center p-8">
@@ -28,22 +31,37 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
               <th className="p-2 text-right">Quantity</th>
               <th className="p-2 text-right">Price</th>
               <th className="p-2 text-right">Total Value</th>
+              <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {transactions.map((tx) => (
               <tr key={tx.id} className="border-t">
-                <td className="p-2">{new Date(tx.transaction_date).toLocaleDateString()}</td>
+                <td className="p-2">{formatDate(tx.transaction_date)}</td>
                 <td className="p-2">
                   <div className="font-bold">{tx.asset.ticker_symbol}</div>
                   <div className="text-sm text-gray-500">{tx.asset.name}</div>
                 </td>
-                <td className={`p-2 font-bold ${tx.transaction_type === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
-                  {tx.transaction_type}
+                <td className="p-2">
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    tx.transaction_type === 'BUY' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {tx.transaction_type}
+                  </span>
                 </td>
                 <td className="p-2 text-right font-mono">{Number(tx.quantity).toLocaleString()}</td>
                 <td className="p-2 text-right font-mono">{formatCurrency(Number(tx.price_per_unit))}</td>
                 <td className="p-2 text-right font-mono">{formatCurrency(Number(tx.quantity) * Number(tx.price_per_unit))}</td>
+                <td className="p-2 text-right">
+                  <div className="flex justify-end space-x-2">
+                    <button onClick={() => onEdit(tx)} className="p-1 text-gray-500 hover:text-blue-600" aria-label={`Edit transaction for ${tx.asset.ticker_symbol}`}>
+                      <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => onDelete(tx)} className="p-1 text-gray-500 hover:text-red-600" aria-label={`Delete transaction for ${tx.asset.ticker_symbol}`}>
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -54,4 +72,3 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
 };
 
 export default TransactionList;
-

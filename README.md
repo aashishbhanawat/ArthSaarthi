@@ -18,14 +18,13 @@ This project is being developed with the guidance of an AI Master Orchestrator, 
     -   Top daily market movers.
     -   Interactive portfolio history and asset allocation charts.
 *   **Advanced Portfolio Analytics:**
-    -   Calculation and display of **XIRR (Extended Internal Rate of Return)**.
-    -   Calculation and display of the **Sharpe Ratio**.
+    -   Calculation and display of XIRR (Extended Internal Rate of Return) and the Sharpe Ratio.
 *   **Full Portfolio & Transaction Tracking:**
     -   Create and manage multiple portfolios.
-    -   Add transactions with on-the-fly asset creation for unlisted tickers.
+    -   Full CRUD (Create, Read, Update, Delete) functionality for transactions.
+    -   On-the-fly asset creation for unlisted tickers during transaction entry.
     -   Business logic validation to prevent invalid transactions (e.g., selling more than you own).
-*   **Automated Data Import (Backend):**
-    -   A full backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files. The frontend for this feature is the next development priority.
+*   **Automated Data Import:** A full-stack feature with a complete workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
 
 ## Technology Stack
 

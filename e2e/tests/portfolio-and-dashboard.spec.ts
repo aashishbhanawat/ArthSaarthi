@@ -12,24 +12,9 @@ const adminUser = {
 };
 
 test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
-  let page: Page;
-
   test.beforeAll(async ({ request }) => {
-    // 1. Reset the database
-    const resetResponse = await request.post('/api/v1/testing/reset-db');
-    expect(resetResponse.status()).toBe(204);
-
-    // 2. Create Admin User via API for a faster, more reliable setup
-    const adminSetupResponse = await request.post('/api/v1/auth/setup', {
-      data: {
-        full_name: 'Admin User',
-        email: adminUser.email,
-        password: adminUser.password,
-      },
-    });
-    expect(adminSetupResponse.ok()).toBeTruthy();
-
-    // 3. Login as Admin to get token for creating the standard user
+    // The global setup has already created the admin user.
+    // We just need to log in as admin to create our test-specific standard user.
     const adminLoginResponse = await request.post('/api/v1/auth/login', {
       form: { username: adminUser.email, password: adminUser.password },
     });
@@ -37,7 +22,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     const { access_token } = await adminLoginResponse.json();
     const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
 
-    // 4. Create Standard User via API (as Admin)
+    // Create Standard User via API (as Admin)
     const standardUserCreateResponse = await request.post('/api/v1/users/', {
       headers: adminAuthHeaders,
       data: { ...standardUser, is_admin: false },
@@ -45,8 +30,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     expect(standardUserCreateResponse.ok()).toBeTruthy();
   });
 
-  test.beforeEach(async ({ browser }) => {
-    page = await browser.newPage();
+  test.beforeEach(async ({ page }) => {
     // Login as the standard user before each test
     await page.goto('/');
     await page.getByLabel('Email address').fill(standardUser.email);
@@ -55,13 +39,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
-  test.afterEach(async () => {
-    await page.close();
-  });
-
-  test('should allow a user to create, view, and delete a portfolio', async () => {
+  test('should allow a user to create, view, and delete a portfolio', async ({ page }) => {
     const portfolioName = `My E2E Portfolio ${Date.now()}`;
-    
+
     await page.getByRole('link', { name: 'Portfolios' }).click();
     await page.getByRole('button', { name: 'Create New Portfolio' }).click();
     await page.getByLabel('Name').fill(portfolioName);
@@ -94,7 +74,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(portfolioRow).not.toBeVisible();
   });
 
-  test('should allow a user to add various types of transactions', async () => {
+  test('should allow a user to add various types of transactions', async ({ page }) => {
     const portfolioName = `My Transaction Portfolio ${Date.now()}`;
     const newAssetName = 'GOOGL';
 
@@ -145,7 +125,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(page.getByRole('row', { name: /GOOGL.*SELL.*5/ })).toBeVisible();
   });
 
-  test('should prevent a user from creating an invalid SELL transaction', async () => {
+  test('should prevent a user from creating an invalid SELL transaction', async ({ page }) => {
     const portfolioName = `Invalid Sell Portfolio ${Date.now()}`;
     const assetName = 'AAPL'; // Use a different asset to avoid test contamination
 
@@ -193,7 +173,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(page.getByRole('row', { name: /AAPL.*SELL.*20/ })).not.toBeVisible();
   });
 
-  test('should display correct data on the dashboard after transactions', async () => {
+  test('should display correct data on the dashboard after transactions', async ({ page }) => {
     const portfolioName = `Dashboard Test Portfolio ${Date.now()}`;
 
     // 1. Create a portfolio

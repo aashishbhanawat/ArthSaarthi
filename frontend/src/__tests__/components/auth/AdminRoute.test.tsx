@@ -16,7 +16,7 @@ describe('AdminRoute', () => {
     it('renders child routes for admin users', () => {
         mockUseAuth.mockReturnValue({ user: { is_admin: true } });
         render(
-            <MemoryRouter initialEntries={['/admin/dashboard']}>
+            <MemoryRouter initialEntries={['/admin/dashboard']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Routes>
                     <Route element={<AdminRoute />}>
                         <Route path="/admin/dashboard" element={<div>Admin Page</div>} />
@@ -30,7 +30,7 @@ describe('AdminRoute', () => {
     it('redirects non-admin users to the dashboard', () => {
         mockUseAuth.mockReturnValue({ user: { is_admin: false } });
         render(
-            <MemoryRouter initialEntries={['/admin/dashboard']}>
+            <MemoryRouter initialEntries={['/admin/dashboard']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Routes>
                     <Route element={<AdminRoute />}>
                         <Route path="/admin/dashboard" element={<div>Admin Page</div>} />
@@ -45,8 +45,8 @@ describe('AdminRoute', () => {
 
     it('renders nothing while user data is loading', () => {
         mockUseAuth.mockReturnValue({ user: null });
-        const { container } = render(
-            <MemoryRouter initialEntries={['/admin/dashboard']}>
+        const { container } = render( // eslint-disable-line testing-library/render-result-naming-convention
+            <MemoryRouter initialEntries={['/admin/dashboard']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Routes>
                     <Route element={<AdminRoute />}>
                         <Route path="/admin/dashboard" element={<div>Admin Page</div>} />

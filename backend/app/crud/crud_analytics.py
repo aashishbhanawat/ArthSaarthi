@@ -170,7 +170,9 @@ def _calculate_xirr(db: Session, portfolio_id: uuid.UUID) -> float:
     try:
         # Add a small initial guess to help convergence
         result = xirr(dates, values, guess=0.1)
-        return result if result is not None else 0.0
+        if result is None or np.isnan(result) or np.isinf(result):
+            return 0.0
+        return result
     except Exception as e:
         logger.error(f"Could not calculate XIRR for portfolio {portfolio_id}: {e}")
         return 0.0
@@ -195,6 +197,10 @@ def _calculate_sharpe_ratio(db: Session, portfolio_id: uuid.UUID) -> float:
 
     # Assuming risk-free rate is 0
     sharpe_ratio = (np.mean(daily_returns) / np.std(daily_returns)) * np.sqrt(252)
+
+    # Handle cases where calculation results in NaN or Infinity, which are not JSON compliant
+    if np.isnan(sharpe_ratio) or np.isinf(sharpe_ratio):
+        return 0.0
     return sharpe_ratio
 
 

@@ -12,26 +12,7 @@ const adminUser = {
 };
 
 test.describe('Admin User Management Flow', () => {
-  let page: Page;
-
-  test.beforeAll(async ({ browser, request }) => {
-    // Reset the database before all tests in this file
-    const resetResponse = await request.post('/api/v1/testing/reset-db');
-    expect(resetResponse.status()).toBe(204);
-
-    // Create Admin User via API for a faster, more reliable setup
-    const adminSetupResponse = await request.post('/api/v1/auth/setup', {
-      data: {
-        full_name: 'Admin User',
-        email: adminUser.email,
-        password: adminUser.password,
-      },
-    });
-    expect(adminSetupResponse.ok()).toBeTruthy();
-  });
-
-  test.beforeEach(async ({ browser }) => {
-    page = await browser.newPage();
+  test.beforeEach(async ({ page }) => {
     // Login as Admin before each test
     await page.goto('/');
     await page.getByLabel('Email address').fill(adminUser.email);
@@ -40,11 +21,7 @@ test.describe('Admin User Management Flow', () => {
     await expect(page.getByRole('link', { name: 'User Management' })).toBeVisible();
   });
 
-  test.afterEach(async () => {
-    await page.close();
-  });
-
-  test('should allow an admin to create, update, and delete a user', async () => {
+  test('should allow an admin to create, update, and delete a user', async ({ page }) => {
     // Navigate to User Management
     await page.getByRole('link', { name: 'User Management' }).click();
     await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible();

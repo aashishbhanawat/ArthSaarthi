@@ -45,3 +45,11 @@ export interface TransactionCreate {
     transaction_date: string;
     fees?: number;
 }
+
+export interface TransactionUpdate {
+    transaction_type?: 'BUY' | 'SELL';
+    quantity?: number;
+    price_per_unit?: number;
+    transaction_date?: string;
+    fees?: number;
+}

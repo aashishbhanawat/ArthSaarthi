@@ -47,7 +47,7 @@ The goal of this release is to act on the critical feedback from the pilot relea
 **Features:**
 
 -   **Edit/Delete Transactions (FR4.4.1):** Implement the ability for users to edit and delete their existing transactions.
-    -   **Status: 📝 Planned**
+    -   **Status: ✅ Complete**
 
 -   **Portfolio Page Redesign (FR4 Enhancement):** A complete overhaul of the portfolio detail page based on user feedback.
     -   **Portfolio Summary:** Display key metrics (Total Value, P&L, etc.) at the top of the page.
@@ -63,7 +63,7 @@ The goal of this release is to act on the critical feedback from the pilot relea
     -   **Status: ✅ Complete**
 
 -   **Context-Sensitive User Guide (FR11 Enhancement):** Make the user guide accessible from within the application via context-sensitive help icons.
-    -   **Status: 📝 Planned**
+    -   **Status: ✅ Complete**
 
 ## Future Releases
 

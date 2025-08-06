@@ -12,7 +12,9 @@ const queryClient = new QueryClient();
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-        <MemoryRouter>{children}</MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            {children}
+        </MemoryRouter>
     </QueryClientProvider>
 );
 

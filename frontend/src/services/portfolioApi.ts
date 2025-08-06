@@ -1,5 +1,5 @@
 import apiClient from './api';
-import { Portfolio, PortfolioCreate, Transaction, TransactionCreate } from '../types/portfolio';
+import { Portfolio, PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate } from '../types/portfolio';
 import { Asset } from '../types/asset';
 import { PortfolioAnalytics } from '../types/analytics';
 
@@ -45,6 +45,25 @@ export const createTransaction = async (
         transactionData
     );
     return response.data;
+};
+
+export const updateTransaction = async (
+    portfolioId: string,
+    transactionId: string,
+    transactionData: TransactionUpdate
+): Promise<Transaction> => {
+    const response = await apiClient.put<Transaction>(
+        `/api/v1/portfolios/${portfolioId}/transactions/${transactionId}`,
+        transactionData
+    );
+    return response.data;
+};
+
+export const deleteTransaction = async (
+    portfolioId: string,
+    transactionId: string
+): Promise<void> => {
+    await apiClient.delete(`/api/v1/portfolios/${portfolioId}/transactions/${transactionId}`);
 };
 
 export const getPortfolioAnalytics = async (id: string): Promise<PortfolioAnalytics> => {

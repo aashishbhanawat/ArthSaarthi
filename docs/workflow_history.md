@@ -846,11 +846,53 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-08-06: Full-Stack Test Suite Stabilization
+
+*   **Task Description:** A final, intensive effort to stabilize all test suites (frontend, backend, and E2E) after implementing the initial set of features requested by the pilot users. This involved debugging complex race conditions, fixing incorrect test logic, and resolving multiple environment configuration issues.
+
+*   **Key Prompts & Interactions:**
+    1.  **Systematic Debugging via Log Analysis:** The entire process was driven by analyzing failing test logs from `pytest`, `npm test`, and `playwright`. For each failure, the full log was provided to the AI to diagnose the root cause.
+    2.  **Bug Triage & Fixing:** For each distinct class of error, the "report a bug" and "apply the fix" prompts were used to systematically document and resolve bugs. This included:
+        *   **E2E Startup Race Condition:** The AI diagnosed that the `e2e-tests` container was starting before the `backend` was ready. The fix was to implement a `global.setup.ts` file with a retry loop.
+        *   **E2E Test State Pollution:** The AI identified that state was leaking between serially executed test files. The `global.setup.ts` also fixed this by performing a single, global database reset.
+        *   **Backend Analytics Crash:** The AI diagnosed that `NaN` or `Infinity` values from analytics calculations were crashing the JSON serializer and provided a fix to handle these edge cases.
+        *   **Frontend Test Failures:** The AI identified and fixed numerous unit test failures caused by incorrect mocks and outdated assertions after component refactors.
+
+*   **File Changes:**
+    *   `e2e/global.setup.ts`: **New** file to handle global E2E test setup, including waiting for the backend and resetting the database.
+    *   `e2e/playwright.config.ts`: Updated to use the new `global.setup.ts` file.
+    *   `e2e/tests/`: All test files were refactored to remove their individual `beforeAll` setup hooks, relying on the new global setup instead.
+    *   `backend/app/crud/crud_analytics.py`: Updated to handle `NaN`/`Infinity` values gracefully.
+    *   `frontend/src/__tests__/`: Multiple test files were updated to fix broken mocks and assertions.
+    *   `docs/bug_reports.md`: All temporary bug reports were consolidated and archived into the main log.
+
+*   **Outcome:**
+    - The entire project is now in a fully stable, "green" state. All E2E, backend, and frontend tests are passing reliably.
+    - The E2E test suite architecture is now more robust and maintainable.
+    - The project is ready for the next phase of development.
+---
+
+## 2025-08-06: Final Documentation Review & Project Handoff
+
+*   **Task Description:** A final pass over all project documentation to ensure it is consistent, accurate, and reflects the final stable state of the application before beginning the next development cycle.
+
+*   **Key Prompts & Interactions:**
+    1.  **Documentation Update Request:** The user requested a final review and update of the `README.md` and `project_handoff_summary.md` files.
+    2.  **AI-led Review:** The AI analyzed the project's current state, including the latest test results and feature implementations, to identify and correct outdated information.
+
+*   **File Changes:**
+    *   `docs/project_handoff_summary.md`: Updated the date and E2E test count. Consolidated and clarified the feature list to accurately reflect the completion of full CRUD for transactions.
+    *   `README.md`: Updated the feature list to match the handoff summary and removed an obsolete "How to Self-Host" section that was for a previous pilot release package.
+    *   `docs/workflow_history.md`: This entry was added to log the final documentation update.
+
+*   **Outcome:**
+    - All project documentation is now up-to-date, providing an accurate and comprehensive overview of the project's status, features, and history. The project is officially ready for the next development sprint.
+
 ## 2025-08-06: Implement Edit/Delete Transactions & Context-Sensitive Help
 
-*   **Task Description:** Implemented two high-priority features based on pilot feedback: the backend for editing/deleting transactions and a frontend enhancement for context-sensitive help. Both implementations involved significant, iterative debugging of their respective test suites.
+*   **Task Description:** Implemented two high-priority features based on pilot feedback: full-stack implementation for editing/deleting transactions and a frontend enhancement for context-sensitive help. Both implementations involved significant, iterative debugging of their respective test suites.
 
-*   **Key Prompts & Interactions (Backend):**
+*   **Key Prompts & Interactions (Backend - Edit/Delete):**
     1.  **Initial Implementation:** Generated the `PUT` and `DELETE` endpoints in `transactions.py` and corresponding tests in `test_portfolios_transactions.py`.
     2.  **Systematic Debugging via Log Analysis:** The backend test suite failed with a cascade of errors. The "Analyze -> Report -> Fix" workflow was used to resolve them:
         *   `TypeError` due to incorrect test helper function signatures (`create_test_transaction`).
@@ -859,23 +901,29 @@ Its purpose is to build an experience history that can be used as a reference fo
         *   A final `AssertionError` was traced to an empty `TransactionUpdate` Pydantic schema, which was then correctly defined.
         *   A final `NameError` on startup was fixed by moving a misplaced import in `schemas/transaction.py`.
 
-*   **Key Prompts & Interactions (Frontend):**
-    1.  **Initial Implementation:** Generated the `HelpLink.tsx` component and integrated it into `DashboardPage.tsx`.
+*   **Key Prompts & Interactions (Frontend - Edit/Delete & Help):**
+    1.  **Initial Implementation:** Generated the `HelpLink.tsx` component and integrated it into `DashboardPage.tsx`. Refactored `TransactionFormModal.tsx` to handle an "edit" mode and added Edit/Delete buttons to `TransactionList.tsx`.
     2.  **Systematic Debugging via Log Analysis:** The frontend test suite failed after the changes. The "Analyze -> Report -> Fix" workflow was used to resolve them:
         *   `AssertionError` due to an outdated error message in the test.
         *   `TestingLibraryElementError` due to ambiguous text queries, which was fixed by making test queries more specific.
         *   A final `ReferenceError` related to Jest's module hoisting and JSX syntax in mock factories. This was resolved by refactoring the mocks to use `React.createElement` explicitly.
+        *   Updated the `PortfolioDetailPage.test.tsx` to correctly test the new modal flows.
 
 *   **File Changes:**
     *   `backend/app/api/v1/endpoints/transactions.py`: Added `PUT` and `DELETE` endpoints with debug logging.
     *   `backend/app/schemas/transaction.py`: Correctly defined the `TransactionUpdate` schema and fixed a misplaced import.
     *   `backend/app/tests/api/v1/test_portfolios_transactions.py`: Added comprehensive tests for the new endpoints.
+    *   `frontend/src/components/Portfolio/TransactionList.tsx`: Added "Edit" and "Delete" buttons with accessible `aria-label`s.
+    *   `frontend/src/components/Portfolio/TransactionFormModal.tsx`: Refactored to handle both "create" and "edit" modes.
+    *   `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx`: Added state management for edit/delete modals and integrated the logic.
+    *   `frontend/src/hooks/usePortfolios.ts`: Added `useUpdateTransaction` and `useDeleteTransaction` mutations.
     *   `frontend/src/components/HelpLink.tsx`: **New** reusable component for help icons.
     *   `frontend/src/pages/DashboardPage.tsx`: Integrated the `HelpLink` component.
     *   `frontend/src/__tests__/pages/DashboardPage.test.tsx`: Fixed multiple test failures related to UI changes and Jest mock limitations.
+    *   `frontend/src/__tests__/pages/Portfolio/PortfolioDetailPage.test.tsx`: Added tests for the new edit/delete modal flows.
     *   `docs/bug_reports_temp.md`: Populated with reports for all bugs discovered and fixed.
 
 *   **Outcome:**
-    - The backend for editing and deleting transactions is complete and fully tested.
+    - The full-stack "Edit/Delete Transactions" feature is complete and fully tested.
     - The context-sensitive help feature is implemented on the dashboard.
     - Both backend and frontend test suites are stable and passing.

@@ -6,12 +6,40 @@ import { useUsers, useDeleteUser, useCreateUser, useUpdateUser } from '../../../
 import { User } from '../../../types/user';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Mock the custom hooks
+// Mock child components to isolate the page component for unit testing
+jest.mock('../../../components/Admin/UsersTable', () => {
+  const React = require('react');
+  return (props: any) =>
+    React.createElement('div', { 'data-testid': 'users-table' },
+      React.createElement('button', { onClick: () => props.onEdit(mockUsers[0]) }, 'Edit'),
+      React.createElement('button', { onClick: () => props.onDelete(mockUsers[1]) }, 'Delete')
+    );
+});
+jest.mock('../../../components/Admin/UserFormModal', () => {
+  const React = require('react');
+  return ({ userToEdit, onClose }: any) =>
+    React.createElement('div', { 'data-testid': 'user-form-modal' },
+      React.createElement('h2', null, userToEdit ? 'Edit User' : 'Create New User'),
+      React.createElement('button', { onClick: onClose }, 'Close')
+    );
+});
+jest.mock('../../../components/Admin/DeleteConfirmationModal', () => {
+  const React = require('react');
+  return ({ user, onClose, onConfirm }: any) =>
+    React.createElement('div', { 'data-testid': 'delete-confirmation-modal' },
+      React.createElement('h2', null, 'Delete User'),
+      React.createElement('p', null, user?.email),
+      React.createElement('button', { onClick: onConfirm }, 'Confirm Delete'),
+      React.createElement('button', { onClick: onClose }, 'Cancel')
+    );
+});
+
+// Mock the custom data hooks
 jest.mock('../../../hooks/useUsers');
 
 const mockUsers: User[] = [
-  { id: 1, email: 'admin@example.com', full_name: 'Admin User', is_active: true, is_admin: true },
-  { id: 2, email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false },
+  { id: 'user-1', email: 'admin@example.com', full_name: 'Admin User', is_active: true, is_admin: true, portfolios: [] },
+  { id: 'user-2', email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false, portfolios: [] },
 ];
 
 const queryClient = new QueryClient();
@@ -31,6 +59,7 @@ const renderWithClient = (ui: React.ReactElement) => {
 
 describe('UserManagementPage', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     // Reset mocks before each test
     mockUseDeleteUser.mockReturnValue({ mutate: jest.fn() });
     mockUseCreateUser.mockReturnValue({
@@ -59,8 +88,8 @@ describe('UserManagementPage', () => {
   test('renders users table with data', () => {
     mockUseUsers.mockReturnValue({ data: mockUsers, isLoading: false, error: null });
     renderWithClient(<UserManagementPage />);
-    expect(screen.getByText('admin@example.com')).toBeInTheDocument();
-    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+    // The UsersTable is now mocked, so we check for its test ID
+    expect(screen.getByTestId('users-table')).toBeInTheDocument();
   });
 
   test('opens create user modal when "Create New User" is clicked', async () => {
@@ -74,10 +103,11 @@ describe('UserManagementPage', () => {
     });
     renderWithClient(<UserManagementPage />);
 
-    fireEvent.click(screen.getByText('Create New User'));
+    fireEvent.click(screen.getByRole('button', { name: 'Create New User' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Create New User' })).toBeInTheDocument();
+      // Check that our mocked modal is rendered
+      expect(screen.getByTestId('user-form-modal')).toBeInTheDocument();
     });
   });
 
@@ -90,13 +120,12 @@ describe('UserManagementPage', () => {
     renderWithClient(<UserManagementPage />);
 
     // Get all Edit buttons and click the first one
-    const editButtons = screen.getAllByRole('button', { name: 'Edit' });
-    fireEvent.click(editButtons[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Edit User' })).toBeInTheDocument();
-      // Check if the form is pre-filled
-      expect(screen.getByDisplayValue('Admin User')).toBeInTheDocument();
+      expect(screen.getByTestId('user-form-modal')).toBeInTheDocument();
+      // Check that the mocked modal shows the correct title for edit mode
+      expect(screen.getByText('Edit User')).toBeInTheDocument();
     });
   });
 
@@ -104,16 +133,11 @@ describe('UserManagementPage', () => {
     mockUseUsers.mockReturnValue({ data: mockUsers, isLoading: false, error: null });
     renderWithClient(<UserManagementPage />);
 
-    const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
-    fireEvent.click(deleteButtons[1]); // Click delete for the non-admin user
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => {
-      const modal = screen.getByRole('heading', { name: 'Delete User' }).closest('.modal-content');
-      expect(modal).toBeInTheDocument();
-      expect(
-        within(modal!).getByText(/are you sure you want to delete the user/i)
-      ).toBeInTheDocument();
-      expect(within(modal!).getByText('test@example.com')).toBeInTheDocument();
+      expect(screen.getByTestId('delete-confirmation-modal')).toBeInTheDocument();
+      expect(screen.getByText('test@example.com')).toBeInTheDocument();
     });
   });
 });

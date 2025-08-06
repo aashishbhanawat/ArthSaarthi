@@ -5759,4 +5759,68 @@ Updated the `TransactionUpdate` schema in `backend/app/schemas/transaction.py` t
 The application fails to start, and the test suite cannot be collected. The root cause is a `NameError: name 'Asset' is not defined` in `backend/app/schemas/transaction.py`. The `Transaction` schema uses the `Asset` class as a type hint, but the `from .asset import Asset` statement was incorrectly placed at the bottom of the file, after the `Asset` name had already been referenced.
 **Resolution:**
 Moved the `from .asset import Asset` import statement to the top of `backend/app/schemas/transaction.py` along with the other imports. This ensures the `Asset` class is defined before it is used.
+
 ---
+
+**Bug ID:** 2025-08-06-05
+**Title:** E2E test suite was unstable due to multiple environment and test script issues.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** User & Gemini Code Assist
+**Date Reported:** 2025-08-06
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:**
+The entire E2E test suite was failing with timeouts, crashes, and race conditions. The root cause was a combination of issues:
+1.  **Inconsistent Test Setup:** Several test files used a non-standard pattern of manually creating a new browser page (`browser.newPage()`) instead of using Playwright's more stable, built-in `page` fixture.
+2.  **Incorrect Selectors:** Test scripts used incorrect or ambiguous selectors (e.g., "Email Address" vs "Email address", `getByRole('row')` for a div-based list) that did not match the rendered UI.
+3.  **Flawed Test Logic:** Tests did not correctly handle the UI flow for creating a new asset when it wasn't found in the database, leading to timeouts.
+**Resolution:**
+Refactored all E2E test files to use standard Playwright patterns. Corrected all invalid selectors to be specific and match the rendered UI. Updated test logic to correctly handle all UI flows, including asset creation.
+
+---
+
+**Bug ID:** 2025-08-06-06
+**Title:** Application crashes and frontend tests fail due to multiple import/component implementation errors.
+**Module:** Core Frontend, User Management, Portfolio Management
+**Reported By:** User & Gemini Code Assist
+**Date Reported:** 2025-08-06
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The application was crashing on multiple pages (`PortfolioDetailPage`, `UserManagementPage`) due to a cascade of frontend implementation errors:
+1.  **Missing Component:** The `DeleteConfirmationModal` component was being imported but the file was empty.
+2.  **Incorrect Imports:** Multiple components and test files used default imports (`import X from ...`) for components that had named exports (`export const X`), causing fatal `SyntaxError` and `TypeError` issues.
+3.  **Incorrect Prop Usage:** The `UserManagementPage` passed an invalid `user` prop to the `DeleteConfirmationModal` instead of the required `title` and `message` props.
+**Resolution:**
+Created the missing `DeleteConfirmationModal` component. Corrected all default/named import mismatches across the application. Updated the `UserManagementPage` to pass the correct props to the modal.
+
+---
+
+**Bug ID:** 2025-08-06-07
+**Title:** Backend for Edit/Delete Transaction feature was incomplete and untested.
+**Module:** Portfolio Management (Backend)
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-06
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The initial implementation of the Edit/Delete transaction feature was incomplete, causing the backend test suite to fail.
+1.  **Schema Error:** The `TransactionUpdate` Pydantic schema was an empty class, causing all update payloads to be ignored.
+2.  **Stale Data:** The `PUT` endpoint did not call `db.refresh()` after committing, causing tests to assert against stale data.
+3.  **Startup Crash:** A misplaced import in `schemas/transaction.py` caused a `NameError` on application startup.
+**Resolution:**
+The `TransactionUpdate` schema was correctly defined with all updatable fields. `db.refresh()` was added to the update endpoint. The misplaced import was moved to the top of the file.
+
+---
+
+**Bug ID:** 2025-08-06-08
+**Title:** Analytics calculation crashes with non-JSON compliant float values.
+**Module:** Analytics (Backend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-06
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The `GET /api/v1/portfolios/{id}/analytics` endpoint crashes with a `ValueError: Out of range float values are not JSON compliant`. This occurs when the Sharpe Ratio calculation divides by zero (due to no variance in price data), producing a `NaN` or `Infinity` value that cannot be serialized to JSON.
+**Resolution:**
+The `_calculate_sharpe_ratio` function in `crud_analytics.py` was updated with a `try...except` block to catch the `ZeroDivisionError` and return `0.0` in such cases, preventing the crash.

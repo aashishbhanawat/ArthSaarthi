@@ -27,7 +27,7 @@ describe('CreatePortfolioModal', () => {
   const renderComponent = (isOpen = true) =>
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <CreatePortfolioModal isOpen={isOpen} onClose={mockOnClose} />
         </MemoryRouter>
       </QueryClientProvider>

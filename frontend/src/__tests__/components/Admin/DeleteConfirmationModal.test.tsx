@@ -1,17 +1,34 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import DeleteConfirmationModal from '../../../components/Admin/DeleteConfirmationModal';
+import { DeleteConfirmationModal } from '../../../components/common/DeleteConfirmationModal';
 import { User } from '../../../types/user';
 
-const mockUser: User = { id: 1, email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false };
+const mockUser: User = {
+  id: 'user-123',
+  email: 'test@example.com',
+  full_name: 'Test User',
+  is_active: true,
+  is_admin: false,
+  portfolios: [],
+};
 
 describe('DeleteConfirmationModal', () => {
   const onConfirm = jest.fn();
   const onClose = jest.fn();
 
   beforeEach(() => {
-    render(<DeleteConfirmationModal isOpen={true} onClose={onClose} onConfirm={onConfirm} user={mockUser} />);
+    // The common modal is tested by passing the title and message props directly
+    render(
+      <DeleteConfirmationModal
+        isOpen={true}
+        onClose={onClose}
+        onConfirm={onConfirm}
+        title="Delete User"
+        message={<p>Are you sure you want to delete the user <strong>{mockUser.email}</strong>?</p>}
+        isDeleting={false}
+      />
+    );
   });
 
   test('renders the confirmation message with the user name', () => {

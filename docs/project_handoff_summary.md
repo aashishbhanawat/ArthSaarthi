@@ -1,7 +1,7 @@
-﻿﻿﻿﻿﻿﻿﻿﻿# Project Handoff Document: Personal Portfolio Management System
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Project Handoff Document: Personal Portfolio Management System
 
 **Version:** 1.0.0 (Pilot Release)
-**Date:** 2025-08-05
+**Date:** 2025-08-06
 **Author:** Gemini Code Assist
 
 ---
@@ -19,7 +19,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Overall Status:** **Complete & Stable**
 *   **Backend Test Suite:** **100% Passing** (71/71 tests)
 *   **Frontend Test Suite:** **100% Passing** (17/17 suites)
-*   **E2E Test Suite:** **100% Passing** (7/7 tests)
+*   **E2E Test Suite:** **100% Passing** (8/8 tests)
 
 All planned MVP features have been implemented and validated through a combination of unit, integration, and end-to-end tests. The application is stable and ready for pilot deployment or the next phase of development.
 
@@ -31,11 +31,8 @@ All planned MVP features have been implemented and validated through a combinati
 *   **Comprehensive User Management:** Admin-only dashboard for full CRUD operations on all users.
 *   **Dynamic Dashboard:** Consolidated view of total portfolio value, realized/unrealized P/L, top daily market movers, and interactive charts for portfolio history and asset allocation.
 *   **Advanced Portfolio Analytics:** Calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio**.
-*   **Portfolio & Transaction Management:** Users can create multiple portfolios and manually add transactions for Stocks, ETFs, and Mutual Funds.
-*   **Full Portfolio & Transaction Tracking:** Create and manage multiple portfolios, add transactions, and perform on-the-fly asset creation for unlisted tickers.
-*   **Business Logic Validation:** The system prevents invalid transactions, such as selling more assets than are held on a given date.
+*   **Full Portfolio & Transaction Management:** Full CRUD functionality for portfolios and transactions. Includes on-the-fly asset creation for unlisted tickers and business logic validation to prevent invalid transactions (e.g., selling more than owned).
 *   **Automated Data Import:** A full-stack feature with a complete backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files. The MVP frontend is implemented and the entire flow is validated by a stable E2E test.
-*   **Transaction Editing & Deletion (Backend):** The backend is complete for editing and deleting transactions, a critical feature based on pilot feedback.
 *   **Context-Sensitive Help:** The frontend now includes on-page help icons that link to specific sections of the user guide.
 
 ---

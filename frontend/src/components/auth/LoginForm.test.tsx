@@ -20,7 +20,7 @@ const mockLogin = jest.fn();
 // A wrapper component that provides the AuthContext
 const renderWithContext = () => {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthContext.Provider value={{ login: mockLogin, logout: jest.fn(), token: null, user: null, isLoading: false, error: null, register: jest.fn() }}>
         <LoginForm />
       </AuthContext.Provider>

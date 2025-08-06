@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useUsers, useDeleteUser } from '../../hooks/useUsers';
 import UsersTable from '../../components/Admin/UsersTable'; // Corrected path
 import UserFormModal from '../../components/Admin/UserFormModal'; // Corrected path
-import DeleteConfirmationModal from '../../components/Admin/DeleteConfirmationModal';
+import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 import { User } from '../../types/user';
 
 const UserManagementPage: React.FC = () => {
@@ -31,7 +31,7 @@ const UserManagementPage: React.FC = () => {
 
   const confirmDelete = () => {
     if (selectedUser) {
-      deleteUserMutation.mutate(selectedUser.id);
+      deleteUserMutation.mutate(selectedUser.id, { onSuccess: () => setDeleteModalOpen(false) });
       setDeleteModalOpen(false);
       setSelectedUser(null);
     }
@@ -59,12 +59,20 @@ const UserManagementPage: React.FC = () => {
         userToEdit={selectedUser}
       />
 
-      <DeleteConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        user={selectedUser}
-      />
+      {isDeleteModalOpen && selectedUser && (
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          onConfirm={confirmDelete}
+          title="Delete User"
+          message={
+            <p>
+              Are you sure you want to delete the user <strong>{selectedUser.email}</strong>?
+            </p>
+          }
+          isDeleting={deleteUserMutation.isPending}
+        />
+      )}
     </div>
   );
 };
