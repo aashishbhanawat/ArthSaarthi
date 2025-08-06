@@ -5,7 +5,9 @@ from .dashboard import (
     DashboardSummary,
     PortfolioHistoryPoint,
     PortfolioHistoryResponse,
+    TopMover,
 )
+from .holding import Holding, HoldingsResponse, PortfolioSummary
 from .import_session import (
     ImportSession,
     ImportSessionCreate,

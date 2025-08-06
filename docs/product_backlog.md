@@ -53,7 +53,7 @@ The goal of this release is to act on the critical feedback from the pilot relea
     -   **Portfolio Summary:** Display key metrics (Total Value, P&L, etc.) at the top of the page.
     -   **Consolidated Holdings View:** Replace the transaction list with a consolidated view of current holdings, showing quantity, average price, current value, and P&L for each stock.
     -   **Transaction Drill-Down:** Allow users to click on a holding to see its detailed transaction history.
-    -   **Status: 📝 Planned**
+    -   **Status: 🚧 In Progress**
 
 -   **Dedicated Transaction History Page (FR4 Enhancement):** Move the full transaction list to a separate, filterable page.
     -   **Status: 📝 Planned**

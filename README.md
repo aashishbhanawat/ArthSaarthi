@@ -1,4 +1,4 @@
-﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
+﻿﻿﻿﻿﻿﻿# Personal Portfolio Management System (PMS)
 
 This project is a web-based application designed to help users manage their personal investment portfolios. It allows tracking of various assets, providing performance insights and analytics.
 
@@ -179,6 +179,16 @@ docker-compose run --rm backend python -m app.scripts.seed_transactions
 
 The application includes a dynamic debugging feature that can be enabled via environment variables to provide more verbose logging without changing the code. For detailed instructions on how to enable this for the backend and frontend, please see the Debugging Guide.
 
+### Cleaning the Workspace
+
+Over time, development, build, and test processes can create temporary files, caches, and artifacts. A script is provided to clean these up.
+
+```bash
+# Make the script executable (only needs to be done once)
+chmod +x clean.sh
+# Run the cleanup script
+./clean.sh
+```
 
 ## Contributing
 

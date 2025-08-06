@@ -112,3 +112,43 @@ def get_portfolio_analytics(
 
     analytics = crud_analytics.get_portfolio_analytics(db=db, portfolio_id=portfolio_id)
     return analytics
+
+
+@router.get("/{portfolio_id}/summary", response_model=schemas.PortfolioSummary)
+def get_portfolio_summary(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get summary metrics for a specific portfolio.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if not current_user.is_admin and (portfolio.user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    result = crud.holding.get_portfolio_holdings_and_summary(db=db, portfolio_id=portfolio_id)
+    return result["summary"]
+
+
+@router.get("/{portfolio_id}/holdings", response_model=schemas.HoldingsResponse)
+def get_portfolio_holdings(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get the consolidated holdings for a specific portfolio.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if not current_user.is_admin and (portfolio.user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    result = crud.holding.get_portfolio_holdings_and_summary(db=db, portfolio_id=portfolio_id)
+    return {"holdings": result["holdings"]}
