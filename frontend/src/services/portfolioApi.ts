@@ -1,6 +1,7 @@
 import apiClient from './api';
 import { Portfolio, PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate } from '../types/portfolio';
 import { Asset } from '../types/asset';
+import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { PortfolioAnalytics } from '../types/analytics';
 
 export const getPortfolios = async (): Promise<Portfolio[]> => {
@@ -68,5 +69,15 @@ export const deleteTransaction = async (
 
 export const getPortfolioAnalytics = async (id: string): Promise<PortfolioAnalytics> => {
     const response = await apiClient.get<PortfolioAnalytics>(`/api/v1/portfolios/${id}/analytics`);
+    return response.data;
+};
+
+export const getPortfolioSummary = async (id: string): Promise<PortfolioSummary> => {
+    const response = await apiClient.get<PortfolioSummary>(`/api/v1/portfolios/${id}/summary`);
+    return response.data;
+};
+
+export const getPortfolioHoldings = async (id: string): Promise<HoldingsResponse> => {
+    const response = await apiClient.get<HoldingsResponse>(`/api/v1/portfolios/${id}/holdings`);
     return response.data;
 };

@@ -23,15 +23,18 @@ jest.mock('../../../components/Admin/UserFormModal', () => {
       React.createElement('button', { onClick: onClose }, 'Close')
     );
 });
-jest.mock('../../../components/Admin/DeleteConfirmationModal', () => {
-  const React = require('react');
-  return ({ user, onClose, onConfirm }: any) =>
-    React.createElement('div', { 'data-testid': 'delete-confirmation-modal' },
-      React.createElement('h2', null, 'Delete User'),
-      React.createElement('p', null, user?.email),
-      React.createElement('button', { onClick: onConfirm }, 'Confirm Delete'),
-      React.createElement('button', { onClick: onClose }, 'Cancel')
-    );
+jest.mock('../../../components/common/DeleteConfirmationModal', () => {
+    const React = require('react');
+    // The component is a NAMED export, so the mock must return an object
+    // with a property matching the component's name.
+    const MockedModal = ({ title, message, onClose, onConfirm }: any) =>
+        React.createElement('div', { 'data-testid': 'delete-confirmation-modal' },
+            React.createElement('h2', null, title),
+            React.createElement('div', null, message),
+            React.createElement('button', { onClick: onConfirm }, 'Confirm Delete'),
+            React.createElement('button', { onClick: onClose }, 'Cancel')
+        );
+    return { DeleteConfirmationModal: MockedModal };
 });
 
 // Mock the custom data hooks

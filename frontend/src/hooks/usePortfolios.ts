@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
 import { PortfolioCreate, TransactionCreate, TransactionUpdate } from '../types/portfolio';
+import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
 import { PortfolioAnalytics } from '../types/analytics';
 
@@ -60,6 +61,8 @@ export const useCreateTransaction = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboardHistory'] });
             queryClient.invalidateQueries({ queryKey: ['dashboardAllocation'] });
             queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', variables.portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', variables.portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', variables.portfolioId] });
         },
     });
 };
@@ -83,6 +86,8 @@ export const useUpdateTransaction = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboardHistory'] });
             queryClient.invalidateQueries({ queryKey: ['dashboardAllocation'] });
             queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', variables.portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', variables.portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', variables.portfolioId] });
         },
     });
 };
@@ -98,6 +103,24 @@ export const useDeleteTransaction = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboardHistory'] });
             queryClient.invalidateQueries({ queryKey: ['dashboardAllocation'] });
             queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', variables.portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', variables.portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', variables.portfolioId] });
         },
+    });
+};
+
+export const usePortfolioSummary = (id: string | undefined) => {
+    return useQuery<PortfolioSummary, Error>({
+        queryKey: ['portfolioSummary', id],
+        queryFn: () => portfolioApi.getPortfolioSummary(id!),
+        enabled: !!id,
+    });
+};
+
+export const usePortfolioHoldings = (id: string | undefined) => {
+    return useQuery<HoldingsResponse, Error>({
+        queryKey: ['portfolioHoldings', id],
+        queryFn: () => portfolioApi.getPortfolioHoldings(id!),
+        enabled: !!id,
     });
 };

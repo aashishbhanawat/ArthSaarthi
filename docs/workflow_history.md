@@ -320,6 +320,56 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-08-07: E2E Test Suite Stabilization for Portfolio Redesign
+
+*   **Task Description:** Run the full E2E test suite to verify the new portfolio page redesign. This involved a highly iterative debugging process to update all outdated E2E tests that were still asserting against the old UI.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Test Run & Failure Analysis:** The user ran the E2E tests, which failed as expected. The AI analyzed the logs and identified that the tests were outdated.
+    2.  **Iterative Fixing:** A series of prompts were used to fix the failing tests. This involved:
+        *   Updating locators in `portfolio-and-dashboard.spec.ts` and `analytics.spec.ts` to assert against the new `HoldingsTable` component instead of the old transaction list.
+        *   Fixing an ambiguous locator by making it more specific (`exact: true`).
+        *   Deleting the now-obsolete `transaction-management.spec.ts` file.
+        *   Fixing a frontend build error caused by a `Duplicate declaration` name collision in `PortfolioSummary.tsx`.
+
+*   **File Changes:**
+    *   `e2e/tests/portfolio-and-dashboard.spec.ts`: **Updated** to assert against the new UI.
+    *   `e2e/tests/analytics.spec.ts`: **Updated** to assert against the new UI.
+    *   `e2e/tests/transaction-management.spec.ts`: **Deleted** as it is now obsolete.
+    *   `frontend/src/components/Portfolio/PortfolioSummary.tsx`: **Updated** to resolve a type name collision.
+    *   `docs/bug_reports_temp.md`: Populated with bug reports for each E2E test failure.
+
+*   **Outcome:**
+    - All 7 E2E tests are now passing. The "Portfolio Page Redesign" feature is fully implemented, tested end-to-end, and stable. The project is ready for the next development cycle.
+---
+
+## 2025-08-06: Frontend for Portfolio Page Redesign
+
+*   **Task Description:** Implement the frontend for the "Portfolio Page Redesign" feature (FR4.7). This involved refactoring the `PortfolioDetailPage` to replace the old transaction list with a new summary header and a consolidated holdings table.
+
+*   **Key Prompts & Interactions:**
+    1.  **Frontend Planning:** The user confirmed the frontend implementation plan, which involved creating new types, API services, React Query hooks, and UI components.
+    2.  **Code Generation:** A series of prompts were used to generate the new frontend files:
+        *   `frontend/src/types/holding.ts`: To define the `Holding` and `PortfolioSummary` interfaces.
+        *   `frontend/src/services/portfolioApi.ts`: To add `getPortfolioSummary` and `getPortfolioHoldings` functions.
+        *   `frontend/src/hooks/usePortfolios.ts`: To add `usePortfolioSummary` and `usePortfolioHoldings` hooks and invalidate their caches on transaction mutations.
+        *   `frontend/src/components/Portfolio/PortfolioSummary.tsx`: To create the summary cards component.
+        *   `frontend/src/components/Portfolio/HoldingsTable.tsx`: To create the consolidated holdings table component.
+    3.  **Page Refactoring:** The `PortfolioDetailPage.tsx` was refactored to integrate the new hooks and components.
+    4.  **Test Suite Stabilization:** The process involved a highly iterative debugging loop where failing test logs were provided to the AI. This led to fixing the `PortfolioDetailPage.test.tsx` suite and adding new, comprehensive unit tests for the `PortfolioSummary` and `HoldingsTable` components. A missing `formatPercentage` utility function was also added to `formatting.ts` to resolve a test failure.
+
+*   **File Changes:**
+    *   `frontend/src/types/holding.ts`: **New** file defining the data structures for the feature.
+    *   `frontend/src/components/Portfolio/PortfolioSummary.tsx`: **New** UI component for the summary header.
+    *   `frontend/src/components/Portfolio/HoldingsTable.tsx`: **New** UI component for the holdings table.
+    *   `frontend/src/services/portfolioApi.ts`, `frontend/src/hooks/usePortfolios.ts`, `frontend/src/utils/formatting.ts`: **Updated** to support the new data layer.
+    *   `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx`: **Updated** to use the new components and data hooks.
+    *   `frontend/src/__tests__/`: **Updated** `PortfolioDetailPage.test.tsx` and **added** `PortfolioSummary.test.tsx` and `HoldingsTable.test.tsx`.
+
+*   **Outcome:**
+    - The frontend for the portfolio page redesign is complete and fully tested. All 91 frontend tests are passing. The application is ready for a final E2E verification.
+---
+
 ## 2025-07-23: Frontend Data Layer for Dashboard Visualization
 
 *   **Task Description:** Implement the frontend data-fetching layer for the new dashboard visualization charts. This involved creating new React Query hooks, API service functions, and corresponding type definitions to consume the new backend endpoints (`/history`, `/allocation`).
@@ -771,6 +821,23 @@ Its purpose is to build an experience history that can be used as a reference fo
 *   **Outcome:**
     - A comprehensive backend plan for the CSV data import feature is complete and documented. The project is now ready for the code generation phase.
 
+---
+
+## 2025-08-07: Add Sorting to Holdings Table
+
+*   **Task Description:** Enhance the new "Consolidated Holdings View" by adding client-side sorting capabilities to the table, allowing users to sort by any column.
+
+*   **Key Prompts & Interactions:**
+    1.  **Feature Enhancement:** The user requested to add a sort option to the holdings table.
+    2.  **Code Generation:** The AI updated `HoldingsTable.tsx` to include state management for sorting and added `onClick` handlers to the table headers.
+    3.  **Test Generation:** The AI was prompted to add a new test case to `HoldingsTable.test.tsx` to verify the sorting logic, including default sort order and ascending/descending clicks.
+
+*   **File Changes:**
+    *   `frontend/src/components/Portfolio/HoldingsTable.tsx`: **Updated** with sorting logic.
+    *   `frontend/src/__tests__/components/Portfolio/HoldingsTable.test.tsx`: **Updated** with a new test for sorting functionality.
+
+*   **Outcome:**
+    - The holdings table is now more interactive and user-friendly. The feature is fully tested and stable, with all 92 frontend tests passing.
 ---
 
 ## 2025-08-05: Backend Implementation & Stabilization for Data Import

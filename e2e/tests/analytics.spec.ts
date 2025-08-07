@@ -61,14 +61,13 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('200');
     await page.getByLabel('Date').fill('2023-01-01');
-    await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.getByRole('row', { name: /MSFT.*BUY.*10/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Save Transaction' }).click();    
+    await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ })).toBeVisible();
 
     // SELL 5 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('SELL');
     await page.getByLabel('Asset').pressSequentially(assetName);
-    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
     const listItem = page.locator(`li:has-text("${assetName}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
@@ -76,7 +75,10 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Price per Unit').fill('220');
     await page.getByLabel('Date').fill('2023-06-01');
     await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.getByRole('row', { name: /MSFT.*SELL.*5/ })).toBeVisible();
+
+    // Verify the holding quantity was updated from 10 to 5
+    const holdingRow = page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ });
+    await expect(holdingRow.getByRole('cell', { name: '5', exact: true })).toBeVisible();
 
     // 3. Verify Analytics Card is visible and displays data
     const analyticsCard = page.locator('.card', { hasText: 'Advanced Analytics' });

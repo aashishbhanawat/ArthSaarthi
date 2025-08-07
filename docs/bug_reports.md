@@ -4618,6 +4618,7 @@ at toFixed (src/components/Portfolio/AnalyticsCard.tsx:33:78)
 **Resolution:**
 The `AnalyticsCard.tsx` component has been updated to check for the existence of `xirr` and `sharpe_ratio` before calling `.toFixed()`. If the values are `null` or `undefined`, it now displays "N/A". This prevents the crash and provides a better user experience when data is incomplete.
 
+
 **Status:**
 Resolved
 
@@ -5813,6 +5814,24 @@ The `TransactionUpdate` schema was correctly defined with all updatable fields. 
 
 ---
 
+**Bug ID:** 2025-08-06-06
+**Title:** `UserManagementPage` test suite crashes due to incorrect mocking of a named export.
+**Module:** User Management (Test Suite)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-06
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** The test suite for `UserManagementPage.tsx` fails with `Element type is invalid... You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.` This is because the test file attempts to mock the `DeleteConfirmationModal` component, which is a named export, by returning a function directly from the `jest.mock` factory. This incorrectly mocks a default export. The mock must be updated to return an object with a key matching the named export (`DeleteConfirmationModal`).
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test suite for `UserManagementPage` should run without crashing.
+**Actual Behavior:**
+The test suite crashes with an `Element type is invalid` error.
+**Resolution:**
+Update the mock in `frontend/src/__tests__/pages/Admin/UserManagementPage.test.tsx` to return an object `{ DeleteConfirmationModal: MockedComponent }` instead of just the `MockedComponent` function.
+---
+
 **Bug ID:** 2025-08-06-08
 **Title:** Analytics calculation crashes with non-JSON compliant float values.
 **Module:** Analytics (Backend)
@@ -5824,3 +5843,117 @@ The `TransactionUpdate` schema was correctly defined with all updatable fields. 
 The `GET /api/v1/portfolios/{id}/analytics` endpoint crashes with a `ValueError: Out of range float values are not JSON compliant`. This occurs when the Sharpe Ratio calculation divides by zero (due to no variance in price data), producing a `NaN` or `Infinity` value that cannot be serialized to JSON.
 **Resolution:**
 The `_calculate_sharpe_ratio` function in `crud_analytics.py` was updated with a `try...except` block to catch the `ZeroDivisionError` and return `0.0` in such cases, preventing the crash.
+
+---
+
+**Bug ID:** 2025-08-07-01
+**Title:** `UserManagementPage` test suite fails with "Cannot find module" for `DeleteConfirmationModal`.
+**Module:** User Management (Test Suite)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-07
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** The test suite for `UserManagementPage.tsx` fails to run because it tries to mock `../../../components/Admin/DeleteConfirmationModal`, but this component was moved to `../../../components/common/DeleteConfirmationModal`. The test file was not updated with the correct path.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test suite should run without module resolution errors.
+**Actual Behavior:**
+The test suite fails with `Cannot find module`.
+**Resolution:**
+Update the path in `jest.mock` in `UserManagementPage.test.tsx`.
+
+---
+
+**Bug ID:** 2025-08-07-02
+**Title:** `PortfolioDetailPage` test suite fails with `ReferenceError` due to JSX in `jest.mock` factory.
+**Module:** Portfolio Management (Test Suite)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-07
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** The test suite for `PortfolioDetailPage.tsx` fails with a `ReferenceError` because the mock factories for child components (`PortfolioSummary`, `HoldingsTable`, `AnalyticsCard`) use JSX syntax. This conflicts with Jest's module hoisting and variable scoping, as the transpiled code attempts to access an out-of-scope helper variable.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test suite should run without crashing.
+**Actual Behavior:**
+The test suite fails with `ReferenceError: ... is not allowed to reference any out-of-scope variables`.
+**Resolution:**
+Refactor the `jest.mock` calls in `PortfolioDetailPage.test.tsx` to use `React.createElement` instead of JSX.
+
+---
+
+**Bug ID:** 2025-08-07-03
+**Title:** `UserManagementPage` test suite crashes due to incorrect mocking of a named export.
+**Module:** User Management (Test Suite)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-07
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** The test suite for `UserManagementPage.tsx` fails with `Element type is invalid... You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.` This is because the test file attempts to mock the `DeleteConfirmationModal` component, which is a named export, by returning a function directly from the `jest.mock` factory. This incorrectly mocks a default export. The mock must be updated to return an object with a key matching the named export (`DeleteConfirmationModal`).
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test suite for `UserManagementPage` should run without crashing.
+**Actual Behavior:**
+The test suite crashes with an `Element type is invalid` error.
+**Resolution:**
+Update the mock in `frontend/src/__tests__/pages/Admin/UserManagementPage.test.tsx` to return an object `{ DeleteConfirmationModal: MockedComponent }` instead of just the `MockedComponent` function.
+
+---
+
+**Bug ID:** 2025-08-07-04
+**Title:** `HoldingsTable` tests crash with `TypeError` due to missing `formatPercentage` utility function.
+**Module:** Portfolio Management (Frontend), Test Suite
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-07
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:** The test suite for `HoldingsTable.tsx` crashes with `TypeError: (0 , formatting_1.formatPercentage) is not a function`. The component correctly attempts to import this utility function from `src/utils/formatting.ts`, but the function was never defined or exported from that file. This prevents the component from rendering and blocks all related tests.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The `HoldingsTable` tests should run without crashing.
+**Actual Behavior:**
+The test suite fails with a `TypeError`.
+**Resolution:**
+Add the `formatPercentage` function to `frontend/src/utils/formatting.ts` and export it.
+
+---
+
+**Bug ID:** 2025-08-07-05
+**Title:** E2E test for portfolio detail page fails after UI redesign.
+**Module:** E2E Testing, Portfolio Management
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-07
+**Classification:** Test Suite
+**Severity:** Critical
+**Description:** The E2E test `should allow a user to add various types of transactions` fails with a timeout. After creating a transaction, the test navigates to the portfolio detail page and asserts that the raw transaction details are visible in a table. This fails because the page was refactored to show a consolidated holdings view (`HoldingsTable`) instead of a raw transaction list. The test's locators and assertions are outdated and need to be updated to match the new UI.
+**Steps to Reproduce:**
+1. Run the E2E test suite after implementing the portfolio page redesign.
+**Expected Behavior:**
+The test should pass by verifying the new holdings view.
+**Actual Behavior:**
+The test fails with a timeout because it cannot find the old transaction list UI elements.
+**Resolution:**
+Update the assertions in `e2e/tests/portfolio-and-dashboard.spec.ts` to check for the `HoldingsTable` and verify the content of the consolidated holding row (e.g., correct ticker, quantity, and value).
+
+---
+
+**Bug ID:** 2025-08-07-06
+**Title:** Frontend build fails with "Duplicate declaration" error in `PortfolioSummary` component.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-07
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:** The E2E test suite fails because the frontend application cannot be built. The Vite server throws a `Duplicate declaration "PortfolioSummary"` error. This is caused by a name collision in `PortfolioSummary.tsx`, where the component constant has the same name as the `PortfolioSummary` type imported from `../../types/holding`.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+**Expected Behavior:**
+The frontend application should build and run successfully.
+**Actual Behavior:**
+The Vite server crashes, preventing the E2E tests from running.
+**Resolution:**
+Rename the imported type to `PortfolioSummaryType` using an `as` alias in the import statement in `frontend/src/components/Portfolio/PortfolioSummary.tsx` to resolve the name collision.

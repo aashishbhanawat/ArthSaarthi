@@ -98,8 +98,12 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
-    // Verify the new transaction is in the list
-    await expect(page.getByRole('row', { name: /GOOGL.*BUY.*10/ })).toBeVisible();
+    // Verify the new holding appears in the HoldingsTable
+    const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
+    await expect(holdingsTable).toBeVisible();
+    const googlRow = holdingsTable.getByRole('row', { name: /GOOGL/ });
+    await expect(googlRow).toBeVisible();
+    await expect(googlRow.getByRole('cell', { name: '10' })).toBeVisible(); // Quantity
 
     // 3. Add a SELL transaction for the same asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
@@ -121,8 +125,10 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
-    // Verify the SELL transaction is also in the list
-    await expect(page.getByRole('row', { name: /GOOGL.*SELL.*5/ })).toBeVisible();
+    // Verify the holding quantity is updated
+    await expect(holdingsTable).toBeVisible();
+    await expect(googlRow).toBeVisible();
+    await expect(googlRow.getByRole('cell', { name: '5' })).toBeVisible(); // Quantity updated from 10 to 5
   });
 
   test('should prevent a user from creating an invalid SELL transaction', async ({ page }) => {
@@ -148,7 +154,12 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Price per Unit').fill('175.00');
     await page.getByLabel('Date').fill('2023-01-15'); // Use a fixed past date
     await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.getByRole('row', { name: /AAPL.*BUY.*10/ })).toBeVisible();
+    // Verify the new holding appears in the HoldingsTable
+    const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
+    await expect(holdingsTable).toBeVisible();
+    const aaplRow = holdingsTable.getByRole('row', { name: /AAPL/ });
+    await expect(aaplRow).toBeVisible();
+    await expect(aaplRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
 
     // 3. Attempt to SELL 20 shares (which is more than owned)
     await page.getByRole('button', { name: 'Add Transaction' }).click();
@@ -170,7 +181,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 5. Verify the modal is still open and the invalid transaction was not added
     await expect(page.getByRole('heading', { name: 'Add Transaction' })).toBeVisible();
     await page.getByRole('button', { name: 'Cancel' }).click();
-    await expect(page.getByRole('row', { name: /AAPL.*SELL.*20/ })).not.toBeVisible();
+    // Verify the holding is unchanged
+    await expect(aaplRow.getByRole('cell', { name: '10', exact: true })).toBeVisible();
   });
 
   test('should display correct data on the dashboard after transactions', async ({ page }) => {
@@ -195,7 +207,12 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Price per Unit').fill('150');
     await page.getByLabel('Date').fill('2023-02-01');
     await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.getByRole('row', { name: /GOOGL.*BUY.*10/ })).toBeVisible();
+    // Verify the new holding appears in the HoldingsTable
+    const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
+    await expect(holdingsTable).toBeVisible();
+    const googlRow = holdingsTable.getByRole('row', { name: /GOOGL/ });
+    await expect(googlRow).toBeVisible();
+    await expect(googlRow.getByRole('cell', { name: '10' })).toBeVisible(); // Quantity
 
     // 3. Navigate to Dashboard and verify data
     await page.getByRole('link', { name: 'Dashboard' }).click();
