@@ -6044,3 +6044,28 @@ The test should use a specific query to uniquely identify the quantity in the su
 The test fails because the query finds multiple elements.
 **Resolution:**
 Update the test in `HoldingDetailModal.test.tsx` to use `getAllByText` and then find the correct element by its tag name (`p` for the summary card), making the assertion specific and robust.
+
+---
+
+**Bug ID:** 2025-08-07-11 (Consolidated)
+**Title:** Multiple UI, logic, and test failures during implementation of Holdings Drill-Down and XIRR Analytics.
+**Module:** Portfolio Management (Full Stack), E2E Testing
+**Reported By:** User & Gemini Code Assist via Manual/Automated Testing
+**Date Reported:** 2025-08-07
+**Classification:** Implementation (Frontend/Backend) / Test Suite
+**Severity:** Critical
+**Description:**
+The implementation of the "Holdings Drill-Down View" and "Asset-Level XIRR Analytics" features involved a series of cascading bugs and regressions that were fixed iteratively.
+1.  **UI/Logic Bugs:** The initial `HoldingDetailModal` had styling defects and a critical logic error where it displayed all historical transactions instead of using FIFO accounting to show only the currently held ones.
+2.  **Unit Test Failures:** The corresponding unit tests were unstable, failing with ambiguous queries that needed to be made more specific.
+3.  **E2E Test Failures:** The new E2E test for XIRR analytics failed due to two separate issues:
+    *   The backend's asset creation endpoint required external validation, which was fixed by adding mock data to the `FinancialDataService`.
+    *   The `HoldingDetailModal` was not accessible (missing `role="dialog"`), which was fixed by adding the correct accessibility attributes.
+4.  **Major Regression:** A major regression occurred where multiple, previously fixed UI flow bugs in `PortfolioDetailPage.tsx` (related to modal state management for edit/delete) were reintroduced. This required a consolidated fix to re-apply all the correct state management logic.
+**Resolution:**
+A series of patches were applied across the full stack:
+-   `HoldingDetailModal.tsx` was refactored to implement FIFO logic and fix all styling/accessibility issues.
+-   `HoldingDetailModal.test.tsx` was updated with specific queries and correct assertions.
+-   `financial_data_service.py` was updated with mock data for the E2E test.
+-   `PortfolioDetailPage.tsx` received a consolidated patch to fix the state management regressions.
+-   `portfolioApi.ts` was fixed to use the correct API endpoint for asset analytics.

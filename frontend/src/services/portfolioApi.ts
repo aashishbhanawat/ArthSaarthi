@@ -89,3 +89,8 @@ export const getAssetTransactions = async (
     const response = await apiClient.get<Transaction[]>(`/api/v1/portfolios/${portfolioId}/assets/${assetId}/transactions`);
     return response.data;
 };
+
+export const getAssetAnalytics = async (portfolioId: string, assetId: string): Promise<AssetAnalytics> => {
+  const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/assets/${assetId}/analytics`);
+  return response.data;
+};

@@ -11,6 +11,13 @@ const adminUser = {
     password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
 };
 
+// Helper to get a date in the past in YYYY-MM-DD format
+const getPastDateISO = (daysAgo: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString().split('T')[0];
+};
+
 test.describe.serial('Advanced Analytics E2E Flow', () => {
   test.beforeAll(async ({ request }) => {
     // The global setup has already created the admin user.
@@ -91,5 +98,59 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // Check for Sharpe Ratio - value can fluctuate, so just check for format
     const sharpeRatioValue = analyticsCard.locator('p', { hasText: 'Sharpe Ratio' }).locator('xpath=..//p[2]');
     await expect(sharpeRatioValue).not.toBeEmpty(); // Check that it's not empty
+  });
+
+  test('should display correct asset-level XIRR in the holding detail modal', async ({ page }) => {
+    const portfolioName = `Asset XIRR Test Portfolio ${Date.now()}`;
+    const assetTicker = 'XIRRTEST';
+
+    // 1. Create a portfolio
+    await page.getByRole('link', { name: 'Portfolios' }).click();
+    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
+    await page.getByLabel('Name').fill(portfolioName);
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+
+    // 2. Add transactions with specific dates for XIRR calculation
+    // BUY 10 shares @ 100, 1 year ago
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+    await page.getByLabel('Asset').pressSequentially(assetTicker);
+    const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
+    await expect(createAssetButton).toBeVisible();
+    await createAssetButton.click();
+    await page.getByLabel('Quantity').fill('10');
+    await page.getByLabel('Price per Unit').fill('100');
+    await page.getByLabel('Date').fill(getPastDateISO(365));
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: new RegExp(assetTicker) })).toBeVisible();
+
+    // SELL 5 shares @ 120, 6 months ago
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Type', { exact: true }).selectOption('SELL');
+    await page.getByLabel('Asset').pressSequentially(assetTicker);
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
+    const listItem = page.locator(`li:has-text("${assetTicker}")`);
+    await expect(listItem).toBeVisible();
+    await listItem.click();
+    await page.getByLabel('Quantity').fill('5');
+    await page.getByLabel('Price per Unit').fill('120');
+    await page.getByLabel('Date').fill(getPastDateISO(182));
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+
+    // 3. Open the holding detail modal
+    const holdingRow = page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: new RegExp(assetTicker) });
+    await holdingRow.click();
+
+    // 4. Verify the XIRR values
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+
+    // Wait for the analytics to load and verify the values
+    const realizedXirrContainer = modal.getByText('Realized XIRR').locator('xpath=..');
+    await expect(realizedXirrContainer.getByText('43.86%')).toBeVisible({ timeout: 10000 });
+
+    const unrealizedXirrContainer = modal.getByText('Unrealized XIRR').locator('xpath=..');
+    await expect(unrealizedXirrContainer.getByText('30.00%')).toBeVisible();
   });
 });

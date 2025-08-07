@@ -1,4 +1,5 @@
 export interface PortfolioAnalytics {
-    xirr: number;
-    sharpe_ratio: number;
+  realized_xirr: number;
+  unrealized_xirr: number;
+  sharpe_ratio: number;
 }

@@ -160,3 +160,23 @@ def read_asset_transactions(portfolio_id: uuid.UUID, asset_id: uuid.UUID, db: Se
     if not portfolio or portfolio.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return crud.transaction.get_multi_by_portfolio_and_asset(db, portfolio_id=portfolio_id, asset_id=asset_id)
+
+
+@router.get("/{portfolio_id}/assets/{asset_id}/analytics", response_model=schemas.AssetAnalytics)
+def get_asset_analytics(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    asset_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get advanced analytics for a specific asset in a portfolio.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    return crud_analytics.get_asset_analytics(db=db, portfolio_id=portfolio_id, asset_id=asset_id)

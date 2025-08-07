@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
-import { getPortfolios, getPortfolio, createPortfolio, deletePortfolio, lookupAsset, createAsset, createTransaction, updateTransaction, deleteTransaction, getPortfolioAnalytics, getPortfolioSummary, getPortfolioHoldings, getAssetTransactions } from '../services/portfolioApi';
+import { getPortfolios, getPortfolio, createPortfolio, deletePortfolio, lookupAsset, createTransaction, getPortfolioSummary, getPortfolioHoldings, getAssetTransactions, updateTransaction, deleteTransaction, getAssetAnalytics } from '../services/portfolioApi';
 import { PortfolioCreate, TransactionCreate, TransactionUpdate } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
@@ -17,6 +17,7 @@ const invalidatePortfolioAndDashboardQueries = (queryClient: QueryClient, portfo
         ['portfolioSummary', portfolioId],
         ['portfolioHoldings', portfolioId],
         ['assetTransactions', portfolioId], // Invalidate all asset transactions for this portfolio
+        ['assetAnalytics', portfolioId],    // Invalidate all asset analytics for this portfolio
     ];
     queriesToInvalidate.forEach(queryKey => queryClient.invalidateQueries({ queryKey }));
 };
@@ -121,4 +122,12 @@ export const useAssetTransactions = (portfolioId: string | undefined, assetId: s
         queryFn: () => getAssetTransactions(portfolioId!, assetId!),
         enabled: !!portfolioId && !!assetId,
     });
+};
+
+export const useAssetAnalytics = (portfolioId: string, assetId: string, options: { enabled: boolean }) => {
+  return useQuery<AssetAnalytics, Error>({
+    queryKey: ['assetAnalytics', portfolioId, assetId],
+    queryFn: () => getAssetAnalytics(portfolioId, assetId),
+    ...options,
+  });
 };

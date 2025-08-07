@@ -7,3 +7,12 @@ class AnalyticsResponse(BaseModel):
     """
     xirr: float
     sharpe_ratio: float
+
+
+class AssetAnalytics(BaseModel):
+    """
+    Response model for single asset analytics.
+    """
+    # xirr: float
+    realized_xirr: float
+    unrealized_xirr: float

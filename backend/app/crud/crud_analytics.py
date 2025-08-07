@@ -2,14 +2,14 @@ import logging
 from datetime import date, timedelta
 from decimal import Decimal
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 import uuid
 import numpy as np
 from sqlalchemy.orm import Session
 from pyxirr import xirr
 
-from app import crud
-from app.schemas.analytics import AnalyticsResponse
+from app import crud, schemas
+from app.schemas.analytics import AnalyticsResponse, AssetAnalytics
 from app.services.financial_data_service import financial_data_service
 
 logger = logging.getLogger(__name__)
@@ -149,7 +149,7 @@ def _calculate_xirr(db: Session, portfolio_id: uuid.UUID) -> float:
     dates = []
     values = []
     for tx in transactions:
-        dates.append(tx.transaction_date)
+        dates.append(tx.transaction_date.date())
         # Buys are cash outflows (-), sells are cash inflows (+)
         amount = tx.quantity * tx.price_per_unit
         if tx.transaction_type == "BUY":
@@ -204,6 +204,108 @@ def _calculate_sharpe_ratio(db: Session, portfolio_id: uuid.UUID) -> float:
     return sharpe_ratio
 
 
+def _get_realized_and_unrealized_cash_flows(transactions: List[schemas.Transaction]) -> Tuple[List, List]:
+    """
+    Applies FIFO logic to separate transactions into realized (closed) and unrealized (open) lots.
+    Returns a tuple of two lists: (realized_cash_flows, unrealized_cash_flows).
+    """
+    sorted_txs = sorted(transactions, key=lambda t: t.transaction_date.date())
+    
+    # Create copies to avoid mutating the original list and to track remaining quantities
+    buys = [t.model_copy(deep=True) for t in sorted_txs if t.transaction_type == 'BUY']
+    sells = [t for t in sorted_txs if t.transaction_type == 'SELL']
+    
+    realized_cash_flows = []
+    
+    for sell_tx in sells:
+        sell_quantity_to_match = sell_tx.quantity
+        
+        for buy_tx in buys:
+            if sell_quantity_to_match == 0:
+                break
+            
+            if buy_tx.quantity > 0:
+                match_quantity = min(sell_quantity_to_match, buy_tx.quantity)
+                
+                # Handle zero-price transactions (e.g., bonus shares) gracefully
+                buy_price = buy_tx.price_per_unit if buy_tx.price_per_unit is not None else Decimal('0.0')
+                sell_price = sell_tx.price_per_unit if sell_tx.price_per_unit is not None else Decimal('0.0')
+
+                buy_cost_for_match = match_quantity * buy_price
+                sell_proceeds_for_match = match_quantity * sell_price
+                
+                # A closed lot is a pair of cashflows
+                realized_cash_flows.append((buy_tx.transaction_date.date(), float(-buy_cost_for_match)))
+                realized_cash_flows.append((sell_tx.transaction_date.date(), float(sell_proceeds_for_match)))
+                
+                buy_tx.quantity -= match_quantity
+                sell_quantity_to_match -= match_quantity
+
+    # The remaining quantities in `buys` are the open lots
+    unrealized_cash_flows = []
+    for buy_tx in buys:
+        if buy_tx.quantity > 0:
+            buy_price = buy_tx.price_per_unit if buy_tx.price_per_unit is not None else Decimal('0.0')
+            unrealized_cash_flows.append(
+                (buy_tx.transaction_date.date(), float(-buy_tx.quantity * buy_price))
+            )
+            
+    return realized_cash_flows, unrealized_cash_flows
+
+
+def _calculate_xirr_from_cashflows(cash_flows: List[Tuple[date, float]]) -> float:
+    """A generic XIRR calculation helper."""
+    if not cash_flows:
+        return 0.0
+
+    dates, values = zip(*cash_flows)
+
+    # XIRR requires at least one positive and one negative cash flow
+    if not any(v > 0 for v in values) or not any(v < 0 for v in values):
+        return 0.0
+
+    try:
+        result = xirr(dates, values, guess=0.1)
+        return 0.0 if result is None or np.isnan(result) or np.isinf(result) else result
+    except Exception:
+        # This can happen if pyxirr fails to converge
+        return 0.0
+
+
+def _get_asset_current_value(db: Session, portfolio_id: uuid.UUID, asset_id: uuid.UUID) -> Decimal:
+    """Calculates the current market value of a single asset holding in a portfolio."""
+    transactions = crud.transaction.get_multi_by_portfolio_and_asset(
+        db=db, portfolio_id=portfolio_id, asset_id=asset_id
+    )
+    if not transactions:
+        return Decimal("0.0")
+
+    asset = crud.asset.get(db=db, id=asset_id)
+    if not asset:
+        # This case should ideally not be reached if transactions exist for the asset_id
+        return Decimal("0.0")
+
+    net_quantity = Decimal("0.0")
+    for t in transactions:
+        if t.transaction_type.lower() == 'buy':
+            net_quantity += t.quantity
+        elif t.transaction_type.lower() == 'sell':
+            net_quantity -= t.quantity
+
+    if net_quantity <= 0:
+        return Decimal("0.0")
+
+    asset_to_price = [{"ticker_symbol": asset.ticker_symbol, "exchange": asset.exchange}]
+    current_prices_details = financial_data_service.get_current_prices(asset_to_price)
+
+    if asset.ticker_symbol not in current_prices_details:
+        return Decimal("0.0")
+
+    price_info = current_prices_details[asset.ticker_symbol]
+    current_price = price_info["current_price"]
+    
+    return net_quantity * current_price
+
 def get_portfolio_analytics(db: Session, portfolio_id: uuid.UUID) -> AnalyticsResponse:
     """
     Calculates advanced analytics for a given portfolio.
@@ -214,4 +316,30 @@ def get_portfolio_analytics(db: Session, portfolio_id: uuid.UUID) -> AnalyticsRe
     return AnalyticsResponse(
         xirr=round(xirr_value, 4),
         sharpe_ratio=round(sharpe_ratio_value, 4),
+    )
+
+def get_asset_analytics(db: Session, portfolio_id: uuid.UUID, asset_id: uuid.UUID) -> AssetAnalytics:
+    """
+    Calculates advanced analytics for a given asset in a portfolio.
+    """    
+    transactions_db = crud.transaction.get_multi_by_portfolio_and_asset(db=db, portfolio_id=portfolio_id, asset_id=asset_id)
+    if not transactions_db:
+        return AssetAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
+
+    # Convert SQLAlchemy models to Pydantic schemas before passing to calculation helpers
+    transactions_schemas = [schemas.Transaction.model_validate(tx) for tx in transactions_db]
+
+    realized_cash_flows, unrealized_cash_flows = _get_realized_and_unrealized_cash_flows(transactions_schemas)
+
+    # Calculate realized XIRR from closed lots
+    realized_xirr_value = _calculate_xirr_from_cashflows(realized_cash_flows)
+
+    # Calculate unrealized XIRR from open lots + their current market value
+    current_value_of_open_lots = _get_asset_current_value(db=db, portfolio_id=portfolio_id, asset_id=asset_id)
+    unrealized_cash_flows.append((date.today(), float(current_value_of_open_lots)))
+    unrealized_xirr_value = _calculate_xirr_from_cashflows(unrealized_cash_flows)
+
+    return AssetAnalytics(
+        realized_xirr=round(realized_xirr_value, 4),
+        unrealized_xirr=round(unrealized_xirr_value, 4)
     )

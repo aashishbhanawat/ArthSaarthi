@@ -103,7 +103,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(holdingsTable).toBeVisible();
     const googlRow = holdingsTable.getByRole('row', { name: /GOOGL/ });
     await expect(googlRow).toBeVisible();
-    await expect(googlRow.getByRole('cell', { name: '10' })).toBeVisible(); // Quantity
+    // Use exact match to avoid ambiguity with other cells that might contain '10' (e.g., P&L of ₹10.53)
+    await expect(googlRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
 
     // 3. Add a SELL transaction for the same asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
@@ -128,7 +129,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // Verify the holding quantity is updated
     await expect(holdingsTable).toBeVisible();
     await expect(googlRow).toBeVisible();
-    await expect(googlRow.getByRole('cell', { name: '5' })).toBeVisible(); // Quantity updated from 10 to 5
+    // Use exact match to avoid ambiguity with other cells that might contain '5'
+    await expect(googlRow.getByRole('cell', { name: '5', exact: true })).toBeVisible(); // Quantity updated from 10 to 5
   });
 
   test('should prevent a user from creating an invalid SELL transaction', async ({ page }) => {
@@ -212,7 +214,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(holdingsTable).toBeVisible();
     const googlRow = holdingsTable.getByRole('row', { name: /GOOGL/ });
     await expect(googlRow).toBeVisible();
-    await expect(googlRow.getByRole('cell', { name: '10' })).toBeVisible(); // Quantity
+    // Use exact match to avoid ambiguity with other cells that might contain '10' (e.g., P&L of ₹10.44)
+    await expect(googlRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
 
     // 3. Navigate to Dashboard and verify data
     await page.getByRole('link', { name: 'Dashboard' }).click();

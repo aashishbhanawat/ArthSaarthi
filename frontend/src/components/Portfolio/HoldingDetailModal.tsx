@@ -1,13 +1,16 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
-import { useAssetTransactions } from '../../hooks/usePortfolios';
-import { formatCurrency, formatDate } from '../../utils/formatting';
+import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
+import { formatCurrency, formatDate, formatPercentage } from '../../utils/formatting';
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface HoldingDetailModalProps {
     holding: Holding;
     portfolioId: string;
     onClose: () => void;
+    onEditTransaction: (transaction: Transaction) => void;
+    onDeleteTransaction: (transaction: Transaction) => void;
 }
 
 const calculateCagr = (buyPrice: number, currentPrice: number, buyDate: string): number | null => {
@@ -25,8 +28,17 @@ const calculateCagr = (buyPrice: number, currentPrice: number, buyDate: string):
     return cagr * 100;
 };
 
-const TransactionRow: React.FC<{ transaction: Transaction; currentPrice: number }> = ({ transaction, currentPrice }) => {
-    const cagr = calculateCagr(Number(transaction.price_per_unit), currentPrice, transaction.transaction_date);
+interface TransactionRowProps {
+    transaction: Transaction;
+    currentPrice: number;
+    onEdit: (transaction: Transaction) => void;
+    onDelete: (transaction: Transaction) => void;
+}
+
+const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPrice, onEdit, onDelete }) => {
+    const cagr = transaction.transaction_type === 'BUY'
+        ? calculateCagr(Number(transaction.price_per_unit), currentPrice, transaction.transaction_date)
+        : null;
 
     return (
         <tr className="border-t">
@@ -40,49 +52,32 @@ const TransactionRow: React.FC<{ transaction: Transaction; currentPrice: number 
             <td className="p-2 text-right font-mono">
                 {cagr !== null ? `${cagr.toFixed(2)}%` : 'N/A'}
             </td>
+            <td className="p-2 text-right">
+                <div className="flex items-center justify-end space-x-3">
+                    <button onClick={() => onEdit(transaction)} className="text-gray-500 hover:text-blue-600" title="Edit Transaction">
+                        <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => onDelete(transaction)} className="text-gray-500 hover:text-red-600" title="Delete Transaction">
+                        <TrashIcon className="h-5 w-5" />
+                    </button>
+                </div>
+            </td>
         </tr>
     );
 };
 
-const getConstituentBuyTransactions = (transactions: Transaction[] | undefined): Transaction[] => {
-    if (!transactions || transactions.length === 0) return [];
-
-    const sortedTxs = [...transactions].sort(
-        (a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
-    );
-
-    const buys = sortedTxs.filter(tx => tx.transaction_type === 'BUY');
-    const sells = sortedTxs.filter(tx => tx.transaction_type === 'SELL');
-
-    let totalSold = sells.reduce((acc, tx) => acc + Number(tx.quantity), 0);
-
-    const openBuys: Transaction[] = [];
-    for (const buy of buys) {
-        if (totalSold <= 0) {
-            openBuys.push(buy);
-            continue;
-        }
-
-        const buyQuantity = Number(buy.quantity);
-        if (totalSold >= buyQuantity) {
-            totalSold -= buyQuantity;
-        } else {
-            const remainingQuantity = buyQuantity - totalSold;
-            totalSold = 0;
-            openBuys.push({ ...buy, quantity: remainingQuantity });
-        }
-    }
-    return openBuys;
-};
-
-const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfolioId, onClose }) => {
+const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfolioId, onClose, onEditTransaction, onDeleteTransaction }) => {
     const { data: transactions, isLoading, error } = useAssetTransactions(portfolioId, holding.asset_id);
-    const constituentBuyTransactions = useMemo(() => getConstituentBuyTransactions(transactions), [transactions]);
+    const { data: analytics, isLoading: isLoadingAnalytics, isError: isErrorAnalytics } = useAssetAnalytics(
+        portfolioId,
+        holding.asset_id,
+        { enabled: !!holding.asset_id }
+    );
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content w-full max-w-3xl p-6 border border-gray-200 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-4">
+            <div role="dialog" aria-modal="true" aria-labelledby="holding-detail-modal-title" className="modal-content w-full max-w-3xl p-6 border border-gray-200 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <div id="holding-detail-modal-title" className="flex justify-between items-center mb-4">
                     <div>
                         <h2 className="text-2xl font-bold">{holding.asset_name} ({holding.ticker_symbol})</h2>
                         <p className="text-sm text-gray-500">Transaction History</p>
@@ -92,7 +87,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
                     <div>
                         <p className="text-sm text-gray-500">Quantity</p>
                         <p className="font-semibold">{Number(holding.quantity).toLocaleString()}</p>
@@ -111,12 +106,24 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                             {formatCurrency(holding.unrealized_pnl)}
                         </p>
                     </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Realized XIRR</p>
+                        <p className="font-semibold">
+                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.realized_xirr)}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Unrealized XIRR</p>
+                        <p className="font-semibold">
+                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.unrealized_xirr)}
+                        </p>
+                    </div>
                 </div>
 
                 <div className="overflow-y-auto max-h-96">
                     {isLoading && <p className="text-center p-4">Loading transactions...</p>}
                     {error && <p className="text-red-500 text-center p-4">Error loading transactions: {error.message}</p>}
-                    {constituentBuyTransactions && (
+                    {transactions && (
                         <table className="table-auto w-full">
                             <thead className="sticky top-0 bg-white shadow-sm">
                                 <tr className="text-left text-gray-600 text-sm">
@@ -126,10 +133,11 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                                     <th className="p-2 text-right">Price/Unit</th>
                                     <th className="p-2 text-right">Total Value</th>
                                     <th className="p-2 text-right">CAGR %</th>
+                                    <th className="p-2 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {constituentBuyTransactions.map(tx => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} />)}
+                                {transactions.map(tx => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
                             </tbody>
                         </table>
                     )}

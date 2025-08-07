@@ -13,6 +13,7 @@ export const formatDate = (dateString: string) => {
   });
 };
 
-export const formatPercentage = (value: number): string => {
-  return `${value.toFixed(2)}%`;
+export const formatPercentage = (value: number | undefined | null): string => {
+  if (value === null || typeof value === 'undefined') return 'N/A';
+  return `${(value * 100).toFixed(2)}%`;
 };

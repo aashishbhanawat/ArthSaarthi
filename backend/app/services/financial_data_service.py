@@ -37,6 +37,19 @@ class FinancialDataService:
         prices_data = {}
         tickers_to_fetch = []
 
+        # Handle mock data for E2E tests to ensure deterministic results
+        non_mock_assets = []
+        for asset in assets:
+            if asset["ticker_symbol"] == "XIRRTEST":
+                prices_data["XIRRTEST"] = {
+                    "current_price": Decimal("130.00"),
+                    "previous_close": Decimal("129.00"),
+                }
+            else:
+                non_mock_assets.append(asset)
+        # Continue with non-mocked assets
+        assets = non_mock_assets
+
         if self.redis_client:
             for asset in assets:
                 ticker = asset["ticker_symbol"]
@@ -152,6 +165,15 @@ class FinancialDataService:
         Fetches details for a single asset from yfinance.
         Tries to find the asset on NSE, then BSE, then as-is.
         """
+        # Handle mock data for E2E tests to ensure deterministic results
+        if ticker_symbol == "XIRRTEST":
+            return {
+                "name": "XIRR Test Company",
+                "asset_type": "Stock",
+                "exchange": "TEST",
+                "currency": "INR",
+            }
+
         # Prioritize Indian exchanges
         potential_tickers = [
             f"{ticker_symbol}.NS",

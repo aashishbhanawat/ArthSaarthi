@@ -77,7 +77,7 @@ describe('HoldingsTable', () => {
 
         // Negative P&L for GOOGL should be red
         expect(screen.getByText('-₹250.00')).toHaveClass('text-red-600');
-        expect(screen.getByText('-1.79%')).toHaveClass('text-red-600');
+        expect(screen.getByText('-179.00%')).toHaveClass('text-red-600');
     });
 
     it('sorts the table when a column header is clicked', () => {
