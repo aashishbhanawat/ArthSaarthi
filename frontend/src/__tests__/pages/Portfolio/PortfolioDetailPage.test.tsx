@@ -29,11 +29,21 @@ jest.mock('../../../components/Portfolio/PortfolioSummary', () => {
 });
 jest.mock('../../../components/Portfolio/HoldingsTable', () => {
     const React = require('react');
-    return () => React.createElement('div', { 'data-testid': 'holdings-table' });
+    // The mock needs to be able to trigger the onRowClick prop
+    return (props: { onRowClick: (holding: Holding) => void }) => 
+        React.createElement('div', { 
+            'data-testid': 'holdings-table',
+            onClick: () => props.onRowClick(mockHoldings[0]) // Simulate clicking the first holding
+        });
 });
 jest.mock('../../../components/Portfolio/AnalyticsCard', () => {
     const React = require('react');
     return () => React.createElement('div', { 'data-testid': 'analytics-card' });
+});
+jest.mock('../../../components/Portfolio/HoldingDetailModal', () => {
+    const React = require('react');
+    // Mock the modal to verify it opens and can be closed
+    return ({ holding, onClose }: { holding: Holding, onClose: () => void }) => React.createElement('div', { 'data-testid': 'holding-detail-modal' }, `Details for ${holding.ticker_symbol}`, React.createElement('button', { onClick: onClose }, 'Close Modal'));
 });
 
 const queryClient = new QueryClient();
@@ -53,7 +63,7 @@ const mockSummary: PortfolioSummary = {
     total_realized_pnl: 500,
 };
 
-const mockHoldings: Holding[] = [{
+const mockHoldings: Holding[] = [{ // This needs to be accessible to the HoldingsTable mock
     asset_id: "a-1",
     ticker_symbol: "AAPL",
     asset_name: "Apple Inc.",
@@ -103,6 +113,26 @@ describe('PortfolioDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /add transaction/i })).toBeInTheDocument();
     });
+  });
+
+  it('opens and closes the holding detail modal when a holding is clicked', async () => {
+    renderComponent();
+
+    // Modal should not be visible initially
+    expect(screen.queryByTestId('holding-detail-modal')).not.toBeInTheDocument();
+
+    // Simulate a click on our mocked holdings table
+    fireEvent.click(screen.getByTestId('holdings-table'));
+
+    // The modal should now be visible with the correct holding's data
+    await waitFor(() => {
+      expect(screen.getByTestId('holding-detail-modal')).toBeInTheDocument();
+      expect(screen.getByText('Details for AAPL')).toBeInTheDocument();
+    });
+
+    // Click the close button inside the mocked modal
+    fireEvent.click(screen.getByRole('button', { name: 'Close Modal' }));
+    expect(screen.queryByTestId('holding-detail-modal')).not.toBeInTheDocument();
   });
 
   it('displays loading state correctly', () => {

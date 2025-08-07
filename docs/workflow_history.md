@@ -840,6 +840,55 @@ Its purpose is to build an experience history that can be used as a reference fo
     - The holdings table is now more interactive and user-friendly. The feature is fully tested and stable, with all 92 frontend tests passing.
 ---
 
+## 2025-08-08: Implement & Stabilize Holdings Drill-Down View
+
+*   **Task Description:** Implement the "Holdings Drill-Down View" (FR4.7.3) as part of the portfolio page redesign. This involved making the holdings table rows clickable and displaying a modal with the detailed transaction history for the selected asset. This task also involved a significant, iterative debugging process to fix both logical errors and UI styling defects identified during manual E2E testing.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full-stack implementation, including the backend endpoint, frontend data layer, and the new `HoldingDetailModal` component.
+    2.  **Systematic Debugging via Manual E2E Feedback:** The user performed manual testing and provided feedback on UI and logic bugs. For each bug, the "report a bug" and "apply the fix" prompts were used to systematically document and resolve the issues. This included:
+        *   Fixing a critical logic error where the modal showed all historical buys instead of only the currently held ones (implementing FIFO).
+        *   Fixing multiple UI styling defects, such as missing borders, incorrect spacing, and invisible buttons.
+    3.  **Test Suite Stabilization:** The AI analyzed failing test logs and provided fixes for buggy test cases with inconsistent mock data and ambiguous queries.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/portfolios.py`: **Updated** with the new asset transactions endpoint.
+    *   `backend/app/crud/crud_transaction.py`: **Updated** with the `get_multi_by_portfolio_and_asset` method.
+    *   `frontend/src/components/Portfolio/HoldingDetailModal.tsx`: **New** component for the drill-down view. Refactored multiple times to fix UI and logic bugs.
+    *   `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx`: **Updated** to handle modal state and row clicks.
+    *   `frontend/src/hooks/usePortfolios.ts`, `frontend/src/services/portfolioApi.ts`: **Updated** with new data-fetching logic.
+    *   `frontend/src/__tests__/`: **Added** `HoldingDetailModal.test.tsx` and **updated** `PortfolioDetailPage.test.tsx`. The modal test was refactored multiple times to align with the component fixes.
+    *   `docs/bug_reports_temp.md`: Populated with bug reports for each issue found.
+
+*   **Outcome:**
+    - The "Holdings Drill-Down View" feature is complete, stable, and fully tested.
+    - All 96 frontend tests are passing. The portfolio page redesign is now functionally complete according to the feature plan.
+
+## 2025-08-07: Implement Holdings Drill-Down View
+
+*   **Task Description:** Implement the "Holdings Drill-Down View" (FR4.7.3) as part of the portfolio page redesign. This involved making the holdings table rows clickable and displaying a modal with the detailed transaction history for the selected asset.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full-stack implementation. This included:
+        *   A new backend endpoint (`/portfolios/{id}/assets/{id}/transactions`) and CRUD method to fetch transactions for a specific asset.
+        *   New frontend API services and React Query hooks (`useAssetTransactions`) to consume the endpoint.
+        *   A new `HoldingDetailModal.tsx` component to display the data.
+        *   Refactoring `PortfolioDetailPage.tsx` to manage the modal's state.
+    2.  **Systematic Debugging via Log Analysis:** The initial implementation introduced a test failure. The user provided the failing `npm test` log.
+    3.  **Bug Triage & Fixing:** The AI analyzed the log, identified that a test assertion for a date format was incorrect, filed a bug report, and provided the corrected test file.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/portfolios.py`: **Updated** with the new asset transactions endpoint.
+    *   `backend/app/crud/crud_transaction.py`: **Updated** with the `get_multi_by_portfolio_and_asset` method.
+    *   `frontend/src/components/Portfolio/HoldingDetailModal.tsx`: **New** component for the drill-down view.
+    *   `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx`: **Updated** to handle modal state and row clicks.
+    *   `frontend/src/hooks/usePortfolios.ts`, `frontend/src/services/portfolioApi.ts`: **Updated** with new data-fetching logic.
+    *   `frontend/src/__tests__/`: **Added** `HoldingDetailModal.test.tsx` and **updated** `PortfolioDetailPage.test.tsx`.
+
+*   **Outcome:**
+    - The "Holdings Drill-Down View" feature is complete and fully tested.
+    - All 96 frontend tests are passing. The portfolio page redesign is now functionally complete according to the feature plan.
+
 ## 2025-08-05: Backend Implementation & Stabilization for Data Import
 
 *   **Task Description:** Implement the backend for the "Automated Data Import" feature and stabilize the test suite.
@@ -1022,3 +1071,4 @@ Its purpose is to build an experience history that can be used as a reference fo
     - The full-stack "Edit/Delete Transactions" feature is complete and fully tested.
     - The context-sensitive help feature is implemented on the dashboard.
     - Both backend and frontend test suites are stable and passing.
+,

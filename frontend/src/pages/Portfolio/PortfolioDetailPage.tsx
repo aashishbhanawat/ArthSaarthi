@@ -5,6 +5,8 @@ import TransactionFormModal from '../../components/Portfolio/TransactionFormModa
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
 import HoldingsTable from '../../components/Portfolio/HoldingsTable';
+import { Holding } from '../../types/holding';
+import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
 
 const PortfolioDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -15,10 +17,19 @@ const PortfolioDetailPage: React.FC = () => {
     const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(id);
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
+    const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
 
     if (isLoading) return <div className="text-center p-8">Loading portfolio details...</div>;
     if (isError) return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
     if (!portfolio) return <div className="text-center p-8">Portfolio not found.</div>;
+
+    const handleHoldingClick = (holding: Holding) => {
+        setSelectedHolding(holding);
+    };
+
+    const handleCloseDetailModal = () => {
+        setSelectedHolding(null);
+    };
 
     return (
         <div>
@@ -39,7 +50,12 @@ const PortfolioDetailPage: React.FC = () => {
             <AnalyticsCard analytics={analytics} isLoading={isAnalyticsLoading} error={analyticsError} />
 
             <div className="mt-8">
-                <HoldingsTable holdings={holdings?.holdings} isLoading={isHoldingsLoading} error={holdingsError} />
+                <HoldingsTable
+                    holdings={holdings?.holdings}
+                    isLoading={isHoldingsLoading}
+                    error={holdingsError}
+                    onRowClick={handleHoldingClick}
+                />
             </div>
 
             {isTransactionFormOpen && (
@@ -47,6 +63,14 @@ const PortfolioDetailPage: React.FC = () => {
                     onClose={() => setTransactionFormOpen(false)}
                     portfolioId={portfolio.id}
                     transactionToEdit={undefined} // Edit functionality will be handled elsewhere
+                />
+            )}
+
+            {selectedHolding && (
+                <HoldingDetailModal
+                    holding={selectedHolding}
+                    portfolioId={portfolio.id}
+                    onClose={handleCloseDetailModal}
                 />
             )}
         </div>

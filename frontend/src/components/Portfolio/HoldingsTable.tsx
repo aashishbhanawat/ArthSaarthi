@@ -6,6 +6,7 @@ interface HoldingsTableProps {
     holdings: Holding[] | undefined;
     isLoading: boolean;
     error: Error | null;
+    onRowClick: (holding: Holding) => void;
 }
 
 type SortKey = keyof Holding;
@@ -27,7 +28,7 @@ const PnlCell: React.FC<{ value: number; isPercentage?: boolean }> = ({ value, i
     );
 };
 
-const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, error }) => {
+const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, error, onRowClick }) => {
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>({
         key: 'current_value',
         direction: 'descending',
@@ -108,7 +109,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                     </thead>
                     <tbody>
                         {sortedHoldings.map((holding) => (
-                            <tr key={holding.asset_id} className="border-t hover:bg-gray-50">
+                            <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer" onClick={() => onRowClick(holding)}>
                                 <td className="p-2">
                                     <div className="font-bold">{holding.ticker_symbol}</div>
                                     <div className="text-sm text-gray-500 truncate">{holding.asset_name}</div>

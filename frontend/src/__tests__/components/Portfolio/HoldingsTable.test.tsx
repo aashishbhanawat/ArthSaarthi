@@ -37,22 +37,22 @@ const mockHoldings: Holding[] = [
 
 describe('HoldingsTable', () => {
     it('renders loading state correctly', () => {
-        render(<HoldingsTable holdings={undefined} isLoading={true} error={null} />);
+        render(<HoldingsTable holdings={undefined} isLoading={true} error={null} onRowClick={jest.fn()} />);
         expect(screen.getByText('', { selector: '.animate-pulse' })).toBeInTheDocument();
     });
 
     it('renders error state correctly', () => {
-        render(<HoldingsTable holdings={undefined} isLoading={false} error={new Error('Failed to fetch')} />);
+        render(<HoldingsTable holdings={undefined} isLoading={false} error={new Error('Failed to fetch')} onRowClick={jest.fn()} />);
         expect(screen.getByText('Error loading holdings: Failed to fetch')).toBeInTheDocument();
     });
 
     it('renders empty state when no holdings are provided', () => {
-        render(<HoldingsTable holdings={[]} isLoading={false} error={null} />);
+        render(<HoldingsTable holdings={[]} isLoading={false} error={null} onRowClick={jest.fn()} />);
         expect(screen.getByText('You have no current holdings in this portfolio.')).toBeInTheDocument();
     });
 
     it('renders table with holdings data correctly', () => {
-        render(<HoldingsTable holdings={mockHoldings} isLoading={false} error={null} />);
+        render(<HoldingsTable holdings={mockHoldings} isLoading={false} error={null} onRowClick={jest.fn()} />);
 
         // Check for headers
         expect(screen.getByText('Holdings')).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe('HoldingsTable', () => {
     });
 
     it('applies correct colors for P&L values', () => {
-        render(<HoldingsTable holdings={mockHoldings} isLoading={false} error={null} />);
+        render(<HoldingsTable holdings={mockHoldings} isLoading={false} error={null} onRowClick={jest.fn()} />);
 
         // Positive P&L for AAPL should be green
         expect(screen.getByText('₹250.00')).toHaveClass('text-green-600');
@@ -81,7 +81,7 @@ describe('HoldingsTable', () => {
     });
 
     it('sorts the table when a column header is clicked', () => {
-        render(<HoldingsTable holdings={mockHoldings} isLoading={false} error={null} />);
+        render(<HoldingsTable holdings={mockHoldings} isLoading={false} error={null} onRowClick={jest.fn()} />);
 
         // Default sort is by Current Value desc. GOOGL (13750) > AAPL (1750)
         let rows = screen.getAllByRole('row');

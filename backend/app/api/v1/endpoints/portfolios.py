@@ -152,3 +152,11 @@ def get_portfolio_holdings(
 
     result = crud.holding.get_portfolio_holdings_and_summary(db=db, portfolio_id=portfolio_id)
     return {"holdings": result["holdings"]}
+
+@router.get("/{portfolio_id}/assets/{asset_id}/transactions", response_model=List[schemas.Transaction])
+def read_asset_transactions(portfolio_id: uuid.UUID, asset_id: uuid.UUID, db: Session = Depends(dependencies.get_db), current_user: models.User = Depends(dependencies.get_current_user)):
+    # Basic ownership check
+    portfolio = crud.portfolio.get(db, id=portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    return crud.transaction.get_multi_by_portfolio_and_asset(db, portfolio_id=portfolio_id, asset_id=asset_id)

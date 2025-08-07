@@ -1,12 +1,16 @@
-feat(portfolio): Complete full-stack portfolio page redesign with sorting
+feat(portfolio): Implement holdings drill-down view
 
-This commit delivers the full-stack implementation of the "Portfolio Page Redesign" feature (FR4.7), a major enhancement driven by pilot user feedback. The portfolio detail page has been transformed from a simple transaction list into a modern, insightful dashboard with interactive sorting capabilities.
+This commit implements the "Holdings Drill-Down View" (FR4.7.3), allowing users to click on any holding to see a detailed breakdown of its constituent transactions. This completes a key part of the portfolio page redesign.
+
+### Backend Changes:
+- **New Endpoint:** Created `GET /portfolios/{portfolio_id}/assets/{asset_id}/transactions` to fetch all transactions for a specific asset within a portfolio.
+- **New CRUD Method:** Added `get_multi_by_portfolio_and_asset` to `crud_transaction.py` to support the new endpoint.
 
 ### Frontend Changes:
-- **Refactored Page (`PortfolioDetailPage.tsx`):** Replaced the old transaction list with the new `PortfolioSummary` and `HoldingsTable` components.
-- **New Components:**
-    - `PortfolioSummary.tsx`: Displays key metrics in a series of summary cards.
-    - `HoldingsTable.tsx`: Displays the detailed, consolidated list of current asset holdings. This table now includes client-side sorting on all columns, defaulting to sort by "Current Value" descending.
-- **New Data Layer:** Added new types, API service functions, and React Query hooks (`usePortfolioSummary`, `usePortfolioHoldings`) to consume the new backend endpoints.
-- **New Unit Tests:** Added dedicated unit tests for the `PortfolioSummary` and `HoldingsTable` components, including tests for the new sorting functionality.
-- **E2E Test Suite Stabilization:** The entire E2E test suite was updated to align with the new UI. Obsolete tests were removed, and existing tests were refactored to assert against the new consolidated holdings view instead of the old transaction list.
+- **New Component (`HoldingDetailModal.tsx`):** A new modal that displays a summary of the selected holding and a detailed list of its transactions.
+- **FIFO Logic:** Implemented First-In, First-Out (FIFO) logic in the modal to accurately display only the "open" buy transactions that make up the current holding.
+- **CAGR Calculation:** Added a "CAGR %" column to the transaction list for quick, on-the-fly performance analysis of each buy lot.
+- **UI/UX Polish:** Iteratively fixed multiple UI defects in the modal, including spacing, borders, and button visibility, based on manual E2E testing feedback.
+- **Data Layer:** Added the `useAssetTransactions` hook and `getAssetTransactions` API service function.
+- **Page Integration:** Updated `PortfolioDetailPage.tsx` to manage the state and rendering of the new drill-down modal.
+- **Test Suite:** Added a comprehensive unit test suite for `HoldingDetailModal.tsx`, including tests for the FIFO logic and UI states. Stabilized existing tests to align with the new functionality.

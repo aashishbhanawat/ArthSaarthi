@@ -57,6 +57,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             db.query(self.model).filter(self.model.portfolio_id == portfolio_id).all()
         )
 
+    def get_multi_by_portfolio_and_asset(self, db: Session, *, portfolio_id: uuid.UUID, asset_id: uuid.UUID) -> List[Transaction]:
+        return db.query(self.model).filter(Transaction.portfolio_id == portfolio_id, Transaction.asset_id == asset_id).order_by(Transaction.transaction_date).all()
+
     def get_by_details(
         self,
         db: Session,
@@ -80,5 +83,6 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             )
             .first()
         )
+
 
 transaction = CRUDTransaction(Transaction)

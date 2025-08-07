@@ -1,9 +1,25 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
+import { getPortfolios, getPortfolio, createPortfolio, deletePortfolio, lookupAsset, createAsset, createTransaction, updateTransaction, deleteTransaction, getPortfolioAnalytics, getPortfolioSummary, getPortfolioHoldings, getAssetTransactions } from '../services/portfolioApi';
 import { PortfolioCreate, TransactionCreate, TransactionUpdate } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
 import { PortfolioAnalytics } from '../types/analytics';
+
+// Helper function to invalidate all queries related to portfolio and dashboard data
+const invalidatePortfolioAndDashboardQueries = (queryClient: QueryClient, portfolioId: string) => {
+    const queriesToInvalidate = [
+        ['portfolio', portfolioId],
+        ['dashboardSummary'],
+        ['dashboardHistory'],
+        ['dashboardAllocation'],
+        ['portfolioAnalytics', portfolioId],
+        ['portfolioSummary', portfolioId],
+        ['portfolioHoldings', portfolioId],
+        ['assetTransactions', portfolioId], // Invalidate all asset transactions for this portfolio
+    ];
+    queriesToInvalidate.forEach(queryKey => queryClient.invalidateQueries({ queryKey }));
+};
 
 export const usePortfolios = () => {
     return useQuery({
@@ -53,17 +69,7 @@ export const useCreateTransaction = () => {
     return useMutation({
         mutationFn: ({ portfolioId, data }: { portfolioId: string; data: TransactionCreate }) =>
             portfolioApi.createTransaction(portfolioId, data),
-        onSuccess: (_, variables) => {
-            // When a transaction changes, we need to refetch data for the specific portfolio,
-            // all dashboard summaries/charts, and the portfolio's specific analytics.
-            queryClient.invalidateQueries({ queryKey: ['portfolio', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardHistory'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardAllocation'] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', variables.portfolioId] });
-        },
+        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });
 };
 
@@ -80,15 +86,7 @@ export const useUpdateTransaction = () => {
     return useMutation({
         mutationFn: ({ portfolioId, transactionId, data }: { portfolioId: string; transactionId: string; data: TransactionUpdate }) =>
             portfolioApi.updateTransaction(portfolioId, transactionId, data),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['portfolio', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardHistory'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardAllocation'] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', variables.portfolioId] });
-        },
+        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });
 };
 
@@ -97,15 +95,7 @@ export const useDeleteTransaction = () => {
     return useMutation({
         mutationFn: ({ portfolioId, transactionId }: { portfolioId: string; transactionId: string }) =>
             portfolioApi.deleteTransaction(portfolioId, transactionId),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['portfolio', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardHistory'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboardAllocation'] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', variables.portfolioId] });
-        },
+        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });
 };
 
@@ -122,5 +112,13 @@ export const usePortfolioHoldings = (id: string | undefined) => {
         queryKey: ['portfolioHoldings', id],
         queryFn: () => portfolioApi.getPortfolioHoldings(id!),
         enabled: !!id,
+    });
+};
+
+export const useAssetTransactions = (portfolioId: string | undefined, assetId: string | undefined) => {
+    return useQuery({
+        queryKey: ['assetTransactions', portfolioId, assetId],
+        queryFn: () => getAssetTransactions(portfolioId!, assetId!),
+        enabled: !!portfolioId && !!assetId,
     });
 };

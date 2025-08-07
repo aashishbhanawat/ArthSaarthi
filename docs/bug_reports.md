@@ -5957,3 +5957,90 @@ The frontend application should build and run successfully.
 The Vite server crashes, preventing the E2E tests from running.
 **Resolution:**
 Rename the imported type to `PortfolioSummaryType` using an `as` alias in the import statement in `frontend/src/components/Portfolio/PortfolioSummary.tsx` to resolve the name collision.
+
+---
+
+**Bug ID:** 2025-08-07-07
+**Title:** Holdings Drill-Down view has incorrect transaction history and UI/styling defects.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** User via Manual E2E Test
+**Date Reported:** 2025-08-07
+**Classification:** Implementation (Frontend)
+**Severity:** High
+**Description:**
+The "Holdings Drill-Down View" modal has two issues:
+1.  **Logical Error:** It incorrectly displays all historical BUY transactions for an asset, rather than only the transactions that constitute the *current* holding based on FIFO accounting.
+2.  **UI Defects:** The modal lacks internal padding, causing text to be too close to the borders. This also causes a rendering glitch where the top-left rounded border is not visible.
+**Steps to Reproduce:**
+1. Create a BUY transaction for 10 shares of an asset.
+2. Create a second BUY transaction for 7 shares of the same asset.
+3. Create a SELL transaction for 10 shares of the same asset.
+4. Navigate to the portfolio detail page and open the drill-down modal for that asset.
+**Expected Behavior:**
+1. The drill-down modal should only display the second BUY transaction for 7 shares.
+2. The modal should have proper internal spacing, and all borders should render correctly.
+**Actual Behavior:**
+1. The modal displays both BUY transactions, incorrectly showing a total of 17 shares.
+2. The modal content is flush against the borders, and the top-left border is not visible.
+**Resolution:**
+1.  Refactor `HoldingDetailModal.tsx` to implement a FIFO calculation to display only the constituent "open" buy transactions.
+2.  Add padding (`p-6`) to the main modal content `div` to fix the spacing and border rendering issues.
+3.  Fix a contradictory assertion in `HoldingDetailModal.test.tsx` that was introduced during the FIFO logic implementation.
+
+---
+
+**Bug ID:** 2025-08-07-08
+**Title:** `HoldingDetailModal` close button has poor visibility and spacing.
+**Module:** Portfolio Management (Frontend), UI/Styling
+**Reported By:** User via Manual E2E Test
+**Date Reported:** 2025-08-07
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:** The close button (`×`) on the "Holdings Drill-Down View" modal is difficult to see and positioned too close to the edge of the modal content. It is rendered as plain gray text, which does not provide a clear visual cue that it is an interactive button.
+**Steps to Reproduce:**
+1. Open the Holdings Drill-Down modal for any asset.
+2. Observe the close button in the top-right corner.
+**Expected Behavior:**
+The close button should be clearly visible, styled as an interactive element (e.g., with a background on hover), and have appropriate spacing from the modal's content and borders.
+**Actual Behavior:**
+The button is faint, unstyled plain text, and appears cramped in the corner.
+**Resolution:**
+Restyle the close button in `HoldingDetailModal.tsx` to be a circular button with a hover effect and adjust its positioning with negative margins to improve its placement and affordance.
+
+---
+
+**Bug ID:** 2025-08-07-09
+**Title:** `HoldingDetailModal` test suite fails due to inconsistent mock data and contradictory assertions.
+**Module:** Portfolio Management (Test Suite)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-07
+**Classification:** Test Suite
+**Severity:** High
+**Description:** The test `renders holding details and transaction list on successful fetch` is failing. The root cause is twofold: 1) The mock `Holding` object has a `quantity` that is inconsistent with the net quantity derived from the mock `Transaction` list. 2) The test contains contradictory assertions, first checking if a transaction is present and then checking if it is not present. The component's FIFO logic is correct, but the test is validating the wrong behavior.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test should use consistent mock data and correctly assert that only the "open" buy transactions are rendered, as determined by the FIFO logic.
+**Actual Behavior:**
+The test fails with `Unable to find an element with the text: 10 Jan 2023`.
+**Resolution:**
+Update `HoldingDetailModal.test.tsx` to use consistent mock data for the `Holding` object and to correctly assert that only the "open" buy transactions are rendered.
+
+---
+
+**Bug ID:** 2025-08-07-10
+**Title:** `HoldingDetailModal` test fails with ambiguous query for "Quantity".
+**Module:** Portfolio Management (Test Suite)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-07
+**Classification:** Test Suite
+**Severity:** High
+**Description:** The test `renders holding details and transaction list on successful fetch` fails with a `TestingLibraryElementError`. The test uses `screen.getByText('50')` to find the quantity in the summary card, but this query is ambiguous because the number "50" also appears in the transaction table row.
+**Steps to Reproduce:**
+1. Run `docker-compose run --rm frontend npm test`.
+**Expected Behavior:**
+The test should use a specific query to uniquely identify the quantity in the summary card.
+**Actual Behavior:**
+The test fails because the query finds multiple elements.
+**Resolution:**
+Update the test in `HoldingDetailModal.test.tsx` to use `getAllByText` and then find the correct element by its tag name (`p` for the summary card), making the assertion specific and robust.
