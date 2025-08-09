@@ -20,27 +20,24 @@ jobs:
           cp backend/.env.prod.example backend/.env.test
           cp frontend/.env.example frontend/.env
 
-      - name: Set up Docker Compose
-        uses: hoverkraft-tech/compose-action@v2.0.1
-
       - name: Build services
-        run: docker-compose build
+        run: docker compose build
 
       - name: Lint Backend
-        run: docker-compose run --rm backend ruff check .
+        run: docker compose run --rm backend ruff check .
 
       - name: Lint Frontend
-        run: docker-compose run --rm frontend npx eslint .
+        run: docker compose run --rm frontend npx eslint .
 
       - name: Run Backend Tests
-        run: docker-compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
 
       - name: Run Frontend Tests
-        run: docker-compose run --rm frontend npm test
+        run: docker compose run --rm frontend npm test
 
       - name: Run E2E Tests
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit
+          docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit
 
       - name: Upload E2E test results
         if: always()
