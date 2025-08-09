@@ -18,13 +18,13 @@ from .import_session import (
 from .msg import Msg
 from .portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
 from .token import Token, TokenPayload
+from . import testing
 from .transaction import (
     Transaction,
     TransactionCreate,
     TransactionUpdate,
 )
 from .user import User, UserCreate, UserUpdate
-from . import testing
 
 __all__ = [
     "AnalyticsResponse",
