@@ -14,6 +14,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create .env files
+        run: |
+          cp backend/.env.prod.example backend/.env
+          cp backend/.env.prod.example backend/.env.test
+          cp frontend/.env.example frontend/.env
+
       - name: Set up Docker Compose
         uses: hoverkraft-tech/compose-action@v2.0.1
 
