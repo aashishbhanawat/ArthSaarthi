@@ -23,11 +23,9 @@ jobs:
       - name: Build services
         run: docker compose build
 
-      - name: Install backend dev dependencies
-        run: docker compose run --rm backend pip install -r requirements-dev.in
-
       - name: Lint Backend
-        run: docker compose run --rm backend ruff check .
+        run: |
+          docker compose run --rm backend sh -c "pip install -r requirements-dev.in && ruff check ."
 
       - name: Lint Frontend
         run: docker compose run --rm frontend npx eslint .
