@@ -1,4 +1,3 @@
-from . import testing
 from .analytics import AnalyticsResponse, AssetAnalytics
 from .asset import Asset, AssetCreate, AssetCreateIn, AssetUpdate
 from .dashboard import (
@@ -18,8 +17,8 @@ from .import_session import (
 )
 from .msg import Msg
 from .portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
-from .token import Token, TokenPayload
 from . import testing
+from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
     TransactionCreate,
@@ -59,5 +58,4 @@ __all__ = [
     "User",
     "UserCreate",
     "UserUpdate",
-    "testing",
 ]
