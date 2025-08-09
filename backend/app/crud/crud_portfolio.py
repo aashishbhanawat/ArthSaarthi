@@ -1,6 +1,7 @@
-from typing import List
-from sqlalchemy.orm import Session
 import uuid
+from typing import List
+
+from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase
 from app.models.portfolio import Portfolio

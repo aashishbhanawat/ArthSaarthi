@@ -1,11 +1,11 @@
-from typing import List
 import uuid
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_admin_user, get_current_user
 from app import crud
+from app.core.dependencies import get_current_admin_user, get_current_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import User, UserCreate, UserUpdate
@@ -25,7 +25,8 @@ def read_user_me(
 
 @router.get("/", response_model=List[User])
 def list_users(
-    db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_admin_user)
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
 ):
     """
     Retrieve a list of all users. (Admin Only)
@@ -80,6 +81,7 @@ def update_user(
     db.commit()
     db.refresh(user)
     return user
+
 
 @router.delete("/{user_id}", response_model=User)
 def delete_user(

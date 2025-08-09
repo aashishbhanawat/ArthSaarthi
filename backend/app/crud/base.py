@@ -1,5 +1,5 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 import uuid
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
@@ -36,7 +36,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: Session,
         *,
         db_obj: ModelType,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
@@ -56,11 +56,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return obj
 
     def create_with_owner(
-        self,
-        db: Session,
-        *,
-        obj_in: CreateSchemaType,
-        owner_id: uuid.UUID
+        self, db: Session, *, obj_in: CreateSchemaType, owner_id: uuid.UUID
     ) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
         db_obj = self.model(**obj_in_data, user_id=owner_id)

@@ -1,12 +1,15 @@
-import pytest
+from typing import Any
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
-from app.schemas.user import UserCreate, UserUpdate
-from app.tests.utils.user import get_access_token, create_random_user, random_email, random_lower_string
-from typing import Any
 from app.models.user import User as UserModel
+from app.tests.utils.user import (
+    create_random_user,
+    get_access_token,
+    random_email,
+)
+
 
 def test_use_access_admin_route(client: TestClient, db: Session) -> None:
     """
@@ -16,7 +19,7 @@ def test_use_access_admin_route(client: TestClient, db: Session) -> None:
     access_token = get_access_token(client=client, email=user.email, password=password)
     response = client.get(
         "/api/v1/users/",  # Hardcode the correct prefix
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 403
 
@@ -55,7 +58,11 @@ def test_create_user(client: TestClient, db: Session) -> None:
     )
 
     # Define the new user's data
-    user_data: dict[str, Any] = {"full_name": "Test User", "email": random_email(), "password": "ValidPassword123!"}
+    user_data: dict[str, Any] = {
+        "full_name": "Test User",
+        "email": random_email(),
+        "password": "ValidPassword123!",
+    }
 
     # Send the request to create the new user
     response = client.post(
@@ -66,7 +73,7 @@ def test_create_user(client: TestClient, db: Session) -> None:
 
     # Assert the response status and data
     assert response.status_code == 201
-    content = response.json()    
+    content = response.json()
     assert content["email"] == user_data["email"]
     assert content["full_name"] == user_data["full_name"]
     assert "id" in content
@@ -84,7 +91,8 @@ def test_update_user(client: TestClient, db: Session) -> None:
     db.commit()
     db.refresh(admin_user)
     admin_access_token = get_access_token(
-        client=client, email=admin_user.email, password=admin_password)
+        client=client, email=admin_user.email, password=admin_password
+    )
 
     # Create a user to update
     user_to_update, _ = create_random_user(db)
@@ -112,7 +120,7 @@ def test_delete_user(client: TestClient, db: Session) -> None:
     """
     Test deleting a user via the admin route.
     """
-    # 1. Create an admin user to authenticate with 
+    # 1. Create an admin user to authenticate with
     admin_user, admin_password = create_random_user(db)
     admin_user.is_admin = True
     db.add(admin_user)
@@ -122,7 +130,7 @@ def test_delete_user(client: TestClient, db: Session) -> None:
         client=client, email=admin_user.email, password=admin_password
     )
 
-    #2. Create a user to delete
+    # 2. Create a user to delete
     user_to_delete, _ = create_random_user(db)
     user_id = user_to_delete.id
 
@@ -135,6 +143,6 @@ def test_delete_user(client: TestClient, db: Session) -> None:
     # Assert the response status
     assert response.status_code == 200
 
-    #3. Verify that the user is actually deleted from the database
-    deleted_user = db.query(UserModel).filter(UserModel.id == user_id).first()    
+    # 3. Verify that the user is actually deleted from the database
+    deleted_user = db.query(UserModel).filter(UserModel.id == user_id).first()
     assert deleted_user is None, "User should be deleted from the database"

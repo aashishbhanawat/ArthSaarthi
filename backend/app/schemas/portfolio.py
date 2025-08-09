@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
 import uuid
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict
+
 from .transaction import Transaction
 
 
@@ -19,6 +21,7 @@ class PortfolioCreate(PortfolioBase):
 class PortfolioUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+
 
 # Properties to return to client
 class Portfolio(PortfolioBase):

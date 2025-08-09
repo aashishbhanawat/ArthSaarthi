@@ -2,23 +2,19 @@ import logging
 import os
 import shutil
 import uuid
-from pathlib import Path
 from decimal import Decimal
-from sqlalchemy.orm import Session
+from pathlib import Path
+from typing import Any
+
 import pandas as pd
-from typing import Any, List
-
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
 
-from app import crud
-from app import models, schemas
+from app import crud, models, schemas
 from app.core import dependencies as deps
-from app.schemas.msg import Msg
 from app.core.config import settings
+from app.schemas.msg import Msg
 from app.services.import_parsers.csv_parser import CsvParser
-from app.services.import_parsers.zerodha_parser import ZerodhaParser
-from app.services.import_parsers.icici_parser import IciciParser
-from app.services.import_parsers.mf_cas_parser import MfCasParser
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -32,9 +28,12 @@ def get_parser(file_name: str):
     # elif "cas" in file_name.lower():
     #     return MfCasParser()
     # else:
-    return CsvParser() # Default to generic CSV parser
+    return CsvParser()  # Default to generic CSV parser
 
-@router.post("/", response_model=schemas.ImportSession, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/", response_model=schemas.ImportSession, status_code=status.HTTP_201_CREATED
+)
 async def create_import_session(
     *,
     db: Session = Depends(deps.get_db),
@@ -52,13 +51,15 @@ async def create_import_session(
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     if portfolio.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions for this portfolio")
+        raise HTTPException(
+            status_code=403, detail="Not enough permissions for this portfolio"
+        )
 
     # 1. Securely save the uploaded file
     upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
     upload_dir.mkdir(exist_ok=True)
-    
-    # Sanitize filename and create a unique path to prevent overwrites and traversal attacks
+
+    # Sanitize filename and create a unique path to prevent attacks.
     sanitized_filename = os.path.basename(file.filename)
     temp_file_path = upload_dir / f"{uuid.uuid4()}_{sanitized_filename}"
 
@@ -89,12 +90,24 @@ async def create_import_session(
         parsed_data = parser.parse(str(temp_file_path))
         if parsed_data.empty:
             # Update status to FAILED if parsing is unsuccessful
-            crud.import_session.update(db, db_obj=import_session, obj_in={"status": "FAILED"})
-            raise HTTPException(status_code=400, detail="Failed to parse file. The file might be empty or in an unsupported format.")
+            crud.import_session.update(
+                db, db_obj=import_session, obj_in={"status": "FAILED"}
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Failed to parse file. The file might be empty or in an"
+                    " unsupported format."
+                ),
+            )
     except Exception as e:
         log.error(f"Error parsing file {temp_file_path}: {e}")
-        crud.import_session.update(db, db_obj=import_session, obj_in={"status": "FAILED"})
-        raise HTTPException(status_code=400, detail=f"An error occurred during file parsing: {e}")
+        crud.import_session.update(
+            db, db_obj=import_session, obj_in={"status": "FAILED"}
+        )
+        raise HTTPException(
+            status_code=400, detail=f"An error occurred during file parsing: {e}"
+        )
 
     # 4. Save the parsed data to a permanent, efficient format (e.g., Parquet)
     parsed_file_name = f"{import_session.id}.parquet"
@@ -103,10 +116,11 @@ async def create_import_session(
 
     # 5. Update the session with the parsed file path and "PARSED" status
     import_session_update = schemas.ImportSessionUpdate(
-        parsed_file_path=str(parsed_file_path),
-        status="PARSED"
+        parsed_file_path=str(parsed_file_path), status="PARSED"
     )
-    import_session = crud.import_session.update(db, db_obj=import_session, obj_in=import_session_update)
+    import_session = crud.import_session.update(
+        db, db_obj=import_session, obj_in=import_session_update
+    )
 
     db.commit()
     db.refresh(import_session)
@@ -174,34 +188,57 @@ def commit_import_session(
             status_code=400,
             detail=f"Cannot commit session with status '{import_session.status}'",
         )
-    if not import_session.parsed_file_path or not Path(import_session.parsed_file_path).exists():
-        raise HTTPException(status_code=400, detail="No parsed file found for this session")
+    if (
+        not import_session.parsed_file_path
+        or not Path(import_session.parsed_file_path).exists()
+    ):
+        raise HTTPException(
+            status_code=400, detail="No parsed file found for this session"
+        )
 
     try:
         df = pd.read_parquet(import_session.parsed_file_path)
-                
+
         # Standardize column names to avoid issues with different file formats
-        df.columns = [c.lower().replace(' ', '_') for c in df.columns]
+        df.columns = [c.lower().replace(" ", "_") for c in df.columns]
 
         # Define expected columns for a generic transaction import
-        required_columns = {'ticker_symbol', 'transaction_type', 'quantity', 'price_per_unit', 'transaction_date'}
+        required_columns = {
+            "ticker_symbol",
+            "transaction_type",
+            "quantity",
+            "price_per_unit",
+            "transaction_date",
+        }
         if not required_columns.issubset(df.columns):
             missing = required_columns - set(df.columns)
             raise HTTPException(
                 status_code=400,
-                detail=f"Parsed file is missing required columns: {', '.join(missing)}"
+                detail=f"Parsed file is missing required columns: {', '.join(missing)}",
             )
 
         transactions_created = 0
         for _, row in df.iterrows():
             # 1. Find the asset by its ticker symbol.
-            asset = crud.asset.get_by_ticker(db, ticker_symbol=row['ticker_symbol'])
+            asset = crud.asset.get_by_ticker(db, ticker_symbol=row["ticker_symbol"])
             if not asset:
-                crud.import_session.update(db, db_obj=import_session, obj_in={"status": "FAILED", "error_message": f"Asset with ticker '{row['ticker_symbol']}' not found."})
+                crud.import_session.update(
+                    db,
+                    db_obj=import_session,
+                    obj_in={
+                        "status": "FAILED",
+                        "error_message": (
+                            f"Asset with ticker '{row['ticker_symbol']}' not found."
+                        ),
+                    },
+                )
                 db.commit()
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Commit failed: Asset with ticker '{row['ticker_symbol']}' not found. Please create it first."
+                    detail=(
+                        f"Commit failed: Asset with ticker '{row['ticker_symbol']}'"
+                        " not found. Please create it first."
+                    ),
                 )
 
             # 2. Check for existing transaction to prevent duplicates.
@@ -209,23 +246,29 @@ def commit_import_session(
                 db,
                 portfolio_id=import_session.portfolio_id,
                 asset_id=asset.id,
-                transaction_date=pd.to_datetime(row['transaction_date']).date(),
-                transaction_type=row['transaction_type'].upper(),
-                quantity=Decimal(str(row['quantity'])),
-                price_per_unit=Decimal(str(row['price_per_unit']))
+                transaction_date=pd.to_datetime(row["transaction_date"]).date(),
+                transaction_type=row["transaction_type"].upper(),
+                quantity=Decimal(str(row["quantity"])),
+                price_per_unit=Decimal(str(row["price_per_unit"])),
             )
             if existing_transaction:
-                log.info(f"Skipping duplicate transaction for asset {asset.ticker_symbol} on date {row['transaction_date']}")
+                log.info(
+                    "Skipping duplicate transaction for asset %s on date %s",
+                    asset.ticker_symbol,
+                    row["transaction_date"],
+                )
                 continue
 
             # 3. Prepare the transaction data from the row.
             transaction_in = schemas.TransactionCreate(
                 asset_id=asset.id,
-                transaction_type=row['transaction_type'].upper(),
-                quantity=Decimal(str(row['quantity'])),
-                price_per_unit=Decimal(str(row['price_per_unit'])),
-                transaction_date=pd.to_datetime(row['transaction_date']),
-                fees=Decimal(str(row.get('fees', '0.0'))) # Handle optional fees column
+                transaction_type=row["transaction_type"].upper(),
+                quantity=Decimal(str(row["quantity"])),
+                price_per_unit=Decimal(str(row["price_per_unit"])),
+                transaction_date=pd.to_datetime(row["transaction_date"]),
+                fees=Decimal(
+                    str(row.get("fees", "0.0"))
+                ),  # Handle optional fees column
             )
 
             # 4. Create the transaction using the existing CRUD method.
@@ -235,12 +278,21 @@ def commit_import_session(
             transactions_created += 1
 
         # Update session status to COMPLETED
-        crud.import_session.update(db, db_obj=import_session, obj_in={"status": "COMPLETED", "error_message": None})
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={"status": "COMPLETED", "error_message": None},
+        )
 
         db.commit()
 
         if transactions_created == 0 and len(df) > 0:
-            return {"msg": f"No new transactions were committed. {len(df)} duplicate(s) were skipped."}
+            return {
+                "msg": (
+                    f"No new transactions were committed. {len(df)} duplicate(s)"
+                    " were skipped."
+                )
+            }
 
         return {"msg": f"Successfully committed {transactions_created} transactions."}
     except HTTPException as http_exc:
@@ -251,6 +303,17 @@ def commit_import_session(
         # For any other unexpected error, rollback, log the failure, and return a 500.
         db.rollback()
         log.error(f"Failed to commit import session {session_id}: {e}")
-        crud.import_session.update(db, db_obj=import_session, obj_in={"status": "FAILED", "error_message": f"An unexpected error occurred during commit: {str(e)}"})
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={
+                "status": "FAILED",
+                "error_message": (
+                    f"An unexpected error occurred during commit: {str(e)}"
+                ),
+            },
+        )
         db.commit()
-        raise HTTPException(status_code=500, detail=f"Could not commit transactions: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Could not commit transactions: {e}"
+        )

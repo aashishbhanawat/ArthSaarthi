@@ -1,6 +1,7 @@
 import logging
+
 from sqlalchemy import create_engine
-from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy_utils import create_database, database_exists
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from app.core.config import settings
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 max_tries = 60 * 5  # 5 minutes
 wait_seconds = 1
+
 
 @retry(
     stop=stop_after_attempt(max_tries),
@@ -27,10 +29,12 @@ def init() -> None:
         logger.error(e)
         raise e
 
+
 def main() -> None:
     logger.info("Initializing service")
     init()
     logger.info("Service finished initializing")
+
 
 if __name__ == "__main__":
     main()

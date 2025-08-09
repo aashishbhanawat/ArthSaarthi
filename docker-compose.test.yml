@@ -5,9 +5,27 @@ services:
     env_file:
       - ./backend/.env.test
     volumes:
-      - postgres_data_test:/var/lib/postgresql/data/ # Use a dedicated volume for test data
+      - postgres_data_test:/var/lib/postgresql/data/
     ports:
-      - "5433:5432" # Use a different external port to avoid conflict with dev db
+      - "5433:5432"
 
-volumes:
-  postgres_data_test: # Define the dedicated test volume
+  backend:
+    env_file:
+      - ./backend/.env.test
+
+  test:
+    build: ./backend
+    image: pms_backend:latest
+    container_name: pms-test
+    command: ["pytest", "-v"]
+    env_file:
+      - ./backend/.env.test
+    volumes:
+      - ./backend:/app
+    networks:
+      - pms_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

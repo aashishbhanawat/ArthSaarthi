@@ -1,8 +1,7 @@
 import uuid
 
-from sqlalchemy import Column, String, ForeignKey, DateTime, Numeric, func
+from sqlalchemy import Column, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
-
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -18,7 +17,9 @@ class Transaction(Base):
     fees = Column(Numeric(18, 8), nullable=False, default=0)
     transaction_date = Column(DateTime(timezone=True), nullable=False)
 
-    portfolio_id = Column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False)
+    portfolio_id = Column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
     asset_id = Column(UUID(as_uuid=True), ForeignKey("assets.id"), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
 

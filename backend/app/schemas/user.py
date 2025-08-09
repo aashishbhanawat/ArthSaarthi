@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
-from typing import Optional
 import re
 import uuid
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 
 # Shared properties

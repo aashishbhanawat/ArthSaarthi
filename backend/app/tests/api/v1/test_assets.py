@@ -1,14 +1,16 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
-from app.tests.utils.user import create_random_user
-from app.tests.utils.asset import create_test_asset
-from app.services.financial_data_service import financial_data_service
 from app import crud
+from app.core.config import settings
+from app.services.financial_data_service import financial_data_service
+from app.tests.utils.asset import create_test_asset
+from app.tests.utils.user import create_random_user
 
 
-def test_create_asset_success(client: TestClient, db: Session, get_auth_headers, mocker):
+def test_create_asset_success(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
     """
     Test successful creation of a new asset that does not exist locally.
     """
@@ -24,7 +26,9 @@ def test_create_asset_success(client: TestClient, db: Session, get_auth_headers,
         "exchange": "NASDAQ",
         "currency": "USD",
     }
-    mocker.patch.object(financial_data_service, "get_asset_details", return_value=mock_asset_details)
+    mocker.patch.object(
+        financial_data_service, "get_asset_details", return_value=mock_asset_details
+    )
 
     # Make the API call
     response = client.post(
@@ -67,7 +71,9 @@ def test_create_asset_conflict(client: TestClient, db: Session, get_auth_headers
     assert "already exists" in response.json()["detail"]
 
 
-def test_create_asset_not_found_externally(client: TestClient, db: Session, get_auth_headers, mocker):
+def test_create_asset_not_found_externally(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
     """
     Test attempting to create an asset that is not found by the external service.
     """

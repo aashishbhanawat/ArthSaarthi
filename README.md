@@ -53,7 +53,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 To start the application services (database, backend, frontend), run:
 
 ```bash
-docker-compose up --build db backend frontend
+docker-compose up --build
 ```
 
 *   Frontend will be available at `http://localhost:3000`

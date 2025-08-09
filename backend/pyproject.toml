@@ -1,0 +1,16 @@
+[tool.ruff]
+line-length = 88
+exclude = [
+    "alembic/versions/*",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+fixable = ["ALL"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.format]
+quote-style = "double"

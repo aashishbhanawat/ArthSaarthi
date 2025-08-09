@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 import logging
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
 from app import crud
-from app.core import dependencies as deps, config
+from app.core import config
+from app.core import dependencies as deps
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -20,7 +22,7 @@ def reset_db(
     403 Forbidden error otherwise.
     """
 
-    if config.settings.ENVIRONMENT != 'test':
+    if config.settings.ENVIRONMENT != "test":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This endpoint is only available in the test environment.",

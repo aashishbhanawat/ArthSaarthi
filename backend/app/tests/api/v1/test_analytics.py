@@ -1,22 +1,17 @@
+import uuid
 from datetime import date, timedelta
 from decimal import Decimal
-import uuid
-from typing import Dict
 
 import pytest
-from httpx import AsyncClient
-from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
-from app import schemas
 from app.core.config import settings
-from app.crud import crud_user
-from app.schemas.analytics import AnalyticsResponse
+from app.services.financial_data_service import financial_data_service
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.transaction import create_test_transaction
 from app.tests.utils.user import create_random_user
-from app.services.financial_data_service import financial_data_service
 
 
 def test_get_portfolio_analytics_success(
@@ -30,7 +25,8 @@ def test_get_portfolio_analytics_success(
     portfolio = create_test_portfolio(db, user_id=user.id, name="Analytics Portfolio")
 
     response = client.get(
-        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/analytics", headers=auth_headers
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/analytics",
+        headers=auth_headers,
     )
     assert response.status_code == 200
     content = response.json()
@@ -48,7 +44,8 @@ def test_get_portfolio_analytics_not_found(
     auth_headers = get_auth_headers(email=user.email, password=password)
     portfolio_id = uuid.uuid4()
     response = client.get(
-        f"{settings.API_V1_STR}/portfolios/{portfolio_id}/analytics", headers=auth_headers
+        f"{settings.API_V1_STR}/portfolios/{portfolio_id}/analytics",
+        headers=auth_headers,
     )
     assert response.status_code == 404
 
@@ -64,16 +61,16 @@ def test_get_portfolio_analytics_unauthorized(client: TestClient, db: Session) -
 def test_get_portfolio_analytics_forbidden(
     client: TestClient, db: Session, get_auth_headers
 ) -> None:
-    """
-    Test that a 403 is returned when trying to access another user's portfolio analytics.
-    """
+    """Test that a 403 is returned for another user's portfolio analytics."""
     # User who makes the request
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(email=user.email, password=password)
 
     # A portfolio owned by another user
     other_user, _ = create_random_user(db)
-    other_portfolio = create_test_portfolio(db, user_id=other_user.id, name="Other User Portfolio")
+    other_portfolio = create_test_portfolio(
+        db, user_id=other_user.id, name="Other User Portfolio"
+    )
 
     response = client.get(
         f"{settings.API_V1_STR}/portfolios/{other_portfolio.id}/analytics",
@@ -114,7 +111,9 @@ def test_get_portfolio_analytics_calculation(
     mock_prices = {
         "CALC1": {"current_price": Decimal("110.0"), "previous_close": Decimal("109.0")}
     }
-    mocker.patch.object(financial_data_service, "get_current_prices", return_value=mock_prices)
+    mocker.patch.object(
+        financial_data_service, "get_current_prices", return_value=mock_prices
+    )
 
     # Mock historical prices for Sharpe Ratio calculation
     mock_history = {
@@ -122,7 +121,11 @@ def test_get_portfolio_analytics_calculation(
         fixed_today - timedelta(days=1): Decimal("105.0"),
         fixed_today: Decimal("110.0"),
     }
-    mocker.patch.object(financial_data_service, "get_historical_prices", return_value={"CALC1": mock_history})
+    mocker.patch.object(
+        financial_data_service,
+        "get_historical_prices",
+        return_value={"CALC1": mock_history},
+    )
 
     # 5. Make the request
     response = client.get(
@@ -152,7 +155,9 @@ def test_get_asset_analytics_success(
     """
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(email=user.email, password=password)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="Asset Analytics Portfolio")
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Asset Analytics Portfolio"
+    )
     transaction = create_test_transaction(
         db, portfolio_id=portfolio.id, ticker="ASSET1", quantity=10
     )
@@ -176,9 +181,11 @@ def test_get_asset_analytics_no_transactions(
     """
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(email=user.email, password=password)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="Asset Analytics Portfolio")
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Asset Analytics Portfolio"
+    )
     asset = create_test_asset(db, ticker_symbol="EMPTY")
-    
+
     response = client.get(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/assets/{asset.id}/analytics",
         headers=auth_headers,
@@ -199,7 +206,9 @@ def test_get_asset_analytics_forbidden(
     auth_headers = get_auth_headers(email=user.email, password=password)
 
     other_user, _ = create_random_user(db)
-    other_portfolio = create_test_portfolio(db, user_id=other_user.id, name="Other User Portfolio")
+    other_portfolio = create_test_portfolio(
+        db, user_id=other_user.id, name="Other User Portfolio"
+    )
     other_transaction = create_test_transaction(
         db, portfolio_id=other_portfolio.id, ticker="OTHER", quantity=10
     )
@@ -238,7 +247,7 @@ def test_get_asset_analytics_calculation_realized_and_unrealized(
 
     create_test_transaction(
         db,
-        portfolio_id=portfolio.id, # The helper finds the asset by ticker
+        portfolio_id=portfolio.id,  # The helper finds the asset by ticker
         ticker="XIRR_TEST",
         quantity=Decimal(5),
         price_per_unit=Decimal(120),
@@ -246,8 +255,15 @@ def test_get_asset_analytics_calculation_realized_and_unrealized(
         transaction_date=fixed_today - timedelta(days=182),
     )
 
-    mock_prices = {"XIRR_TEST": {"current_price": Decimal("130.0"), "previous_close": Decimal("129.0")}}
-    mocker.patch.object(financial_data_service, "get_current_prices", return_value=mock_prices)
+    mock_prices = {
+        "XIRR_TEST": {
+            "current_price": Decimal("130.0"),
+            "previous_close": Decimal("129.0"),
+        }
+    }
+    mocker.patch.object(
+        financial_data_service, "get_current_prices", return_value=mock_prices
+    )
 
     response = client.get(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/assets/{asset_id}/analytics",
