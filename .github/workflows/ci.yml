@@ -16,9 +16,24 @@ jobs:
 
       - name: Create .env files
         run: |
+          # Create backend .env files from examples
           cp backend/.env.prod.example backend/.env
           cp backend/.env.prod.example backend/.env.test
+
+          # Create frontend .env file from example
           cp frontend/.env.example frontend/.env
+
+          # Generate unique secret keys for production and test environments
+          SECRET_KEY_PROD=$(openssl rand -hex 32)
+          SECRET_KEY_TEST=$(openssl rand -hex 32)
+
+          # Set the secret keys in the respective .env files
+          sed -i "s/SECRET_KEY=/SECRET_KEY=$SECRET_KEY_PROD/" backend/.env
+          sed -i "s/SECRET_KEY=/SECRET_KEY=$SECRET_KEY_TEST/" backend/.env.test
+
+          # Set the environment to "test" in the test-specific .env file
+          # This is crucial for enabling test-only API endpoints
+          sed -i 's/ENVIRONMENT=production/ENVIRONMENT=test/g' backend/.env.test
 
       - name: Build services
         run: docker compose build
