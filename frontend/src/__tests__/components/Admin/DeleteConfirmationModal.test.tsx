@@ -17,8 +17,11 @@ describe('DeleteConfirmationModal', () => {
   const onConfirm = jest.fn();
   const onClose = jest.fn();
 
-  beforeEach(() => {
-    // The common modal is tested by passing the title and message props directly
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const renderComponent = () => {
     render(
       <DeleteConfirmationModal
         isOpen={true}
@@ -29,20 +32,23 @@ describe('DeleteConfirmationModal', () => {
         isDeleting={false}
       />
     );
-  });
+  };
 
   test('renders the confirmation message with the user name', () => {
+    renderComponent();
     expect(screen.getByRole('heading', { name: 'Delete User' })).toBeInTheDocument();
     expect(screen.getByText(/are you sure you want to delete the user/i)).toBeInTheDocument();
     expect(screen.getByText(mockUser.email)).toBeInTheDocument();
   });
 
   test('calls onConfirm when the Delete button is clicked', () => {
+    renderComponent();
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Delete' }));
     expect(onConfirm).toHaveBeenCalled();
   });
 
   test('calls onClose when the Cancel button is clicked', () => {
+    renderComponent();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onClose).toHaveBeenCalled();
   });

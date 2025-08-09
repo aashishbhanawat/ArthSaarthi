@@ -9,16 +9,17 @@ interface AuthContextType {
   error: string | null;
   login: (token: string) => void;
   logout: () => void;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string) => Promise<void>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   const logout = useCallback(() => {
     setToken(null);
@@ -44,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [logout]);
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data } = await api.get<User>('/api/v1/users/me');
@@ -54,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [logout]);
 
   useEffect(() => {
     if (token) {
@@ -63,14 +64,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, fetchUserData]);
 
   const login = (newToken: string) => {
     setToken(newToken);
     localStorage.setItem('token', newToken);
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string) => {
     // This function can be expanded if needed
     console.log("Register function called for", email);
   };
@@ -82,6 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

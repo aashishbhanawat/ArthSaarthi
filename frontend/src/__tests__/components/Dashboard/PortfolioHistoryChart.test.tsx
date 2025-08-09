@@ -7,10 +7,20 @@ jest.mock('../../../hooks/useDashboard');
 const mockUseDashboardHistory = useDashboardHistory as jest.Mock;
 
 // Mock the charting library to verify props without rendering a canvas
+interface MockLineProps {
+  data: {
+    labels: string[];
+    datasets: Array<{
+      data: number[];
+      label: string;
+    }>;
+  };
+}
 jest.mock('react-chartjs-2', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
   return {
-    Line: (props: any) => React.createElement('div', { 'data-testid': 'line-chart', 'data-props': JSON.stringify(props) }),
+    Line: (props: MockLineProps) => React.createElement('div', { 'data-testid': 'line-chart', 'data-props': JSON.stringify(props) }),
   };
 });
 

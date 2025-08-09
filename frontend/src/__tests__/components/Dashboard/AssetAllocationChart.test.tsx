@@ -7,10 +7,21 @@ jest.mock('../../../hooks/useDashboard');
 const mockUseDashboardAllocation = useDashboardAllocation as jest.Mock;
 
 // Mock the charting library to verify props without rendering a canvas
+interface MockPieProps {
+  data: {
+    labels: string[];
+    datasets: Array<{
+      data: number[];
+      backgroundColor: string[];
+    }>;
+  };
+}
+
 jest.mock('react-chartjs-2', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
   return {
-    Pie: (props: any) => React.createElement('div', { 'data-testid': 'pie-chart', 'data-props': JSON.stringify(props) }),
+    Pie: (props: MockPieProps) => React.createElement('div', { 'data-testid': 'pie-chart', 'data-props': JSON.stringify(props) }),
   };
 });
 

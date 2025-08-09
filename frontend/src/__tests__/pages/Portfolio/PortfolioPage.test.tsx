@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,8 +19,8 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 const mockPortfolios: Portfolio[] = [
-    { id: 1, name: 'Retirement Fund', user_id: 1, transactions: [] },
-    { id: 2, name: 'Vacation Fund', user_id: 1, transactions: [] },
+    { id: '1', name: 'Retirement Fund', description: 'My retirement fund', transactions: [] },
+    { id: '2', name: 'Vacation Fund', description: 'My vacation fund', transactions: [] },
 ];
 
 const mockUsePortfolios = (data: Partial<ReturnType<typeof usePortfoliosHook.usePortfolios>>) => {
@@ -63,6 +63,7 @@ describe('PortfolioPage', () => {
         
         await userEvent.click(screen.getByRole('button', { name: /create new portfolio/i }));
 
-        await waitFor(() => expect(screen.getByRole('heading', { name: /create new portfolio/i })).toBeInTheDocument());
+        const modalTitle = await screen.findByRole('heading', { name: /create new portfolio/i });
+        expect(modalTitle).toBeInTheDocument();
     });
 });

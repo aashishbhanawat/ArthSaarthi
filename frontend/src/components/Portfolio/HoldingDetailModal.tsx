@@ -88,31 +88,31 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
-                    <div>
+                    <div data-testid="summary-quantity">
                         <p className="text-sm text-gray-500">Quantity</p>
                         <p className="font-semibold">{Number(holding.quantity).toLocaleString()}</p>
                     </div>
-                    <div>
+                    <div data-testid="summary-avg-buy-price">
                         <p className="text-sm text-gray-500">Avg. Buy Price</p>
                         <p className="font-semibold">{formatCurrency(holding.average_buy_price)}</p>
                     </div>
-                    <div>
+                    <div data-testid="summary-current-value">
                         <p className="text-sm text-gray-500">Current Value</p>
                         <p className="font-semibold">{formatCurrency(holding.current_value)}</p>
                     </div>
-                    <div>
+                    <div data-testid="summary-unrealized-pnl">
                         <p className="text-sm text-gray-500">Unrealized P&L</p>
                         <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {formatCurrency(holding.unrealized_pnl)}
                         </p>
                     </div>
-                    <div>
+                    <div data-testid="summary-realized-xirr">
                         <p className="text-sm text-gray-500">Realized XIRR</p>
                         <p className="font-semibold">
                             {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.realized_xirr)}
                         </p>
                     </div>
-                    <div>
+                    <div data-testid="summary-unrealized-xirr">
                         <p className="text-sm text-gray-500">Unrealized XIRR</p>
                         <p className="font-semibold">
                             {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.unrealized_xirr)}

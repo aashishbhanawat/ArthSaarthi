@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
-import { getPortfolios, getPortfolio, createPortfolio, deletePortfolio, lookupAsset, createTransaction, getPortfolioSummary, getPortfolioHoldings, getAssetTransactions, updateTransaction, deleteTransaction, getAssetAnalytics } from '../services/portfolioApi';
 import { PortfolioCreate, TransactionCreate, TransactionUpdate } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
@@ -59,7 +58,6 @@ export const useDeletePortfolio = () => {
 };
 
 export const useCreateAsset = () => {
-    const queryClient = useQueryClient();
     return useMutation<Asset, Error, string>({
         mutationFn: (ticker: string) => portfolioApi.createAsset(ticker),
     });
