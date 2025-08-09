@@ -24,6 +24,7 @@ from .transaction import (
     TransactionUpdate,
 )
 from .user import User, UserCreate, UserUpdate
+from . import testing
 
 __all__ = [
     "AnalyticsResponse",
@@ -57,4 +58,5 @@ __all__ = [
     "User",
     "UserCreate",
     "UserUpdate",
+    "testing",
 ]

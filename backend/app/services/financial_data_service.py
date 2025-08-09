@@ -28,6 +28,15 @@ class FinancialDataService:
                 f"WARNING: Could not connect to Redis: {e}. Caching will be disabled."
             )
             self.redis_client = None
+        self.mocked_today: Optional[date] = None
+
+    def set_mocked_today(self, new_date: date) -> None:
+        """Sets a mock date for date.today() for testing purposes."""
+        self.mocked_today = new_date
+
+    def get_today(self) -> date:
+        """Returns the mocked date if set, otherwise the real date."""
+        return self.mocked_today or date.today()
 
     def _get_yfinance_ticker(self, ticker_symbol: str, exchange: Optional[str]) -> str:
         """Constructs the correct ticker for yfinance."""

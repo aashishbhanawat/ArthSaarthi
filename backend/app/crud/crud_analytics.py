@@ -58,7 +58,7 @@ def _get_single_portfolio_history(
     db: Session, portfolio_id: uuid.UUID, time_range: str
 ) -> List[Dict[str, Any]]:
     """Calculates the total value of a single portfolio over a specified time range."""
-    end_date = date.today()
+    end_date = financial_data_service.get_today()
 
     transactions = crud.transaction.get_multi_by_portfolio(
         db=db, portfolio_id=portfolio_id
@@ -192,7 +192,7 @@ def _calculate_xirr(db: Session, portfolio_id: uuid.UUID) -> float:
     # 2. Add the current market value as the final cash inflow
     current_value = _get_portfolio_current_value(db=db, portfolio_id=portfolio_id)
 
-    dates.append(date.today())
+    dates.append(financial_data_service.get_today())
     values.append(float(current_value))
 
     # 3. Calculate XIRR
@@ -403,7 +403,9 @@ def get_asset_analytics(
     current_value_of_open_lots = _get_asset_current_value(
         db=db, portfolio_id=portfolio_id, asset_id=asset_id
     )
-    unrealized_cash_flows.append((date.today(), float(current_value_of_open_lots)))
+    unrealized_cash_flows.append(
+        (financial_data_service.get_today(), float(current_value_of_open_lots))
+    )
     unrealized_xirr_value = _calculate_xirr_from_cashflows(unrealized_cash_flows)
 
     return AssetAnalytics(

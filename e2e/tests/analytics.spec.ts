@@ -12,14 +12,21 @@ const adminUser = {
 };
 
 // Helper to get a date in the past in YYYY-MM-DD format
+const fixedToday = new Date('2024-08-01T00:00:00Z');
 const getPastDateISO = (daysAgo: number): string => {
-  const date = new Date();
+  const date = new Date(fixedToday);
   date.setDate(date.getDate() - daysAgo);
   return date.toISOString().split('T')[0];
 };
 
 test.describe.serial('Advanced Analytics E2E Flow', () => {
   test.beforeAll(async ({ request }) => {
+    // Set a fixed date for deterministic XIRR calculations
+    const setDateResponse = await request.post('/api/v1/testing/set-date', {
+      data: { mock_date: fixedToday.toISOString().split('T')[0] },
+    });
+    expect(setDateResponse.ok()).toBeTruthy();
+
     // The global setup has already created the admin user.
     // We just need to log in as admin to create our test-specific standard user.
     const adminLoginResponse = await request.post('/api/v1/auth/login', {
