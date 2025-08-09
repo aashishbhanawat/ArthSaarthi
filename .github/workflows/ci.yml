@@ -7,124 +7,36 @@ on:
     branches: [ main ]
 
 jobs:
-  lint:
-    name: Lint Codebase
+  test:
+    name: Test and Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Set up Docker Compose
+        uses: hoverkraft-tech/compose-action@v2.0.1
 
-      - name: Install backend dependencies
+      - name: Build services
+        run: docker-compose build
+
+      - name: Lint Backend
+        run: docker-compose run --rm backend ruff check .
+
+      - name: Lint Frontend
+        run: docker-compose run --rm frontend npx eslint .
+
+      - name: Run Backend Tests
+        run: docker-compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
+
+      - name: Run Frontend Tests
+        run: docker-compose run --rm frontend npm test
+
+      - name: Run E2E Tests
         run: |
-          pip install ruff
-          pip install -r backend/requirements.txt
+          docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit
 
-      - name: Lint backend
-        run: ruff check backend/
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm install
-
-      - name: Lint frontend
-        working-directory: ./frontend
-        run: npm run test -- --selectProjects "Linting" # Assuming a separate project/script for linting
-
-  backend-tests:
-    name: Run Backend Tests
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpassword
-          POSTGRES_DB: testdb
-        ports:
-          - 5433:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install -r backend/requirements.txt
-
-      - name: Run backend tests
-        env:
-          DATABASE_URL: "postgresql://testuser:testpassword@localhost:5433/testdb"
-          REDIS_URL: "redis://localhost:6379/0"
-        run: |
-          cd backend
-          pytest
-
-  frontend-tests:
-    name: Run Frontend Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm install
-
-      - name: Run frontend tests
-        working-directory: ./frontend
-        run: npm test
-
-  e2e-tests:
-    name: Run E2E Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Playwright Browsers
-        working-directory: ./e2e
-        run: npx playwright install --with-deps
-
-      - name: Run Playwright tests
-        working-directory: ./e2e
-        run: npx playwright test
-
-      - name: Upload test results
+      - name: Upload E2E test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
