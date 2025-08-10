@@ -117,15 +117,15 @@ export const usePortfolioHoldings = (id: string | undefined) => {
 export const useAssetTransactions = (portfolioId: string | undefined, assetId: string | undefined) => {
     return useQuery({
         queryKey: ['assetTransactions', portfolioId, assetId],
-        queryFn: () => getAssetTransactions(portfolioId!, assetId!),
+        queryFn: () => portfolioApi.getAssetTransactions(portfolioId!, assetId!),
         enabled: !!portfolioId && !!assetId,
     });
 };
 
 export const useAssetAnalytics = (portfolioId: string, assetId: string, options: { enabled: boolean }) => {
-  return useQuery<AssetAnalytics, Error>({
+  return useQuery<PortfolioAnalytics, Error>({
     queryKey: ['assetAnalytics', portfolioId, assetId],
-    queryFn: () => getAssetAnalytics(portfolioId, assetId),
+    queryFn: () => portfolioApi.getAssetAnalytics(portfolioId, assetId),
     ...options,
   });
 };
