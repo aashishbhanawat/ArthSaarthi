@@ -17,7 +17,6 @@ from .import_session import (
 )
 from .msg import Msg
 from .portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
-from . import testing
 from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
