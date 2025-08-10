@@ -130,7 +130,7 @@ class FinancialDataService:
 
         # Handle mock data for E2E tests to ensure deterministic results
         if any(a["ticker_symbol"] == "XIRRTEST" for a in assets):
-            # For XIRRTEST, we don't need real historical data, just a value for each day.
+            # For XIRRTEST, we return a constant price for simplicity.
             # We can return a constant price for simplicity.
             mock_history = {}
             current_day = start_date
