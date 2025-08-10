@@ -36,6 +36,9 @@ SECRET_KEY=$(openssl rand -hex 32)
 # Use sed to replace the placeholder SECRET_KEY= with the new key.
 sed -i.bak "s|SECRET_KEY=|SECRET_KEY=$SECRET_KEY|" "$ENV_FILE" && rm "${ENV_FILE}.bak"
 
+echo "Setting default ALLOWED_HOSTS in $ENV_FILE..."
+echo -e "\n# A comma-separated list of domains to allow for Vite's dev server\nALLOWED_HOSTS=localhost" >> "$ENV_FILE"
+
 echo_green "Configuration file '$ENV_FILE' created successfully."
 echo_yellow "IMPORTANT: You must now edit this file to set your CORS_ORIGINS."
 echo "Set CORS_ORIGINS to the domain name or IP address you will use to access the app."

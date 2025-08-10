@@ -22,6 +22,7 @@ jobs:
 
           # Create frontend .env file from example
           cp frontend/.env.example frontend/.env
+          echo "ALLOWED_HOSTS=localhost" >> frontend/.env
 
           # Generate unique secret keys for production and test environments
           SECRET_KEY_PROD=$(openssl rand -hex 32)
