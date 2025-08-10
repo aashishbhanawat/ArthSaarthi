@@ -1,10 +1,18 @@
-from fastapi import APIRouter
 import logging
 
-from .endpoints import auth, users, portfolios, assets, dashboard, testing, import_sessions
+from fastapi import APIRouter
+
 from app.core.config import settings
 
-
+from .endpoints import (
+    assets,
+    auth,
+    dashboard,
+    import_sessions,
+    portfolios,
+    testing,
+    users,
+)
 
 api_router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -18,7 +26,9 @@ api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboar
 # Conditionally include the testing router only in the test environment
 logger.warning(f"Current ENVIRONMENT in api.py: '{settings.ENVIRONMENT}'")
 logger.warning(f"CORS confiured: {settings.CORS_ORIGINS}")
-if settings.ENVIRONMENT == 'test':
-    logger.warning(f"Adding testing route in api.py")
+if settings.ENVIRONMENT == "test":
+    logger.warning("Adding testing route in api.py")
     api_router.include_router(testing.router, prefix="/testing", tags=["testing"])
-api_router.include_router(import_sessions.router, prefix="/import-sessions", tags=["import-sessions"])
+api_router.include_router(
+    import_sessions.router, prefix="/import-sessions", tags=["import-sessions"]
+)

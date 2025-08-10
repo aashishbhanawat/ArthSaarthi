@@ -1,13 +1,14 @@
-from typing import List
 import uuid
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
-from app.core.config import settings
 from app.core import dependencies as deps
-from app.services.financial_data_service import financial_data_service
+from app.core.config import settings
 from app.models.user import User
+from app.services.financial_data_service import financial_data_service
 
 router = APIRouter()
 
@@ -53,13 +54,14 @@ def lookup_ticker_symbol(
     """
     assets = crud.asset.search_by_name_or_ticker(db, query=query)
     if settings.DEBUG:
-        print(f"--- BACKEND DEBUG: Asset Lookup ---")
+        print("--- BACKEND DEBUG: Asset Lookup ---")
         print(f"Received query: '{query}'")
         print(f"Found {len(assets)} assets.")
-        print(f"---------------------------------")
+        print("---------------------------------")
     if assets:
         return assets
     return []
+
 
 @router.post("/", response_model=schemas.Asset, status_code=201)
 def create_asset(
@@ -85,13 +87,14 @@ def create_asset(
     if not details:
         raise HTTPException(
             status_code=404,
-            detail=f"Could not find a valid asset with ticker symbol '{ticker}' on supported exchanges.",
+            detail=(
+                f"Could not find a valid asset with ticker symbol '{ticker}' on"
+                " supported exchanges."
+            ),
         )
 
-    new_asset_data = schemas.AssetCreate(
-        ticker_symbol=ticker, **details
-    )
-    
+    new_asset_data = schemas.AssetCreate(ticker_symbol=ticker, **details)
+
     asset = crud.asset.create(db=db, obj_in=new_asset_data)
     db.commit()
     return asset

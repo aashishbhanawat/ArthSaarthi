@@ -21,12 +21,12 @@ describe('PortfolioSummary', () => {
 
     it('renders null when there is an error', () => {
         const { container } = render(<PortfolioSummary summary={undefined} isLoading={false} error={new Error('Failed to fetch')} />);
-        expect(container.firstChild).toBeNull();
+        expect(container).toBeEmptyDOMElement();
     });
 
     it('renders null when there is no summary data', () => {
         const { container } = render(<PortfolioSummary summary={undefined} isLoading={false} error={null} />);
-        expect(container.firstChild).toBeNull();
+        expect(container).toBeEmptyDOMElement();
     });
 
     it('renders summary data with correct formatting', () => {

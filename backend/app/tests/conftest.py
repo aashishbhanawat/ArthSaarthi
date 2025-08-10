@@ -1,23 +1,20 @@
-import os
-import pytest
-from typing import Generator
 import logging
+from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.engine.url import make_url
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy_utils import create_database, database_exists, drop_database
 
-from app.db.base import Base
-from app.main import app
-from app.db.session import get_db
-from app.models.user import User
 from app.core.config import settings
-from app.tests.utils.user import get_access_token, create_random_user
+from app.db.base import Base
+from app.db.session import get_db
+from app.main import app
+from app.tests.utils.user import create_random_user, get_access_token
 
 log = logging.getLogger(__name__)
+
 
 def get_test_database_url():
     """
@@ -126,6 +123,7 @@ def get_auth_headers(client: TestClient):
     def _get_auth_headers(email: str, password: str) -> dict[str, str]:
         log.info(f"--- Getting auth headers for user: {email} ---")
         return {"Authorization": f"Bearer {get_access_token(client, email, password)}"}
+
     return _get_auth_headers
 
 
@@ -136,7 +134,8 @@ def superuser_token_headers(client: TestClient, db: Session) -> dict[str, str]:
     db.add(admin_user)
     db.commit()
     db.refresh(admin_user)
-    return {"Authorization": f"Bearer {get_access_token(client, admin_user.email, admin_password)}"}
+    token = get_access_token(client, admin_user.email, admin_password)
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture

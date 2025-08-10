@@ -11,18 +11,21 @@ import {
 // Mock the hook
 jest.mock('../../hooks/useDashboard');
 jest.mock('../../components/Dashboard/PortfolioHistoryChart', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
   return function DummyPortfolioHistoryChart() {
     return React.createElement('div', { 'data-testid': 'portfolio-history-chart-mock' });
   };
 });
 jest.mock('../../components/Dashboard/AssetAllocationChart', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
   return function DummyAssetAllocationChart() {
     return React.createElement('div', { 'data-testid': 'asset-allocation-chart-mock' });
   };
 });
 jest.mock('../../components/HelpLink', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
   return function DummyHelpLink({ sectionId }: { sectionId: string }) {
     return React.createElement('a', { href: `/user_guide.md#${sectionId}` }, '?');

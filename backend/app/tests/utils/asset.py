@@ -1,11 +1,14 @@
 from typing import Optional
+
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.models.asset import Asset
 
 
-def create_test_asset(db: Session, *, ticker_symbol: str, name: Optional[str] = None) -> Asset:
+def create_test_asset(
+    db: Session, *, ticker_symbol: str, name: Optional[str] = None
+) -> Asset:
     """
     Test utility to create an asset.
     """

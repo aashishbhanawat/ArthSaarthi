@@ -2,11 +2,12 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/react-query';
 import PortfolioDetailPage from '../../../pages/Portfolio/PortfolioDetailPage';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Portfolio } from '../../../types/portfolio';
-import { Holding, PortfolioSummary } from '../../../types/holding';
+import { Holding, PortfolioSummary, HoldingsResponse } from '../../../types/holding';
+import { PortfolioAnalytics } from '../../../types/analytics';
 
 jest.mock('../../../hooks/usePortfolios');
 const mockedPortfolioHooks = portfolioHooks as jest.Mocked<typeof portfolioHooks>;
@@ -24,10 +25,12 @@ jest.mock('../../../components/Portfolio/TransactionFormModal', () => {
 
 // Mock child components to isolate the page component logic
 jest.mock('../../../components/Portfolio/PortfolioSummary', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const React = require('react');
     return () => React.createElement('div', { 'data-testid': 'portfolio-summary' });
 });
 jest.mock('../../../components/Portfolio/HoldingsTable', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const React = require('react');
     // The mock needs to be able to trigger the onRowClick prop
     return (props: { onRowClick: (holding: Holding) => void }) => 
@@ -37,10 +40,12 @@ jest.mock('../../../components/Portfolio/HoldingsTable', () => {
         });
 });
 jest.mock('../../../components/Portfolio/AnalyticsCard', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const React = require('react');
     return () => React.createElement('div', { 'data-testid': 'analytics-card' });
 });
 jest.mock('../../../components/Portfolio/HoldingDetailModal', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const React = require('react');
     // Mock the modal to verify it opens and can be closed
     return ({ holding, onClose }: { holding: Holding, onClose: () => void }) => React.createElement('div', { 'data-testid': 'holding-detail-modal' }, `Details for ${holding.ticker_symbol}`, React.createElement('button', { onClick: onClose }, 'Close Modal'));
@@ -90,13 +95,15 @@ const renderComponent = () => {
   );
 };
 
+type PartialUseQueryResult<TData> = Partial<UseQueryResult<TData, Error>>;
+
 describe('PortfolioDetailPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: mockPortfolio, isLoading: false, isError: false } as any);
-    mockedPortfolioHooks.usePortfolioSummary.mockReturnValue({ data: mockSummary, isLoading: false, error: null } as any);
-    mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue({ data: { holdings: mockHoldings }, isLoading: false, error: null } as any);
-    mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue({ data: {}, isLoading: false, isError: false } as any);
+    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: mockPortfolio, isLoading: false, isError: false } as PartialUseQueryResult<Portfolio>);
+    mockedPortfolioHooks.usePortfolioSummary.mockReturnValue({ data: mockSummary, isLoading: false, error: null } as PartialUseQueryResult<PortfolioSummary>);
+    mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue({ data: { holdings: mockHoldings }, isLoading: false, error: null } as PartialUseQueryResult<HoldingsResponse>);
+    mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue({ data: {} as PortfolioAnalytics, isLoading: false, isError: false } as PartialUseQueryResult<PortfolioAnalytics>);
   });
 
   it('renders the portfolio name and child components', () => {
@@ -125,10 +132,9 @@ describe('PortfolioDetailPage', () => {
     fireEvent.click(screen.getByTestId('holdings-table'));
 
     // The modal should now be visible with the correct holding's data
-    await waitFor(() => {
-      expect(screen.getByTestId('holding-detail-modal')).toBeInTheDocument();
-      expect(screen.getByText('Details for AAPL')).toBeInTheDocument();
-    });
+    const modal = await screen.findByTestId('holding-detail-modal');
+    expect(modal).toBeInTheDocument();
+    expect(screen.getByText('Details for AAPL')).toBeInTheDocument();
 
     // Click the close button inside the mocked modal
     fireEvent.click(screen.getByRole('button', { name: 'Close Modal' }));
@@ -136,7 +142,7 @@ describe('PortfolioDetailPage', () => {
   });
 
   it('displays loading state correctly', () => {
-    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: undefined, isLoading: true, isError: false } as any);
+    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: undefined, isLoading: true, isError: false } as PartialUseQueryResult<Portfolio>);
     renderComponent();
     expect(screen.getByText('Loading portfolio details...')).toBeInTheDocument();
   });
@@ -147,13 +153,13 @@ describe('PortfolioDetailPage', () => {
       isLoading: false,
       isError: true,
       error: new Error('Failed to fetch'),
-    } as any);
+    } as PartialUseQueryResult<Portfolio>);
     renderComponent();
     expect(screen.getByText('Error: Failed to fetch')).toBeInTheDocument();
   });
 
   it('displays not found message if portfolio is not found', () => {
-    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: undefined, isLoading: false, isError: false } as any);
+    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: undefined, isLoading: false, isError: false } as PartialUseQueryResult<Portfolio>);
     renderComponent();
     expect(screen.getByText('Portfolio not found.')).toBeInTheDocument();
   });

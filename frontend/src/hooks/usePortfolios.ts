@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
-import { getPortfolios, getPortfolio, createPortfolio, deletePortfolio, lookupAsset, createTransaction, getPortfolioSummary, getPortfolioHoldings, getAssetTransactions, updateTransaction, deleteTransaction, getAssetAnalytics } from '../services/portfolioApi';
 import { PortfolioCreate, TransactionCreate, TransactionUpdate } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
@@ -59,7 +58,6 @@ export const useDeletePortfolio = () => {
 };
 
 export const useCreateAsset = () => {
-    const queryClient = useQueryClient();
     return useMutation<Asset, Error, string>({
         mutationFn: (ticker: string) => portfolioApi.createAsset(ticker),
     });
@@ -119,15 +117,15 @@ export const usePortfolioHoldings = (id: string | undefined) => {
 export const useAssetTransactions = (portfolioId: string | undefined, assetId: string | undefined) => {
     return useQuery({
         queryKey: ['assetTransactions', portfolioId, assetId],
-        queryFn: () => getAssetTransactions(portfolioId!, assetId!),
+        queryFn: () => portfolioApi.getAssetTransactions(portfolioId!, assetId!),
         enabled: !!portfolioId && !!assetId,
     });
 };
 
 export const useAssetAnalytics = (portfolioId: string, assetId: string, options: { enabled: boolean }) => {
-  return useQuery<AssetAnalytics, Error>({
+  return useQuery<PortfolioAnalytics, Error>({
     queryKey: ['assetAnalytics', portfolioId, assetId],
-    queryFn: () => getAssetAnalytics(portfolioId, assetId),
+    queryFn: () => portfolioApi.getAssetAnalytics(portfolioId, assetId),
     ...options,
   });
 };

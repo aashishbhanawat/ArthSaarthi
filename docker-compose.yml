@@ -1,5 +1,10 @@
-version: '3.8'
+networks:
+  pms_network:
+    driver: bridge
 
+volumes:
+  postgres_data:
+  postgres_data_test:
 
 services:
   db:
@@ -12,7 +17,6 @@ services:
       - ./backend/.env
     ports:
       - "5432:5432"
-    #command: postgres -c log_statement=all
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -21,21 +25,17 @@ services:
     networks:
       - pms_network
 
-  test:
-    image: pms_backend:latest
-    container_name: pms-test
-    command: ["pytest", "-v"]
-    env_file:
-      - ./backend/.env.test
-    volumes:
-      - ./backend:/app
+  redis:
+    image: redis:alpine
+    container_name: pms-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - pms_network
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
 
   backend:
     build: ./backend
@@ -43,12 +43,10 @@ services:
     container_name: pms-backend
     restart: unless-stopped
     command: /app/entrypoint.sh
-    volumes:
-      - ./backend:/app
     env_file:
       - ./backend/.env
-    ports:
-      - "8000:8000"
+    networks:
+      - pms_network
     depends_on:
       db:
         condition: service_healthy
@@ -59,41 +57,14 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
-      start_period: 60s   # Give it a full minute before counting failures
-    networks:
-      - pms_network
+      start_period: 60s
 
   frontend:
     build: ./frontend
+    image: pms_frontend:latest
     container_name: pms-frontend
-    #command: npm run dev -- --debug
     restart: unless-stopped
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    ports:
-      - "3000:3000"
+    networks:
+      - pms_network
     depends_on:
       - backend
-    networks:
-      - pms_network
-
-  redis:
-    image: redis:alpine
-    container_name: pms-redis
-    #command: redis-server --loglevel debug
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - pms_network
-
-volumes:
-  postgres_data:
-
-networks:
-  pms_network:
-    driver: bridge

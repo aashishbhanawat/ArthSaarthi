@@ -1,5 +1,7 @@
 import pandas as pd
+
 from .base_parser import BaseParser
+
 
 class IciciParser(BaseParser):
     def parse(self, file_path: str) -> pd.DataFrame:

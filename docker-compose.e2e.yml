@@ -1,18 +1,16 @@
-version: '3.8'
-
 services:
   db:
     env_file:
       - ./backend/.env.test
     volumes:
-      - postgres_data_test:/var/lib/postgresql/data/ # Use a dedicated volume for test data
+      - postgres_data_test:/var/lib/postgresql/data/
     ports:
-      - "5433:5432" # Use a different external port to avoid conflict with dev db
+      - "5433:5432"
 
   backend:
     env_file:
       - ./backend/.env.test
-    command: /app/e2e_entrypoint.sh # Use a dedicated entrypoint for E2E
+    command: /app/e2e_entrypoint.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
       interval: 5s
@@ -32,6 +30,3 @@ services:
     depends_on:
       - frontend
       - backend
-
-volumes:
-  postgres_data_test: # Define the dedicated test volume

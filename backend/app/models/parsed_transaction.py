@@ -11,10 +11,11 @@ class ParsedTransaction(Base):
     __tablename__ = "parsed_transactions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    session_id = Column(UUID(as_uuid=True), ForeignKey("import_sessions.id"), nullable=False)
+    session_id = Column(
+        UUID(as_uuid=True), ForeignKey("import_sessions.id"), nullable=False
+    )
     row_number = Column(Integer, nullable=False)
     data = Column(JSONB, nullable=False)
     is_selected = Column(Boolean, default=True, nullable=False)
 
     session = relationship("ImportSession", back_populates="parsed_transactions")
-

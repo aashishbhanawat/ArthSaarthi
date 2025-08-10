@@ -1,13 +1,15 @@
-from pydantic import BaseModel, ConfigDict
-from decimal import Decimal
 import uuid
+from decimal import Decimal
 from typing import List
+
+from pydantic import BaseModel, ConfigDict
 
 
 class Holding(BaseModel):
     """
     Represents a single consolidated holding in a portfolio.
     """
+
     asset_id: uuid.UUID
     ticker_symbol: str
     asset_name: str
@@ -28,6 +30,7 @@ class HoldingsResponse(BaseModel):
     """
     Response model for the list of portfolio holdings.
     """
+
     holdings: List[Holding]
 
 
@@ -35,6 +38,7 @@ class PortfolioSummary(BaseModel):
     """
     Response model for the portfolio summary metrics.
     """
+
     total_value: Decimal
     total_invested_amount: Decimal
     days_pnl: Decimal

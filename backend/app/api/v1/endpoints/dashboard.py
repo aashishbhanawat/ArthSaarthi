@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
-from app.models.user import User as UserModel
 from app.core import dependencies as deps
+from app.models.user import User as UserModel
 
 router = APIRouter()
+
 
 class HistoryRange(str, Enum):
     d7 = "7d"
@@ -35,12 +36,16 @@ def get_portfolio_history(
     *,
     db: Session = Depends(deps.get_db),
     current_user: UserModel = Depends(deps.get_current_user),
-    range: HistoryRange = Query(HistoryRange.d30, description="Time range for the history data")
+    range: HistoryRange = Query(
+        HistoryRange.d30, description="Time range for the history data"
+    ),
 ):
     """
     Retrieve historical portfolio value data for a specified time range.
     """
-    history = crud.dashboard.get_history(db=db, user=current_user, range_str=range.value)
+    history = crud.dashboard.get_history(
+        db=db, user=current_user, range_str=range.value
+    )
     return {"history": history}
 
 

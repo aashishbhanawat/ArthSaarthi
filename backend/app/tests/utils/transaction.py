@@ -1,7 +1,8 @@
-from sqlalchemy.orm import Session
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, Any
+from typing import Optional
+
+from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.models.transaction import Transaction
@@ -39,4 +40,6 @@ def create_test_transaction(
         transaction_type=transaction_type.upper(),
         fees=Decimal(str(fees)),
     )
-    return crud.transaction.create_with_portfolio(db=db, obj_in=transaction_in, portfolio_id=portfolio_id)
+    return crud.transaction.create_with_portfolio(
+        db=db, obj_in=transaction_in, portfolio_id=portfolio_id
+    )

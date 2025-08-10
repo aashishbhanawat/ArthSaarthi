@@ -50,20 +50,16 @@ export const setupAdminUser = async (full_name: string, email: string, password:
 };
 
 export const loginUser = async (email: string, password: string) => {
-  try {
-    const response = await apiClient.post(
-      "/api/v1/auth/login",
-      new URLSearchParams({ username: email, password: password }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-    return response.data;
-  } catch (error: any) {
-    throw error;
-  }
+  const response = await apiClient.post(
+    "/api/v1/auth/login",
+    new URLSearchParams({ username: email, password: password }),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }
+  );
+  return response.data;
 };
 
 export const getCurrentUser = async () => {

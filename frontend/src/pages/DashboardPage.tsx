@@ -7,7 +7,7 @@ import HelpLink from '../components/HelpLink';
 
 
 const DashboardPage = () => {
-  const { data: summary, isLoading, isError, error } = useDashboardSummary();
+  const { data: summary, isLoading, isError } = useDashboardSummary();
 
   if (isLoading) {
     return <div className="text-center p-8">Loading dashboard data...</div>;

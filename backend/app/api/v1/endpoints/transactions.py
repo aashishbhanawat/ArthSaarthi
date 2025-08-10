@@ -1,10 +1,11 @@
-from typing import Any
 import uuid
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.core import dependencies, config
+from app.core import config, dependencies
 from app.models.user import User
 
 router = APIRouter()
@@ -22,10 +23,10 @@ def create_transaction(
     Create new transaction for a portfolio.
     """
     if config.settings.DEBUG:
-        print(f"--- BACKEND DEBUG: Create Transaction Request ---")
+        print("--- BACKEND DEBUG: Create Transaction Request ---")
         print(f"Portfolio ID: {portfolio_id}")
         print(f"Transaction Payload: {transaction_in.model_dump_json(indent=2)}")
-        print(f"---------------------------------------------")
+        print("---------------------------------------------")
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -59,15 +60,18 @@ def update_transaction(
     Update a transaction.
     """
     if config.settings.DEBUG:
-        print(f"--- BACKEND DEBUG: Update Transaction Request ---")
+        print("--- BACKEND DEBUG: Update Transaction Request ---")
         print(f"Transaction ID: {transaction_id}")
-        print(f"Update Payload: {transaction_in.model_dump_json(indent=2, exclude_unset=True)}")
-        print(f"---------------------------------------------")
+        payload = transaction_in.model_dump_json(indent=2, exclude_unset=True)
+        print(f"Update Payload: {payload}")
+        print("---------------------------------------------")
     transaction = crud.transaction.get(db=db, id=transaction_id)
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
     if transaction.portfolio_id != portfolio_id:
-        raise HTTPException(status_code=404, detail="Transaction not found in this portfolio")
+        raise HTTPException(
+            status_code=404, detail="Transaction not found in this portfolio"
+        )
     if transaction.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
@@ -91,14 +95,16 @@ def delete_transaction(
     Delete a transaction.
     """
     if config.settings.DEBUG:
-        print(f"--- BACKEND DEBUG: Delete Transaction Request ---")
+        print("--- BACKEND DEBUG: Delete Transaction Request ---")
         print(f"Transaction ID: {transaction_id}")
-        print(f"---------------------------------------------")
+        print("---------------------------------------------")
     transaction = crud.transaction.get(db=db, id=transaction_id)
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
     if transaction.portfolio_id != portfolio_id:
-        raise HTTPException(status_code=404, detail="Transaction not found in this portfolio")
+        raise HTTPException(
+            status_code=404, detail="Transaction not found in this portfolio"
+        )
     if transaction.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 

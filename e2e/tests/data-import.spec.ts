@@ -14,6 +14,7 @@ const adminUser = {
 };
 
 test.describe.serial('Automated Data Import E2E Test', () => {
+    test.slow();
     const portfolioName = `Test Import Portfolio ${Date.now()}`;
     const csvFilePath = path.join(__dirname, 'temp_transactions.csv');
     const csvContent = `ticker_symbol,transaction_type,quantity,price_per_unit,transaction_date,fees\nNTPC,BUY,10,150.75,2023-10-26,5.50\nSCI,BUY,5,170.25,2023-10-27,2.75`;

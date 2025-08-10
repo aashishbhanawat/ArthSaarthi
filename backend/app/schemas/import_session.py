@@ -1,4 +1,5 @@
 import uuid
+
 from pydantic import BaseModel, ConfigDict
 
 # Need to import Portfolio and User schemas to be used as nested objects
@@ -51,4 +52,3 @@ class ParsedTransaction(BaseModel):
     quantity: float
     price_per_unit: float
     fees: float
-

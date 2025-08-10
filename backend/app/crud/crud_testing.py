@@ -1,8 +1,7 @@
-import logging
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
-from app.db.session import engine
+
 
 class TestingCRUD:
     def reset_database(self, db: Session) -> None:
@@ -11,7 +10,6 @@ class TestingCRUD:
         """
         Base.metadata.drop_all(bind=db.get_bind())
         Base.metadata.create_all(bind=db.get_bind())
-
 
     def seed_database(self, db: Session) -> None:
         """

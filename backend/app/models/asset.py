@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Integer, String, UniqueConstraint
+from sqlalchemy import Column, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -20,6 +20,4 @@ class Asset(Base):
 
     transactions = relationship("Transaction", back_populates="asset")
 
-    __table_args__ = (
-        UniqueConstraint('ticker_symbol', name='uq_ticker_symbol'),
-    )
+    __table_args__ = (UniqueConstraint("ticker_symbol", name="uq_ticker_symbol"),)

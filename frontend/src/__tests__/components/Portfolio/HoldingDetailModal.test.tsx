@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/react-query';
 import HoldingDetailModal from '../../../components/Portfolio/HoldingDetailModal';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Holding } from '../../../types/holding';
@@ -50,13 +50,20 @@ const renderComponent = (onClose = jest.fn(), onEdit = jest.fn(), onDelete = jes
   );
 };
 
+type PartialUseQueryResult<TData> = Partial<UseQueryResult<TData, Error>>;
+
+interface AssetAnalyticsData {
+  realized_xirr: number;
+  unrealized_xirr: number;
+}
+
 describe('HoldingDetailModal', () => {
   beforeEach(() => {
     jest.spyOn(portfolioHooks, 'useAssetTransactions').mockReturnValue({
       data: mockTransactions,
       isLoading: false,
       error: null,
-    } as any);
+    } as PartialUseQueryResult<Transaction[]>);
   });
 
   afterEach(() => {
@@ -68,26 +75,16 @@ describe('HoldingDetailModal', () => {
       data: { realized_xirr: 0.1234, unrealized_xirr: 0.2345 },
       isLoading: false,
       isError: false,
-    } as any);
+    } as PartialUseQueryResult<AssetAnalyticsData>);
 
     renderComponent();
 
     expect(screen.getByText('Test Asset (TEST)')).toBeInTheDocument();
 
-    // Helper function to find a summary value by its label, making the query robust and unambiguous.
-    const getSummaryValueByLabel = (label: string): HTMLElement => {
-      // Find the <p> tag that is the label to disambiguate from table headers.
-      const labelElement = screen.getAllByText(label).find(el => el.tagName.toLowerCase() === 'p');
-      if (!labelElement) throw new Error(`Could not find summary label: ${label}`);
-      const container = labelElement.parentElement!;
-      return container;
-    };
-
-    expect(within(getSummaryValueByLabel('Quantity')).getByText('100')).toBeInTheDocument();
-    expect(within(getSummaryValueByLabel('Avg. Buy Price')).getByText('₹150.00')).toBeInTheDocument();
-    expect(within(getSummaryValueByLabel('Current Value')).getByText('₹16,000.00')).toBeInTheDocument();
-    expect(within(getSummaryValueByLabel('Unrealized P&L')).getByText('₹1,000.00')).toBeInTheDocument();
-
+    expect(within(screen.getByTestId('summary-quantity')).getByText('100')).toBeInTheDocument();
+    expect(within(screen.getByTestId('summary-avg-buy-price')).getByText('₹150.00')).toBeInTheDocument();
+    expect(within(screen.getByTestId('summary-current-value')).getByText('₹16,000.00')).toBeInTheDocument();
+    expect(within(screen.getByTestId('summary-unrealized-pnl')).getByText('₹1,000.00')).toBeInTheDocument();
 
     // Check for analytics data
     expect(screen.getByText('12.34%')).toBeInTheDocument();
@@ -103,7 +100,7 @@ describe('HoldingDetailModal', () => {
       data: undefined,
       isLoading: true,
       isError: false,
-    } as any);
+    } as PartialUseQueryResult<AssetAnalyticsData>);
 
     renderComponent();
 
@@ -118,7 +115,7 @@ describe('HoldingDetailModal', () => {
       data: undefined,
       isLoading: false,
       isError: true,
-    } as any);
+    } as PartialUseQueryResult<AssetAnalyticsData>);
 
     renderComponent();
 

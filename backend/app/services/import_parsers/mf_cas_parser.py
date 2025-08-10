@@ -1,5 +1,7 @@
 import pandas as pd
+
 from .base_parser import BaseParser
+
 
 class MfCasParser(BaseParser):
     """

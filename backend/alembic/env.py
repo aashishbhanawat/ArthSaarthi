@@ -2,10 +2,11 @@ import sys
 from logging.config import fileConfig
 from os.path import abspath, dirname
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.core.config import settings
+from app.db.base_class import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -20,13 +21,9 @@ if config.config_file_name is not None:
 # This allows alembic to find the app modules
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
-from app.db.base_class import Base
-from app.core.config import settings
-
 # --- Model Imports ---
 # All application models are imported here for Alembic's 'autogenerate'
 # support to detect schema changes.
-from app.models import user, portfolio, asset, transaction
 
 # ---------------------
 
@@ -36,7 +33,7 @@ target_metadata = Base.metadata
 
 # Set the sqlalchemy.url from our application settings object
 if settings.DATABASE_URL:
-    config.set_main_option('sqlalchemy.url', str(settings.DATABASE_URL))
+    config.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
 
 
 def run_migrations_offline() -> None:
@@ -77,9 +74,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

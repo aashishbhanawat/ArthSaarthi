@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
 from app.core.config import settings
 
-
 app = FastAPI(
     title="Personal Portfolio Management System",
     openapi_url="/api/v1/openapi.json",

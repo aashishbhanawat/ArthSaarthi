@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, UserCreate, UserUpdate } from '../../types/user';
+import { User, UserUpdate } from '../../types/user';
 import { useCreateUser, useUpdateUser } from '../../hooks/useUsers';
 
 interface UserFormModalProps {
@@ -72,17 +72,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         });
       }
       onClose();
-    } catch (error: any) {
+    } catch (e: unknown) {
+      const error = e as { response?: { data?: { detail?: string | { msg: string }[] } } };
       const errorDetail = error.response?.data?.detail;
       let displayMessage = "An unexpected error occurred.";
 
       if (typeof errorDetail === 'string') {
         displayMessage = errorDetail;
-      } else if (Array.isArray(errorDetail) && errorDetail.length > 0 && typeof errorDetail[0].msg === 'string') {
+      } else if (Array.isArray(errorDetail)) {
         displayMessage = errorDetail.map(e => e.msg).join(', ');
-      } else {
-        // Handle other potential object structures or fall back
-        displayMessage = errorDetail?.msg || displayMessage;
       }
       setError(displayMessage);
     }

@@ -1,16 +1,16 @@
 import pytest
-from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
 from app.models.user import User as UserModel
 
-from app import crud, models, schemas  # Keep these for now, but might be unused
-from app.core import security       # Keep this as it's used directly
-from app.tests.utils.user import create_random_user, get_access_token
 
 def test_get_status_setup_needed(client: TestClient):
     response = client.get("/api/v1/auth/status")
     assert response.status_code == 200
-    assert response.json() == {"setup_needed": True}, "Should indicate setup is needed initially"
+    assert response.json() == {"setup_needed": True}, (
+        "Should indicate setup is needed initially"
+    )
     assert response.headers["content-type"] == "application/json"
 
 

@@ -1,8 +1,9 @@
-from sqlalchemy.orm import Session
+import uuid
 from collections import defaultdict
 from decimal import Decimal
-from typing import Dict, Any, List
-import uuid
+from typing import Any, Dict, List
+
+from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.services.financial_data_service import financial_data_service
@@ -50,7 +51,9 @@ class CRUDHolding:
             ticker = tx.asset.ticker_symbol
             if tx.transaction_type == "BUY":
                 holdings_state[ticker]["quantity"] += tx.quantity
-                holdings_state[ticker]["total_invested"] += tx.quantity * tx.price_per_unit
+                holdings_state[ticker]["total_invested"] += (
+                    tx.quantity * tx.price_per_unit
+                )
             elif tx.transaction_type == "SELL":
                 if holdings_state[ticker]["quantity"] > 0:
                     # Calculate avg buy price before the sale
@@ -73,12 +76,12 @@ class CRUDHolding:
         current_holdings_tickers = [
             ticker for ticker, data in holdings_state.items() if data["quantity"] > 0
         ]
-        
+
         assets_to_price = [
             {"ticker_symbol": ticker, "exchange": asset_map[ticker].exchange}
             for ticker in current_holdings_tickers
         ]
-        
+
         price_details = financial_data_service.get_current_prices(assets_to_price)
 
         holdings_list: List[schemas.Holding] = []
@@ -97,11 +100,15 @@ class CRUDHolding:
 
             quantity = data["quantity"]
             total_invested = data["total_invested"]
-            average_buy_price = total_invested / quantity if quantity > 0 else Decimal(0)
+            average_buy_price = (
+                total_invested / quantity if quantity > 0 else Decimal(0)
+            )
             current_value = quantity * current_price
             unrealized_pnl = current_value - total_invested
             unrealized_pnl_percentage = (
-                float((unrealized_pnl / total_invested) * 100) if total_invested > 0 else 0.0
+                float((unrealized_pnl / total_invested) * 100)
+                if total_invested > 0
+                else 0.0
             )
             days_pnl = (current_price - previous_close) * quantity
             days_pnl_percentage = (

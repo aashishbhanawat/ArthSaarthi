@@ -19,7 +19,7 @@ export const useCreateUser = () => {
       // Invalidate and refetch the users query to show the new user
       queryClient.invalidateQueries({ queryKey: [USERS_QUERY_KEY] });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { detail?: string } } }) => {
       // It's good practice to handle errors, maybe show a toast notification
       console.error('Error creating user:', error);
       // You can throw the error to be caught by the component's onSubmit
@@ -41,7 +41,7 @@ export const useUpdateUser = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [USERS_QUERY_KEY] });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { detail?: string } } }) => {
       console.error('Error updating user:', error);
       throw error;
     },
@@ -55,7 +55,7 @@ export const useDeleteUser = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [USERS_QUERY_KEY] });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { detail?: string } } }) => {
       console.error('Error deleting user:', error);
       throw error;
     },

@@ -146,6 +146,9 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const modal = page.getByRole('dialog');
     await expect(modal).toBeVisible();
 
+    // Wait for the data to load before checking the values
+    await expect(modal.getByText('Loading transactions...')).not.toBeVisible({ timeout: 10000 });
+
     // Wait for the analytics to load and verify the values
     const realizedXirrContainer = modal.getByText('Realized XIRR').locator('xpath=..');
     await expect(realizedXirrContainer.getByText('43.86%')).toBeVisible({ timeout: 10000 });
