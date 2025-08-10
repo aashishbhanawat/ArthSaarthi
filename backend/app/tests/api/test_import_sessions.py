@@ -257,7 +257,9 @@ def test_commit_import_session_success(
 
     # Construct the commit payload from the parsed data
     df = pd.read_parquet(parsed_import_session.parsed_file_path)
-    transactions_to_commit = [schemas.ParsedTransaction(**row) for _, row in df.iterrows()]
+    transactions_to_commit = [
+        schemas.ParsedTransaction(**row) for _, row in df.iterrows()
+    ]
     commit_payload = {
         "transactions_to_commit": [tx.dict() for tx in transactions_to_commit],
         "aliases_to_create": [],
@@ -327,7 +329,8 @@ def test_commit_import_session_asset_not_found(
         headers=auth_headers,
         json=commit_payload,
     )
-    # The new logic just skips invalid assets, so the commit is "successful" but creates 0 transactions.
+    # The new logic just skips invalid assets, so the commit is "successful"
+    # but creates 0 transactions.
     assert response.status_code == 200
     assert "Successfully committed 0 transactions" in response.json()["msg"]
 
