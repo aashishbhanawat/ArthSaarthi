@@ -24,3 +24,20 @@ export interface ParsedTransaction {
     price_per_unit: number;
     fees: number;
 }
+
+export interface AssetAliasCreate {
+    asset_id: string;
+    alias_symbol: string;
+    source: string;
+}
+
+export interface ImportSessionPreview {
+    valid_new: ParsedTransaction[];
+    duplicates: ParsedTransaction[];
+    invalid: { row_data: Record<string, any>; error: string }[];
+}
+
+export interface ImportSessionCommit {
+    transactions_to_commit: ParsedTransaction[];
+    aliases_to_create: AssetAliasCreate[];
+}

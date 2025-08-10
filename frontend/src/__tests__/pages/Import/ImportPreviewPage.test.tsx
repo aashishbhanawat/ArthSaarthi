@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import ImportPreviewPage from '../../../pages/Import/ImportPreviewPage';
-import { useImportSession, useParsedTransactions, useCommitImportSession } from '../../../hooks/useImport';
+import { useImportSession, useImportSessionPreview, useCommitImportSession } from '../../../hooks/useImport';
 
 // Mock hooks
 jest.mock('react-router-dom', () => ({
@@ -13,7 +13,7 @@ jest.mock('react-router-dom', () => ({
 jest.mock('../../../hooks/useImport');
 
 const mockUseImportSession = useImportSession as jest.Mock;
-const mockUseParsedTransactions = useParsedTransactions as jest.Mock;
+const mockUseImportSessionPreview = useImportSessionPreview as jest.Mock;
 const mockUseCommitImportSession = useCommitImportSession as jest.Mock;
 const mockNavigate = useNavigate as jest.Mock;
 
@@ -22,7 +22,7 @@ const queryClient = new QueryClient();
 const renderComponent = (sessionId: string) => {
     return render(
         <QueryClientProvider client={queryClient}>
-            <MemoryRouter initialEntries={[`/import/${sessionId}/preview`]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <MemoryRouter initialEntries={[`/import/${sessionId}/preview`]}>
                 <Routes>
                     <Route path="/import/:sessionId/preview" element={<ImportPreviewPage />} />
                 </Routes>
@@ -32,6 +32,15 @@ const renderComponent = (sessionId: string) => {
 };
 
 describe('ImportPreviewPage', () => {
+    const mockTransaction = {
+        transaction_date: '2023-01-01T00:00:00Z',
+        ticker_symbol: 'TEST',
+        transaction_type: 'BUY' as const,
+        quantity: 10,
+        price_per_unit: 100,
+        fees: 5,
+    };
+
     beforeEach(() => {
         jest.clearAllMocks();
         mockNavigate.mockReturnValue(jest.fn());
@@ -45,43 +54,65 @@ describe('ImportPreviewPage', () => {
             },
             isLoading: false,
         });
-        mockUseParsedTransactions.mockReturnValue({
-            data: [
-                {
-                    transaction_date: '2023-01-01T00:00:00Z',
-                    ticker_symbol: 'TEST',
-                    transaction_type: 'BUY',
-                    quantity: 10,
-                    price_per_unit: 100,
-                    fees: 5,
-                },
-            ],
+        mockUseImportSessionPreview.mockReturnValue({
+            data: {
+                valid_new: [mockTransaction],
+                duplicates: [],
+                invalid: [],
+            },
             isLoading: false,
         });
     });
 
-    it('renders the preview table with transaction data', () => {
+    it('renders the categorized tables with transaction data', () => {
         mockUseCommitImportSession.mockReturnValue({ isPending: false });
         renderComponent('session-123');
 
         expect(screen.getByText('Import Preview')).toBeInTheDocument();
+        expect(screen.getByText('New Transactions (1)')).toBeInTheDocument();
         expect(screen.getByText('TEST')).toBeInTheDocument();
         expect(screen.getByText('BUY')).toBeInTheDocument();
-        expect(screen.getByText('10')).toBeInTheDocument(); // Quantity
-        expect(screen.getByText('₹100.00')).toBeInTheDocument(); // Price
     });
 
-    it('calls the commit mutation when "Commit Transactions" is clicked', () => {
+    it('handles transaction selection and calls the commit mutation with selected data', async () => {
         const mockMutate = jest.fn();
         mockUseCommitImportSession.mockReturnValue({ mutate: mockMutate, isPending: false });
 
         renderComponent('session-123');
 
-        const commitButton = screen.getByRole('button', { name: 'Commit Transactions' });
+        // Initial state: transaction is selected by default
+        let commitButton = await screen.findByRole('button', { name: /Commit 1 Transactions/ });
+        let rowCheckbox = (await screen.findAllByRole('checkbox'))[1];
         expect(commitButton).toBeEnabled();
+        expect(rowCheckbox).toBeChecked();
+
+        // Deselect the transaction
+        fireEvent.click(rowCheckbox);
+
+        // Check state after deselect
+        commitButton = await screen.findByRole('button', { name: /Commit 0 Transactions/ });
+        rowCheckbox = (await screen.findAllByRole('checkbox'))[1];
+        expect(commitButton).toBeDisabled();
+        expect(rowCheckbox).not.toBeChecked();
+
+        // Reselect the transaction
+        fireEvent.click(rowCheckbox);
+
+        // Check state after reselect
+        commitButton = await screen.findByRole('button', { name: /Commit 1 Transactions/ });
+        expect(commitButton).toBeEnabled();
+
+        // Click commit
         fireEvent.click(commitButton);
 
-        expect(mockMutate).toHaveBeenCalledWith({ sessionId: 'session-123', portfolioId: 'port-1' });
+        expect(mockMutate).toHaveBeenCalledWith({
+            sessionId: 'session-123',
+            portfolioId: 'port-1',
+            commitPayload: {
+                transactions_to_commit: [mockTransaction],
+                aliases_to_create: [],
+            },
+        });
     });
 
     it('displays a success message and navigates on successful commit', async () => {

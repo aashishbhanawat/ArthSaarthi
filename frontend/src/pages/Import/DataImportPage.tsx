@@ -7,6 +7,7 @@ import { ArrowUpTrayIcon } from '@heroicons/react/24/solid';
 const DataImportPage: React.FC = () => {
     const navigate = useNavigate();
     const [selectedPortfolio, setSelectedPortfolio] = useState<string>('');
+    const [sourceType, setSourceType] = useState<string>('Generic CSV');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const { data: portfolios, isLoading: isLoadingPortfolios } = usePortfolios();
@@ -27,12 +28,13 @@ const DataImportPage: React.FC = () => {
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!selectedPortfolio || !selectedFile) {
-            alert('Please select a portfolio and a file.');
+        if (!selectedPortfolio || !selectedFile || !sourceType) {
+            alert('Please select a portfolio, a source type, and a file.');
             return;
         }
         createImportSessionMutation.mutate({
             portfolioId: selectedPortfolio,
+            source_type: sourceType,
             file: selectedFile,
         });
     };
@@ -41,7 +43,7 @@ const DataImportPage: React.FC = () => {
         <div>
             <h1 className="text-3xl font-bold text-gray-800 mb-4">Import Transactions</h1>
             <p className="text-gray-600 mb-8">
-                Upload your transaction history from a CSV file.
+                Upload your transaction history from a CSV file. Select the correct source type for accurate parsing.
             </p>
 
             <div className="card max-w-2xl mx-auto">
@@ -68,6 +70,24 @@ const DataImportPage: React.FC = () => {
                                         {p.name}
                                     </option>
                                 ))}
+                            </select>
+                        </div>
+
+                        {/* Source Type Selector */}
+                        <div className="form-group">
+                            <label htmlFor="sourceType" className="form-label">
+                                Statement Type
+                            </label>
+                            <select
+                                id="sourceType"
+                                value={sourceType}
+                                onChange={(e) => setSourceType(e.target.value)}
+                                className="form-select"
+                                disabled={createImportSessionMutation.isPending}
+                                required
+                            >
+                                <option value="Generic CSV">Generic CSV</option>
+                                <option value="Zerodha Tradebook">Zerodha Tradebook</option>
                             </select>
                         </div>
 
@@ -102,7 +122,7 @@ const DataImportPage: React.FC = () => {
 
                     {/* Submission and Status */}
                     <div className="mt-8">
-                        <button type="submit" className="btn btn-primary w-full" disabled={!selectedPortfolio || !selectedFile || createImportSessionMutation.isPending}>
+                        <button type="submit" className="btn btn-primary w-full" disabled={!selectedPortfolio || !selectedFile || !sourceType || createImportSessionMutation.isPending}>
                             {createImportSessionMutation.isPending ? 'Uploading & Parsing...' : 'Upload and Preview'}
                         </button>
 

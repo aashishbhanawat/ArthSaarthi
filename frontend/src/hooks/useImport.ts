@@ -1,10 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as importApi from '../services/importApi';
+import { ImportSessionCommit } from '../types/import';
 
 export const useCreateImportSession = () => {
     return useMutation({
-        mutationFn: ({ portfolioId, file }: { portfolioId: string; file: File }) =>
-            importApi.createImportSession(portfolioId, file),
+        mutationFn: ({
+            portfolioId,
+            source_type,
+            file,
+        }: {
+            portfolioId: string;
+            source_type: string;
+            file: File;
+        }) => importApi.createImportSession(portfolioId, source_type, file),
     });
 };
 
@@ -16,10 +24,10 @@ export const useImportSession = (sessionId: string) => {
     });
 };
 
-export const useParsedTransactions = (sessionId: string) => {
+export const useImportSessionPreview = (sessionId: string) => {
     return useQuery({
-        queryKey: ['parsedTransactions', sessionId],
-        queryFn: () => importApi.getParsedTransactions(sessionId),
+        queryKey: ['importSessionPreview', sessionId],
+        queryFn: () => importApi.getImportSessionPreview(sessionId),
         enabled: !!sessionId,
     });
 };
@@ -28,12 +36,19 @@ export const useCommitImportSession = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ sessionId }: { sessionId: string; portfolioId: string }) =>
-            importApi.commitImportSession(sessionId),
+        mutationFn: ({
+            sessionId,
+            commitPayload,
+        }: {
+            sessionId: string;
+            commitPayload: ImportSessionCommit;
+            portfolioId: string; // Keep for invalidation
+        }) => importApi.commitImportSession(sessionId, commitPayload),
         onSuccess: (data, variables) => {
             const { sessionId, portfolioId } = variables;
             // Invalidate queries to refetch data after commit
             queryClient.invalidateQueries({ queryKey: ['importSession', sessionId] });
+            queryClient.invalidateQueries({ queryKey: ['importSessionPreview', sessionId] });
             queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['transactions', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', portfolioId] });
