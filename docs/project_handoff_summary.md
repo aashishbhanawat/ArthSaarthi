@@ -1,14 +1,14 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Project Handoff Document: Personal Portfolio Management System
+# Project Handoff Document: Personal Portfolio Management System
 
-**Version:** 1.1.0 (Pilot Release 2)
-**Date:** 2025-08-08
+**Version:** 1.2.0
+**Date:** 2025-08-09
 **Author:** Gemini Code Assist
 
 ---
 
 ## 1. Project Overview
 
-This document marks the successful completion and stabilization of the second pilot release for the Personal Portfolio Management System (PMS). The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
+This document marks the successful completion and stabilization of the second pilot release for the Personal Portfolio Management System (PMS), and subsequent improvements to the development process. The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
 
 The project was developed following a rigorous, AI-assisted Agile SDLC, with a strong emphasis on automated testing, comprehensive documentation, and iterative feature implementation.
 
@@ -17,9 +17,9 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 ## 2. Final Status
 
 *   **Overall Status:** **Complete & Stable**
-*   **Backend Test Suite:** **100% Passing** (71/71 tests)
-*   **Backend Test Suite:** **100% Passing** (74/74 tests)
-*   **E2E Test Suite:** **100% Passing** (9/9 tests)
+*   **Backend Tests:** **100% Passing** (78/78 tests)
+*   **Frontend Tests:** **100% Passing** (96 tests, 22 suites)
+*   **E2E Tests:** **100% Passing** (8/8 tests)
 
 All planned MVP features have been implemented and validated through a combination of unit, integration, and end-to-end tests. The application is stable and ready for pilot deployment or the next phase of development.
 
@@ -39,7 +39,25 @@ All planned MVP features have been implemented and validated through a combinati
 
 ---
 
-## 4. How to Run the Application
+## 4. Development Process & CI/CD
+
+To improve code quality and ensure stability, a comprehensive CI/CD pipeline and linting process have been established.
+
+*   **CI/CD Pipeline:** A GitHub Actions workflow is configured in `.github/workflows/ci.yml`. It automatically runs on every push and pull request to the `main` branch. The pipeline performs the following checks:
+    *   **Linting:** Runs `ruff` on the backend and `eslint` on the frontend to enforce code style and catch errors.
+    *   **Unit & Integration Tests:** Executes the full Pytest suite for the backend and the Jest/RTL suite for the frontend.
+    *   **End-to-End (E2E) Tests:** Runs the full Playwright E2E test suite in an isolated Docker environment.
+
+*   **Linting Process:**
+    *   **Backend:** The backend uses `ruff` for both linting and formatting. The configuration is in `backend/pyproject.toml`.
+    *   **Frontend:** The frontend uses `ESLint` with a standard configuration for React/TypeScript projects (`frontend/.eslintrc.cjs`). A `lint` script is available in `frontend/package.json` to run the linter locally: `npm run lint`.
+
+**Instructions for AI Assistants:**
+Future development by AI assistants **must** adhere to these processes. All code changes must pass the linting checks and all test suites before being submitted. Any new feature should be accompanied by corresponding tests.
+
+---
+
+## 5. How to Run the Application
 
 The application is fully containerized. Please refer to the main **README.md** for detailed instructions on environment setup and running the application using Docker Compose.
 
@@ -47,24 +65,24 @@ The application is fully containerized. Please refer to the main **README.md** f
 
 *   **Start the Application:**
     ```bash
-    docker-compose up --build db backend frontend
+    docker compose up --build
     ```
 *   **Run Backend Unit Tests:**
     ```bash
-    docker-compose run --rm test
+    docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
     ```
 *   **Run Frontend Unit Tests:**
     ```bash
-    docker-compose run --rm frontend npm test
+    docker compose run --rm frontend npm test
     ```
 *   **Run E2E Tests:**
     ```bash
-    docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e-tests db redis backend frontend e2e-tests
+    docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit
     ```
 
 ---
 
-## 5. Codebase & Documentation
+## 6. Codebase & Documentation
 
 *   **Source Code:** The full source code is available in the `backend/` and `frontend/` directories.
 *   **System Architecture:** See docs/architecture.md.
@@ -76,14 +94,14 @@ The application is fully containerized. Please refer to the main **README.md** f
 
 ---
 
-## 6. Known Issues & Technical Debt
+## 7. Known Issues & Technical Debt
 
 *   **External API Dependency in E2E Tests:** The E2E tests have a dependency on the live `yfinance` API for the "create new asset" flow. This has been partially mitigated by adding mock data for specific test tickers (`XIRRTEST`), but a broader dependency remains. For future hardening, this should be fully mocked.
 *   **Limited Mock Financial Data:** The mock `FinancialDataService` only contains data for a few specific tickers. This may need to be expanded for more comprehensive manual testing.
 
 ---
 
-## 7. Recommended Next Steps
+## 8. Recommended Next Steps
 
 The application is in a strong position for future development. With the core portfolio management and analytics features now stable, the following are recommended next steps based on the product backlog:
 

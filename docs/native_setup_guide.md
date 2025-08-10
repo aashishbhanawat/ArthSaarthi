@@ -78,6 +78,10 @@ Before you begin, ensure you have the following installed on your system:
         ```
         VITE_API_PROXY_TARGET=http://localhost:8000
         ```
+    *   If you need to access the dev server from a different machine on your network (e.g., from your phone), you will also need to add your machine's IP address or hostname to the `ALLOWED_HOSTS` variable in your `frontend/.env.local` file:
+        ```
+        ALLOWED_HOSTS=192.168.1.100,your-pc-name.local
+        ```
 
 ---
 

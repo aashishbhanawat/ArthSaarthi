@@ -1,6 +1,9 @@
 import logging
+
 import pandas as pd
+
 from .base_parser import BaseParser
+
 
 class CsvParser(BaseParser):
     """
@@ -21,4 +24,4 @@ class CsvParser(BaseParser):
         except Exception as e:
             # It's better to use logging than print for server applications
             logging.error(f"Error parsing CSV file at {file_path}: {e}")
-            return pd.DataFrame() # Return empty DataFrame on error
+            return pd.DataFrame()  # Return empty DataFrame on error

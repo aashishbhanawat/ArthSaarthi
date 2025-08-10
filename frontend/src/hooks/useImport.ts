@@ -28,7 +28,7 @@ export const useCommitImportSession = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ sessionId, portfolioId }: { sessionId: string; portfolioId: string }) =>
+        mutationFn: ({ sessionId }: { sessionId: string; portfolioId: string }) =>
             importApi.commitImportSession(sessionId),
         onSuccess: (data, variables) => {
             const { sessionId, portfolioId } = variables;

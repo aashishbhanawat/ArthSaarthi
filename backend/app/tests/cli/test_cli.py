@@ -84,7 +84,9 @@ def test_seed_assets_with_local_dir(mocker, tmp_path, mock_db_session_empty):
     mock_asset_create = mocker.patch("app.crud.asset.create", return_value=None)
 
     # Run the command
-    result = runner.invoke(main_app, ["db", "seed-assets", "--local-dir", str(tmp_path)])
+    result = runner.invoke(
+        main_app, ["db", "seed-assets", "--local-dir", str(tmp_path)]
+    )
 
     # Assertions
     assert result.exit_code == 0

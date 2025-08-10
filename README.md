@@ -1,9 +1,9 @@
-﻿﻿# Personal Portfolio Management System
+# Personal Portfolio Management System
 
 [![CI/CD Status](https://img.shields.io/badge/CI/CD-Passing-brightgreen)](.)
-[![Backend Tests](https://img.shields.io/badge/Backend_Tests-71/71-brightgreen)](.)
-[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-17/17_suites-brightgreen)](.)
-[![E2E Tests](https://img.shields.io/badge/E2E_Tests-9/9-brightgreen)](.)
+[![Backend Tests](https://img.shields.io/badge/Backend_Tests-78/78-brightgreen)](.)
+[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-96/96_passed-brightgreen)](.)
+[![E2E Tests](https://img.shields.io/badge/E2E_Tests-8/8-brightgreen)](.)
 
 ---
 
@@ -42,37 +42,41 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 ### Environment Setup
 
 1.  **Clone the repository.**
-2.  **Create the backend environment file:**
+2.  **Run the configuration script:**
     ```bash
-    cp backend/.env.example backend/.env
+    ./configure.sh
     ```
-    Review `backend/.env` and fill in any necessary values (e.g., `FINANCIAL_API_KEY`).
+    This will create the necessary `.env` files and generate a secure secret key. You will be prompted to edit the `CORS_ORIGINS` setting, which is a crucial security step.
+3.  **For frontend development (optional):** If you need to access the Vite dev server from a different domain or IP address, create a `frontend/.env` file and add the `ALLOWED_HOSTS` variable:
+    ```
+    ALLOWED_HOSTS=your.domain.com,192.168.1.100
+    ```
 
 ### Running the Application (Development)
 
 To start the application services (database, backend, frontend), run:
 
 ```bash
-docker-compose up --build db backend frontend
+docker compose up --build
 ```
 
 *   Frontend will be available at `http://localhost:3000`
 *   Backend API will be available at `http://localhost:8000`
 
-**Note on Database Resets:** To completely reset the database, run `docker-compose down -v`. After this, you will need to perform the initial admin setup again in the browser.
+**Note on Database Resets:** To completely reset the database, run `docker compose down -v`. After this, you will need to perform the initial admin setup again in the browser.
 
 ### Running the Test Suites
 
 **1. Backend Unit & Integration Tests:**
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
+docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
 ```
 
 **2. Frontend Unit & Integration Tests:**
 
 ```bash
-docker-compose run --rm frontend npm test
+docker compose run --rm frontend npm test
 ```
 
 **3. End-to-End (E2E) Tests:**
@@ -80,7 +84,7 @@ docker-compose run --rm frontend npm test
 This command starts a fully isolated test environment and runs the Playwright tests.
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit db redis backend frontend e2e-tests
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit
 ```
 
 ## 5. Project Documentation

@@ -66,9 +66,9 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(mockedApi.loginUser).toHaveBeenCalledWith('test@example.com', 'password123');
       expect(mockLogin).toHaveBeenCalledWith('fake-token');
     });
+    expect(mockedApi.loginUser).toHaveBeenCalledWith('test@example.com', 'password123');
   });
 
   it('shows an error message on failed submission', async () => {

@@ -1,12 +1,13 @@
 import logging
+import uuid
+from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
-from collections import defaultdict
 from typing import Any, Dict, List, Tuple
-import uuid
+
 import numpy as np
-from sqlalchemy.orm import Session
 from pyxirr import xirr
+from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.schemas.analytics import AnalyticsResponse, AssetAnalytics
@@ -17,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decimal:
     """Calculates the current market value of a single portfolio."""
-    transactions = crud.transaction.get_multi_by_portfolio(db=db, portfolio_id=portfolio_id)
+    transactions = crud.transaction.get_multi_by_portfolio(
+        db=db, portfolio_id=portfolio_id
+    )
     if not transactions:
         return Decimal("0.0")
 
@@ -25,36 +28,41 @@ def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decima
     for t in transactions:
         ticker = t.asset.ticker_symbol
         live_holdings[ticker]["exchange"] = t.asset.exchange
-        if t.transaction_type.lower() == 'buy':
+        if t.transaction_type.lower() == "buy":
             live_holdings[ticker]["quantity"] += t.quantity
-        elif t.transaction_type.lower() == 'sell':
+        elif t.transaction_type.lower() == "sell":
             live_holdings[ticker]["quantity"] -= t.quantity
 
     assets_to_price = [
         {"ticker_symbol": ticker, "exchange": data["exchange"]}
-        for ticker, data in live_holdings.items() if data["quantity"] > 0
+        for ticker, data in live_holdings.items()
+        if data["quantity"] > 0
     ]
-    
+
     if not assets_to_price:
         return Decimal("0.0")
 
     current_prices_details = financial_data_service.get_current_prices(assets_to_price)
-    
+
     total_value = Decimal("0.0")
     for ticker, data in live_holdings.items():
         if data["quantity"] > 0 and ticker in current_prices_details:
             price_info = current_prices_details[ticker]
             current_price = price_info["current_price"]
             total_value += data["quantity"] * current_price
-            
+
     return total_value
 
 
-def _get_single_portfolio_history(db: Session, portfolio_id: uuid.UUID, time_range: str) -> List[Dict[str, Any]]:
+def _get_single_portfolio_history(
+    db: Session, portfolio_id: uuid.UUID, time_range: str
+) -> List[Dict[str, Any]]:
     """Calculates the total value of a single portfolio over a specified time range."""
     end_date = date.today()
-    
-    transactions = crud.transaction.get_multi_by_portfolio(db=db, portfolio_id=portfolio_id)
+
+    transactions = crud.transaction.get_multi_by_portfolio(
+        db=db, portfolio_id=portfolio_id
+    )
     if not transactions:
         return []
 
@@ -72,7 +80,13 @@ def _get_single_portfolio_history(db: Session, portfolio_id: uuid.UUID, time_ran
     # Ensure start_date is not before the first transaction
     start_date = max(start_date, first_transaction_date)
 
-    portfolio_assets = db.query(crud.asset.model).join(crud.transaction.model).filter(crud.transaction.model.portfolio_id == portfolio_id).distinct().all()
+    portfolio_assets = (
+        db.query(crud.asset.model)
+        .join(crud.transaction.model)
+        .filter(crud.transaction.model.portfolio_id == portfolio_id)
+        .distinct()
+        .all()
+    )
     if not portfolio_assets:
         return []
 
@@ -91,10 +105,12 @@ def _get_single_portfolio_history(db: Session, portfolio_id: uuid.UUID, time_ran
     last_known_prices = {}
 
     # Calculate initial holdings up to the start_date
-    initial_transactions = [t for t in transactions if t.transaction_date.date() < start_date]
+    initial_transactions = [
+        t for t in transactions if t.transaction_date.date() < start_date
+    ]
     for t in initial_transactions:
         ticker = t.asset.ticker_symbol
-        if t.transaction_type.lower() == 'buy':
+        if t.transaction_type.lower() == "buy":
             daily_holdings[ticker] += t.quantity
         else:
             daily_holdings[ticker] -= t.quantity
@@ -103,19 +119,30 @@ def _get_single_portfolio_history(db: Session, portfolio_id: uuid.UUID, time_ran
     day_before_start = start_date - timedelta(days=1)
     for ticker in daily_holdings:
         if ticker in historical_prices:
-            relevant_dates = [d for d in historical_prices[ticker] if d <= day_before_start]
+            relevant_dates = [
+                d for d in historical_prices[ticker] if d <= day_before_start
+            ]
             if relevant_dates:
-                last_known_prices[ticker] = historical_prices[ticker][max(relevant_dates)]
-    
+                last_known_prices[ticker] = historical_prices[ticker][
+                    max(relevant_dates)
+                ]
+
     # Filter transactions to only those within the date window for daily processing
-    window_transactions = sorted([t for t in transactions if t.transaction_date.date() >= start_date], key=lambda t: t.transaction_date)
+    window_transactions = sorted(
+        [t for t in transactions if t.transaction_date.date() >= start_date],
+        key=lambda t: t.transaction_date,
+    )
     transaction_idx = 0
 
     while current_day <= end_date:
-        while transaction_idx < len(window_transactions) and window_transactions[transaction_idx].transaction_date.date() == current_day:
+        while (
+            transaction_idx < len(window_transactions)
+            and window_transactions[transaction_idx].transaction_date.date()
+            == current_day
+        ):
             t = window_transactions[transaction_idx]
             ticker = t.asset.ticker_symbol
-            if t.transaction_type.lower() == 'buy':
+            if t.transaction_type.lower() == "buy":
                 daily_holdings[ticker] += t.quantity
             else:
                 daily_holdings[ticker] -= t.quantity
@@ -124,12 +151,17 @@ def _get_single_portfolio_history(db: Session, portfolio_id: uuid.UUID, time_ran
         day_total_value = Decimal("0.0")
         for ticker, quantity in daily_holdings.items():
             if quantity > 0:
-                if ticker in historical_prices and current_day in historical_prices[ticker]:
+                if (
+                    ticker in historical_prices
+                    and current_day in historical_prices[ticker]
+                ):
                     last_known_prices[ticker] = historical_prices[ticker][current_day]
-                
+
                 if ticker in last_known_prices:
                     day_total_value += quantity * last_known_prices[ticker]
-        history_points.append({"date": current_day.isoformat(), "value": float(day_total_value)})
+        history_points.append(
+            {"date": current_day.isoformat(), "value": float(day_total_value)}
+        )
         current_day += timedelta(days=1)
 
     return history_points
@@ -186,10 +218,10 @@ def _calculate_sharpe_ratio(db: Session, portfolio_id: uuid.UUID) -> float:
     if len(history_points) < 2:
         return 0.0
 
-    daily_values = [p['value'] for p in history_points]
+    daily_values = [p["value"] for p in history_points]
     # Ensure no zero values before division
     daily_values = [v if v > 0 else 1e-9 for v in daily_values]
-    
+
     daily_returns = np.diff(daily_values) / daily_values[:-1]
 
     if len(daily_returns) == 0 or np.std(daily_returns) == 0:
@@ -198,46 +230,61 @@ def _calculate_sharpe_ratio(db: Session, portfolio_id: uuid.UUID) -> float:
     # Assuming risk-free rate is 0
     sharpe_ratio = (np.mean(daily_returns) / np.std(daily_returns)) * np.sqrt(252)
 
-    # Handle cases where calculation results in NaN or Infinity, which are not JSON compliant
+    # Handle non-JSON compliant results like NaN or Infinity.
     if np.isnan(sharpe_ratio) or np.isinf(sharpe_ratio):
         return 0.0
     return sharpe_ratio
 
 
-def _get_realized_and_unrealized_cash_flows(transactions: List[schemas.Transaction]) -> Tuple[List, List]:
+def _get_realized_and_unrealized_cash_flows(
+    transactions: List[schemas.Transaction],
+) -> Tuple[List, List]:
     """
-    Applies FIFO logic to separate transactions into realized (closed) and unrealized (open) lots.
+    Applies FIFO logic to separate transactions into realized and unrealized lots.
+
     Returns a tuple of two lists: (realized_cash_flows, unrealized_cash_flows).
     """
     sorted_txs = sorted(transactions, key=lambda t: t.transaction_date.date())
-    
-    # Create copies to avoid mutating the original list and to track remaining quantities
-    buys = [t.model_copy(deep=True) for t in sorted_txs if t.transaction_type == 'BUY']
-    sells = [t for t in sorted_txs if t.transaction_type == 'SELL']
-    
+
+    # Create copies to avoid mutation and to track remaining quantities.
+    buys = [t.model_copy(deep=True) for t in sorted_txs if t.transaction_type == "BUY"]
+    sells = [t for t in sorted_txs if t.transaction_type == "SELL"]
+
     realized_cash_flows = []
-    
+
     for sell_tx in sells:
         sell_quantity_to_match = sell_tx.quantity
-        
+
         for buy_tx in buys:
             if sell_quantity_to_match == 0:
                 break
-            
+
             if buy_tx.quantity > 0:
                 match_quantity = min(sell_quantity_to_match, buy_tx.quantity)
-                
+
                 # Handle zero-price transactions (e.g., bonus shares) gracefully
-                buy_price = buy_tx.price_per_unit if buy_tx.price_per_unit is not None else Decimal('0.0')
-                sell_price = sell_tx.price_per_unit if sell_tx.price_per_unit is not None else Decimal('0.0')
+                buy_price = (
+                    buy_tx.price_per_unit
+                    if buy_tx.price_per_unit is not None
+                    else Decimal("0.0")
+                )
+                sell_price = (
+                    sell_tx.price_per_unit
+                    if sell_tx.price_per_unit is not None
+                    else Decimal("0.0")
+                )
 
                 buy_cost_for_match = match_quantity * buy_price
                 sell_proceeds_for_match = match_quantity * sell_price
-                
+
                 # A closed lot is a pair of cashflows
-                realized_cash_flows.append((buy_tx.transaction_date.date(), float(-buy_cost_for_match)))
-                realized_cash_flows.append((sell_tx.transaction_date.date(), float(sell_proceeds_for_match)))
-                
+                realized_cash_flows.append(
+                    (buy_tx.transaction_date.date(), float(-buy_cost_for_match))
+                )
+                realized_cash_flows.append(
+                    (sell_tx.transaction_date.date(), float(sell_proceeds_for_match))
+                )
+
                 buy_tx.quantity -= match_quantity
                 sell_quantity_to_match -= match_quantity
 
@@ -245,11 +292,15 @@ def _get_realized_and_unrealized_cash_flows(transactions: List[schemas.Transacti
     unrealized_cash_flows = []
     for buy_tx in buys:
         if buy_tx.quantity > 0:
-            buy_price = buy_tx.price_per_unit if buy_tx.price_per_unit is not None else Decimal('0.0')
+            buy_price = (
+                buy_tx.price_per_unit
+                if buy_tx.price_per_unit is not None
+                else Decimal("0.0")
+            )
             unrealized_cash_flows.append(
                 (buy_tx.transaction_date.date(), float(-buy_tx.quantity * buy_price))
             )
-            
+
     return realized_cash_flows, unrealized_cash_flows
 
 
@@ -272,7 +323,9 @@ def _calculate_xirr_from_cashflows(cash_flows: List[Tuple[date, float]]) -> floa
         return 0.0
 
 
-def _get_asset_current_value(db: Session, portfolio_id: uuid.UUID, asset_id: uuid.UUID) -> Decimal:
+def _get_asset_current_value(
+    db: Session, portfolio_id: uuid.UUID, asset_id: uuid.UUID
+) -> Decimal:
     """Calculates the current market value of a single asset holding in a portfolio."""
     transactions = crud.transaction.get_multi_by_portfolio_and_asset(
         db=db, portfolio_id=portfolio_id, asset_id=asset_id
@@ -287,15 +340,17 @@ def _get_asset_current_value(db: Session, portfolio_id: uuid.UUID, asset_id: uui
 
     net_quantity = Decimal("0.0")
     for t in transactions:
-        if t.transaction_type.lower() == 'buy':
+        if t.transaction_type.lower() == "buy":
             net_quantity += t.quantity
-        elif t.transaction_type.lower() == 'sell':
+        elif t.transaction_type.lower() == "sell":
             net_quantity -= t.quantity
 
     if net_quantity <= 0:
         return Decimal("0.0")
 
-    asset_to_price = [{"ticker_symbol": asset.ticker_symbol, "exchange": asset.exchange}]
+    asset_to_price = [
+        {"ticker_symbol": asset.ticker_symbol, "exchange": asset.exchange}
+    ]
     current_prices_details = financial_data_service.get_current_prices(asset_to_price)
 
     if asset.ticker_symbol not in current_prices_details:
@@ -303,8 +358,9 @@ def _get_asset_current_value(db: Session, portfolio_id: uuid.UUID, asset_id: uui
 
     price_info = current_prices_details[asset.ticker_symbol]
     current_price = price_info["current_price"]
-    
+
     return net_quantity * current_price
+
 
 def get_portfolio_analytics(db: Session, portfolio_id: uuid.UUID) -> AnalyticsResponse:
     """
@@ -318,28 +374,39 @@ def get_portfolio_analytics(db: Session, portfolio_id: uuid.UUID) -> AnalyticsRe
         sharpe_ratio=round(sharpe_ratio_value, 4),
     )
 
-def get_asset_analytics(db: Session, portfolio_id: uuid.UUID, asset_id: uuid.UUID) -> AssetAnalytics:
+
+def get_asset_analytics(
+    db: Session, portfolio_id: uuid.UUID, asset_id: uuid.UUID
+) -> AssetAnalytics:
     """
     Calculates advanced analytics for a given asset in a portfolio.
-    """    
-    transactions_db = crud.transaction.get_multi_by_portfolio_and_asset(db=db, portfolio_id=portfolio_id, asset_id=asset_id)
+    """
+    transactions_db = crud.transaction.get_multi_by_portfolio_and_asset(
+        db=db, portfolio_id=portfolio_id, asset_id=asset_id
+    )
     if not transactions_db:
         return AssetAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
 
-    # Convert SQLAlchemy models to Pydantic schemas before passing to calculation helpers
-    transactions_schemas = [schemas.Transaction.model_validate(tx) for tx in transactions_db]
+    # Convert SQLAlchemy models to Pydantic schemas for calculation helpers.
+    transactions_schemas = [
+        schemas.Transaction.model_validate(tx) for tx in transactions_db
+    ]
 
-    realized_cash_flows, unrealized_cash_flows = _get_realized_and_unrealized_cash_flows(transactions_schemas)
+    realized_cash_flows, unrealized_cash_flows = (
+        _get_realized_and_unrealized_cash_flows(transactions_schemas)
+    )
 
     # Calculate realized XIRR from closed lots
     realized_xirr_value = _calculate_xirr_from_cashflows(realized_cash_flows)
 
     # Calculate unrealized XIRR from open lots + their current market value
-    current_value_of_open_lots = _get_asset_current_value(db=db, portfolio_id=portfolio_id, asset_id=asset_id)
+    current_value_of_open_lots = _get_asset_current_value(
+        db=db, portfolio_id=portfolio_id, asset_id=asset_id
+    )
     unrealized_cash_flows.append((date.today(), float(current_value_of_open_lots)))
     unrealized_xirr_value = _calculate_xirr_from_cashflows(unrealized_cash_flows)
 
     return AssetAnalytics(
         realized_xirr=round(realized_xirr_value, 4),
-        unrealized_xirr=round(unrealized_xirr_value, 4)
+        unrealized_xirr=round(unrealized_xirr_value, 4),
     )

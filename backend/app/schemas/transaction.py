@@ -1,9 +1,12 @@
-from pydantic import BaseModel, ConfigDict
+import uuid
 from datetime import datetime
 from decimal import Decimal
-import uuid
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
 from .asset import Asset
+
 
 # Shared properties
 class TransactionBase(BaseModel):

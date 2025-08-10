@@ -69,10 +69,9 @@ describe('AddTransactionModal', () => {
         const assetInput = screen.getByLabelText('Asset');
         fireEvent.change(assetInput, { target: { value: 'AAPL' } });
 
-        await waitFor(() => {
-            expect(mockLookupAsset).toHaveBeenCalledWith('AAPL');
-            expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
-        });
+        const searchResult = await screen.findByText('Apple Inc. (AAPL)');
+        expect(searchResult).toBeInTheDocument();
+        expect(mockLookupAsset).toHaveBeenCalledWith('AAPL');
     });
 
     it('allows selecting an asset from search results', async () => {

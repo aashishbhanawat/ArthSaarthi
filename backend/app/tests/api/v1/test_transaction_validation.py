@@ -1,23 +1,23 @@
+from datetime import date
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from datetime import date, timedelta
 
 from app.core.config import settings
-from app.tests.utils.asset import create_test_asset
-from app.tests.utils.user import create_random_user
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.transaction import create_test_transaction
+from app.tests.utils.user import create_random_user
 
 
 def test_sell_transaction_before_buy_date_fails(
     client: TestClient, db: Session, get_auth_headers
 ):
-    """
-    Test that a user cannot create a SELL transaction on a date before they owned the asset.
-    """
+    """Test selling an asset before its purchase date fails."""
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="Validation Test Portfolio")
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Validation Test Portfolio"
+    )
 
     # 1. Buy GOOGL on a specific date
     buy_date = date(2024, 11, 6)
@@ -29,7 +29,7 @@ def test_sell_transaction_before_buy_date_fails(
         price_per_unit=100,
         asset_type="Stock",
         transaction_date=buy_date,
-        fees=0.0
+        fees=0.0,
     )
     asset_id = buy_transaction.asset_id
 

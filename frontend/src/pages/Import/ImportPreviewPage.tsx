@@ -7,10 +7,6 @@ const ImportPreviewPage: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
 
-    if (!sessionId) {
-        return <div className="alert alert-error">No session ID provided.</div>;
-    }
-
     const { data: session, isLoading: isLoadingSession, error: sessionError } = useImportSession(sessionId);
     const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useParsedTransactions(sessionId);
     const commitMutation = useCommitImportSession();
@@ -25,6 +21,10 @@ const ImportPreviewPage: React.FC = () => {
             }
         }
     }, [commitMutation.isSuccess, commitMutation.data, session, navigate]);
+
+    if (!sessionId) {
+        return <div className="alert alert-error">No session ID provided.</div>;
+    }
 
     if (isLoadingSession || isLoadingTransactions) {
         return <div>Loading import preview...</div>;
@@ -135,7 +135,7 @@ const ImportPreviewPage: React.FC = () => {
             {commitMutation.isError && (
                 <div className="alert alert-error mt-4">
                     Error committing transactions: {
-                        (commitMutation.error as any)?.response?.data?.detail || commitMutation.error.message
+                        ((commitMutation.error as { response?: { data?: { detail?: string } } }).response?.data?.detail) || (commitMutation.error as Error).message
                     }
                 </div>
             )}

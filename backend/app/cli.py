@@ -1,23 +1,25 @@
-import pathlib
-import io
-import csv
-import zipfile
 import collections
+import csv
+import io
+import pathlib
+import zipfile
 
 import requests
 import typer
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-from app.db.session import SessionLocal
 from app import crud, schemas
+from app.db.session import SessionLocal
 from app.models.asset import Asset
 from app.models.portfolio import Portfolio
 from app.models.transaction import Transaction
 
 app = typer.Typer(help="Database commands.")
 
-SECURITY_MASTER_URL = "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
+SECURITY_MASTER_URL = (
+    "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
+)
 NSE_MASTER_FILE = "NSEScripMaster.txt"
 BSE_MASTER_FILE = "BSEScripMaster.txt"
 
@@ -44,12 +46,14 @@ EXCHANGE_CONFIGS = {
 
 # --- Helper Functions ---
 
+
 def get_db_session():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 def _parse_and_seed_exchange_data(
     db: Session,
@@ -77,7 +81,10 @@ def _parse_and_seed_exchange_data(
                 if series:
                     skipped_series_counts[series] += 1
                 if debug and debug_rows_printed < MAX_DEBUG_ROWS:
-                    typer.echo(f"\n[DEBUG] Skipping {exchange} row due to Series '{series}'.", err=True)
+                    typer.echo(
+                        f"\n[DEBUG] Skipping {exchange} row due to Series '{series}'.",
+                        err=True,
+                    )
                     debug_rows_printed += 1
                 continue
 
@@ -88,7 +95,14 @@ def _parse_and_seed_exchange_data(
             # Skip if essential data is missing
             if not all([ticker, name, isin]):
                 if debug and debug_rows_printed < MAX_DEBUG_ROWS:
-                    typer.echo(f"\n[DEBUG] Skipping {exchange} row due to missing essential data. Ticker: '{ticker}', Name: '{name}', ISIN: '{isin}'.", err=True)
+                    typer.echo(
+                        (
+                            f"\n[DEBUG] Skipping {exchange} row due to missing"
+                            f" essential data. Ticker: '{ticker}', Name: '{name}',"
+                            f" ISIN: '{isin}'."
+                        ),
+                        err=True,
+                    )
                     debug_rows_printed += 1
                 continue
 
@@ -128,6 +142,7 @@ def _parse_and_seed_exchange_data(
                 skipped_count += 1
     return created_count, skipped_count, skipped_series_counts
 
+
 def _process_asset_file(
     file_content: io.TextIOWrapper,
     exchange: str,
@@ -145,10 +160,14 @@ def _process_asset_file(
     created, skipped, skipped_series = _parse_and_seed_exchange_data(
         db, reader, exchange, existing_isins, existing_tickers, debug=debug
     )
-    typer.echo(f"\n{exchange} processing complete. Created: {created}, Skipped: {skipped}")
+    typer.echo(
+        f"\n{exchange} processing complete. Created: {created}, Skipped: {skipped}"
+    )
     return created, skipped, skipped_series
 
+
 # --- CLI Command ---
+
 
 @app.command("seed-assets")
 def seed_assets_command(
@@ -158,7 +177,10 @@ def seed_assets_command(
     local_dir: pathlib.Path = typer.Option(
         None,
         "--local-dir",
-        help="Path to a local directory containing master files (e.g., NSEScripMaster.txt). Skips download.",
+        help=(
+            "Path to a local directory containing master files (e.g.,"
+            " NSEScripMaster.txt). Skips download."
+        ),
         exists=True,
         file_okay=False,
         dir_okay=True,
@@ -169,8 +191,9 @@ def seed_assets_command(
     ),
 ):
     """
-    Downloads the ICICI Direct Security Master file, parses it, and seeds the assets table
-    in the database with NSE-first priority.
+    Downloads and parses the ICICI Direct Security Master file.
+
+    Seeds the assets table in the database with NSE-first priority.
     """
     typer.echo("Starting asset database seeding process...")
     db: Session = next(get_db_session())
@@ -182,7 +205,8 @@ def seed_assets_command(
         }
         existing_tickers = {r[0] for r in db.query(Asset.ticker_symbol).all()}
         typer.echo(
-            f"Found {len(existing_isins)} existing ISINs and {len(existing_tickers)} tickers."
+            f"Found {len(existing_isins)} existing ISINs and"
+            f" {len(existing_tickers)} tickers."
         )
 
         total_created, total_skipped = 0, 0
@@ -194,7 +218,9 @@ def seed_assets_command(
             for exchange, config in EXCHANGE_CONFIGS.items():
                 file_path = local_dir / config["filename"]
                 if not file_path.exists():
-                    typer.echo(f"Warning: File '{file_path}' not found. Skipping.", err=True)
+                    typer.echo(
+                        f"Warning: File '{file_path}' not found. Skipping.", err=True
+                    )
                     continue
                 with open(file_path, mode="r", encoding="utf-8", errors="ignore") as f:
                     created, skipped, skipped_series = _process_asset_file(
@@ -213,13 +239,22 @@ def seed_assets_command(
                 for exchange, config in EXCHANGE_CONFIGS.items():
                     filename = config["filename"]
                     if filename not in thezip.namelist():
-                        typer.echo(f"Warning: '{filename}' not found in archive.", err=True)
+                        typer.echo(
+                            f"Warning: '{filename}' not found in archive.", err=True
+                        )
                         continue
                     with thezip.open(filename) as thefile:
                         # Decode to a text stream for the CSV reader
-                        text_stream = io.TextIOWrapper(thefile, encoding="utf-8", errors="ignore")
+                        text_stream = io.TextIOWrapper(
+                            thefile, encoding="utf-8", errors="ignore"
+                        )
                         created, skipped, skipped_series = _process_asset_file(
-                            text_stream, exchange, db, existing_isins, existing_tickers, debug=debug
+                            text_stream,
+                            exchange,
+                            db,
+                            existing_isins,
+                            existing_tickers,
+                            debug=debug,
                         )
                         total_created += created
                         total_skipped += skipped
@@ -248,12 +283,13 @@ def clear_assets_command(
         "--force",
         "-f",
         help="Force deletion without confirmation.",
-    )
+    ),
 ):
-    """Deletes all portfolio-related data (transactions, portfolios, assets) from the database."""
+    """Deletes all portfolio data (transactions, portfolios, assets)."""
     if not force:
         typer.echo(
-            "This will permanently delete all assets, transactions, and portfolios from the database."
+            "This will permanently delete all assets, transactions, and portfolios"
+            " from the database."
         )
         typer.confirm("Are you sure you want to proceed?", abort=True)
 
@@ -264,9 +300,17 @@ def clear_assets_command(
         num_portfolios_deleted = db.query(Portfolio).delete()
         num_assets_deleted = db.query(Asset).delete()
         db.commit()
-        typer.secho(f"Successfully deleted {num_transactions_deleted} transactions.", fg=typer.colors.GREEN)
-        typer.secho(f"Successfully deleted {num_portfolios_deleted} portfolios.", fg=typer.colors.GREEN)
-        typer.secho(f"Successfully deleted {num_assets_deleted} assets.", fg=typer.colors.GREEN)
+        typer.secho(
+            f"Successfully deleted {num_transactions_deleted} transactions.",
+            fg=typer.colors.GREEN,
+        )
+        typer.secho(
+            f"Successfully deleted {num_portfolios_deleted} portfolios.",
+            fg=typer.colors.GREEN,
+        )
+        typer.secho(
+            f"Successfully deleted {num_assets_deleted} assets.", fg=typer.colors.GREEN
+        )
     except Exception as e:
         db.rollback()
         typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
