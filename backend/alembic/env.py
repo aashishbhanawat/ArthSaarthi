@@ -24,7 +24,13 @@ sys.path.insert(0, dirname(dirname(abspath(__file__))))
 # --- Model Imports ---
 # All application models are imported here for Alembic's 'autogenerate'
 # support to detect schema changes.
-
+from app.models.user import User
+from app.models.portfolio import Portfolio
+from app.models.asset import Asset
+from app.models.transaction import Transaction
+from app.models.import_session import ImportSession
+from app.models.parsed_transaction import ParsedTransaction
+from app.models.asset_alias import AssetAlias
 # ---------------------
 
 # add your model's MetaData object here

@@ -45,6 +45,8 @@ services:
     command: /app/entrypoint.sh
     env_file:
       - ./backend/.env
+    environment:
+      - PYTHONPATH=/app
     networks:
       - pms_network
     depends_on:

@@ -19,5 +19,6 @@ class Asset(Base):
     isin = Column(String, unique=True, index=True, nullable=True)
 
     transactions = relationship("Transaction", back_populates="asset")
+    aliases = relationship("AssetAlias", back_populates="asset", cascade="all, delete-orphan")
 
     __table_args__ = (UniqueConstraint("ticker_symbol", name="uq_ticker_symbol"),)
