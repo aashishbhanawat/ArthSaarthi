@@ -3,19 +3,20 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 
+from app.schemas.import_session import ParsedTransaction
+from typing import List
+
 class BaseParser(ABC):
     """
     Abstract base class for all file parsers.
     """
 
     @abstractmethod
-    def parse(self, file_path: str) -> pd.DataFrame:
+    def parse(self, df: pd.DataFrame) -> List[ParsedTransaction]:
         """
-        Parses the given file and returns a pandas DataFrame.
+        Parses the given DataFrame and returns a list of Pydantic models.
 
-        The DataFrame should have standardized column names.
-
-        :param file_path: The path to the file to be parsed.
-        :return: A pandas DataFrame containing the extracted transaction data.
+        :param df: The pandas DataFrame to be parsed.
+        :return: A list of ParsedTransaction objects.
         """
         pass

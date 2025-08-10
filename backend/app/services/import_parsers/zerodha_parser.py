@@ -8,12 +8,12 @@ class ZerodhaParser(BaseParser):
     Parser for Zerodha statements (CSV/PDF).
     """
 
-    def parse(self, file_path: str) -> pd.DataFrame:
+    def parse(self, df: pd.DataFrame) -> list:
         """
-        Parses a Zerodha statement and returns a DataFrame.
+        Parses a Zerodha statement and returns a list of Pydantic models.
 
-        :param file_path: The path to the Zerodha statement.
-        :return: A pandas DataFrame with the transaction data.
+        :param df: The pandas DataFrame to be parsed.
+        :return: A list of ParsedTransaction objects.
         """
         # TODO: Implement Zerodha-specific parsing logic
         raise NotImplementedError("Zerodha parser is not yet implemented.")

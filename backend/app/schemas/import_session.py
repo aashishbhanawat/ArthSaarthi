@@ -3,6 +3,7 @@ import uuid
 from pydantic import BaseModel, ConfigDict
 
 # Need to import Portfolio and User schemas to be used as nested objects
+from .asset_alias import AssetAliasCreate
 from .portfolio import Portfolio
 from .user import User
 
@@ -52,3 +53,16 @@ class ParsedTransaction(BaseModel):
     quantity: float
     price_per_unit: float
     fees: float
+
+
+# New schema for the categorized preview response
+class ImportSessionPreview(BaseModel):
+    valid_new: list[ParsedTransaction]
+    duplicates: list[ParsedTransaction]
+    invalid: list[dict] # e.g., {"row_data": {...}, "error": "Unrecognized Symbol"}
+
+
+# New schema for the selective commit request body
+class ImportSessionCommit(BaseModel):
+    transactions_to_commit: list[ParsedTransaction]
+    aliases_to_create: list[AssetAliasCreate] = []
