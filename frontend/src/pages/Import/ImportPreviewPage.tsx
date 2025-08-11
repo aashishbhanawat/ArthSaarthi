@@ -93,38 +93,36 @@ const ImportPreviewPage: React.FC = () => {
     const canCommit = session.status === 'PARSED' && selectedTransactions.size > 0;
 
     const TransactionTable = ({ transactions, selectable = false }: { transactions: ParsedTransaction[], selectable?: boolean }) => (
-        <div className="overflow-x-auto">
-            <table className="table w-full table-zebra">
-                <thead className="bg-gray-50">
-                    <tr>
+        <table className="table-auto w-full">
+            <thead className="bg-gray-50">
+                <tr>
+                    {selectable && (
+                        <th className="p-3 w-12"><input type="checkbox" className="checkbox" checked={selectedTransactions.size === transactions.length && transactions.length > 0} onChange={handleToggleSelectAll} /></th>
+                    )}
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                    <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Unit</th>
+                    <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fees</th>
+                </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200 text-gray-900">
+                {transactions.map((tx, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
                         {selectable && (
-                            <th className="p-3 w-12"><input type="checkbox" className="checkbox" checked={selectedTransactions.size === transactions.length && transactions.length > 0} onChange={handleToggleSelectAll} /></th>
+                            <td className="p-3"><input type="checkbox" className="checkbox" checked={selectedTransactions.has(index)} onChange={() => handleToggleSelection(index)} /></td>
                         )}
-                        <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
-                        <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                        <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Unit</th>
-                        <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fees</th>
+                        <td className="p-3 whitespace-nowrap">{formatDate(tx.transaction_date)}</td>
+                        <td className="p-3 whitespace-nowrap font-medium">{tx.ticker_symbol}</td>
+                        <td className="p-3 whitespace-nowrap"><span className={`badge ${tx.transaction_type.toUpperCase() === 'BUY' ? 'badge-success' : 'badge-error'}`}>{tx.transaction_type.toUpperCase()}</span></td>
+                        <td className="p-3 whitespace-nowrap text-right">{tx.quantity}</td>
+                        <td className="p-3 whitespace-nowrap text-right">{formatCurrency(tx.price_per_unit)}</td>
+                        <td className="p-3 whitespace-nowrap text-right">{formatCurrency(tx.fees)}</td>
                     </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                    {transactions.map((tx, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                            {selectable && (
-                                <td className="p-3"><input type="checkbox" className="checkbox" checked={selectedTransactions.has(index)} onChange={() => handleToggleSelection(index)} /></td>
-                            )}
-                            <td className="p-3 whitespace-nowrap">{formatDate(tx.transaction_date)}</td>
-                            <td className="p-3 whitespace-nowrap font-medium text-gray-900">{tx.ticker_symbol}</td>
-                            <td className="p-3 whitespace-nowrap"><span className={`badge ${tx.transaction_type.toUpperCase() === 'BUY' ? 'badge-success' : 'badge-error'}`}>{tx.transaction_type.toUpperCase()}</span></td>
-                            <td className="p-3 whitespace-nowrap text-right">{tx.quantity}</td>
-                            <td className="p-3 whitespace-nowrap text-right">{formatCurrency(tx.price_per_unit)}</td>
-                            <td className="p-3 whitespace-nowrap text-right">{formatCurrency(tx.fees)}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+                ))}
+            </tbody>
+        </table>
     );
 
     // TODO: Add UI for invalid transactions
@@ -139,28 +137,24 @@ const ImportPreviewPage: React.FC = () => {
 
             <div className="space-y-6">
                 {/* New Transactions */}
-                <div className="card">
-                    <details className="collapse collapse-arrow bg-base-200" open>
-                        <summary className="collapse-title text-xl font-medium">
-                            New Transactions ({transactions.valid_new.length})
-                        </summary>
-                        <div className="collapse-content">
-                            {transactions.valid_new.length > 0 ? <TransactionTable transactions={transactions.valid_new} selectable={true} /> : <p className="p-4 text-gray-500">No new transactions to import.</p>}
-                        </div>
-                    </details>
+                <div className="card p-4 sm:p-6">
+                    <h2 className="text-xl font-medium mb-4">
+                        New Transactions ({transactions.valid_new.length})
+                    </h2>
+                    <div className="overflow-x-auto">
+                        {transactions.valid_new.length > 0 ? <TransactionTable transactions={transactions.valid_new} selectable={true} /> : <p className="text-center text-gray-500 py-4">No new transactions to import.</p>}
+                    </div>
                 </div>
 
                 {/* Duplicate Transactions */}
                 {transactions.duplicates.length > 0 && (
-                    <div className="card">
-                        <details className="collapse collapse-arrow bg-base-200">
-                            <summary className="collapse-title text-xl font-medium">
-                                Potential Duplicates ({transactions.duplicates.length})
-                            </summary>
-                            <div className="collapse-content">
-                                <TransactionTable transactions={transactions.duplicates} />
-                            </div>
-                        </details>
+                    <div className="card p-4 sm:p-6">
+                        <h2 className="text-xl font-medium mb-4">
+                            Potential Duplicates ({transactions.duplicates.length})
+                        </h2>
+                        <div className="overflow-x-auto">
+                            <TransactionTable transactions={transactions.duplicates} />
+                        </div>
                     </div>
                 )}
             </div>
