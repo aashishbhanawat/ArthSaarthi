@@ -505,4 +505,6 @@ def test_get_import_session_preview_with_invalid_symbol(
     assert len(data["duplicates"]) == 0
     assert len(data["invalid"]) == 1
     assert data["invalid"][0]["row_data"]["ticker_symbol"] == "UNKNOWN"
-    assert data["invalid"][0]["error"] == "Unrecognized Symbol"
+    assert (
+        data["invalid"][0]["error"] == "Unrecognized ticker symbol: 'UNKNOWN'"
+    )

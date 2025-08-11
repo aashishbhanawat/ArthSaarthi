@@ -5873,6 +5873,28 @@ The ICICI parser should correctly parse the date and create valid `ParsedTransac
 The import fails with a Pydantic validation error due to a type mismatch on the date field.
 **Resolution:**
 The `IciciParser` in `backend/app/services/import_parsers/icici_parser.py` was updated. After converting the date column to pandas `Timestamp` objects, the `.dt.strftime('%Y-%m-%d')` method is now used to format the date as a string, which the Pydantic model can correctly validate.
+
+---
+
+**Bug ID:** 2025-08-11-02
+**Title:** `AttributeError` when previewing an import session with an asset alias.
+**Module:** Data Import (Backend)
+**Reported By:** User
+**Date Reported:** 2025-08-11
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+When a user imports a statement containing a ticker symbol that exists as an `AssetAlias`, the import preview process crashes. This is because the code attempts to call a non-existent `get_by_alias` method on the `CRUDAssetAlias` object.
+**Steps to Reproduce:**
+1. Create an asset and an alias for it.
+2. Import a statement containing a transaction for the alias symbol.
+3. The import preview will fail with a 500 Internal Server Error.
+**Expected Behavior:**
+The import preview should correctly identify the asset via its alias and categorize the transaction.
+**Actual Behavior:**
+The backend crashes with `AttributeError: 'CRUDAssetAlias' object has no attribute 'get_by_alias'`.
+**Resolution:**
+Implemented the `get_by_alias` method in `backend/app/crud/crud_asset_alias.py`. Also fixed an unrelated failing test in `test_import_sessions.py` that had an outdated error message assertion.
 ---
 
 **Bug ID:** 2025-08-06-08
