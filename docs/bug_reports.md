@@ -5852,6 +5852,27 @@ The system should be able to handle unsorted transaction data in the source file
 The commit fails because the transactions are processed in the order they appear in the file, leading to a validation error on the SELL transaction.
 **Resolution:**
 The `create_import_session` endpoint was updated. After parsing the file, the list of transactions is now explicitly sorted by transaction date, then by ticker symbol, and then by transaction type (BUY before SELL). This ensures that all transactions are processed in the correct logical order, regardless of their order in the source file.
+
+---
+
+**Bug ID:** 2025-08-11-01
+**Title:** ICICI Direct statement import fails with Pydantic validation error for date format.
+**Module:** Data Import (Backend)
+**Reported By:** User via Manual E2E Test
+**Date Reported:** 2025-08-11
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+When importing an ICICI Direct tradebook CSV, the process fails during parsing. The backend logs show a `pydantic.ValidationError` with the message "Input should be a valid string" for the `transaction_date` field. This is because the `IciciParser` uses the pandas library to convert the date string into a pandas `Timestamp` object, but the `ParsedTransaction` Pydantic model expects a standard Python `date` object (or a string it can parse). This type mismatch causes the validation to fail for every row.
+**Steps to Reproduce:**
+1. Upload an ICICI Direct tradebook CSV file.
+2. The import process fails immediately with a 400 Bad Request error.
+**Expected Behavior:**
+The ICICI parser should correctly parse the date and create valid `ParsedTransaction` objects.
+**Actual Behavior:**
+The import fails with a Pydantic validation error due to a type mismatch on the date field.
+**Resolution:**
+The `IciciParser` in `backend/app/services/import_parsers/icici_parser.py` was updated. After converting the date column to pandas `Timestamp` objects, the `.dt.date` accessor is now used to convert them into standard Python `date` objects before they are passed to the Pydantic model, resolving the validation error.
 ---
 
 **Bug ID:** 2025-08-06-08
