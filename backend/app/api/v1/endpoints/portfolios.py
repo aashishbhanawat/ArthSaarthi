@@ -159,6 +159,25 @@ def get_portfolio_holdings(
     return {"holdings": result["holdings"]}
 
 
+@router.get("/{portfolio_id}/assets", response_model=List[schemas.Asset])
+def get_portfolio_assets(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get all assets for a specific portfolio.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if not current_user.is_admin and (portfolio.user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    return crud.asset.get_multi_by_portfolio(db=db, portfolio_id=portfolio_id)
+
+
 @router.get(
     "/{portfolio_id}/assets/{asset_id}/transactions",
     response_model=List[schemas.Transaction],

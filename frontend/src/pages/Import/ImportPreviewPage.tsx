@@ -1,15 +1,22 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useImportSession, useImportSessionPreview, useCommitImportSession } from '../../hooks/useImport';
 import { formatCurrency, formatDate } from '../../utils/formatting';
-import { ParsedTransaction } from '../../types/import';
+import { ParsedTransaction, AssetAlias } from '../../types/import';
+import AssetAliasMappingModal from '../../components/modals/AssetAliasMappingModal';
 
 const ImportPreviewPage: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     // State for managing which transactions are selected for commit
     const [selectedTransactionIndices, setSelectedTransactionIndices] = useState<Set<number>>(new Set());
+    const [aliasesToCreate, setAliasesToCreate] = useState<AssetAlias[]>([]);
+    const [isAliasModalOpen, setAliasModalOpen] = useState(false);
+    const [tickerToMap, setTickerToMap] = useState<string | null>(null);
+
 
     const { data: session, isLoading: isLoadingSession, error: sessionError } = useImportSession(sessionId);
     const { data: previewData, isLoading: isLoadingPreview, error: previewError } = useImportSessionPreview(sessionId);
@@ -64,6 +71,22 @@ const ImportPreviewPage: React.FC = () => {
         }
     };
 
+    const handleOpenAliasModal = (ticker: string) => {
+        setTickerToMap(ticker);
+        setAliasModalOpen(true);
+    };
+
+    const handleCloseAliasModal = () => {
+        setTickerToMap(null);
+        setAliasModalOpen(false);
+    };
+
+    const handleAliasCreated = (alias: AssetAlias) => {
+        setAliasesToCreate(prev => [...prev.filter(a => a.alias !== alias.alias), alias]);
+        // Invalidate preview to refetch and re-categorize transactions
+        queryClient.invalidateQueries({ queryKey: ['importSessionPreview', sessionId] });
+    };
+
     const handleCommit = () => {
         if (sessionId && session.portfolio_id) {
             const transactions_to_commit = allSelectableTransactions.filter((_, index) => selectedTransactionIndices.has(index));
@@ -72,7 +95,7 @@ const ImportPreviewPage: React.FC = () => {
                 portfolioId: session.portfolio_id,
                 commitPayload: {
                     transactions_to_commit,
-                    aliases_to_create: [], // Alias creation UI not implemented yet
+                    aliases_to_create: aliasesToCreate,
                 },
             });
         }
@@ -130,7 +153,45 @@ const ImportPreviewPage: React.FC = () => {
         </table>
     );
 
-    // TODO: Add UI for invalid transactions
+    const InvalidTransactionTable = ({ invalidRows, onMapTicker }: { invalidRows: { row_data: any; error: string }[], onMapTicker: (ticker: string) => void }) => {
+        const getTickerFromError = (error: string): string | null => {
+            const match = error.match(/Unrecognized ticker symbol: '([^']+)'/);
+            return match ? match[1] : null;
+        }
+
+        return (
+            <table className="table-auto w-full">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Data</th>
+                        <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
+                        <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200 text-gray-900">
+                    {invalidRows.map((item, index) => {
+                        const unrecognizedTicker = getTickerFromError(item.error);
+                        return (
+                            <tr key={index} className="hover:bg-gray-50">
+                                <td className="p-3 text-xs text-gray-500 break-all">{JSON.stringify(item.row_data)}</td>
+                                <td className="p-3 whitespace-nowrap"><span className="badge badge-error">{item.error}</span></td>
+                                <td className="p-3 whitespace-nowrap">
+                                    {unrecognizedTicker && (
+                                        <button
+                                            className="btn btn-xs btn-outline btn-primary"
+                                            onClick={() => onMapTicker(unrecognizedTicker)}
+                                        >
+                                            Map Ticker
+                                        </button>
+                                    )}
+                                </td>
+                            </tr>
+                        )
+                    })}
+                </tbody>
+            </table>
+        );
+    };
 
     return (
         <div>
@@ -163,6 +224,21 @@ const ImportPreviewPage: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Invalid Transactions */}
+                {previewData.invalid.length > 0 && (
+                    <div className="card p-4 sm:p-6 bg-red-50 border-red-200">
+                        <h2 className="text-xl font-medium mb-4 text-red-800">
+                            Invalid Transactions ({previewData.invalid.length})
+                        </h2>
+                        <p className="text-sm text-red-700 mb-4">
+                            These rows from the file could not be parsed and will be ignored. This is usually due to missing or malformed data.
+                        </p>
+                        <div className="overflow-x-auto">
+                            <InvalidTransactionTable invalidRows={previewData.invalid} onMapTicker={handleOpenAliasModal} />
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="mt-8 flex justify-end gap-4">
@@ -182,6 +258,16 @@ const ImportPreviewPage: React.FC = () => {
                 <div className="alert alert-error mt-4">
                     Error committing transactions: {((commitMutation.error as { response?: { data?: { detail?: string } } }).response?.data?.detail) || (commitMutation.error as Error).message}
                 </div>
+            )}
+
+            {session && tickerToMap && (
+                <AssetAliasMappingModal
+                    isOpen={isAliasModalOpen}
+                    onClose={handleCloseAliasModal}
+                    unrecognizedTicker={tickerToMap}
+                    portfolioId={session.portfolio_id}
+                    onAliasCreated={handleAliasCreated}
+                />
             )}
         </div>
     );

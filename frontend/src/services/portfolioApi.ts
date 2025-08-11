@@ -94,3 +94,8 @@ export const getAssetAnalytics = async (portfolioId: string, assetId: string): P
   const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/assets/${assetId}/analytics`);
   return response.data;
 };
+
+export const getPortfolioAssets = async (portfolioId: string): Promise<Asset[]> => {
+    const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/assets`);
+    return response.data;
+};
