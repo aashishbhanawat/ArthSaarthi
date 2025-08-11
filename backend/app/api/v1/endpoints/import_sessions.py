@@ -187,13 +187,20 @@ def get_import_session_preview(
         # 1. Asset Identification
         asset = crud.asset.get_by_ticker(db, ticker_symbol=row["ticker_symbol"])
         if not asset:
-            invalid.append(
-                {
-                    "row_data": row_data,
-                    "error": "Unrecognized Symbol",
-                }
+            # First, check if an alias exists for this ticker
+            asset_alias = crud.asset_alias.get_by_alias(
+                db, alias_symbol=row["ticker_symbol"]
             )
-            continue
+            if asset_alias:
+                asset = asset_alias.asset
+            else:
+                invalid.append(
+                    {
+                        "row_data": row_data,
+                        "error": f"Unrecognized ticker symbol: '{row['ticker_symbol']}'",
+                    }
+                )
+                continue
 
         # 2. Duplicate Detection
         existing_transaction = crud.transaction.get_by_details(
