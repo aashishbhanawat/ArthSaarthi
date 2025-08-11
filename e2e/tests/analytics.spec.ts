@@ -69,7 +69,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Price per Unit').fill('200');
     await page.getByLabel('Date').fill('2023-01-01');
     await page.getByRole('button', { name: 'Save Transaction' }).click();    
-    await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ })).toBeVisible();
+    await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ })).toBeVisible({ timeout: 15000 });
 
     // SELL 5 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();

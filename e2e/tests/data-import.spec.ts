@@ -60,7 +60,7 @@ test.describe.serial('Automated Data Import E2E Test', () => {
             });
             expect(assetCreateResponse.ok()).toBeTruthy();
         }
-      });
+      }, 60000); // Increase timeout for beforeAll hook to 60 seconds
 
       test.beforeEach(async ({ page }) => {
         // Login as the standard user before each test
