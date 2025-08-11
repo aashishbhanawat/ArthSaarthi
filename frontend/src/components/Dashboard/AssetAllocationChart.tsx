@@ -2,6 +2,7 @@ import React from 'react';
 import { useDashboardAllocation } from '../../hooks/useDashboard';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
+import { AssetAllocation } from '../../types/dashboard';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -34,11 +35,11 @@ const AssetAllocationChart: React.FC = () => {
   };
 
   const chartData = {
-    labels: data?.allocation.map((item) => item.ticker) || [],
+    labels: data?.allocation.map((item: AssetAllocation) => item.ticker) || [],
     datasets: [
       {
         label: 'Value',
-        data: data?.allocation.map((item) => item.value) || [],
+        data: data?.allocation.map((item: AssetAllocation) => item.value) || [],
         backgroundColor: generateColors(data?.allocation.length || 0),
         borderColor: 'rgba(255, 255, 255, 0.8)',
         borderWidth: 1,
