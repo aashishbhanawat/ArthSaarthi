@@ -503,8 +503,6 @@ def test_get_import_session_preview_with_invalid_symbol(
     data = response.json()
     assert len(data["valid_new"]) == 0
     assert len(data["duplicates"]) == 0
-    assert len(data["invalid"]) == 1
-    assert data["invalid"][0]["row_data"]["ticker_symbol"] == "UNKNOWN"
-    assert (
-        data["invalid"][0]["error"] == "Unrecognized ticker symbol: 'UNKNOWN'"
-    )
+    assert len(data["invalid"]) == 0
+    assert len(data["needs_mapping"]) == 1
+    assert data["needs_mapping"][0]["ticker_symbol"] == "UNKNOWN"

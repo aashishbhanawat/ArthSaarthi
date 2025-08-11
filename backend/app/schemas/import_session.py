@@ -59,7 +59,10 @@ class ParsedTransaction(BaseModel):
 class ImportSessionPreview(BaseModel):
     valid_new: list[ParsedTransaction]
     duplicates: list[ParsedTransaction]
-    invalid: list[dict] # e.g., {"row_data": {...}, "error": "Unrecognized Symbol"}
+    invalid: list[dict]  # e.g., {"row_data": {...}, "error": "Invalid data format"}
+    needs_mapping: list[
+        ParsedTransaction
+    ]  # For rows with unrecognized ticker symbols
 
 
 # New schema for the selective commit request body

@@ -8,3 +8,11 @@ export const usePortfolioAssets = (portfolioId: string) => {
         enabled: !!portfolioId,
     });
 };
+
+export const useAssetSearch = (query: string) => {
+    return useQuery({
+        queryKey: ['assetSearch', query],
+        queryFn: () => portfolioApi.lookupAsset(query),
+        enabled: !!query, // Only run the query if there is a search term
+    });
+};

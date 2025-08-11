@@ -179,6 +179,7 @@ def get_import_session_preview(
     valid_new: list[schemas.ParsedTransaction] = []
     duplicates: list[schemas.ParsedTransaction] = []
     invalid: list[dict] = []
+    needs_mapping: list[schemas.ParsedTransaction] = []
 
     for _, row in df.iterrows():
         row_data = row.to_dict()
@@ -194,12 +195,8 @@ def get_import_session_preview(
             if asset_alias:
                 asset = asset_alias.asset
             else:
-                invalid.append(
-                    {
-                        "row_data": row_data,
-                        "error": f"Unrecognized ticker symbol: '{row['ticker_symbol']}'",
-                    }
-                )
+                # If no asset or alias is found, it needs user mapping
+                needs_mapping.append(parsed_transaction)
                 continue
 
         # 2. Duplicate Detection
@@ -219,7 +216,10 @@ def get_import_session_preview(
             valid_new.append(parsed_transaction)
 
     return schemas.ImportSessionPreview(
-        valid_new=valid_new, duplicates=duplicates, invalid=invalid
+        valid_new=valid_new,
+        duplicates=duplicates,
+        invalid=invalid,
+        needs_mapping=needs_mapping,
     )
 
 

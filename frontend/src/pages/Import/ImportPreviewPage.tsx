@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useImportSession, useImportSessionPreview, useCommitImportSession } from '../../hooks/useImport';
 import { formatCurrency, formatDate } from '../../utils/formatting';
-import { ParsedTransaction, AssetAlias } from '../../types/import';
+import { ParsedTransaction, AssetAliasCreate } from '../../types/import';
 import AssetAliasMappingModal from '../../components/modals/AssetAliasMappingModal';
 
 const ImportPreviewPage: React.FC = () => {
@@ -13,7 +13,7 @@ const ImportPreviewPage: React.FC = () => {
 
     // State for managing which transactions are selected for commit
     const [selectedTransactionIndices, setSelectedTransactionIndices] = useState<Set<number>>(new Set());
-    const [aliasesToCreate, setAliasesToCreate] = useState<AssetAlias[]>([]);
+    const [aliasesToCreate, setAliasesToCreate] = useState<AssetAliasCreate[]>([]);
     const [isAliasModalOpen, setAliasModalOpen] = useState(false);
     const [tickerToMap, setTickerToMap] = useState<string | null>(null);
 
@@ -81,8 +81,8 @@ const ImportPreviewPage: React.FC = () => {
         setAliasModalOpen(false);
     };
 
-    const handleAliasCreated = (alias: AssetAlias) => {
-        setAliasesToCreate(prev => [...prev.filter(a => a.alias !== alias.alias), alias]);
+    const handleAliasCreated = (alias: AssetAliasCreate) => {
+        setAliasesToCreate(prev => [...prev.filter(a => a.alias_symbol !== alias.alias_symbol), alias]);
         // Invalidate preview to refetch and re-categorize transactions
         queryClient.invalidateQueries({ queryKey: ['importSessionPreview', sessionId] });
     };
@@ -153,41 +153,56 @@ const ImportPreviewPage: React.FC = () => {
         </table>
     );
 
-    const InvalidTransactionTable = ({ invalidRows, onMapTicker }: { invalidRows: { row_data: any; error: string }[], onMapTicker: (ticker: string) => void }) => {
-        const getTickerFromError = (error: string): string | null => {
-            const match = error.match(/Unrecognized ticker symbol: '([^']+)'/);
-            return match ? match[1] : null;
-        }
+    const NeedsMappingTable = ({ transactions, onMapTicker }: { transactions: ParsedTransaction[], onMapTicker: (ticker: string) => void }) => (
+        <table className="table-auto w-full">
+            <thead className="bg-gray-50">
+                <tr>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                    <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Unit</th>
+                    <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200 text-gray-900">
+                {transactions.map((tx, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                        <td className="p-3 whitespace-nowrap">{formatDate(tx.transaction_date)}</td>
+                        <td className="p-3 whitespace-nowrap font-medium">{tx.ticker_symbol}</td>
+                        <td className="p-3 whitespace-nowrap"><span className={`badge ${tx.transaction_type.toUpperCase() === 'BUY' ? 'badge-success' : 'badge-error'}`}>{tx.transaction_type.toUpperCase()}</span></td>
+                        <td className="p-3 whitespace-nowrap text-right">{tx.quantity}</td>
+                        <td className="p-3 whitespace-nowrap text-right">{formatCurrency(tx.price_per_unit)}</td>
+                        <td className="p-3 whitespace-nowrap text-right">
+                            <button
+                                className="btn btn-xs btn-outline btn-primary"
+                                onClick={() => onMapTicker(tx.ticker_symbol)}
+                            >
+                                Map Symbol
+                            </button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
 
+    const InvalidTransactionTable = ({ invalidRows }: { invalidRows: { row_data: any; error: string }[] }) => {
         return (
             <table className="table-auto w-full">
                 <thead className="bg-gray-50">
                     <tr>
                         <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Data</th>
                         <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
-                        <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200 text-gray-900">
-                    {invalidRows.map((item, index) => {
-                        const unrecognizedTicker = getTickerFromError(item.error);
-                        return (
-                            <tr key={index} className="hover:bg-gray-50">
-                                <td className="p-3 text-xs text-gray-500 break-all">{JSON.stringify(item.row_data)}</td>
-                                <td className="p-3 whitespace-nowrap"><span className="badge badge-error">{item.error}</span></td>
-                                <td className="p-3 whitespace-nowrap">
-                                    {unrecognizedTicker && (
-                                        <button
-                                            className="btn btn-xs btn-outline btn-primary"
-                                            onClick={() => onMapTicker(unrecognizedTicker)}
-                                        >
-                                            Map Ticker
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        )
-                    })}
+                    {invalidRows.map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                            <td className="p-3 text-xs text-gray-500 break-all">{JSON.stringify(item.row_data)}</td>
+                            <td className="p-3 whitespace-nowrap"><span className="badge badge-error">{item.error}</span></td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
         );
@@ -225,6 +240,21 @@ const ImportPreviewPage: React.FC = () => {
                     </div>
                 )}
 
+                {/* Transactions Needing Mapping */}
+                {previewData.needs_mapping.length > 0 && (
+                    <div className="card p-4 sm:p-6 bg-blue-50 border-blue-200">
+                        <h2 className="text-xl font-medium mb-4 text-blue-800">
+                            Transactions Needing Mapping ({previewData.needs_mapping.length})
+                        </h2>
+                        <p className="text-sm text-blue-700 mb-4">
+                            These transactions have unrecognized ticker symbols. Map them to an existing asset to include them in the import.
+                        </p>
+                        <div className="overflow-x-auto">
+                            <NeedsMappingTable transactions={previewData.needs_mapping} onMapTicker={handleOpenAliasModal} />
+                        </div>
+                    </div>
+                )}
+
                 {/* Invalid Transactions */}
                 {previewData.invalid.length > 0 && (
                     <div className="card p-4 sm:p-6 bg-red-50 border-red-200">
@@ -235,7 +265,7 @@ const ImportPreviewPage: React.FC = () => {
                             These rows from the file could not be parsed and will be ignored. This is usually due to missing or malformed data.
                         </p>
                         <div className="overflow-x-auto">
-                            <InvalidTransactionTable invalidRows={previewData.invalid} onMapTicker={handleOpenAliasModal} />
+                            <InvalidTransactionTable invalidRows={previewData.invalid} />
                         </div>
                     </div>
                 )}
