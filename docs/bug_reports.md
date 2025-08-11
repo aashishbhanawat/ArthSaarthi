@@ -26,28 +26,6 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
-**Bug ID:** 2025-08-10-01
-**Title:** Data import commit fails for unsorted transactions.
-**Module:** Data Import (Backend)
-**Reported By:** User via Manual E2E Test
-**Date Reported:** 2025-08-10
-**Classification:** Implementation (Backend)
-**Severity:** High
-**Description:**
-When importing a trade file (e.g., CSV) where transactions are not chronologically sorted, the commit process can fail. If a 'SELL' transaction for an asset appears in the file before the corresponding 'BUY' transaction, the system will attempt to commit the sell first. This fails because the validation logic correctly determines there are insufficient holdings, causing the entire commit to fail.
-**Steps to Reproduce:**
-1. Create a CSV file with a 'SELL' transaction dated after a 'BUY' transaction, but place the 'SELL' row before the 'BUY' row in the file.
-2. Upload this file via the Data Import feature.
-3. Preview and attempt to commit the transactions.
-**Expected Behavior:**
-The system should be able to handle unsorted transaction data in the source file, process it correctly, and commit it successfully.
-**Actual Behavior:**
-The commit fails because the transactions are processed in the order they appear in the file, leading to a validation error on the SELL transaction.
-**Resolution:**
-The `create_import_session` endpoint was updated. After parsing the file, the list of transactions is now explicitly sorted by transaction date, then by ticker symbol, and then by transaction type (BUY before SELL). This ensures that all transactions are processed in the correct logical order, regardless of their order in the source file.
-
----
-
 **Bug ID:** 2025-07-17-01 
 **Title:** Frontend tests fail due to missing @tanstack/react-query dependency. 
 **Module:** Core Frontend, Dependencies 
@@ -5852,6 +5830,28 @@ The test suite for `UserManagementPage` should run without crashing.
 The test suite crashes with an `Element type is invalid` error.
 **Resolution:**
 Update the mock in `frontend/src/__tests__/pages/Admin/UserManagementPage.test.tsx` to return an object `{ DeleteConfirmationModal: MockedComponent }` instead of just the `MockedComponent` function.
+
+---
+
+**Bug ID:** 2025-08-10-01
+**Title:** Data import commit fails for unsorted transactions.
+**Module:** Data Import (Backend)
+**Reported By:** User via Manual E2E Test
+**Date Reported:** 2025-08-10
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+When importing a trade file (e.g., CSV) where transactions are not chronologically sorted, the commit process can fail. If a 'SELL' transaction for an asset appears in the file before the corresponding 'BUY' transaction, the system will attempt to commit the sell first. This fails because the validation logic correctly determines there are insufficient holdings, causing the entire commit to fail.
+**Steps to Reproduce:**
+1. Create a CSV file with a 'SELL' transaction dated after a 'BUY' transaction, but place the 'SELL' row before the 'BUY' row in the file.
+2. Upload this file via the Data Import feature.
+3. Preview and attempt to commit the transactions.
+**Expected Behavior:**
+The system should be able to handle unsorted transaction data in the source file, process it correctly, and commit it successfully.
+**Actual Behavior:**
+The commit fails because the transactions are processed in the order they appear in the file, leading to a validation error on the SELL transaction.
+**Resolution:**
+The `create_import_session` endpoint was updated. After parsing the file, the list of transactions is now explicitly sorted by transaction date, then by ticker symbol, and then by transaction type (BUY before SELL). This ensures that all transactions are processed in the correct logical order, regardless of their order in the source file.
 ---
 
 **Bug ID:** 2025-08-06-08

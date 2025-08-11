@@ -88,6 +88,7 @@ const DataImportPage: React.FC = () => {
                             >
                                 <option value="Generic CSV">Generic CSV</option>
                                 <option value="Zerodha Tradebook">Zerodha Tradebook</option>
+                                <option value="ICICI Direct Tradebook">ICICI Direct Tradebook</option>
                             </select>
                         </div>
 

@@ -214,6 +214,7 @@ Based on user feedback from the MVP, this phase enhances the import feature to p
       "invalid": [...]
     }
     ```
+*   **Future Enhancement:** The duplicates detection could be enhanced to identify transactions that exist in *other* portfolios for the same user, providing a cross-portfolio conflict warning.
 *   **Selective Commit Endpoint:** The `POST /commit` endpoint has been updated to accept a payload containing a list of transaction identifiers and new asset aliases to commit. This allows the user to select which transactions to import from the preview screen.
 *   **Parser Strategy Pattern:** The parsing logic has been refactored into a Strategy Pattern, using a `ParserFactory` to select the appropriate parser (`GenericCsvParser`, `ZerodhaParser`, `IciciParser`) based on the user's selection.
 *   **Transaction Sorting:** A critical improvement was added to sort all parsed transactions by date, ticker, and type (BUY then SELL) before they are saved for preview. This resolves commit failures caused by unsorted data in the source file.

@@ -83,6 +83,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 ## Future Releases
 
+-   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to support mutual fund transaction imports.
 -   **Advanced Asset Support (FR4):** Add support for FDs, RDs, PPF, NPS, Bonds, RSUs, ESPPs.
 -   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
 -   **Goal Planning & Tracking (FR13):** Implement the goal definition and progress tracking module.
