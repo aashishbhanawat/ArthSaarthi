@@ -1,3 +1,25 @@
-node_modules
-dist
-.env
+# Git files
+.git/
+.gitignore
+
+# Node dependencies and build output
+node_modules/
+dist/
+
+# Environment files
+.env*
+
+# Test files and configs
+src/__tests__/
+src/__mocks__/
+jest.config.cjs
+setupTests.ts
+
+# Editor and OS files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

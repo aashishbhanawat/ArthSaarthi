@@ -6,6 +6,8 @@ services:
       - ./backend:/app
 
   frontend:
+    build:
+      target: builder
     ports:
       - "3000:3000"
     volumes:

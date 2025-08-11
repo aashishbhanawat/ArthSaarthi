@@ -30,7 +30,7 @@ export const useCommitImportSession = () => {
     return useMutation({
         mutationFn: ({ sessionId }: { sessionId: string; portfolioId: string }) =>
             importApi.commitImportSession(sessionId),
-        onSuccess: (data, variables) => {
+        onSuccess: (_, variables) => {
             const { sessionId, portfolioId } = variables;
             // Invalidate queries to refetch data after commit
             queryClient.invalidateQueries({ queryKey: ['importSession', sessionId] });

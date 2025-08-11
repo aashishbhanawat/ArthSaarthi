@@ -20,7 +20,8 @@ const SetupForm: React.FC<SetupFormProps> = ({ onSuccess }) => {
         try {
             await api.setupAdminUser(fullName, email, password);
             onSuccess();
-        } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
             if (err.response?.data?.detail) {
                 // Handle validation errors which might be an array
                 if (Array.isArray(err.response.data.detail)) {

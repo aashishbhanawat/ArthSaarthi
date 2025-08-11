@@ -1,4 +1,3 @@
-from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,9 +6,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     API_V1_STR: str = "/api/v1"
-    DATABASE_URL: PostgresDsn
+    DATABASE_URL: str = "sqlite:///./pms_local.db"
     REDIS_URL: str = "redis://redis:6379/0"
     ENVIRONMENT: str = "production"
+    SERVE_STATIC_FRONTEND: bool = False
     IMPORT_UPLOAD_DIR: str = "/app/uploads"
 
     ICICI_BREEZE_API_KEY: str = ""

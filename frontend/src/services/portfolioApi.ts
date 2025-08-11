@@ -1,5 +1,5 @@
 import apiClient from './api';
-import { Portfolio, Transaction, TransactionCreate, TransactionUpdate } from '../types/portfolio';
+import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate } from '../types/portfolio';
 import { Asset } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { PortfolioAnalytics } from '../types/analytics';
@@ -90,7 +90,7 @@ export const getAssetTransactions = async (
     return response.data;
 };
 
-export const getAssetAnalytics = async (portfolioId: string, assetId: string): Promise<AssetAnalytics> => {
+export const getAssetAnalytics = async (portfolioId: string, assetId: string): Promise<PortfolioAnalytics> => {
   const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/assets/${assetId}/analytics`);
   return response.data;
 };

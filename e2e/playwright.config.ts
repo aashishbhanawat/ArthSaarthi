@@ -9,7 +9,7 @@ export default defineConfig({
   fullyParallel: false, // Tests within a file can run in parallel, but files will not.
   workers: 1, // Opt out of parallel execution by setting workers to 1
   use: {
-    baseURL: 'http://frontend:3000',
+    baseURL: 'http://frontend:80',
     trace: 'on-first-retry',
   },
   timeout: 30 * 1000, // 30 seconds
