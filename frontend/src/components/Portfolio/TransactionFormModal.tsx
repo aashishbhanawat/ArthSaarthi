@@ -6,6 +6,7 @@ import { Asset } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
 
 interface TransactionFormModalProps {
+    isOpen: boolean;
     portfolioId: string;
     onClose: () => void;
     transactionToEdit?: Transaction;

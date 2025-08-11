@@ -56,7 +56,7 @@ cd $BE_DIR || print_error "Failed to navigate to backend directory."
 # The database URL is not set, so it will default to the SQLite database.
 export SERVE_STATIC_FRONTEND=True
 
-pyinstaller \
+python3 -m PyInstaller \
     --name pms_app \
     --onefile \
     --windowed \

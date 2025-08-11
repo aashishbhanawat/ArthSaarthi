@@ -7,8 +7,8 @@ const ImportPreviewPage: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
 
-    const { data: session, isLoading: isLoadingSession, error: sessionError } = useImportSession(sessionId);
-    const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useParsedTransactions(sessionId);
+    const { data: session, isLoading: isLoadingSession, error: sessionError } = useImportSession(sessionId!);
+    const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useParsedTransactions(sessionId!);
     const commitMutation = useCommitImportSession();
 
     useEffect(() => {
