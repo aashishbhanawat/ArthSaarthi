@@ -22,17 +22,22 @@ describe('AnalyticsCard', () => {
 
     it('should render success state and format numbers correctly', () => {
         const mockAnalytics: PortfolioAnalytics = {
-            xirr: 0.12345,
+            realized_xirr: 0.12345,
+            unrealized_xirr: -0.05678,
             sharpe_ratio: 1.23456,
         };
         render(<AnalyticsCard analytics={mockAnalytics} isLoading={false} error={null} />);
 
-        // XIRR should be formatted as a percentage with 2 decimal places
+        // Check for Realized XIRR (formatted as a percentage)
+        expect(screen.getByText('Realized XIRR')).toBeInTheDocument();
         expect(screen.getByText('12.35%')).toBeInTheDocument();
-        expect(screen.getByText('XIRR')).toBeInTheDocument();
 
-        // Sharpe Ratio should be formatted as a number with 2 decimal places
-        expect(screen.getByText('1.23')).toBeInTheDocument();
+        // Check for Unrealized XIRR (formatted as a percentage)
+        expect(screen.getByText('Unrealized XIRR')).toBeInTheDocument();
+        expect(screen.getByText('-5.68%')).toBeInTheDocument();
+
+        // Check for Sharpe Ratio (formatted as a number)
         expect(screen.getByText('Sharpe Ratio')).toBeInTheDocument();
+        expect(screen.getByText('1.23')).toBeInTheDocument();
     });
 });
