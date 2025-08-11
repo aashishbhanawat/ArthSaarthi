@@ -91,9 +91,13 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const analyticsCard = page.locator('.card', { hasText: 'Advanced Analytics' });
     await expect(analyticsCard).toBeVisible();
 
-    // Check for XIRR - value can fluctuate, so just check for format
-    const xirrValue = analyticsCard.locator('p', { hasText: 'XIRR' }).locator('xpath=..//p[2]');
-    await expect(xirrValue).toContainText(/%$/); // Check that it ends with a percentage sign
+    // Check for Realized XIRR - value can fluctuate, so just check for format
+    const realizedXirrValue = analyticsCard.locator('p', { hasText: 'Realized XIRR' }).locator('xpath=..//p[2]');
+    await expect(realizedXirrValue).toContainText(/%$/); // Check that it ends with a percentage sign
+
+    // Check for Unrealized XIRR
+    const unrealizedXirrValue = analyticsCard.locator('p', { hasText: 'Unrealized XIRR' }).locator('xpath=..//p[2]');
+    await expect(unrealizedXirrValue).toContainText(/%$/);
 
     // Check for Sharpe Ratio - value can fluctuate, so just check for format
     const sharpeRatioValue = analyticsCard.locator('p', { hasText: 'Sharpe Ratio' }).locator('xpath=..//p[2]');
