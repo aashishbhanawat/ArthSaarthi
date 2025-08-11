@@ -91,15 +91,14 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const analyticsCard = page.locator('.card', { hasText: 'Advanced Analytics' });
     await expect(analyticsCard).toBeVisible();
 
-    // A more robust way to check for these values, less prone to ambiguity.
-    // We find the label and then its parent, then the value within that parent.
-    const realizedXirrValue = analyticsCard.locator('p:has-text("Realized XIRR")').locator('xpath=..').locator('p.text-xl');
+    // Use data-testid for unambiguous selection
+    const realizedXirrValue = analyticsCard.getByTestId('realized-xirr-container').locator('p.text-xl');
     await expect(realizedXirrValue).toContainText(/%$/);
 
-    const unrealizedXirrValue = analyticsCard.locator('p:has-text("Unrealized XIRR")').locator('xpath=..').locator('p.text-xl');
+    const unrealizedXirrValue = analyticsCard.getByTestId('unrealized-xirr-container').locator('p.text-xl');
     await expect(unrealizedXirrValue).toContainText(/%$/);
 
-    const sharpeRatioValue = analyticsCard.locator('p:has-text("Sharpe Ratio")').locator('xpath=..').locator('p.text-xl');
+    const sharpeRatioValue = analyticsCard.getByTestId('sharpe-ratio-container').locator('p.text-xl');
     await expect(sharpeRatioValue).not.toBeEmpty();
   });
 
