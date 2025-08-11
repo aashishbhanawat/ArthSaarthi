@@ -19,3 +19,16 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+
+# This part should be last, as it includes a catch-all route
+if settings.SERVE_STATIC_FRONTEND:
+    import os
+    from fastapi.staticfiles import StaticFiles
+    from starlette.responses import FileResponse
+
+    # The directory where the built frontend assets are located.
+    # This is configured to be 'static' and will be the output dir of the frontend build.
+    static_files_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+
+    # Serve the static files (JS, CSS, images) and handle client-side routing
+    app.mount("/", StaticFiles(directory=static_files_dir, html=True), name="static")

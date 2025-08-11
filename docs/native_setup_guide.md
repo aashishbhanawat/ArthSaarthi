@@ -1,127 +1,124 @@
 # Native Setup Guide (Without Docker)
 
-This guide provides instructions for setting up and running the Personal Portfolio Management System directly on your local machine without using Docker. This is for users who cannot or prefer not to install Docker.
-
-**Note:** This method is more complex than using the provided Docker setup and requires manual installation of all dependencies.
-
----
+This guide provides instructions on how to set up and run the Personal Portfolio Management System on your local machine without using Docker. This is useful for development or for environments where Docker is not available.
 
 ## 1. Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
+Before you begin, you need to install the following software on your system. Please use the recommended versions to ensure compatibility.
 
-*   **Python:** Version 3.9 or higher.
-*   **Node.js:** Version 18.x or higher (which includes `npm`).
-*   **PostgreSQL:** A running instance of PostgreSQL. You will need to create a database and a user for the application.
-*   **Redis:** A running instance of Redis.
 *   **Git:** For cloning the repository.
+*   **Python:** Version 3.11.x
+*   **Node.js:** Version 18.x (which includes `npm`)
+*   **PostgreSQL:** Version 13.x
+*   **Redis:** Version 6.x or later
 
----
+### Installation Guides
 
-## 2. Backend Setup
-
-1.  **Clone the Repository:**
+*   **macOS (using Homebrew):**
     ```bash
-    git clone <repository_url>
-    cd pms
+    brew install python@3.11 node@18 postgresql@13 redis
+    brew services start postgresql@13
+    brew services start redis
     ```
+*   **Windows (using Chocolatey or official installers):**
+    *   Install Chocolatey from [chocolatey.org](https://chocolatey.org/install).
+    *   Run PowerShell as Administrator:
+        ```powershell
+        choco install python --version=3.11.5
+        choco install nodejs --version=18.17.1
+        choco install postgresql13
+        choco install redis-64
+        ```
+    *   Follow the post-installation instructions for PostgreSQL to set up a user and password.
 
-2.  **Navigate to the Backend Directory:**
-    ```bash
-    cd backend
-    ```
+## 2. Initial Setup
 
-3.  **Create and Activate a Python Virtual Environment:**
+### Clone the Repository
+
+```bash
+git clone <repository-url>
+cd personal-portfolio-management-system
+```
+
+### Configure Environment Variables
+
+The application uses environment variables for configuration.
+
+1.  **Backend:**
+    *   Navigate to the `backend` directory: `cd backend`
+    *   Copy the example environment file: `cp .env.prod.example .env`
+    *   Edit the `.env` file with your local settings. Key variables to change are:
+        *   `POSTGRES_SERVER`: `localhost`
+        *   `POSTGRES_PORT`: `5432`
+        *   `POSTGRES_USER`: Your PostgreSQL username.
+        *   `POSTGRES_PASSWORD`: Your PostgreSQL password.
+        *   `POSTGRES_DB`: A name for the database (e.g., `pms_native`).
+        *   `REDIS_HOST`: `localhost`
+        *   `SECRET_KEY`: Generate a strong secret key. You can use `openssl rand -hex 32` to generate one.
+
+2.  **Frontend:**
+    *   The frontend reads its configuration from the backend, so no separate `.env` file is typically needed for it to connect.
+
+## 3. Backend Setup
+
+1.  **Create and Activate a Virtual Environment:**
+    From the `backend` directory:
     ```bash
-    # For Unix/macOS
     python3 -m venv venv
     source venv/bin/activate
-
-    # For Windows
-    python -m venv venv
-    .\venv\Scripts\activate
+    # On Windows, use: venv\Scripts\activate
     ```
 
-4.  **Install Dependencies:**
+2.  **Install Dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
 
-5.  **Configure Environment Variables:**
-    *   Create a `.env` file in the `backend/` directory by copying the example:
-        ```bash
-        cp .env.example .env
+3.  **Create the Database:**
+    *   Open the PostgreSQL command-line tool (`psql`).
+    *   Create the database specified in your `.env` file:
+        ```sql
+        CREATE DATABASE pms_native;
         ```
-    *   Edit the `backend/.env` file and update the `DATABASE_URL` and `REDIS_URL` to point to your local instances.
-        *   **`DATABASE_URL`:** `postgresql://<your_user>:<your_password>@localhost:5432/<your_db_name>`
-        *   **`REDIS_URL`:** `redis://localhost:6379/0`
 
----
+4.  **Run Database Migrations:**
+    *   Make sure you are in the `backend` directory with the virtual environment activated.
+    *   Run the Alembic migrations to create the database tables:
+        ```bash
+        alembic upgrade head
+        ```
 
-## 3. Frontend Setup
+## 4. Frontend Setup
 
 1.  **Navigate to the Frontend Directory:**
-    *   From the project root, run:
-        ```bash
-        cd frontend
-        ```
+    From the root of the project: `cd frontend`
 
 2.  **Install Dependencies:**
     ```bash
     npm install
     ```
 
-3.  **Configure Environment Variables (Optional but Recommended):**
-    *   The frontend uses a proxy in `vite.config.ts` to forward API requests. By default, it points to `http://backend:8000`, which only works inside Docker. To run natively, you need to point it to your local backend server.
-    *   While you can edit `vite.config.ts` directly, the best practice is to create a `.env.local` file in the `frontend/` directory to override this setting.
-    *   Create `frontend/.env.local` with the following content:
-        ```
-        VITE_API_PROXY_TARGET=http://localhost:8000
-        ```
-    *   If you need to access the dev server from a different machine on your network (e.g., from your phone), you will also need to add your machine's IP address or hostname to the `ALLOWED_HOSTS` variable in your `frontend/.env.local` file:
-        ```
-        ALLOWED_HOSTS=192.168.1.100,your-pc-name.local
-        ```
+## 5. Running the Application
 
----
+You will need two separate terminal windows to run the backend and frontend servers.
 
-## 4. Running the Application
-
-You will need to run the backend and frontend servers in two separate terminal windows.
-
-1.  **Start the Backend Server:**
-    *   Open a terminal, navigate to the `backend/` directory, and ensure your virtual environment is activated.
-    *   Run the startup script:
+1.  **Run the Backend Server:**
+    *   Open a terminal in the `backend` directory.
+    *   Activate the virtual environment (`source venv/bin/activate`).
+    *   Start the FastAPI server with Uvicorn:
         ```bash
-        ./entrypoint.sh
+        uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
         ```
-    *   The backend will be running at `http://localhost:8000`.
 
-2.  **Start the Frontend Server:**
-    *   Open a second terminal and navigate to the `frontend/` directory.
-    *   Run the development server:
+2.  **Run the Frontend Server:**
+    *   Open a second terminal in the `frontend` directory.
+    *   Start the Vite development server:
         ```bash
         npm run dev
         ```
-    *   The frontend will be accessible at `http://localhost:3000`.
 
-You can now access the application in your browser at `http://localhost:3000`.
+The application should now be running:
+*   **Frontend:** `http://localhost:3000`
+*   **Backend API Docs:** `http://localhost:8000/docs`
 
----
-
-## 5. Enabling Debug Logs (Optional)
-
-To get more detailed logs for troubleshooting, you can start the services with debug flags.
-
-*   **PostgreSQL:**
-    *   You will need to edit your local `postgresql.conf` file and set `log_statement = 'all'`. The location of this file varies by operating system.
-
-*   **Redis:**
-    *   Start the Redis server with the `loglevel` flag: `redis-server --loglevel debug`
-
-*   **Frontend (Vite):**
-    *   Start the frontend dev server with the `--debug` flag: `npm run dev -- --debug`
-
----
-
-For troubleshooting common issues, please refer to the main Troubleshooting Guide.
+To run the application in a production-like mode, you would first build the frontend (`npm run build`) and then serve the static files in the `frontend/dist` directory with a web server like Nginx. The backend should be run with a production-grade server like `gunicorn`.

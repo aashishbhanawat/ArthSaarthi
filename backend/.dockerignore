@@ -1,0 +1,29 @@
+# Git files
+.git/
+.gitignore
+
+# Python cache and virtual environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+
+# Environment files
+.env*
+!/.env.prod.example
+
+# Test files and artifacts
+app/tests/
+.pytest_cache/
+pytest.ini
+test.csv
+e2e_entrypoint.sh
+
+# Development dependency files
+requirements-dev.in
+requirements.in
+
+# Tooling configuration
+pyproject.toml
