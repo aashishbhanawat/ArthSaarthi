@@ -82,6 +82,15 @@ async def create_import_session(
         # Parse the dataframe into a list of Pydantic models
         parsed_transactions = parser.parse(df)
 
+        # Sort transactions: by date, then ticker, then type (BUY before SELL)
+        parsed_transactions.sort(
+            key=lambda x: (
+                x.transaction_date,
+                x.ticker_symbol,
+                0 if x.transaction_type.upper() == "BUY" else 1,
+            )
+        )
+
         if not parsed_transactions:
             crud.import_session.update(
                 db,

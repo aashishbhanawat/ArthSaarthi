@@ -65,10 +65,25 @@ The goal of this release is to act on the critical feedback from the pilot relea
 -   **Context-Sensitive User Guide (FR11 Enhancement):** Make the user guide accessible from within the application via context-sensitive help icons.
     -   **Status: ✅ Complete**
 
+## Release 3: Automated Data Import
+
+**Status: ✅ COMPLETE (as of 2025-08-11)**
+
+The goal of this release was to build a robust and user-friendly system for importing transaction data from external brokerage statements, reducing manual data entry.
+
+**Features:**
+
+-   **Automated Data Import - Phase 2 (FR7):**
+    -   Implement a two-stage import workflow (upload/preview/commit).
+    -   Implement a parser strategy pattern to handle different file formats.
+    -   Create specific parsers for Zerodha and ICICI Direct tradebooks.
+    -   Redesign the frontend to support a categorized preview and selective committing of transactions.
+    -   Add logic to sort transactions by date/ticker/type to ensure data integrity.
+    -   **Status: ✅ Complete**
+
 ## Future Releases
 
 -   **Advanced Asset Support (FR4):** Add support for FDs, RDs, PPF, NPS, Bonds, RSUs, ESPPs.
--   **Automated Data Import - Phase 2 (FR7):** Implement file parsers for specific broker statements (Zerodha, ICICI) and MF CAS.
 -   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
 -   **Goal Planning & Tracking (FR13):** Implement the goal definition and progress tracking module.
 -   **Market Insights & Research (FR8):** Watchlists, news feeds.

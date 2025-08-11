@@ -200,11 +200,13 @@ The user workflow will be a guided, two-step process to ensure clarity and preve
 
 ## 8. Implementation Plan (Phase 2 - Advanced Reconciliation & UI)
 
-Based on user feedback from the MVP, this phase will enhance the import feature to provide more control, better feedback, and more robust error handling.
+**Status: ✅ Done**
+
+Based on user feedback from the MVP, this phase enhances the import feature to provide more control, better feedback, and more robust error handling. The backend and frontend work for this phase is complete.
 
 ### 8.1. Backend Enhancements
 
-*   **Smarter Preview Endpoint:** The `GET /preview` endpoint will be refactored. Instead of returning a flat list of transactions, it will return a structured object that categorizes transactions:
+*   **Smarter Preview Endpoint:** The `GET /preview` endpoint has been refactored. Instead of returning a flat list of transactions, it now returns a structured object that categorizes transactions:
     ```json
     {
       "valid_new": [...],
@@ -212,16 +214,16 @@ Based on user feedback from the MVP, this phase will enhance the import feature 
       "invalid": [...]
     }
     ```
-*   The `duplicates` category will be enhanced to detect transactions that exist in *other* portfolios, providing a cross-portfolio conflict warning.
-*   **Selective Commit Endpoint:** The `POST /commit` endpoint will be updated to accept a payload containing a list of transaction identifiers to commit. This allows the user to select which transactions to import. It will also include a flag to force-commit duplicates.
-*   **Improved Commit Response:** The commit response will be more detailed, indicating how many transactions were successfully created, skipped, or failed.
+*   **Selective Commit Endpoint:** The `POST /commit` endpoint has been updated to accept a payload containing a list of transaction identifiers and new asset aliases to commit. This allows the user to select which transactions to import from the preview screen.
+*   **Parser Strategy Pattern:** The parsing logic has been refactored into a Strategy Pattern, using a `ParserFactory` to select the appropriate parser (`GenericCsvParser`, `ZerodhaParser`, `IciciParser`) based on the user's selection.
+*   **Transaction Sorting:** A critical improvement was added to sort all parsed transactions by date, ticker, and type (BUY then SELL) before they are saved for preview. This resolves commit failures caused by unsorted data in the source file.
+*   **Broker-Specific Parsers:**
+    *   `ZerodhaParser`: Implemented to handle Zerodha Tradebook CSVs.
+    *   `IciciParser`: Implemented to handle ICICI Direct Tradebook CSVs.
 
 ### 8.2. Frontend UI/UX Overhaul
 
-*   **Grouped Transaction View:** The `ImportPreviewPage` will be redesigned to display transactions in collapsible groups based on the new API response (e.g., "New Transactions", "Potential Duplicates", "Invalid Rows").
-*   **Selective Committing:** Each valid transaction will have a checkbox, allowing the user to select which ones to import. A "Select All" option will be available.
-*   **Clear User Warnings:**
-    *   A clear warning will be shown for duplicate transactions, with an option for the user to "force commit" them.
-    *   A specific warning will be shown for transactions that are duplicates of entries in *other* portfolios (e.g., "Warning: This transaction already exists in 'Portfolio A'.")
-    *   Invalid rows will be displayed with clear error messages (e.g., "Asset 'XYZ' not found", "Invalid date format").
-*   **Accurate Final Summary:** After committing, a summary message will accurately reflect the outcome (e.g., "Committed 15 transactions, skipped 3 duplicates."). The user will no longer be redirected if no transactions were committed.
+*   **Statement Type Selection:** A dropdown has been added to the upload page, allowing users to specify the statement type (e.g., "Zerodha", "ICICI Direct"), which is passed to the backend to select the correct parser.
+*   **Grouped Transaction View:** The `ImportPreviewPage` has been completely redesigned to display transactions in collapsible, accordion-style groups based on the new API response ("New Transactions", "Potential Duplicates", "Invalid Rows").
+*   **Selective Committing:** Each valid transaction is displayed with a checkbox, allowing the user to select exactly which ones to import. A "Select All" option is also available.
+*   **Clear User Feedback:** The UI provides clear feedback on the outcome of the import, showing how many transactions were successfully committed.
