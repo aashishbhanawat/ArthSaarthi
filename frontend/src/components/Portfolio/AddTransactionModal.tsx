@@ -82,6 +82,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
                 queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
                 onClose();
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (error: any) => {
                 const message = error.response?.data?.detail || 'An unexpected error occurred while adding the transaction';
                 setApiError(message);
@@ -95,6 +96,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (error: any) => {
                 setApiError(error.response?.data?.detail || 'Failed to create asset.');
             }

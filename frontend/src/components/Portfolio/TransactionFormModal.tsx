@@ -99,6 +99,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
         const mutationOptions = {
             onSuccess: () => onClose(),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (error: any) => {
                 const defaultMessage = isEditMode
                     ? 'An unexpected error occurred while updating the transaction'
@@ -131,8 +132,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (error: any) => {
-                setApiError(error.response?.data?.detail || 'Failed to create asset.');
+                const message = error.response?.data?.detail || 'Failed to create asset.';
+                setApiError(message);
             }
         });
     };
