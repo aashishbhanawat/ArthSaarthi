@@ -5863,7 +5863,7 @@ The `create_import_session` endpoint was updated. After parsing the file, the li
 **Classification:** Implementation (Backend)
 **Severity:** Critical
 **Description:**
-When importing an ICICI Direct tradebook CSV, the process fails during parsing. The backend logs show a `pydantic.ValidationError` with the message "Input should be a valid string" for the `transaction_date` field. This is because the `IciciParser` uses the pandas library to convert the date string into a pandas `Timestamp` object, but the `ParsedTransaction` Pydantic model expects a standard Python `date` object (or a string it can parse). This type mismatch causes the validation to fail for every row.
+When importing an ICICI Direct tradebook CSV, the process fails during parsing. The backend logs show a `pydantic.ValidationError` with the message "Input should be a valid string" for the `transaction_date` field. This is because the `IciciParser` was passing a Python `datetime.date` object to the Pydantic model, but the model's validator expected a string in `YYYY-MM-DD` format.
 **Steps to Reproduce:**
 1. Upload an ICICI Direct tradebook CSV file.
 2. The import process fails immediately with a 400 Bad Request error.
@@ -5872,7 +5872,7 @@ The ICICI parser should correctly parse the date and create valid `ParsedTransac
 **Actual Behavior:**
 The import fails with a Pydantic validation error due to a type mismatch on the date field.
 **Resolution:**
-The `IciciParser` in `backend/app/services/import_parsers/icici_parser.py` was updated. After converting the date column to pandas `Timestamp` objects, the `.dt.date` accessor is now used to convert them into standard Python `date` objects before they are passed to the Pydantic model, resolving the validation error.
+The `IciciParser` in `backend/app/services/import_parsers/icici_parser.py` was updated. After converting the date column to pandas `Timestamp` objects, the `.dt.strftime('%Y-%m-%d')` method is now used to format the date as a string, which the Pydantic model can correctly validate.
 ---
 
 **Bug ID:** 2025-08-06-08

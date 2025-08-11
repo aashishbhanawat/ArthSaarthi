@@ -70,7 +70,7 @@ class IciciParser(BaseParser):
         df_trades["transaction_type"] = df_trades["transaction_type"].str.upper()
 
         # Convert date format
-        df_trades["transaction_date"] = pd.to_datetime(df_trades["transaction_date"], format='%d-%b-%Y').dt.date
+        df_trades["transaction_date"] = pd.to_datetime(df_trades["transaction_date"], format='%d-%b-%Y').dt.strftime('%Y-%m-%d')
 
 
         for _, row in df_trades.iterrows():
