@@ -1,9 +1,11 @@
 import uuid
-from sqlalchemy import Column, String, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import relationship
+
+from sqlalchemy import Column, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
+
 
 class AssetAlias(Base):
     __tablename__ = "asset_aliases"

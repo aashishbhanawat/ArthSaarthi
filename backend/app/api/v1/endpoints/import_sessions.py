@@ -84,7 +84,12 @@ async def create_import_session(
 
         if not parsed_transactions:
             crud.import_session.update(
-                db, db_obj=import_session, obj_in={"status": "FAILED", "error_message": "No transactions found in file."}
+                db,
+                db_obj=import_session,
+                obj_in={
+                    "status": "FAILED",
+                    "error_message": "No transactions found in file.",
+                },
             )
             raise HTTPException(
                 status_code=400,
@@ -93,7 +98,9 @@ async def create_import_session(
     except Exception as e:
         log.error(f"Error parsing file {temp_file_path}: {e}")
         crud.import_session.update(
-            db, db_obj=import_session, obj_in={"status": "FAILED", "error_message": str(e)}
+            db,
+            db_obj=import_session,
+            obj_in={"status": "FAILED", "error_message": str(e)},
         )
         raise HTTPException(
             status_code=400, detail=f"An error occurred during file parsing: {e}"
@@ -235,7 +242,8 @@ def commit_import_session(
                 # This should ideally not happen if the preview logic is correct,
                 # but as a safeguard:
                 log.error(
-                    f"Asset '{parsed_tx.ticker_symbol}' not found during commit for session {session_id}"
+                    f"Asset '{parsed_tx.ticker_symbol}' not found during commit for "
+                    f"session {session_id}"
                 )
                 continue
 
@@ -272,7 +280,9 @@ def commit_import_session(
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": f"An unexpected error occurred during commit: {str(e)}",
+                "error_message": (
+                    f"An unexpected error occurred during commit: {str(e)}"
+                ),
             },
         )
         db.commit()

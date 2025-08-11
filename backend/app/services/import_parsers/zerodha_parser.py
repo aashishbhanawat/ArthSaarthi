@@ -1,9 +1,12 @@
-import pandas as pd
-from typing import List
 import logging
+from typing import List
+
+import pandas as pd
+
+from app.schemas.import_session import ParsedTransaction
 
 from .base_parser import BaseParser
-from app.schemas.import_session import ParsedTransaction
+
 
 class ZerodhaParser(BaseParser):
     """
@@ -12,7 +15,8 @@ class ZerodhaParser(BaseParser):
 
     def parse(self, df: pd.DataFrame) -> List[ParsedTransaction]:
         """
-        Parses a Zerodha Tradebook DataFrame and returns a list of ParsedTransaction objects.
+        Parses a Zerodha Tradebook DataFrame and returns a list of
+        ParsedTransaction objects.
         """
         transactions = []
 
@@ -35,7 +39,9 @@ class ZerodhaParser(BaseParser):
         df_renamed = df.rename(columns=column_map)
 
         # Filter for only buy and sell trades
-        df_trades = df_renamed[df_renamed["transaction_type"].isin(["buy", "sell"])].copy()
+        df_trades = df_renamed[
+            df_renamed["transaction_type"].isin(["buy", "sell"])
+        ].copy()
 
         # Convert trade_type to uppercase
         df_trades["transaction_type"] = df_trades["transaction_type"].str.upper()
@@ -44,6 +50,8 @@ class ZerodhaParser(BaseParser):
             try:
                 transactions.append(ParsedTransaction(**row.to_dict()))
             except Exception as e:
-                logging.error(f"Zerodha parser: Error parsing row: {row.to_dict()}. Error: {e}")
+                logging.error(
+                    f"Zerodha parser: Error parsing row: {row.to_dict()}. Error: {e}"
+                )
 
         return transactions

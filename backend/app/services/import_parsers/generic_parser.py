@@ -1,9 +1,11 @@
 import logging
-import pandas as pd
 from typing import List
 
-from .base_parser import BaseParser
+import pandas as pd
+
 from app.schemas.import_session import ParsedTransaction
+
+from .base_parser import BaseParser
 
 
 class GenericCsvParser(BaseParser):

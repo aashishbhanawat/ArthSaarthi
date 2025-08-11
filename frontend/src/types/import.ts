@@ -34,7 +34,7 @@ export interface AssetAliasCreate {
 export interface ImportSessionPreview {
     valid_new: ParsedTransaction[];
     duplicates: ParsedTransaction[];
-    invalid: { row_data: Record<string, any>; error: string }[];
+    invalid: { row_data: Record<string, unknown>; error: string }[];
 }
 
 export interface ImportSessionCommit {

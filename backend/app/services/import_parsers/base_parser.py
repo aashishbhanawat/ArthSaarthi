@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import List
 
 import pandas as pd
 
-
 from app.schemas.import_session import ParsedTransaction
-from typing import List
+
 
 class BaseParser(ABC):
     """

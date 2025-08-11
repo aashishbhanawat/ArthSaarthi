@@ -1,5 +1,7 @@
 import uuid
+
 from pydantic import BaseModel
+
 
 class AssetAliasBase(BaseModel):
     alias_symbol: str

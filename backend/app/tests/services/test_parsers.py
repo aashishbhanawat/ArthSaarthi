@@ -1,7 +1,8 @@
 import pandas as pd
-import pytest
-from app.services.import_parsers.zerodha_parser import ZerodhaParser
+
 from app.schemas.import_session import ParsedTransaction
+from app.services.import_parsers.zerodha_parser import ZerodhaParser
+
 
 def test_zerodha_parser_success():
     # 1. Setup
