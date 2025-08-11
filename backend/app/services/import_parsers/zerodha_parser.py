@@ -21,22 +21,28 @@ class ZerodhaParser(BaseParser):
         transactions = []
 
         # Define expected columns and map them to our schema
-        column_map = {
+        core_columns = {
             "symbol": "ticker_symbol",
             "trade_date": "transaction_date",
             "trade_type": "transaction_type",
             "quantity": "quantity",
             "price": "price_per_unit",
-            "charges": "fees",
         }
 
-        # Check if all required columns exist
-        if not all(col in df.columns for col in column_map.keys()):
-            logging.error("Zerodha parser: Missing required columns.")
+        # Check if all core required columns exist
+        if not all(col in df.columns for col in core_columns.keys()):
+            logging.error(f"Zerodha parser: Missing one or more core columns. Expected: {list(core_columns.keys())}, Found: {df.columns.tolist()}")
             return []
 
-        # Rename columns to our internal schema
-        df_renamed = df.rename(columns=column_map)
+        # Rename core columns
+        df_renamed = df.rename(columns=core_columns)
+
+        # Handle optional charges column
+        if "charges" in df.columns:
+            df_renamed["fees"] = pd.to_numeric(df["charges"], errors='coerce').fillna(0)
+        else:
+            df_renamed["fees"] = 0
+
 
         # Filter for only buy and sell trades
         df_trades = df_renamed[
