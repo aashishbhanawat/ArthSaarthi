@@ -11,7 +11,7 @@ async function globalSetup() {
   });
 
   // 1. Wait for the backend to be ready by retrying the reset-db call
-  let retries = 5;
+  let retries = 15; // Increased retries for more robust waiting
   while (retries > 0) {
     try {
       const resetResponse = await requestContext.post('/api/v1/testing/reset-db');
@@ -19,14 +19,18 @@ async function globalSetup() {
         console.log('Database reset successfully.');
         break; // Success
       }
+      console.log(`Backend not ready yet (status: ${resetResponse.status()}). Retrying...`);
     } catch (error) {
-      console.log(`Waiting for backend... Retries left: ${retries - 1}`);
-      retries--;
-      if (retries === 0) {
-        throw new Error('Backend did not become available in time.');
-      }
-      await new Promise(res => setTimeout(res, 2000)); // Wait 2 seconds before retrying
+      // Catches network errors when the service is not yet reachable
+      console.log('Backend not reachable. Retrying...');
     }
+
+    retries--;
+    if (retries === 0) {
+      throw new Error('Backend did not become available in time.');
+    }
+    console.log(`Waiting for backend... ${retries} retries left.`);
+    await new Promise(res => setTimeout(res, 2000)); // Wait 2 seconds before every retry
   }
 
   // 2. Create the initial admin user
