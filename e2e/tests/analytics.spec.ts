@@ -91,17 +91,17 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const analyticsCard = page.locator('.card', { hasText: 'Advanced Analytics' });
     await expect(analyticsCard).toBeVisible();
 
-    // Check for Realized XIRR - value can fluctuate, so just check for format
-    const realizedXirrValue = analyticsCard.locator('p', { hasText: 'Realized XIRR' }).locator('xpath=..//p[2]');
-    await expect(realizedXirrValue).toContainText(/%$/); // Check that it ends with a percentage sign
+    // Check for Realized XIRR
+    const realizedXirrContainer = analyticsCard.locator('div', { has: page.locator('p', { hasText: 'Realized XIRR' }) });
+    await expect(realizedXirrContainer.locator('p.text-xl')).toContainText(/%$/);
 
     // Check for Unrealized XIRR
-    const unrealizedXirrValue = analyticsCard.locator('p', { hasText: 'Unrealized XIRR' }).locator('xpath=..//p[2]');
-    await expect(unrealizedXirrValue).toContainText(/%$/);
+    const unrealizedXirrContainer = analyticsCard.locator('div', { has: page.locator('p', { hasText: 'Unrealized XIRR' }) });
+    await expect(unrealizedXirrContainer.locator('p.text-xl')).toContainText(/%$/);
 
-    // Check for Sharpe Ratio - value can fluctuate, so just check for format
-    const sharpeRatioValue = analyticsCard.locator('p', { hasText: 'Sharpe Ratio' }).locator('xpath=..//p[2]');
-    await expect(sharpeRatioValue).not.toBeEmpty(); // Check that it's not empty
+    // Check for Sharpe Ratio
+    const sharpeRatioContainer = analyticsCard.locator('div', { has: page.locator('p', { hasText: 'Sharpe Ratio' }) });
+    await expect(sharpeRatioContainer.locator('p.text-xl')).not.toBeEmpty();
   });
 
   test('should display correct asset-level XIRR in the holding detail modal', async ({ page }) => {
