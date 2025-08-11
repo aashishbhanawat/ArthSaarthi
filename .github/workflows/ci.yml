@@ -44,13 +44,13 @@ jobs:
           docker compose run --rm backend sh -c "pip install -r requirements-dev.in && ruff check ."
 
       - name: Lint Frontend
-        run: docker compose run --rm frontend npx eslint .
+        run: docker compose -f docker-compose.yml -f docker-compose.override.yml run --rm frontend npx eslint .
 
       - name: Run Backend Tests
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
 
       - name: Run Frontend Tests
-        run: docker compose run --rm frontend npm test
+        run: docker compose -f docker-compose.yml -f docker-compose.override.yml run --rm frontend npm test
 
       - name: Run E2E Tests
         run: |
