@@ -31,7 +31,10 @@ class ZerodhaParser(BaseParser):
 
         # Check if all core required columns exist
         if not all(col in df.columns for col in core_columns.keys()):
-            logging.error(f"Zerodha parser: Missing one or more core columns. Expected: {list(core_columns.keys())}, Found: {df.columns.tolist()}")
+            logging.error(
+                f"Zerodha parser: Missing one or more core columns. "
+                f"Expected: {list(core_columns.keys())}, Found: {df.columns.tolist()}"
+            )
             return []
 
         # Rename core columns

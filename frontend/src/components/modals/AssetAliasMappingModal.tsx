@@ -31,6 +31,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
     onAliasCreated,
 }) => {
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+    const [isAssetSelected, setIsAssetSelected] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
     const { data: searchResults, isLoading, error } = useAssetSearch(debouncedSearchTerm);
@@ -51,6 +52,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
         if (!isOpen) {
             setSearchTerm('');
             setSelectedAsset(null);
+            setIsAssetSelected(false);
         }
     }, [isOpen]);
 
@@ -74,7 +76,11 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
                         placeholder="Type to search by name or ticker..."
                         className="input input-bordered w-full"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setSelectedAsset(null);
+                            setIsAssetSelected(false);
+                        }}
                     />
                 </div>
 
@@ -82,12 +88,13 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
 
                 {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
 
-                {searchResults && searchResults.length > 0 && (
+                {searchResults && searchResults.length > 0 && !isAssetSelected && (
                     <ul className="menu bg-base-100 w-full rounded-box mt-2 border max-h-60 overflow-y-auto">
                         {searchResults.map((asset) => (
                             <li key={asset.id} onClick={() => {
                                 setSelectedAsset(asset);
                                 setSearchTerm(`${asset.name} (${asset.ticker_symbol})`);
+                                setIsAssetSelected(true);
                             }}>
                                 <a>{asset.name} ({asset.ticker_symbol})</a>
                             </li>
@@ -95,15 +102,15 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
                     </ul>
                 )}
 
-                {debouncedSearchTerm && !isLoading && searchResults?.length === 0 && (
+                {debouncedSearchTerm && !isLoading && !isAssetSelected && searchResults?.length === 0 && (
                      <p className="text-sm text-gray-500 mt-2">No assets found.</p>
                 )}
 
 
                 <div className="modal-action">
                     <button onClick={onClose} className="btn btn-ghost">Cancel</button>
-                    <button onClick={handleSave} className="btn btn-primary" disabled={!selectedAsset}>
-                        Save Mapping
+                    <button onClick={handleSave} className="btn btn-primary" disabled={!selectedAsset || !isAssetSelected}>
+                        Create Alias
                     </button>
                 </div>
             </div>

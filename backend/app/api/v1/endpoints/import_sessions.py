@@ -4,10 +4,19 @@ import shutil
 import uuid
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
 import pandas as pd
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -153,9 +162,10 @@ def get_import_session(
     return import_session
 
 
-@router.get("/{session_id}/preview", response_model=schemas.ImportSessionPreview)
+@router.post("/{session_id}/preview", response_model=schemas.ImportSessionPreview)
 def get_import_session_preview(
     session_id: uuid.UUID,
+    aliases_to_create: List[schemas.AssetAliasCreate] = Body(default=[]),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_user),
 ) -> Any:
@@ -181,6 +191,11 @@ def get_import_session_preview(
     invalid: list[dict] = []
     needs_mapping: list[schemas.ParsedTransaction] = []
 
+    # Create a temporary map of pending aliases for quick lookup
+    pending_alias_map = {
+        alias.alias_symbol: alias.asset_id for alias in aliases_to_create
+    }
+
     for _, row in df.iterrows():
         row_data = row.to_dict()
         parsed_transaction = schemas.ParsedTransaction(**row_data)
@@ -188,13 +203,18 @@ def get_import_session_preview(
         # 1. Asset Identification
         asset = crud.asset.get_by_ticker(db, ticker_symbol=row["ticker_symbol"])
         if not asset:
-            # First, check if an alias exists for this ticker
-            asset_alias = crud.asset_alias.get_by_alias(
-                db, alias_symbol=row["ticker_symbol"]
-            )
-            if asset_alias:
-                asset = asset_alias.asset
+            # Check pending aliases from the current session first
+            if row["ticker_symbol"] in pending_alias_map:
+                asset_id = pending_alias_map[row["ticker_symbol"]]
+                asset = crud.asset.get(db, id=asset_id)
             else:
+                # Then check persisted aliases
+                asset_alias = crud.asset_alias.get_by_alias(
+                    db, alias_symbol=row["ticker_symbol"]
+                )
+                if asset_alias:
+                    asset = asset_alias.asset
+        if not asset:
                 # If no asset or alias is found, it needs user mapping
                 needs_mapping.append(parsed_transaction)
                 continue
@@ -253,10 +273,18 @@ def commit_import_session(
         # 2. Commit the selected transactions.
         transactions_created = 0
         for parsed_tx in commit_payload.transactions_to_commit:
-            asset = crud.asset.get_by_ticker(db, ticker_symbol=parsed_tx.ticker_symbol)
+            # Try to find asset by alias first, then by direct ticker
+            asset = None
+            asset_alias = crud.asset_alias.get_by_alias(
+                db, alias_symbol=parsed_tx.ticker_symbol
+            )
+            if asset_alias:
+                asset = asset_alias.asset
+            else:
+                asset = crud.asset.get_by_ticker(
+                    db, ticker_symbol=parsed_tx.ticker_symbol
+                )
             if not asset:
-                # This should ideally not happen if the preview logic is correct,
-                # but as a safeguard:
                 log.error(
                     f"Asset '{parsed_tx.ticker_symbol}' not found during commit for "
                     f"session {session_id}"

@@ -42,7 +42,11 @@ class IciciParser(BaseParser):
 
         # Check if all required columns exist
         if not all(col in df.columns for col in required_columns):
-            logging.error(f"ICICI parser: Missing required columns. Expected: {required_columns}, Found: {df.columns.tolist()}")
+            logging.error(
+                "ICICI parser: Missing required columns. Expected: %s, Found: %s",
+                required_columns,
+                df.columns.tolist(),
+            )
             # Attempt to proceed if at least the core columns are present
             if not all(col in df.columns for col in column_map.keys()):
                  return []
@@ -54,7 +58,9 @@ class IciciParser(BaseParser):
         # Ensure fee columns are numeric, coercing errors to 0
         for col in fee_columns:
             if col in df_renamed.columns:
-                df_renamed[col] = pd.to_numeric(df_renamed[col], errors='coerce').fillna(0)
+                df_renamed[col] = pd.to_numeric(
+                    df_renamed[col], errors="coerce"
+                ).fillna(0)
             else:
                 df_renamed[col] = 0 # Add column with 0 if it's missing
 
@@ -70,7 +76,9 @@ class IciciParser(BaseParser):
         df_trades["transaction_type"] = df_trades["transaction_type"].str.upper()
 
         # Convert date format
-        df_trades["transaction_date"] = pd.to_datetime(df_trades["transaction_date"], format='%d-%b-%Y').dt.strftime('%Y-%m-%d')
+        df_trades["transaction_date"] = pd.to_datetime(
+            df_trades["transaction_date"], format="%d-%b-%Y"
+        ).dt.strftime("%Y-%m-%d")
 
 
         for _, row in df_trades.iterrows():

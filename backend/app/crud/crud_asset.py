@@ -15,8 +15,9 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         self, db: Session, *, portfolio_id: uuid.UUID
     ) -> List[Asset]:
         """
-        Retrieves all assets that have at least one transaction in the specified portfolio.
-        """
+        Retrieves all assets that have at least one transaction in the
+        specified portfolio.
+         """
         # Get distinct asset_ids from transactions for the given portfolio
         asset_ids_query = (
             db.query(Transaction.asset_id)

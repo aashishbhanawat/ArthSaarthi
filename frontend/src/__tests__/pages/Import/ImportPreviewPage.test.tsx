@@ -59,6 +59,7 @@ describe('ImportPreviewPage', () => {
                 valid_new: [mockTransaction],
                 duplicates: [],
                 invalid: [],
+                needs_mapping: [],
             },
             isLoading: false,
         });
@@ -133,4 +134,3 @@ describe('ImportPreviewPage', () => {
         }, { timeout: 2500 });
     });
 });
-

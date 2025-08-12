@@ -200,7 +200,7 @@ The user workflow will be a guided, two-step process to ensure clarity and preve
 
 ## 8. Implementation Plan (Phase 2 - Advanced Reconciliation & UI)
 
-**Status: ✅ Done**
+**Status: ⚠️ Implementation Complete, E2E Testing Incomplete**
 
 Based on user feedback from the MVP, this phase enhances the import feature to provide more control, better feedback, and more robust error handling. The backend and frontend work for this phase is complete.
 
@@ -222,9 +222,15 @@ Based on user feedback from the MVP, this phase enhances the import feature to p
     *   `ZerodhaParser`: Implemented to handle Zerodha Tradebook CSVs.
     *   `IciciParser`: Implemented to handle ICICI Direct Tradebook CSVs.
 
+
 ### 8.2. Frontend UI/UX Overhaul
 
 *   **Statement Type Selection:** A dropdown has been added to the upload page, allowing users to specify the statement type (e.g., "Zerodha", "ICICI Direct"), which is passed to the backend to select the correct parser.
 *   **Grouped Transaction View:** The `ImportPreviewPage` has been completely redesigned to display transactions in collapsible, accordion-style groups based on the new API response ("New Transactions", "Potential Duplicates", "Invalid Rows").
 *   **Selective Committing:** Each valid transaction is displayed with a checkbox, allowing the user to select exactly which ones to import. A "Select All" option is also available.
 *   **Clear User Feedback:** The UI provides clear feedback on the outcome of the import, showing how many transactions were successfully committed.
+*   **Asset Alias Mapping:** A new UI flow allows users to map unrecognized ticker symbols to existing assets on the fly during the preview stage.
+
+### 8.3. Known Issues
+
+*   The E2E test for verifying that a newly created alias is used in a subsequent import is failing with a timeout. This is the final blocker for this feature. See Bug ID `2025-08-12-03`.

@@ -1,9 +1,5 @@
 import apiClient from './api';
-import {
-    ImportSession,
-    ImportSessionPreview,
-    ImportSessionCommit,
-} from '../types/import';
+import { ImportSession, ImportSessionPreview, ImportSessionCommit, AssetAliasCreate } from '../types/import';
 import { Msg } from '../types/msg';
 
 export const createImportSession = async (
@@ -32,9 +28,11 @@ export const getImportSession = async (sessionId: string): Promise<ImportSession
 };
 
 export const getImportSessionPreview = async (
-    sessionId: string
+    sessionId: string,
+    aliasesToCreate: AssetAliasCreate[]
 ): Promise<ImportSessionPreview> => {
-    const response = await apiClient.get(`/api/v1/import-sessions/${sessionId}/preview`);
+    // Use POST to send the pending aliases in the request body
+    const response = await apiClient.post(`/api/v1/import-sessions/${sessionId}/preview`, aliasesToCreate);
     return response.data;
 };
 

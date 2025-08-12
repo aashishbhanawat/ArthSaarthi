@@ -93,7 +93,6 @@ test.describe.serial('Automated Data Import E2E Test', () => {
 
         // Verify the Preview Page and Commit
         await expect(page.getByRole('heading', { name: 'Import Preview' })).toBeVisible();
-        await page.screenshot({ path: 'e2e/failure.png' });
         await expect(page.getByText(/New Transactions \(\d+\)/)).toBeVisible();
         await expect(page.getByRole('cell', { name: 'NTPC' })).toBeVisible();
         await page.getByRole('button', { name: /Commit 2 Transactions/ }).click();

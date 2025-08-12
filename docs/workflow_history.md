@@ -1141,3 +1141,32 @@ Its purpose is to build an experience history that can be used as a reference fo
 *   **Outcome:**
     - The "Automated Data Import - Phase 2" feature is now complete and robust.
     - All project documentation is accurate and up-to-date, reflecting the final state of the project.
+
+---
+
+## 2025-08-12: Implement Asset Alias Mapping
+
+*   **Task Description:** Implement the "Asset Alias Mapping" feature as part of the data import workflow. This allows users to map unrecognized ticker symbols from an import file to existing assets in the system on the fly.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full-stack implementation. This included:
+        *   Updating the backend preview endpoint to categorize unrecognized symbols into a `needs_mapping` list.
+        *   Refactoring the `AssetAliasMappingModal` to include an asset search input.
+        *   Creating a new `useAssetSearch` hook for the frontend.
+        *   Implementing state management to collect and commit the new aliases.
+    2.  **E2E Test Generation:** The AI was prompted to create a new E2E test file (`data-import-mapping.spec.ts`) to validate the entire workflow.
+    3.  **Bug Fixing:** The AI fixed a critical bug in the `CRUDAssetAlias` class where the `get_by_alias` method was missing.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/import_sessions.py`: **Updated** to categorize transactions needing mapping.
+    *   `backend/app/schemas/import_session.py`: **Updated** to include the `needs_mapping` field.
+    *   `backend/app/crud/crud_asset_alias.py`: **Updated** to add the missing `get_by_alias` method.
+    *   `frontend/src/pages/Import/ImportPreviewPage.tsx`: **Updated** to render the new mapping section and modal.
+    *   `frontend/src/components/modals/AssetAliasMappingModal.tsx`: **Updated** with asset search functionality.
+    *   `frontend/src/hooks/useAssets.ts`: **New** file with the `useAssetSearch` hook.
+    *   `e2e/tests/data-import-mapping.spec.ts`: **New** E2E test file for the feature.
+
+*   **Outcome:**
+    - The full-stack implementation for asset alias mapping is complete.
+    - All backend and frontend unit/integration tests are passing.
+    - A new E2E test was created, but it is failing with a timeout, blocking the final validation of the feature. The project is being prepared for a handoff to debug this final issue.

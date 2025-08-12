@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as importApi from '../services/importApi';
-import { ImportSessionCommit } from '../types/import';
+import { AssetAliasCreate, ImportSessionCommit } from '../types/import';
 
 export const useCreateImportSession = () => {
     return useMutation({
@@ -24,10 +24,13 @@ export const useImportSession = (sessionId: string) => {
     });
 };
 
-export const useImportSessionPreview = (sessionId: string) => {
+export const useImportSessionPreview = (
+    sessionId: string,
+    aliasesToCreate: AssetAliasCreate[]
+) => {
     return useQuery({
-        queryKey: ['importSessionPreview', sessionId],
-        queryFn: () => importApi.getImportSessionPreview(sessionId),
+        queryKey: ['importSessionPreview', sessionId, aliasesToCreate],
+        queryFn: () => importApi.getImportSessionPreview(sessionId, aliasesToCreate),
         enabled: !!sessionId,
     });
 };

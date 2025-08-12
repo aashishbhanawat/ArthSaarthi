@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { useImportSession, useImportSessionPreview, useCommitImportSession } from '../../hooks/useImport';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import { ParsedTransaction, AssetAliasCreate } from '../../types/import';
@@ -9,7 +8,6 @@ import AssetAliasMappingModal from '../../components/modals/AssetAliasMappingMod
 const ImportPreviewPage: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
 
     // State for managing which transactions are selected for commit
     const [selectedTransactionIndices, setSelectedTransactionIndices] = useState<Set<number>>(new Set());
@@ -19,7 +17,7 @@ const ImportPreviewPage: React.FC = () => {
 
 
     const { data: session, isLoading: isLoadingSession, error: sessionError } = useImportSession(sessionId);
-    const { data: previewData, isLoading: isLoadingPreview, error: previewError } = useImportSessionPreview(sessionId);
+    const { data: previewData, isLoading: isLoadingPreview, error: previewError } = useImportSessionPreview(sessionId, aliasesToCreate);
     const commitMutation = useCommitImportSession();
 
     const allSelectableTransactions = useMemo(() => {
@@ -82,9 +80,9 @@ const ImportPreviewPage: React.FC = () => {
     };
 
     const handleAliasCreated = (alias: AssetAliasCreate) => {
+        // Update the list of pending aliases. React Query will automatically refetch the preview
+        // because `aliasesToCreate` is now part of the query key for `useImportSessionPreview`.
         setAliasesToCreate(prev => [...prev.filter(a => a.alias_symbol !== alias.alias_symbol), alias]);
-        // Invalidate preview to refetch and re-categorize transactions
-        queryClient.invalidateQueries({ queryKey: ['importSessionPreview', sessionId] });
     };
 
     const handleCommit = () => {
@@ -187,7 +185,7 @@ const ImportPreviewPage: React.FC = () => {
         </table>
     );
 
-    const InvalidTransactionTable = ({ invalidRows }: { invalidRows: { row_data: any; error: string }[] }) => {
+    const InvalidTransactionTable = ({ invalidRows }: { invalidRows: { row_data: Record<string, unknown>; error: string }[] }) => {
         return (
             <table className="table-auto w-full">
                 <thead className="bg-gray-50">
