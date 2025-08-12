@@ -1144,6 +1144,38 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-08-12: Fix Data Import Asset Alias Bug
+
+*   **Task Description:** Debug and fix a critical bug in the data import feature where a newly created asset alias was not being correctly applied in a subsequent import, causing an E2E test to fail.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Analysis:** The user provided a failing E2E test log. The AI analyzed the log and hypothesized that the alias was not being found.
+    2.  **Systematic Investigation:** A series of `read_file` prompts were used to trace the code execution path from the API endpoint (`import_sessions.py`) to the CRUD layer (`crud_asset_alias.py`) and the database models (`asset_alias.py`, `import_session.py`).
+    3.  **Root Cause Discovery:** The investigation revealed that the `ImportSession` model was missing a `source` field. This meant the backend had no way to know which source (e.g., "Generic CSV") to use when looking up a source-specific alias, causing the lookup to fail.
+    4.  **Comprehensive Bug Fix:** A multi-step fix was implemented:
+        *   The `ImportSession` model and Pydantic schema were updated to include the `source` field.
+        *   A new Alembic migration was created to add the `source` column to the database table.
+        *   The `create_import_session` endpoint was updated to save the `source_type`.
+        *   The `get_by_alias` CRUD method was updated to accept a `source` parameter.
+        *   The `get_import_session_preview` endpoint was updated to use the new source-specific lookup.
+    5.  **Environment Debugging:** A significant portion of the task involved debugging the local development environment itself. The AI discovered that the `backend` service in `docker-compose.yml` was missing a volume mount, which prevented code changes from being reflected in the container and caused the `alembic revision` command to fail silently.
+
+*   **File Changes:**
+    *   `docker-compose.yml`: **Updated** to add a volume mount to the `backend` service.
+    *   `backend/app/models/import_session.py`: **Updated** to add the `source` column.
+    *   `backend/alembic/versions/1c3a7e6d8b5f_add_source_to_import_sessions.py`: **New** database migration file.
+    *   `backend/app/schemas/import_session.py`: **Updated** to include `source` in the relevant schemas.
+    *   `backend/app/api/v1/endpoints/import_sessions.py`: **Updated** to save and use the `source` of the import session.
+    *   `backend/app/crud/crud_asset_alias.py`: **Updated** to make the alias lookup source-specific.
+
+*   **Verification:**
+    - Ran the full E2E test suite to confirm that the failing test now passes.
+
+*   **Outcome:**
+    - The bug is fixed, and the E2E test suite is now fully passing. The data import feature is now more robust and correctly handles source-specific asset aliases.
+
+---
+
 ## 2025-08-12: Implement Asset Alias Mapping
 
 *   **Task Description:** Implement the "Asset Alias Mapping" feature as part of the data import workflow. This allows users to map unrecognized ticker symbols from an import file to existing assets in the system on the fly.

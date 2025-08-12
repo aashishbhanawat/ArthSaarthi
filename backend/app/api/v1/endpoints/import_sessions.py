@@ -73,6 +73,7 @@ async def create_import_session(
         file_name=file.filename,
         file_path=str(temp_file_path),
         portfolio_id=portfolio_id,
+        source=source_type,
         status="UPLOADED",
     )
     import_session = crud.import_session.create_with_owner(
@@ -210,7 +211,9 @@ def get_import_session_preview(
             else:
                 # Then check persisted aliases
                 asset_alias = crud.asset_alias.get_by_alias(
-                    db, alias_symbol=row["ticker_symbol"]
+                    db,
+                    alias_symbol=row["ticker_symbol"],
+                    source=import_session.source,
                 )
                 if asset_alias:
                     asset = asset_alias.asset
