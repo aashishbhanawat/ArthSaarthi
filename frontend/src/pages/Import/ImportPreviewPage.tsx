@@ -294,6 +294,7 @@ const ImportPreviewPage: React.FC = () => {
                     onClose={handleCloseAliasModal}
                     unrecognizedTicker={tickerToMap}
                     portfolioId={session.portfolio_id}
+                    source={session.source}
                     onAliasCreated={handleAliasCreated}
                 />
             )}
