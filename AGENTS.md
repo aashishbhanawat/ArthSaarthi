@@ -2,6 +2,16 @@
 
 This guide provides instructions for setting up a local development and testing environment that is self-contained and does not require Docker or external services like a running PostgreSQL server.
 
+## 0. Prerequisites
+
+This environment requires a Redis server for caching.
+
+### Install Redis
+On Debian-based systems (like Ubuntu), you can install Redis with:
+```bash
+sudo apt-get update && sudo apt-get install -y redis-server
+```
+
 ## 1. Initial Environment Setup
 
 This only needs to be done once.
@@ -85,17 +95,24 @@ The backend tests will use the `test.db` SQLite database file. The frontend test
 
 This requires running the backend and frontend servers in separate processes.
 
-**Terminal 1: Start Backend Server (for E2E)**
+**Terminal 1: Start Redis Server**
+Ensure the Redis server is running before starting the backend.
+```bash
+# This command might require sudo
+sudo service redis-server start
+```
+
+**Terminal 2: Start Backend Server (for E2E)**
 ```bash
 (cd backend && python -m dotenv -f .env.test run -- uvicorn app.main:app --host 127.0.0.1 --port 8001)
 ```
 
-**Terminal 2: Start Frontend Server (for E2E)**
+**Terminal 3: Start Frontend Server (for E2E)**
 ```bash
 (cd frontend && npm run dev)
 ```
 
-**Terminal 3: Run E2E Tests**
+**Terminal 4: Run E2E Tests**
 Set the `E2E_BASE_URL` for the Playwright tests to point to the local frontend server.
 ```bash
 export E2E_BASE_URL='http://localhost:3000'
