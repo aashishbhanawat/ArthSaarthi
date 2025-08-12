@@ -1180,6 +1180,28 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-08-12: Fix E2E Test for Asset Alias Mapping
+
+*   **Task Description:** Fix a failing E2E test for the asset alias mapping feature. The test `should automatically use the created alias for subsequent imports` in `data-import-mapping.spec.ts` was consistently failing with a timeout.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Investigation:** The initial investigation focused on the backend, with a hypothesis that database transactions were not being committed correctly between test steps. This led to suggesting changes in `backend/app/db/session.py` and adding extensive logging.
+    2.  **Root Cause Identification (User-led):** The user provided the crucial insight that the problem was not in the backend, but in the test itself. The test was waiting for the UI element `Transactions Needing Mapping (0)` to be visible. However, on a successful run where the alias is correctly applied, this element is never rendered, causing the test to time out.
+    3.  **Targeted Fix:** Based on the user's feedback, the AI pivoted to a frontend-only fix. The test assertion was changed to be more robust, verifying that the main "Import Preview" heading is visible and that the "Commit" button is present, which correctly confirms the success state without relying on a conditionally rendered element.
+
+*   **File Changes:**
+    *   `e2e/tests/data-import-mapping.spec.ts`: **Updated** the test assertions to be more robust and not rely on a conditionally rendered element.
+    *   `docs/bug_reports_temp.md`: **Updated** the bug report for this issue with the correct root cause and resolution.
+    *   `docs/workflow_history.md`: **Updated** with this entry.
+
+*   **Verification:**
+    - The changes are being submitted without running the test suite, as per user instruction. The validation will be performed by the CI/CD git workflow.
+
+*   **Outcome:**
+    - The E2E test for asset alias mapping has been fixed by correcting the test's assertion logic. This resolves the final blocker for the data import feature.
+
+---
+
 ## 2025-08-12: Implement Asset Alias Mapping
 
 *   **Task Description:** Implement the "Asset Alias Mapping" feature as part of the data import workflow. This allows users to map unrecognized ticker symbols from an import file to existing assets in the system on the fly.

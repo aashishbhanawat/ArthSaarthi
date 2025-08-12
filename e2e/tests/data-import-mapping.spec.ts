@@ -145,10 +145,15 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         });
         
         await page.getByRole('button', { name: 'Upload and Preview' }).click();
+
         // 3. Verify it appears directly in "New Transactions"
-        await expect(page.getByRole('heading', { name: 'Transactions Needing Mapping (0)' })).toBeVisible();
+        // The "Transactions Needing Mapping" heading should not be visible.
+        // Instead, we verify the main page heading and the presence of the commit button.
+        await expect(page.getByRole('heading', { name: 'Import Preview' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Transactions Needing Mapping' })).not.toBeVisible();
         await expect(page.getByRole('heading', { name: 'New Transactions (1)' })).toBeVisible();
         const newTransactionRow = page.locator('tr', { hasText: 'RIL' });
         await expect(newTransactionRow).toBeVisible();
+        await expect(page.getByRole('button', { name: /Commit \d+ Transactions/ })).toBeVisible();
     });
 });

@@ -37,4 +37,7 @@ Update the `beforeEach` block in `frontend/src/__tests__/pages/Import/ImportPrev
 **Classification:** Test Suite
 **Severity:** Critical
 **Description:** The test `should automatically use the created alias for subsequent imports` in `data-import-mapping.spec.ts` fails with a 30-second timeout. The test runs serially after a successful mapping test. The failure occurs on the first action (`page.getByRole('link', { name: 'Import' }).click()`), suggesting the page is in an unresponsive or unexpected state at the beginning of the test. This blocks the final validation of the asset alias mapping feature.
-**Resolution:** TBD. This requires further debugging by the E2E test engineering team.
+**Resolution:**
+The root cause was a faulty assertion in the test. The test was waiting for the text "Transactions Needing Mapping (0)" to appear on the page. However, this element is not rendered when an alias is applied successfully and there are no transactions that actually need mapping. The test was therefore waiting for a non-existent element until it timed out.
+
+The fix was to replace this brittle assertion with a more robust set of checks that verify the "Import Preview" page has loaded correctly. The new assertions check for the main page heading, explicitly check that the "Transactions Needing Mapping" section is **not** visible, and confirm that the "Commit" button is visible. This correctly validates the success state without relying on an element that is conditionally rendered.
