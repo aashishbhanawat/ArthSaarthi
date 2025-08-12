@@ -21,6 +21,7 @@ interface AssetAliasMappingModalProps {
     onClose: () => void;
     unrecognizedTicker: string;
     portfolioId: string; // Keep portfolioId in case we need it later
+    source: string;
     onAliasCreated: (alias: { alias_symbol: string; asset_id: string, source: string }) => void;
 }
 
@@ -28,6 +29,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
     isOpen,
     onClose,
     unrecognizedTicker,
+    source,
     onAliasCreated,
 }) => {
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -41,7 +43,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
             onAliasCreated({
                 alias_symbol: unrecognizedTicker,
                 asset_id: selectedAsset.id,
-                source: `import_mapping_${unrecognizedTicker}`,
+                source: source,
             });
             onClose();
         }
