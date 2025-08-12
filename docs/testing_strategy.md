@@ -33,6 +33,9 @@ To ensure accuracy, improve code quality, and prevent recurring issues, the foll
 4.  **Stale Context Mitigation:**
     *   The developer is the **source of truth**. If the AI appears to be working with outdated file information, the developer will provide the full, current content of the relevant file(s) to resynchronize the AI's context.
 
+5.  **Sandboxed Environment Workflow:**
+    *   When working in a sandboxed environment without Docker or administrative privileges, the AI assistant must follow the instructions in the `AGENTS.md` file. This file provides a self-contained, Docker-less development and testing process that uses a local SQLite database.
+
 ## 1. Backend Testing
 
 The backend is tested using the `pytest` framework along with `httpx` for asynchronous API requests.

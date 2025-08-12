@@ -1,10 +1,10 @@
 import uuid
 
 from sqlalchemy import Boolean, Column, DateTime, String, func
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
+from app.db.custom_types import UUID
 
 
 class User(Base):

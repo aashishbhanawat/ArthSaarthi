@@ -15,6 +15,8 @@ For each stage, you will:
 
 Our application will be deployed in a Docker environment or as an independent app. We will use Gemini-CLI or other GenAI for code generation.
 
+**Note for AI Assistants:** If you are working in a sandboxed environment where you do not have Docker or administrative privileges, please follow the instructions in the `AGENTS.md` file for a self-contained, Docker-less development and testing process.
+
 Let's begin with **Stage 1: Requirement Gathering** and invoke the **Requirement Analyst**."
 
 ---

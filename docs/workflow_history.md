@@ -4,8 +4,6 @@ This document serves as a chronological log of the development process for this 
 
 Its purpose is to build an experience history that can be used as a reference for future projects, to onboard new team members, or to showcase GenAI-assisted development skills. Each entry captures a specific development task, the prompts used, the AI's output, and the final outcome.
 
----
-
 ## 2025-07-17: Backend for User Management
 
 *   **Task Description:** Implement the backend functionality for the User Management feature, allowing an administrator to perform CRUD operations on users.
@@ -1107,3 +1105,32 @@ Its purpose is to build an experience history that can be used as a reference fo
 *   **Outcome:**
     - The "Asset-Level XIRR Analytics" feature is complete, stable, and fully tested.
     - All E2E tests are passing, and all known regressions have been resolved.
+
+---
+
+## 2025-08-11: Docker-less Testing Environment
+
+*   **Task Description:** Create a new development and testing process that does not rely on Docker. This was necessary to enable development in sandboxed environments where Docker is not available.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** The AI was prompted to create a new testing process that did not use Docker. The initial implementation involved creating a guide for a human developer.
+    2.  **Course Correction:** The user clarified that the target audience for the guide was an AI assistant, not a human. The AI then pivoted to a new approach.
+    3.  **Backend Refactoring:** A series of prompts were used to refactor the backend to use a file-based SQLite database for testing. This involved:
+        *   Modifying the database configuration to support SQLite.
+        *   Creating a custom `UUID` type to handle differences between PostgreSQL and SQLite.
+        *   Updating the test suite to create and tear down the SQLite database.
+    4.  **Documentation:** The AI created a new `AGENTS.md` file with instructions for setting up the environment and running all tests without Docker.
+
+*   **File Changes:**
+    *   `backend/app/core/config.py`: Updated to allow for a generic database connection string.
+    *   `backend/app/tests/conftest.py`: Updated to handle the creation and teardown of the SQLite database.
+    *   `backend/app/models/`: All models were updated to use a custom `UUID` type that is compatible with both PostgreSQL and SQLite.
+    *   `backend/app/db/custom_types.py`: **New** file containing the custom `UUID` type.
+    *   `backend/app/db/utils.py`: **New** file containing a utility function to determine the database dialect.
+    *   `AGENTS.md`: **New** file with instructions for the Docker-less testing process.
+
+*   **Verification:**
+    - Ran the full backend and frontend test suites using the new Docker-less process.
+
+*   **Outcome:**
+    - The project now supports a fully self-contained development and testing environment that does not require Docker. This makes it possible to work on the project in a wider range of environments.
