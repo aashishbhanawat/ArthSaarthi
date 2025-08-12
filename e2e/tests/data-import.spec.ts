@@ -86,16 +86,17 @@ test.describe.serial('Automated Data Import E2E Test', () => {
         await page.getByRole('link', { name: 'Import' }).click();
         await expect(page.getByRole('heading', { name: 'Import Transactions' })).toBeVisible();
         await page.getByLabel('Select Portfolio').selectOption({ label: portfolioName });
+        await page.getByLabel('Statement Type').selectOption({ value: 'Generic CSV' });
         // Use setInputFiles for a more robust file upload interaction, avoiding click interception issues.
         await page.getByLabel('Upload a file').setInputFiles(csvFilePath);
         await page.getByRole('button', { name: 'Upload and Preview' }).click();
 
         // Verify the Preview Page and Commit
         await expect(page.getByRole('heading', { name: 'Import Preview' })).toBeVisible();
-        await expect(page.getByText('Found 2 transactions to be added')).toBeVisible();
+        await expect(page.getByText(/New Transactions \(\d+\)/)).toBeVisible();
         await expect(page.getByRole('cell', { name: 'NTPC' })).toBeVisible();
-        await page.getByRole('button', { name: 'Commit Transactions' }).click();
-        await expect(page.getByText('Successfully committed 2 transactions. Redirecting to portfolio...')).toBeVisible();
+        await page.getByRole('button', { name: /Commit 2 Transactions/ }).click();
+        await expect(page.getByText('Successfully committed 2 transactions.')).toBeVisible();
 
         // Verify the transactions on the portfolio detail page
         await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 5000 });

@@ -96,5 +96,6 @@ def create_asset(
     new_asset_data = schemas.AssetCreate(ticker_symbol=ticker, **details)
 
     asset = crud.asset.create(db=db, obj_in=new_asset_data)
-    db.commit()
+    db.commit()  # Persist the new asset to the database
+    db.refresh(asset)  # Refresh the instance to get the latest state from the DB
     return asset

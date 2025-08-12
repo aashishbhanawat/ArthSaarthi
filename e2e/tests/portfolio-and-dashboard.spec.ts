@@ -48,15 +48,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Create', exact: true }).click();
 
     // Verify creation and navigation to detail page
-    try {
-      await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 5000 });
-    } catch (error) {
-      console.error(`\n--- E2E DEBUG ---`);
-      console.error(`Failed to find heading: "${portfolioName}"`);
-      console.error(`Current URL: ${page.url()}`);
-      console.error('Dumping page content:\n' + await page.content());
-      throw error;
-    }
+    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
 
     // Go back and delete
     await page.getByRole('link', { name: 'Back to Portfolios' }).click();

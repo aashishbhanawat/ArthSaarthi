@@ -1,5 +1,6 @@
 from .analytics import AnalyticsResponse, AssetAnalytics
 from .asset import Asset, AssetCreate, AssetCreateIn, AssetUpdate
+from .asset_alias import AssetAlias, AssetAliasCreate
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,
@@ -11,7 +12,9 @@ from .dashboard import (
 from .holding import Holding, HoldingsResponse, PortfolioSummary
 from .import_session import (
     ImportSession,
+    ImportSessionCommit,
     ImportSessionCreate,
+    ImportSessionPreview,
     ImportSessionUpdate,
     ParsedTransaction,
 )
@@ -32,6 +35,8 @@ __all__ = [
     "AssetCreate",
     "AssetCreateIn",
     "AssetUpdate",
+    "AssetAlias",
+    "AssetAliasCreate",
     "AssetAllocation",
     "AssetAllocationResponse",
     "DashboardSummary",
@@ -42,7 +47,9 @@ __all__ = [
     "HoldingsResponse",
     "PortfolioSummary",
     "ImportSession",
+    "ImportSessionCommit",
     "ImportSessionCreate",
+    "ImportSessionPreview",
     "ImportSessionUpdate",
     "ParsedTransaction",
     "Msg",

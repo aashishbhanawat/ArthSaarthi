@@ -10,6 +10,8 @@ services:
   backend:
     env_file:
       - ./backend/.env.test
+    environment:
+      - PYTHONPATH=/app
 
   test:
     build: ./backend
@@ -20,6 +22,8 @@ services:
       - ./backend/.env.test
     volumes:
       - ./backend:/app
+    environment:
+      - PYTHONPATH=/app
     networks:
       - pms_network
     depends_on:
