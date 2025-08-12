@@ -127,7 +127,7 @@ async def create_import_session(
 
     # 4. Save the list of Pydantic models to a Parquet file
     # Convert list of Pydantic models to a DataFrame for efficient storage
-    parsed_df = pd.DataFrame([t.dict() for t in parsed_transactions])
+    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_transactions])
     parsed_file_name = f"{import_session.id}.parquet"
     parsed_file_path = upload_dir / parsed_file_name
     parsed_df.to_parquet(parsed_file_path)
@@ -279,7 +279,9 @@ def commit_import_session(
             # Try to find asset by alias first, then by direct ticker
             asset = None
             asset_alias = crud.asset_alias.get_by_alias(
-                db, alias_symbol=parsed_tx.ticker_symbol
+                db,
+                alias_symbol=parsed_tx.ticker_symbol,
+                source=import_session.source,
             )
             if asset_alias:
                 asset = asset_alias.asset
