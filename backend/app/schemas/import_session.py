@@ -19,7 +19,6 @@ class ImportSessionBase(BaseModel):
 class ImportSessionCreate(ImportSessionBase):
     file_path: str
     portfolio_id: uuid.UUID
-    source: str
 
 
 # Properties to receive on item update
@@ -35,7 +34,6 @@ class ImportSessionInDBBase(ImportSessionBase):
     user_id: uuid.UUID
     portfolio_id: uuid.UUID
     file_path: str
-    source: str
     parsed_file_path: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
