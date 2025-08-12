@@ -100,7 +100,6 @@ The application is fully containerized. Please refer to the main **README.md** f
 
 ## 7. Known Issues & Next Steps
 
-*   **Failing E2E Test:** The test `should automatically use the created alias for subsequent imports` in `data-import-mapping.spec.ts` is failing with a timeout. This is the immediate next priority and requires debugging. See Bug ID `2025-08-12-03` for details.
 *   **External API Dependency in E2E Tests:** The E2E tests have a dependency on the live `yfinance` API for the "create new asset" flow. This has been partially mitigated by adding mock data for specific test tickers, but a broader dependency remains. For future hardening, this should be fully mocked.
 *   **Limited Mock Financial Data:** The mock `FinancialDataService` only contains data for a few specific tickers. This may need to be expanded for more comprehensive manual testing.
 
