@@ -216,7 +216,7 @@ def test_get_import_session_preview(
     response = client.post(
         f"/api/v1/import-sessions/{parsed_import_session.id}/preview",
         headers=auth_headers,
-        json={},
+        json=[],
     )
     assert response.status_code == 200
     data = response.json()
@@ -242,7 +242,7 @@ def test_get_import_session_preview_unauthorized(
     response = client.post(
         f"/api/v1/import-sessions/{parsed_import_session.id}/preview",
         headers=auth_headers,
-        json={},
+        json=[],
     )
     assert response.status_code == 403
 
@@ -454,7 +454,7 @@ def test_get_import_session_preview_with_duplicate(
     response = client.post(
         f"/api/v1/import-sessions/{session_in.id}/preview",
         headers=auth_headers,
-        json={},
+        json=[],
     )
     assert response.status_code == 200
     data = response.json()
@@ -507,7 +507,7 @@ def test_get_import_session_preview_with_invalid_symbol(
     response = client.post(
         f"/api/v1/import-sessions/{session_in.id}/preview",
         headers=auth_headers,
-        json={},
+        json=[],
     )
     assert response.status_code == 200
     data = response.json()
