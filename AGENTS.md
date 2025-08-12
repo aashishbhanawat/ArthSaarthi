@@ -86,7 +86,7 @@ This requires running the backend and frontend servers in separate processes.
 
 **Terminal 1: Start Backend Server (for E2E)**
 ```bash
-(cd backend && python -m dotenv -f .env.test run -- uvicorn app.main:app --host 127.0.0.1 --port 8000)
+(cd backend && python -m dotenv -f .env.test run -- uvicorn app.main:app --host 127.0.0.1 --port 8001)
 ```
 
 **Terminal 2: Start Frontend Server (for E2E)**
