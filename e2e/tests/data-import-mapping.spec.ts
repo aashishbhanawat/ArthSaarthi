@@ -33,14 +33,17 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         expect(standardUserCreateResponse.ok()).toBeTruthy();
     });
 
-    test('should allow a user to map an unrecognized symbol and commit the transaction', async ({ page }) => {
-        // 1. Setup: Login and create a portfolio and a target asset
+    test.beforeEach(async ({ page }) => {
+        // Login as the standard user before each test.
         await page.goto('/');
         await page.getByLabel('Email address').fill(testUser.email);
         await page.getByLabel('Password').fill(testUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    });
 
+    test('should allow a user to map an unrecognized symbol and commit the transaction', async ({ page }) => {
+        // 1. Setup: Create a portfolio and a target asset
         await page.getByRole('link', { name: 'Portfolios' }).click();
         await page.getByRole('button', { name: 'Create New Portfolio' }).click();
         await page.getByLabel('Portfolio Name').fill(portfolioName);

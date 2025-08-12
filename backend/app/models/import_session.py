@@ -18,6 +18,7 @@ class ImportSession(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     file_name = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
+    source = Column(String, nullable=False)
     parsed_file_path = Column(String, nullable=True)
     error_message = Column(String, nullable=True)
     status = Column(String, nullable=False, default="UPLOADED")
