@@ -69,6 +69,11 @@ The backend tests will use the `test.db` SQLite database file. The frontend test
 
 ```bash
 # Backend Tests
+# To run with SQLite (recommended for sandboxed environments):
+(cd backend && FORCE_SQLITE_TEST=true python -m dotenv -f .env.test run -- pytest -v)
+
+# To run with PostgreSQL (for local development):
+# - Ensure your `.env.test` file has the correct `DATABASE_URL` for your PostgreSQL instance.
 (cd backend && python -m dotenv -f .env.test run -- pytest -v)
 
 # Frontend Tests

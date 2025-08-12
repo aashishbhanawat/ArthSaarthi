@@ -11,7 +11,6 @@
 # These are loaded by docker-compose but should never be in version control.
 .env
 backend/.env
-backend/uploads/
 frontend/.env
 .env.test
 .env.local
@@ -34,6 +33,7 @@ dist/
 # Test artifacts
 **/test.db
 .coverage
+uploads/
 
 # Frontend
 frontend/dist/

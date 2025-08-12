@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Generator
 
 import pytest
@@ -29,9 +30,6 @@ def test_database_url() -> str:
     Yields the test database URL.
     """
     yield get_test_database_url()
-
-
-import os
 
 
 @pytest.fixture(scope="session", autouse=True)
