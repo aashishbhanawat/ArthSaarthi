@@ -213,9 +213,10 @@ def test_get_import_session_preview(
     user, password = normal_user
     auth_headers = get_auth_headers(user.email, password)
 
-    response = client.get(
+    response = client.post(
         f"/api/v1/import-sessions/{parsed_import_session.id}/preview",
         headers=auth_headers,
+        json={},
     )
     assert response.status_code == 200
     data = response.json()
@@ -238,9 +239,10 @@ def test_get_import_session_preview_unauthorized(
     user, password = other_user
     auth_headers = get_auth_headers(user.email, password)
 
-    response = client.get(
+    response = client.post(
         f"/api/v1/import-sessions/{parsed_import_session.id}/preview",
         headers=auth_headers,
+        json={},
     )
     assert response.status_code == 403
 
@@ -261,7 +263,9 @@ def test_commit_import_session_success(
         schemas.ParsedTransaction(**row) for _, row in df.iterrows()
     ]
     commit_payload = {
-        "transactions_to_commit": [tx.dict() for tx in transactions_to_commit],
+        "transactions_to_commit": [
+            tx.model_dump() for tx in transactions_to_commit
+        ],
         "aliases_to_create": [],
     }
 
@@ -308,7 +312,9 @@ def test_commit_import_session_asset_not_found(
         )
     ]
     commit_payload = {
-        "transactions_to_commit": [tx.dict() for tx in transactions_to_commit],
+        "transactions_to_commit": [
+            tx.model_dump() for tx in transactions_to_commit
+        ],
         "aliases_to_create": [],
     }
 
@@ -445,8 +451,10 @@ def test_get_import_session_preview_with_duplicate(
     db.refresh(session_in)
 
     # 3. Call the preview endpoint
-    response = client.get(
-        f"/api/v1/import-sessions/{session_in.id}/preview", headers=auth_headers
+    response = client.post(
+        f"/api/v1/import-sessions/{session_in.id}/preview",
+        headers=auth_headers,
+        json={},
     )
     assert response.status_code == 200
     data = response.json()
@@ -496,8 +504,10 @@ def test_get_import_session_preview_with_invalid_symbol(
     db.refresh(session_in)
 
     # Call the preview endpoint
-    response = client.get(
-        f"/api/v1/import-sessions/{session_in.id}/preview", headers=auth_headers
+    response = client.post(
+        f"/api/v1/import-sessions/{session_in.id}/preview",
+        headers=auth_headers,
+        json={},
     )
     assert response.status_code == 200
     data = response.json()
