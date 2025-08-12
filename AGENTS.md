@@ -43,10 +43,11 @@ CORS_ORIGINS=http://localhost:3000,http://localhost,http://127.0.0.1
 ```
 
 **3. Create `frontend/.env.local`**
-Use `create_file_with_block` with the following content:
+Use `create_file_with_block` with the following content. This configures the frontend to proxy API requests to the local backend and to bind the server to the local interface.
 ```
 # frontend/.env.local
-VITE_API_PROXY_TARGET=http://localhost:8000
+VITE_API_PROXY_TARGET=http://localhost:8001
+VITE_DEV_SERVER_HOST=127.0.0.1
 ```
 
 ## 2. Running All Checks
@@ -95,7 +96,9 @@ This requires running the backend and frontend servers in separate processes.
 ```
 
 **Terminal 3: Run E2E Tests**
+Set the `E2E_BASE_URL` for the Playwright tests to point to the local frontend server.
 ```bash
+export E2E_BASE_URL='http://localhost:3000'
 (cd e2e && npx playwright test)
 ```
 

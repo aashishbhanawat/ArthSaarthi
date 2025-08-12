@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
-      host: "0.0.0.0", // This is required for Docker
+      host: env.VITE_DEV_SERVER_HOST || "0.0.0.0", // This is required for Docker
       port: 3000, // Explicitly set the port to 3000
       allowedHosts: [
         "frontend",
