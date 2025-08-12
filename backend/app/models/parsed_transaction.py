@@ -1,10 +1,16 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, Boolean, Column, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
+from app.db.custom_types import UUID
+from app.db.utils import get_db_type
+
+if get_db_type() == "postgresql":
+    from sqlalchemy.dialects.postgresql import JSONB
+else:
+    JSONB = JSON
 
 
 class ParsedTransaction(Base):
