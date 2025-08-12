@@ -7,7 +7,7 @@ const adminUser = {
 
 async function globalSetup() {
   const requestContext = await request.newContext({
-    baseURL: 'http://frontend:3000',
+    baseURL: 'http://backend:8000',
   });
 
   // 1. Wait for the backend to be ready by retrying the reset-db call

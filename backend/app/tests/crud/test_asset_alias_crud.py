@@ -27,7 +27,7 @@ def test_create_and_get_asset_alias(db: Session) -> None:
 
     # 3. Retrieve the alias using the new method
     retrieved_alias = crud.asset_alias.get_by_alias(
-        db=db, alias_symbol=alias_symbol, source="test"
+        db=db, alias_symbol=alias_symbol
     )
 
     # 4. Assertions
@@ -43,7 +43,7 @@ def test_get_asset_alias_not_found(db: Session) -> None:
     """
     # 1. Attempt to retrieve an alias that does not exist
     retrieved_alias = crud.asset_alias.get_by_alias(
-        db=db, alias_symbol="NONEXISTENTALIAS", source="test"
+        db=db, alias_symbol="NONEXISTENTALIAS"
     )
 
     # 2. Assertion

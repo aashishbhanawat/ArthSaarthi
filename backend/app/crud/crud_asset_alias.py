@@ -9,13 +9,11 @@ from app.schemas.asset_alias import AssetAliasCreate
 
 class CRUDAssetAlias(CRUDBase[AssetAlias, AssetAliasCreate, AssetAliasCreate]):
     def get_by_alias(
-        self, db: Session, *, alias_symbol: str, source: str
+        self, db: Session, *, alias_symbol: str
     ) -> Optional[AssetAlias]:
         return (
             db.query(self.model)
-            .filter(
-                self.model.alias_symbol == alias_symbol, self.model.source == source
-            )
+            .filter(self.model.alias_symbol == alias_symbol)
             .first()
         )
 
