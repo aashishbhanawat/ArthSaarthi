@@ -180,3 +180,41 @@ def get_portfolio_analytics(db: Session, portfolio_id: int) -> AnalyticsResponse
 ### Step 3: Response & Schema Validation (`schemas/analytics.py`)
 
 The calculated values are packaged into an `AnalyticsResponse` Pydantic model. FastAPI uses this model to serialize the data into a JSON response and send it back to the frontend with a `200 OK` status code.
+
+---
+
+## 4. Full-Stack Flow: Automated Data Import
+
+This trace follows the user journey for importing a CSV of transactions.
+
+### Step 1: Frontend - Upload (`DataImportPage.tsx` & `useImport.ts`)
+
+1.  The user selects a portfolio, a statement type (e.g., "Zerodha Tradebook"), and a CSV file from their computer.
+2.  On submission, the `useCreateImportSession` mutation hook (from `useImport.ts`) is called.
+3.  This hook calls the `createImportSession` function in `importApi.ts`, which sends a `multipart/form-data` POST request to the backend.
+4.  On a successful response, the user is automatically navigated to the preview page using the `sessionId` returned from the backend.
+
+### Step 2: Backend - Parsing & Staging (`endpoints/import_sessions.py`)
+
+The `POST /api/v1/import-sessions/` endpoint orchestrates the first half of the import process.
+
+1.  **File Storage:** The uploaded file is securely saved to a temporary directory.
+2.  **Parser Selection:** The `source_type` from the form data is passed to a `ParserFactory`. The factory returns the appropriate parser instance (e.g., `ZerodhaParser`, `IciciParser`).
+3.  **Parsing:** The `parser.parse(df)` method is called, which converts the CSV data into a list of `ParsedTransaction` Pydantic models.
+4.  **Sorting:** The list of `ParsedTransaction` objects is immediately sorted by date, ticker, and type (BUY then SELL). This is a critical step to ensure data integrity and prevent commit failures from out-of-order source data.
+5.  **Staging:** The sorted list of transactions is saved to a `.parquet` file, a highly efficient binary format. The path to this file is stored in the `ImportSession` database record. The session status is updated to `PARSED`.
+
+### Step 3: Frontend - Preview & Selection (`ImportPreviewPage.tsx`)
+
+1.  The preview page uses the `sessionId` from the URL to call the `useImportSessionPreview` query hook.
+2.  This hook fetches data from the `GET /api/v1/import-sessions/{sessionId}/preview` backend endpoint.
+3.  The backend reads the staged `.parquet` file, compares each transaction against the database to categorize it (`valid_new`, `duplicate`, `invalid`), and returns the categorized data.
+4.  The frontend renders the transactions in collapsible sections. The user can select which of the `valid_new` transactions they wish to commit using checkboxes.
+
+### Step 4: Backend - Commit (`endpoints/import_sessions.py`)
+
+1.  When the user clicks "Commit", the frontend calls the `useCommitImportSession` mutation hook.
+2.  This sends a `POST` request to `POST /api/v1/import-sessions/{sessionId}/commit` with a payload containing the list of transactions the user selected.
+3.  The backend endpoint iterates through the selected transactions. For each one, it creates a `Transaction` database record using `crud.transaction.create_with_portfolio`.
+4.  The entire operation is wrapped in a single database transaction. If all transactions are created successfully, the session status is updated to `COMPLETED` and the changes are committed.
+5.  If any error occurs, the entire transaction is rolled back, ensuring the database is not left in a partially updated state.

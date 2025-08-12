@@ -43,8 +43,12 @@ services:
     container_name: pms-backend
     restart: unless-stopped
     command: /app/entrypoint.sh
+    volumes:
+      - ./backend:/app
     env_file:
       - ./backend/.env
+    environment:
+      - PYTHONPATH=/app
     networks:
       - pms_network
     depends_on:

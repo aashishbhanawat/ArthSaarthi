@@ -1,9 +1,7 @@
 export interface Asset {
-    id: number;
-    ticker_symbol: string;
+    id: string;
     name: string;
+    ticker_symbol: string;
     asset_type: string;
-    currency: string;
-    exchange: string;
-    isin: string;
+    isin: string | null;
 }

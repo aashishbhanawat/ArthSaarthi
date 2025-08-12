@@ -225,3 +225,43 @@ This guide documents common setup and runtime issues and their solutions.
         module.exports = new Proxy({}, { get: () => () => React.createElement('div') });
         ```
     4.  **Update `package.json`.** Ensure the `test` script points to the new configuration file: `"test": "jest --config jest.config.cjs"`.
+
+---
+
+### 13. Data Import Commit Fails
+
+*   **Symptom:** You upload a CSV file, the preview looks correct, but when you click "Commit Transactions", the process fails.
+*   **Cause:** The most common cause is that the transactions in the source CSV file are not in the correct chronological order. If a 'SELL' transaction for an asset appears in the file *before* its corresponding 'BUY' transaction, the backend validation will correctly reject the 'SELL' because it would result in a negative holding.
+*   **Solution:** The application logic has been updated to automatically sort all parsed transactions by date, ticker, and then type (BUY before SELL) before they are committed. This should resolve most issues. If you are still encountering errors, ensure your CSV file has the correct columns required by the selected parser (e.g., Zerodha, ICICI Direct).
+
+---
+
+### 14. Proactive Error Avoidance Plan
+
+*   **Objective:** To formalize a set of checks to avoid common environmental and access-related errors experienced in previous sessions.
+
+*   **Disk Space Issues (`df -h`)**
+    *   **Problem:** Previous sessions have failed due to "out of space" errors, especially when running tests or building large Docker images.
+    *   **Mitigation:** Before running any potentially disk-intensive command (like `docker-compose up --build`, `npm install`, or `pytest`), first check the available disk space.
+        ```bash
+        df -h
+        ```
+    *   **Action:** If disk space is low (e.g., usage is > 90%), proactively clean up old Docker images, volumes, and build caches (`docker system prune -a -f`) or other temporary files before proceeding. When running containers, use the `--rm` flag where appropriate (e.g., `docker-compose run --rm test`) to ensure they are removed after execution.
+
+*   **Access/Path Failures (`pwd`, `ls -l`)**
+    *   **Problem:** Commands have failed because they were run from the wrong directory, or because a file or directory did not have the expected permissions.
+    *   **Mitigation:** Before running a command that depends on the current working directory or specific file paths, always verify your location and the existence/permissions of the target files.
+        ```bash
+        pwd
+        ls -l path/to/your/file
+        ```
+    *   **Action:** Ensure you are in the project's root directory before running `docker-compose` commands. Double-check that any file paths passed as arguments are correct and that the files are readable.
+
+*   **Docker Compose Pull Failures**
+    *   **Problem:** `docker-compose up --build` can sometimes fail if it has trouble pulling a base image from a remote registry.
+    *   **Mitigation:** To improve reliability, you can pre-pull the necessary images before running the main build command.
+        ```bash
+        # You can specify multiple services
+        docker-compose pull db backend frontend
+        ```
+    *   **Action:** If a pull fails, running `docker-compose pull <service_name>` directly can often provide a more specific error message than the generic `up` command. This also helps in caching the images locally for faster and more reliable subsequent builds.
