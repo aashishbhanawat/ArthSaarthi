@@ -93,7 +93,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         *,
         portfolio_id: uuid.UUID,
         asset_id: uuid.UUID,
-        transaction_date: date,
+        transaction_date: datetime,
         transaction_type: str,
         quantity: Decimal,
         price_per_unit: Decimal,
@@ -103,7 +103,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             .filter(
                 self.model.portfolio_id == portfolio_id,
                 self.model.asset_id == asset_id,
-                cast(self.model.transaction_date, Date) == transaction_date,
+                self.model.transaction_date == transaction_date,
                 self.model.transaction_type == transaction_type,
                 self.model.quantity == quantity,
                 self.model.price_per_unit == price_per_unit,

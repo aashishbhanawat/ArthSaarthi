@@ -18,8 +18,10 @@ log = logging.getLogger(__name__)
 
 def get_test_database_url():
     """
-    Generates a unique test database URL.
+    Generates a test database URL based on the DATABASE_TYPE.
     """
+    if settings.DATABASE_TYPE == "sqlite":
+        return "sqlite:///:memory:"  # Use in-memory SQLite database for tests
     return str(settings.DATABASE_URL)
 
 
@@ -35,27 +37,42 @@ def test_database_url() -> str:
 def setup_test_database(test_database_url: str):
     """
     Creates and drops the test database for the test session.
+    For SQLite, this is a no-op as the in-memory database is created
+    when the first connection is established.
     """
-    log.info("*******************************************************************")
-    log.info(f"--- Setting up test database: {test_database_url} ---")
-    if database_exists(test_database_url):
-        log.info("--- Database exists, dropping. ---")
+    if "sqlite" in test_database_url:
+        # For in-memory SQLite, no setup/teardown is needed at this level.
+        # The database is created and destroyed with the engine connection.
+        log.info("--- Using in-memory SQLite database. No setup needed. ---")
+        yield
+        log.info("--- Tearing down in-memory SQLite database. ---")
+    else:
+        log.info("*******************************************************************")
+        log.info(f"--- Setting up test database: {test_database_url} ---")
+        if database_exists(test_database_url):
+            log.info("--- Database exists, dropping. ---")
+            drop_database(test_database_url)
+        create_database(test_database_url)
+        log.info("--- Database created successfully. ---")
+        yield
+        log.info("--- Tearing down test database. ---")
+        log.info("*******************************************************************")
         drop_database(test_database_url)
-    create_database(test_database_url)
-    log.info("--- Database created successfully. ---")
-    yield
-    log.info("--- Tearing down test database. ---")
-    log.info("*******************************************************************")
-    drop_database(test_database_url)
 
 
 @pytest.fixture(scope="session")
 def engine(test_database_url: str):
     """
     Yields a SQLAlchemy engine for the test database.
+    Handles special connection arguments for SQLite.
     """
     log.info("--- Creating Engine ---")
-    engine = create_engine(test_database_url)
+    if "sqlite" in test_database_url:
+        engine = create_engine(
+            test_database_url, connect_args={"check_same_thread": False}
+        )
+    else:
+        engine = create_engine(test_database_url)
     yield engine
 
 

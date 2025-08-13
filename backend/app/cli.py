@@ -316,5 +316,19 @@ def clear_assets_command(
         typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
 
 
+@app.command("init-db")
+def init_db_command():
+    """Initializes the database by creating all tables."""
+    from app.db.base import Base
+    from app.db.session import engine
+
+    typer.echo("Initializing database...")
+    try:
+        Base.metadata.create_all(bind=engine)
+        typer.secho("Database initialized successfully.", fg=typer.colors.GREEN)
+    except Exception as e:
+        typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
+
+
 if __name__ == "__main__":
     app()

@@ -15,7 +15,6 @@ services:
 
   test:
     build: ./backend
-    image: pms_backend:latest
     container_name: pms-test
     command: ["pytest", "-v"]
     env_file:

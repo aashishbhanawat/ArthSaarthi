@@ -1,4 +1,6 @@
-from pydantic import PostgresDsn
+from typing import Optional
+
+from pydantic import validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,7 +9,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     API_V1_STR: str = "/api/v1"
-    DATABASE_URL: PostgresDsn
+    DATABASE_TYPE: str = "postgres"
+    DATABASE_URL: Optional[str] = None
     REDIS_URL: str = "redis://redis:6379/0"
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "/app/uploads"
@@ -19,7 +22,16 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000"
     DEBUG: bool = False
 
-    model_config = SettingsConfigDict(case_sensitive=True)
+    @validator("DATABASE_URL", pre=True, always=True)
+    def assemble_db_connection(cls, v, values):
+        if isinstance(v, str):
+            return v
+        if values.get("DATABASE_TYPE") == "sqlite":
+            return "sqlite:///./arthsaarthi.db"
+        # Default to PostgreSQL if not specified
+        return "postgresql://user:password@db:5432/app"
+
+    model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
 
 
 settings = Settings()
