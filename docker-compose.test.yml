@@ -7,22 +7,15 @@ services:
     ports:
       - "5433:5432"
 
-  backend:
-    env_file:
-      - ./backend/.env.test
-    environment:
-      - PYTHONPATH=/app
-
   test:
     build: ./backend
     container_name: pms-test
     command: ["pytest", "-v"]
-    env_file:
-      - ./backend/.env.test
     volumes:
       - ./backend:/app
     environment:
       - PYTHONPATH=/app
+      - DATABASE_TYPE=postgres
     networks:
       - pms_network
     depends_on:
