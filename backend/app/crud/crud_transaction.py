@@ -1,10 +1,10 @@
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import List
 
 from fastapi import HTTPException, status
-from sqlalchemy import Date, cast, func
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
