@@ -14,4 +14,6 @@ python -m app.cli seed-assets
 
 # Start the application using exec to replace the shell process with the uvicorn process
 echo "Starting Uvicorn server..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+# The --host 0.0.0.0 is important to make the server accessible from outside the container
+# The "$@" allows passing additional arguments to the uvicorn command
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000 "$@"

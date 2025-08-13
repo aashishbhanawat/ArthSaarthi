@@ -1,0 +1,44 @@
+# Stage 1: Builder
+# This stage installs all the python dependencies in a virtual environment.
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Create a virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: Final Image
+# This stage creates the final, lean image.
+FROM python:3.11-slim
+
+# Create a non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser
+
+WORKDIR /app
+
+# Copy the virtual environment from the builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Copy the application code
+COPY . .
+
+# Set permissions for the appuser
+RUN chown -R appuser:appuser /app
+
+# Set the PATH to include the virtual environment's binaries
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Switch to the non-root user
+USER appuser
+
+# Expose the port the app runs on
+EXPOSE 8000
+
+# Set the entrypoint for the container.
+# This will execute the entrypoint.sh script when the container starts.
+ENTRYPOINT ["/app/entrypoint.sh"]
