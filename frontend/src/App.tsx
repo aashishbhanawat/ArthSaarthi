@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import NavBar from './components/NavBar';
@@ -9,6 +9,7 @@ import PortfolioPage from './pages/Portfolio/PortfolioPage';
 import PortfolioDetailPage from './pages/Portfolio/PortfolioDetailPage';
 import DataImportPage from './pages/Import/DataImportPage';
 import ImportPreviewPage from './pages/Import/ImportPreviewPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -49,11 +50,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
         <AppRoutes />
-      </Router>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -7,6 +7,13 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.config import settings
 from app.db.base_class import Base
+from app.models.asset import Asset  # noqa: F401
+from app.models.asset_alias import AssetAlias  # noqa: F401
+from app.models.import_session import ImportSession  # noqa: F401
+from app.models.parsed_transaction import ParsedTransaction  # noqa: F401
+from app.models.portfolio import Portfolio  # noqa: F401
+from app.models.transaction import Transaction  # noqa: F401
+from app.models.user import User  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -24,7 +31,6 @@ sys.path.insert(0, dirname(dirname(abspath(__file__))))
 # --- Model Imports ---
 # All application models are imported here for Alembic's 'autogenerate'
 # support to detect schema changes.
-
 # ---------------------
 
 # add your model's MetaData object here

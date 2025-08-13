@@ -23,7 +23,7 @@ const queryClient = new QueryClient();
 const renderComponent = () => {
     return render(
         <QueryClientProvider client={queryClient}>
-            <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <MemoryRouter>
                 <DataImportPage />
             </MemoryRouter>
         </QueryClientProvider>
@@ -46,6 +46,7 @@ describe('DataImportPage', () => {
 
         expect(screen.getByText('Import Transactions')).toBeInTheDocument();
         expect(screen.getByLabelText('Select Portfolio')).toBeInTheDocument();
+        expect(screen.getByLabelText('Statement Type')).toBeInTheDocument();
         expect(screen.getByText('Upload a file')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Upload and Preview' })).toBeInTheDocument();
     });
@@ -83,15 +84,20 @@ describe('DataImportPage', () => {
 
         renderComponent();
 
-        // Select portfolio and file
+        // Select portfolio, source type and file
         fireEvent.change(screen.getByLabelText('Select Portfolio'), { target: { value: '1' } });
+        fireEvent.change(screen.getByLabelText('Statement Type'), { target: { value: 'Zerodha Tradebook' } });
         const file = new File(['test'], 'test.csv', { type: 'text/csv' });
         fireEvent.change(screen.getByLabelText('Upload a file'), { target: { files: [file] } });
 
         // Submit form
         fireEvent.click(screen.getByRole('button', { name: 'Upload and Preview' }));
 
-        expect(mockMutate).toHaveBeenCalledWith({ portfolioId: '1', file: file });
+        expect(mockMutate).toHaveBeenCalledWith({
+            portfolioId: '1',
+            source_type: 'Zerodha Tradebook',
+            file: file,
+        });
 
         // Check for navigation
         await waitFor(() => {

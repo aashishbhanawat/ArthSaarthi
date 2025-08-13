@@ -135,3 +135,19 @@ A final, intensive effort was made to stabilize all test suites (E2E, backend, f
 *   **Unit Test Debt is Real:** Component refactoring creates test debt. It's crucial to budget time to update or rewrite unit tests to keep them valuable. The "rewrite from scratch" approach for a broken suite can be more efficient than trying to patch dozens of individual failures.
 
 ---
+
+## 2025-08-11: Data Integrity in Batch Processing
+
+### 1. What Happened?
+
+During manual E2E testing of the data import feature, a critical bug was found: if a user's source CSV file contained a 'SELL' transaction row before the corresponding 'BUY' transaction row, the import would fail. The backend was processing transactions in the exact order they appeared in the file, leading to a validation error when it tried to sell an asset that hadn't been bought yet.
+
+### 2. How Did the Process Help?
+
+*   **User Feedback is Key:** This bug was not caught by automated unit or integration tests, as they used perfectly ordered test data. It was discovered through manual E2E testing that simulated a real-world, imperfect user file. This highlights the value of manual testing for uncovering edge cases related to data quality.
+*   **Targeted Fix:** The fix was not to change the individual parsers, but to address the problem at the orchestration layer. By sorting the list of all parsed transactions *after* parsing and *before* committing, we ensure that the business logic always operates on a correctly ordered set of data, regardless of the source file's quality.
+
+### 3. Outcome & New Learning
+
+*   The data import feature is now more robust and resilient to common real-world data issues.
+*   **Data Integrity over Source Order:** When processing financial transactions in a batch, never assume the source data is correctly ordered. The application must enforce logical order (chronological, by asset, etc.) before committing any data to the database to ensure data integrity. This principle is fundamental to any batch processing system.

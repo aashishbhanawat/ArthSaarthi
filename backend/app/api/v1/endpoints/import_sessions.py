@@ -4,31 +4,29 @@ import shutil
 import uuid
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
 import pandas as pd
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.core import dependencies as deps
 from app.core.config import settings
 from app.schemas.msg import Msg
-from app.services.import_parsers.csv_parser import CsvParser
+from app.services.import_parsers import parser_factory
 
 router = APIRouter()
 log = logging.getLogger(__name__)
-
-
-def get_parser(file_name: str):
-    # if "zerodha" in file_name.lower():
-    #     return ZerodhaParser()
-    # elif "icici" in file_name.lower():
-    #     return IciciParser()
-    # elif "cas" in file_name.lower():
-    #     return MfCasParser()
-    # else:
-    return CsvParser()  # Default to generic CSV parser
 
 
 @router.post(
@@ -39,12 +37,13 @@ async def create_import_session(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_user),
     portfolio_id: uuid.UUID = Form(...),
+    source_type: str = Form(...),
     file: UploadFile = File(...),
 ) -> Any:
     """
     Create new import session.
-    This endpoint handles the file upload for a specific portfolio, saves it securely,
-    parses it, and creates a session record in the database.
+    This endpoint handles the file upload, saves it, selects the correct parser
+    based on the source_type, parses the data, and stores it for review.
     """
     # 0. Verify user has access to the portfolio
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
@@ -58,11 +57,8 @@ async def create_import_session(
     # 1. Securely save the uploaded file
     upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
     upload_dir.mkdir(exist_ok=True)
-
-    # Sanitize filename and create a unique path to prevent attacks.
     sanitized_filename = os.path.basename(file.filename)
     temp_file_path = upload_dir / f"{uuid.uuid4()}_{sanitized_filename}"
-
     try:
         with temp_file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -72,47 +68,69 @@ async def create_import_session(
     finally:
         file.file.close()
 
-    # 2. Create the initial ImportSession record with "UPLOADED" status
-    parser = get_parser(file.filename)
+    # 2. Create the initial ImportSession record
     import_session_in = schemas.ImportSessionCreate(
         file_name=file.filename,
         file_path=str(temp_file_path),
         portfolio_id=portfolio_id,
+        source=source_type,
         status="UPLOADED",
     )
-
     import_session = crud.import_session.create_with_owner(
         db=db, obj_in=import_session_in, owner_id=current_user.id
     )
 
-    # 3. Select and use the appropriate parser
+    # 3. Parse the file using the appropriate strategy
     try:
-        parsed_data = parser.parse(str(temp_file_path))
-        if parsed_data.empty:
-            # Update status to FAILED if parsing is unsuccessful
+        # Load the uploaded file into a pandas DataFrame
+        # This is a simple approach; more complex files might need different readers
+        df = pd.read_csv(temp_file_path)
+
+        # Get the correct parser from the factory
+        parser = parser_factory.get_parser(source_type)
+
+        # Parse the dataframe into a list of Pydantic models
+        parsed_transactions = parser.parse(df)
+
+        # Sort transactions: by date, then ticker, then type (BUY before SELL)
+        parsed_transactions.sort(
+            key=lambda x: (
+                x.transaction_date,
+                x.ticker_symbol,
+                0 if x.transaction_type.upper() == "BUY" else 1,
+            )
+        )
+
+        if not parsed_transactions:
             crud.import_session.update(
-                db, db_obj=import_session, obj_in={"status": "FAILED"}
+                db,
+                db_obj=import_session,
+                obj_in={
+                    "status": "FAILED",
+                    "error_message": "No transactions found in file.",
+                },
             )
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    "Failed to parse file. The file might be empty or in an"
-                    " unsupported format."
-                ),
+                detail="Failed to parse file. No valid transactions were found.",
             )
     except Exception as e:
         log.error(f"Error parsing file {temp_file_path}: {e}")
         crud.import_session.update(
-            db, db_obj=import_session, obj_in={"status": "FAILED"}
+            db,
+            db_obj=import_session,
+            obj_in={"status": "FAILED", "error_message": str(e)},
         )
         raise HTTPException(
             status_code=400, detail=f"An error occurred during file parsing: {e}"
         )
 
-    # 4. Save the parsed data to a permanent, efficient format (e.g., Parquet)
+    # 4. Save the list of Pydantic models to a Parquet file
+    # Convert list of Pydantic models to a DataFrame for efficient storage
+    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_transactions])
     parsed_file_name = f"{import_session.id}.parquet"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_data.to_parquet(parsed_file_path)
+    parsed_df.to_parquet(parsed_file_path)
 
     # 5. Update the session with the parsed file path and "PARSED" status
     import_session_update = schemas.ImportSessionUpdate(
@@ -145,14 +163,16 @@ def get_import_session(
     return import_session
 
 
-@router.get("/{session_id}/preview", response_model=list[dict[str, Any]])
+@router.post("/{session_id}/preview", response_model=schemas.ImportSessionPreview)
 def get_import_session_preview(
     session_id: uuid.UUID,
+    aliases_to_create: List[schemas.AssetAliasCreate] = Body(default=[]),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_user),
-):
+) -> Any:
     """
-    Get a preview of the parsed data for an import session.
+    Get a categorized preview of the parsed data for an import session,
+    identifying new, duplicate, and invalid transactions.
     """
     import_session = crud.import_session.get(db=db, id=session_id)
     if not import_session:
@@ -164,19 +184,79 @@ def get_import_session_preview(
 
     try:
         df = pd.read_parquet(import_session.parsed_file_path)
-        return df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not read parsed data: {e}")
+
+    valid_new: list[schemas.ParsedTransaction] = []
+    duplicates: list[schemas.ParsedTransaction] = []
+    invalid: list[dict] = []
+    needs_mapping: list[schemas.ParsedTransaction] = []
+
+    # Create a temporary map of pending aliases for quick lookup
+    pending_alias_map = {
+        alias.alias_symbol: alias.asset_id for alias in aliases_to_create
+    }
+
+    for _, row in df.iterrows():
+        row_data = row.to_dict()
+        parsed_transaction = schemas.ParsedTransaction(**row_data)
+
+        # 1. Asset Identification
+        asset = crud.asset.get_by_ticker(db, ticker_symbol=row["ticker_symbol"])
+        if not asset:
+            # Check pending aliases from the current session first
+            if row["ticker_symbol"] in pending_alias_map:
+                asset_id = pending_alias_map[row["ticker_symbol"]]
+                asset = crud.asset.get(db, id=asset_id)
+            else:
+                # Then check persisted aliases
+                asset_alias = crud.asset_alias.get_by_alias(
+                    db,
+                    alias_symbol=row["ticker_symbol"],
+                    source=import_session.source,
+                )
+                if asset_alias:
+                    asset = asset_alias.asset
+        if not asset:
+                # If no asset or alias is found, it needs user mapping
+                needs_mapping.append(parsed_transaction)
+                continue
+
+        # 2. Duplicate Detection
+        existing_transaction = crud.transaction.get_by_details(
+            db,
+            portfolio_id=import_session.portfolio_id,
+            asset_id=asset.id,
+            transaction_date=pd.to_datetime(row["transaction_date"]).date(),
+            transaction_type=row["transaction_type"].upper(),
+            quantity=Decimal(str(row["quantity"])),
+            price_per_unit=Decimal(str(row["price_per_unit"])),
+            fees=Decimal(str(row.get("fees", 0))),
+        )
+
+        if existing_transaction:
+            duplicates.append(parsed_transaction)
+        else:
+            valid_new.append(parsed_transaction)
+
+    return schemas.ImportSessionPreview(
+        valid_new=valid_new,
+        duplicates=duplicates,
+        invalid=invalid,
+        needs_mapping=needs_mapping,
+    )
 
 
 @router.post("/{session_id}/commit", response_model=Msg)
 def commit_import_session(
     session_id: uuid.UUID,
+    commit_payload: schemas.ImportSessionCommit,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_user),
 ):
     """
-    Commit the transactions from an import session to the portfolio.
+    Commit the selected transactions from an import session to the portfolio.
+    This also handles the creation of new asset aliases.
     """
     import_session = crud.import_session.get(db=db, id=session_id)
     if not import_session:
@@ -188,96 +268,50 @@ def commit_import_session(
             status_code=400,
             detail=f"Cannot commit session with status '{import_session.status}'",
         )
-    if (
-        not import_session.parsed_file_path
-        or not Path(import_session.parsed_file_path).exists()
-    ):
-        raise HTTPException(
-            status_code=400, detail="No parsed file found for this session"
-        )
 
     try:
-        df = pd.read_parquet(import_session.parsed_file_path)
+        # 1. Create any new asset aliases that the user has defined.
+        for alias_in in commit_payload.aliases_to_create:
+            crud.asset_alias.create(db, obj_in=alias_in)
 
-        # Standardize column names to avoid issues with different file formats
-        df.columns = [c.lower().replace(" ", "_") for c in df.columns]
-
-        # Define expected columns for a generic transaction import
-        required_columns = {
-            "ticker_symbol",
-            "transaction_type",
-            "quantity",
-            "price_per_unit",
-            "transaction_date",
-        }
-        if not required_columns.issubset(df.columns):
-            missing = required_columns - set(df.columns)
-            raise HTTPException(
-                status_code=400,
-                detail=f"Parsed file is missing required columns: {', '.join(missing)}",
-            )
-
+        # 2. Commit the selected transactions.
         transactions_created = 0
-        for _, row in df.iterrows():
-            # 1. Find the asset by its ticker symbol.
-            asset = crud.asset.get_by_ticker(db, ticker_symbol=row["ticker_symbol"])
-            if not asset:
-                crud.import_session.update(
-                    db,
-                    db_obj=import_session,
-                    obj_in={
-                        "status": "FAILED",
-                        "error_message": (
-                            f"Asset with ticker '{row['ticker_symbol']}' not found."
-                        ),
-                    },
-                )
-                db.commit()
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Commit failed: Asset with ticker '{row['ticker_symbol']}'"
-                        " not found. Please create it first."
-                    ),
-                )
-
-            # 2. Check for existing transaction to prevent duplicates.
-            existing_transaction = crud.transaction.get_by_details(
+        for parsed_tx in commit_payload.transactions_to_commit:
+            # Try to find asset by alias first, then by direct ticker
+            asset = None
+            asset_alias = crud.asset_alias.get_by_alias(
                 db,
-                portfolio_id=import_session.portfolio_id,
-                asset_id=asset.id,
-                transaction_date=pd.to_datetime(row["transaction_date"]).date(),
-                transaction_type=row["transaction_type"].upper(),
-                quantity=Decimal(str(row["quantity"])),
-                price_per_unit=Decimal(str(row["price_per_unit"])),
+                alias_symbol=parsed_tx.ticker_symbol,
+                source=import_session.source,
             )
-            if existing_transaction:
-                log.info(
-                    "Skipping duplicate transaction for asset %s on date %s",
-                    asset.ticker_symbol,
-                    row["transaction_date"],
+            if asset_alias:
+                asset = asset_alias.asset
+            else:
+                asset = crud.asset.get_by_ticker(
+                    db, ticker_symbol=parsed_tx.ticker_symbol
+                )
+            if not asset:
+                log.error(
+                    f"Asset '{parsed_tx.ticker_symbol}' not found during commit for "
+                    f"session {session_id}"
                 )
                 continue
 
-            # 3. Prepare the transaction data from the row.
             transaction_in = schemas.TransactionCreate(
                 asset_id=asset.id,
-                transaction_type=row["transaction_type"].upper(),
-                quantity=Decimal(str(row["quantity"])),
-                price_per_unit=Decimal(str(row["price_per_unit"])),
-                transaction_date=pd.to_datetime(row["transaction_date"]),
-                fees=Decimal(
-                    str(row.get("fees", "0.0"))
-                ),  # Handle optional fees column
+                transaction_type=parsed_tx.transaction_type.upper(),
+                quantity=Decimal(str(parsed_tx.quantity)),
+                price_per_unit=Decimal(str(parsed_tx.price_per_unit)),
+                transaction_date=pd.to_datetime(parsed_tx.transaction_date),
+                fees=Decimal(str(parsed_tx.fees)),
             )
 
-            # 4. Create the transaction using the existing CRUD method.
             crud.transaction.create_with_portfolio(
                 db=db, obj_in=transaction_in, portfolio_id=import_session.portfolio_id
             )
             transactions_created += 1
 
-        # Update session status to COMPLETED
+        # 3. Update session status to COMPLETED
         crud.import_session.update(
             db,
             db_obj=import_session,
@@ -286,21 +320,9 @@ def commit_import_session(
 
         db.commit()
 
-        if transactions_created == 0 and len(df) > 0:
-            return {
-                "msg": (
-                    f"No new transactions were committed. {len(df)} duplicate(s)"
-                    " were skipped."
-                )
-            }
-
         return {"msg": f"Successfully committed {transactions_created} transactions."}
-    except HTTPException as http_exc:
-        # Re-raise controlled HTTP exceptions (like 400 for validation)
-        # so FastAPI can handle them correctly.
-        raise http_exc
+
     except Exception as e:
-        # For any other unexpected error, rollback, log the failure, and return a 500.
         db.rollback()
         log.error(f"Failed to commit import session {session_id}: {e}")
         crud.import_session.update(

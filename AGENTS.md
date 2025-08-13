@@ -95,6 +95,11 @@ The backend tests will use the `test.db` SQLite database file. The frontend test
 
 This requires running the backend and frontend servers in separate processes.
 
+**Important**: Before running E2E tests, ensure you have a clean database.
+```bash
+rm -f backend/test.db
+```
+
 **Terminal 1: Start Redis Server**
 Ensure the Redis server is running before starting the backend.
 ```bash
@@ -102,14 +107,22 @@ Ensure the Redis server is running before starting the backend.
 sudo service redis-server start
 ```
 
+**Note on ports**: The default ports are 8001 for the backend and 3000 for the frontend. If these ports are in use on your system, you can change them. For example, to use port 8002 for the backend and 3001 for the frontend, you would need to:
+1.  Update `CORS_ORIGINS` in `backend/.env.test` to include `http://localhost:3001`.
+2.  Start the backend server with the `--port 8002` flag.
+3.  Update `VITE_API_PROXY_TARGET` in `frontend/.env.local` to `http://localhost:8002`.
+4.  The `npm run dev` command in `frontend/package.json` needs to be updated to accept a port. Or you can run `(cd frontend && npm run dev -- --port 3001)`.
+5.  Set the `E2E_BASE_URL` environment variable to `http://localhost:3001` before running the tests.
+
 **Terminal 2: Start Backend Server (for E2E)**
 ```bash
-(cd backend && python -m dotenv -f .env.test run -- uvicorn app.main:app --host 127.0.0.1 --port 8001)
+(cd backend && python -m dotenv -f .env.test run -- uvicorn app.main:app --host 127.0.0.1 --port 8001) &
 ```
 
 **Terminal 3: Start Frontend Server (for E2E)**
+To ensure all environment variables are loaded correctly, especially when running in the background, source the `.env.local` file.
 ```bash
-(cd frontend && npm run dev)
+(cd frontend && export $(grep -v '^#' .env.local | xargs) && npm run dev) &
 ```
 
 **Terminal 4: Run E2E Tests**

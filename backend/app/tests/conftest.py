@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Generator
 
 import pytest
@@ -36,40 +35,18 @@ def test_database_url() -> str:
 def setup_test_database(test_database_url: str):
     """
     Creates and drops the test database for the test session.
-    Handles both PostgreSQL and SQLite dialects.
     """
     log.info("*******************************************************************")
     log.info(f"--- Setting up test database: {test_database_url} ---")
-
-    is_sqlite = "sqlite" in test_database_url
-
-    if is_sqlite:
-        # For SQLite, the "database" is a file.
-        # We need to ensure it doesn't exist from a previous run.
-        db_file = test_database_url.split(":///")[1]
-        if os.path.exists(db_file):
-            os.remove(db_file)
-        log.info("--- Using SQLite, old database file removed. ---")
-    else:
-        # Original logic for PostgreSQL
-        if database_exists(test_database_url):
-            log.info("--- Database exists, dropping. ---")
-            drop_database(test_database_url)
-        create_database(test_database_url)
-        log.info("--- Database created successfully. ---")
-
-    yield
-
-    if is_sqlite:
-        db_file = test_database_url.split(":///")[1]
-        if os.path.exists(db_file):
-            os.remove(db_file)
-        log.info("--- Torn down SQLite database file. ---")
-    else:
-        log.info("--- Tearing down PostgreSQL test database. ---")
+    if database_exists(test_database_url):
+        log.info("--- Database exists, dropping. ---")
         drop_database(test_database_url)
-
+    create_database(test_database_url)
+    log.info("--- Database created successfully. ---")
+    yield
+    log.info("--- Tearing down test database. ---")
     log.info("*******************************************************************")
+    drop_database(test_database_url)
 
 
 @pytest.fixture(scope="session")

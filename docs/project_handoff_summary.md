@@ -1,14 +1,14 @@
 # Project Handoff Document: Personal Portfolio Management System
 
-**Version:** 1.2.0
-**Date:** 2025-08-09
+**Version:** 1.3.0
+**Date:** 2025-08-12
 **Author:** Gemini Code Assist
 
 ---
 
 ## 1. Project Overview
 
-This document marks the successful completion and stabilization of the second pilot release for the Personal Portfolio Management System (PMS), and subsequent improvements to the development process. The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
+This document provides a status update for the Personal Portfolio Management System (PMS). The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
 
 The project was developed following a rigorous, AI-assisted Agile SDLC, with a strong emphasis on automated testing, comprehensive documentation, and iterative feature implementation.
 
@@ -16,12 +16,12 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ## 2. Final Status
 
-*   **Overall Status:** **Complete & Stable**
-*   **Backend Tests:** **100% Passing** (78/78 tests)
-*   **Frontend Tests:** **100% Passing** (96 tests, 22 suites)
-*   **E2E Tests:** **100% Passing** (8/8 tests)
+*   **Overall Status:** **Stable**
+*   **Backend Tests:** **100% Passing**
+*   **Frontend Tests:** **100% Passing**
+*   **E2E Tests:** **10/10 Passing**
 
-All planned MVP features have been implemented and validated through a combination of unit, integration, and end-to-end tests. The application is stable and ready for pilot deployment or the next phase of development.
+All planned features for the current release cycle have been implemented and validated through a combination of unit, integration, and end-to-end tests. The application is stable and ready for the next phase of development.
 
 ---
 
@@ -35,7 +35,11 @@ All planned MVP features have been implemented and validated through a combinati
     *   Full CRUD functionality for portfolios and transactions.
     *   A redesigned portfolio page showing a consolidated holdings view with sorting.
     *   A **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
-*   **Automated Data Import:** A full-stack feature with a complete backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files. The MVP frontend is implemented and the entire flow is validated by a stable E2E test.
+*   **Automated Data Import (Phase 2):**
+    *   A full-stack feature with a workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
+    *   A robust parser strategy that supports generic CSVs, Zerodha Tradebooks, and ICICI Direct Tradebooks.
+    *   An advanced frontend UI with categorized previews, selective transaction committing, and on-the-fly asset alias mapping for unrecognized symbols.
+    *   Intelligent sorting of transactions to ensure data integrity regardless of source file order.
 
 ---
 
@@ -94,21 +98,21 @@ The application is fully containerized. Please refer to the main **README.md** f
 
 ---
 
-## 7. Known Issues & Technical Debt
+## 7. Known Issues & Next Steps
 
-*   **External API Dependency in E2E Tests:** The E2E tests have a dependency on the live `yfinance` API for the "create new asset" flow. This has been partially mitigated by adding mock data for specific test tickers (`XIRRTEST`), but a broader dependency remains. For future hardening, this should be fully mocked.
+*   **External API Dependency in E2E Tests:** The E2E tests have a dependency on the live `yfinance` API for the "create new asset" flow. This has been partially mitigated by adding mock data for specific test tickers, but a broader dependency remains. For future hardening, this should be fully mocked.
 *   **Limited Mock Financial Data:** The mock `FinancialDataService` only contains data for a few specific tickers. This may need to be expanded for more comprehensive manual testing.
 
 ---
 
 ## 8. Recommended Next Steps
 
-The application is in a strong position for future development. With the core portfolio management and analytics features now stable, the following are recommended next steps based on the product backlog:
+The application is in a strong position for future development. With the core portfolio management and data import features now stable, the following are recommended next steps based on the product backlog:
 
-1.  **Multi-Currency Support:** Enhance the application to support multiple currencies, including currency conversion for portfolio valuation.
+1.  **Advanced Asset Support:** Add support for other asset classes like Fixed Deposits (FDs), Public Provident Fund (PPF), and Bonds.
 2.  **Corporate Actions:** Implement functionality to handle corporate actions like stock splits, dividends, and mergers.
-3.  **Advanced Reporting:** Create a dedicated reporting page with customizable charts and data exports.
+3.  **Risk Profile Management:** Implement the risk questionnaire and portfolio alignment dashboard.
 
 ---
 
-This concludes the handoff for the second pilot release. The project is stable, well-documented, and ready for the next phase.
+This concludes the handoff for the data import release. The project is stable, well-documented, and ready for the next phase.
