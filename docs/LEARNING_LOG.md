@@ -1,6 +1,6 @@
 # Project Introspection & Learning Log
 
-This document captures key architectural decisions, learnings, and process improvements made during the project's lifecycle.
+This document captures key architectural decisions, learnings, and process improvements made during the lifecycle of the **ArthSaarthi** project.
 
 ---
 

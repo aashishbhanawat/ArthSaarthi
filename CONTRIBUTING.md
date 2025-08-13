@@ -1,4 +1,4 @@
-# Contributing to the Personal Portfolio Management System
+# Contributing to ArthSaarthi
 
 Thank you for your interest in contributing to this project. This document outlines the development process we follow, which is guided by an AI Master Orchestrator.
 

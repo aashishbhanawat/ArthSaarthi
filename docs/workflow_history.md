@@ -1,6 +1,6 @@
 # Workflow & AI Interaction History
 
-This document serves as a chronological log of the development process for this project, specifically detailing the interactions with the GenAI code assistant.
+This document serves as a chronological log of the development process for **ArthSaarthi**, specifically detailing the interactions with the GenAI code assistant.
 
 Its purpose is to build an experience history that can be used as a reference for future projects, to onboard new team members, or to showcase GenAI-assisted development skills. Each entry captures a specific development task, the prompts used, the AI's output, and the final outcome.
 

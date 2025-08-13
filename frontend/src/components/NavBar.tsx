@@ -1,12 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import {
-    HomeIcon,
-    BriefcaseIcon,
-    ArrowUpTrayIcon,
-    UsersIcon,
-} from '@heroicons/react/24/outline';
+import { HomeIcon,
+  BriefcaseIcon,
+  ArrowUpTrayIcon,
+  UsersIcon,
+  ArrowLeftOnRectangleIcon,
+ } from '@heroicons/react/24/outline';
+
+const appVersion = import.meta.env.VITE_APP_VERSION;
+
 
 const NavBar: React.FC = () => {
     const { user, logout } = useAuth();
@@ -20,7 +23,10 @@ const NavBar: React.FC = () => {
 
     return (
         <aside className="bg-white flex flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200">
-            <h2 className="text-xl font-bold mb-6 text-gray-800">My PMS</h2>
+            <div className="flex items-center gap-3 mb-6">
+                <img src="/ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-8 w-8" />
+                <h2 className="text-xl font-bold text-gray-800">ArthSaarthi</h2>
+            </div>
             <nav className="flex flex-col gap-2 flex-grow">
                 <NavLink
                     to="/dashboard"
@@ -48,9 +54,16 @@ const NavBar: React.FC = () => {
             </nav>
             <div className="mt-auto pt-4 border-t">
                 <div className="text-center text-sm text-gray-600 mb-2 truncate" title={user?.email}>{user?.email}</div>
-                <button onClick={logout} className="btn btn-secondary w-full">
-                    Logout
+                <button
+                    onClick={logout}
+                    className="btn btn-secondary w-full flex items-center justify-center"
+                >
+                    <ArrowLeftOnRectangleIcon className="h-5 w-5 mr-2" />
+                    <span>Logout</span>
                 </button>
+                <div className="text-center text-xs text-gray-500 mt-4">
+                    Version: {appVersion}
+                </div>
             </div>
         </aside>
     );

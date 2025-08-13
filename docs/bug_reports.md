@@ -1,6 +1,6 @@
 # Bug Reports
 
-This document serves as the official bug log for the Personal Portfolio Management System. All issues discovered during testing must be documented here before work on a fix begins.
+This document serves as the official bug log for **ArthSaarthi**. All issues discovered during testing must be documented here before work on a fix begins.
 
 ---
 

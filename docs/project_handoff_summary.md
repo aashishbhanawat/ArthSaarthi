@@ -1,4 +1,4 @@
-# Project Handoff Document: Personal Portfolio Management System
+# Project Handoff Document: ArthSaarthi
 
 **Version:** 1.3.0
 **Date:** 2025-08-12
@@ -8,7 +8,7 @@
 
 ## 1. Project Overview
 
-This document provides a status update for the Personal Portfolio Management System (PMS). The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
+This document provides a status update for **ArthSaarthi**. The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
 
 The project was developed following a rigorous, AI-assisted Agile SDLC, with a strong emphasis on automated testing, comprehensive documentation, and iterative feature implementation.
 

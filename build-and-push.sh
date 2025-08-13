@@ -14,8 +14,8 @@ if [ -z "$DOCKER_REGISTRY" ]; then
   echo "Please set it to your Docker Hub username or container registry URL."
   exit 1
 fi
-BACKEND_IMAGE_NAME="pms-backend"
-FRONTEND_IMAGE_NAME="pms-frontend"
+BACKEND_IMAGE_NAME="arthsaarthi-backend"
+FRONTEND_IMAGE_NAME="arthsaarthi-frontend"
 
 # --- Versioning ---
 # Check if a version tag is provided
@@ -29,26 +29,23 @@ VERSION=$1
 # --- Build ---
 echo "Building Docker images for version: $VERSION"
 
-echo "Building backend image..."
-docker build -t "$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:$VERSION" -f backend/Dockerfile.prod ./backend
-docker tag "$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:$VERSION" "$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:latest"
+echo "Setting up docker buildx..."
+docker buildx create --use --name pms-builder
 
-echo "Building frontend image..."
-docker build -t "$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:$VERSION" -f frontend/Dockerfile.prod ./frontend
-docker tag "$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:$VERSION" "$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:latest"
+echo "Building and pushing multi-architecture backend image..."
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t "$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:$VERSION" \
+  -t "$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:latest" \
+  -f backend/Dockerfile.prod ./backend --push
 
-echo "Docker images built and tagged successfully."
+echo "Building and pushing multi-architecture frontend image..."
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t "$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:$VERSION" \
+  -t "$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:latest" \
+  -f frontend/Dockerfile.prod ./frontend --push
 
-# --- Push ---
-echo "Pushing Docker images to the registry..."
+echo "Docker images built and pushed to the registry successfully."
 
-echo "Pushing backend image..."
-docker push "$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:$VERSION"
-docker push "$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:latest"
-
-echo "Pushing frontend image..."
-docker push "$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:$VERSION"
-docker push "$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:latest"
-
-echo "Docker images pushed to the registry successfully."
 echo "Release version $VERSION is complete."

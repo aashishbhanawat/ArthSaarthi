@@ -1,8 +1,8 @@
-### Project Handoff Document: Personal Portfolio Management System
+### Project Handoff Document: ArthSaarthi
 
 #### 1. Project Goal & Current Status
 
-*   **Goal:** To build a full-stack, containerized Personal Portfolio Management System (PMS) with a robust, multi-layered testing strategy.
+*   **Goal:** To build a full-stack, containerized application, **ArthSaarthi**, with a robust, multi-layered testing strategy.
 *   **Current Status:** The application is stable and feature-complete for the MVP and Release 2 backend requirements. All test suites (backend, frontend, E2E) are passing. The backend for the "Automated Data Import" feature is complete.
 *   **Testing:** The project has a multi-layered testing strategy. A full suite of automated backend tests (`pytest`), frontend tests (`jest`), and **end-to-end tests (`Playwright`)** is stable and passing. This ensures reliability from individual components to complete user flows.
 *   **Implemented Functionalities:**

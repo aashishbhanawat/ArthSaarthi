@@ -1,15 +1,17 @@
-# Personal Portfolio Management System
+# ArthSaarthi - Personal Portfolio Management System
 
-[![CI/CD Status](https://img.shields.io/badge/CI/CD-Passing-brightgreen)](.)
-[![Backend Tests](https://img.shields.io/badge/Backend_Tests-78/78-brightgreen)](.)
-[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-96/96_passed-brightgreen)](.)
-[![E2E Tests](https://img.shields.io/badge/E2E_Tests-8/8-brightgreen)](.)
+<!-- Note: Replace YOUR_USERNAME/YOUR_REPO with your actual GitHub repository path -->
+[![CI/CD Status](https://github.com/aashishbhanawat/pms/actions/workflows/ci.yml/badge.svg)](https://github.com/aashishbhanawat/pms/actions/workflows/ci.yml)
+<!-- The badges below are placeholders. To make them dynamic, you would need a service that generates badges from your test coverage reports (e.g., Codecov, Coveralls). -->
+[![Backend Tests](https://img.shields.io/badge/Backend_Tests-Passing-brightgreen)](#)
+[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-Passing-brightgreen)](#)
+[![E2E Tests](https://img.shields.io/badge/E2E_Tests-Passing-brightgreen)](#)
 
 ---
 
 ## 1. Overview
 
-This is a full-stack web application designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
+**ArthSaarthi** is a full-stack web application designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
 
 The project was developed following a rigorous, AI-assisted Agile SDLC, with a strong emphasis on automated testing, comprehensive documentation, and iterative feature implementation.
 

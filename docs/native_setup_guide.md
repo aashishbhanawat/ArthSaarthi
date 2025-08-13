@@ -1,6 +1,6 @@
 # Native Setup Guide (Without Docker)
 
-This guide provides instructions for setting up and running the Personal Portfolio Management System directly on your local machine without using Docker. This is for users who cannot or prefer not to install Docker.
+This guide provides instructions for setting up and running **ArthSaarthi** directly on your local machine without using Docker. This is for users who cannot or prefer not to install Docker.
 
 **Note:** This method is more complex than using the provided Docker setup and requires manual installation of all dependencies.
 

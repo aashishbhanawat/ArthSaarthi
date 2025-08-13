@@ -5,6 +5,6 @@ echo "Building macOS DMG..."
 
 # Create a dummy file to represent the output
 # In a real scenario, your build tool (e.g., create-dmg, electron-builder) would create this.
-touch my-app.dmg
+touch arthsaarthi.dmg
 
-echo "macOS DMG built: my-app.dmg"
+echo "macOS DMG built: arthsaarthi.dmg"

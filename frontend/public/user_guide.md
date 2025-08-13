@@ -1,6 +1,6 @@
-# Personal Portfolio Management System - User Guide
+# ArthSaarthi - User Guide
 
-Welcome to the Personal Portfolio Management System (PMS)! This guide will walk you through setting up and using the application.
+Welcome to ArthSaarthi! This guide will walk you through setting up and using the application.
 
 ---
 
@@ -44,7 +44,7 @@ A pie chart showing the distribution of your investments across different assets
 
 ---
 
-## 3. Managing Your Portfolios
+## 3. Managing Your Portfolios {#managing-portfolios}
 
 You can create multiple portfolios to track different investment strategies or accounts.
 
@@ -63,7 +63,7 @@ You can create multiple portfolios to track different investment strategies or a
 
 ---
 
-## 4. Managing Transactions
+## 4. Managing Transactions {#managing-transactions}
 
 The core of the application is tracking your individual buy and sell transactions.
 
@@ -90,12 +90,28 @@ Instead of adding transactions one by one, you can use the data import feature t
 
 1.  Navigate to the **"Import"** page from the main menu.
 2.  Select the portfolio you want to import the transactions into.
-3.  Choose the CSV file from your computer. The CSV file must have the following columns: `ticker_symbol`, `transaction_type`, `quantity`, `price_per_unit`, `transaction_date`, `fees`.
+3.  Select the **Statement Type** (e.g., "Generic CSV", "Zerodha", "ICICI Direct") that matches your file format. This ensures the file is parsed correctly.
+4.  Choose the CSV file from your computer.
 4.  Click **"Upload and Preview"**.
-5.  The system will show you a preview of the transactions it has parsed from the file.
-6.  If everything looks correct, click **"Commit Transactions"** to save them to your portfolio.
+6.  The system will show you a preview of the transactions it has parsed, categorized into sections:
+    *   **New Transactions:** Valid transactions that can be imported.
+    *   **Transactions Requiring Mapping:** Transactions with a ticker symbol that is not recognized by the system (e.g., `INFY-BE` instead of `INFY.NS`).
+    *   **Duplicate Transactions:** Transactions that appear to already exist in your portfolio.
+    *   **Invalid Transactions:** Transactions with errors that prevent them from being imported.
 
-**Note:** For the import to succeed, the assets (e.g., 'NTPC') must already exist in the system. You can add them manually via the "Add Transaction" flow if needed.
+### Mapping Unrecognized Tickers
+
+For transactions in the "Requiring Mapping" section, you must map the unrecognized ticker from your file to an existing asset in the system.
+
+1.  Click the **"Map Ticker"** button next to the transaction.
+2.  In the modal that appears, search for the correct asset that the alias belongs to (e.g., search for "Infosys" or "INFY.NS").
+3.  Select the correct asset from the search results and click **"Create Alias"**.
+4.  Once the alias is created, the transaction will automatically move to the "New Transactions" section.
+
+### Committing Transactions
+
+1.  Use the checkboxes to select which "New" and "Duplicate" transactions you wish to import.
+2.  Click **"Commit Transactions"** to save the selected transactions to your portfolio.
 
 ---
 

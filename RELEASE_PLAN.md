@@ -44,14 +44,21 @@ Before any release, the following testing must be completed:
 
 ## 4. Building and Pushing Docker Images
 
-The Docker images for the `backend` and `frontend` services are built and pushed to our Docker Hub registry (or other container registry).
+The Docker images for the `backend` and `frontend` services are built and pushed to our Docker Hub registry (or other container registry). To support various hardware platforms (e.g., standard servers and Raspberry Pi), we will build **multi-architecture images**.
 
 This process is automated by the GitHub Actions release workflow. The workflow uses the `build-and-push.sh` script to perform the following steps:
 
-1.  Build the `backend` Docker image.
-2.  Build the `frontend` Docker image.
-3.  Tag the images with the Git tag (e.g., `v1.2.3`) and `latest`.
-4.  Push the images to the container registry.
+1.  **Setup `buildx`:** Initialize the `docker buildx` builder.
+2.  **Build & Push:** Use `docker buildx build` to build and push the `backend` and `frontend` images for multiple platforms (`linux/amd64`, `linux/arm64`).
+    ```bash
+    # Example command for the backend
+    docker buildx build \
+      --platform linux/amd64,linux/arm64 \
+      -t your-repo/arthsaarthi-backend:latest \
+      -t your-repo/arthsaarthi-backend:v1.2.3 \
+      --push .
+    ```
+3.  The images are tagged with the Git tag (e.g., `v1.2.3`) and `latest`.
 
 ## 5. Deployment
 
