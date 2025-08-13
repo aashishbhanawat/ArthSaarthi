@@ -1,4 +1,4 @@
-# Feature Plan: Core User Authentication
+# Feature Plan: Core User Authentication for ArthSaarthi
 
 This document outlines the development plan for the Core User Authentication feature.
 

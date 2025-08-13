@@ -2,7 +2,7 @@
 
 ## 1. Objective
 
-To enable users to efficiently import their financial transaction and holding data from various external sources, specifically broker statements (Zerodha, ICICI) and Mutual Fund (MF) Consolidated Account Statements (CAS), into the Personal Portfolio Management System. The system will provide robust parsing, intelligent column mapping, and user-controlled reconciliation of duplicate or conflicting entries.
+To enable users to efficiently import their financial transaction and holding data from various external sources, specifically broker statements (Zerodha, ICICI) and Mutual Fund (MF) Consolidated Account Statements (CAS), into **ArthSaarthi**. The system will provide robust parsing, intelligent column mapping, and user-controlled reconciliation of duplicate or conflicting entries.
 
 ## 2. Functional Requirements
 
@@ -200,7 +200,7 @@ The user workflow will be a guided, two-step process to ensure clarity and preve
 
 ## 8. Implementation Plan (Phase 2 - Advanced Reconciliation & UI)
 
-**Status: ⚠️ Implementation Complete, E2E Testing Incomplete**
+**Status: ✅ Done**
 
 Based on user feedback from the MVP, this phase enhances the import feature to provide more control, better feedback, and more robust error handling. The backend and frontend work for this phase is complete.
 
@@ -230,7 +230,3 @@ Based on user feedback from the MVP, this phase enhances the import feature to p
 *   **Selective Committing:** Each valid transaction is displayed with a checkbox, allowing the user to select exactly which ones to import. A "Select All" option is also available.
 *   **Clear User Feedback:** The UI provides clear feedback on the outcome of the import, showing how many transactions were successfully committed.
 *   **Asset Alias Mapping:** A new UI flow allows users to map unrecognized ticker symbols to existing assets on the fly during the preview stage.
-
-### 8.3. Known Issues
-
-*   The E2E test for verifying that a newly created alias is used in a subsequent import is failing with a timeout. This is the final blocker for this feature. See Bug ID `2025-08-12-03`.

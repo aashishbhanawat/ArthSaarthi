@@ -1,6 +1,6 @@
-# Personal Portfolio Management System - User Guide
+# ArthSaarthi - User Guide
 
-Welcome to the Personal Portfolio Management System (PMS)! This guide will walk you through setting up and using the application.
+Welcome to ArthSaarthi! This guide will walk you through setting up and using the application.
 
 ---
 
