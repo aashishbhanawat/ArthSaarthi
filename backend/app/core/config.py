@@ -31,10 +31,10 @@ class Settings(BaseSettings):
 
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
-        if isinstance(v, str):
-            return v
         if values.get("DATABASE_TYPE") == "sqlite":
             return "sqlite:///./arthsaarthi.db"
+        if isinstance(v, str):
+            return v
         # Default to PostgreSQL if not specified
         return (
             f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@"
