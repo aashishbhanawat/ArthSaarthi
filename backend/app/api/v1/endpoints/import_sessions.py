@@ -227,7 +227,7 @@ def get_import_session_preview(
             db,
             portfolio_id=import_session.portfolio_id,
             asset_id=asset.id,
-            transaction_date=pd.to_datetime(row["transaction_date"]).date(),
+            transaction_date=pd.to_datetime(row["transaction_date"]),
             transaction_type=row["transaction_type"].upper(),
             quantity=Decimal(str(row["quantity"])),
             price_per_unit=Decimal(str(row["price_per_unit"])),

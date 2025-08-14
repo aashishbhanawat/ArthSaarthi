@@ -1,0 +1,16 @@
+services:
+  test-sqlite:
+    build: ./backend
+    container_name: pms-test-sqlite
+    command: ["pytest", "-v"]
+    volumes:
+      - ./backend:/app
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_TYPE=sqlite
+      - TESTING=True
+    networks:
+      - pms_network
+    depends_on:
+      redis:
+        condition: service_healthy

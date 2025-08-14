@@ -11,6 +11,7 @@
 # These are loaded by docker-compose but should never be in version control.
 .env
 backend/.env
+uploads/
 backend/uploads/
 frontend/.env
 .env.test

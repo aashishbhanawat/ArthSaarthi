@@ -3,9 +3,14 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Apply database migrations
-echo "Applying database migrations..."
-alembic upgrade head
+# Conditionally apply database migrations or create schema
+if [ "$DATABASE_TYPE" = "sqlite" ]; then
+  echo "Database type is SQLite. Creating schema from models..."
+  python -m app.cli init-db
+else
+  echo "Database type is PostgreSQL. Applying Alembic migrations..."
+  alembic upgrade head
+fi
 
 # Seed the database with master asset data.
 # This is idempotent and safe to run on every startup.

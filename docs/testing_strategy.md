@@ -52,6 +52,7 @@ The backend is tested using the `pytest` framework along with `httpx` for asynch
 * **Scope:**
 * **API Endpoints:** Test each endpoint for correct responses with valid data (2xx status codes), invalid client input (4xx status codes), and server errors (5xx status codes).
 * **Database Interaction:** Ensure that API calls result in the correct state changes in the database (e.g., creating a user, fetching data).
+* **Dual-Database CI:** The entire backend test suite is executed against both a PostgreSQL database and an in-memory SQLite database in the CI pipeline to ensure compatibility and prevent regressions.
 
 ## 2. Frontend Testing
 
@@ -107,9 +108,12 @@ The E2E test suite is implemented using **Playwright**. It is the final and most
 *   **Scope:**
     *   Test critical user flows, such as user registration, login, and core feature interactions.
 *   **Environment:**
-    *   The E2E environment is defined in `docker-compose.e2e.yml`.
-    *   It uses a dedicated test database (`pms_db_test`) to isolate test data from development data.
+    *   The E2E environment is defined via a combination of `docker-compose.yml`, `docker-compose.e2e.yml`, and database-specific overrides (`docker-compose.e2e.sqlite.yml`).
+    *   This setup allows the entire E2E suite to be run against either a PostgreSQL or a file-based SQLite backend.
     *   A special backend endpoint (`/api/v1/testing/reset-db`) is exposed *only* in the test environment to allow for programmatic database resets between test runs.
+*   **CI/CD Execution:**
+    *   The CI pipeline is configured to run the entire E2E test suite twice: once against the PostgreSQL backend and once against the SQLite backend.
+    *   This dual execution ensures that new features and bug fixes do not introduce regressions for either supported database, guaranteeing portability.
 
 ### E2E Test Development Principles
 

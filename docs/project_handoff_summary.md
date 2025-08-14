@@ -8,7 +8,7 @@
 
 ## 1. Project Overview
 
-This document provides a status update for **ArthSaarthi**. The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
+This document provides a status update for **ArthSaarthi**. The application is a full-stack web platform designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend and a TypeScript/React frontend. The application now supports both **PostgreSQL** and **SQLite** as database backends, making it highly portable and easy to deploy in various environments, from full Docker setups to single-file native executables.
 
 The project was developed following a rigorous, AI-assisted Agile SDLC, with a strong emphasis on automated testing, comprehensive documentation, and iterative feature implementation.
 
@@ -40,6 +40,9 @@ All planned features for the current release cycle have been implemented and val
     *   A robust parser strategy that supports generic CSVs, Zerodha Tradebooks, and ICICI Direct Tradebooks.
     *   An advanced frontend UI with categorized previews, selective transaction committing, and on-the-fly asset alias mapping for unrecognized symbols.
     *   Intelligent sorting of transactions to ensure data integrity regardless of source file order.
+*   **Database Portability (SQLite Support):**
+    *   The application backend has been refactored to be database-agnostic, officially supporting both PostgreSQL and SQLite.
+    *   This significantly enhances portability, simplifying deployment for users who prefer not to manage a separate PostgreSQL server.
 
 ---
 
@@ -67,21 +70,38 @@ The application is fully containerized. Please refer to the main **README.md** f
 
 ### Key Commands
 
-*   **Start the Application:**
+The application can be run with either PostgreSQL (default) or SQLite.
+
+*   **Start with PostgreSQL (Default):**
     ```bash
     docker compose up --build
     ```
-*   **Run Backend Unit Tests:**
+*   **Start with SQLite:**
+    ```bash
+    docker compose -f docker-compose.yml -f docker-compose.sqlite.yml up --build
+    ```
+
+*   **Run Backend Tests (PostgreSQL):**
     ```bash
     docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
     ```
+*   **Run Backend Tests (SQLite):**
+    ```bash
+    docker compose -f docker-compose.yml -f docker-compose.test.sqlite.yml run --rm test-sqlite
+    ```
+
 *   **Run Frontend Unit Tests:**
     ```bash
     docker compose run --rm frontend npm test
     ```
-*   **Run E2E Tests:**
+
+*   **Run E2E Tests (PostgreSQL):**
     ```bash
     docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit
+    ```
+*   **Run E2E Tests (SQLite):**
+    ```bash
+    docker compose -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit
     ```
 
 ---

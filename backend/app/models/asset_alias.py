@@ -1,17 +1,17 @@
 import uuid
 
 from sqlalchemy import Column, ForeignKey, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
+from app.db.custom_types import GUID
 
 
 class AssetAlias(Base):
     __tablename__ = "asset_aliases"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    asset_id = Column(UUID(as_uuid=True), ForeignKey("assets.id"), nullable=False)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    asset_id = Column(GUID, ForeignKey("assets.id"), nullable=False)
     alias_symbol = Column(String, nullable=False, index=True)
     source = Column(String, nullable=False) # e.g., "Zerodha Tradebook", "ICICI Direct"
 

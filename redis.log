@@ -1,0 +1,16 @@
+38233:C 14 Aug 2025 14:11:45.062 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+38233:C 14 Aug 2025 14:11:45.062 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=38233, just started
+38233:C 14 Aug 2025 14:11:45.062 # Configuration loaded
+38233:M 14 Aug 2025 14:11:45.064 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+38233:M 14 Aug 2025 14:11:45.064 * monotonic clock: POSIX clock_gettime
+38233:M 14 Aug 2025 14:11:45.066 # Warning: Could not create server TCP listening socket ::*:6379: unable to bind socket, errno: 97
+38233:M 14 Aug 2025 14:11:45.067 * Running mode=standalone, port=6379.
+38233:M 14 Aug 2025 14:11:45.068 # Server initialized
+38233:M 14 Aug 2025 14:11:45.068 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+38233:M 14 Aug 2025 14:11:45.070 * Ready to accept connections
+38233:signal-handler (1755180826) Received SIGTERM scheduling shutdown...
+38233:M 14 Aug 2025 14:13:46.096 # User requested shutdown...
+38233:M 14 Aug 2025 14:13:46.096 * Saving the final RDB snapshot before exiting.
+38233:M 14 Aug 2025 14:13:46.100 * DB saved on disk
+38233:M 14 Aug 2025 14:13:46.100 * Removing the pid file.
+38233:M 14 Aug 2025 14:13:46.100 # Redis is now ready to exit, bye bye...

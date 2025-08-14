@@ -17,6 +17,15 @@ The backend uses a `DEBUG` flag to control verbose logging in the API endpoints.
 
 When enabled, you will see detailed logs in the backend container's output for events like portfolio creation and transaction requests.
 
+### Checking the Database Configuration
+
+To debug database-related issues, it's useful to know which database the application is configured to use.
+
+1.  **Check the `DATABASE_TYPE` variable:** In your `docker-compose.yml` or override files, check the `environment` section for the `backend` service. The `DATABASE_TYPE` variable can be set to `postgres` (default) or `sqlite`.
+2.  **Check the startup logs:** When the backend container starts, the `entrypoint.sh` script will log which database it is initializing.
+    *   For PostgreSQL: `Database type is PostgreSQL, applying Alembic migrations...`
+    *   For SQLite: `Database type is SQLite, initializing database...`
+
 ## Frontend Debugging
 
 The frontend uses a Vite environment variable `VITE_DEBUG_ENABLED` to control logging in the browser console.
