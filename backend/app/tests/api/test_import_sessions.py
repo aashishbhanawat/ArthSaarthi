@@ -410,7 +410,8 @@ def test_get_import_session_preview_with_duplicate(
     auth_headers = get_auth_headers(user.email, password)
 
     # 1. Create an existing transaction in the DB
-    transaction_date = datetime.now(timezone.utc)
+    transaction_date_str = "2023-01-01T12:00:00"
+    transaction_date = datetime.fromisoformat(transaction_date_str)
     transaction_in = models.Transaction(
         portfolio_id=user_portfolio.id,
         asset_id=test_asset.id,
@@ -434,7 +435,7 @@ def test_get_import_session_preview_with_duplicate(
                 "transaction_type": "BUY",
                 "quantity": 10.0,
                 "price_per_unit": 100.0,
-                "transaction_date": transaction_date.isoformat(),
+                "transaction_date": transaction_date_str,
                 "fees": 5.0,
             }
         ]

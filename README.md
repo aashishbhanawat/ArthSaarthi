@@ -29,7 +29,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ## 3. Technology Stack
 
-*   **Backend:** Python, FastAPI, SQLAlchemy, PostgreSQL
+*   **Backend:** Python, FastAPI, SQLAlchemy, PostgreSQL, SQLite
 *   **Frontend:** TypeScript, React, Vite, React Query, Tailwind CSS
 *   **Testing:** Pytest (Backend), Jest & React Testing Library (Frontend), Playwright (E2E)
 *   **Containerization:** Docker, Docker Compose
@@ -54,7 +54,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
     ALLOWED_HOSTS=your.domain.com,192.168.1.100
     ```
 
-### Running the Application (Development)
+### Running with PostgreSQL (Default)
 
 To start the application services (database, backend, frontend), run:
 
@@ -66,6 +66,19 @@ docker compose up --build
 *   Backend API will be available at `http://localhost:8000`
 
 **Note on Database Resets:** To completely reset the database, run `docker compose down -v`. After this, you will need to perform the initial admin setup again in the browser.
+
+### Running with SQLite (Simplified Setup)
+
+For a simpler setup that does not require a separate PostgreSQL database, you can run the application using SQLite. This is ideal for local development or simple deployments.
+
+1.  **Run the configuration script** as described above.
+2.  **Start the application using the SQLite override file:**
+
+    ```bash
+    docker compose -f docker-compose.yml -f docker-compose.sqlite.yml up --build
+    ```
+
+    This will start the backend and frontend services, with the backend using a persistent SQLite database file.
 
 ### Running the Test Suites
 
