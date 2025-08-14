@@ -1,11 +1,2670 @@
 
 > arthsaarthi-frontend@0.2.0 dev
-> vite --port 3000
+> vite --port 3001
 
 
-  VITE v5.4.19  ready in 360 ms
+  VITE v5.4.19  ready in 264 ms
 
-  ➜  Local:   http://localhost:3000/
-  ➜  Network: http://192.168.0.2:3000/
-2:13:46 PM [vite] .env.local changed, restarting server...
-2:13:46 PM [vite] server restarted.
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: http://192.168.0.2:3001/
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:20 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:25 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:25 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:41 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:46 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:51 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:56 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:08:56 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:01 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:01 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:01 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:06 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:11 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:16 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:21 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:26 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:26 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:36 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:41 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:41 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:41 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:41 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:41 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:42 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:42 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:42 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:42 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:42 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:42 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:57 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:09:57 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:02 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:02 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:02 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:07 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:12 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:17 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:22 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:27 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:27 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:32 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:32 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:37 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:42 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:47 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:52 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:10:58 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:03 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:03 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:08 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:13 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:18 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:23 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:28 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:28 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:33 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:38 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:43 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:43 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:48 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:53 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:11:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:04 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:04 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:09 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:09 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:14 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:19 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:19 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:24 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:29 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:34 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:39 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:39 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:44 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:44 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:49 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:54 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:12:59 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:20 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:25 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:25 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:35 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:40 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:40 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:45 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:45 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:50 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:55 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:13:55 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:00 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:05 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:10 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:15 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:20 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:25 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:25 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:30 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+5:14:31 PM [vite] http proxy error: /api/v1/testing/reset-db
+Error: getaddrinfo ENOTFOUND backend
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)

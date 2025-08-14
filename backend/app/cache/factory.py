@@ -25,5 +25,8 @@ def get_cache_client() -> Optional[CacheClient]:
         return DiskCacheClient()
     else:
         # This case should ideally not be reached if config validation is in place
-        print(f"WARNING: Unknown CACHE_TYPE '{settings.CACHE_TYPE}'. Caching will be disabled.")
+        print(
+            f"WARNING: Unknown CACHE_TYPE '{settings.CACHE_TYPE}'. "
+            "Caching will be disabled."
+        )
         return None

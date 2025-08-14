@@ -1,5 +1,6 @@
-import redis
 from typing import Optional
+
+import redis
 
 from app.cache.base import CacheClient
 
@@ -14,7 +15,10 @@ class RedisCacheClient(CacheClient):
             self._client.ping()
             print("Successfully connected to Redis for caching.")
         except redis.exceptions.ConnectionError as e:
-            print(f"WARNING: Could not connect to Redis at {redis_url}. Caching will be disabled. Error: {e}")
+            print(
+                f"WARNING: Could not connect to Redis at {redis_url}. "
+                f"Caching will be disabled. Error: {e}"
+            )
             self._client = None
 
     def get(self, key: str) -> Optional[str]:

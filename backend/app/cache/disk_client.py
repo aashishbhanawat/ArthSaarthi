@@ -16,7 +16,7 @@ class DiskCacheClient(CacheClient):
         print(f"Initialized disk-based cache at: {cache_dir}")
 
     def get(self, key: str) -> Optional[str]:
-        # diskcache.get returns None if the key doesn't exist, which matches our interface
+        # .get() returns None if the key doesn't exist, which matches our interface
         return self._cache.get(key)
 
     def set(self, key: str, value: str, expire: Optional[int] = None) -> None:
