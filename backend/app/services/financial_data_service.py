@@ -4,11 +4,11 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-import redis
 import yfinance as yf
 from pydantic import ValidationError
 
-from app.core.config import settings
+from app.cache.base import CacheClient
+from app.cache.factory import get_cache_client
 
 # Constants
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
@@ -16,18 +16,8 @@ CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
 
 
 class FinancialDataService:
-    def __init__(self, redis_url: str):
-        try:
-            self.redis_client: Optional[redis.Redis] = redis.from_url(
-                redis_url, decode_responses=True
-            )
-            self.redis_client.ping()
-            print("Successfully connected to Redis.")
-        except redis.exceptions.ConnectionError as e:
-            print(
-                f"WARNING: Could not connect to Redis: {e}. Caching will be disabled."
-            )
-            self.redis_client = None
+    def __init__(self, cache_client: Optional[CacheClient]):
+        self.cache_client = cache_client
 
     def _get_yfinance_ticker(self, ticker_symbol: str, exchange: Optional[str]) -> str:
         """Constructs the correct ticker for yfinance."""
@@ -56,16 +46,15 @@ class FinancialDataService:
         # Continue with non-mocked assets
         assets = non_mock_assets
 
-        if self.redis_client:
+        if self.cache_client:
             for asset in assets:
                 ticker = asset["ticker_symbol"]
                 cache_key = f"price_details:{ticker}"
-                cached_data = self.redis_client.get(cache_key)
+                cached_data = self.cache_client.get_json(cache_key)
                 if cached_data:
-                    data = json.loads(cached_data)
                     prices_data[ticker] = {
-                        "current_price": Decimal(data["current_price"]),
-                        "previous_close": Decimal(data["previous_close"]),
+                        "current_price": Decimal(cached_data["current_price"]),
+                        "previous_close": Decimal(cached_data["previous_close"]),
                     }
                 else:
                     tickers_to_fetch.append(asset)
@@ -108,17 +97,17 @@ class FinancialDataService:
         except (Exception, ValidationError) as e:
             print(f"WARNING: Error fetching batch data from yfinance: {e}")
 
-        if self.redis_client:
+        if self.cache_client:
             for ticker, data in prices_data.items():
                 if any(t["ticker_symbol"] == ticker for t in tickers_to_fetch):
                     serializable_data = {
                         "current_price": str(data["current_price"]),
                         "previous_close": str(data["previous_close"]),
                     }
-                    self.redis_client.set(
+                    self.cache_client.set_json(
                         f"price_details:{ticker}",
-                        json.dumps(serializable_data),
-                        ex=CACHE_TTL_CURRENT_PRICE,
+                        serializable_data,
+                        expire=CACHE_TTL_CURRENT_PRICE,
                     )
 
         return prices_data
@@ -157,11 +146,10 @@ class FinancialDataService:
             f"{end_date.isoformat()}"
         )
 
-        if self.redis_client:
-            cached_data = self.redis_client.get(cache_key)
+        if self.cache_client:
+            cached_data = self.cache_client.get_json(cache_key)
             if cached_data:
-                deserialized_data = json.loads(cached_data)
-                for ticker, date_prices in deserialized_data.items():
+                for ticker, date_prices in cached_data.items():
                     for date_str, price_str in date_prices.items():
                         historical_data[ticker][
                             datetime.fromisoformat(date_str).date()
@@ -194,14 +182,14 @@ class FinancialDataService:
             print(f"WARNING: Error fetching historical data from yfinance: {e}")
             return {}
 
-        if self.redis_client:
+        if self.cache_client:
             serializable_data = {}
             for ticker, date_prices in historical_data.items():
                 serializable_data[ticker] = {
                     dt.isoformat(): str(price) for dt, price in date_prices.items()
                 }
-            self.redis_client.set(
-                cache_key, json.dumps(serializable_data), ex=CACHE_TTL_HISTORICAL_PRICE
+            self.cache_client.set_json(
+                cache_key, serializable_data, expire=CACHE_TTL_HISTORICAL_PRICE
             )
 
         return historical_data
@@ -254,4 +242,4 @@ class FinancialDataService:
 
 
 # Create a singleton instance to be used throughout the application
-financial_data_service = FinancialDataService(redis_url=settings.REDIS_URL)
+financial_data_service = FinancialDataService(cache_client=get_cache_client())

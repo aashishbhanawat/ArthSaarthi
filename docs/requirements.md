@@ -161,4 +161,5 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **NFR5: Reliability & Data Integrity:** Accurate calculations, high uptime, regular backups. `⚠️ Partially Implemented`
 -   **NFR6: Deployment:** The application must be deployable in a Docker environment, specifically on a Raspberry Pi, and accessible via a Cloudflare tunnel. `✅ Done`
 -   **NFR7: Data Management:** The system must provide a mechanism for users to back up and restore their portfolio data. `📝 Planned`
--   **NFR8: Portability:** The application must support SQLite as an alternative to PostgreSQL to facilitate simpler, single-file native deployments. `📝 Planned`
+-   **NFR8: Portability:** The application must support SQLite as an alternative to PostgreSQL to facilitate simpler, single-file native deployments. `✅ Done`
+-   **NFR9: Pluggable Caching:** The application must support both Redis and a lightweight, file-based cache (`diskcache`) to remove the Redis dependency for non-Docker deployments. `✅ Done`

@@ -15,7 +15,12 @@ services:
   backend:
     env_file:
       - ./backend/.env.test
+    environment:
+      - CACHE_TYPE=disk
     command: /app/e2e_entrypoint.sh
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
       interval: 5s

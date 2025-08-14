@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
     REDIS_URL: Optional[str] = None
+    CACHE_TYPE: Literal["redis", "disk"] = "redis"
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "/app/uploads"
 
