@@ -6,8 +6,11 @@ const adminUser = {
 };
 
 async function globalSetup() {
+  const baseURL = process.env.E2E_BASE_URL || 'http://frontend:3000';
+  console.log(`Using base URL: ${baseURL}`);
+
   const requestContext = await request.newContext({
-    baseURL: 'http://frontend:3000',
+    baseURL: baseURL,
   });
 
   // 1. Wait for the backend to be ready by retrying the reset-db call

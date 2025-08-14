@@ -110,7 +110,8 @@ print_info "Checking for available ports..."
 function find_free_port() {
   local port=$1
   while lsof -i:$port >/dev/null; do
-    print_info "Port $port is in use. Trying next port..."
+    # Redirect info messages to stderr to avoid being captured by command substitution
+    print_info "Port $port is in use. Trying next port..." >&2
     port=$((port+1))
   done
   echo "$port"
@@ -128,7 +129,8 @@ sed -i "s|REDIS_URL=redis://localhost:$DEFAULT_REDIS_PORT|REDIS_URL=redis://loca
 sed -i "s|VITE_API_PROXY_TARGET=http://localhost:$DEFAULT_BACKEND_PORT|VITE_API_PROXY_TARGET=http://localhost:$NEW_BACKEND_PORT|" frontend/.env.local
 # Update CORS_ORIGINS for backend
 CORS_ORIGINS="http://localhost:$NEW_FRONTEND_PORT,http://127.0.0.1:$NEW_FRONTEND_PORT"
-sed -i "s|CORS_ORIGINS=.*|CORS_ORIGINS=$CORS_ORIGINS|" backend/.env.test
+# Use # as a delimiter for sed to avoid conflicts with URL slashes, just in case.
+sed -i "s#CORS_ORIGINS=.*#CORS_ORIGINS=$CORS_ORIGINS#" backend/.env.test
 print_success "Configuration updated."
 
 

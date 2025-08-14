@@ -2,10 +2,9 @@ services:
   backend:
     environment:
       - DATABASE_TYPE=sqlite
+      - CACHE_TYPE=disk
     ports:
       - "8000:8000"
-    depends_on:
-      - redis
 
   frontend:
     ports:

@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
       port: 3000, // Explicitly set the port to 3000
       allowedHosts: [
         "frontend",
+        "localhost",
+        "127.0.0.1",
         ...allowedHostsFromEnv,
       ],
       proxy: {
