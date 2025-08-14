@@ -124,8 +124,8 @@ print_success "Assigned ports: Redis=$NEW_REDIS_PORT, Backend=$NEW_BACKEND_PORT,
 
 # --- Step 4: Update configuration files with dynamic ports ---
 print_info "Updating configuration files with dynamic ports..."
-sed -i "s/REDIS_URL=redis:\/\/localhost:$DEFAULT_REDIS_PORT/REDIS_URL=redis:\/\/localhost:$NEW_REDIS_PORT/" backend/.env.test
-sed -i "s/VITE_API_PROXY_TARGET=http:\/\/localhost:$DEFAULT_BACKEND_PORT/VITE_API_PROXY_TARGET=http:\/\/localhost:$NEW_BACKEND_PORT/" frontend/.env.local
+sed -i "s|REDIS_URL=redis://localhost:$DEFAULT_REDIS_PORT|REDIS_URL=redis://localhost:$NEW_REDIS_PORT|" backend/.env.test
+sed -i "s|VITE_API_PROXY_TARGET=http://localhost:$DEFAULT_BACKEND_PORT|VITE_API_PROXY_TARGET=http://localhost:$NEW_BACKEND_PORT|" frontend/.env.local
 # Update CORS_ORIGINS for backend
 CORS_ORIGINS="http://localhost:$NEW_FRONTEND_PORT,http://127.0.0.1:$NEW_FRONTEND_PORT"
 sed -i "s|CORS_ORIGINS=.*|CORS_ORIGINS=$CORS_ORIGINS|" backend/.env.test

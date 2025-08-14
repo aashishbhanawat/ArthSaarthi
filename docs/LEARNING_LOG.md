@@ -151,3 +151,31 @@ During manual E2E testing of the data import feature, a critical bug was found: 
 
 *   The data import feature is now more robust and resilient to common real-world data issues.
 *   **Data Integrity over Source Order:** When processing financial transactions in a batch, never assume the source data is correctly ordered. The application must enforce logical order (chronological, by asset, etc.) before committing any data to the database to ensure data integrity. This principle is fundamental to any batch processing system.
+
+---
+
+## 2025-08-14: Database Portability & CI/CD Challenges
+
+### 1. What Happened?
+
+We implemented support for SQLite as an alternative to PostgreSQL. This was a critical non-functional requirement to make the application more portable. The implementation was complex and uncovered several deep-seated issues in our configuration and CI/CD pipeline, leading to a prolonged and iterative debugging process.
+
+### 2. How Did the Process Help?
+
+*   **Systematic RCA:** The "Analyze -> Report -> Fix" cycle was essential. Each CI failure, from Pydantic validation errors to database connection issues to `sed` command failures, required a careful analysis of logs from multiple services to pinpoint the true root cause.
+*   **Revealing Hidden Flaws:** This process uncovered several latent bugs that had not been previously detected:
+    1.  The `e2e_entrypoint.sh` script was not using the same conditional logic as the main `entrypoint.sh`.
+    2.  The Pydantic settings validator had a logical flaw that incorrectly prioritized `.env` file values over Docker environment variables.
+    3.  The CI pipeline was not cleaning up Docker volumes between runs, leading to stale database states that caused non-deterministic failures.
+    4.  The `docker-compose.sqlite.yml` file was missing necessary port and volume configurations for manual testing.
+*   **User Collaboration:** Direct feedback from the user, especially the observation that tests passed locally after a `docker system prune`, was the critical clue that helped diagnose the CI volume caching issue.
+
+### 3. Outcome & New Learning
+
+*   The application now robustly supports both PostgreSQL and SQLite, making it significantly easier to set up and deploy.
+*   The CI pipeline is more reliable due to the addition of explicit cleanup steps.
+*   **Key Learnings:**
+    1.  **Database-Agnosticism is More Than Just SQL:** True portability requires removing all DB-specific elements, including data types (`JSONB`, `TIMESTAMP WITH TIME ZONE`) and connection arguments (`check_same_thread`). Custom SQLAlchemy types are an excellent pattern for this.
+    2.  **Entrypoints Must Be Consistent:** All entrypoint scripts (`entrypoint.sh`, `e2e_entrypoint.sh`) that perform similar functions must be kept in sync.
+    3.  **CI is Not a Clean Room:** Never assume a CI runner provides a perfectly clean environment for every run. Docker volumes, caches, and other artifacts can persist. Always add explicit cleanup steps (`docker compose down -v`) to your workflows to ensure reproducible builds.
+    4.  **Configuration Loading Order Matters:** The interaction between `.env` files, Docker environment variables, and Pydantic validators is complex. The order of precedence must be carefully managed to avoid subtle and confusing bugs.
