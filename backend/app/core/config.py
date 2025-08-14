@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 
 from pydantic import validator
@@ -34,4 +35,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
 
 
-settings = Settings()
+settings = Settings(_env_file=None) if os.getenv("TESTING") else Settings()

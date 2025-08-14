@@ -16,6 +16,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - DATABASE_TYPE=postgres
+      - TESTING=True
     networks:
       - pms_network
     depends_on:
