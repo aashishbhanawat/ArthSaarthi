@@ -16,7 +16,9 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "app"
     DATABASE_URL: Optional[str] = None
-    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_URL: Optional[str] = None
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "/app/uploads"
 
@@ -38,6 +40,12 @@ class Settings(BaseSettings):
             f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@"
             f"{values.get('POSTGRES_SERVER')}:5432/{values.get('POSTGRES_DB')}"
         )
+
+    @validator("REDIS_URL", pre=True, always=True)
+    def assemble_redis_connection(cls, v, values):
+        if isinstance(v, str):
+            return v
+        return f"redis://{values.get('REDIS_HOST')}:{values.get('REDIS_PORT')}/0"
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
 
