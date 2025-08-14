@@ -1,7 +1,7 @@
 services:
   db:
     env_file:
-      - ./backend/.env.test
+      - ./backend/.env
     volumes:
       - postgres_data_test:/var/lib/postgresql/data/
     ports:
