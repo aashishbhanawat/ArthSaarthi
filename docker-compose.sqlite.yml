@@ -2,5 +2,11 @@ services:
   backend:
     environment:
       - DATABASE_TYPE=sqlite
+    ports:
+      - "8000:8000"
     depends_on:
       - redis
+
+  frontend:
+    ports:
+      - "3000:3000"
