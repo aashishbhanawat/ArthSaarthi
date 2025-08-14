@@ -1,12 +1,6 @@
-volumes:
-  arthsaarthi_db:
-
 services:
   backend:
     environment:
       - DATABASE_TYPE=sqlite
-    volumes:
-      - ./backend:/app
-      - arthsaarthi_db:/app
     depends_on:
       - redis

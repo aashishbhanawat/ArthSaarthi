@@ -1,12 +1,4 @@
 services:
-  db:
-    env_file:
-      - ./backend/.env
-    volumes:
-      - postgres_data_test:/var/lib/postgresql/data/
-    ports:
-      - "5433:5432"
-
   test:
     build: ./backend
     container_name: pms-test
@@ -15,12 +7,10 @@ services:
       - ./backend:/app
     environment:
       - PYTHONPATH=/app
-      - DATABASE_TYPE=postgres
+      - DATABASE_TYPE=sqlite
       - TESTING=True
     networks:
       - pms_network
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
