@@ -1,9 +1,0 @@
-Current ENVIRONMENT in api.py: 'test'
-CORS confiured: http://localhost:3001,http://127.0.0.1:3001
-Adding testing route in api.py
-INFO:     Started server process [12555]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
-Successfully connected to Redis for caching.
-INFO:     127.0.0.1:50822 - "GET /api/v1/openapi.json HTTP/1.1" 200 OK
