@@ -1,0 +1,18 @@
+services:
+  backend:
+    environment:
+      - DATABASE_TYPE=sqlite
+    # The base docker-compose.yml has the backend depending on 'db' and 'redis'.
+    # We must redefine depends_on here to remove the 'db' dependency.
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  e2e-tests:
+    # This service definition is inherited from docker-compose.e2e.yml
+    # and doesn't need changes, but we must ensure it waits for the
+    # backend to be healthy. The dependency is already defined in the base
+    # e2e compose file.
+    depends_on:
+      - frontend
+      - backend
