@@ -29,7 +29,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ## 3. Technology Stack
 
-*   **Backend:** Python, FastAPI, SQLAlchemy, PostgreSQL, SQLite
+*   **Backend:** Python, FastAPI, SQLAlchemy, PostgreSQL, SQLite, Redis, DiskCache
 *   **Frontend:** TypeScript, React, Vite, React Query, Tailwind CSS
 *   **Testing:** Pytest (Backend), Jest & React Testing Library (Frontend), Playwright (E2E)
 *   **Containerization:** Docker, Docker Compose
@@ -53,6 +53,10 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
     ```
     ALLOWED_HOSTS=your.domain.com,192.168.1.100
     ```
+4.  **Configure Caching (optional):** The application uses Redis for caching by default. For non-Docker or simplified deployments, you can switch to a file-based cache by setting the following environment variable in your `backend/.env` file:
+    ```
+    CACHE_TYPE=disk
+    ```
 
 ### Running with PostgreSQL (Default)
 
@@ -69,7 +73,7 @@ docker compose up --build
 
 ### Running with SQLite (Simplified Setup)
 
-For a simpler setup that does not require a separate PostgreSQL database, you can run the application using SQLite. This is ideal for local development or simple deployments.
+For a simpler setup that does not require a separate PostgreSQL or Redis instance, you can run the application using SQLite and a file-based cache. This is ideal for local development or simple deployments.
 
 1.  **Run the configuration script** as described above.
 2.  **Start the application using the SQLite override file:**
@@ -78,7 +82,7 @@ For a simpler setup that does not require a separate PostgreSQL database, you ca
     docker compose -f docker-compose.yml -f docker-compose.sqlite.yml up --build
     ```
 
-    This will start the backend and frontend services, with the backend using a persistent SQLite database file.
+    This will start the backend and frontend services. The backend will use a persistent SQLite database file (`arthsaarthi.db`) and `diskcache` for caching, removing the need for the `db` and `redis` containers.
 
 ### Running the Test Suites
 
@@ -101,6 +105,16 @@ This command starts a fully isolated test environment and runs the Playwright te
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit
 ```
+
+**4. Running All Checks Locally (Without Docker):**
+
+For a development environment without Docker, a comprehensive script is provided to run all linters and tests. This is the recommended way to validate changes locally before committing.
+
+```bash
+./run_e2e_local.sh
+```
+
+This script will automatically handle dependencies, start the necessary services on dynamic ports, run all backend, frontend, and E2E tests, and clean up afterwards. For more details on the individual commands, see the `prompt/AGENTS.md` guide.
 
 ## 5. Project Documentation
 

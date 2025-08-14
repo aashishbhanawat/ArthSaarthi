@@ -11,6 +11,7 @@ pytest-mock
 python-jose[cryptography]
 python-multipart
 redis
+diskcache
 sqlalchemy
 sqlalchemy-utils
 typer

@@ -43,6 +43,9 @@ All planned features for the current release cycle have been implemented and val
 *   **Database Portability (SQLite Support):**
     *   The application backend has been refactored to be database-agnostic, officially supporting both PostgreSQL and SQLite.
     *   This significantly enhances portability, simplifying deployment for users who prefer not to manage a separate PostgreSQL server.
+*   **Pluggable Caching Layer:**
+    *   The hard dependency on Redis has been removed and replaced with a flexible caching abstraction.
+    *   The application now supports both Redis (default for Docker) and a file-based `diskcache` (default for SQLite/local deployments), configured via a `CACHE_TYPE` environment variable.
 
 ---
 
@@ -58,6 +61,8 @@ To improve code quality and ensure stability, a comprehensive CI/CD pipeline and
 *   **Linting Process:**
     *   **Backend:** The backend uses `ruff` for both linting and formatting. The configuration is in `backend/pyproject.toml`.
     *   **Frontend:** The frontend uses `ESLint` with a standard configuration for React/TypeScript projects (`frontend/.eslintrc.cjs`). A `lint` script is available in `frontend/package.json` to run the linter locally: `npm run lint`.
+
+*   **Local Test Runner:** A new script, `./run_e2e_local.sh`, has been created to run the entire test and linting suite in a local, non-Docker environment. This is the recommended way to validate changes locally before committing.
 
 **Instructions for AI Assistants:**
 Future development by AI assistants **must** adhere to these processes. All code changes must pass the linting checks and all test suites before being submitted. Any new feature should be accompanied by corresponding tests.
