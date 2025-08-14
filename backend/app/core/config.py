@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     API_V1_STR: str = "/api/v1"
     DATABASE_TYPE: str = "postgres"
+    POSTGRES_SERVER: str = "db"
+    POSTGRES_USER: str = "user"
+    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_DB: str = "app"
     DATABASE_URL: Optional[str] = None
     REDIS_URL: str = "redis://redis:6379/0"
     ENVIRONMENT: str = "production"
@@ -30,7 +34,10 @@ class Settings(BaseSettings):
         if values.get("DATABASE_TYPE") == "sqlite":
             return "sqlite:///./arthsaarthi.db"
         # Default to PostgreSQL if not specified
-        return "postgresql://user:password@db:5432/app"
+        return (
+            f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@"
+            f"{values.get('POSTGRES_SERVER')}:5432/{values.get('POSTGRES_DB')}"
+        )
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
 

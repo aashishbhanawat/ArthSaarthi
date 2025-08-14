@@ -1,37 +1,32 @@
 # Native Setup Guide (Without Docker)
 
-This guide provides instructions for setting up and running **ArthSaarthi** directly on your local machine without using Docker. This is for users who cannot or prefer not to install Docker.
+This guide provides instructions for setting up and running **ArthSaarthi** directly on your local machine without using Docker.
 
-**Note:** This method is more complex than using the provided Docker setup and requires manual installation of all dependencies.
+**The recommended approach for native setup is to use SQLite**, as it simplifies the process by removing the need for external database and Redis servers.
 
 ---
 
 ## 1. Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
-
 *   **Python:** Version 3.9 or higher.
 *   **Node.js:** Version 18.x or higher (which includes `npm`).
-*   **PostgreSQL:** A running instance of PostgreSQL. You will need to create a database and a user for the application.
-*   **Redis:** A running instance of Redis.
 *   **Git:** For cloning the repository.
 
 ---
 
 ## 2. Backend Setup
 
+### SQLite Setup (Recommended)
+
+This is the simplest way to get the backend running.
+
 1.  **Clone the Repository:**
     ```bash
     git clone <repository_url>
-    cd pms
+    cd pms/backend
     ```
 
-2.  **Navigate to the Backend Directory:**
-    ```bash
-    cd backend
-    ```
-
-3.  **Create and Activate a Python Virtual Environment:**
+2.  **Create and Activate a Python Virtual Environment:**
     ```bash
     # For Unix/macOS
     python3 -m venv venv
@@ -42,17 +37,31 @@ Before you begin, ensure you have the following installed on your system:
     .\venv\Scripts\activate
     ```
 
-4.  **Install Dependencies:**
+3.  **Install Dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
 
-5.  **Configure Environment Variables:**
+4.  **Configure Environment Variables:**
     *   Create a `.env` file in the `backend/` directory by copying the example:
         ```bash
         cp .env.example .env
         ```
-    *   Edit the `backend/.env` file and update the `DATABASE_URL` and `REDIS_URL` to point to your local instances.
+    *   Edit the `backend/.env` file and set `DATABASE_TYPE=sqlite`. You can leave the other database variables as they are; they will be ignored.
+
+### PostgreSQL Setup
+
+This method is more complex and requires a running PostgreSQL and Redis instance.
+
+1.  **Prerequisites:**
+    *   A running instance of PostgreSQL.
+    *   A running instance of Redis.
+
+2.  **Follow steps 1-4 from the SQLite setup.**
+
+3.  **Configure Environment Variables:**
+    *   In the `backend/.env` file, ensure `DATABASE_TYPE` is set to `postgres`.
+    *   Update the `DATABASE_URL` and `REDIS_URL` to point to your local instances.
         *   **`DATABASE_URL`:** `postgresql://<your_user>:<your_password>@localhost:5432/<your_db_name>`
         *   **`REDIS_URL`:** `redis://localhost:6379/0`
 
