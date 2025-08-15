@@ -1,164 +1,99 @@
-import logging
-from typing import Generator
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy_utils import create_database, database_exists, drop_database
+from typing import Generator
+from starlette.testclient import TestClient
+from sqlalchemy.orm import Session
+from _pytest.monkeypatch import MonkeyPatch
 
-from app.core.config import settings
-from app.db.base import Base
-from app.db.session import get_db
 from app.main import app
-from app.tests.utils.user import create_random_user, get_access_token
-
-log = logging.getLogger(__name__)
-
-
-def get_test_database_url():
-    """
-    Generates a test database URL based on the DATABASE_TYPE.
-    """
-    if settings.DATABASE_TYPE == "sqlite":
-        return "sqlite:///:memory:"  # Use in-memory SQLite database for tests
-    return str(settings.DATABASE_URL)
+from app.core.config import settings
+from app.db.session import SessionLocal, engine
+from app.db.base_class import Base
+from app.api.deps import get_db
 
 
 @pytest.fixture(scope="session")
-def test_database_url() -> str:
-    """
-    Yields the test database URL.
-    """
-    yield get_test_database_url()
+def monkeypatch_session() -> Generator[MonkeyPatch, None, None]:
+    """Session-scoped monkeypatch to avoid re-patching for every test."""
+    m = MonkeyPatch()
+    yield m
+    m.undo()
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_test_database(test_database_url: str):
+def setup_test_environment(monkeypatch_session: MonkeyPatch) -> Generator[None, None, None]:
     """
-    Creates and drops the test database for the test session.
-    For SQLite, this is a no-op as the in-memory database is created
-    when the first connection is established.
+    Set up the test environment for the entire session.
+    This fixture ensures that all tests run in a consistent "desktop" mode
+    with a temporary SQLite database and a pre-loaded encryption key.
     """
-    if "sqlite" in test_database_url:
-        # For in-memory SQLite, no setup/teardown is needed at this level.
-        # The database is created and destroyed with the engine connection.
-        log.info("--- Using in-memory SQLite database. No setup needed. ---")
-        yield
-        log.info("--- Tearing down in-memory SQLite database. ---")
-    else:
-        log.info("*******************************************************************")
-        log.info(f"--- Setting up test database: {test_database_url} ---")
-        if database_exists(test_database_url):
-            log.info("--- Database exists, dropping. ---")
-            drop_database(test_database_url)
-        create_database(test_database_url)
-        log.info("--- Database created successfully. ---")
-        yield
-        log.info("--- Tearing down test database. ---")
-        log.info("*******************************************************************")
-        drop_database(test_database_url)
+    from app.core.key_manager import key_manager
 
+    monkeypatch_session.setattr(settings, "DEPLOYMENT_MODE", "desktop")
+    monkeypatch_session.setattr(settings, "DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch_session.setattr(settings, "ENCRYPTION_KEY_PATH", "test_master.key")
+    monkeypatch_session.setattr(settings, "WRAPPED_KEY_PATH", "test_master.key.wrapped")
+    monkeypatch_session.setattr(settings, "TEST_MODE", True)
 
-@pytest.fixture(scope="session")
-def engine(test_database_url: str):
-    """
-    Yields a SQLAlchemy engine for the test database.
-    Handles special connection arguments for SQLite.
-    """
-    log.info("--- Creating Engine ---")
-    if "sqlite" in test_database_url:
-        engine = create_engine(
-            test_database_url, connect_args={"check_same_thread": False}
-        )
-    else:
-        engine = create_engine(test_database_url)
-    yield engine
+    # The engine is created when db.session is imported. We need to dispose of the
+    # old engine and allow a new one to be created with the patched DATABASE_URL.
+    engine.dispose()
 
-
-@pytest.fixture(scope="session")
-def TestingSessionLocal(engine):
-    """
-    Yields a SQLAlchemy session factory for the test database.
-    """
-    log.info("--- Creating TestingSessionLocal ---")
-    yield sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def create_tables(engine, setup_test_database):
-    log.info("--- Creating tables... ---")
+    # Create all tables for the new in-memory database
     Base.metadata.create_all(bind=engine)
+
+    # In desktop mode, we need a master key for encryption.
+    # We generate a dummy key for the test session.
+    if settings.DEPLOYMENT_MODE == "desktop":
+        key_manager.generate_master_key()
+        # Use a dummy password for tests. In a real scenario, this would be derived
+        # from the user's password at login.
+        key_manager.load_master_key(b"testpassword")
+
     yield
-    log.info("--- Dropping tables... ---")
+
+    # Teardown: Clean up the database and key files
     Base.metadata.drop_all(bind=engine)
+    if os.path.exists(settings.ENCRYPTION_KEY_PATH):
+        os.remove(settings.ENCRYPTION_KEY_PATH)
+    if os.path.exists(settings.WRAPPED_KEY_PATH):
+        os.remove(settings.WRAPPED_KEY_PATH)
+
+
+@pytest.fixture(scope="function")
+def db(setup_test_environment: None) -> Generator[Session, None, None]:
+    """
+    Provides a transactional database session for each test function.
+    This fixture ensures that each test runs in a clean, isolated transaction
+    that is rolled back at the end, preventing tests from interfering with each other.
+    """
+    connection = engine.connect()
+    transaction = connection.begin()
+    db_session = SessionLocal(bind=connection)
+
+    yield db_session
+
+    db_session.close()
+    transaction.rollback()
+    connection.close()
 
 
 @pytest.fixture(scope="function")
 def client(db: Session) -> Generator[TestClient, None, None]:
-    # Set deployment mode to server for all tests by default
-    settings.DEPLOYMENT_MODE = "server"
+    """
+    Provides a TestClient instance for each test function, with the database
+    dependency overridden to use the transactional session from the `db` fixture.
+    """
 
-    def override_get_db():
+    def override_get_db() -> Generator[Session, None, None]:
         yield db
 
     app.dependency_overrides[get_db] = override_get_db
-    log.info("--- Creating TestClient ---")
+
     with TestClient(app) as c:
-        log.info("--- TestClient is ready ---")
         yield c
-    app.dependency_overrides.clear()
 
-
-@pytest.fixture(scope="function")
-def db(TestingSessionLocal: sessionmaker, engine) -> Generator[Session, None, None]:
-    """
-    Yields a SQLAlchemy session for the test database.
-    """
-    log.info("--- Creating Database Session ---")
-    connection = engine.connect()  # Get a connection from the engine
-    transaction = connection.begin()  # Start a transaction
-    session = TestingSessionLocal(bind=connection)  # Bind the session to the connection
-    yield session  # Yield the session to the test
-    session.close()  # Close the session
-    transaction.rollback()  # Rollback the transaction, undoing changes
-    connection.close()  # Return the connection to the pool
-
-
-@pytest.fixture
-def admin_user_data() -> dict:
-    return {
-        "full_name": "Admin User",
-        "email": "admin@example.com",
-        "password": "ValidPassword123!",
-    }
-
-
-@pytest.fixture
-def get_auth_headers(client: TestClient):
-    """
-    Returns authentication headers for a given email and password.
-    """
-
-    def _get_auth_headers(email: str, password: str) -> dict[str, str]:
-        log.info(f"--- Getting auth headers for user: {email} ---")
-        return {"Authorization": f"Bearer {get_access_token(client, email, password)}"}
-
-    return _get_auth_headers
-
-
-@pytest.fixture
-def superuser_token_headers(client: TestClient, db: Session) -> dict[str, str]:
-    admin_user, admin_password = create_random_user(db)
-    admin_user.is_admin = True
-    db.add(admin_user)
-    db.commit()
-    db.refresh(admin_user)
-    token = get_access_token(client, admin_user.email, admin_password)
-    return {"Authorization": f"Bearer {token}"}
-
-
-@pytest.fixture
-def test_user_token_headers(client: TestClient, db: Session) -> dict[str, str]:
-    user, password = create_random_user(db)
-    return {"Authorization": f"Bearer {get_access_token(client, user.email, password)}"}
+    del app.dependency_overrides[get_db]
