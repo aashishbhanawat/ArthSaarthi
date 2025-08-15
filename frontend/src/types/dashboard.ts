@@ -27,3 +27,7 @@ export interface PortfolioHistoryPoint {
 export interface PortfolioHistoryResponse {
     history: PortfolioHistoryPoint[];
 }
+
+export interface AssetAllocationResponse {
+    allocation: AssetAllocation[];
+}

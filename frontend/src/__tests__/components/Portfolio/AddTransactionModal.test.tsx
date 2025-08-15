@@ -1,10 +1,9 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AddTransactionModal from '../../../components/Portfolio/AddTransactionModal';
 import * as portfolioApi from '../../../services/portfolioApi';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
-import { Asset } from '../../../types';
+import { Asset } from '../../../types/asset';
 const mockLookupAsset = jest.spyOn(portfolioApi, 'lookupAsset');
 const mockUseCreateTransaction = jest.spyOn(portfolioHooks, 'useCreateTransaction') as jest.Mock;
 const mockUseCreateAsset = jest.spyOn(portfolioHooks, 'useCreateAsset') as jest.Mock;
@@ -22,8 +21,8 @@ const mockMutateTransaction = jest.fn();
 const mockMutateAsset = jest.fn();
 
 const mockAssets: Asset[] = [
-    { id: 1, ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
-    { id: 2, ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
+    { id: '1', ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', isin: 'US0378331005', currency: 'USD', exchange: 'NASDAQ' },
+    { id: '2', ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', isin: 'US02079K3059', currency: 'USD', exchange: 'NASDAQ' },
 ];
 
 const renderComponent = () => {

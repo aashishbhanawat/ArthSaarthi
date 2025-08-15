@@ -7,6 +7,7 @@ export interface ImportSession {
     portfolio_id: string;
     file_name: string;
     file_path: string;
+    source: string;
     parsed_file_path: string | null;
     status: 'PENDING' | 'PARSING' | 'PARSED' | 'COMMITTING' | 'COMPLETED' | 'FAILED';
     error_message: string | null;

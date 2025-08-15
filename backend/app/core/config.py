@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_URL: Optional[str] = None
     CACHE_TYPE: Literal["redis", "disk"] = "redis"
+    DEPLOYMENT_MODE: Literal["server", "desktop"] = "server"
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "/app/uploads"
 
@@ -38,6 +39,10 @@ class Settings(BaseSettings):
 
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
+        if values.get("DEPLOYMENT_MODE") == "desktop":
+            # In desktop mode, always use a local SQLite file
+            # The path will be determined later, for now, a default name
+            return "sqlite:///./arthsaarthi-desktop.db"
         if values.get("DATABASE_TYPE") == "sqlite":
             return "sqlite:///./arthsaarthi.db"
         if isinstance(v, str):
@@ -47,6 +52,12 @@ class Settings(BaseSettings):
             f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@"
             f"{values.get('POSTGRES_SERVER')}:5432/{values.get('POSTGRES_DB')}"
         )
+
+    @validator("CACHE_TYPE", pre=True, always=True)
+    def set_cache_type_for_desktop(cls, v, values):
+        if values.get("DEPLOYMENT_MODE") == "desktop":
+            return "disk"
+        return v
 
     @validator("REDIS_URL", pre=True, always=True)
     def assemble_redis_connection(cls, v, values):

@@ -1,6 +1,5 @@
-import React from 'react';
 import { render, screen, within } from '@testing-library/react';
-import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import HoldingDetailModal from '../../../components/Portfolio/HoldingDetailModal';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Holding } from '../../../types/holding';
@@ -12,11 +11,13 @@ const mockHolding: Holding = {
   ticker_symbol: 'TEST',
   quantity: 100,
   average_buy_price: 150,
+  total_invested_amount: 15000,
   current_price: 160,
   current_value: 16000,
+  days_pnl: 100,
+  days_pnl_percentage: 0.00625,
   unrealized_pnl: 1000,
-  asset_type: 'Stock',
-  exchange: 'NSE',
+  unrealized_pnl_percentage: 0.0666,
 };
 
 const mockTransactions: Transaction[] = [
@@ -29,8 +30,15 @@ const mockTransactions: Transaction[] = [
     price_per_unit: 150,
     fees: 10,
     transaction_date: '2023-01-15T10:00:00Z',
-    created_at: '2023-01-15T10:00:00Z',
-    updated_at: '2023-01-15T10:00:00Z',
+    asset: {
+        id: 'asset-1',
+        name: 'Test Asset',
+        ticker_symbol: 'TEST',
+        asset_type: 'Stock',
+        currency: 'INR',
+        isin: 'US0378331005',
+        exchange: 'NASDAQ',
+    }
   },
 ];
 
@@ -50,20 +58,13 @@ const renderComponent = (onClose = jest.fn(), onEdit = jest.fn(), onDelete = jes
   );
 };
 
-type PartialUseQueryResult<TData> = Partial<UseQueryResult<TData, Error>>;
-
-interface AssetAnalyticsData {
-  realized_xirr: number;
-  unrealized_xirr: number;
-}
-
 describe('HoldingDetailModal', () => {
   beforeEach(() => {
     jest.spyOn(portfolioHooks, 'useAssetTransactions').mockReturnValue({
       data: mockTransactions,
       isLoading: false,
       error: null,
-    } as PartialUseQueryResult<Transaction[]>);
+    } as any);
   });
 
   afterEach(() => {
@@ -75,7 +76,7 @@ describe('HoldingDetailModal', () => {
       data: { realized_xirr: 0.1234, unrealized_xirr: 0.2345 },
       isLoading: false,
       isError: false,
-    } as PartialUseQueryResult<AssetAnalyticsData>);
+    } as any);
 
     renderComponent();
 
@@ -100,7 +101,7 @@ describe('HoldingDetailModal', () => {
       data: undefined,
       isLoading: true,
       isError: false,
-    } as PartialUseQueryResult<AssetAnalyticsData>);
+    } as any);
 
     renderComponent();
 
@@ -115,7 +116,7 @@ describe('HoldingDetailModal', () => {
       data: undefined,
       isLoading: false,
       isError: true,
-    } as PartialUseQueryResult<AssetAnalyticsData>);
+    } as any);
 
     renderComponent();
 

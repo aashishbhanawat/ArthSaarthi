@@ -111,14 +111,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             const payload: TransactionUpdate = commonPayload;
             updateTransactionMutation.mutate(
                 { portfolioId, transactionId: transactionToEdit.id, data: payload },
-                mutationOptions
+                mutationOptions as any
             );
         } else {
             const payload: TransactionCreate = {
                 ...commonPayload,
                 asset_id: selectedAsset.id,
             };
-            createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions as any);
         }
     };
 
@@ -130,7 +130,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },
-            onError: (error: { response?: { data?: { detail?: string } } }) => {
+            onError: (error: any) => {
                 setApiError(error.response?.data?.detail || 'Failed to create asset.');
             }
         });

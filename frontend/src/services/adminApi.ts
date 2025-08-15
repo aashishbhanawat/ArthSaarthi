@@ -12,14 +12,14 @@ export const createUser = async (userData: UserCreate): Promise<User> => {
 };
 
 export const updateUser = async (
-  userId: number,
+  userId: string,
   userData: UserUpdate
 ): Promise<User> => {
   const response = await apiClient.put(`/api/v1/users/${userId}`, userData);
   return response.data;
 };
 
-export const deleteUser = async (userId: number): Promise<User> => {
+export const deleteUser = async (userId: string): Promise<User> => {
   const response = await apiClient.delete(`/api/v1/users/${userId}`);
   return response.data;
 };

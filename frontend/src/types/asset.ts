@@ -4,4 +4,6 @@ export interface Asset {
     ticker_symbol: string;
     asset_type: string;
     isin: string | null;
+    currency: string | null;
+    exchange: string | null;
 }
