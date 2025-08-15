@@ -62,4 +62,14 @@ def login_for_access_token(
     access_token = security.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    deployment_mode = (
+        "single_user"
+        if settings.DATABASE_TYPE == "sqlite" and settings.ENVIRONMENT == "production"
+        else "multi_user"
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user,
+        "deployment_mode": deployment_mode,
+    }

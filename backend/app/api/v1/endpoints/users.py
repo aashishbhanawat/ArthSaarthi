@@ -5,22 +5,30 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud
+from app.core.config import settings
 from app.core.dependencies import get_current_admin_user, get_current_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
-from app.schemas.user import User, UserCreate, UserUpdate
+from app.schemas.user import User, UserCreate, UserUpdate, UserWithDeploymentMode
 
 router = APIRouter()
 
 
-@router.get("/me", response_model=User)
+@router.get("/me", response_model=UserWithDeploymentMode)
 def read_user_me(
     current_user: UserModel = Depends(get_current_user),
 ):
     """
     Get current user's profile.
     """
-    return current_user
+    deployment_mode = (
+        "single_user"
+        if settings.DATABASE_TYPE == "sqlite" and settings.ENVIRONMENT == "production"
+        else "multi_user"
+    )
+    user_data = current_user.__dict__
+    user_data["deployment_mode"] = deployment_mode
+    return user_data
 
 
 @router.get("/", response_model=List[User])

@@ -62,25 +62,42 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            build_script: ./scripts/build-windows.sh
-            asset_name: my-app.exe
+            asset_name_suffix: .exe
+            asset_content_type: application/vnd.microsoft.portable-executable
           - os: macos-latest
-            build_script: ./scripts/build-macos.sh
-            asset_name: my-app.dmg
+            asset_name_suffix: .dmg
+            asset_content_type: application/x-apple-diskimage
           - os: ubuntu-latest
-            build_script: ./scripts/build-linux.sh
-            asset_name: my-app-linux
+            asset_name_suffix: .AppImage
+            asset_content_type: application/vnd.appimage
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r backend/requirements.in && pip install -r backend/requirements-dev.in
+
       - name: Make build script executable
-        if: runner.os != 'Windows'
-        run: chmod +x ${{ matrix.build_script }}
+        run: chmod +x ./scripts/build-desktop.sh
 
       - name: Run build script
-        run: ${{ matrix.build_script }}
+        run: ./scripts/build-desktop.sh
         shell: bash
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -88,47 +105,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./${{ matrix.asset_name }}
-          asset_name: ${{ matrix.asset_name }}
-          asset_content_type: application/octet-stream
-
-  upload-docs-and-source:
-    name: Upload Docs and Source Code
-    needs: create-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Create source code zip
-        run: zip -r source-code-${{ github.ref_name }}.zip . -x ".git/*"
-
-      - name: Upload Source Code Zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./source-code-${{ github.ref_name }}.zip
-          asset_name: source-code-${{ github.ref_name }}.zip
-          asset_content_type: application/zip
-
-      - name: Upload README
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./README.md
-          asset_name: README.md
-          asset_content_type: text/markdown
-
-      - name: Upload Native Setup Guide
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./docs/native_setup_guide.md
-          asset_name: native_setup_guide.md
-          asset_content_type: text/markdown
+          asset_path: ./frontend/release/ArthSaarthi-${{ env.VERSION }}${{ matrix.asset_name_suffix }}
+          asset_name: ArthSaarthi-${{ env.VERSION }}-${{ matrix.os }}${{ matrix.asset_name_suffix }}
+          asset_content_type: ${{ matrix.asset_content_type }}

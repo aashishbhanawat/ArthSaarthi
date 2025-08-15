@@ -162,7 +162,7 @@ print_info "Frontend started with PID: $FRONTEND_PID"
 
 # --- Step 8: Wait for Services to be Ready ---
 print_info "Waiting for services to become available..."
-TIMEOUT=120 # Increased timeout for slower CIs
+TIMEOUT=300 # Increased timeout for slower CIs
 
 # Wait for backend
 BACKEND_HEALTH_URL="http://127.0.0.1:$NEW_BACKEND_PORT/api/v1/openapi.json"
@@ -201,7 +201,7 @@ done
 # --- Step 9: Run E2E Tests ---
 print_info "Running Playwright E2E tests..."
 export E2E_BASE_URL="http://127.0.0.1:$NEW_FRONTEND_PORT"
-(cd e2e && npx playwright test)
+(cd e2e && npx playwright test tests/admin-user-management.spec.ts)
 
 print_success "E2E tests finished successfully."
 

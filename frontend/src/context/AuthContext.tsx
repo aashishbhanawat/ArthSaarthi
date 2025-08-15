@@ -1,29 +1,31 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import api from '../services/api';
-import { User } from '../types/user';
+import { User, UserWithDeploymentMode } from '../types/user';
 
 interface AuthContextType {
   token: string | null;
   user: User | null;
+  deploymentMode: 'single_user' | 'multi_user' | null;
   isLoading: boolean;
   error: string | null;
-  login: (token: string) => void;
+  login: (token: string, user: User, deploymentMode: 'single_user' | 'multi_user') => void;
   logout: () => void;
   register: (email: string) => Promise<void>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(null);
+  const [deploymentMode, setDeploymentMode] = useState<'single_user' | 'multi_user' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error] = useState<string | null>(null);
 
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
+    setDeploymentMode(null);
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
   }, []);
@@ -33,7 +35,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       response => response,
       (error) => {
         if (error.response && error.response.status === 403) {
-          // This indicates an expired or invalid token
           logout();
         }
         return Promise.reject(error);
@@ -48,8 +49,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data } = await api.get<User>('/api/v1/users/me');
+      const { data } = await api.get<UserWithDeploymentMode>('/api/v1/users/me');
       setUser(data);
+      setDeploymentMode(data.deployment_mode);
     } catch (err) {
       logout();
     } finally {
@@ -66,24 +68,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token, fetchUserData]);
 
-  const login = (newToken: string) => {
+  const login = (newToken: string, newUser: User, newDeploymentMode: 'single_user' | 'multi_user') => {
     setToken(newToken);
     localStorage.setItem('token', newToken);
+    setUser(newUser);
+    setDeploymentMode(newDeploymentMode);
+    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
 
   const register = async (email: string) => {
-    // This function can be expanded if needed
     console.log("Register function called for", email);
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoading, error, login, logout, register }}>
+    <AuthContext.Provider value={{ token, user, deploymentMode, isLoading, error, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
