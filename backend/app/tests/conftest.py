@@ -96,6 +96,9 @@ def create_tables(engine, setup_test_database):
 
 @pytest.fixture(scope="function")
 def client(db: Session) -> Generator[TestClient, None, None]:
+    # Set deployment mode to server for all tests by default
+    settings.DEPLOYMENT_MODE = "server"
+
     def override_get_db():
         yield db
 
