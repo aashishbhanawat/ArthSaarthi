@@ -14,6 +14,7 @@ echo "Building backend executable with PyInstaller..."
 # The spec file is configured to place the output in backend/dist/
 # We need to ensure dependencies are installed first.
 pip install -r backend/requirements.txt
+rm -rf backend/dist backend/build
 (cd backend && pyinstaller build-backend.spec)
 echo "Backend build complete. Output is in backend/dist/"
 

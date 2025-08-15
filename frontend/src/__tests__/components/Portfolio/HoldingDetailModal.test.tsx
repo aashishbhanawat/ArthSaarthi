@@ -1,9 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/react-query';
 import HoldingDetailModal from '../../../components/Portfolio/HoldingDetailModal';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Holding } from '../../../types/holding';
 import { Transaction } from '../../../types/portfolio';
+import { PortfolioAnalytics } from '../../../types/analytics';
 
 const mockHolding: Holding = {
   asset_id: 'asset-1',
@@ -58,13 +59,37 @@ const renderComponent = (onClose = jest.fn(), onEdit = jest.fn(), onDelete = jes
   );
 };
 
+// A helper to create a complete UseQueryResult mock
+const createUseQueryResultMock = <TData>(data: TData, options: Partial<UseQueryResult<TData, Error>> = {}): UseQueryResult<TData, Error> => ({
+    data,
+    dataUpdatedAt: 1,
+    error: null,
+    errorUpdatedAt: 0,
+    failureCount: 0,
+    failureReason: null,
+    fetchStatus: 'idle',
+    isError: false,
+    isFetched: true,
+    isFetchedAfterMount: true,
+    isFetching: false,
+    isInitialLoading: false,
+    isLoading: false,
+    isLoadingError: false,
+    isPlaceholderData: false,
+    isRefetchError: false,
+    isRefetching: false,
+    isStale: false,
+    isSuccess: true,
+    refetch: jest.fn(),
+    status: 'success',
+    ...options
+});
+
 describe('HoldingDetailModal', () => {
   beforeEach(() => {
-    jest.spyOn(portfolioHooks, 'useAssetTransactions').mockReturnValue({
-      data: mockTransactions,
-      isLoading: false,
-      error: null,
-    } as any);
+    jest.spyOn(portfolioHooks, 'useAssetTransactions').mockReturnValue(
+        createUseQueryResultMock(mockTransactions)
+    );
   });
 
   afterEach(() => {
@@ -72,11 +97,9 @@ describe('HoldingDetailModal', () => {
   });
 
   it('renders holding details and transaction list correctly', () => {
-    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue({
-      data: { realized_xirr: 0.1234, unrealized_xirr: 0.2345 },
-      isLoading: false,
-      isError: false,
-    } as any);
+    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
+        createUseQueryResultMock({ realized_xirr: 0.1234, unrealized_xirr: 0.2345, sharpe_ratio: 1.5 })
+    );
 
     renderComponent();
 
@@ -97,11 +120,9 @@ describe('HoldingDetailModal', () => {
   });
 
   it('displays loading state for analytics', () => {
-    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      isError: false,
-    } as any);
+    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
+        createUseQueryResultMock(undefined, { isLoading: true, isSuccess: false, status: 'pending' })
+    );
 
     renderComponent();
 
@@ -112,11 +133,9 @@ describe('HoldingDetailModal', () => {
   });
 
   it('displays error state for analytics', () => {
-    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: true,
-    } as any);
+    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
+        createUseQueryResultMock(undefined, { isError: true, isSuccess: false, status: 'error', error: new Error('Failed to fetch') })
+    );
 
     renderComponent();
 
@@ -126,4 +145,3 @@ describe('HoldingDetailModal', () => {
     expect(errorElements).toHaveLength(2);
   });
 });
-

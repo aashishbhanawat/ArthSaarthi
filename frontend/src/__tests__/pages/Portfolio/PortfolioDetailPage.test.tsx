@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PortfolioDetailPage from '../../../pages/Portfolio/PortfolioDetailPage';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Portfolio } from '../../../types/portfolio';
-import { Holding, PortfolioSummary, HoldingsResponse } from '../../../types/holding';
+import { Holding, PortfolioSummary } from '../../../types/holding';
 import { PortfolioAnalytics } from '../../../types/analytics';
 
 jest.mock('../../../hooks/usePortfolios');
