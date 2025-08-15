@@ -8,12 +8,12 @@ from sqlalchemy.orm import Session
 from app import crud
 from app.core import security
 from app.core.config import settings
+from app.core.dependencies import get_current_active_user
 from app.core.key_manager import key_manager
 from app.db.session import get_db
 from app.models import user as user_model
 from app.schemas import token as token_schema
 from app.schemas.auth import Status
-from app.core.dependencies import get_current_active_user
 from app.schemas.msg import Msg
 from app.schemas.user import User, UserCreate, UserPasswordChange
 
@@ -63,7 +63,10 @@ def login_for_access_token(
         # In desktop mode, we must first unlock the master key.
         # This will fail if the password is wrong.
         if not key_manager.unlock_master_key(password=form_data.password):
-            logger.warning(f"Desktop mode login failed for user: {form_data.username} - Master key unlock failed.")
+            logger.warning(
+                f"Desktop mode login failed for user: {form_data.username} - "
+                "Master key unlock failed."
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
@@ -102,13 +105,21 @@ def change_password(
     In desktop mode, this also re-wraps the master encryption key.
     """
     # First, verify the old password is correct
-    if not security.verify_password(password_data.old_password, current_user.hashed_password):
+    if not security.verify_password(
+        password_data.old_password, current_user.hashed_password
+    ):
         raise HTTPException(status_code=400, detail="Incorrect old password")
 
     # In desktop mode, re-wrap the master key
     if settings.DEPLOYMENT_MODE == "desktop":
-        if not key_manager.change_password(password_data.old_password, password_data.new_password):
-            raise HTTPException(status_code=400, detail="Failed to re-wrap master key. The old password may be incorrect.")
+        if not key_manager.change_password(
+            password_data.old_password, password_data.new_password
+        ):
+            detail = "Failed to re-wrap master key. The old password may be incorrect."
+            raise HTTPException(
+                status_code=400,
+                detail=detail,
+            )
 
     # Update the password in the database
     new_hashed_password = security.get_password_hash(password_data.new_password)

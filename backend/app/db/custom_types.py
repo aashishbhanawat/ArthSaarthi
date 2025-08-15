@@ -1,7 +1,12 @@
+import os
 import uuid
 
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from sqlalchemy import LargeBinary
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.types import CHAR, TypeDecorator
+
+from app.core.key_manager import key_manager
 
 
 class GUID(TypeDecorator):
@@ -42,13 +47,6 @@ class GUID(TypeDecorator):
     def copy(self, **kwargs):
         return GUID(self.impl.length)
 
-
-import os
-
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from sqlalchemy import LargeBinary
-
-from app.core.key_manager import key_manager
 
 NONCE_SIZE = 12
 
