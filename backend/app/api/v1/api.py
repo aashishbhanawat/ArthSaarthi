@@ -3,26 +3,33 @@ import os
 
 from fastapi import APIRouter
 
-from app.core.config import settings
-
-from .endpoints import (
+from app.api.v1.endpoints import (
     assets,
     auth,
     dashboard,
     import_sessions,
     portfolios,
     testing,
+    transactions,
     users,
 )
+from app.core.config import settings
 
-api_router = APIRouter()
 logger = logging.getLogger(__name__)
 
+api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
-if not (settings.DATABASE_TYPE == "sqlite" and settings.ENVIRONMENT == "production"):
+if not (
+    settings.DATABASE_TYPE == "sqlite"
+    and settings.ENVIRONMENT == "production"
+    and not os.getenv("TESTING")
+):
     api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfolios"])
 api_router.include_router(assets.router, prefix="/assets", tags=["assets"])
+api_router.include_router(
+    transactions.router, prefix="/transactions", tags=["transactions"]
+)
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 
 # Conditionally include the testing router only in the test environment
