@@ -6,9 +6,8 @@ from _pytest.monkeypatch import MonkeyPatch
 
 from app.main import app
 from app.core.config import settings
-from app.db.session import SessionLocal, engine
+from app.db.session import SessionLocal, engine, get_db
 from app.db.base_class import Base
-from app.api.deps import get_db
 
 
 @pytest.fixture(scope="session")
