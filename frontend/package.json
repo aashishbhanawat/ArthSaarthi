@@ -6,7 +6,7 @@
   "author": "Your Name",
   "type": "module",
   "homepage": "./",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
