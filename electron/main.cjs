@@ -1,96 +1,103 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
-const isDev = require('electron-is-dev');
 const path = require('path');
 const { spawn } = require('child_process');
 const portfinder = require('portfinder');
 
 let mainWindow;
 let backendProcess;
+let isDev;
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
+async function main() {
+    const isDevModule = await import('electron-is-dev');
+    isDev = isDevModule.default;
 
-  const startUrl = isDev
-    ? 'http://localhost:3000'
-    : `file://${path.join(__dirname, '../frontend/dist/index.html')}`;
+    function createWindow() {
+        mainWindow = new BrowserWindow({
+            width: 800,
+            height: 600,
+            webPreferences: {
+                preload: path.join(__dirname, 'preload.cjs'),
+                contextIsolation: true,
+                nodeIntegration: false,
+            },
+        });
 
-  mainWindow.loadURL(startUrl);
+        const startUrl = isDev
+            ? 'http://localhost:3000'
+            : `file://${path.join(__dirname, '../dist/index.html')}`;
 
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
+        mainWindow.loadURL(startUrl);
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-}
+        if (isDev) {
+            mainWindow.webContents.openDevTools();
+        }
 
-function startBackend() {
-  portfinder.getPort((err, port) => {
-    if (err) {
-      console.error('Could not find a free port.', err);
-      app.quit();
-      return;
+        mainWindow.on('closed', () => {
+            mainWindow = null;
+        });
     }
 
-    const backendExecutable = path.join(
-      __dirname,
-      '..',
-      'backend_dist', // This will be the output directory for PyInstaller
-      'main' // The name of the executable
-    );
+    function startBackend() {
+        portfinder.getPort((err, port) => {
+            if (err) {
+                console.error('Could not find a free port.', err);
+                app.quit();
+                return;
+            }
 
-    // Add .exe for windows
-    const executable = process.platform === 'win32' ? `${backendExecutable}.exe` : backendExecutable;
+            const backendExecutable = path.join(
+                __dirname,
+                '..',
+                'dist-backend', // This will be the output directory for PyInstaller
+                'main' // The name of the executable
+            );
 
-    backendProcess = spawn(executable, ['--port', port]);
+            // Add .exe for windows
+            const executable = process.platform === 'win32' ? `${backendExecutable}.exe` : backendExecutable;
 
-    backendProcess.stdout.on('data', (data) => {
-      console.log(`Backend: ${data}`);
+            backendProcess = spawn(executable, ['--port', port]);
+
+            backendProcess.stdout.on('data', (data) => {
+                console.log(`Backend: ${data}`);
+            });
+
+            backendProcess.stderr.on('data', (data) => {
+                console.error(`Backend Error: ${data}`);
+            });
+
+            backendProcess.on('close', (code) => {
+                console.log(`Backend process exited with code ${code}`);
+            });
+
+            // Pass the port to the frontend
+            ipcMain.handle('get-api-port', () => port);
+        });
+    }
+
+    app.on('ready', () => {
+        if (!isDev) {
+            startBackend();
+        }
+        createWindow();
     });
 
-    backendProcess.stderr.on('data', (data) => {
-      console.error(`Backend Error: ${data}`);
+    app.on('window-all-closed', () => {
+        if (process.platform !== 'darwin') {
+            app.quit();
+        }
     });
 
-    backendProcess.on('close', (code) => {
-      console.log(`Backend process exited with code ${code}`);
+    app.on('will-quit', () => {
+        if (backendProcess) {
+            backendProcess.kill();
+        }
     });
 
-    // Pass the port to the frontend
-    ipcMain.handle('get-api-port', () => port);
-  });
+    app.on('activate', () => {
+        if (mainWindow === null) {
+            createWindow();
+        }
+    });
 }
 
-app.on('ready', () => {
-  if (!isDev) {
-    startBackend();
-  }
-  createWindow();
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('will-quit', () => {
-  if (backendProcess) {
-    backendProcess.kill();
-  }
-});
-
-app.on('activate', () => {
-  if (mainWindow === null) {
-    createWindow();
-  }
-});
+main();
