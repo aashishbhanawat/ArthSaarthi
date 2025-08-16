@@ -1,8 +1,8 @@
 import apiClient from './api';
-import { Portfolio, Transaction, TransactionCreate, TransactionUpdate } from '../types/portfolio';
+import { Portfolio, PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate } from '../types/portfolio';
 import { Asset } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
-import { PortfolioAnalytics } from '../types/analytics';
+import { PortfolioAnalytics, AssetAnalytics } from '../types/analytics';
 
 export const getPortfolios = async (): Promise<Portfolio[]> => {
     const response = await apiClient.get<Portfolio[]>('/api/v1/portfolios/');

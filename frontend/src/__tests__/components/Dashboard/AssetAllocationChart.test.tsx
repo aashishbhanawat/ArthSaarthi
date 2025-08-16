@@ -43,12 +43,10 @@ describe('AssetAllocationChart', () => {
   });
 
   it('renders the pie chart with correct data on success', () => {
-    const mockData = {
-      allocation: [
+    const mockData = [
         { ticker: 'AAPL', value: 5000 },
         { ticker: 'GOOGL', value: 3000 },
-      ],
-    };
+    ];
     mockUseDashboardAllocation.mockReturnValue({ data: mockData, isLoading: false, isError: false });
     render(<AssetAllocationChart />);
 
@@ -62,7 +60,7 @@ describe('AssetAllocationChart', () => {
   });
 
   it('renders the pie chart correctly with no data', () => {
-    mockUseDashboardAllocation.mockReturnValue({ data: { allocation: [] }, isLoading: false, isError: false });
+    mockUseDashboardAllocation.mockReturnValue({ data: [], isLoading: false, isError: false });
     render(<AssetAllocationChart />);
 
     const chart = screen.getByTestId('pie-chart');

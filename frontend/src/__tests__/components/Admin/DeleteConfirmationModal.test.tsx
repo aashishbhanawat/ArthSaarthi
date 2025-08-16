@@ -1,16 +1,14 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DeleteConfirmationModal } from '../../../components/common/DeleteConfirmationModal';
 import { User } from '../../../types/user';
 
 const mockUser: User = {
-  id: 'user-123',
+  id: 123,
   email: 'test@example.com',
   full_name: 'Test User',
   is_active: true,
   is_admin: false,
-  portfolios: [],
 };
 
 describe('DeleteConfirmationModal', () => {

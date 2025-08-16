@@ -98,11 +98,12 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
         const mutationOptions = {
             onSuccess: () => onClose(),
-            onError: (error: { response?: { data?: { detail?: string } } }) => {
+            onError: (error: Error) => {
+                const apiError = error as { response?: { data?: { detail?: string } } };
                 const defaultMessage = isEditMode
                     ? 'An unexpected error occurred while updating the transaction'
                     : 'An unexpected error occurred while adding the transaction';
-                const message = error.response?.data?.detail || defaultMessage;
+                const message = apiError.response?.data?.detail || defaultMessage;
                 setApiError(message);
             }
         };
@@ -130,8 +131,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },
-            onError: (error: { response?: { data?: { detail?: string } } }) => {
-                setApiError(error.response?.data?.detail || 'Failed to create asset.');
+            onError: (error: Error) => {
+                const apiError = error as { response?: { data?: { detail?: string } } };
+                setApiError(apiError.response?.data?.detail || 'Failed to create asset.');
             }
         });
     };

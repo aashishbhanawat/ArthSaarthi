@@ -9,7 +9,7 @@ import {
 import {
     DashboardSummary,
     PortfolioHistoryResponse,
-    AssetAllocationResponse,
+    AssetAllocation,
 } from '../../types/dashboard';
 
 // Mock the API module
@@ -80,9 +80,7 @@ describe('Dashboard Hooks', () => {
 
     describe('useDashboardAllocation', () => {
         it('should return asset allocation data on success', async () => {
-            const mockAllocation: AssetAllocationResponse = {
-                allocation: [{ ticker: 'AAPL', value: 5000 }],
-            };
+            const mockAllocation: AssetAllocation[] = [{ ticker: 'AAPL', value: 5000 }];
             mockedDashboardApi.getDashboardAllocation.mockResolvedValue(mockAllocation);
 
             const { result } = renderHook(() => useDashboardAllocation(), { wrapper });

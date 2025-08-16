@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/reac
 import PortfolioDetailPage from '../../../pages/Portfolio/PortfolioDetailPage';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Portfolio } from '../../../types/portfolio';
-import { Holding, PortfolioSummary, HoldingsResponse } from '../../../types/holding';
+import { Holding, PortfolioSummary } from '../../../types/holding';
 import { PortfolioAnalytics } from '../../../types/analytics';
 
 jest.mock('../../../hooks/usePortfolios');
@@ -72,6 +71,8 @@ const mockHoldings: Holding[] = [{ // This needs to be accessible to the Holding
     asset_id: "a-1",
     ticker_symbol: "AAPL",
     asset_name: "Apple Inc.",
+    asset_type: "Stock",
+    exchange: "NASDAQ",
     quantity: 100,
     average_buy_price: 120,
     total_invested_amount: 12000,
@@ -95,15 +96,34 @@ const renderComponent = () => {
   );
 };
 
-type PartialUseQueryResult<TData> = Partial<UseQueryResult<TData, Error>>;
+const createMockQueryResult = <TData,>(data: TData, options: Partial<UseQueryResult<TData, Error>> = {}): UseQueryResult<TData, Error> => {
+    const defaults: UseQueryResult<TData, Error> = {
+        data,
+        error: null,
+        isError: false,
+        isLoading: false,
+        isSuccess: true,
+        status: 'success',
+        refetch: jest.fn(),
+        isInitialLoading: false,
+        isStale: false,
+        isRefetching: false,
+        isPlaceholderData: false,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isFetched: true,
+        fetchStatus: 'idle'
+    };
+    return { ...defaults, ...options } as UseQueryResult<TData, Error>;
+};
 
 describe('PortfolioDetailPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: mockPortfolio, isLoading: false, isError: false } as PartialUseQueryResult<Portfolio>);
-    mockedPortfolioHooks.usePortfolioSummary.mockReturnValue({ data: mockSummary, isLoading: false, error: null } as PartialUseQueryResult<PortfolioSummary>);
-    mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue({ data: { holdings: mockHoldings }, isLoading: false, error: null } as PartialUseQueryResult<HoldingsResponse>);
-    mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue({ data: {} as PortfolioAnalytics, isLoading: false, isError: false } as PartialUseQueryResult<PortfolioAnalytics>);
+    mockedPortfolioHooks.usePortfolio.mockReturnValue(createMockQueryResult(mockPortfolio));
+    mockedPortfolioHooks.usePortfolioSummary.mockReturnValue(createMockQueryResult(mockSummary));
+    mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue(createMockQueryResult({ holdings: mockHoldings }));
+    mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue(createMockQueryResult({} as PortfolioAnalytics));
   });
 
   it('renders the portfolio name and child components', () => {
@@ -142,24 +162,21 @@ describe('PortfolioDetailPage', () => {
   });
 
   it('displays loading state correctly', () => {
-    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: undefined, isLoading: true, isError: false } as PartialUseQueryResult<Portfolio>);
+    mockedPortfolioHooks.usePortfolio.mockReturnValue(createMockQueryResult(undefined, { isLoading: true }));
     renderComponent();
     expect(screen.getByText('Loading portfolio details...')).toBeInTheDocument();
   });
 
   it('displays error state correctly', () => {
-    mockedPortfolioHooks.usePortfolio.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: true,
-      error: new Error('Failed to fetch'),
-    } as PartialUseQueryResult<Portfolio>);
+    mockedPortfolioHooks.usePortfolio.mockReturnValue(
+        createMockQueryResult(undefined, { isError: true, error: new Error('Failed to fetch') })
+    );
     renderComponent();
     expect(screen.getByText('Error: Failed to fetch')).toBeInTheDocument();
   });
 
   it('displays not found message if portfolio is not found', () => {
-    mockedPortfolioHooks.usePortfolio.mockReturnValue({ data: undefined, isLoading: false, isError: false } as PartialUseQueryResult<Portfolio>);
+    mockedPortfolioHooks.usePortfolio.mockReturnValue(createMockQueryResult(undefined));
     renderComponent();
     expect(screen.getByText('Portfolio not found.')).toBeInTheDocument();
   });

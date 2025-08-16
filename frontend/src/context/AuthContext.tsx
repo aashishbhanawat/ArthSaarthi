@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import api from '../services/api';
 import { User, UserWithDeploymentMode } from '../types/user';
 
