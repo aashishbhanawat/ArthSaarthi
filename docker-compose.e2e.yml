@@ -33,5 +33,7 @@ services:
     networks:
       - pms_network
     depends_on:
-      - frontend
-      - backend
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
