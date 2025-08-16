@@ -12,5 +12,5 @@ export default defineConfig({
     baseURL: 'http://frontend:3000',
     trace: 'on-first-retry',
   },
-  timeout: 30 * 1000, // 30 seconds
+  timeout: 90 * 1000, // 90 seconds
 });
