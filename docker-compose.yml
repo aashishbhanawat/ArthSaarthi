@@ -73,7 +73,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 | grep -q ArthSaarthi"]
       interval: 10s
       timeout: 10s
       retries: 10
