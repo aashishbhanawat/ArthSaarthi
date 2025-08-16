@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000"
     DEBUG: bool = False
 
+    # For desktop encryption
+    ENCRYPTION_KEY_PATH: str = "master.key"
+    WRAPPED_KEY_PATH: str = "master.key.wrapped"
+
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
         if values.get("DEPLOYMENT_MODE") == "desktop":
