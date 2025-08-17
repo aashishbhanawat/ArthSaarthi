@@ -5,6 +5,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app import schemas
+from app.core.config import settings
+from app.core.security import create_access_token
 from app.crud import crud_user
 
 
@@ -38,10 +40,6 @@ def create_random_user(db: Session):
     )
     user = crud_user.user.create(db, obj_in=user_in)
     return user, password
-
-
-from app.core.config import settings
-from app.core.security import create_access_token
 
 
 def get_access_token(client: TestClient, email: str, password: str) -> str:

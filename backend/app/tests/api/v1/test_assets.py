@@ -8,7 +8,6 @@ from app.services.financial_data_service import financial_data_service
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.user import create_random_user
 
-
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 

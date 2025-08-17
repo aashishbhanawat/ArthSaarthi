@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     CACHE_TYPE: Literal["redis", "disk"] = "redis"
     DEPLOYMENT_MODE: Literal["server", "desktop"] = "server"
     ENVIRONMENT: str = "production"
-    IMPORT_UPLOAD_DIR: str = "/app/uploads"
+    IMPORT_UPLOAD_DIR: str = "uploads"
 
     ICICI_BREEZE_API_KEY: str = ""
     ZERODHA_KITE_API_KEY: str = ""

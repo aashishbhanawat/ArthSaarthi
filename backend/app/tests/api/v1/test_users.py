@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.tests.utils.user import create_random_user
 
-
 pytestmark = [
     pytest.mark.usefixtures("pre_unlocked_key_manager"),
     pytest.mark.skipif(

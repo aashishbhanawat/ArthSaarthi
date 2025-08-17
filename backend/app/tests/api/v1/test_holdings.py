@@ -10,7 +10,6 @@ from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.transaction import create_test_transaction
 from app.tests.utils.user import create_random_user
 
-
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 

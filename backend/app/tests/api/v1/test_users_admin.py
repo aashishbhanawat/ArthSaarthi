@@ -12,7 +12,6 @@ from app.tests.utils.user import (
     random_email,
 )
 
-
 pytestmark = [
     pytest.mark.usefixtures("pre_unlocked_key_manager"),
     pytest.mark.skipif(

@@ -4,17 +4,13 @@ import pytest
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
+from app.core import security
 from app.core.config import settings
 from app.core.key_manager import key_manager
 from app.db.base_class import Base
 from app.db.session import SessionLocal, engine, get_db
 from app.main import app
 
-
-import os
-
-
-from pathlib import Path
 
 @pytest.fixture(scope="function")
 def pre_unlocked_key_manager(monkeypatch, tmp_path):
@@ -50,9 +46,6 @@ def admin_user_data() -> Dict[str, str]:
         "password": "A-secure-password!123",
         "full_name": "Test Admin",
     }
-
-
-from app.core import security
 
 
 @pytest.fixture(scope="function")
