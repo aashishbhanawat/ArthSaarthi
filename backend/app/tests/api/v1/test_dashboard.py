@@ -190,11 +190,9 @@ def test_get_asset_allocation_success(
     assert response.status_code == 200
     data = response.json()
 
-    assert "allocation" in data
-    assert len(data["allocation"]) == 2
-    allocation_map = {
-        item["ticker"]: Decimal(item["value"]) for item in data["allocation"]
-    }
+    assert isinstance(data, list)
+    assert len(data) == 2
+    allocation_map = {item["ticker"]: Decimal(item["value"]) for item in data}
     assert allocation_map["TSLA"] == Decimal("2000.0")  # 10 * 200
     assert allocation_map["MSFT"] == Decimal("1500.0")  # 5 * 300
 

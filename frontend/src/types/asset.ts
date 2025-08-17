@@ -3,5 +3,7 @@ export interface Asset {
     name: string;
     ticker_symbol: string;
     asset_type: string;
+    currency: string;
+    exchange: string | null;
     isin: string | null;
 }

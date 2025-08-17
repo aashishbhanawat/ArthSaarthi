@@ -2,7 +2,7 @@ import api from './api';
 import {
     DashboardSummary,
     PortfolioHistoryResponse,
-    AssetAllocationResponse,
+    AssetAllocation,
 } from '../types/dashboard';
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {
@@ -20,7 +20,7 @@ export const getDashboardHistory = async (
     return data;
 };
 
-export const getDashboardAllocation = async (): Promise<AssetAllocationResponse> => {
-    const { data } = await api.get<AssetAllocationResponse>('/api/v1/dashboard/allocation');
+export const getDashboardAllocation = async (): Promise<AssetAllocation[]> => {
+    const { data } = await api.get<AssetAllocation[]>('/api/v1/dashboard/allocation');
     return data;
 };

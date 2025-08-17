@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
@@ -59,6 +59,8 @@ class User(UserBase):
         },
     )
 
+class UserWithDeploymentMode(User):
+    deployment_mode: Literal["single_user", "multi_user"]
 
 # Properties to receive via API on update
 class UserUpdate(BaseModel):

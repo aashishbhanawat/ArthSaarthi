@@ -6,15 +6,21 @@ export interface User {
   is_admin: boolean;
 }
 
+export interface UserWithDeploymentMode extends User {
+  deployment_mode: 'single_user' | 'multi_user';
+}
+
 export type UserCreate = {
   full_name: string;
   email: string;
   password: string;
+  is_admin: boolean;
 };
 
 export type UserUpdate = Partial<{
   full_name: string;
   email: string;
+  password?: string;
   is_active: boolean;
   is_admin: boolean;
 }>;

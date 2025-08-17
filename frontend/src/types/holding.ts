@@ -2,6 +2,8 @@ export interface Holding {
   asset_id: string;
   ticker_symbol: string;
   asset_name: string;
+  asset_type: string;
+  exchange: string;
   quantity: number;
   average_buy_price: number;
   total_invested_amount: number;

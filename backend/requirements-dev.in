@@ -1,2 +1,3 @@
 ruff
 pip-tools
+pyinstaller

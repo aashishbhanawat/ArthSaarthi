@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,6 +24,8 @@ const mockAsset: Asset = {
   name: 'Test Asset Inc.',
   asset_type: 'Stock',
   currency: 'USD',
+  exchange: 'NASDAQ',
+  isin: 'US0378331005'
 };
 
 const mockTransaction: Transaction = {
@@ -37,6 +38,8 @@ const mockTransaction: Transaction = {
   fees: 5,
   transaction_date: '2023-10-26T10:00:00Z',
   asset: mockAsset,
+  created_at: '2023-10-26T10:00:00Z',
+  updated_at: '2023-10-26T10:00:00Z',
 };
 
 describe('TransactionFormModal', () => {

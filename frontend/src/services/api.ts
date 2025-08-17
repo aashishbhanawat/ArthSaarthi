@@ -1,33 +1,54 @@
-import axios from "axios";
+import axios from 'axios';
 
 const apiClient = axios.create({
-  // The base URL is no longer needed here because we are using a proxy.
-  // The browser will make requests to the same origin (i.e., /api/...),
-  // and Vite's dev server will forward them to the backend.
-}); 
+  // The baseURL will be set dynamically
+});
+
+export const initializeApi = async () => {
+  // In an Electron environment, the window.electronAPI object will be available
+  if (window.electronAPI) {
+    try {
+      const port = await window.electronAPI.getApiPort();
+      apiClient.defaults.baseURL = `http://localhost:${port}`;
+      console.log(`API baseURL set to: ${apiClient.defaults.baseURL}`);
+    } catch (error) {
+      console.error('Failed to get API port from Electron main process:', error);
+    }
+  } else {
+    // In a browser/development environment, we use the Vite proxy.
+    // The baseURL should be relative to the current origin.
+    apiClient.defaults.baseURL = '/';
+    console.log('API baseURL set for browser environment.');
+  }
+};
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log("API Request:", config.method?.toUpperCase(), config.url, config.data);
+    console.log('API Request:', config.method?.toUpperCase(), config.url, config.data);
     return config;
   },
   (error) => {
-    console.error("API Request Error:", error);
+    console.error('API Request Error:', error);
     return Promise.reject(error);
   }
 );
 
 apiClient.interceptors.response.use(
   (response) => {
-    console.log("API Response:", response.status, response.config.url, response.data);
+    console.log('API Response:', response.status, response.config.url, response.data);
     return response;
   },
   (error) => {
-    console.error("API Response Error:", error.response?.status, error.config.url, error.response?.data);
+    console.error(
+      'API Response Error:',
+      error.response?.status,
+      error.config.url,
+      error.response?.data
+    );
     return Promise.reject(error);
   }
 );

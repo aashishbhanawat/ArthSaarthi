@@ -1,10 +1,4 @@
-export interface Asset {
-  id: string;
-  ticker_symbol: string;
-  name: string;
-  asset_type: string;
-  currency: string;
-}
+import { Asset } from './asset';
 
 export interface Transaction {
   id: string;
@@ -16,6 +10,8 @@ export interface Transaction {
   fees: number;
   transaction_date: string; // ISO 8601 date string
   asset: Asset;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Portfolio {

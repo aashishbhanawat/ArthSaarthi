@@ -5,6 +5,7 @@ export interface ImportSession {
     id: string;
     user_id: string;
     portfolio_id: string;
+    source: string;
     file_name: string;
     file_path: string;
     parsed_file_path: string | null;

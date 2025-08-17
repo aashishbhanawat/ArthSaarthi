@@ -4,14 +4,17 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App.tsx'
 import './index.css'
 import { AuthProvider } from "./context/AuthContext";
+import { initializeApi } from './services/api';
 
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// Initialize the API before rendering the app
+initializeApi().then(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Router>
       <AuthProvider>
         <App />
       </AuthProvider>
     </Router>
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+  );
+});

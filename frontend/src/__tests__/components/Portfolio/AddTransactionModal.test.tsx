@@ -1,176 +1,213 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import AddTransactionModal from '../../../components/Portfolio/AddTransactionModal';
-import * as portfolioApi from '../../../services/portfolioApi';
+import TransactionFormModal from '../../../components/Portfolio/TransactionFormModal';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
-import { Asset } from '../../../types';
-const mockLookupAsset = jest.spyOn(portfolioApi, 'lookupAsset');
-const mockUseCreateTransaction = jest.spyOn(portfolioHooks, 'useCreateTransaction') as jest.Mock;
-const mockUseCreateAsset = jest.spyOn(portfolioHooks, 'useCreateAsset') as jest.Mock;
+import * as portfolioApi from '../../../services/portfolioApi';
+import { Transaction } from '../../../types/portfolio';
+import { Asset } from '../../../types/asset';
 
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            retry: false,
-        },
-    },
-});
+// Mock hooks and services
+jest.mock('../../../hooks/usePortfolios');
+jest.mock('../../../services/portfolioApi');
 
-const mockOnClose = jest.fn();
-const mockMutateTransaction = jest.fn();
-const mockMutateAsset = jest.fn();
+const mockUseCreateTransaction = portfolioHooks.useCreateTransaction as jest.Mock;
+const mockUseUpdateTransaction = portfolioHooks.useUpdateTransaction as jest.Mock;
+const mockUseCreateAsset = portfolioHooks.useCreateAsset as jest.Mock;
+const mockLookupAsset = portfolioApi.lookupAsset as jest.Mock;
 
-const mockAssets: Asset[] = [
-    { id: 1, ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
-    { id: 2, ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
-];
+const queryClient = new QueryClient();
 
-const renderComponent = () => {
-    return render(
-        <QueryClientProvider client={queryClient}>
-            <AddTransactionModal portfolioId={1} onClose={mockOnClose} />
-        </QueryClientProvider>
-    );
+const mockAsset: Asset = {
+  id: 'asset-1',
+  ticker_symbol: 'TEST',
+  name: 'Test Asset Inc.',
+  asset_type: 'Stock',
+  currency: 'USD',
+  exchange: 'NASDAQ',
+  isin: 'US0378331005'
 };
 
-describe('AddTransactionModal', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-        mockUseCreateTransaction.mockReturnValue({
-            mutate: mockMutateTransaction,
-            isPending: false, isSuccess: false, isError: false, error: null, reset: jest.fn()
-        });
-        mockUseCreateAsset.mockReturnValue({
-            mutate: mockMutateAsset,
-            isPending: false,
-            isSuccess: false,
-            isError: false,
-            error: null,
-            reset: jest.fn()
-        });
+const mockTransaction: Transaction = {
+  id: 'tx-123',
+  asset_id: 'asset-1',
+  portfolio_id: 'p-1',
+  transaction_type: 'BUY',
+  quantity: 10,
+  price_per_unit: 150,
+  fees: 5,
+  transaction_date: '2023-10-26T10:00:00Z',
+  asset: mockAsset,
+  created_at: '2023-10-26T10:00:00Z',
+  updated_at: '2023-10-26T10:00:00Z',
+};
+
+describe('TransactionFormModal', () => {
+  let createTransactionMutate: jest.Mock;
+  let updateTransactionMutate: jest.Mock;
+  let createAssetMutate: jest.Mock;
+  const mockOnClose = jest.fn();
+
+  beforeEach(() => {
+    createTransactionMutate = jest.fn();
+    updateTransactionMutate = jest.fn();
+    createAssetMutate = jest.fn();
+
+    mockUseCreateTransaction.mockReturnValue({ mutate: createTransactionMutate, isPending: false });
+    mockUseUpdateTransaction.mockReturnValue({ mutate: updateTransactionMutate, isPending: false });
+    mockUseCreateAsset.mockReturnValue({ mutate: createAssetMutate, isPending: false });
+    mockLookupAsset.mockResolvedValue([mockAsset]);
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  const renderComponent = (transactionToEdit?: Transaction) => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TransactionFormModal
+          portfolioId="p-1"
+          onClose={mockOnClose}
+          transactionToEdit={transactionToEdit}
+        />
+      </QueryClientProvider>
+    );
+  };
+
+  describe('Create Mode', () => {
+    it('renders the "Add Transaction" title and form', () => {
+      renderComponent();
+      expect(screen.getByRole('heading', { name: /add transaction/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/asset/i)).not.toBeDisabled();
     });
 
-    it('renders the modal with all form fields', () => {
-        renderComponent();
-        expect(screen.getByText('Add Transaction')).toBeInTheDocument();
-        expect(screen.getByLabelText('Asset')).toBeInTheDocument();
-        expect(screen.getByLabelText('Type')).toBeInTheDocument();
-        expect(screen.getByLabelText('Quantity')).toBeInTheDocument();
-        expect(screen.getByLabelText('Price per Unit')).toBeInTheDocument();
-        expect(screen.getByLabelText('Date')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Save Transaction' })).toBeInTheDocument();
+    it('searches for and selects an asset', async () => {
+      renderComponent();
+      const assetInput = screen.getByLabelText(/asset/i);
+      fireEvent.change(assetInput, { target: { value: 'Test' } });
+      act(() => {
+        jest.runAllTimers();
+      });
+
+      expect(await screen.findByText(/test asset inc./i)).toBeInTheDocument();
+      fireEvent.click(screen.getByText(/test asset inc./i));
+
+      expect(assetInput).toHaveValue('Test Asset Inc.');
     });
 
-    it('searches for assets when user types in the input', async () => {
-        mockLookupAsset.mockResolvedValue(mockAssets);
-        renderComponent();
+    it('allows creating a new asset if not found', async () => {
+      mockLookupAsset.mockResolvedValue([]);
+      renderComponent();
+      const assetInput = screen.getByLabelText(/asset/i);
+      fireEvent.change(assetInput, { target: { value: 'NEW' } });
 
-        const assetInput = screen.getByLabelText('Asset');
-        fireEvent.change(assetInput, { target: { value: 'AAPL' } });
+      act(() => {
+        jest.runAllTimers();
+      });
 
-        const searchResult = await screen.findByText('Apple Inc. (AAPL)');
-        expect(searchResult).toBeInTheDocument();
-        expect(mockLookupAsset).toHaveBeenCalledWith('AAPL');
+      expect(await screen.findByRole('button', { name: /create asset "NEW"/i })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /create asset "NEW"/i }));
+
+      expect(createAssetMutate).toHaveBeenCalledWith('NEW', expect.any(Object));
     });
 
-    it('allows selecting an asset from search results', async () => {
-        mockLookupAsset.mockResolvedValue(mockAssets);
-        renderComponent();
+    it('submits the form and calls createTransaction mutation', async () => {
+      renderComponent();
+      // Select an asset first
+      const assetInput = screen.getByLabelText(/asset/i);
+      fireEvent.change(assetInput, { target: { value: 'Test' } });
+      act(() => {
+        jest.runAllTimers();
+      });
+      const searchResult = await screen.findByText(/test asset inc./i);
+      fireEvent.click(searchResult);
 
-        const assetInput = screen.getByLabelText('Asset');
-        fireEvent.change(assetInput, { target: { value: 'GOOG' } });
+      // Fill the rest of the form
+      fireEvent.change(screen.getByLabelText(/type/i), { target: { value: 'BUY' } });
+      fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '10' } });
+      fireEvent.change(screen.getByLabelText(/price per unit/i), { target: { value: '100' } });
+      fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
 
-        const searchResult = await screen.findByText('Alphabet Inc. (GOOGL)');
-        fireEvent.click(searchResult);
+      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
 
-        expect(assetInput).toHaveValue('Alphabet Inc.');
-        // Search results should disappear
-        expect(screen.queryByText('Apple Inc. (AAPL)')).not.toBeInTheDocument();
-    });
-
-    it('submits the form with correct data for an existing asset', async () => {
-        mockLookupAsset.mockResolvedValue([mockAssets[0]]);
-        renderComponent();
-
-        // Select an asset
-        const assetInput = screen.getByLabelText('Asset');
-        fireEvent.change(assetInput, { target: { value: 'AAPL' } });
-        const searchResult = await screen.findByText('Apple Inc. (AAPL)');
-        fireEvent.click(searchResult);
-
-        // Fill form
-        fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '10' } });
-        fireEvent.change(screen.getByLabelText('Price per Unit'), { target: { value: '150' } });
-        fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2025-07-27' } });
-
-        // Submit
-        fireEvent.click(screen.getByRole('button', { name: 'Save Transaction' }));
-
-        await waitFor(() => {
-
-        expect(mockMutateTransaction).toHaveBeenCalledWith(
-            {
-                portfolioId: 1,
-                data: expect.objectContaining({
-                    asset_id: 1,
-                    quantity: 10,
-                    price_per_unit: 150,
-                    transaction_type: 'BUY',
-                }),
-            },
-            expect.any(Object)
+      await waitFor(() => {
+        expect(createTransactionMutate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            portfolioId: 'p-1',
+            data: expect.objectContaining({
+              asset_id: 'asset-1',
+              quantity: 10,
+              price_per_unit: 100,
+            }),
+          }),
+          expect.any(Object)
         );
-        });
+      });
+    });
+  });
+
+  describe('Edit Mode', () => {
+    it('renders the "Edit Transaction" title and pre-populates form', () => {
+      renderComponent(mockTransaction);
+      expect(screen.getByRole('heading', { name: /edit transaction/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/asset/i)).toBeDisabled();
+      expect(screen.getByLabelText(/asset/i)).toHaveValue('Test Asset Inc.');
+      expect(screen.getByLabelText(/quantity/i)).toHaveValue(10);
+      expect(screen.getByLabelText(/price per unit/i)).toHaveValue(150);
     });
 
-    it('shows a "Create Asset" button when search returns no results', async () => {
-        mockLookupAsset.mockResolvedValue([]);
-        renderComponent();
+    it('submits the form and calls updateTransaction mutation', async () => {
+      renderComponent(mockTransaction);
 
-        const assetInput = screen.getByLabelText('Asset');
-        fireEvent.change(assetInput, { target: { value: 'NEW' } });
+      // Use fireEvent for simple input changes to avoid conflicts with fake timers
+      fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '20' } });
 
-        await waitFor(() => {
-            expect(mockLookupAsset).toHaveBeenCalledWith('NEW');
-        });
+      fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
-        expect(screen.getByRole('button', { name: 'Create Asset "NEW"' })).toBeInTheDocument();
+      await waitFor(() => {
+        expect(updateTransactionMutate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            portfolioId: 'p-1',
+            transactionId: 'tx-123',
+            data: expect.objectContaining({
+              quantity: 20,
+              price_per_unit: 150, // Unchanged
+            }),
+          }),
+          expect.any(Object)
+        );
+      });
+    });
+  });
+
+  it('displays an API error on failure', async () => {
+    const error = { response: { data: { detail: 'A test error occurred' } } };
+    createTransactionMutate.mockImplementation((_payload, { onError }) => {
+      onError(error);
     });
 
-    it('calls the create asset mutation when the "Create Asset" button is clicked', async () => {
-        mockLookupAsset.mockResolvedValue([]);
-        renderComponent();
-
-        const assetInput = screen.getByLabelText('Asset');
-        fireEvent.change(assetInput, { target: { value: 'NEW' } });
-
-        const createButton = await screen.findByRole('button', { name: 'Create Asset "NEW"' });
-        fireEvent.click(createButton);
-
-        expect(mockMutateAsset).toHaveBeenCalledWith('NEW', expect.any(Object));
+    renderComponent();
+    // Select an asset
+    fireEvent.change(screen.getByLabelText(/asset/i), { target: { value: 'Test' } });
+    act(() => {
+      jest.runAllTimers();
     });
+    const searchResult = await screen.findByText(/test asset inc./i);
+      fireEvent.click(searchResult);
 
-    it('displays an API error on transaction submission failure', async () => {
-        const error = { response: { data: { detail: 'Insufficient funds' } } };
-        mockMutateTransaction.mockImplementation((_vars, { onError }) => onError(error));
-        mockLookupAsset.mockResolvedValue([mockAssets[0]]);
-        renderComponent();
+    // Fill form to pass client-side validation
+    fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/price per unit/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
 
-        // Select an asset
-        const assetInput = screen.getByLabelText('Asset');
-        fireEvent.change(assetInput, { target: { value: 'AAPL' } });
-        const searchResult = await screen.findByText('Apple Inc. (AAPL)');
-        fireEvent.click(searchResult);
+    // Submit
+      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
 
-        // Fill and submit
-        fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '10' } });
-        fireEvent.change(screen.getByLabelText('Price per Unit'), { target: { value: '150' } });
-        fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2025-07-27' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Save Transaction' }));
-
-        await waitFor(() => {
-            expect(screen.getByText('Insufficient funds')).toBeInTheDocument();
-        });
+    await waitFor(() => {
+      expect(screen.getByText('A test error occurred')).toBeInTheDocument();
     });
+  });
 });

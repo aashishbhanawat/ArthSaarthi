@@ -114,7 +114,6 @@ const PortfolioDetailPage: React.FC = () => {
 
             {isTransactionFormOpen && (
                 <TransactionFormModal
-                    isOpen={isTransactionFormOpen}
                     onClose={handleCloseTransactionModal}
                     portfolioId={portfolio.id}
                     transactionToEdit={transactionToEdit}
@@ -139,7 +138,7 @@ const PortfolioDetailPage: React.FC = () => {
                     onConfirm={handleConfirmDelete}
                     title="Delete Transaction"
                     message={`Are you sure you want to delete this ${transactionToDelete.transaction_type} transaction of ${Number(transactionToDelete.quantity).toLocaleString()} units? This action cannot be undone.`}
-                    isPending={deleteTransactionMutation.isPending}
+                    isDeleting={deleteTransactionMutation.isPending}
                 />
             )}
         </div>

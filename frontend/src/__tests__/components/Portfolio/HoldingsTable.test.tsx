@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import HoldingsTable from '../../../components/Portfolio/HoldingsTable';
@@ -9,6 +8,8 @@ const mockHoldings: Holding[] = [
         asset_id: 'asset-1',
         ticker_symbol: 'AAPL',
         asset_name: 'Apple Inc.',
+        asset_type: 'Stock',
+        exchange: 'NASDAQ',
         quantity: 10,
         average_buy_price: 150,
         total_invested_amount: 1500,
@@ -23,6 +24,8 @@ const mockHoldings: Holding[] = [
         asset_id: 'asset-2',
         ticker_symbol: 'GOOGL',
         asset_name: 'Alphabet Inc.',
+        asset_type: 'Stock',
+        exchange: 'NASDAQ',
         quantity: 5,
         average_buy_price: 2800,
         total_invested_amount: 14000,

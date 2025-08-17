@@ -16,7 +16,7 @@ const LoginForm: React.FC = () => {
 
     try {
         const data = await api.loginUser(email, password);
-        login(data.access_token);
+        login(data.access_token, data.user, data.deployment_mode);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
       setError(err.response?.data?.detail || 'Login failed. Please try again.');

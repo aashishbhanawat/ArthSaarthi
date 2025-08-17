@@ -84,6 +84,23 @@ For a simpler setup that does not require a separate PostgreSQL or Redis instanc
 
     This will start the backend and frontend services. The backend will use a persistent SQLite database file (`arthsaarthi.db`) and `diskcache` for caching, removing the need for the `db` and `redis` containers.
 
+### Building the Native Desktop Application
+
+The application can be packaged as a standalone desktop application for Windows, macOS, and Linux using Electron and PyInstaller.
+
+To build the desktop application, run the following script:
+
+```bash
+./scripts/build-desktop.sh
+```
+
+This script will:
+1.  Bundle the Python backend into a single executable.
+2.  Build the React frontend.
+3.  Package everything into a native installer for your current operating system.
+
+The final installer will be located in the `frontend/release` directory.
+
 ### Running the Test Suites
 
 **1. Backend Unit & Integration Tests:**
