@@ -20,13 +20,13 @@ const SetupForm: React.FC<SetupFormProps> = ({ onSuccess }) => {
         try {
             await api.setupAdminUser(fullName, email, password);
             onSuccess();
-        } catch (err: any) {
+        } catch (err: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) {
             if (err.response?.data?.detail) {
                 // Handle validation errors which might be an array
                 if (Array.isArray(err.response.data.detail)) {
                     setError(err.response.data.detail[0].msg);
                 } else {
-                    setError(err.response.data.detail);
+                    setError(err.response.data.detail as string);
                 }
             } else {
                 setError('An unexpected error occurred during setup.');

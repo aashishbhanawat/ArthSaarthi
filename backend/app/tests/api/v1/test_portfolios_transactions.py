@@ -100,16 +100,12 @@ def test_create_transaction_with_existing_asset(
         "quantity": 10,
         "price_per_unit": 150.00,
         "transaction_date": datetime.now(timezone.utc).isoformat(),
-        "fees": 0.0,  # This line was missing
+        "fees": 0.0,
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
         headers=auth_headers,
         json=data,
-    )
-    print(
-        "DEBUG (test_create_transaction_with_existing_asset):"
-        f" STATUS={response.status_code}, RESPONSE={response.json()}"
     )
     assert response.status_code == 201
     content = response.json()
@@ -133,16 +129,12 @@ def test_create_transaction_for_other_user_portfolio(
         "quantity": 5,
         "price_per_unit": 250.00,
         "transaction_date": datetime.now(timezone.utc).isoformat(),
-        "fees": 0.0,  # This line was missing
+        "fees": 0.0,
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio1.id}/transactions/",
         headers=auth_headers2,
         json=data,
-    )
-    print(
-        "DEBUG (test_create_transaction_for_other_user_portfolio):"
-        f" STATUS={response.status_code}, RESPONSE={response.json()}"
     )
     assert response.status_code == 403
 

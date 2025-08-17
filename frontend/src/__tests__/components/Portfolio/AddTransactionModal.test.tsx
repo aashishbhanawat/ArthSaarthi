@@ -28,7 +28,7 @@ const mockAssets: Asset[] = [
 const renderComponent = () => {
     return render(
         <QueryClientProvider client={queryClient}>
-            <AddTransactionModal portfolioId={1} onClose={mockOnClose} />
+            <AddTransactionModal portfolioId="1" onClose={mockOnClose} />
         </QueryClientProvider>
     );
 };
@@ -110,12 +110,14 @@ describe('AddTransactionModal', () => {
 
         expect(mockMutateTransaction).toHaveBeenCalledWith(
             {
-                portfolioId: 1,
+                portfolioId: "1",
                 data: expect.objectContaining({
-                    asset_id: 1,
+                    asset_id: "1",
                     quantity: 10,
                     price_per_unit: 150,
                     transaction_type: 'BUY',
+                    fees: 0,
+                    transaction_date: "2025-07-27T00:00:00.000Z",
                 }),
             },
             expect.any(Object)

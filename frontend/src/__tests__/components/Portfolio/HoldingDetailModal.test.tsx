@@ -4,7 +4,6 @@ import HoldingDetailModal from '../../../components/Portfolio/HoldingDetailModal
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Holding } from '../../../types/holding';
 import { Transaction } from '../../../types/portfolio';
-import { PortfolioAnalytics } from '../../../types/analytics';
 
 const mockHolding: Holding = {
   asset_id: 'asset-1',
@@ -60,7 +59,11 @@ const renderComponent = (onClose = jest.fn(), onEdit = jest.fn(), onDelete = jes
 };
 
 // A helper to create a complete UseQueryResult mock
-const createUseQueryResultMock = <TData>(data: TData, options: Partial<UseQueryResult<TData, Error>> = {}): UseQueryResult<TData, Error> => ({
+function createUseQueryResultMock<TData>(
+  data: TData,
+  options: Partial<UseQueryResult<TData, Error>> = {}
+): UseQueryResult<TData, Error> {
+  return {
     data,
     dataUpdatedAt: 1,
     error: null,
@@ -83,7 +86,8 @@ const createUseQueryResultMock = <TData>(data: TData, options: Partial<UseQueryR
     refetch: jest.fn(),
     status: 'success',
     ...options
-});
+  };
+}
 
 describe('HoldingDetailModal', () => {
   beforeEach(() => {

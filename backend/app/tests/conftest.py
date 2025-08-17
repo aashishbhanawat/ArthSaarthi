@@ -1,11 +1,49 @@
 import pytest
-from typing import Generator
+from typing import Generator, Dict, Callable
+
 from starlette.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.main import app
 from app.db.session import SessionLocal, engine, get_db
 from app.db.base_class import Base
+from app.core.config import settings
+from app.core.key_manager import key_manager
+from app.schemas.user import UserCreate
+from app.crud.crud_user import user as crud_user
+
+
+@pytest.fixture(scope="session", autouse=True)
+def load_test_key():
+    if settings.DEPLOYMENT_MODE == "desktop":
+        # This generates a key, wraps it with the password, saves it,
+        # and loads it into the key_manager instance for the session.
+        key_manager.generate_and_wrap_master_key("testpassword")
+
+
+@pytest.fixture(scope="session")
+def admin_user_data() -> Dict[str, str]:
+    return {
+        "email": settings.FIRST_SUPERUSER,
+        "password": "A-secure-password!123",
+        "full_name": "Test Admin",
+    }
+
+
+@pytest.fixture(scope="function")
+def get_auth_headers(
+    client: TestClient,
+) -> Callable[[str, str], Dict[str, str]]:
+    def _get_auth_headers(email: str, password: str) -> Dict[str, str]:
+        login_data = {"username": email, "password": password}
+        r = client.post(f"{settings.API_V1_STR}/auth/login", data=login_data)
+        response = r.json()
+        auth_token = response["access_token"]
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return headers
+
+    return _get_auth_headers
+
 
 @pytest.fixture(scope="session", autouse=True)
 def create_test_database() -> Generator[None, None, None]:
@@ -15,6 +53,7 @@ def create_test_database() -> Generator[None, None, None]:
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
 
 @pytest.fixture(scope="function")
 def db(create_test_database: None) -> Generator[Session, None, None]:
@@ -30,6 +69,7 @@ def db(create_test_database: None) -> Generator[Session, None, None]:
     db_session.close()
     transaction.rollback()
     connection.close()
+
 
 @pytest.fixture(scope="function")
 def client(db: Session) -> Generator[TestClient, None, None]:

@@ -104,8 +104,8 @@ def test_login_nonexistent_user(client: TestClient):
 
 def test_login_inactive_user(client: TestClient, db: Session, admin_user_data: dict):
     # Arrange: Create a user
-    response = client.post("/api/v1/auth/setup", json=admin_user_data)
-    user_email = response.json()["email"]
+    client.post("/api/v1/auth/setup", json=admin_user_data)
+    user_email = admin_user_data["email"]
 
     # Manually set the user to inactive in the database
     user_in_db = db.query(UserModel).filter(UserModel.email == user_email).first()
@@ -148,5 +148,6 @@ def test_setup_admin_user_invalid_password(
     response = client.post("/api/v1/auth/setup", json=user_data)
 
     # Assert
-    assert response.status_code == 422  # Expect a validation error
-    assert "detail" in response.json()  # Check for error details
+    assert response.status_code == 422
+    assert "detail" in response.json()
+

@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     ADMIN_USERNAME: str = "admin"
     ADMIN_EMAIL: str = "admin@example.com"
     ADMIN_PASSWORD: str = "admin_password"
+    FIRST_SUPERUSER: str = "admin@example.com"
+    FIRST_SUPERUSER_PASSWORD: str = "a-secure-password!123"
 
     API_V1_STR: str = "/api/v1"
     DATABASE_TYPE: str = "postgres"
@@ -73,3 +75,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings(_env_file=None) if os.getenv("TESTING") else Settings()
+
