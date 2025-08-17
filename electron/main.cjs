@@ -45,9 +45,9 @@ async function main() {
                 return;
             }
 
+            const resourcesPath = isDev ? path.join(__dirname, '..', 'frontend') : process.resourcesPath;
             const backendExecutable = path.join(
-                __dirname,
-                '..',
+                resourcesPath,
                 'dist-backend', // This will be the output directory for PyInstaller
                 'main' // The name of the executable
             );
