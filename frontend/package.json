@@ -8,7 +8,7 @@
   "homepage": "./",
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "tsc && vite build",
     "postbuild": "cp -r ../electron .",
     "lint": "eslint .",
