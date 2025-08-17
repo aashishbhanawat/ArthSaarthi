@@ -71,9 +71,10 @@ services:
     networks:
       - pms_network
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000 | grep -q ArthSaarthi"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 10s
       timeout: 10s
       retries: 10

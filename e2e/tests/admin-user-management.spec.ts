@@ -34,7 +34,10 @@ test.describe('Admin User Management Flow', () => {
     await page.getByRole('button', { name: 'Create User' }).click();
 
     // Verify creation
-    await expect(page.getByRole('row', { name: new RegExp(testUser.email) })).toBeVisible();
+    // Wait for the modal to close first, which indicates the request was processed.
+    await expect(page.getByRole('heading', { name: 'Create New User' })).not.toBeVisible({ timeout: 10000 });
+    // Then, wait for the user to appear in the table.
+    await expect(page.getByRole('row', { name: new RegExp(testUser.email) })).toBeVisible({ timeout: 10000 });
 
     // UPDATE User
     const updatedName = `${testUser.name} (Updated)`;

@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -49,14 +50,14 @@ def get_portfolio_history(
     return {"history": history}
 
 
-@router.get("/allocation", response_model=schemas.AssetAllocationResponse)
+@router.get("/allocation", response_model=List[schemas.AssetAllocation])
 def get_asset_allocation(
     *,
     db: Session = Depends(deps.get_db),
     current_user: UserModel = Depends(deps.get_current_user),
-):
+) -> List[schemas.AssetAllocation]:
     """
     Retrieve asset allocation for the current user.
     """
     allocation = crud.dashboard.get_allocation(db=db, user=current_user)
-    return {"allocation": allocation}
+    return allocation
