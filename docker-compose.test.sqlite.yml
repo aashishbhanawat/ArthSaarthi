@@ -2,7 +2,7 @@ services:
   test-sqlite:
     build: ./backend
     container_name: pms-test-sqlite
-    command: ["pytest", "-v"]
+    command: sh -c "pip install -r requirements-dev.in && pytest -v"
     volumes:
       - ./backend:/app
     environment:

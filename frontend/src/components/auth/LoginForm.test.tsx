@@ -21,7 +21,7 @@ const mockLogin = jest.fn();
 const renderWithContext = () => {
   return render(
     <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <AuthContext.Provider value={{ login: mockLogin, logout: jest.fn(), token: null, user: null, isLoading: false, error: null, register: jest.fn() }}>
+      <AuthContext.Provider value={{ login: mockLogin, logout: jest.fn(), token: null, user: null, isLoading: false, error: null, register: jest.fn(), deploymentMode: 'server' }}>
         <LoginForm />
       </AuthContext.Provider>
     </MemoryRouter>
@@ -57,7 +57,8 @@ describe('LoginForm', () => {
   });
 
   it('calls login api and calls context login function on successful submission', async () => {
-    mockedApi.loginUser.mockResolvedValue({ access_token: 'fake-token' });
+    const mockLoginResponse = { access_token: 'fake-token', deployment_mode: 'server' as const };
+    mockedApi.loginUser.mockResolvedValue(mockLoginResponse);
     renderWithContext();
     const user = userEvent.setup();
 
@@ -66,7 +67,7 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('fake-token');
+      expect(mockLogin).toHaveBeenCalledWith(mockLoginResponse);
     });
     expect(mockedApi.loginUser).toHaveBeenCalledWith('test@example.com', 'password123');
   });

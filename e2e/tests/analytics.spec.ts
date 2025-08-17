@@ -92,7 +92,8 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await expect(analyticsCard).toBeVisible();
 
     // Check for XIRR - value can fluctuate, so just check for format
-    const xirrValue = analyticsCard.locator('p', { hasText: 'XIRR' }).locator('xpath=..//p[2]');
+    const xirrValue = analyticsCard.locator('p', { hasText: 'Portfolio XIRR' }).locator('xpath=..//p[2]');
+    await expect(xirrValue).not.toContainText("N/A");
     await expect(xirrValue).toContainText(/%$/); // Check that it ends with a percentage sign
 
     // Check for Sharpe Ratio - value can fluctuate, so just check for format

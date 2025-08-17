@@ -18,7 +18,8 @@ api_router = APIRouter()
 logger = logging.getLogger(__name__)
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
-api_router.include_router(users.router, prefix="/users", tags=["users"])
+if settings.DEPLOYMENT_MODE != "desktop":
+    api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfolios"])
 api_router.include_router(assets.router, prefix="/assets", tags=["assets"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])

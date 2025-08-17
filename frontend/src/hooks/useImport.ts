@@ -47,7 +47,7 @@ export const useCommitImportSession = () => {
             commitPayload: ImportSessionCommit;
             portfolioId: string; // Keep for invalidation
         }) => importApi.commitImportSession(sessionId, commitPayload),
-        onSuccess: (data, variables) => {
+        onSuccess: (_data, variables) => {
             const { sessionId, portfolioId } = variables;
             // Invalidate queries to refetch data after commit
             queryClient.invalidateQueries({ queryKey: ['importSession', sessionId] });

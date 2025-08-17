@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import UserFormModal from '../../../components/Admin/UserFormModal';
@@ -12,7 +11,7 @@ jest.mock('../../../hooks/useUsers');
 const mockUseCreateUser = useCreateUser as jest.Mock;
 const mockUseUpdateUser = useUpdateUser as jest.Mock;
 
-const mockUser: User = { id: 1, email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false };
+const mockUser: User = { id: '1', email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false };
 
 const queryClient = new QueryClient();
 

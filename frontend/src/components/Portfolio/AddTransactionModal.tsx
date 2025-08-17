@@ -7,7 +7,7 @@ import { Asset } from '../../types/asset';
 import { TransactionCreate } from '../../types/portfolio';
 
 interface AddTransactionModalProps {
-    portfolioId: number;
+    portfolioId: string;
     onClose: () => void;
 }
 
@@ -82,7 +82,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
                 queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
                 onClose();
             },
-            onError: (error: { response?: { data?: { detail?: string } } }) => {
+            onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
                 const message = error.response?.data?.detail || 'An unexpected error occurred while adding the transaction';
                 setApiError(message);
             }
@@ -95,7 +95,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },
-            onError: (error: { response?: { data?: { detail?: string } } }) => {
+            onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
                 setApiError(error.response?.data?.detail || 'Failed to create asset.');
             }
         });

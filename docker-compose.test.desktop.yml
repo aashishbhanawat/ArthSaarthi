@@ -1,0 +1,15 @@
+services:
+  test-desktop:
+    build: ./backend
+    container_name: pms-test-desktop
+    command: sh -c "pip install -r requirements-dev.in && pytest -v"
+    volumes:
+      - ./backend:/app
+    environment:
+      - PYTHONPATH=/app
+      - DEPLOYMENT_MODE=desktop
+      - DATABASE_TYPE=sqlite
+      - CACHE_TYPE=disk
+      - TESTING=True
+    networks:
+      - pms_network

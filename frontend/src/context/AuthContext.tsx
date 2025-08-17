@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import api from '../services/api';
 import { User } from '../types/user';
 
@@ -7,7 +7,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-  login: (token: string) => void;
+  deploymentMode: 'server' | 'desktop' | null;
+  login: (data: { access_token: string, deployment_mode: 'server' | 'desktop' }) => void;
   logout: () => void;
   register: (email: string) => Promise<void>;
 }
@@ -17,6 +18,9 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [deploymentMode, setDeploymentMode] = useState<'server' | 'desktop' | null>(
+    localStorage.getItem('deployment_mode') as 'server' | 'desktop' | null
+  );
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error] = useState<string | null>(null);
@@ -24,7 +28,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
+    setDeploymentMode(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('deployment_mode');
     delete api.defaults.headers.common['Authorization'];
   }, []);
 
@@ -66,9 +72,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token, fetchUserData]);
 
-  const login = (newToken: string) => {
-    setToken(newToken);
-    localStorage.setItem('token', newToken);
+  const login = (data: { access_token: string, deployment_mode: 'server' | 'desktop' }) => {
+    setToken(data.access_token);
+    setDeploymentMode(data.deployment_mode);
+    localStorage.setItem('token', data.access_token);
+    localStorage.setItem('deployment_mode', data.deployment_mode);
   };
 
   const register = async (email: string) => {
@@ -77,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoading, error, login, logout, register }}>
+    <AuthContext.Provider value={{ token, user, isLoading, error, deploymentMode, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

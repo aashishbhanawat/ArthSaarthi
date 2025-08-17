@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import UserManagementPage from '../../../pages/Admin/UserManagementPage';
@@ -61,8 +60,8 @@ jest.mock('../../../components/common/DeleteConfirmationModal', () => {
 jest.mock('../../../hooks/useUsers');
 
 const mockUsers: User[] = [
-    { id: 1, email: 'admin@example.com', full_name: 'Admin User', is_active: true, is_admin: true },
-    { id: 2, email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false },
+    { id: '1', email: 'admin@example.com', full_name: 'Admin User', is_active: true, is_admin: true },
+    { id: '2', email: 'test@example.com', full_name: 'Test User', is_active: true, is_admin: false },
 ];
 
 const queryClient = new QueryClient();

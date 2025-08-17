@@ -4,15 +4,15 @@ from sqlalchemy import Boolean, Column, DateTime, String, func
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
-from app.db.custom_types import GUID
+from app.db.custom_types import GUID, EncryptedString
 
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
-    full_name = Column(String, index=True, nullable=True)
-    email = Column(String, unique=True, index=True, nullable=False)
+    full_name = Column(EncryptedString, index=True, nullable=True)
+    email = Column(EncryptedString, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_admin = Column(Boolean(), default=False, nullable=False)
     is_active = Column(Boolean(), default=True)

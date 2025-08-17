@@ -16,8 +16,8 @@ const ImportPreviewPage: React.FC = () => {
     const [tickerToMap, setTickerToMap] = useState<string | null>(null);
 
 
-    const { data: session, isLoading: isLoadingSession, error: sessionError } = useImportSession(sessionId);
-    const { data: previewData, isLoading: isLoadingPreview, error: previewError } = useImportSessionPreview(sessionId, aliasesToCreate);
+    const { data: session, isLoading: isLoadingSession, error: sessionError } = useImportSession(sessionId!);
+    const { data: previewData, isLoading: isLoadingPreview, error: previewError } = useImportSessionPreview(sessionId!, aliasesToCreate);
     const commitMutation = useCommitImportSession();
 
     const allSelectableTransactions = useMemo(() => {

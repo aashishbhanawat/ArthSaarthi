@@ -35,7 +35,7 @@ export const useUpdateUser = () => {
       userId,
       userData,
     }: {
-      userId: number;
+      userId: string;
       userData: UserUpdate;
     }) => adminApi.updateUser(userId, userData),
     onSuccess: () => {
@@ -51,7 +51,7 @@ export const useUpdateUser = () => {
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userId: number) => adminApi.deleteUser(userId),
+    mutationFn: (userId: string) => adminApi.deleteUser(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [USERS_QUERY_KEY] });
     },

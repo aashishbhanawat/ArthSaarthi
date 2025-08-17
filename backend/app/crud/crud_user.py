@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional, Union
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
 from app.models.user import User
@@ -10,7 +11,17 @@ from app.schemas.user import UserCreate, UserUpdate
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def get_by_email(self, db: Session, *, email: str) -> Optional[User]:
-        return db.query(User).filter(User.email == email).first()
+        if settings.DEPLOYMENT_MODE == "desktop":
+            # In desktop mode, we can't query the encrypted email directly.
+            # Since there's only one user, we fetch them all and compare in Python.
+            users = db.query(User).all()
+            for user in users:
+                if user.email == email:
+                    return user
+            return None
+        else:
+            # In server mode, email is not encrypted, so we can query it.
+            return db.query(User).filter(User.email == email).first()
 
     def create(
         self, db: Session, *, obj_in: UserCreate, is_admin: bool = False
