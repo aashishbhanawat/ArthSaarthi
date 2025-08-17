@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.user import User as UserModel
 
 
@@ -102,6 +103,10 @@ def test_login_nonexistent_user(client: TestClient):
     assert response.json()["detail"] == "Incorrect email or password"
 
 
+@pytest.mark.skipif(
+    settings.DEPLOYMENT_MODE == "desktop",
+    reason="Inactive user concept is not applicable in single-user desktop mode.",
+)
 def test_login_inactive_user(client: TestClient, db: Session, admin_user_data: dict):
     # Arrange: Create a user
     client.post("/api/v1/auth/setup", json=admin_user_data)

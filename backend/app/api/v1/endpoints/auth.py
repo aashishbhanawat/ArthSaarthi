@@ -41,14 +41,15 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail="An admin account already exists.",
         )
-    db_user = crud.user.create(db=db, obj_in=user, is_admin=True)
-    db.commit()
-
     if settings.DEPLOYMENT_MODE == "desktop":
         # In desktop mode, the creation of the first user also sets up
-        # the master encryption key.
+        # the master encryption key. This must be done *before* creating the
+        # user, as the user creation will encrypt data.
         logger.info("Desktop mode: Generating and wrapping master key.")
         key_manager.generate_and_wrap_master_key(password=user.password)
+
+    db_user = crud.user.create(db=db, obj_in=user, is_admin=True)
+    db.commit()
 
     return db_user
 
@@ -85,7 +86,7 @@ def login_for_access_token(
         )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        subject=user.email, expires_delta=access_token_expires
     )
     return {
         "access_token": access_token,

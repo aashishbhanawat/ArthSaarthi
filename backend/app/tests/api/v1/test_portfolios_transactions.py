@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -10,6 +11,9 @@ from app.tests.utils.asset import create_test_asset
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.transaction import create_test_transaction
 from app.tests.utils.user import create_random_user
+
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_create_portfolio(client: TestClient, db: Session, get_auth_headers):

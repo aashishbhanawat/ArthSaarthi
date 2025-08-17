@@ -18,6 +18,9 @@ from app.schemas.portfolio import PortfolioCreate
 from app.tests.utils.user import create_random_user
 
 
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
+
+
 @pytest.fixture(scope="function")
 def normal_user(db: Session) -> tuple[User, str]:
     """Fixture to create a normal user and return the user object and password."""

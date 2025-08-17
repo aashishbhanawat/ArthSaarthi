@@ -6,6 +6,11 @@
 
 set -e
 
+# --- Default Ports ---
+DEFAULT_BACKEND_PORT=8008
+DEFAULT_FRONTEND_PORT=3008
+DEFAULT_REDIS_PORT=6379
+
 # --- Helper Functions for colored output ---
 function print_info() {
   echo -e "\033[34m[INFO]\033[0m $1"
@@ -59,7 +64,7 @@ EOF
 
 print_success "Environment files created."
 
-# --- Step 9: Run Backend Tests in Desktop Mode ---
+# --- Step 3: Run Backend Tests in Desktop Mode ---
 print_info "Running Backend Tests in Desktop Mode..."
 (cd backend && FORCE_SQLITE_TEST=true python -m dotenv -f .env.test run -- pytest -v)
 
