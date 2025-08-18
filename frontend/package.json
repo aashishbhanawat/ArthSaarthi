@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "type": "module",
   "homepage": "./",
-  "main": "../electron/main.js",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -21,9 +21,8 @@
       "output": "dist-electron"
     },
     "files": [
-      "dist/**/*",
-      "../electron/main.js",
-      "../electron/preload.js"
+      "dist",
+      "electron"
     ],
     "extraResources": [
       {

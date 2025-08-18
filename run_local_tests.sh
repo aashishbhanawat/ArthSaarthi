@@ -101,6 +101,7 @@ cleanup() {
     print_info "Dropping test database '$TEST_DB_NAME'..."
     PGPASSWORD=${POSTGRES_PASSWORD:-} psql -h localhost -U "$DEFAULT_POSTGRES_USER" -d "$DEFAULT_POSTGRES_DB" -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" > /dev/null
   fi
+  rm -f frontend/.env
   print_success "Cleanup complete."
 }
 trap cleanup EXIT
@@ -109,8 +110,9 @@ trap cleanup EXIT
 
 install_deps() {
     print_info "Installing all project dependencies..."
-    pip install -r backend/requirements-dev.in > /dev/null 2>&1
+    pip install -r backend/requirements-dev.txt > /dev/null 2>&1
     (cd frontend && npm install > /dev/null 2>&1)
+    (cd e2e && npm install > /dev/null 2>&1)
     (cd e2e && npx playwright install --with-deps > /dev/null 2>&1)
     print_success "All dependencies installed."
 }
@@ -195,6 +197,8 @@ run_e2e_tests() {
     timeout 60s bash -c "until curl -s -f http://localhost:$backend_port/api/v1/auth/status > /dev/null; do sleep 1; done"
     print_success "Backend is up."
 
+    print_info "Configuring frontend..."
+    echo "VITE_API_PROXY_TARGET=http://localhost:$backend_port" > frontend/.env
     print_info "Starting frontend server..."
     (cd frontend && npm run dev -- --port $frontend_port) &
     FRONTEND_PID=$!

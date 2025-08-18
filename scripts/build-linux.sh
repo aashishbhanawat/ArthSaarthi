@@ -1,10 +1,17 @@
 #!/bin/bash
-# This is a placeholder for the Linux build script.
-# Replace this with your actual build commands to generate the executable.
-echo "Building Linux executable..."
+set -ex
 
-# Create a dummy file to represent the output
-# In a real scenario, your build tool (e.g., pyinstaller, electron-builder) would create this.
-touch my-app-linux
+echo "--- Cleaning up old builds ---"
+rm -rf backend/build backend/dist frontend/dist-electron frontend/electron
 
-echo "Linux executable built: my-app-linux"
+echo "--- Copying electron files ---"
+cp -r electron frontend/
+
+echo "--- Building Backend ---"
+(cd backend && pyinstaller build-backend.spec)
+
+echo "--- Building Frontend and Packaging ---"
+(cd frontend && npm install && npm run build && npm run dist)
+
+echo "--- Build Complete ---"
+find frontend/dist-electron -name "*.AppImage"
