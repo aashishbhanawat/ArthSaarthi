@@ -33,13 +33,21 @@ class FinancialDataService:
         tickers_to_fetch = []
 
         # Handle mock data for E2E tests to ensure deterministic results
+        mock_tickers = {
+            "XIRRTEST": {
+                "current_price": Decimal("130.00"),
+                "previous_close": Decimal("129.00"),
+            },
+            "MSFT": {
+                "current_price": Decimal("220.00"),
+                "previous_close": Decimal("215.00"),
+            },
+        }
         non_mock_assets = []
         for asset in assets:
-            if asset["ticker_symbol"] == "XIRRTEST":
-                prices_data["XIRRTEST"] = {
-                    "current_price": Decimal("130.00"),
-                    "previous_close": Decimal("129.00"),
-                }
+            ticker = asset["ticker_symbol"]
+            if ticker in mock_tickers:
+                prices_data[ticker] = mock_tickers[ticker]
             else:
                 non_mock_assets.append(asset)
         # Continue with non-mocked assets
@@ -117,18 +125,26 @@ class FinancialDataService:
         historical_data = defaultdict(dict)
 
         # Handle mock data for E2E tests to ensure deterministic results
-        if any(a["ticker_symbol"] == "XIRRTEST" for a in assets):
-            # For XIRRTEST, we return a constant price for simplicity.
-            # We can return a constant price for simplicity.
-            mock_history = {}
-            current_day = start_date
-            while current_day <= end_date:
-                mock_history[current_day] = Decimal("130.00")
-                current_day += timedelta(days=1)
-            historical_data["XIRRTEST"] = mock_history
+        mock_tickers_to_process = [
+            a for a in assets if a["ticker_symbol"] in ["XIRRTEST", "MSFT"]
+        ]
+        if mock_tickers_to_process:
+            for asset in mock_tickers_to_process:
+                ticker = asset["ticker_symbol"]
+                mock_history = {}
+                current_day = start_date
+                # Create a simple, predictable price history
+                price = Decimal("130.00") if ticker == "XIRRTEST" else Decimal("200.00")
+                while current_day <= end_date:
+                    mock_history[current_day] = price
+                    price += Decimal("0.1")  # Simulate slight daily increase
+                    current_day += timedelta(days=1)
+                historical_data[ticker] = mock_history
 
-            # Filter out the mock asset so we don't try to fetch it from yfinance
-            assets = [a for a in assets if a["ticker_symbol"] != "XIRRTEST"]
+            # Filter out the mock assets so we don't try to fetch them from yfinance
+            assets = [
+                a for a in assets if a["ticker_symbol"] not in ["XIRRTEST", "MSFT"]
+            ]
             if not assets:
                 return historical_data
 
@@ -199,13 +215,22 @@ class FinancialDataService:
         Tries to find the asset on NSE, then BSE, then as-is.
         """
         # Handle mock data for E2E tests to ensure deterministic results
-        if ticker_symbol == "XIRRTEST":
-            return {
+        mock_details = {
+            "XIRRTEST": {
                 "name": "XIRR Test Company",
                 "asset_type": "Stock",
                 "exchange": "TEST",
                 "currency": "INR",
-            }
+            },
+            "MSFT": {
+                "name": "Microsoft Corporation",
+                "asset_type": "Stock",
+                "exchange": "NASDAQ",
+                "currency": "USD",
+            },
+        }
+        if ticker_symbol in mock_details:
+            return mock_details[ticker_symbol]
 
         # Prioritize Indian exchanges
         potential_tickers = [
