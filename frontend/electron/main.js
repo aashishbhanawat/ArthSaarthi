@@ -31,7 +31,7 @@ function createMainWindow(backendPort) {
     mainWindow.webContents.openDevTools();
   } else {
     // In production, load the built frontend
-    const indexPath = path.join(__dirname, '../frontend/dist/index.html');
+    const indexPath = path.join(__dirname, '../dist/index.html');
     mainWindow.loadFile(indexPath);
   }
 
@@ -45,7 +45,7 @@ function startBackend() {
     portfinder.getPortPromise()
       .then(port => {
         const backendPath = isDev
-          ? path.join(__dirname, '../backend/run_cli.py') // Placeholder for dev
+          ? path.join(__dirname, '../../backend/run_cli.py') // Placeholder for dev
           : path.join(process.resourcesPath, 'arthsaarthi-backend'); // Production path
 
         const args = isDev ? ['run-dev-server', '--port', port] : ['--port', port];

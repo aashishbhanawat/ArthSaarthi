@@ -1,10 +1,34 @@
 #!/bin/bash
-# This is a placeholder for the Windows build script.
-# Replace this with your actual build commands to generate the .exe file.
-echo "Building Windows executable..."
 
-# Create a dummy file to represent the output
-# In a real scenario, your build tool (e.g., pyinstaller, electron-builder) would create this.
-touch my-app.exe
+# Exit immediately if a command exits with a non-zero status.
+set -e
 
-echo "Windows executable built: my-app.exe"
+echo "--- Starting Windows Build ---"
+
+# Clean up previous builds
+echo "Cleaning up previous builds..."
+rm -rf backend/dist frontend/dist-electron
+
+# 1. Install Frontend Dependencies
+echo "Step 1: Installing frontend dependencies..."
+(cd frontend && npm install)
+
+# 2. Build Frontend
+echo "Step 2: Building frontend..."
+(cd frontend && npm run build)
+
+# 3. Install Backend Dependencies
+echo "Step 3: Installing backend dependencies..."
+(cd backend && pip install -r requirements.txt)
+
+# 4. Bundle Backend
+echo "Step 4: Bundling backend..."
+(cd backend && pyinstaller build-backend.spec)
+
+# 5. Package Electron App for Windows
+echo "Step 5: Packaging Electron app for Windows..."
+# We use the 'dist' script from package.json which runs electron-builder
+(cd frontend && npm run dist -- --win)
+
+echo "--- Windows Build Finished ---"
+echo "Installer located in frontend/dist-electron/"

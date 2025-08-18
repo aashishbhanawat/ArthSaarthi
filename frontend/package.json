@@ -4,7 +4,11 @@
   "version": "0.2.0",
   "type": "module",
   "homepage": "./",
-  "main": "../electron/main.js",
+  "author": {
+    "name": "ArthSaarthi",
+    "email": "contact@arthsaarthi.com"
+  },
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -22,15 +26,27 @@
     },
     "files": [
       "dist/**/*",
-      "../electron/main.js",
-      "../electron/preload.js"
+      "electron/**/*"
     ],
     "extraResources": [
       {
         "from": "../backend/dist/arthsaarthi-backend",
-        "to": "arthsaarthi-backend"
+        "to": "arthsaarthi-backend",
+        "filter": [
+          "**/*"
+        ]
       }
-    ]
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Finance"
+    }
   },
   "dependencies": {
     "@heroicons/react": "^2.1.5",
