@@ -199,6 +199,8 @@ run_e2e_tests() {
 
     print_info "Configuring frontend..."
     echo "VITE_API_PROXY_TARGET=http://localhost:$backend_port" > frontend/.env
+    print_info "Configuring frontend..."
+    echo "VITE_API_PROXY_TARGET=http://localhost:$backend_port" > frontend/.env
     print_info "Starting frontend server..."
     (cd frontend && npm run dev -- --port $frontend_port) &
     FRONTEND_PID=$!

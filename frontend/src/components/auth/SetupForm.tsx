@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import * as api from '../../services/api';
+import { isAxiosError } from 'axios';
 
 interface SetupFormProps {
     onSuccess: () => void;
@@ -22,14 +23,11 @@ const SetupForm: React.FC<SetupFormProps> = ({ onSuccess }) => {
             onSuccess();
         } catch (err) {
             let errorMessage = 'An unexpected error occurred during setup.';
-            if (typeof err === 'object' && err !== null && 'response' in err) {
-                const response = (err as any).response;
-                if (response?.data?.detail) {
-                    if (Array.isArray(response.data.detail)) {
-                        errorMessage = response.data.detail[0].msg;
-                    } else {
-                        errorMessage = response.data.detail as string;
-                    }
+            if (isAxiosError(err) && err.response?.data?.detail) {
+                if (Array.isArray(err.response.data.detail)) {
+                    errorMessage = err.response.data.detail[0].msg;
+                } else {
+                    errorMessage = err.response.data.detail as string;
                 }
             }
             setError(errorMessage);
