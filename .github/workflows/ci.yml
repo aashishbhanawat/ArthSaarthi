@@ -50,7 +50,7 @@ jobs:
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
 
       - name: Run Backend Tests (SQLite + Encryption)
-        run: docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml run --rm test-sqlite
+        run: docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml up --build --abort-on-container-exit
 
       - name: Run Frontend Tests
         run: docker compose run --rm frontend npm test
