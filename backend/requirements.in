@@ -18,6 +18,7 @@ typer
 uvicorn[standard]
 yfinance
 tenacity
+cryptography
 pyxirr
 numpy
 pyarrow

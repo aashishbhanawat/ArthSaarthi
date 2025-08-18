@@ -1,14 +1,24 @@
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.user import User as UserModel
 from app.tests.utils.user import (
     create_random_user,
     get_access_token,
     random_email,
 )
+
+pytestmark = [
+    pytest.mark.usefixtures("pre_unlocked_key_manager"),
+    pytest.mark.skipif(
+        settings.DEPLOYMENT_MODE == "desktop",
+        reason="User management APIs are disabled in desktop mode",
+    ),
+]
 
 
 def test_use_access_admin_route(client: TestClient, db: Session) -> None:

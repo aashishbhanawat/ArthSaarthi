@@ -1,7 +1,17 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.tests.utils.user import create_random_user
+
+pytestmark = [
+    pytest.mark.usefixtures("pre_unlocked_key_manager"),
+    pytest.mark.skipif(
+        settings.DEPLOYMENT_MODE == "desktop",
+        reason="User management APIs are disabled in desktop mode",
+    ),
+]
 
 
 def test_get_current_user_unauthorized(client: TestClient):

@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     ADMIN_USERNAME: str = "admin"
     ADMIN_EMAIL: str = "admin@example.com"
     ADMIN_PASSWORD: str = "admin_password"
+    FIRST_SUPERUSER: str = "admin@example.com"
+    FIRST_SUPERUSER_PASSWORD: str = "a-secure-password!123"
 
     API_V1_STR: str = "/api/v1"
     DATABASE_TYPE: str = "postgres"
@@ -26,8 +28,9 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_URL: Optional[str] = None
     CACHE_TYPE: Literal["redis", "disk"] = "redis"
+    DEPLOYMENT_MODE: Literal["server", "desktop"] = "server"
     ENVIRONMENT: str = "production"
-    IMPORT_UPLOAD_DIR: str = "/app/uploads"
+    IMPORT_UPLOAD_DIR: str = "uploads"
 
     ICICI_BREEZE_API_KEY: str = ""
     ZERODHA_KITE_API_KEY: str = ""
@@ -36,8 +39,16 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000"
     DEBUG: bool = False
 
+    # For desktop encryption
+    ENCRYPTION_KEY_PATH: str = "master.key"
+    WRAPPED_KEY_PATH: str = "master.key.wrapped"
+
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
+        if values.get("DEPLOYMENT_MODE") == "desktop":
+            # In desktop mode, always use a local SQLite file
+            # The path will be determined later, for now, a default name
+            return "sqlite:///./arthsaarthi-desktop.db"
         if values.get("DATABASE_TYPE") == "sqlite":
             return "sqlite:///./arthsaarthi.db"
         if isinstance(v, str):
@@ -47,6 +58,12 @@ class Settings(BaseSettings):
             f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@"
             f"{values.get('POSTGRES_SERVER')}:5432/{values.get('POSTGRES_DB')}"
         )
+
+    @validator("CACHE_TYPE", pre=True, always=True)
+    def set_cache_type_for_desktop(cls, v, values):
+        if values.get("DEPLOYMENT_MODE") == "desktop":
+            return "disk"
+        return v
 
     @validator("REDIS_URL", pre=True, always=True)
     def assemble_redis_connection(cls, v, values):
@@ -58,3 +75,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings(_env_file=None) if os.getenv("TESTING") else Settings()
+

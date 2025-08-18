@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -10,6 +11,8 @@ from app.tests.utils.asset import create_test_asset
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.transaction import create_test_transaction
 from app.tests.utils.user import create_random_user
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_create_portfolio(client: TestClient, db: Session, get_auth_headers):
@@ -100,16 +103,12 @@ def test_create_transaction_with_existing_asset(
         "quantity": 10,
         "price_per_unit": 150.00,
         "transaction_date": datetime.now(timezone.utc).isoformat(),
-        "fees": 0.0,  # This line was missing
+        "fees": 0.0,
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
         headers=auth_headers,
         json=data,
-    )
-    print(
-        "DEBUG (test_create_transaction_with_existing_asset):"
-        f" STATUS={response.status_code}, RESPONSE={response.json()}"
     )
     assert response.status_code == 201
     content = response.json()
@@ -133,16 +132,12 @@ def test_create_transaction_for_other_user_portfolio(
         "quantity": 5,
         "price_per_unit": 250.00,
         "transaction_date": datetime.now(timezone.utc).isoformat(),
-        "fees": 0.0,  # This line was missing
+        "fees": 0.0,
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio1.id}/transactions/",
         headers=auth_headers2,
         json=data,
-    )
-    print(
-        "DEBUG (test_create_transaction_for_other_user_portfolio):"
-        f" STATUS={response.status_code}, RESPONSE={response.json()}"
     )
     assert response.status_code == 403
 

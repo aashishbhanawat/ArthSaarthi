@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/react-query';
 import HoldingDetailModal from '../../../components/Portfolio/HoldingDetailModal';
@@ -12,11 +11,13 @@ const mockHolding: Holding = {
   ticker_symbol: 'TEST',
   quantity: 100,
   average_buy_price: 150,
+  total_invested_amount: 15000,
   current_price: 160,
   current_value: 16000,
+  days_pnl: 100,
+  days_pnl_percentage: 0.00625,
   unrealized_pnl: 1000,
-  asset_type: 'Stock',
-  exchange: 'NSE',
+  unrealized_pnl_percentage: 0.0666,
 };
 
 const mockTransactions: Transaction[] = [
@@ -29,8 +30,15 @@ const mockTransactions: Transaction[] = [
     price_per_unit: 150,
     fees: 10,
     transaction_date: '2023-01-15T10:00:00Z',
-    created_at: '2023-01-15T10:00:00Z',
-    updated_at: '2023-01-15T10:00:00Z',
+    asset: {
+        id: 'asset-1',
+        name: 'Test Asset',
+        ticker_symbol: 'TEST',
+        asset_type: 'Stock',
+        currency: 'INR',
+        isin: 'US0378331005',
+        exchange: 'NASDAQ',
+    }
   },
 ];
 
@@ -50,20 +58,42 @@ const renderComponent = (onClose = jest.fn(), onEdit = jest.fn(), onDelete = jes
   );
 };
 
-type PartialUseQueryResult<TData> = Partial<UseQueryResult<TData, Error>>;
-
-interface AssetAnalyticsData {
-  realized_xirr: number;
-  unrealized_xirr: number;
+// A helper to create a complete UseQueryResult mock
+function createUseQueryResultMock<TData>(
+  data: TData,
+  options: Partial<UseQueryResult<TData, Error>> = {}
+): UseQueryResult<TData, Error> {
+  return {
+    data,
+    dataUpdatedAt: 1,
+    error: null,
+    errorUpdatedAt: 0,
+    failureCount: 0,
+    failureReason: null,
+    fetchStatus: 'idle',
+    isError: false,
+    isFetched: true,
+    isFetchedAfterMount: true,
+    isFetching: false,
+    isInitialLoading: false,
+    isLoading: false,
+    isLoadingError: false,
+    isPlaceholderData: false,
+    isRefetchError: false,
+    isRefetching: false,
+    isStale: false,
+    isSuccess: true,
+    refetch: jest.fn(),
+    status: 'success',
+    ...options
+  };
 }
 
 describe('HoldingDetailModal', () => {
   beforeEach(() => {
-    jest.spyOn(portfolioHooks, 'useAssetTransactions').mockReturnValue({
-      data: mockTransactions,
-      isLoading: false,
-      error: null,
-    } as PartialUseQueryResult<Transaction[]>);
+    jest.spyOn(portfolioHooks, 'useAssetTransactions').mockReturnValue(
+        createUseQueryResultMock(mockTransactions)
+    );
   });
 
   afterEach(() => {
@@ -71,11 +101,9 @@ describe('HoldingDetailModal', () => {
   });
 
   it('renders holding details and transaction list correctly', () => {
-    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue({
-      data: { realized_xirr: 0.1234, unrealized_xirr: 0.2345 },
-      isLoading: false,
-      isError: false,
-    } as PartialUseQueryResult<AssetAnalyticsData>);
+    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
+        createUseQueryResultMock({ realized_xirr: 0.1234, unrealized_xirr: 0.2345, sharpe_ratio: 1.5 })
+    );
 
     renderComponent();
 
@@ -96,11 +124,9 @@ describe('HoldingDetailModal', () => {
   });
 
   it('displays loading state for analytics', () => {
-    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      isError: false,
-    } as PartialUseQueryResult<AssetAnalyticsData>);
+    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
+        createUseQueryResultMock(undefined, { isLoading: true, isSuccess: false, status: 'pending' })
+    );
 
     renderComponent();
 
@@ -111,11 +137,9 @@ describe('HoldingDetailModal', () => {
   });
 
   it('displays error state for analytics', () => {
-    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: true,
-    } as PartialUseQueryResult<AssetAnalyticsData>);
+    jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
+        createUseQueryResultMock(undefined, { isError: true, isSuccess: false, status: 'error', error: new Error('Failed to fetch') })
+    );
 
     renderComponent();
 
@@ -125,4 +149,3 @@ describe('HoldingDetailModal', () => {
     expect(errorElements).toHaveLength(2);
   });
 });
-

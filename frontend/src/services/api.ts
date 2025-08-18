@@ -1,10 +1,46 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  // The base URL is no longer needed here because we are using a proxy.
-  // The browser will make requests to the same origin (i.e., /api/...),
-  // and Vite's dev server will forward them to the backend.
-}); 
+  // Base URL is determined dynamically by an interceptor.
+  // In a standard web build, this will be empty (relying on relative paths).
+  // In Electron, it will be set to http://localhost:<port>.
+});
+
+// This interceptor dynamically sets the baseURL when running in Electron.
+// It runs only once and then is ejected.
+apiClient.interceptors.request.use(
+  async (config) => {
+    // If the baseURL is already set, we don't need to do anything.
+    if (apiClient.defaults.baseURL) {
+      return config;
+    }
+
+    // Check if the electronAPI is exposed on the window object
+    if (window.electronAPI && typeof window.electronAPI.getApiConfig === 'function') {
+      try {
+        const apiConfig = await window.electronAPI.getApiConfig();
+        const baseUrl = `http://${apiConfig.host}:${apiConfig.port}`;
+        console.log(`Electron environment detected. Setting API base URL to: ${baseUrl}`);
+        apiClient.defaults.baseURL = baseUrl;
+        config.baseURL = baseUrl;
+      } catch (error) {
+        console.error("Failed to get API config from Electron main process:", error);
+      }
+    }
+
+    // After the first run, we can remove this interceptor if we want,
+    // but leaving it is fine as it will just pass through on subsequent requests.
+    // For cleanliness, let's eject it after it has run once.
+    // Note: This might cause issues if the first request fails for other reasons.
+    // A safer approach is to just let it be. We'll keep it simple for now.
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 
 apiClient.interceptors.request.use(
   (config) => {
