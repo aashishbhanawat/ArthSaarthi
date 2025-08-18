@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import TransactionList from '../../../components/Portfolio/TransactionList';
 import { Transaction } from '../../../types/portfolio';
@@ -14,7 +13,7 @@ const mockTransactions: Transaction[] = [
     price_per_unit: 150.75,
     transaction_date: '2023-10-26T10:00:00Z',
     fees: 5,
-    asset: { id: 'asset-1', ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD' },
+    asset: { id: 'asset-1', ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD', isin: 'US0378331005', exchange: 'NASDAQ' },
   },
   {
     id: 'tx-2',
@@ -25,7 +24,7 @@ const mockTransactions: Transaction[] = [
     price_per_unit: 3000.50,
     transaction_date: '2023-10-27T10:00:00Z',
     fees: 10,
-    asset: { id: 'asset-2', ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', currency: 'USD' },
+    asset: { id: 'asset-2', ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', currency: 'USD', isin: 'US02079K3059', exchange: 'NASDAQ' },
   },
 ];
 

@@ -49,8 +49,8 @@ jobs:
       - name: Run Backend Tests (PostgreSQL)
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
 
-      - name: Run Backend Tests (SQLite)
-        run: docker compose -f docker-compose.yml -f docker-compose.test.sqlite.yml run --rm test-sqlite
+      - name: Run Backend Tests (SQLite + Encryption)
+        run: docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml up --build --abort-on-container-exit
 
       - name: Run Frontend Tests
         run: docker compose run --rm frontend npm test

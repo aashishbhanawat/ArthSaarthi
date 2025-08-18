@@ -12,7 +12,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION;
 
 
 const NavBar: React.FC = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, deploymentMode } = useAuth();
 
     const baseLinkClass = "py-2 px-3 rounded-md transition-colors";
     const inactiveLinkClass = "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
@@ -45,7 +45,7 @@ const NavBar: React.FC = () => {
                 <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
                     <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>
                 </NavLink>
-                {user?.is_admin && (
+                {user?.is_admin && deploymentMode === 'server' && (
                     <NavLink to="/admin/users" className={({ isActive }) => linkClass(isActive)}>
                         <UsersIcon className="h-5 w-5" />
                         <span>User Management</span>

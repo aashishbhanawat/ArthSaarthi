@@ -1,9 +1,12 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str
+    deployment_mode: Literal["server", "desktop"]
 
 
 class TokenData(BaseModel):

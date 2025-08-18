@@ -50,3 +50,4 @@ yarn-error.log*
 # Database files
 *.db
 dump.rdb
+/frontend/dist-electron/

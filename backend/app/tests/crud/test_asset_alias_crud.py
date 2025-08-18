@@ -1,9 +1,12 @@
+import pytest
 from sqlalchemy.orm import Session
 
 from app import crud
 from app.schemas.asset_alias import AssetAliasCreate
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.user import create_random_user
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_create_and_get_asset_alias(db: Session) -> None:

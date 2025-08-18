@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,6 +24,8 @@ const mockAsset: Asset = {
   name: 'Test Asset Inc.',
   asset_type: 'Stock',
   currency: 'USD',
+  isin: 'US0378331005',
+  exchange: 'NASDAQ',
 };
 
 const mockTransaction: Transaction = {

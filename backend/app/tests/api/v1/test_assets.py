@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -6,6 +7,8 @@ from app.core.config import settings
 from app.services.financial_data_service import financial_data_service
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.user import create_random_user
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_create_asset_success(

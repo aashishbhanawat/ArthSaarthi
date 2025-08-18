@@ -5,6 +5,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app import schemas
+from app.core.config import settings
+from app.core.security import create_access_token
 from app.crud import crud_user
 
 
@@ -41,7 +43,14 @@ def create_random_user(db: Session):
 
 
 def get_access_token(client: TestClient, email: str, password: str) -> str:
+    if settings.DEPLOYMENT_MODE == "desktop":
+        # In desktop mode, for tests not focused on auth, we bypass the login
+        # endpoint. This assumes a fixture like `pre_unlocked_key_manager`
+        # has already set up and unlocked the master key.
+        return create_access_token(subject=email)
+
     response = client.post(
         "/api/v1/auth/login", data={"username": email, "password": password}
     )
+    response.raise_for_status()
     return response.json()["access_token"]
