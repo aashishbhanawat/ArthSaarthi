@@ -2,12 +2,13 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const portfinder = require('portfinder');
-const isDev = require('electron-is-dev');
 
 let backendProcess;
 let mainWindow;
 
-function createMainWindow(backendPort) {
+async function createMainWindow(backendPort) {
+  const isDev = (await import('electron-is-dev')).default;
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -40,7 +41,8 @@ function createMainWindow(backendPort) {
   });
 }
 
-function startBackend() {
+async function startBackend() {
+  const isDev = (await import('electron-is-dev')).default;
   return new Promise((resolve, reject) => {
     portfinder.getPortPromise()
       .then(port => {
@@ -81,15 +83,15 @@ app.whenReady().then(async () => {
   try {
     const backendPort = await startBackend();
     console.log(`Backend started on port ${backendPort}`);
-    createMainWindow(backendPort);
+    await createMainWindow(backendPort);
   } catch (error) {
     console.error('Failed to start backend, quitting app.', error);
     app.quit();
   }
 
-  app.on('activate', () => {
+  app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
+      await createMainWindow();
     }
   });
 });
