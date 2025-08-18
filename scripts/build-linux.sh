@@ -19,6 +19,7 @@ echo "Step 2: Building frontend..."
 
 # 3. Install Backend Dependencies
 echo "Step 3: Installing backend dependencies..."
+source ~/venc/bin/activate
 (cd backend && pip install -r requirements.txt)
 
 # 4. Bundle Backend
