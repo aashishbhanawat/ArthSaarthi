@@ -28,7 +28,7 @@ echo "Step 4: Bundling backend..."
 # 5. Package Electron App for Linux
 echo "Step 5: Packaging Electron app for Linux..."
 # We use the 'dist' script from package.json which runs electron-builder
-(cd frontend && npm run dist -- --linux)
+(cd frontend && USE_SYSTEM_FPM=true npm run dist -- --linux)
 
 echo "--- Linux Build Finished ---"
 echo "Installer located in frontend/dist-electron/"
