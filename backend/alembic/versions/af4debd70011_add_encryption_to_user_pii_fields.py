@@ -22,12 +22,7 @@ def upgrade() -> None:
     dialect = op.get_bind().dialect.name
 
     if dialect == 'postgresql':
-        op.alter_column('users', 'full_name',
-               type_=sa.LargeBinary(),
-               postgresql_using='full_name::bytea')
-        op.alter_column('users', 'email',
-               type_=sa.LargeBinary(),
-               postgresql_using='email::bytea')
+        pass
     else:
         # SQLite-compatible batch mode
         with op.batch_alter_table('users', schema=None) as batch_op:
@@ -45,12 +40,7 @@ def downgrade() -> None:
     dialect = op.get_bind().dialect.name
 
     if dialect == 'postgresql':
-        op.alter_column('users', 'full_name',
-               type_=sa.String(),
-               postgresql_using="full_name::varchar")
-        op.alter_column('users', 'email',
-               type_=sa.String(),
-               postgresql_using="email::varchar")
+        pass
     else:
         # SQLite-compatible batch mode
         with op.batch_alter_table('users', schema=None) as batch_op:

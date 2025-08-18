@@ -71,30 +71,22 @@ def get_auth_headers(
     return _get_auth_headers
 
 
-@pytest.fixture(scope="session", autouse=True)
-def create_test_database() -> Generator[None, None, None]:
-    """
-    Create a test database for the duration of the test session.
-    """
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+
 
 
 @pytest.fixture(scope="function")
-def db(create_test_database: None) -> Generator[Session, None, None]:
+def db() -> Generator[Session, None, None]:
     """
-    Provides a transactional database session for each test function.
+    Provides a fresh database for each test function.
     """
-    connection = engine.connect()
-    transaction = connection.begin()
-    db_session = SessionLocal(bind=connection)
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    db_session = SessionLocal()
 
     yield db_session
 
     db_session.close()
-    transaction.rollback()
-    connection.close()
 
 
 @pytest.fixture(scope="function")

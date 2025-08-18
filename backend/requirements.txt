@@ -13,7 +13,7 @@ anyio==4.10.0
     #   httpx
     #   starlette
     #   watchfiles
-bcrypt==4.3.0
+bcrypt==3.2.0
     # via -r backend/requirements.in
 beautifulsoup4==4.13.4
     # via yfinance
@@ -88,7 +88,7 @@ packaging==25.0
     # via pytest
 pandas==2.3.1
     # via yfinance
-passlib==1.7.4
+passlib[bcrypt]==1.7.4
     # via -r backend/requirements.in
 peewee==3.18.2
     # via yfinance
