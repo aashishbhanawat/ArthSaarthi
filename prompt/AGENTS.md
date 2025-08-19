@@ -2,48 +2,57 @@
 
 This guide provides instructions for setting up a local development and testing environment that is self-contained and does not require Docker.
 
-## 1. Running All Checks
+## Unified Local Test Runner
 
-This is the main command to run all linters and tests. It uses the SQLite database for backend and E2E tests.
+The `run_local_tests.sh` script is the single, unified way to run all types of tests and checks for this project. It is designed to be run in a non-Dockerized environment and can be configured to target different databases and test suites.
 
-### 1.1. Linting
-
-```bash
-# Backend Linter
-(cd backend && ruff check .)
-
-# Frontend Linter
-(cd frontend && npm run lint)
-```
-
-### 1.2. Unit & Integration Tests
-
-The backend tests will use an auto-generated `test.db` SQLite database file. The frontend tests are self-contained.
+### Usage
 
 ```bash
-# Backend Tests
-# To run with SQLite (recommended for sandboxed environments):
-(cd backend && FORCE_SQLITE_TEST=true python -m dotenv -f .env.test run -- pytest -v)
-
-# Frontend Tests
-(cd frontend && npm test)
+./run_local_tests.sh [TEST_SUITE] [--db DB_TYPE]
 ```
 
-### 1.3. End-to-End (E2E) Tests
+### Test Suites
 
-The E2E tests are run using a dedicated script that handles all setup, execution, and cleanup.
+You can specify which suite of tests to run:
 
-**Run E2E Test Suite**
-This single command will:
-1.  Install any missing prerequisites (like Redis).
-2.  Install all project dependencies.
-3.  Create the necessary test environment files.
-4.  Start the backend, frontend, and Redis services on dynamically chosen ports.
-5.  Run the complete Playwright E2E test suite.
-6.  Clean up all running processes and temporary files automatically.
+- `all`: (Default) Runs linting, all unit tests, and all e2e tests.
+- `lint`: Runs backend (ruff) and frontend (eslint) linters.
+- `backend`: Runs backend (pytest) unit and integration tests.
+- `frontend`: Runs frontend (jest) unit tests.
+- `e2e`: Runs end-to-end (playwright) tests.
 
+### Database Backends
+
+The script can run tests against two different database backends, specified with the `--db` flag:
+
+- `--db sqlite`: (Default) Uses a temporary file-based SQLite database. This is the recommended option for most sandboxed development and testing, as it has no external dependencies.
+- `--db postgres`: Uses a local PostgreSQL server and a local Redis server.
+
+### Prerequisites for PostgreSQL
+
+If you intend to run tests with the PostgreSQL backend (`--db postgres`), you must ensure the following services are installed and running **before** executing the script:
+- PostgreSQL server
+- Redis server
+
+The script will handle the creation and teardown of the test database, but the services themselves must be active.
+
+### Examples
+
+**Run all checks with SQLite:**
 ```bash
-./run_e2e_local.sh
+./run_local_tests.sh all --db sqlite
+```
+*(Note: `all` and `--db sqlite` are defaults, so `./run_local_tests.sh` is equivalent)*
+
+**Run only E2E tests with PostgreSQL:**
+```bash
+./run_local_tests.sh e2e --db postgres
 ```
 
-This is the definitive way to run E2E tests in a non-Dockerized environment.
+**Run only backend unit tests (defaults to SQLite):**
+```bash
+./run_local_tests.sh backend
+```
+
+This script is the definitive way to run tests in a non-Dockerized environment. Please refer to the script's help message (`./run_local_tests.sh --help`) for more details.
