@@ -9,7 +9,7 @@ echo "--- Starting Windows Build ---"
 
 # Clean up previous builds
 echo "Cleaning up previous builds..."
-rm -rf backend/dist frontend/dist-electron
+rm -rf backend/dist backend/build frontend/dist-electron
 
 # 1. Install Frontend Dependencies
 echo "Step 1: Installing frontend dependencies..."
