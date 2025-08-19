@@ -25,8 +25,17 @@ def run_dev_server(
     import os
     if os.getenv("DEPLOYMENT_MODE") == "desktop":
         from app.core.config import settings
+        from app.db import session
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+
         settings.CACHE_TYPE = "disk"
         settings.DATABASE_URL = "sqlite:///./arthsaarthi-desktop.db"
+
+        # Re-initialize the database engine and session
+        session.engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, connect_args={"check_same_thread": False})
+        session.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=session.engine)
+
     uvicorn.run(fastapi_app, host=host, port=port)
 
 
