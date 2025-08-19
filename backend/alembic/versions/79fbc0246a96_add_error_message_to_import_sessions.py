@@ -24,7 +24,7 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('session_id', sa.UUID(), nullable=False),
     sa.Column('row_number', sa.Integer(), nullable=False),
-    sa.Column('data', sa.JSON(), nullable=False),
+    sa.Column('data', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('is_selected', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['session_id'], ['import_sessions.id'], ),
     sa.PrimaryKeyConstraint('id')

@@ -41,11 +41,10 @@ test.describe.serial('Automated Data Import E2E Test', () => {
         const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
 
         // Create Standard User via API (as Admin)
-        const standardUserCreateResponse = await request.post('/api/v1/users', {
+        const standardUserCreateResponse = await request.post('/api/v1/users/', {
           headers: adminAuthHeaders,
           data: { ...standardUser, is_admin: false },
         });
-        console.log(await standardUserCreateResponse.json());
         expect(standardUserCreateResponse.ok()).toBeTruthy();
 
         // Create necessary assets for the import test (as Admin)
@@ -55,7 +54,7 @@ test.describe.serial('Automated Data Import E2E Test', () => {
         ];
 
         for (const asset of assetsToCreate) {
-            const assetCreateResponse = await request.post('/api/v1/assets', {
+            const assetCreateResponse = await request.post('/api/v1/assets/', {
                 headers: adminAuthHeaders,
                 data: asset,
             });

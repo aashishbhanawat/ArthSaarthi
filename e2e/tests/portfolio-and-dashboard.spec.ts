@@ -23,11 +23,10 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
 
     // Create Standard User via API (as Admin)
-    const standardUserCreateResponse = await request.post('/api/v1/users', {
+    const standardUserCreateResponse = await request.post('/api/v1/users/', {
       headers: adminAuthHeaders,
       data: { ...standardUser, is_admin: false },
     });
-    console.log(await standardUserCreateResponse.json());
     expect(standardUserCreateResponse.ok()).toBeTruthy();
   });
 
