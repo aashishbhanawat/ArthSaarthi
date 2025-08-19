@@ -62,18 +62,19 @@ async function startBackend() {
           env: { ...process.env, DEPLOYMENT_MODE: 'desktop' },
         });
 
-        backendProcess.stdout.on('data', (data) => {
-          const message = data.toString();
-          console.log(`Backend stdout: ${message}`);
-          if (message.includes('Uvicorn running on')) {
-            console.log('Backend is ready. Resolving startBackend promise.');
-            resolve(port);
-          }
-        });
+        let resolved = false;
+        const handleData = (data) => {
+            const message = data.toString();
+            console.log(`Backend output: ${message}`);
+            if (!resolved && message.includes('Uvicorn running on')) {
+                console.log('Backend is ready. Resolving startBackend promise.');
+                resolved = true;
+                resolve(port);
+            }
+        };
 
-        backendProcess.stderr.on('data', (data) => {
-          console.error(`Backend stderr: ${data}`);
-        });
+        backendProcess.stdout.on('data', handleData);
+        backendProcess.stderr.on('data', handleData);
 
         backendProcess.on('close', (code) => {
           console.log(`Backend process exited with code ${code}`);
