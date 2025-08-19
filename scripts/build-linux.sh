@@ -26,8 +26,12 @@ source ~/venc/bin/activate
 echo "Step 4: Bundling backend..."
 (cd backend && pyinstaller build-backend.spec)
 
-# 5. Package Electron App for Linux
-echo "Step 5: Packaging Electron app for Linux..."
+# 5. Set Execute Permissions
+echo "Step 5: Setting execute permissions on backend..."
+chmod +x backend/dist/arthsaarthi-backend/arthsaarthi-backend
+
+# 6. Package Electron App for Linux
+echo "Step 6: Packaging Electron app for Linux..."
 # We use the 'dist' script from package.json which runs electron-builder
 (cd frontend && USE_SYSTEM_FPM=true npm run dist -- --linux)
 

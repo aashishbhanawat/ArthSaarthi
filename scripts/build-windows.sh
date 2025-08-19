@@ -26,8 +26,12 @@ source ~/venc/bin/activate
 echo "Step 4: Bundling backend..."
 (cd backend && pyinstaller build-backend.spec)
 
-# 5. Package Electron App for Windows
-echo "Step 5: Packaging Electron app for Windows..."
+# 5. Set Execute Permissions
+echo "Step 5: Setting execute permissions on backend..."
+chmod +x backend/dist/arthsaarthi-backend/arthsaarthi-backend.exe
+
+# 6. Package Electron App for Windows
+echo "Step 6: Packaging Electron app for Windows..."
 # We use the 'dist' script from package.json which runs electron-builder
 (cd frontend && npm run dist -- --win)
 
