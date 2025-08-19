@@ -26,10 +26,11 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
 
         // Create the standard user needed for this test file
-        const standardUserCreateResponse = await request.post('/api/v1/users/', {
+        const standardUserCreateResponse = await request.post('/api/v1/users', {
           headers: adminAuthHeaders,
           data: { ...testUser, is_admin: false },
         });
+        console.log(await standardUserCreateResponse.json());
         expect(standardUserCreateResponse.ok()).toBeTruthy();
     });
 
