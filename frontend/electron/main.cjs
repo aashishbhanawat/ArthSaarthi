@@ -32,8 +32,8 @@ async function createMainWindow(backendPort) {
     mainWindow.webContents.openDevTools();
   } else {
     // In production, load the built frontend
-    const indexPath = path.join(__dirname, '../dist/index.html');
-    mainWindow.loadFile(indexPath);
+    const testPath = path.join(__dirname, '../dist/test.html');
+    mainWindow.loadFile(testPath);
     mainWindow.webContents.openDevTools();
   }
 
