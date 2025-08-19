@@ -25,8 +25,9 @@ const AuthPage: React.FC = () => {
         try {
             const status = await api.getAuthStatus();
             setSetupNeeded(status.setup_needed);
-        } catch (err) {
+        } catch (err: any) {
             setError('Failed to check setup status.');
+            alert(`Error in checkStatus: ${err.message}`);
         } finally {
             setIsLoading(false);
         }
