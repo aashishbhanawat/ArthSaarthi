@@ -63,10 +63,12 @@ async function startBackend() {
         });
 
         backendProcess.stdout.on('data', (data) => {
-          console.log(`Backend stdout: ${data}`);
-          // Resolve once we get some output, assuming it's ready
-          // A more robust solution would be to wait for a specific message
-          resolve(port);
+          const message = data.toString();
+          console.log(`Backend stdout: ${message}`);
+          if (message.includes('Uvicorn running on')) {
+            console.log('Backend is ready. Resolving startBackend promise.');
+            resolve(port);
+          }
         });
 
         backendProcess.stderr.on('data', (data) => {
