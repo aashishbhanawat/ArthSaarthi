@@ -26,6 +26,7 @@ def run_dev_server(
     if os.getenv("DEPLOYMENT_MODE") == "desktop":
         from app.core.config import settings
         settings.CACHE_TYPE = "disk"
+        settings.DATABASE_URL = "sqlite:///./arthsaarthi-desktop.db"
     uvicorn.run(fastapi_app, host=host, port=port)
 
 
