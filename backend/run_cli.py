@@ -41,6 +41,15 @@ def run_dev_server(
         session.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=session.engine)
         print("--- Database engine re-initialized ---")
 
+        # Run database migrations
+        print("--- Running database migrations ---")
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+        command.upgrade(alembic_cfg, "head")
+        print("--- Database migrations complete ---")
+
     uvicorn.run(fastapi_app, host=host, port=port)
 
 
