@@ -50,6 +50,8 @@ async function startBackend() {
           ? path.join(__dirname, '../../backend/run_cli.py') // Placeholder for dev
           : path.join(process.resourcesPath, 'arthsaarthi-backend'); // Production path
 
+        console.log(`Attempting to start backend at: ${backendPath}`);
+
         const args = isDev ? ['run-dev-server', '--port', port] : ['--port', port];
         const command = isDev ? 'python' : backendPath;
 
@@ -70,6 +72,11 @@ async function startBackend() {
 
         backendProcess.on('close', (code) => {
           console.log(`Backend process exited with code ${code}`);
+        });
+
+        backendProcess.on('error', (err) => {
+            console.error('Failed to start backend process.', err);
+            reject(err);
         });
       })
       .catch(err => {
