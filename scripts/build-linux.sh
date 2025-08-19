@@ -28,7 +28,7 @@ echo "Step 4: Bundling backend..."
 
 # 5. Set Execute Permissions
 echo "Step 5: Setting execute permissions on backend..."
-chmod +x backend/dist/arthsaarthi-backend/arthsaarthi-backend
+chmod +x "$(pwd)/backend/dist/arthsaarthi-backend/arthsaarthi-backend"
 
 # 6. Package Electron App for Linux
 echo "Step 6: Packaging Electron app for Linux..."
