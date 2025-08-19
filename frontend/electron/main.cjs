@@ -48,7 +48,7 @@ async function startBackend() {
       .then(port => {
         const backendPath = isDev
           ? path.join(__dirname, '../../backend/run_cli.py') // Placeholder for dev
-          : path.join(process.resourcesPath, 'arthsaarthi-backend'); // Production path
+          : path.join(process.resourcesPath, 'arthsaarthi-backend', 'arthsaarthi-backend'); // Production path
 
         console.log(`Attempting to start backend at: ${backendPath}`);
 
