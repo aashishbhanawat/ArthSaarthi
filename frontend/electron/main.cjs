@@ -13,7 +13,7 @@ async function createMainWindow(backendPort) {
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       // It's recommended to turn off nodeIntegration and enable contextIsolation for security
       nodeIntegration: false,
       contextIsolation: true,
