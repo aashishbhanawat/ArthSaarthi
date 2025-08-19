@@ -36,6 +36,8 @@ async function createMainWindow(backendPort) {
     mainWindow.loadFile(indexPath);
   }
 
+  mainWindow.setMenu(null);
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -52,7 +54,7 @@ async function startBackend() {
 
         console.log(`Attempting to start backend at: ${backendPath}`);
 
-        const args = isDev ? ['run-dev-server', '--port', port] : ['--port', port];
+        const args = isDev ? ['run-dev-server', '--port', port] : ['run-dev-server', '--port', port];
         const command = isDev ? 'python' : backendPath;
 
         backendProcess = spawn(command, args, {

@@ -22,6 +22,10 @@ def run_dev_server(
     """
     Starts the Uvicorn server for development and for the Electron app.
     """
+    import os
+    if os.getenv("DEPLOYMENT_MODE") == "desktop":
+        from app.core.config import settings
+        settings.CACHE_TYPE = "disk"
     uvicorn.run(fastapi_app, host=host, port=port)
 
 
