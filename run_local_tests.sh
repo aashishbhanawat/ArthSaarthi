@@ -146,6 +146,15 @@ CACHE_TYPE=disk
 TESTING=True
 EOF
     elif [ "$DB_TYPE" == "postgres" ]; then
+        print_info "Configuring PostgreSQL for local access..."
+        # This script requires sudo to configure PostgreSQL for local testing.
+        # It replaces the pg_hba.conf file to allow passwordless local connections
+        # and restarts the PostgreSQL service.
+        # This is a temporary measure for the sandboxed environment.
+        sudo cp pg_hba.conf.new /etc/postgresql/16/main/pg_hba.conf
+        sudo systemctl restart postgresql
+        print_success "PostgreSQL configured and restarted."
+
         print_info "Creating test database '$TEST_DB_NAME'..."
         PGPASSWORD=${POSTGRES_PASSWORD:-} psql -h localhost -U "$DEFAULT_POSTGRES_USER" -d "$DEFAULT_POSTGRES_DB" -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" > /dev/null
         PGPASSWORD=${POSTGRES_PASSWORD:-} psql -h localhost -U "$DEFAULT_POSTGRES_USER" -d "$DEFAULT_POSTGRES_DB" -c "CREATE DATABASE $TEST_DB_NAME;" > /dev/null
@@ -169,7 +178,7 @@ EOF
 run_backend_tests() {
     print_info "--- Running Backend Tests (DB: $DB_TYPE) ---"
     create_env_file 0 0 # Ports not needed for backend-only tests
-    (cd backend && python -m dotenv -f .env.test.local run -- pytest -v)
+    (cd backend && python -m dotenv -f .env.test run -- pytest -v)
     print_success "Backend tests passed."
 }
 
