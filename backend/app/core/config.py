@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
     REDIS_URL: Optional[str] = None
-    CACHE_TYPE: Literal["redis", "disk"] = "redis"
     DEPLOYMENT_MODE: Literal["server", "desktop"] = "server"
+    CACHE_TYPE: Literal["redis", "disk"] = "disk" if os.getenv("DEPLOYMENT_MODE") == "desktop" else "redis"
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "uploads"
 
@@ -58,12 +58,6 @@ class Settings(BaseSettings):
             f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@"
             f"{values.get('POSTGRES_SERVER')}:5432/{values.get('POSTGRES_DB')}"
         )
-
-    @validator("CACHE_TYPE", pre=True, always=True)
-    def set_cache_type_for_desktop(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") == "desktop":
-            return "disk"
-        return v
 
     @validator("REDIS_URL", pre=True, always=True)
     def assemble_redis_connection(cls, v, values):
