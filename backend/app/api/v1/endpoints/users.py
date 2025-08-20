@@ -13,16 +13,6 @@ from app.schemas.user import User, UserCreate, UserUpdate
 router = APIRouter()
 
 
-@router.get("/me", response_model=User)
-def read_user_me(
-    current_user: UserModel = Depends(get_current_user),
-):
-    """
-    Get current user's profile.
-    """
-    return current_user
-
-
 @router.get("/", response_model=List[User])
 def list_users(
     db: Session = Depends(get_db),

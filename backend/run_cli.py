@@ -22,6 +22,28 @@ def run_dev_server(
     """
     Starts the Uvicorn server for development and for the Electron app.
     """
+    import os
+    from app.core.config import settings
+
+    if settings.DATABASE_TYPE == 'sqlite':
+        from app.db import session, base
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+
+        # This is still necessary to override the PostgreSQL default
+        settings.DATABASE_URL = "sqlite:///./arthsaarthi-desktop.db"
+        engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, connect_args={"check_same_thread": False})
+        session.engine = engine
+        session.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+        # Create tables directly from models if the db file doesn't exist
+        db_path = settings.DATABASE_URL.split("///")[1]
+        if not os.path.exists(db_path):
+            print("--- Database file not found. Creating and initializing. ---")
+            base.Base.metadata.create_all(bind=engine)
+        else:
+            print("--- Database file found. Skipping initialization. ---")
+
     uvicorn.run(fastapi_app, host=host, port=port)
 
 
