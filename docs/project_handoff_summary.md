@@ -62,7 +62,7 @@ To improve code quality and ensure stability, a comprehensive CI/CD pipeline and
     *   **Backend:** The backend uses `ruff` for both linting and formatting. The configuration is in `backend/pyproject.toml`.
     *   **Frontend:** The frontend uses `ESLint` with a standard configuration for React/TypeScript projects (`frontend/.eslintrc.cjs`). A `lint` script is available in `frontend/package.json` to run the linter locally: `npm run lint`.
 
-*   **Local Test Runner:** A new script, `./run_e2e_local.sh`, has been created to run the entire test and linting suite in a local, non-Docker environment. This is the recommended way to validate changes locally before committing.
+*   **Local Test Runner:** A new script, `./run_local_tests.sh`, has been created to run the entire test and linting suite in a local, non-Docker environment. This is the recommended way to validate changes locally before committing.
 
 **Instructions for AI Assistants:**
 Future development by AI assistants **must** adhere to these processes. All code changes must pass the linting checks and all test suites before being submitted. Any new feature should be accompanied by corresponding tests.
@@ -86,6 +86,11 @@ The application can be run with either PostgreSQL (default) or SQLite.
     docker compose -f docker-compose.yml -f docker-compose.sqlite.yml up --build
     ```
 
+*   **Start in Desktop Mode (for manual testing):**
+    ```bash
+    docker compose -f docker-compose.desktop.yml -f docker-compose.override.yml up --build
+    ```
+
 *   **Run Backend Tests (PostgreSQL):**
     ```bash
     docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
@@ -106,7 +111,7 @@ The application can be run with either PostgreSQL (default) or SQLite.
     ```
 *   **Run E2E Tests (SQLite):**
     ```bash
-    docker compose -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit
+    docker compose -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit
     ```
 
 ---
