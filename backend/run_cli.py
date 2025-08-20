@@ -1,6 +1,5 @@
 import typer
 import uvicorn
-print("--- Loading run_cli.py (v2) ---")
 
 from app.cli import app as db_cli_app
 from app.main import app as fastapi_app
@@ -40,10 +39,15 @@ def run_dev_server(
         # Create tables directly from models if the db file doesn't exist
         db_path = settings.DATABASE_URL.split("///")[1]
         if not os.path.exists(db_path):
-            print("--- Database file not found. Creating and initializing. ---")
             base.Base.metadata.create_all(bind=engine)
-        else:
-            print("--- Database file found. Skipping initialization. ---")
+            # Seed the database with initial asset data
+            print("--- Seeding initial asset data ---")
+            from app.cli import seed_assets_command
+            try:
+                seed_assets_command(url=None, local_dir=".")
+                print("--- Asset seeding complete ---")
+            except Exception as e:
+                print(f"--- Asset seeding failed: {e} ---")
 
     uvicorn.run(fastapi_app, host=host, port=port)
 
