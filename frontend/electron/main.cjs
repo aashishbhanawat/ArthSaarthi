@@ -59,7 +59,11 @@ async function startBackend() {
         const command = isDev ? 'python' : backendPath;
 
         backendProcess = spawn(command, args, {
-          env: { ...process.env, DEPLOYMENT_MODE: 'desktop' },
+          env: { ...process.env,
+		  DEPLOYMENT_MODE: 'desktop',
+                  DATABASE_TYPE: 'sqlite',
+                  CACHE_TYPE: 'disk',
+	       },
         });
 
         let resolved = false;
