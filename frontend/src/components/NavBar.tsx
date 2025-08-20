@@ -24,7 +24,7 @@ const NavBar: React.FC = () => {
     return (
         <aside className="bg-white flex flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200">
             <div className="flex items-center gap-3 mb-6">
-                <img src="/ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-8 w-8" />
+                <img src="ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-8 w-8" />
                 <h2 className="text-xl font-bold text-gray-800">ArthSaarthi</h2>
             </div>
             <nav className="flex flex-col gap-2 flex-grow">
