@@ -21,7 +21,6 @@
   "build": {
     "appId": "com.example.arthsaarthi",
     "productName": "ArthSaarthi",
-    "icon": "public/ArthSaarthi.png",
     "directories": {
       "output": "dist-electron"
     },

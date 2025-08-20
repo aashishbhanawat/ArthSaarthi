@@ -21,8 +21,6 @@ echo "Step 2: Building frontend..."
 
 # 3. Install Backend Dependencies
 echo "Step 3: Installing backend dependencies..."
-# This assumes the user has a virtual environment named 'venc' in their home directory
-# In a more robust setup, this would be handled by a configuration file or a setup script.
 source ~/venc/bin/activate
 (cd backend && pip install -r requirements.txt)
 
@@ -37,7 +35,6 @@ chmod +x "$(pwd)/backend/dist/arthsaarthi-backend/arthsaarthi-backend"
 # 6. Package Electron App for Linux
 echo "Step 6: Packaging Electron app for Linux..."
 # We use the 'dist' script from package.json which runs electron-builder
-# We set USE_SYSTEM_FPM=true to work around an issue with the pre-built fpm on ARM
 (cd frontend && USE_SYSTEM_FPM=true npm run dist -- --linux)
 
 echo "--- Linux Build Finished ---"
