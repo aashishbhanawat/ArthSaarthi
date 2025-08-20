@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => {
   const allowedHostsFromEnv = env.ALLOWED_HOSTS ? env.ALLOWED_HOSTS.split(',') : [];
 
   return {
-    base: './',
     define: {
       // Expose the app version from package.json to the app
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version),
