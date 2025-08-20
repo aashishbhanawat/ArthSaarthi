@@ -8,7 +8,6 @@ from .endpoints import (
     assets,
     auth,
     dashboard,
-    me,
     import_sessions,
     portfolios,
     testing,
@@ -19,7 +18,6 @@ api_router = APIRouter()
 logger = logging.getLogger(__name__)
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
-api_router.include_router(me.router, prefix="/users", tags=["users"])
 if settings.DEPLOYMENT_MODE != "desktop":
     api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfolios"])
