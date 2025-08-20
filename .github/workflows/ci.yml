@@ -50,7 +50,7 @@ jobs:
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
 
       - name: Run Backend Tests (SQLite + Encryption)
-        run: docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml up --build --abort-on-container-exit
+        run: docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml run --build --rm test-desktop
 
       - name: Run Frontend Tests
         run: docker compose run --rm frontend npm test
@@ -62,8 +62,8 @@ jobs:
 
       - name: Run E2E Tests (SQLite)
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.e2e.sqlite.yml down -v --remove-orphans
-          docker compose -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit
+          docker compose -f docker-compose.e2e.sqlite.yml down -v --remove-orphans
+          docker compose -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit
 
       - name: Upload E2E test results
         if: always()

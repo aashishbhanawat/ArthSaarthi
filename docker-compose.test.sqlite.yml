@@ -1,4 +1,8 @@
 services:
+  # Unset the db and redis services from the base file
+  db: null
+  redis: null
+
   test-sqlite:
     build: ./backend
     container_name: pms-test-sqlite
