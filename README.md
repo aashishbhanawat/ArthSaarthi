@@ -84,6 +84,16 @@ For a simpler setup that does not require a separate PostgreSQL or Redis instanc
 
     This will start the backend and frontend services. The backend will use a persistent SQLite database file (`arthsaarthi.db`) and `diskcache` for caching, removing the need for the `db` and `redis` containers.
 
+### Running in Desktop Mode (Manual Testing)
+
+The application also supports a "Desktop Mode" which is a single-user configuration using SQLite and a file-based cache. This is the recommended way to perform manual end-to-end testing of this specific mode.
+
+```bash
+docker compose -f docker-compose.desktop.yml -f docker-compose.override.yml up --build
+```
+
+This command starts the backend and frontend, makes them accessible on `localhost:8000` and `localhost:3000` respectively, and enables hot-reloading for development.
+
 ### Running the Test Suites
 
 **1. Backend Unit & Integration Tests:**
@@ -108,10 +118,10 @@ docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abor
 
 **4. Running All Checks Locally (Without Docker):**
 
-For a development environment without Docker, a comprehensive script is provided to run all linters and tests. This is the recommended way to validate changes locally before committing.
+For a development environment without Docker, a comprehensive and configurable script is provided to run all linters and tests. This is the recommended way to validate changes locally before committing.
 
 ```bash
-./run_e2e_local.sh
+./run_local_tests.sh
 ```
 
 This script will automatically handle dependencies, start the necessary services on dynamic ports, run all backend, frontend, and E2E tests, and clean up afterwards. For more details on the individual commands, see the `prompt/AGENTS.md` guide.
