@@ -20,7 +20,7 @@ const SetupForm: React.FC<SetupFormProps> = ({ onSuccess }) => {
         try {
             await api.setupAdminUser(fullName, email, password);
             onSuccess();
-        } catch (err: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) {
+        } catch (err: any) {
             if (err.response?.data?.detail) {
                 // Handle validation errors which might be an array
                 if (Array.isArray(err.response.data.detail)) {
