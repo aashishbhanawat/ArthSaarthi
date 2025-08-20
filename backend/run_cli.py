@@ -43,10 +43,23 @@ def run_dev_server(
 
         # Run database migrations
         print("--- Running database migrations ---")
+        import sys
         from alembic.config import Config
         from alembic import command
-        alembic_cfg = Config("alembic.ini")
+
+        # Determine the base path (for PyInstaller)
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
+        alembic_ini_path = os.path.join(base_path, 'alembic.ini')
+        alembic_script_location = os.path.join(base_path, 'alembic')
+
+        alembic_cfg = Config(alembic_ini_path)
+        alembic_cfg.set_main_option("script_location", alembic_script_location)
         alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
         command.upgrade(alembic_cfg, "head")
         print("--- Database migrations complete ---")
 
