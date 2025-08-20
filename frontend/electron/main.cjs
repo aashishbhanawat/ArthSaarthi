@@ -14,27 +14,30 @@ async function createMainWindow(backendPort) {
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
+      // It's recommended to turn off nodeIntegration and enable contextIsolation for security
       nodeIntegration: false,
       contextIsolation: true,
     },
   });
 
-  mainWindow.setMenu(null);
-
+  // Expose the backend port to the renderer process via IPC
   ipcMain.handle('get-api-config', () => ({
     host: '127.0.0.1',
     port: backendPort,
   }));
 
   if (isDev) {
+    // In development, load the Vite dev server
     mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
   } else {
+    // In production, load the built frontend
     const indexPath = path.join(__dirname, '../dist/index.html');
     mainWindow.loadFile(indexPath);
-    // Uncomment the line below to debug in production
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
   }
+
+  mainWindow.setMenu(null);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -47,12 +50,12 @@ async function startBackend() {
     portfinder.getPortPromise()
       .then(port => {
         const backendPath = isDev
-          ? path.join(__dirname, '../../backend/run_cli.py')
-          : path.join(process.resourcesPath, 'arthsaarthi-backend', 'arthsaarthi-backend');
+          ? path.join(__dirname, '../../backend/run_cli.py') // Placeholder for dev
+          : path.join(process.resourcesPath, 'arthsaarthi-backend', 'arthsaarthi-backend'); // Production path
 
         console.log(`Attempting to start backend at: ${backendPath}`);
 
-        const args = ['run-dev-server', '--port', port];
+        const args = isDev ? ['run-dev-server', '--port', port] : ['run-dev-server', '--port', port];
         const command = isDev ? 'python' : backendPath;
 
         backendProcess = spawn(command, args, {
@@ -113,6 +116,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', () => {
+  // Gracefully terminate the backend process
   if (backendProcess) {
     console.log('Terminating backend process...');
     backendProcess.kill();
