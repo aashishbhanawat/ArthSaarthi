@@ -61,7 +61,7 @@ async function startBackend() {
         backendProcess = spawn(command, args, {
           env: {
             ...process.env,
-            DATABASE_TYPE: 'sqlite',
+            DEPLOYMENT_MODE: 'desktop',
 	       },
         });
 

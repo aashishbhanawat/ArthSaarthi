@@ -27,19 +27,18 @@ def run_dev_server(
     import subprocess
     from app.core.config import settings
 
-    # This function should only be run in sqlite mode, which is set by the Electron process
-    if settings.DATABASE_TYPE == "sqlite":
+    # This command is for the desktop app, so we assume DEPLOYMENT_MODE is 'desktop'
+    # The environment variable is set by the Electron process that calls this.
+    if settings.DEPLOYMENT_MODE == "desktop":
         db_path_str = settings.DATABASE_URL.split("///")[1]
 
         if not os.path.exists(db_path_str):
             print(f"--- Database not found at {db_path_str}, initializing new database... ---")
-            # We can use the main executable with the 'db' commands
             subprocess.run([sys.executable, "db", "init-db"], check=True)
             print("--- Database initialization complete. ---")
 
         print("--- Seeding initial asset data ---")
         try:
-            # We also run the seeder as a separate process to ensure it's fresh
             subprocess.run([sys.executable, "db", "seed-assets"], check=True)
             print("--- Asset seeding complete ---")
         except Exception as e:
