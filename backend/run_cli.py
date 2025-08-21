@@ -21,25 +21,26 @@ def run_dev_server(
 ):
     """
     Starts the Uvicorn server for development and for the Electron app.
+    This function now orchestrates the db creation and seeding directly.
     """
     import os
-    import sys
-    import subprocess
     from app.core.config import settings
+    from app.cli import init_db_command, seed_assets_command
 
     # This command is for the desktop app, so we assume DEPLOYMENT_MODE is 'desktop'
     # The environment variable is set by the Electron process that calls this.
     if settings.DEPLOYMENT_MODE == "desktop":
+        # The database path is now determined by the centralized config logic
         db_path_str = settings.DATABASE_URL.split("///")[1]
 
         if not os.path.exists(db_path_str):
             print(f"--- Database not found at {db_path_str}, initializing new database... ---")
-            subprocess.run([sys.executable, "db", "init-db"], check=True)
+            init_db_command()
             print("--- Database initialization complete. ---")
 
         print("--- Seeding initial asset data ---")
         try:
-            subprocess.run([sys.executable, "db", "seed-assets"], check=True)
+            seed_assets_command()
             print("--- Asset seeding complete ---")
         except Exception as e:
             print(f"--- Asset seeding failed: {e} ---")

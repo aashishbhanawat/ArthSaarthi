@@ -45,17 +45,13 @@ class Settings(BaseSettings):
 
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") == "desktop":
+        if values.get("DEPLOYMENT_MODE") == "desktop" or values.get("DATABASE_TYPE") == "sqlite":
             from pathlib import Path
             # Use a stable directory in the user's home for the database
             app_dir = Path.home() / ".arthsaarthi"
             app_dir.mkdir(exist_ok=True)
-            db_path = app_dir / "arthsaarthi-desktop.db"
+            db_path = app_dir / "arthsaarthi.db"
             return f"sqlite:///{db_path.resolve()}"
-
-        if values.get("DATABASE_TYPE") == "sqlite":
-            # This is for local testing with run_local_tests.sh
-            return "sqlite:///./arthsaarthi.db"
 
         if isinstance(v, str):
             return v
@@ -67,7 +63,7 @@ class Settings(BaseSettings):
 
     @validator("CACHE_TYPE", pre=True, always=True)
     def set_cache_type_for_desktop(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") == "desktop":
+        if values.get("DEPLOYMENT_MODE") == "desktop" or values.get("DATABASE_TYPE") == "sqlite":
             return "disk"
         return v
 
