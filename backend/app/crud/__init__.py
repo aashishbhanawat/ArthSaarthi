@@ -7,8 +7,11 @@ from .crud_portfolio import portfolio
 from .crud_testing import testing
 from .crud_transaction import transaction
 from .crud_user import user
+from .crud_goal import goal, goal_link
 
 __all__ = [
+    "goal",
+    "goal_link",
     "asset",
     "asset_alias",
     "dashboard",

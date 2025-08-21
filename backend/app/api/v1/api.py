@@ -12,6 +12,7 @@ from .endpoints import (
     portfolios,
     testing,
     users,
+    goals,
 )
 
 api_router = APIRouter()
@@ -33,3 +34,4 @@ if settings.ENVIRONMENT == "test":
 api_router.include_router(
     import_sessions.router, prefix="/import-sessions", tags=["import-sessions"]
 )
+api_router.include_router(goals.router, prefix="/goals", tags=["goals"])

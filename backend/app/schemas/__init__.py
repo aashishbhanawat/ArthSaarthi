@@ -27,8 +27,14 @@ from .transaction import (
     TransactionUpdate,
 )
 from .user import User, UserCreate, UserUpdate
+from .goal import Goal, GoalCreate, GoalUpdate, GoalLink, GoalLinkCreate
 
 __all__ = [
+    "Goal",
+    "GoalCreate",
+    "GoalUpdate",
+    "GoalLink",
+    "GoalLinkCreate",
     "AnalyticsResponse",
     "AssetAnalytics",
     "Asset",
