@@ -110,10 +110,10 @@ trap cleanup EXIT
 
 install_deps() {
     print_info "Installing all project dependencies..."
-    pip install -r backend/requirements-dev.in > /dev/null 2>&1
-    (cd frontend && npm install > /dev/null 2>&1)
-    (cd e2e && npm install > /dev/null 2>&1)
-    (cd e2e && npx playwright install --with-deps > /dev/null 2>&1)
+    pip install -r backend/requirements-dev.in
+    (cd frontend && npm install)
+    (cd e2e && npm install)
+    (cd e2e && npx playwright install --with-deps)
     print_success "All dependencies installed."
 }
 

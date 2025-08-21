@@ -36,6 +36,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Email address').fill(standardUser.email);
     await page.getByLabel('Password').fill(standardUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.waitForNavigation();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
@@ -166,13 +167,15 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Quantity').fill('20'); // Invalid quantity
     await page.getByLabel('Price per Unit').fill('180.00');
     await page.getByLabel('Date').fill('2023-01-20'); // A date after the buy
-    await page.getByRole('button', { name: 'Save Transaction' }).click();
 
-    // 4. Verify the backend error is displayed in the modal
-    await expect(page.locator('.alert-error')).toBeVisible();
-    await expect(page.locator('.alert-error')).toContainText('Insufficient holdings to sell');
+    // 4. Verify that the save button is disabled due to client-side validation
+    const saveButton = page.getByRole('button', { name: 'Save Transaction' });
+    await expect(saveButton).toBeDisabled();
 
-    // 5. Verify the modal is still open and the invalid transaction was not added
+    // 5. Verify the client-side validation message is shown
+    await expect(page.getByText('You do not have enough shares to sell.')).toBeVisible();
+
+    // 6. Verify the modal is still open and the invalid transaction was not added
     await expect(page.getByRole('heading', { name: 'Add Transaction' })).toBeVisible();
     await page.getByRole('button', { name: 'Cancel' }).click();
     // Verify the holding is unchanged

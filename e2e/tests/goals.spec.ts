@@ -32,6 +32,7 @@ test.describe.serial('Goal Planning E2E Flow', () => {
     await page.getByLabel('Email address').fill(standardUser.email);
     await page.getByLabel('Password').fill(standardUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.waitForNavigation();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
@@ -61,15 +62,24 @@ test.describe.serial('Goal Planning E2E Flow', () => {
     await page.getByRole('link', { name: 'Goals' }).click();
     await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
     await page.getByRole('button', { name: 'Create New Goal' }).click();
+
     await page.getByLabel('Name').fill(goalName);
     await page.getByLabel('Target Amount').fill('2000');
     await page.getByLabel('Target Date').fill('2025-12-31');
+
+    // Intercept the API call to get the new goal's ID
+    const goalResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/v1/goals') && response.request().method() === 'POST'
+    );
     await page.getByRole('button', { name: 'Create Goal' }).click();
+    const goalResponse = await goalResponsePromise;
+    const goalData = await goalResponse.json();
+
     await expect(page.getByRole('heading', { name: goalName })).toBeVisible();
 
     // 3. Link the portfolio to the goal
     const goalCard = page.locator('.card', { hasText: goalName });
-    await page.getByTestId(`link-asset-button-${goal_res.json().id}`).click();
+    await goalCard.getByTestId(`link-asset-button-${goalData.id}`).click();
     const assetLinkModal = page.getByRole('dialog');
     await expect(assetLinkModal).toBeVisible();
     await assetLinkModal.getByRole('combobox').selectOption({ label: `${portfolioName} (Portfolio)` });

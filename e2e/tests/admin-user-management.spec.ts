@@ -43,6 +43,7 @@ test.describe('Admin User Management Flow', () => {
     await expect(page.getByRole('heading', { name: 'Edit User' })).toBeVisible();
     await page.getByLabel('Full Name').fill(updatedName);
     await page.getByRole('button', { name: 'Save Changes' }).click();
+    await page.waitForResponse(response => response.url().includes('/api/v1/users/') && response.request().method() === 'PUT');
     
     // Verify update
     // The name is not in the table, so verify the update by re-opening the edit modal
