@@ -115,6 +115,7 @@ For each feature, we'll follow these steps:
     *   **Testing Plan:** The QA Engineer will define unit tests, integration tests, and acceptance criteria.
     *   **E2E Test Plan:** The QA Engineer will also define a high-level E2E test case to be added for the feature.
     *   **Rigorous RCA:** When an error occurs, the AI must analyze the **full stack trace**, validate dependencies by requesting to see imported files, and state its hypothesis before proposing a fix.
+    *   **Local Testing Environment:** For development and testing in a non-Dockerized environment, refer to the instructions in `task_prompt/AGENTS.md`. This guide details how to use the `run_local_tests.sh` script to execute the full test suite.
     *   **Formal Bug Triage:** Before filing a new bug, the AI must search the temporary bug log (`docs/bug_report_temp.md`) for existing issues. It will propose updating an existing bug before creating a new one. The main `docs/bug_reports.md` file is for historical context only.
     *   **No Debugging Loops:** If a proposed fix does not work, the AI must not suggest the same fix again. It must re-evaluate its hypothesis, ask for more information (e.g., different logs, file contents), and propose a new, distinct path forward.
 
@@ -127,7 +128,10 @@ For each feature, we'll follow these steps:
     *   **Then, ask the user which file they would like to see the changes for first.**
     *   **Proceed with generating the code for one file at a time, as directed by the user.**
 7.  **Review and Iteration.**
-8.  **Document Workflow:** Append a detailed entry to `docs/workflow_history.md` summarizing the task, key prompts used, a summary of the AI's output, a comprehensive list of file changes, verification steps, and the final outcome.
+8.  **Documentation & Commit Workflow:**
+    *   Append a detailed entry to `docs/workflow_history.md` summarizing the task, key prompts used, a summary of the AI's output, a comprehensive list of file changes, verification steps, and the final outcome.
+    *   Systematically update all other relevant project documents as per the checklist in `docs/COMMIT_TEMPLATE.md`.
+    *   Generate a final, standardized commit message using the format specified in `task_prompt/COMMIT_TEMPLATE.md`.
 
 **A `.gitignore` file should be created early in the process to exclude virtual environments, `.env` files, and `__pycache__` directories.**
 
