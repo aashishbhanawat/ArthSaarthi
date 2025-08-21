@@ -33,6 +33,8 @@ services:
     image: pms_frontend:latest
     container_name: pms-frontend
     restart: unless-stopped
+    env_file:
+      - ./frontend/.env
     networks:
       - pms_network
     depends_on:

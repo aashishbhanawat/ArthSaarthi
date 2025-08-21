@@ -1,143 +1,70 @@
 # ArthSaarthi - Personal Portfolio Management System
 
-<!-- Note: Replace YOUR_USERNAME/YOUR_REPO with your actual GitHub repository path -->
 [![CI/CD Status](https://github.com/aashishbhanawat/pms/actions/workflows/ci.yml/badge.svg)](https://github.com/aashishbhanawat/pms/actions/workflows/ci.yml)
-<!-- The badges below are placeholders. To make them dynamic, you would need a service that generates badges from your test coverage reports (e.g., Codecov, Coveralls). -->
 [![Backend Tests](https://img.shields.io/badge/Backend_Tests-Passing-brightgreen)](#)
 [![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-Passing-brightgreen)](#)
 [![E2E Tests](https://img.shields.io/badge/E2E_Tests-Passing-brightgreen)](#)
 
 ---
 
-## 1. Overview
+**ArthSaarthi** is a self-hostable, privacy-focused application designed to help users manage their personal investment portfolios. It provides a comprehensive suite of tools for tracking assets, analyzing performance, and making informed financial decisions.
 
-**ArthSaarthi** is a full-stack web application designed to help users manage their personal investment portfolios. It is built with a Python/FastAPI backend, a TypeScript/React frontend, and a PostgreSQL database, all containerized with Docker for consistent and reliable deployment.
+The application can be run as a full-stack web service using Docker, or as a simple, single-user **desktop application** that requires no external database, making it accessible to both technical and non-technical users.
 
 The project was developed following a rigorous, AI-assisted Agile SDLC, with a strong emphasis on automated testing, comprehensive documentation, and iterative feature implementation.
 
-## 2. Key Features
+<!-- Optional: Add a link to a live demo if you have one -->
+<!-- **[Live Demo](https://your-demo-link.com)** -->
 
-*   **Secure Authentication:** Initial admin setup, JWT-based login/logout, and automatic session termination on token expiration.
-*   **Comprehensive User Management:** Admin-only dashboard for full CRUD operations on all users.
-*   **Dynamic Dashboard:** Consolidated view of total portfolio value, realized/unrealized P/L, top daily market movers, and interactive charts for portfolio history and asset allocation.
-*   **Advanced Portfolio Analytics:** Calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset level.
-*   **Full Portfolio & Transaction Management:**
-    *   Full CRUD functionality for portfolios and transactions.
+## ✨ Features
+
+### Currently Available
+
+*   **Secure Authentication & User Management:** Initial admin setup, JWT-based login/logout, and an admin-only dashboard for full CRUD operations on users.
+*   **Comprehensive Dashboard:** Get a bird's-eye view of your financial health with a dynamic dashboard showing total portfolio value, realized/unrealized P&L, top daily market movers, and interactive charts for portfolio history and asset allocation.
+*   **Advanced Portfolio Analytics:** Go beyond simple returns with on-demand calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset level.
+*   **Detailed Portfolio & Transaction Management:**
+    *   Create and manage multiple portfolios with full CRUD functionality for transactions.
     *   A redesigned portfolio page showing a consolidated holdings view with sorting.
-    *   A **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
-*   **Automated Data Import:** A full-stack feature with a complete backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
+    *   A unique **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
+*   **Automated Data Import:** Drastically reduce manual entry with a full-stack feature for uploading, parsing, previewing, and committing transaction data from CSV files (supports Zerodha, ICICI Direct, and generic formats).
 
-## 3. Technology Stack
+### On the Horizon (Future Features)
 
-*   **Backend:** Python, FastAPI, SQLAlchemy, PostgreSQL, SQLite, Redis, DiskCache
+*   **Advanced Asset Support:** Track everything from Employee Stock Plans (RSUs/ESPPs) and Fixed Deposits (FDs) to government schemes like PPF and NPS.
+*   **Corporate Actions & Income Tracking:** Automatically handle dividends, stock splits, and bonuses, and track income from interest payments.
+*   **Deeper Analytics & Reporting:** Generate capital gains reports for tax filing, benchmark your portfolio against market indices, and analyze diversification by sector, geography, and more.
+*   **Goal-Oriented Planning:** Define financial goals (e.g., "Retirement", "House Down Payment"), link assets to them, and track your progress with projections.
+*   **AI-Powered Insights:** Leverage AI to get suggestions for tax-loss harvesting, portfolio rebalancing, and receive a personalized daily digest of your financial world.
+*   **Market Insights:** Create watchlists, get relevant news feeds, and perform deep-dive research on individual assets.
+
+## 🛠️ Technology Stack
+
+*   **Backend:** Python, FastAPI, SQLAlchemy, Alembic (Migrations)
 *   **Frontend:** TypeScript, React, Vite, React Query, Tailwind CSS
+*   **Database:** PostgreSQL, SQLite
+*   **Caching:** Redis, DiskCache
 *   **Testing:** Pytest (Backend), Jest & React Testing Library (Frontend), Playwright (E2E)
-*   **Containerization:** Docker, Docker Compose
+*   **Containerization & CI/CD:** Docker, Docker Compose, GitHub Actions
 
-## 4. 🚀 How to Run the Project
+---
 
-### Prerequisites
+## 🚀 Getting Started
 
-*   Docker
-*   Docker Compose
+For instructions on how to set up and run the application, please see the **[Installation Guide](./docs/installation_guide.md)**.
 
-### Environment Setup
+To learn how to use the application's features, refer to the **[User Guide](./docs/user_guide.md)**.
 
-1.  **Clone the repository.**
-2.  **Run the configuration script:**
-    ```bash
-    ./configure.sh
-    ```
-    This will create the necessary `.env` files and generate a secure secret key. You will be prompted to edit the `CORS_ORIGINS` setting, which is a crucial security step.
-3.  **For frontend development (optional):** If you need to access the Vite dev server from a different domain or IP address, create a `frontend/.env` file and add the `ALLOWED_HOSTS` variable:
-    ```
-    ALLOWED_HOSTS=your.domain.com,192.168.1.100
-    ```
-4.  **Configure Caching (optional):** The application uses Redis for caching by default. For non-Docker or simplified deployments, you can switch to a file-based cache by setting the following environment variable in your `backend/.env` file:
-    ```
-    CACHE_TYPE=disk
-    ```
+## 👨‍💻 For Developers
 
-### Running with PostgreSQL (Default)
+We welcome contributions! If you're interested in the technical details or want to contribute to the project, please check out the following resources:
 
-To start the application services (database, backend, frontend), run:
+*   **Developer Guide:** Instructions for setting up a development environment, running tests, and understanding the local development workflow.
+*   **Contributing Guide:** Our guide for contributing to the project, including our AI-assisted development process.
+*   **Architecture Overview:** A high-level look at the system's design.
 
-```bash
-docker compose up --build
-```
+---
 
-*   Frontend will be available at `http://localhost:3000`
-*   Backend API will be available at `http://localhost:8000`
+## 📄 License
 
-**Note on Database Resets:** To completely reset the database, run `docker compose down -v`. After this, you will need to perform the initial admin setup again in the browser.
-
-### Running with SQLite (Simplified Setup)
-
-For a simpler setup that does not require a separate PostgreSQL or Redis instance, you can run the application using SQLite and a file-based cache. This is ideal for local development or simple deployments.
-
-1.  **Run the configuration script** as described above.
-2.  **Start the application using the SQLite override file:**
-
-    ```bash
-    docker compose -f docker-compose.yml -f docker-compose.sqlite.yml up --build
-    ```
-
-    This will start the backend and frontend services. The backend will use a persistent SQLite database file (`arthsaarthi.db`) and `diskcache` for caching, removing the need for the `db` and `redis` containers.
-
-### Running in Desktop Mode (Manual Testing)
-
-The application also supports a "Desktop Mode" which is a single-user configuration using SQLite and a file-based cache. This is the recommended way to perform manual end-to-end testing of this specific mode.
-
-```bash
-docker compose -f docker-compose.desktop.yml -f docker-compose.override.yml up --build
-```
-
-This command starts the backend and frontend, makes them accessible on `localhost:8000` and `localhost:3000` respectively, and enables hot-reloading for development.
-
-### Running the Test Suites
-
-**1. Backend Unit & Integration Tests:**
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
-```
-
-**2. Frontend Unit & Integration Tests:**
-
-```bash
-docker compose run --rm frontend npm test
-```
-
-**3. End-to-End (E2E) Tests:**
-
-This command starts a fully isolated test environment and runs the Playwright tests.
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit
-```
-
-**4. Running All Checks Locally (Without Docker):**
-
-For a development environment without Docker, a comprehensive and configurable script is provided to run all linters and tests. This is the recommended way to validate changes locally before committing.
-
-```bash
-./run_local_tests.sh
-```
-
-This script will automatically handle dependencies, start the necessary services on dynamic ports, run all backend, frontend, and E2E tests, and clean up afterwards. For more details on the individual commands, see the `prompt/AGENTS.md` guide.
-
-## 5. Project Documentation
-
-This project emphasizes comprehensive documentation to ensure clarity and maintainability.
-
-*   **System Architecture:** High-level overview of the system design.
-*   **User Guide:** Instructions on how to use the application's features.
-*   **Testing Strategy:** Detailed explanation of our multi-layered testing approach.
-*   **Bug Reports:** A complete log of all bugs discovered and their resolutions.
-*   **Workflow History:** A chronological log of the AI-assisted development process.
-*   **Troubleshooting Guide:** Solutions for common development and runtime issues.
-*   **Feature Plans:** Detailed plans for each implemented feature.
-
-## 6. Contributing
-
-Please see the CONTRIBUTING.md file for details on our development process and how to contribute.
+This project is licensed under the MIT License. See the LICENSE file for details.
