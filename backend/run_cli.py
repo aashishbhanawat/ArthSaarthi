@@ -54,7 +54,7 @@ def run_dev_server(
     if not db_path.exists():
         print(f"--- Database not found at {db_path}, initializing new database... ---")
         subprocess.run(
-            [sys.executable, "-m", "app.cli", "db", "init-db"],
+            [sys.executable, "db", "init-db"],
             check=True,
             env=subprocess_env,
         )
@@ -63,7 +63,7 @@ def run_dev_server(
     print("--- Seeding initial asset data ---")
     try:
         subprocess.run(
-            [sys.executable, "-m", "app.cli", "db", "seed-assets"],
+            [sys.executable, "db", "seed-assets"],
             check=True,
             env=subprocess_env,
         )
