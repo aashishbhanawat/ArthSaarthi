@@ -26,6 +26,8 @@ def run_dev_server(
     from app.core.config import settings
 
     if settings.DATABASE_TYPE == 'sqlite':
+        import sys
+        import subprocess
         from app.db import session, base
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
@@ -36,20 +38,18 @@ def run_dev_server(
         session.engine = engine
         session.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-        # Create tables directly from models if the db file doesn't exist
         db_path = settings.DATABASE_URL.split("///")[1]
         if not os.path.exists(db_path):
             print("--- Database not found, initializing new database... ---")
-            base.Base.metadata.create_all(bind=engine)
+            # Use subprocess to call the init-db command in a separate process
+            # This ensures it completes fully before proceeding.
+            subprocess.run([sys.executable, "app/cli.py", "init-db"], check=True)
             print("--- Database initialization complete. ---")
 
-        # Seed the database with master asset data on every startup.
-        # This is idempotent and safe to run multiple times.
+        # Now, run the seeder in a separate process as well.
         print("--- Seeding initial asset data ---")
-        from app.cli import seed_assets_command
         try:
-            # Call with no args to trigger download from default URL
-            seed_assets_command()
+            subprocess.run([sys.executable, "app/cli.py", "seed-assets"], check=True)
             print("--- Asset seeding complete ---")
         except Exception as e:
             print(f"--- Asset seeding failed: {e} ---")
