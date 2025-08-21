@@ -1,6 +1,9 @@
 import { test, expect, Page } from '@playwright/test';
+import { faker } from '@faker-js/faker';
 import fs from 'fs';
 import path from 'path';
+
+test.describe.configure({ mode: 'parallel' });
 
 const standardUser = {
   name: 'Standard User E2E',
@@ -9,43 +12,35 @@ const standardUser = {
 };
 
 const adminUser = {
-    email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
-    password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
+  email: process.env.VITE_TEST_ADMIN_EMAIL || 'admin@example.com',
+  password: process.env.VITE_TEST_ADMIN_PASSWORD || 'AdminPass123!',
 };
 
-test.describe.serial('Automated Data Import E2E Test', () => {
+test.describe('Automated Data Import E2E Test', () => {
     test.slow();
-    const portfolioName = `Test Import Portfolio ${Date.now()}`;
+    const portfolioName = `Test Import Portfolio ${faker.string.uuid()}`;
     const csvFilePath = path.join(__dirname, 'temp_transactions.csv');
     const csvContent = `ticker_symbol,transaction_type,quantity,price_per_unit,transaction_date,fees\nNTPC,BUY,10,150.75,2023-10-26,5.50\nSCI,BUY,5,170.25,2023-10-27,2.75`;
 
-    // Create the temp CSV file before tests run, and clean it up after.
-    test.beforeAll(() => {
+    test.beforeAll(async ({ browser }) => {
         fs.writeFileSync(csvFilePath, csvContent);
-    });
 
-    test.afterAll(() => {
-        if (fs.existsSync(csvFilePath)) {
-            fs.unlinkSync(csvFilePath);
-        }
-    });
+        const apiContext = await browser.newContext();
+        const api = apiContext.request;
 
-    test.beforeAll(async ({ request }) => {
-        // The global setup has already created the admin user.
-        // We just need to log in as admin to create our test-specific standard user and assets.
-        const adminLoginResponse = await request.post('/api/v1/auth/login', {
+        // Create Standard User via API
+        const standardUserCreateResponse = await api.post('/api/v1/users/', {
+          data: { ...standardUser, is_admin: false },
+        });
+        expect(standardUserCreateResponse.ok()).toBeTruthy();
+
+        // Login as admin to create assets
+        const adminLoginResponse = await api.post('/api/v1/auth/token', {
           form: { username: adminUser.email, password: adminUser.password },
         });
         expect(adminLoginResponse.ok()).toBeTruthy();
         const { access_token } = await adminLoginResponse.json();
         const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
-
-        // Create Standard User via API (as Admin)
-        const standardUserCreateResponse = await request.post('/api/v1/users/', {
-          headers: adminAuthHeaders,
-          data: { ...standardUser, is_admin: false },
-        });
-        expect(standardUserCreateResponse.ok()).toBeTruthy();
 
         // Create necessary assets for the import test (as Admin)
         const assetsToCreate = [
@@ -54,22 +49,30 @@ test.describe.serial('Automated Data Import E2E Test', () => {
         ];
 
         for (const asset of assetsToCreate) {
-            const assetCreateResponse = await request.post('/api/v1/assets/', {
+            const assetCreateResponse = await api.post('/api/v1/assets/', {
                 headers: adminAuthHeaders,
                 data: asset,
             });
             expect(assetCreateResponse.ok()).toBeTruthy();
         }
-      });
+        await apiContext.dispose();
+    });
 
-      test.beforeEach(async ({ page }) => {
+    test.afterAll(() => {
+        if (fs.existsSync(csvFilePath)) {
+            fs.unlinkSync(csvFilePath);
+        }
+    });
+
+    test.beforeEach(async ({ page }) => {
         // Login as the standard user before each test
         await page.goto('/');
         await page.getByLabel('Email address').fill(standardUser.email);
         await page.getByLabel('Password').fill(standardUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
+        await page.waitForURL('**/dashboard', { timeout: 30000 });
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-      });
+    });
 
     test('should allow a user to upload, preview, and commit a CSV of transactions', async ({ page }) => {
 

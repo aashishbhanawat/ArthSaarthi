@@ -1,24 +1,34 @@
 import { test, expect, Page } from '@playwright/test';
+import { faker } from '@faker-js/faker';
+
+test.describe.configure({ mode: 'parallel' });
 
 const testUser = {
   name: 'Test User E2E',
-  email: `test.e2e.${Date.now()}@example.com`, // Use unique email to avoid conflicts
+  email: faker.internet.email(),
   password: 'Password123!',
 };
 
 const adminUser = {
-  email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
-  password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
+  email: process.env.VITE_TEST_ADMIN_EMAIL || 'admin@example.com',
+  password: process.env.VITE_TEST_ADMIN_PASSWORD || 'AdminPass123!',
 };
 
 test.describe('Admin User Management Flow', () => {
-  test.beforeEach(async ({ page }) => {
+  let page: Page;
+
+  test.beforeEach(async ({ browser }) => {
+    page = await browser.newPage();
     // Login as Admin before each test
     await page.goto('/');
     await page.getByLabel('Email address').fill(adminUser.email);
     await page.getByLabel('Password').fill(adminUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByRole('link', { name: 'User Management' })).toBeVisible();
+  });
+
+  test.afterEach(async () => {
+    await page.close();
   });
 
   test('should allow an admin to create, update, and delete a user', async ({ page }) => {

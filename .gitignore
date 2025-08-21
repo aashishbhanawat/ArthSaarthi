@@ -52,3 +52,5 @@ yarn-error.log*
 dump.rdb
 /frontend/dist-electron/
 frontend/vite.config.ts.timestamp-*.mjs
+.vite
+.vite

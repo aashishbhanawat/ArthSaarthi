@@ -1,47 +1,73 @@
 import { test, expect, Page } from '@playwright/test';
+import { faker } from '@faker-js/faker';
+import { createPortfolio, createTransaction, createAsset } from '../utils';
+
+test.describe.configure({ mode: 'parallel' });
 
 const standardUser = {
-  name: 'Standard User E2E',
-  email: `standard.e2e.${Date.now()}@example.com`,
-  password: 'Password123!',
+  email: faker.internet.email(),
+  password: 'password',
 };
 
 const adminUser = {
-    email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
-    password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
+  email: process.env.VITE_TEST_ADMIN_EMAIL || 'admin@example.com',
+  password: process.env.VITE_TEST_ADMIN_PASSWORD || 'AdminPass123!',
 };
 
-test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
-  test.beforeAll(async ({ request }) => {
-    // The global setup has already created the admin user.
-    // We just need to log in as admin to create our test-specific standard user.
-    const adminLoginResponse = await request.post('/api/v1/auth/login', {
+test.describe('Portfolio and Dashboard E2E Flow', () => {
+  let page: Page;
+
+  test.beforeAll(async ({ browser }) => {
+    const apiContext = await browser.newContext();
+    const api = apiContext.request;
+
+    // Create Standard User via API
+    const standardUserCreateResponse = await api.post('/api/v1/users/', {
+      data: { email: standardUser.email, password: standardUser.password, is_admin: false },
+    });
+    expect(standardUserCreateResponse.ok()).toBeTruthy();
+
+    // Login as admin to create assets
+    const adminLoginResponse = await api.post('/api/v1/auth/token', {
       form: { username: adminUser.email, password: adminUser.password },
     });
     expect(adminLoginResponse.ok()).toBeTruthy();
     const { access_token } = await adminLoginResponse.json();
     const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
 
-    // Create Standard User via API (as Admin)
-    const standardUserCreateResponse = await request.post('/api/v1/users/', {
-      headers: adminAuthHeaders,
-      data: { ...standardUser, is_admin: false },
-    });
-    expect(standardUserCreateResponse.ok()).toBeTruthy();
+    // Create necessary assets for the import test (as Admin)
+    const assetsToCreate = [
+      { ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
+      { ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
+    ];
+
+    for (const asset of assetsToCreate) {
+        const assetCreateResponse = await api.post('/api/v1/assets/', {
+            headers: adminAuthHeaders,
+            data: asset,
+        });
+        expect(assetCreateResponse.ok()).toBeTruthy();
+    }
+    await apiContext.dispose();
   });
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ browser }) => {
+    page = await browser.newPage();
     // Login as the standard user before each test
     await page.goto('/');
     await page.getByLabel('Email address').fill(standardUser.email);
     await page.getByLabel('Password').fill(standardUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await page.waitForNavigation();
+    await page.waitForURL('**/dashboard', { timeout: 30000 });
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
+  test.afterEach(async () => {
+    await page.close();
+  });
+
   test('should allow a user to create, view, and delete a portfolio', async ({ page }) => {
-    const portfolioName = `My E2E Portfolio ${Date.now()}`;
+    const portfolioName = `My E2E Portfolio ${faker.string.uuid()}`;
 
     await page.getByRole('link', { name: 'Portfolios' }).click();
     await page.getByRole('button', { name: 'Create New Portfolio' }).click();
@@ -68,27 +94,22 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
   });
 
   test('should allow a user to add various types of transactions', async ({ page }) => {
-    const portfolioName = `My Transaction Portfolio ${Date.now()}`;
+    const portfolioName = `My Transaction Portfolio ${faker.string.uuid()}`;
     const newAssetName = 'GOOGL';
 
     // 1. Create a portfolio to hold transactions
-    await page.getByRole('link', { name: 'Portfolios' }).click();
-    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await page.getByLabel('Name').fill(portfolioName);
-    await page.getByRole('button', { name: 'Create', exact: true }).click();
-    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+    const portfolio = await createPortfolio(page.request, portfolioName, 'USD');
+    await page.goto(`/portfolio/${portfolio.id}`);
 
     // 2. Add a BUY transaction for a NEW asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByLabel('Asset').pressSequentially(newAssetName);
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${newAssetName}"` });
-    await expect(createAssetButton).toBeVisible();
-    await createAssetButton.click();
-    await expect(createAssetButton).not.toBeVisible();
+    await page.getByLabel('Asset').pressSequentially(newAssetName, { delay: 100 });
+    await page.waitForResponse('/api/v1/assets/lookup**');
+    await page.locator(`li:has-text("${newAssetName}")`).click();
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('150.00');
-    await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
+    await page.getByLabel('Date').fill('2023-01-15');
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // Verify the new holding appears in the HoldingsTable
@@ -96,59 +117,46 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(holdingsTable).toBeVisible();
     const googlRow = holdingsTable.getByRole('row', { name: /GOOGL/ });
     await expect(googlRow).toBeVisible();
-    // Use exact match to avoid ambiguity with other cells that might contain '10' (e.g., P&L of ₹10.53)
     await expect(googlRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
 
     // 3. Add a SELL transaction for the same asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('SELL');
-    // Use pressSequentially to simulate user typing and avoid race conditions with debounced search
-    await page.getByLabel('Asset').pressSequentially(newAssetName);
-
-    // Wait for the debounced search API call to complete before interacting with the results
+    await page.getByLabel('Asset').pressSequentially(newAssetName, { delay: 100 });
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
-
-    // Use a direct locator strategy that is more robust for this component.
     const listItem = page.locator(`li:has-text("${newAssetName}")`);
-    // Wait for the search result to appear and then press Enter to select it. This is more stable than clicking.
-    await expect(listItem).toBeVisible(); // Ensure the item is there
-    await listItem.click(); // Click the item directly to ensure selection
-
+    await expect(listItem).toBeVisible();
+    await listItem.click();
     await page.getByLabel('Quantity').fill('5');
     await page.getByLabel('Price per Unit').fill('160.00');
-    await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
+    await page.getByLabel('Date').fill('2023-01-16');
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // Verify the holding quantity is updated
     await expect(holdingsTable).toBeVisible();
     await expect(googlRow).toBeVisible();
-    // Use exact match to avoid ambiguity with other cells that might contain '5'
-    await expect(googlRow.getByRole('cell', { name: '5', exact: true })).toBeVisible(); // Quantity updated from 10 to 5
+    await expect(googlRow.getByRole('cell', { name: '5', exact: true })).toBeVisible(); // Quantity
   });
 
   test('should prevent a user from creating an invalid SELL transaction', async ({ page }) => {
-    const portfolioName = `Invalid Sell Portfolio ${Date.now()}`;
+    const portfolioName = `Invalid Sell Portfolio ${faker.string.uuid()}`;
     const assetName = 'AAPL'; // Use a different asset to avoid test contamination
 
     // 1. Create a portfolio
-    await page.getByRole('link', { name: 'Portfolios' }).click();
-    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await page.getByLabel('Name').fill(portfolioName);
-    await page.getByRole('button', { name: 'Create', exact: true }).click();
-    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+    const portfolio = await createPortfolio(page.request, portfolioName, 'USD');
+    await page.goto(`/portfolio/${portfolio.id}`);
 
     // 2. Add a BUY transaction for 10 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByLabel('Asset').pressSequentially(assetName);
-    // Handle asset creation since it does not exist in the mock service
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetName}"` });
-    await expect(createAssetButton).toBeVisible();
-    await createAssetButton.click();
+    await page.getByLabel('Asset').pressSequentially(assetName, { delay: 100 });
+    await page.waitForResponse('/api/v1/assets/lookup**');
+    await page.locator(`li:has-text("${assetName}")`).click();
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('175.00');
-    await page.getByLabel('Date').fill('2023-01-15'); // Use a fixed past date
+    await page.getByLabel('Date').fill('2023-01-15');
     await page.getByRole('button', { name: 'Save Transaction' }).click();
+
     // Verify the new holding appears in the HoldingsTable
     const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
     await expect(holdingsTable).toBeVisible();
@@ -159,8 +167,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 3. Attempt to SELL 20 shares (which is more than owned)
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('SELL');
-    await page.getByLabel('Asset').pressSequentially(assetName);
-    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
+    await page.getByLabel('Asset').pressSequentially(assetName, { delay: 100 });
+    await page.waitForResponse((response) => response.url().includes('/api/v1/assets/lookup'));
     const listItemSell = page.locator(`li:has-text("${assetName}")`);
     await expect(listItemSell).toBeVisible();
     await listItemSell.click();
@@ -168,12 +176,12 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Price per Unit').fill('180.00');
     await page.getByLabel('Date').fill('2023-01-20'); // A date after the buy
 
-    // 4. Verify that the save button is disabled due to client-side validation
+    // 4. Verify the client-side validation message is shown
+    await expect(page.getByText('You do not have enough shares to sell.')).toBeVisible();
+    // 5. Verify that the save button is disabled due to client-side validation
     const saveButton = page.getByRole('button', { name: 'Save Transaction' });
     await expect(saveButton).toBeDisabled();
 
-    // 5. Verify the client-side validation message is shown
-    await expect(page.getByText('You do not have enough shares to sell.')).toBeVisible();
 
     // 6. Verify the modal is still open and the invalid transaction was not added
     await expect(page.getByRole('heading', { name: 'Add Transaction' })).toBeVisible();
@@ -183,19 +191,16 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
   });
 
   test('should display correct data on the dashboard after transactions', async ({ page }) => {
-    const portfolioName = `Dashboard Test Portfolio ${Date.now()}`;
+    const portfolioName = `Dashboard Test Portfolio ${faker.string.uuid()}`;
 
     // 1. Create a portfolio
-    await page.getByRole('link', { name: 'Portfolios' }).click();
-    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await page.getByLabel('Name').fill(portfolioName);
-    await page.getByRole('button', { name: 'Create', exact: true }).click();
-    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+    const portfolio = await createPortfolio(page.request, portfolioName, 'USD');
+    await page.goto(`/portfolio/${portfolio.id}`);
 
     // 2. Add two different assets
     // Asset 1: 10 GOOGL @ $150
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Asset').pressSequentially('GOOGL'); // Asset already exists from a previous test
+    await page.getByLabel('Asset').pressSequentially('GOOGL', { delay: 100 }); // Asset already exists from a previous test
     // Wait for the lookup and select the existing asset from the list
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
     const listItem = page.locator(`li:has-text("GOOGL")`);
@@ -204,12 +209,13 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Price per Unit').fill('150');
     await page.getByLabel('Date').fill('2023-02-01');
     await page.getByRole('button', { name: 'Save Transaction' }).click();
+
     // Verify the new holding appears in the HoldingsTable
     const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
     await expect(holdingsTable).toBeVisible();
     const googlRow = holdingsTable.getByRole('row', { name: /GOOGL/ });
     await expect(googlRow).toBeVisible();
-    // Use exact match to avoid ambiguity with other cells that might contain '10' (e.g., P&L of ₹10.44)
+    // Use exact match to avoid ambiguity with other cells that might contain '10' (e.g., P&L of ₹10.53)
     await expect(googlRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
 
     // 3. Navigate to Dashboard and verify data

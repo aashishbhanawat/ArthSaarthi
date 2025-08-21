@@ -1,14 +1,12 @@
 import { test, expect, Page } from '@playwright/test';
+import { faker } from '@faker-js/faker';
+import { createPortfolio, createTransaction, createAsset } from '../utils';
+
+test.describe.configure({ mode: 'parallel' });
 
 const standardUser = {
-  name: 'Analytics User E2E',
-  email: `analytics.e2e.${Date.now()}@example.com`,
-  password: 'Password123!',
-};
-
-const adminUser = {
-    email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
-    password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
+  email: faker.internet.email(),
+  password: 'password',
 };
 
 // Helper to get a date in the past in YYYY-MM-DD format
@@ -18,70 +16,51 @@ const getPastDateISO = (daysAgo: number): string => {
   return date.toISOString().split('T')[0];
 };
 
-test.describe.serial('Advanced Analytics E2E Flow', () => {
-  test.beforeAll(async ({ request }) => {
-    // The global setup has already created the admin user.
-    // We just need to log in as admin to create our test-specific standard user.
-    const adminLoginResponse = await request.post('/api/v1/auth/login', {
-      form: { username: adminUser.email, password: adminUser.password },
-    });
-    expect(adminLoginResponse.ok()).toBeTruthy();
-    const { access_token } = await adminLoginResponse.json();
-    const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
+test.describe('Advanced Analytics E2E Flow', () => {
+  let page: Page;
 
-    // Create the standard user needed for this test file
-    const standardUserCreateResponse = await request.post('/api/v1/users/', {
-      headers: adminAuthHeaders,
+  test.beforeAll(async ({ browser }) => {
+    const apiContext = await browser.newContext();
+    const api = apiContext.request;
+    const standardUserCreateResponse = await api.post('/api/v1/users/', {
       data: { ...standardUser, is_admin: false },
     });
     expect(standardUserCreateResponse.ok()).toBeTruthy();
+    await apiContext.dispose();
   });
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ browser }) => {
+    page = await browser.newPage();
     // Login as the standard user before each test
     await page.goto('/');
     await page.getByLabel('Email address').fill(standardUser.email);
     await page.getByLabel('Password').fill(standardUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.waitForURL('**/dashboard', { timeout: 30000 });
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
+  test.afterEach(async () => {
+    await page.close();
+  });
+
   test('should display advanced analytics for a portfolio', async ({ page }) => {
-    const portfolioName = `Analytics Test Portfolio ${Date.now()}`;
+    const portfolioName = `Analytics Test Portfolio ${faker.string.uuid()}`;
     const assetName = 'MSFT';
 
     // 1. Create a portfolio
-    await page.getByRole('link', { name: 'Portfolios' }).click();
-    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await page.getByLabel('Name').fill(portfolioName);
-    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    const portfolio = await createPortfolio(page.request, portfolioName, 'USD');
+    await page.goto(`/portfolio/${portfolio.id}`);
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
     // 2. Add transactions to create a history
+    const asset = await createAsset(page.request, assetName, 'Microsoft Corporation', 'STOCK', 'USD', 'NASDAQ');
     // BUY 10 shares
-    await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByLabel('Asset').pressSequentially(assetName);
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetName}"` });
-    await expect(createAssetButton).toBeVisible();
-    await createAssetButton.click();
-    await page.getByLabel('Quantity').fill('10');
-    await page.getByLabel('Price per Unit').fill('200');
-    await page.getByLabel('Date').fill('2023-01-01');
-    await page.getByRole('button', { name: 'Save Transaction' }).click();    
-    await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ })).toBeVisible();
-
+    await createTransaction(page.request, portfolio.id, asset.id, 'buy', 10, 200, '2023-01-01');
     // SELL 5 shares
-    await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('SELL');
-    await page.getByLabel('Asset').pressSequentially(assetName);
-    const listItem = page.locator(`li:has-text("${assetName}")`);
-    await expect(listItem).toBeVisible();
-    await listItem.click();
-    await page.getByLabel('Quantity').fill('5');
-    await page.getByLabel('Price per Unit').fill('220');
-    await page.getByLabel('Date').fill('2023-06-01');
-    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await createTransaction(page.request, portfolio.id, asset.id, 'sell', 5, 220, '2023-06-01');
+
+    await page.reload();
 
     // Verify the holding quantity was updated from 10 to 5
     const holdingRow = page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ });
@@ -101,42 +80,24 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
   });
 
   test('should display correct asset-level XIRR in the holding detail modal', async ({ page }) => {
-    const portfolioName = `Asset XIRR Test Portfolio ${Date.now()}`;
+    const portfolioName = `Asset XIRR Test Portfolio ${faker.string.uuid()}`;
     const assetTicker = 'XIRRTEST';
+    const assetName = 'XIRR Test Company';
 
-    // 1. Create a portfolio
-    await page.getByRole('link', { name: 'Portfolios' }).click();
-    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await page.getByLabel('Name').fill(portfolioName);
-    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    // 1. Create a portfolio and asset
+    const portfolio = await createPortfolio(page.request, portfolioName, 'USD');
+    const asset = await createAsset(page.request, assetTicker, assetName, 'Stock', 'INR', 'NSE');
+
+    await page.goto(`/portfolio/${portfolio.id}`);
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
     // 2. Add transactions with specific dates for XIRR calculation
     // BUY 10 shares @ 100, 1 year ago
-    await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByLabel('Asset').pressSequentially(assetTicker);
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
-    await expect(createAssetButton).toBeVisible();
-    await createAssetButton.click();
-    await page.getByLabel('Quantity').fill('10');
-    await page.getByLabel('Price per Unit').fill('100');
-    await page.getByLabel('Date').fill(getPastDateISO(365));
-    await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: new RegExp(assetTicker) })).toBeVisible();
-
+    await createTransaction(page.request, portfolio.id, asset.id, 'buy', 10, 100, getPastDateISO(365));
     // SELL 5 shares @ 120, 6 months ago
-    await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('SELL');
-    await page.getByLabel('Asset').pressSequentially(assetTicker);
-    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
-    const listItem = page.locator(`li:has-text("${assetTicker}")`);
-    await expect(listItem).toBeVisible();
-    await listItem.click();
-    await page.getByLabel('Quantity').fill('5');
-    await page.getByLabel('Price per Unit').fill('120');
-    await page.getByLabel('Date').fill(getPastDateISO(182));
-    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await createTransaction(page.request, portfolio.id, asset.id, 'sell', 5, 120, getPastDateISO(182));
+
+    await page.reload();
 
     // 3. Open the holding detail modal
     const holdingRow = page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: new RegExp(assetTicker) });

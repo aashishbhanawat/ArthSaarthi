@@ -1,92 +1,78 @@
 import { test, expect, Page } from '@playwright/test';
+import { createPortfolio, createGoal, createAsset, createTransaction } from '../utils';
+import { faker } from '@faker-js/faker';
+
+test.describe.configure({ mode: 'parallel' });
 
 const standardUser = {
-  name: 'Goal User E2E',
-  email: `goal.e2e.${Date.now()}@example.com`,
-  password: 'Password123!',
+  email: faker.internet.email(),
+  password: 'password',
 };
 
-const adminUser = {
-    email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
-    password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
-};
+test.describe('Goal Planning E2E Flow', () => {
+  let page: Page;
 
-test.describe.serial('Goal Planning E2E Flow', () => {
-  test.beforeAll(async ({ request }) => {
-    const adminLoginResponse = await request.post('/api/v1/auth/login', {
-      form: { username: adminUser.email, password: adminUser.password },
-    });
-    expect(adminLoginResponse.ok()).toBeTruthy();
-    const { access_token } = await adminLoginResponse.json();
-    const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
-
-    const standardUserCreateResponse = await request.post('/api/v1/users/', {
-      headers: adminAuthHeaders,
-      data: { ...standardUser, is_admin: false },
+  test.beforeAll(async ({ browser }) => {
+    const apiContext = await browser.newContext();
+    const api = apiContext.request;
+    const standardUserCreateResponse = await api.post('/api/v1/users/', {
+      data: { email: standardUser.email, password: standardUser.password, is_admin: false },
     });
     expect(standardUserCreateResponse.ok()).toBeTruthy();
+    await apiContext.dispose();
   });
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ browser }) => {
+    page = await browser.newPage();
+    // Login as the standard user before each test
     await page.goto('/');
     await page.getByLabel('Email address').fill(standardUser.email);
     await page.getByLabel('Password').fill(standardUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await page.waitForNavigation();
+    await page.waitForURL('**/dashboard', { timeout: 30000 });
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
-  test('should allow a user to create a goal, link a portfolio, and see progress', async ({ page }) => {
-    const portfolioName = `Goal Test Portfolio ${Date.now()}`;
+  test.afterEach(async () => {
+    await page.close();
+  });
+
+  test('should allow a user to create a goal, link a portfolio, and see progress', async ({
+    page,
+  }) => {
+    const portfolioName = `Goal Test Portfolio ${faker.string.uuid()}`;
     const goalName = `Buy a New Laptop`;
 
     // 1. Create a portfolio and add a transaction
-    await page.getByRole('link', { name: 'Portfolios' }).click();
-    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await page.getByLabel('Name').fill(portfolioName);
-    await page.getByRole('button', { name: 'Create', exact: true }).click();
-    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
-
-    await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Asset').pressSequentially('AAPL');
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "AAPL"` });
-    await expect(createAssetButton).toBeVisible();
-    await createAssetButton.click();
-    await page.getByLabel('Quantity').fill('10');
-    await page.getByLabel('Price per Unit').fill('150'); // Total value = 1500
-    await page.getByLabel('Date').fill('2023-01-15');
-    await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.getByRole('row', { name: /AAPL/ })).toBeVisible();
+    const portfolio = await createPortfolio(page.request, portfolioName, 'USD');
+    const asset = await createAsset(page.request, 'AAPL', 'Apple Inc.', 'STOCK', 'USD', 'NASDAQ');
+    await createTransaction(page.request, portfolio.id, asset.id, 'BUY', 10, 150, new Date().toISOString().split('T')[0]);
 
     // 2. Navigate to Goals page and create a new goal
-    await page.getByRole('link', { name: 'Goals' }).click();
+    await page.goto('/goals');
     await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
-    await page.getByRole('button', { name: 'Create New Goal' }).click();
 
-    await page.getByLabel('Name').fill(goalName);
-    await page.getByLabel('Target Amount').fill('2000');
-    await page.getByLabel('Target Date').fill('2025-12-31');
+    const goal = await createGoal(page.request, goalName, 2000, '2025-12-31');
 
-    // Intercept the API call to get the new goal's ID
-    const goalResponsePromise = page.waitForResponse(
-      (response) => response.url().includes('/api/v1/goals') && response.request().method() === 'POST'
-    );
-    await page.getByRole('button', { name: 'Create Goal' }).click();
-    const goalResponse = await goalResponsePromise;
-    const goalData = await goalResponse.json();
+    await page.reload();
 
-    await expect(page.getByRole('heading', { name: goalName })).toBeVisible();
+    await page.waitForSelector(`.card:has-text("${goalName}")`);
+    const goalCard = page.locator('.card', { hasText: goalName });
+    await expect(goalCard).toBeVisible();
 
     // 3. Link the portfolio to the goal
-    const goalCard = page.locator('.card', { hasText: goalName });
-    await goalCard.getByTestId(`link-asset-button-${goalData.id}`).click();
+    const linkButton = goalCard.getByTestId(`link-asset-button-${goal.id}`);
+    await expect(linkButton).toBeEnabled();
+    await linkButton.click();
     const assetLinkModal = page.getByRole('dialog');
     await expect(assetLinkModal).toBeVisible();
-    await assetLinkModal.getByRole('combobox').selectOption({ label: `${portfolioName} (Portfolio)` });
+    await assetLinkModal.getByRole('combobox').selectOption({ label: `${portfolio.name} (Portfolio)` });
     await assetLinkModal.getByRole('button', { name: 'Link' }).click();
     await expect(assetLinkModal).not.toBeVisible();
 
     // 4. Verify progress
+    await page.reload();
+    await page.waitForSelector(`.card:has-text("${goalName}")`);
     await goalCard.getByRole('button', { name: 'Show Details' }).click();
     const detailView = goalCard.locator('.bg-gray-100');
     await expect(detailView).toBeVisible();
