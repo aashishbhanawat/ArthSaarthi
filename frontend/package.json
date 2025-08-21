@@ -6,7 +6,7 @@
   "homepage": "./",
   "author": {
     "name": "ArthSaarthi",
-    "email": "contact@arthsaarthi.com"
+    "email": "contact@aashish.ai.in"
   },
   "main": "electron/main.cjs",
   "scripts": {
