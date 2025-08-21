@@ -62,7 +62,9 @@ async function startBackend() {
           env: {
             ...process.env,
             DEPLOYMENT_MODE: 'desktop',
-	       },
+            DATABASE_TYPE: 'sqlite',
+            CACHE_TYPE: 'disk',
+               },
         });
 
         let resolved = false;
