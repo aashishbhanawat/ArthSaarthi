@@ -26,8 +26,7 @@ def run_dev_server(
     from app.core.config import settings
 
     # For desktop mode, we need to ensure a consistent setup
-    # We force the deployment mode to 'desktop' to ensure SQLite is used with a stable path
-    os.environ['DEPLOYMENT_MODE'] = 'desktop'
+    os.environ['DATABASE_TYPE'] = 'sqlite'
     from app.core.config import settings # Re-import settings after setting env var
     import sys
     import subprocess
@@ -36,7 +35,7 @@ def run_dev_server(
     # Use a stable directory in the user's home for the database
     app_dir = Path.home() / ".arthsaarthi"
     app_dir.mkdir(exist_ok=True)
-    db_path = app_dir / "arthsaarthi-desktop.db"
+    db_path = app_dir / "arthsaarthi.db" # Use the unified name from config
 
     # Manually override the settings to ensure all parts of the app use the correct path
     settings.DATABASE_URL = f"sqlite:///{db_path.resolve()}"
@@ -49,8 +48,8 @@ def run_dev_server(
     session.engine = engine
     session.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-    # The environment for subprocesses must also know it's in desktop mode
-    subprocess_env = {**os.environ, "DEPLOYMENT_MODE": "desktop"}
+    # The environment for subprocesses must also know it's in sqlite mode
+    subprocess_env = {**os.environ, "DATABASE_TYPE": "sqlite"}
 
     if not db_path.exists():
         print(f"--- Database not found at {db_path}, initializing new database... ---")
