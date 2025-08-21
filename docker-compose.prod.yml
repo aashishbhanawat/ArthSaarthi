@@ -8,7 +8,7 @@ services:
     # In production, we don't mount the source code. The code is copied in the Dockerfile.
     volumes: []
     env_file:
-      - ./backend/.env.prod # Use a dedicated production environment file
+      - ./.env.prod # Use a dedicated production environment file from the root
     healthcheck:
       # The healthcheck in the base file is fine, but we ensure it's here.
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
@@ -29,4 +29,4 @@ services:
 
   db:
     env_file:
-      - ./backend/.env.prod # Ensure DB uses the same prod environment file
+      - ./.env.prod # Ensure DB uses the same prod environment file from the root
