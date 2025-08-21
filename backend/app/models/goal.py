@@ -1,7 +1,14 @@
 import uuid
 
-from sqlalchemy import (CheckConstraint, Column, Date, ForeignKey, Numeric,
-                        String, TIMESTAMP)
+from sqlalchemy import (
+    TIMESTAMP,
+    CheckConstraint,
+    Column,
+    Date,
+    ForeignKey,
+    Numeric,
+    String,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -44,7 +51,8 @@ class GoalLink(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "(portfolio_id IS NOT NULL AND asset_id IS NULL) OR (portfolio_id IS NULL AND asset_id IS NOT NULL)",
+            "(portfolio_id IS NOT NULL AND asset_id IS NULL) OR "
+            "(portfolio_id IS NULL AND asset_id IS NOT NULL)",
             name="check_goal_link_target",
         ),
     )

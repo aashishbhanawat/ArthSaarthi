@@ -8,11 +8,11 @@ from .endpoints import (
     assets,
     auth,
     dashboard,
+    goals,
     import_sessions,
     portfolios,
     testing,
     users,
-    goals,
 )
 
 api_router = APIRouter()

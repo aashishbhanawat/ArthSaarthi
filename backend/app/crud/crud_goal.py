@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase
 from app.models.goal import Goal, GoalLink
-from app.schemas.goal import GoalCreate, GoalUpdate, GoalLinkCreate, GoalLinkUpdate
+from app.schemas.goal import GoalCreate, GoalLinkCreate, GoalLinkUpdate, GoalUpdate
 
 
 class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
@@ -32,9 +32,9 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
 
 class CRUDGoalLink(CRUDBase[GoalLink, GoalLinkCreate, GoalLinkUpdate]):
     def create_with_owner(
-        self, db: Session, *, obj_in: GoalLinkCreate, user_id: uuid.UUID
+        self, db: Session, *, obj_in: GoalLinkCreate, user_id: uuid.UUID, goal_id: uuid.UUID
     ) -> GoalLink:
-        db_obj = self.model(**obj_in.model_dump(), user_id=user_id)
+        db_obj = self.model(**obj_in.model_dump(), user_id=user_id, goal_id=goal_id)
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)

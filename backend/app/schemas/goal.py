@@ -13,7 +13,7 @@ class GoalLinkBase(BaseModel):
 
 # Properties to receive on GoalLink creation
 class GoalLinkCreate(GoalLinkBase):
-    goal_id: uuid.UUID
+    pass
 
 
 # Properties to receive on GoalLink update

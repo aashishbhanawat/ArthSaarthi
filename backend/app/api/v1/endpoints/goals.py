@@ -4,7 +4,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
+from app import crud, schemas
 from app.core import dependencies
 from app.models.user import User
 
@@ -113,9 +113,8 @@ def create_goal_link(
     if goal.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    link_in.goal_id = goal_id
     link = crud.goal_link.create_with_owner(
-        db=db, obj_in=link_in, user_id=current_user.id
+        db=db, obj_in=link_in, user_id=current_user.id, goal_id=goal_id
     )
     return link
 
