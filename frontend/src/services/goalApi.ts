@@ -34,9 +34,16 @@ export const createGoalLink = async (
   return response.data;
 };
 
+import { GoalProgress } from "../types/goal";
+
 export const deleteGoalLink = async (
   goalId: string,
   linkId: string
 ): Promise<void> => {
   await apiClient.delete(`/api/v1/goals/${goalId}/links/${linkId}`);
+};
+
+export const getGoalProgress = async (goalId: string): Promise<GoalProgress> => {
+  const response = await apiClient.get<GoalProgress>(`/api/v1/goals/${goalId}/progress`);
+  return response.data;
 };

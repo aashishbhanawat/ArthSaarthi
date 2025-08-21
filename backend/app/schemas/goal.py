@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -55,3 +56,10 @@ class Goal(GoalBase):
     created_at: datetime
     links: list[GoalLink] = []
     model_config = ConfigDict(from_attributes=True)
+
+
+class GoalProgress(BaseModel):
+    goal_id: uuid.UUID
+    current_value: Decimal
+    target_amount: Decimal
+    progress_percentage: float

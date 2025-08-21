@@ -1,8 +1,10 @@
 import uuid
+from decimal import Decimal
 from typing import List
 
 from sqlalchemy.orm import Session
 
+from app import crud
 from app.crud.base import CRUDBase
 from app.models.goal import Goal, GoalLink
 from app.schemas.goal import GoalCreate, GoalLinkCreate, GoalLinkUpdate, GoalUpdate
@@ -28,6 +30,23 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
             .limit(limit)
             .all()
         )
+
+    def get_goal_progress(self, db: Session, *, goal_id: uuid.UUID) -> Decimal:
+        goal = self.get(db, id=goal_id)
+        if not goal:
+            return Decimal(0)
+
+        total_value = Decimal(0)
+        for link in goal.links:
+            if link.portfolio_id:
+                summary = crud.holding.get_portfolio_holdings_and_summary(
+                    db, portfolio_id=link.portfolio_id
+                )["summary"]
+                total_value += summary.total_value
+            # Not implementing single asset linking for now
+            # else if link.asset_id:
+            #     pass
+        return total_value
 
 
 class CRUDGoalLink(CRUDBase[GoalLink, GoalLinkCreate, GoalLinkUpdate]):

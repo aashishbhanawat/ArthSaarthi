@@ -138,3 +138,32 @@ def delete_goal_link(
 
     crud.goal_link.remove(db=db, id=link_id)
     return {"msg": "Link deleted successfully"}
+
+
+@router.get("/{goal_id}/progress", response_model=schemas.GoalProgress)
+def get_goal_progress(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get the progress of a goal.
+    """
+    goal = crud.goal.get(db=db, id=goal_id)
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    if goal.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    current_value = crud.goal.get_goal_progress(db=db, goal_id=goal_id)
+    progress_percentage = (
+        (current_value / goal.target_amount) * 100 if goal.target_amount > 0 else 0
+    )
+
+    return {
+        "goal_id": goal_id,
+        "current_value": current_value,
+        "target_amount": goal.target_amount,
+        "progress_percentage": progress_percentage,
+    }

@@ -21,3 +21,10 @@ export type GoalCreate = Omit<Goal, "id" | "user_id" | "created_at" | "links">;
 export type GoalUpdate = Partial<GoalCreate>;
 
 export type GoalLinkCreate = Omit<GoalLink, "id" | "goal_id" | "user_id">;
+
+export interface GoalProgress {
+  goal_id: string;
+  current_value: number;
+  target_amount: number;
+  progress_percentage: number;
+}
