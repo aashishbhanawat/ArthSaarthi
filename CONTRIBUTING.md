@@ -29,3 +29,21 @@ We follow an Agile Software Development Life Cycle (SDLC), developing features i
 All decisions and plans at each stage require confirmation from the project owner before proceeding.
 
 For a detailed breakdown of our AI-assisted development workflow and testing standards, please see `docs/testing_strategy.md`.
+
+---
+
+## Commit & Documentation Process
+
+To maintain consistency and ensure all work is properly documented, all AI assistants must follow a standardized commit process at the conclusion of each task.
+
+### The Golden Rule
+
+**Code is not "done" until the documentation is also done.**
+
+### Workflow
+
+1.  **Implement & Test:** Complete the code implementation and ensure all automated tests (backend, frontend, E2E) are passing.
+2.  **Update Documentation:** Systematically review and update all relevant project documents. This is a critical step to keep the project's history and status accurate.
+3.  **Finalize Commit:** Use the official commit template to generate a clear, conventional commit message.
+
+For the detailed checklist and the commit message format, refer to the **Commit Template**. The Master Orchestrator will enforce this process.
