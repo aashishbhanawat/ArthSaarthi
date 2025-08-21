@@ -51,7 +51,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ## 🚀 Getting Started
 
-For instructions on how to set up and run the application, please see the **[Installation Guide](./docs/installation_guide.md)**.
+For instructions on how to set up and run the application, please see the **[Installation Guide](./installation_guide.md)**.
 
 To learn how to use the application's features, refer to the **[User Guide](./docs/user_guide.md)**.
 
