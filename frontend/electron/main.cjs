@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { spawn } = require('child_process');
 const portfinder = require('portfinder');
 
@@ -46,6 +47,13 @@ async function createMainWindow(backendPort) {
 
 async function startBackend() {
   const isDev = (await import('electron-is-dev')).default;
+
+  // Determine the correct data directory based on XDG specs
+  const dataHome = process.env.XDG_DATA_HOME || path.join(process.env.HOME, '.local', 'share');
+  const appDataPath = path.join(dataHome, 'ArthSaarthi');
+  fs.mkdirSync(appDataPath, { recursive: true });
+  console.log(`Using data directory: ${appDataPath}`);
+
   return new Promise((resolve, reject) => {
     portfinder.getPortPromise()
       .then(port => {
@@ -59,10 +67,10 @@ async function startBackend() {
         const command = isDev ? 'python' : backendPath;
 
         backendProcess = spawn(command, args, {
-          env: { ...process.env,
-		  DEPLOYMENT_MODE: 'desktop',
-                  DATABASE_TYPE: 'sqlite',
-                  CACHE_TYPE: 'disk',
+          env: {
+            ...process.env,
+            DEPLOYMENT_MODE: 'desktop',
+            ARTHSAARTHI_DATA_PATH: appDataPath, // Pass the stable path to the backend
 	       },
         });
 
