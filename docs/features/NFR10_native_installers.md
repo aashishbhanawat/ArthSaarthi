@@ -95,6 +95,6 @@ Building a packaged Electron application that bundles a Python backend is a comp
 
 *   **Problem:** On the very first launch of the native application on a new machine, the application would crash. The logs revealed a `sqlite3.OperationalError: no such table: assets`.
 *   **Root Cause:** The application's first-run logic in `run_cli.py` was attempting to seed the asset master data immediately after creating the database file. However, the `seed_assets_command` was being called before the database schema (i.e., the `assets` table and others) had been created by the `create_all` call. This created a race condition where the seeder would try to write to a table that didn't exist yet.
-*   **Solution:** The startup logic in `run_cli.py` was modified to be more robust. It now explicitly calls the `init-db` command, which is responsible for creating all database tables, and waits for it to complete *before* calling the `seed-assets` command. This ensures the database schema is fully in place before any data is written to it.
+*   **Solution:** The startup logic in `run_cli.py` was modified to be more robust. It now ensures that the database tables are created using `create_all` on the first run. It also now calls the `seed_assets_command` on *every* application launch, ensuring the asset data is always up-to-date, which mirrors the production server's behavior.
 
 This plan provides a robust and standard way to convert a web application into a cross-platform desktop application.

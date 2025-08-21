@@ -39,15 +39,20 @@ def run_dev_server(
         # Create tables directly from models if the db file doesn't exist
         db_path = settings.DATABASE_URL.split("///")[1]
         if not os.path.exists(db_path):
-            from app.cli import init_db_command, seed_assets_command
-            print("--- Initializing new database ---")
-            init_db_command()
-            print("--- Seeding initial asset data ---")
-            try:
-                seed_assets_command()
-                print("--- Asset seeding complete ---")
-            except Exception as e:
-                print(f"--- Asset seeding failed: {e} ---")
+            print("--- Database not found, initializing new database... ---")
+            base.Base.metadata.create_all(bind=engine)
+            print("--- Database initialization complete. ---")
+
+        # Seed the database with master asset data on every startup.
+        # This is idempotent and safe to run multiple times.
+        print("--- Seeding initial asset data ---")
+        from app.cli import seed_assets_command
+        try:
+            # Call with no args to trigger download from default URL
+            seed_assets_command()
+            print("--- Asset seeding complete ---")
+        except Exception as e:
+            print(f"--- Asset seeding failed: {e} ---")
 
     uvicorn.run(fastapi_app, host=host, port=port)
 
