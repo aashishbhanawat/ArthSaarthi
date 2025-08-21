@@ -43,13 +43,13 @@ def run_dev_server(
             print("--- Database not found, initializing new database... ---")
             # Use subprocess to call the init-db command in a separate process
             # This ensures it completes fully before proceeding.
-            subprocess.run([sys.executable, __file__, "db", "init-db"], check=True)
+            subprocess.run([sys.executable, "db", "init-db"], check=True)
             print("--- Database initialization complete. ---")
 
         # Now, run the seeder in a separate process as well.
         print("--- Seeding initial asset data ---")
         try:
-            subprocess.run([sys.executable, __file__, "db", "seed-assets"], check=True)
+            subprocess.run([sys.executable, "db", "seed-assets"], check=True)
             print("--- Asset seeding complete ---")
         except Exception as e:
             print(f"--- Asset seeding failed: {e} ---")
