@@ -24,6 +24,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onLinkAsset }) => {
           <button
             onClick={() => onLinkAsset(goal.id)}
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            data-testid={`link-asset-button-${goal.id}`}
           >
             Link Asset
           </button>
