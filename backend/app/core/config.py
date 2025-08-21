@@ -28,10 +28,8 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_URL: Optional[str] = None
     CACHE_TYPE: Literal["redis", "disk"] = "redis"
-    DEPLOYMENT_MODE: Literal["server", "desktop"] = "server"
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "uploads"
-    ARTHSAARTHI_DATA_PATH: Optional[str] = None
 
     ICICI_BREEZE_API_KEY: str = ""
     ZERODHA_KITE_API_KEY: str = ""
@@ -46,21 +44,13 @@ class Settings(BaseSettings):
 
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") == "desktop":
-            from pathlib import Path
-            data_path_str = values.get("ARTHSAARTHI_DATA_PATH")
-            if not data_path_str:
-                # Fallback for safety, though it should always be provided by Electron
-                data_path = Path.home() / ".arthsaarthi"
-                data_path.mkdir(exist_ok=True)
-            else:
-                data_path = Path(data_path_str)
-
-            db_path = data_path / "arthsaarthi-desktop.db"
-            return f"sqlite:///{db_path.resolve()}"
-
         if values.get("DATABASE_TYPE") == "sqlite":
-            return "sqlite:///./arthsaarthi.db"
+            from pathlib import Path
+            # Use a stable directory in the user's home for the database
+            app_dir = Path.home() / ".arthsaarthi"
+            app_dir.mkdir(exist_ok=True)
+            db_path = app_dir / "arthsaarthi.db"
+            return f"sqlite:///{db_path.resolve()}"
 
         if isinstance(v, str):
             return v
@@ -72,7 +62,7 @@ class Settings(BaseSettings):
 
     @validator("CACHE_TYPE", pre=True, always=True)
     def set_cache_type_for_desktop(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") == "desktop":
+        if values.get("DATABASE_TYPE") == "sqlite":
             return "disk"
         return v
 
