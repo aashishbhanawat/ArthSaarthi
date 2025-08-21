@@ -39,12 +39,12 @@ def run_dev_server(
         # Create tables directly from models if the db file doesn't exist
         db_path = settings.DATABASE_URL.split("///")[1]
         if not os.path.exists(db_path):
-            base.Base.metadata.create_all(bind=engine)
-            # Seed the database with initial asset data
+            from app.cli import init_db_command, seed_assets_command
+            print("--- Initializing new database ---")
+            init_db_command()
             print("--- Seeding initial asset data ---")
-            from app.cli import seed_assets_command
             try:
-                seed_assets_command(url=None, local_dir=".")
+                seed_assets_command()
                 print("--- Asset seeding complete ---")
             except Exception as e:
                 print(f"--- Asset seeding failed: {e} ---")
