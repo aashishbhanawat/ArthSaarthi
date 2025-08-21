@@ -6,6 +6,7 @@ import { HomeIcon,
   ArrowUpTrayIcon,
   UsersIcon,
   ArrowLeftOnRectangleIcon,
+  ChartBarIcon,
  } from '@heroicons/react/24/outline';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
@@ -41,6 +42,13 @@ const NavBar: React.FC = () => {
                 >
                     <BriefcaseIcon className="h-5 w-5" />
                     <span>Portfolios</span>
+                </NavLink>
+                <NavLink
+                    to="/goals"
+                    className={({ isActive }) => linkClass(isActive)}
+                >
+                    <ChartBarIcon className="h-5 w-5" />
+                    <span>Goals</span>
                 </NavLink>
                 <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
                     <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>
