@@ -39,17 +39,24 @@ def run_dev_server(
         session.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
         db_path = settings.DATABASE_URL.split("///")[1]
+        subprocess_env = {**os.environ, "DATABASE_TYPE": "sqlite"}
+
         if not os.path.exists(db_path):
             print("--- Database not found, initializing new database... ---")
-            # Use subprocess to call the init-db command in a separate process
-            # This ensures it completes fully before proceeding.
-            subprocess.run([sys.executable, "db", "init-db"], check=True)
+            subprocess.run(
+                [sys.executable, "-m", "app.cli", "db", "init-db"],
+                check=True,
+                env=subprocess_env,
+            )
             print("--- Database initialization complete. ---")
 
-        # Now, run the seeder in a separate process as well.
         print("--- Seeding initial asset data ---")
         try:
-            subprocess.run([sys.executable, "db", "seed-assets"], check=True)
+            subprocess.run(
+                [sys.executable, "-m", "app.cli", "db", "seed-assets"],
+                check=True,
+                env=subprocess_env,
+            )
             print("--- Asset seeding complete ---")
         except Exception as e:
             print(f"--- Asset seeding failed: {e} ---")
