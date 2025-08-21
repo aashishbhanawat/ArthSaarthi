@@ -1,8 +1,17 @@
+import os
+import sys
+import subprocess
+
+# This must be set *before* any other app modules are imported
+# to ensure the settings are loaded correctly from the start.
+os.environ['DEPLOYMENT_MODE'] = 'desktop'
+
 import typer
 import uvicorn
-
 from app.cli import app as db_cli_app
 from app.main import app as fastapi_app
+from app.core.config import settings
+
 
 app = typer.Typer(
     name="pms-cli",
@@ -22,37 +31,20 @@ def run_dev_server(
     """
     Starts the Uvicorn server for development and for the Electron app.
     """
-    import os
-    import sys
-    import subprocess
+    # The settings object is now correctly configured thanks to the env var at the top
+    db_path_str = settings.DATABASE_URL.split("///")[1]
 
-    # For desktop mode, we force the deployment mode to 'desktop'
-    # This ensures the correct settings (SQLite, stable DB path) are loaded from config.py
-    os.environ['DEPLOYMENT_MODE'] = 'desktop'
-
-    # We need to get the db_path from the settings *after* the env var is set
-    from app.core.config import settings
-    db_path = settings.DATABASE_URL.split("///")[1]
-
-    # The environment for subprocesses must also know it's in desktop mode
+    # The environment for subprocesses is inherited, but we ensure DEPLOYMENT_MODE is set
     subprocess_env = {**os.environ, "DEPLOYMENT_MODE": "desktop"}
 
-    if not os.path.exists(db_path):
-        print(f"--- Database not found at {db_path}, initializing new database... ---")
-        subprocess.run(
-            [sys.executable, "db", "init-db"],
-            check=True,
-            env=subprocess_env,
-        )
+    if not os.path.exists(db_path_str):
+        print(f"--- Database not found at {db_path_str}, initializing new database... ---")
+        subprocess.run([sys.executable, "db", "init-db"], check=True, env=subprocess_env)
         print("--- Database initialization complete. ---")
 
     print("--- Seeding initial asset data ---")
     try:
-        subprocess.run(
-            [sys.executable, "db", "seed-assets"],
-            check=True,
-            env=subprocess_env,
-        )
+        subprocess.run([sys.executable, "db", "seed-assets"], check=True, env=subprocess_env)
         print("--- Asset seeding complete ---")
     except Exception as e:
         print(f"--- Asset seeding failed: {e} ---")
