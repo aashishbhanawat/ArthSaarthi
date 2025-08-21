@@ -45,8 +45,16 @@ class Settings(BaseSettings):
 
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
+        if values.get("DEPLOYMENT_MODE") == "desktop":
+            from pathlib import Path
+            app_dir = Path.home() / ".arthsaarthi"
+            app_dir.mkdir(exist_ok=True)
+            db_path = app_dir / "arthsaarthi-desktop.db"
+            return f"sqlite:///{db_path.resolve()}"
+
         if values.get("DATABASE_TYPE") == "sqlite":
             return "sqlite:///./arthsaarthi.db"
+
         if isinstance(v, str):
             return v
         # Default to PostgreSQL if not specified
@@ -57,7 +65,7 @@ class Settings(BaseSettings):
 
     @validator("CACHE_TYPE", pre=True, always=True)
     def set_cache_type_for_desktop(cls, v, values):
-        if values.get("DATABASE_TYPE") == "sqlite":
+        if values.get("DEPLOYMENT_MODE") == "desktop":
             return "disk"
         return v
 

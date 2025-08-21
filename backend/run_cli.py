@@ -23,35 +23,21 @@ def run_dev_server(
     Starts the Uvicorn server for development and for the Electron app.
     """
     import os
-    from app.core.config import settings
-
-    # For desktop mode, we need to ensure a consistent setup
-    os.environ['DATABASE_TYPE'] = 'sqlite'
-    from app.core.config import settings # Re-import settings after setting env var
     import sys
     import subprocess
-    from pathlib import Path
 
-    # Use a stable directory in the user's home for the database
-    app_dir = Path.home() / ".arthsaarthi"
-    app_dir.mkdir(exist_ok=True)
-    db_path = app_dir / "arthsaarthi.db" # Use the unified name from config
+    # For desktop mode, we force the deployment mode to 'desktop'
+    # This ensures the correct settings (SQLite, stable DB path) are loaded from config.py
+    os.environ['DEPLOYMENT_MODE'] = 'desktop'
 
-    # Manually override the settings to ensure all parts of the app use the correct path
-    settings.DATABASE_URL = f"sqlite:///{db_path.resolve()}"
+    # We need to get the db_path from the settings *after* the env var is set
+    from app.core.config import settings
+    db_path = settings.DATABASE_URL.split("///")[1]
 
-    from app.db import session, base
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
+    # The environment for subprocesses must also know it's in desktop mode
+    subprocess_env = {**os.environ, "DEPLOYMENT_MODE": "desktop"}
 
-    engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, connect_args={"check_same_thread": False})
-    session.engine = engine
-    session.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-    # The environment for subprocesses must also know it's in sqlite mode
-    subprocess_env = {**os.environ, "DATABASE_TYPE": "sqlite"}
-
-    if not db_path.exists():
+    if not os.path.exists(db_path):
         print(f"--- Database not found at {db_path}, initializing new database... ---")
         subprocess.run(
             [sys.executable, "db", "init-db"],
