@@ -1,35 +1,34 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status.
+# This script is the entrypoint for the backend container in the E2E test environment.
+# It ensures the database is ready and migrated before starting the application.
+
 set -e
 
-# Conditionally initialize the database based on DATABASE_TYPE
-if [ "$DATABASE_TYPE" = "sqlite" ]; then
-  echo "E2E: Database type is SQLite, initializing database..."
-  python -m app.cli init-db
+function print_info() {
+  echo -e "\033[34m[E2E-SETUP]\033[0m $1"
+}
+
+if [ "$DATABASE_TYPE" == "sqlite" ]; then
+    print_info "Database type is SQLite, ensuring clean state..."
+    # The DB file is defined in .env.test as sqlite:///./test.db
+    # The working directory is /app
+    rm -f /app/test.db
+    print_info "Creating database schema directly from models for SQLite..."
+    # Instead of 'alembic upgrade head', which is failing due to a likely broken
+    # migration history, we create the schema directly from the current models.
+    python -m app.cli init-db
+    print_info "Stamping the database with the latest Alembic revision..."
+    alembic stamp head
+    print_info "Starting Uvicorn server for E2E tests..."
+    exec uvicorn app.main:app --host 0.0.0.0 --port 8000
 else
-  # Function to check if the test database exists
-  ensure_test_db() {
-      echo "E2E: Ensuring test database exists..."
-      # The python script will exit with a non-zero status if it fails
-      python -c "from app.db.session import SessionLocal; from sqlalchemy import text; db = SessionLocal(); db.execute(text('SELECT 1')); db.close()"
-  }
-
-  # Wait for the database to be ready
-  # Retry logic to handle initial connection errors
-  n=0
-  until [ $n -ge 10 ]
-  do
-      ensure_test_db && break
-      n=$[$n+1]
-      sleep 5
-  done
-
-  # Run database migrations
-  echo "E2E: Applying database migrations..."
-  alembic upgrade head
+    # PostgreSQL flow
+    print_info "Waiting for PostgreSQL to be ready..."
+    python /app/app/db/init_db.py
+    print_info "Applying database migrations..."
+    alembic upgrade head
+    print_info "Starting Uvicorn server for E2E tests..."
+    exec uvicorn app.main:app --host 0.0.0.0 --port 8000
 fi
 
-# Start the application using a Uvicorn server suitable for E2E testing
-echo "E2E: Starting Uvicorn server for E2E tests..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app

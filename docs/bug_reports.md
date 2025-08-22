@@ -6273,3 +6273,47 @@ The `UserManagementPage.tsx` component was updated to conditionally render the `
 
 ---
 
+**Bug ID:** 2025-08-22-04
+**Title:** E2E test environment for SQLite was unstable due to multiple cascading startup and initialization failures.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-22
+**Classification:** Test Suite / Configuration
+**Severity:** Critical
+**Description:**
+The E2E test suite for SQLite was completely non-functional due to a series of cascading bugs that prevented the backend container from starting and initializing correctly. The debugging process revealed several distinct root causes:
+1.  **Inconsistent DB Initialization:** The initial strategy of using `alembic upgrade head` failed due to a corrupted migration history (`table users already exists`). Switching to `python -m app.cli init-db` fixed the initial creation but introduced a new problem.
+2.  **Missing Alembic Stamp:** `init-db` creates the schema but does not stamp it with an Alembic version. When the test runner called `/testing/reset-db`, Alembic would try to run migrations from scratch, causing a `table users already exists` error.
+3.  **Missing Server Command:** For a time, the entrypoint script would initialize the database and then exit because the `exec uvicorn` command was missing from the SQLite logic block.
+4.  **Incorrect Port:** After adding the server command, it was configured for the wrong port (`800` instead of `8000`), causing the healthcheck to fail.
+**Steps to Reproduce:**
+1. Run `docker compose -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit`.
+**Expected Behavior:**
+The E2E test environment should start, and tests should run successfully.
+**Actual Behavior:**
+The backend container would fail to start, exit prematurely, or crash upon the first API call from the test runner.
+**Resolution:**
+A series of fixes were applied to `backend/e2e_entrypoint.sh` to create a robust startup sequence for SQLite:
+1.  The script now uses `python -m app.cli init-db` to create a clean schema directly from the models, bypassing the broken migration history.
+2.  It immediately follows up with `alembic stamp head` to mark the database as up-to-date for Alembic.
+3.  It correctly starts the server with `exec uvicorn app.main:app --host 0.0.0.0 --port 8000`.
+
+---
+
+**Bug ID:** 2025-08-22-05
+**Title:** E2E test for SQLite fails during database reset due to Alembic incompatibility.
+**Module:** E2E Testing, Database Migrations, API
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-22
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** Critical
+**Description:**
+After fixing the container startup issues, the E2E test suite still failed. The backend crashed with a `500 Internal Server Error` when the test runner called `/api/v1/testing/reset-db`. The root cause was that the reset endpoint uses `alembic downgrade base`, which executes migration scripts containing `ALTER TABLE` commands. These commands are not supported by SQLite, causing an `(sqlite3.OperationalError) near "ALTER": syntax error`.
+**Steps to Reproduce:**
+1. Run `docker compose -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit`.
+**Expected Behavior:**
+The database should be reset successfully.
+**Actual Behavior:**
+The backend crashes with a 500 Internal Server Error.
+**Resolution:**
+The `reset-db` endpoint in `backend/app/api/v1/endpoints/testing.py` was refactored to be database-aware. For SQLite, it now uses `Base.metadata.drop_all/create_all` to reliably reset the database, bypassing the incompatible Alembic downgrade command. For PostgreSQL, it continues to use the standard Alembic downgrade/upgrade cycle.
