@@ -29,10 +29,22 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    user = crud.user.get_by_email(db, email=token_data.sub)
-    if not user:
-        logger.warning(f"User not found for email in token: {token_data.sub}")
-        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        user = crud.user.get_by_email(db, email=token_data.sub)
+        if not user:
+            logger.warning(f"User not found for email in token: {token_data.sub}")
+            raise HTTPException(status_code=404, detail="User not found")
+    except RuntimeError as e:
+        # This can happen in desktop mode if the app is restarted and the key
+        # manager is not yet unlocked by user login.
+        if "master key is not loaded" in str(e):
+            logger.warning("Could not get user by email, master key not loaded.")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Master key not loaded, please log in again.",
+            )
+        # Re-raise other runtime errors
+        raise
     return user
 
 

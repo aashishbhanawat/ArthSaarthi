@@ -6,8 +6,11 @@ a = Analysis(
     ['run_cli.py'],
     pathex=['.'],
     binaries=[],
-    datas=[('alembic', 'alembic'), ('alembic.ini', '.')],
-    hiddenimports=['uvicorn.lifespan', 'uvicorn.loops', 'uvicorn.protocols'],
+    datas=[
+        ('alembic', 'alembic'),
+        ('alembic.ini', '.'),
+    ],
+    hiddenimports=['uvicorn.lifespan', 'uvicorn.loops', 'uvicorn.protocols', 'passlib.handlers.bcrypt'],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],

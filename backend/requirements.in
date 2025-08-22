@@ -22,4 +22,5 @@ cryptography
 pyxirr
 numpy
 pyarrow
+pyinstaller
 requests

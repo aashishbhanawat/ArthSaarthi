@@ -2,17 +2,18 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const portfinder = require('portfinder');
-const isDev = require('electron-is-dev');
 
 let backendProcess;
 let mainWindow;
 
-function createMainWindow(backendPort) {
+async function createMainWindow(backendPort) {
+  const isDev = (await import('electron-is-dev')).default;
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       // It's recommended to turn off nodeIntegration and enable contextIsolation for security
       nodeIntegration: false,
       contextIsolation: true,
@@ -31,43 +32,61 @@ function createMainWindow(backendPort) {
     mainWindow.webContents.openDevTools();
   } else {
     // In production, load the built frontend
-    const indexPath = path.join(__dirname, '../frontend/dist/index.html');
+    const indexPath = path.join(__dirname, '../dist/index.html');
     mainWindow.loadFile(indexPath);
   }
+
+  mainWindow.setMenu(null);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
-function startBackend() {
+async function startBackend() {
+  const isDev = (await import('electron-is-dev')).default;
   return new Promise((resolve, reject) => {
     portfinder.getPortPromise()
       .then(port => {
         const backendPath = isDev
-          ? path.join(__dirname, '../backend/run_cli.py') // Placeholder for dev
-          : path.join(process.resourcesPath, 'arthsaarthi-backend'); // Production path
+          ? path.join(__dirname, '../../backend/run_cli.py') // Placeholder for dev
+          : path.join(process.resourcesPath, 'arthsaarthi-backend', 'arthsaarthi-backend'); // Production path
 
-        const args = isDev ? ['run-dev-server', '--port', port] : ['--port', port];
+        console.log(`Attempting to start backend at: ${backendPath}`);
+
+        const args = isDev ? ['run-dev-server', '--port', port] : ['run-dev-server', '--port', port];
         const command = isDev ? 'python' : backendPath;
 
         backendProcess = spawn(command, args, {
-          env: { ...process.env, DEPLOYMENT_MODE: 'desktop' },
+          env: {
+            ...process.env,
+            DEPLOYMENT_MODE: 'desktop',
+            DATABASE_TYPE: 'sqlite',
+            CACHE_TYPE: 'disk',
+               },
         });
 
-        backendProcess.stdout.on('data', (data) => {
-          console.log(`Backend stdout: ${data}`);
-          // Resolve once we get some output, assuming it's ready
-          // A more robust solution would be to wait for a specific message
-          resolve(port);
-        });
+        let resolved = false;
+        const handleData = (data) => {
+            const message = data.toString();
+            console.log(`Backend output: ${message}`);
+            if (!resolved && message.includes('Uvicorn running on')) {
+                console.log('Backend is ready. Resolving startBackend promise.');
+                resolved = true;
+                resolve(port);
+            }
+        };
 
-        backendProcess.stderr.on('data', (data) => {
-          console.error(`Backend stderr: ${data}`);
-        });
+        backendProcess.stdout.on('data', handleData);
+        backendProcess.stderr.on('data', handleData);
 
         backendProcess.on('close', (code) => {
           console.log(`Backend process exited with code ${code}`);
+        });
+
+        backendProcess.on('error', (err) => {
+            console.error('Failed to start backend process.', err);
+            reject(err);
         });
       })
       .catch(err => {
@@ -81,15 +100,15 @@ app.whenReady().then(async () => {
   try {
     const backendPort = await startBackend();
     console.log(`Backend started on port ${backendPort}`);
-    createMainWindow(backendPort);
+    await createMainWindow(backendPort);
   } catch (error) {
     console.error('Failed to start backend, quitting app.', error);
     app.quit();
   }
 
-  app.on('activate', () => {
+  app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
+      await createMainWindow();
     }
   });
 });
