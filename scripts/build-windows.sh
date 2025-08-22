@@ -24,7 +24,7 @@ echo "Step 3: Installing backend dependencies..."
 # This assumes the user has a virtual environment named 'venc' in their home directory
 # In a more robust setup, this would be handled by a configuration file or a setup script.
 source ~/venc/bin/activate
-(cd backend && pip install -r requirements.txt)
+(cd backend && pip install -r requirements-windows.txt)
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."
