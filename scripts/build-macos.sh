@@ -28,7 +28,6 @@ echo "Step 2: Building frontend..."
 echo "Step 3: Installing backend dependencies..."
 source ~/venc/bin/activate
 (cd backend && "$VIRTUAL_ENV/bin/pip" install -r requirements.txt)
-(cd backend && "$VIRTUAL_ENV/bin/pip" install PyInstaller)
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."

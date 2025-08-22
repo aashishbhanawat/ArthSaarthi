@@ -6,6 +6,8 @@
 #
 alembic==1.16.4
     # via -r backend/requirements.in
+altgraph==0.17.4
+    # via pyinstaller
 annotated-types==0.7.0
     # via pydantic
 anyio==4.10.0
@@ -25,6 +27,7 @@ certifi==2025.8.3
     #   requests
 cffi==1.17.1
     # via
+    #   bcrypt
     #   cryptography
     #   curl-cffi
 charset-normalizer==3.4.2
@@ -34,7 +37,9 @@ click==8.2.1
     #   typer
     #   uvicorn
 cryptography==45.0.6
-    # via python-jose
+    # via
+    #   -r backend/requirements.in
+    #   python-jose
 curl-cffi==0.13.0
     # via yfinance
 diskcache==5.6.3
@@ -85,10 +90,13 @@ numpy==2.3.2
     #   pandas
     #   yfinance
 packaging==25.0
-    # via pytest
+    # via
+    #   pyinstaller
+    #   pyinstaller-hooks-contrib
+    #   pytest
 pandas==2.3.1
     # via yfinance
-passlib[bcrypt]==1.7.4
+passlib==1.7.4
     # via -r backend/requirements.in
 peewee==3.18.2
     # via yfinance
@@ -120,6 +128,10 @@ pygments==2.19.2
     # via
     #   pytest
     #   rich
+pyinstaller==6.15.0
+    # via -r backend/requirements.in
+pyinstaller-hooks-contrib==2025.8
+    # via pyinstaller
 pytest==8.4.1
     # via
     #   -r backend/requirements.in
@@ -156,6 +168,7 @@ shellingham==1.5.4
     # via typer
 six==1.17.0
     # via
+    #   bcrypt
     #   ecdsa
     #   python-dateutil
 sniffio==1.3.1
@@ -207,3 +220,6 @@ websockets==15.0.1
     #   yfinance
 yfinance==0.2.65
     # via -r backend/requirements.in
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
