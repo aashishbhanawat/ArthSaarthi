@@ -37,6 +37,7 @@ TEST_SUITE:
   backend     Runs backend (pytest) unit and integration tests.
   frontend    Runs frontend (jest) unit tests.
   e2e         Runs end-to-end (playwright) tests.
+  migrations  Tests the full Alembic migration cycle (upgrade/downgrade).
 
 OPTIONS:
   --db <type> Specifies the database backend to use. Default is 'sqlite'.
@@ -51,7 +52,7 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help; exit 0 ;;
         --db) DB_TYPE="$2"; shift ;;
-        lint|backend|frontend|e2e|all) TEST_SUITE=$1 ;;
+        lint|backend|frontend|e2e|migrations|all) TEST_SUITE=$1 ;;
         *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
     esac
     shift
@@ -109,12 +110,27 @@ trap cleanup EXIT
 # --- Test Functions ---
 
 install_deps() {
-    print_info "Installing all project dependencies..."
-    pip install -r backend/requirements-dev.in > /dev/null 2>&1
-    (cd frontend && npm install > /dev/null 2>&1)
-    (cd e2e && npm install > /dev/null 2>&1)
-    (cd e2e && npx playwright install --with-deps > /dev/null 2>&1)
-    print_success "All dependencies installed."
+    print_info "--- Installing Project Dependencies ---"
+
+    print_info "Installing backend dependencies..."
+    if ! pip install -r backend/requirements-dev.in > backend-install.log 2>&1; then
+        print_error "Failed to install backend dependencies. Check backend-install.log for details."
+        exit 1
+    fi
+
+    print_info "Installing frontend dependencies..."
+    if ! (cd frontend && npm install > ../frontend-install.log 2>&1); then
+        print_error "Failed to install frontend dependencies. Check frontend-install.log for details."
+        exit 1
+    fi
+
+    print_info "Installing E2E dependencies..."
+    if ! (cd e2e && npm install > ../e2e-install.log 2>&1 && npx playwright install --with-deps > ../e2e-playwright-install.log 2>&1); then
+        print_error "Failed to install E2E dependencies. Check e2e-install.log and e2e-playwright-install.log for details."
+        exit 1
+    fi
+
+    print_success "All project dependencies installed successfully."
 }
 
 run_lint() {
@@ -201,7 +217,7 @@ run_e2e_tests() {
 
     # Create .env.development.local for the frontend
     cat > frontend/.env.development.local << EOF
-VITE_API_PROXY_TARGET=http://localhost:$backend_port
+VITE_API_PROXY_TARGET=http://127.0.0.1:$backend_port
 EOF
 
     print_info "Initializing database..."
@@ -209,26 +225,62 @@ EOF
     print_success "Database initialized."
 
     print_info "Starting backend server..."
-    (cd backend && uvicorn app.main:app --host 0.0.0.0 --port $backend_port --env-file .env.test) &
+    (cd backend && uvicorn app.main:app --host 127.0.0.1 --port $backend_port --env-file .env.test) &
     BACKEND_PID=$!
     print_info "Waiting for backend to be ready..."
-    timeout 60s bash -c "until curl -s -f http://localhost:$backend_port/api/v1/auth/status > /dev/null; do sleep 1; done"
+    timeout 60s bash -c "until curl -s -f http://127.0.0.1:$backend_port/api/v1/auth/status > /dev/null; do sleep 1; done"
     print_success "Backend is up."
 
     print_info "Starting frontend server..."
     (cd frontend && npm run dev -- --port $frontend_port) &
     FRONTEND_PID=$!
     print_info "Waiting for frontend to be ready..."
-    timeout 60s bash -c "until curl -s -f http://localhost:$frontend_port > /dev/null; do sleep 1; done"
+    timeout 60s bash -c "until curl -s -f http://127.0.0.1:$frontend_port > /dev/null; do sleep 1; done"
     print_success "Frontend is up."
 
     print_info "Running Playwright E2E tests..."
-    export E2E_BASE_URL="http://localhost:$frontend_port"
-    export E2E_BACKEND_URL="http://localhost:$backend_port"
+    export E2E_BASE_URL="http://127.0.0.1:$frontend_port"
+    export E2E_BACKEND_URL="http://127.0.0.1:$backend_port"
     (cd e2e && npx playwright test)
     print_success "E2E tests passed."
 }
 
+run_migration_tests() {
+    print_info "--- Running Database Migration Tests (DB: $DB_TYPE) ---"
+    # Ensure a clean state before running, especially for SQLite.
+    if [ "$DB_TYPE" == "sqlite" ]; then
+        print_info "Removing old SQLite database file..."
+        rm -f backend/test.db
+    fi
+    # Create the test environment file and the database itself
+    create_env_file 0 0
+
+    if [ "$DB_TYPE" == "sqlite" ]; then
+        print_info "Testing SQLite migrations (upgrade head only)..."
+        # For SQLite, we can't test the full downgrade cycle due to ALTER TABLE incompatibility.
+        # The most valuable test is to ensure the schema can be built from scratch.
+        (cd backend && python -m dotenv -f .env.test run -- alembic upgrade head)
+        print_success "SQLite upgrade to head successful."
+    else # postgres
+        # For PostgreSQL, we test the full up/down cycle.
+        # Due to a suspected side-effect where importing app modules creates all tables,
+        # we can't directly run 'upgrade head' on a clean DB.
+        # Instead, we stamp the auto-created DB, then perform a full downgrade/upgrade cycle.
+        print_info "Stamping the database to the latest revision..."
+        (cd backend && python -m dotenv -f .env.test run -- alembic stamp head)
+        print_success "Stamp successful."
+
+        print_info "Running migrations down to base..."
+        (cd backend && python -m dotenv -f .env.test run -- alembic downgrade base)
+        print_success "Downgrade to base successful."
+
+        print_info "Running migrations up to head again..."
+        (cd backend && python -m dotenv -f .env.test run -- alembic upgrade head)
+        print_success "Final upgrade to head successful."
+    fi
+
+    print_success "Migration tests passed."
+}
 # --- Main Execution Logic ---
 
 main() {
@@ -239,6 +291,7 @@ main() {
         all)
             run_lint
             run_frontend_tests
+            run_migration_tests
             run_backend_tests
             run_e2e_tests
             ;;
@@ -253,6 +306,9 @@ main() {
             ;;
         e2e)
             run_e2e_tests
+            ;;
+        migrations)
+            run_migration_tests
             ;;
     esac
 
