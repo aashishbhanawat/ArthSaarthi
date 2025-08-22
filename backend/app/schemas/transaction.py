@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -23,16 +23,23 @@ class TransactionCreate(TransactionBase):
 
 
 # Properties to receive on transaction update
-class TransactionUpdate(BaseModel):
-    transaction_type: Optional[str] = None
+class TransactionUpdate(TransactionBase):
+    transaction_type: Optional[str] = None # type: ignore
     quantity: Optional[Decimal] = None
     price_per_unit: Optional[Decimal] = None
     transaction_date: Optional[datetime] = None
     fees: Optional[Decimal] = None
+    asset_id: Optional[uuid.UUID] = None
 
 
 # Properties to return to client
 class Transaction(TransactionBase):
     id: uuid.UUID
+    portfolio_id: uuid.UUID
     asset: Asset
     model_config = ConfigDict(from_attributes=True)
+
+
+class TransactionsResponse(BaseModel):
+    transactions: List[Transaction]
+    total: int

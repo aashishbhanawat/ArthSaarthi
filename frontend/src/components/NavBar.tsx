@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { HomeIcon,
   BriefcaseIcon,
   ArrowUpTrayIcon,
+  ListBulletIcon,
   UsersIcon,
   ArrowLeftOnRectangleIcon,
  } from '@heroicons/react/24/outline';
@@ -41,6 +42,13 @@ const NavBar: React.FC = () => {
                 >
                     <BriefcaseIcon className="h-5 w-5" />
                     <span>Portfolios</span>
+                </NavLink>
+                <NavLink
+                    to="/transactions"
+                    className={({ isActive }) => linkClass(isActive)}
+                >
+                    <ListBulletIcon className="h-5 w-5" />
+                    <span>Transactions</span>
                 </NavLink>
                 <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
                     <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>

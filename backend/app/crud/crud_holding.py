@@ -106,13 +106,13 @@ class CRUDHolding:
             current_value = quantity * current_price
             unrealized_pnl = current_value - total_invested
             unrealized_pnl_percentage = (
-                float((unrealized_pnl / total_invested) * 100)
+                float(unrealized_pnl / total_invested)
                 if total_invested > 0
                 else 0.0
             )
             days_pnl = (current_price - previous_close) * quantity
             days_pnl_percentage = (
-                float(((current_price - previous_close) / previous_close) * 100)
+                float((current_price - previous_close) / previous_close)
                 if previous_close > 0
                 else 0.0
             )

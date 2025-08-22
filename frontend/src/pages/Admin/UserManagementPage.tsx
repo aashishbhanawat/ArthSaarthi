@@ -30,9 +30,12 @@ const UserManagementPage: React.FC = () => {
 
   const confirmDelete = () => {
     if (selectedUser) {
-      deleteUserMutation.mutate(selectedUser.id, { onSuccess: () => setDeleteModalOpen(false) });
-      setDeleteModalOpen(false);
-      setSelectedUser(null);
+      deleteUserMutation.mutate(selectedUser.id, {
+        onSuccess: () => {
+          setDeleteModalOpen(false);
+          setSelectedUser(null);
+        },
+      });
     }
   };
 
@@ -52,11 +55,13 @@ const UserManagementPage: React.FC = () => {
         onDelete={handleDeleteUser}
       />
 
-      <UserFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => setFormModalOpen(false)}
-        userToEdit={selectedUser}
-      />
+      {isFormModalOpen && (
+        <UserFormModal
+          isOpen={isFormModalOpen}
+          onClose={() => setFormModalOpen(false)}
+          userToEdit={selectedUser}
+        />
+      )}
 
       {isDeleteModalOpen && selectedUser && (
         <DeleteConfirmationModal

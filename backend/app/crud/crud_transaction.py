@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
@@ -66,6 +66,40 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         db.add(db_obj)
         db.flush()
         return db_obj
+
+    def get_multi_by_user_with_filters(
+        self,
+        db: Session,
+        *,
+        user_id: uuid.UUID,
+        portfolio_id: uuid.UUID,
+        asset_id: Optional[uuid.UUID] = None,
+        transaction_type: Optional[str] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> tuple[list[Transaction], int]:
+        query = db.query(self.model).filter(
+            self.model.user_id == user_id, self.model.portfolio_id == portfolio_id
+        )
+
+        if asset_id:
+            query = query.filter(self.model.asset_id == asset_id)
+        if transaction_type:
+            query = query.filter(
+                self.model.transaction_type == transaction_type.upper()
+            )
+        if start_date:
+            query = query.filter(self.model.transaction_date >= start_date)
+        if end_date:
+            query = query.filter(self.model.transaction_date <= end_date)
+
+        total = query.count()
+        transactions = (
+            query.order_by(self.model.transaction_date.desc()).offset(skip).limit(limit).all()
+        )
+        return transactions, total
 
     def get_multi_by_portfolio(
         self, db: Session, *, portfolio_id: uuid.UUID

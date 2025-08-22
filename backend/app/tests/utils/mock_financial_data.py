@@ -78,6 +78,18 @@ class MockFinancialDataService:
                 "currency": "INR",
                 "exchange": "NSE",
             },
+            "TXN1": {
+                "name": "Transaction Asset 1",
+                "asset_type": "STOCK",
+                "currency": "USD",
+                "exchange": "NASDAQ",
+            },
+            "TXN2": {
+                "name": "Transaction Asset 2",
+                "asset_type": "STOCK",
+                "currency": "USD",
+                "exchange": "NASDAQ",
+            },
         }
         details = mock_data.get(ticker_symbol)
         print(f"MockFinancialDataService: found details: {details}")

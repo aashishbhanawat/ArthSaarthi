@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useCreateTransaction, useCreateAsset } from '../../hooks/usePortfolios';
+import { useCreateTransaction } from '../../hooks/usePortfolios';
+import { useCreateAsset } from '../../hooks/useAssets'
 import { useQueryClient } from '@tanstack/react-query';
 import { lookupAsset } from '../../services/portfolioApi';
 import { Asset } from '../../types/asset';
@@ -9,12 +10,13 @@ import { TransactionCreate } from '../../types/portfolio';
 interface AddTransactionModalProps {
     portfolioId: string;
     onClose: () => void;
+    isOpen: boolean;
 }
 
 // Define the shape of our form data
 type TransactionFormInputs = Omit<TransactionCreate, 'asset_id'>;
 
-const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, onClose }) => {
+const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, onClose, isOpen }) => {
     const { register, handleSubmit, formState: { errors } } = useForm<TransactionFormInputs>();
     const queryClient = useQueryClient();
     const createTransactionMutation = useCreateTransaction();
@@ -53,7 +55,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
 
     const handleSelectAsset = (asset: Asset) => {
         setSelectedAsset(asset);
-        setInputValue(asset.name);
+        setInputValue(`${asset.name} (${asset.ticker_symbol})`);
         setSearchResults([]);
     };
 
@@ -91,7 +93,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
 
     const handleCreateAsset = () => {
         setApiError(null);
-        createAssetMutation.mutate(inputValue.toUpperCase(), {
+        createAssetMutation.mutate({ ticker: inputValue.toUpperCase() }, {
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },
@@ -101,10 +103,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
         });
     };
 
+    if (!isOpen) return null;
+
     return (
-        <div className="modal-overlay z-30">
-            <div className="modal-content overflow-visible w-11/12 md:w-3/4 lg:max-w-2xl p-6">
-                <h2 className="text-2xl font-bold mb-4">Add Transaction</h2>
+        <div className="modal-overlay z-30" onClick={onClose} data-testid="add-transaction-modal-overlay">
+            <div role="dialog" aria-modal="true" aria-labelledby="add-transaction-modal-title" className="modal-content overflow-visible w-11/12 md:w-3/4 lg:max-w-2xl p-6" onClick={e => e.stopPropagation()} data-testid="add-transaction-modal-content">
+                <h2 id="add-transaction-modal-title" className="text-2xl font-bold mb-4">Add Transaction</h2>
                 <div className="max-h-[70vh] overflow-y-auto px-2 -mr-2">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         {/* Asset Search */}

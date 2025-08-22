@@ -179,3 +179,22 @@ We implemented support for SQLite as an alternative to PostgreSQL. This was a cr
     2.  **Entrypoints Must Be Consistent:** All entrypoint scripts (`entrypoint.sh`, `e2e_entrypoint.sh`) that perform similar functions must be kept in sync.
     3.  **CI is Not a Clean Room:** Never assume a CI runner provides a perfectly clean environment for every run. Docker volumes, caches, and other artifacts can persist. Always add explicit cleanup steps (`docker compose down -v`) to your workflows to ensure reproducible builds.
     4.  **Configuration Loading Order Matters:** The interaction between `.env` files, Docker environment variables, and Pydantic validators is complex. The order of precedence must be carefully managed to avoid subtle and confusing bugs.
+
+---
+---
+
+## 2025-08-22: Final Stabilization & API Contract Enforcement
+
+### 1. What Happened?
+
+The final push to get the E2E test suite to a 100% passing state involved fixing a series of bugs related to modals and backend data fetching. The most critical bug was in the "Edit Transaction" flow, where the feature was completely broken.
+
+### 2. How Did the Process Help?
+
+*   **E2E as a Truth Source:** The E2E test logs were invaluable. The `transaction-history.spec.ts` test log clearly showed that the `handleEdit` function in the frontend was receiving an incomplete `Transaction` object from the backend API, which was missing the `portfolio_id`. This immediately pinpointed the bug's origin in the backend.
+*   **Root Cause Analysis:** Instead of trying to patch the frontend to work around the missing data, the RCA process correctly identified that the `GET /api/v1/transactions/` endpoint was violating its implicit data contract. The Pydantic schema (`schemas.Transaction`) defined the expected shape, but the endpoint was not delivering it.
+
+### 3. Outcome & New Learning
+
+*   The application is now fully stable with a 12/12 passing E2E test suite.
+*   **API Schemas are Contracts:** This experience reinforces a critical software engineering principle: API response schemas are a contract. The backend *must* guarantee that it will return data in the shape defined by the schema. The frontend should be able to trust this contract implicitly. When this contract is broken, it leads to hard-to-debug, cascading failures in the client application. Rigorous testing of API responses against their schemas is essential.

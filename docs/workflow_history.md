@@ -1228,3 +1228,43 @@ Its purpose is to build an experience history that can be used as a reference fo
     - The full-stack implementation for asset alias mapping is complete.
     - All backend and frontend unit/integration tests are passing.
     - A new E2E test was created, but it is failing with a timeout, blocking the final validation of the feature. The project is being prepared for a handoff to debug this final issue.
+
+---
+
+**Date:** 2025-08-22
+**Objective:** To diagnose and fix the final remaining E2E test failures to achieve a 100% stable test suite.
+
+### 1. Initial State & Problem Analysis
+
+The E2E test suite was failing with multiple timeout errors, primarily in `transaction-history.spec.ts` and `admin-user-management.spec.ts`. The core issues were modals not appearing and features breaking due to incorrect data flow.
+
+### 2. AI-Assisted Plan & Execution
+
+1.  **Root Cause Analysis:** A thorough analysis of the `log.txt` file was performed. This revealed two distinct root causes:
+    *   **Backend Bug:** The `GET /api/v1/transactions/` endpoint was returning incomplete `Transaction` objects, missing the `portfolio_id`. This broke the "Edit Transaction" feature on the frontend.
+    *   **Frontend Bug:** The `UserManagementPage.tsx` component was not conditionally rendering the `UserFormModal`, preventing it from appearing when triggered.
+
+2.  **Targeted Fixes:** Based on the analysis, two precise fixes were implemented:
+    *   **Backend:** The `schemas/transaction.py` Pydantic model was updated to include the `portfolio_id`, ensuring the API response adhered to the data contract expected by the frontend.
+    *   **Frontend:** The `UserManagementPage.tsx` component was updated to wrap the `<UserFormModal>` in a conditional block (`{isFormModalOpen && ...}`), ensuring it is only mounted and rendered when active.
+
+### 3. Verification & Outcome
+
+*   **E2E Tests:** A full run of the E2E test suite was executed.
+*   **Result:** **Success.** All 12 E2E tests passed, confirming that both the backend data contract issue and the frontend modal rendering bug were resolved. The application is now in a fully stable, "green" state.
+
+### 4. Documentation Update
+
+*   `docs/bug_reports.md`: Added final bug reports for the issues discovered and resolved.
+*   `docs/project_handoff_summary.md`: Updated to reflect the stable status and explicitly mention the new Transaction History page.
+*   `docs/LEARNING_LOG.md`: Added a new entry on the importance of API data contracts.
+*   `docs/workflow_history.md`: This entry was created.
+
+### 5. Final Changed Files
+
+*   `backend/app/schemas/transaction.py`
+*   `frontend/src/pages/Admin/UserManagementPage.tsx`
+*   `docs/bug_reports.md`
+*   `docs/project_handoff_summary.md`
+*   `docs/LEARNING_LOG.md`
+*   `docs/workflow_history.md`

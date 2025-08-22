@@ -1,7 +1,8 @@
 import uuid
-from typing import Any
+from datetime import datetime
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -9,6 +10,61 @@ from app.core import config, dependencies
 from app.models.user import User
 
 router = APIRouter()
+
+
+@router.get("/", response_model=schemas.TransactionsResponse)
+def read_transactions(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: Optional[uuid.UUID] = None,
+    asset_id: Optional[uuid.UUID] = None,
+    transaction_type: Optional[str] = Query(None, enum=["BUY", "SELL"]),
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Retrieve transactions for the current user, with optional filters.
+    """
+    if portfolio_id:
+        portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+        if not portfolio:
+            raise HTTPException(status_code=404, detail="Portfolio not found")
+        if portfolio.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+        transactions, total = crud.transaction.get_multi_by_user_with_filters(
+            db=db,
+            user_id=current_user.id,
+            portfolio_id=portfolio_id,
+            asset_id=asset_id,
+            transaction_type=transaction_type,
+            start_date=start_date,
+            end_date=end_date,
+            skip=skip,
+            limit=limit,
+        )
+    else:
+        # If no portfolio_id is provided, use the same filter function
+        # to fetch all transactions for the user.
+        transactions, total = crud.transaction.get_multi_by_user_with_filters( # type: ignore
+            db=db, user_id=current_user.id, portfolio_id=None, skip=skip, limit=limit
+        )
+    if config.settings.DEBUG:
+        print("--- BACKEND DEBUG: Read Transactions Response ---")
+        # Log the first transaction to see its structure
+        if transactions:
+            try:
+                # Directly accessing attributes from the SQLAlchemy model
+                print(f"First transaction ID: {transactions[0].id}")
+                print(f"First transaction Portfolio ID: {transactions[0].portfolio_id}")
+            except Exception as e:
+                print(f"Could not log transaction details: {e}")
+        else:
+            print("No transactions found to log.")
+        print("---------------------------------------------")
+    return {"transactions": transactions, "total": total}
 
 
 @router.post("/", response_model=schemas.Transaction, status_code=201)

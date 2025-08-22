@@ -12,6 +12,7 @@ from .endpoints import (
     me,
     portfolios,
     testing,
+    transactions,
     users,
 )
 
@@ -25,6 +26,9 @@ if settings.DEPLOYMENT_MODE != "desktop":
 api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfolios"])
 api_router.include_router(assets.router, prefix="/assets", tags=["assets"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+api_router.include_router(
+    transactions.router, prefix="/transactions", tags=["transactions"]
+)
 
 # Conditionally include the testing router only in the test environment
 logger.warning(f"Current ENVIRONMENT in api.py: '{settings.ENVIRONMENT}'")
