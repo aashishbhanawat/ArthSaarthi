@@ -10,7 +10,7 @@ echo "--- Starting Windows Build ---"
 # Create a clean virtual environment
 echo "Creating a clean virtual environment..."
 rm -rf ~/venc
-python -m venv ~/venc
+py -3 -m venv ~/venc
 
 # Clean up previous builds
 echo "Cleaning up previous builds..."
