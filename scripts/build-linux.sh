@@ -37,8 +37,7 @@ chmod +x "$(pwd)/backend/dist/arthsaarthi-backend/arthsaarthi-backend"
 # 6. Package Electron App for Linux
 echo "Step 6: Packaging Electron app for Linux..."
 # We use the 'dist' script from package.json which runs electron-builder
-# We set USE_SYSTEM_FPM=true to work around an issue with the pre-built fpm on ARM
-(cd frontend && USE_SYSTEM_FPM=true npm run dist -- --linux)
+(cd frontend && npm run dist -- --linux)
 
 echo "--- Linux Build Finished ---"
 echo "Installer located in frontend/dist-electron/"

@@ -9,8 +9,6 @@ a = Analysis(
     datas=[
         ('alembic', 'alembic'),
         ('alembic.ini', '.'),
-        # Workaround for PyInstaller on Raspberry Pi not finding the python shared library
-        ('/usr/lib/aarch64-linux-gnu/libpython3.11.so.1.0', '.'),
     ],
     hiddenimports=['uvicorn.lifespan', 'uvicorn.loops', 'uvicorn.protocols', 'passlib.handlers.bcrypt'],
     hookspath=[],

@@ -37,14 +37,21 @@
         ]
       }
     ],
+    "icon": "public/ArthSaarthi.png",
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "public/ArthSaarthi.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/ArthSaarthi.png"
     },
     "linux": {
       "target": [
         "AppImage",
         "deb"
       ],
+      "icon": "public/ArthSaarthi.png",
       "category": "Finance"
     }
   },

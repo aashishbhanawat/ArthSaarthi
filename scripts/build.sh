@@ -11,6 +11,7 @@ case "$OS" in
     Linux*)     ./scripts/build-linux.sh;;
     MINGW*)     ./scripts/build-windows.sh;;
     CYGWIN*)    ./scripts/build-windows.sh;;
+    Darwin*)    ./scripts/build-macos.sh;;
     *)          echo "Unsupported OS: $OS"; exit 1;;
 esac
 
