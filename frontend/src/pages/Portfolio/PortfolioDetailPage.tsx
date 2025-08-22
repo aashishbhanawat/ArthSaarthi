@@ -92,9 +92,12 @@ const PortfolioDetailPage: React.FC = () => {
                 </Link>
                 <div className="flex justify-between items-center mt-2">
                     <h1 className="text-3xl font-bold">{portfolio.name}</h1>
-                    <button onClick={handleOpenCreateTransactionModal} className="btn btn-primary">
-                        Add Transaction
-                    </button>
+                    <div className="flex space-x-2">
+                        <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary">
+                            View History
+                        </Link>
+                        <button onClick={handleOpenCreateTransactionModal} className="btn btn-primary">Add Transaction</button>
+                    </div>
                 </div>
                 <p className="text-gray-600 mt-1">{portfolio.description}</p>
             </div>
@@ -115,6 +118,7 @@ const PortfolioDetailPage: React.FC = () => {
             {isTransactionFormOpen && (
                 <TransactionFormModal
                     onClose={handleCloseTransactionModal}
+                    isOpen={isTransactionFormOpen}
                     portfolioId={portfolio.id}
                     transactionToEdit={transactionToEdit}
                 />

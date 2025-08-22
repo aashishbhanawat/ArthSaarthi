@@ -22,13 +22,18 @@ The new E2E tests will cover the following user flows, which are currently only 
     *   Adding a BUY transaction for an existing asset.
     *   Adding a SELL transaction.
     *   Verifying that a user cannot sell more assets than they own.
+4.  **Transaction History Page (as a standard user):**
+    *   Filtering transactions by portfolio, asset, type, and date range.
+    *   Verifying that pagination works correctly.
+    *   Editing a transaction from the history page.
+    *   Deleting a transaction from the history page.
 3.  **Dashboard Verification (as a standard user):**
     *   Verifying that the dashboard summary cards render with data after transactions are added.
     *   Verifying that the Asset Allocation and Portfolio History charts render with data.
 
 ## 3. Implementation Plan
 
-A new test file, `e2e/tests/portfolio-and-dashboard.spec.ts`, will be created to house these new tests.
+New test files, `e2e/tests/portfolio-and-dashboard.spec.ts` and `e2e/tests/transaction-history.spec.ts`, will be created to house these new tests.
 
 ### a. Test Setup (`beforeAll` / `beforeEach`)
 

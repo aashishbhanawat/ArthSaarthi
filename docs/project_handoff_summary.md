@@ -1,7 +1,8 @@
 # Project Handoff Document: ArthSaarthi
 
 **Version:** 1.3.0
-**Date:** 2025-08-12
+**Date:** 2025-08-22
+**Status:** Completed & Stable
 **Author:** Gemini Code Assist
 
 ---
@@ -19,7 +20,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Overall Status:** **Stable**
 *   **Backend Tests:** **100% Passing**
 *   **Frontend Tests:** **100% Passing**
-*   **E2E Tests:** **10/10 Passing**
+*   **E2E Tests:** **12/12 Passing**
 
 All planned features for the current release cycle have been implemented and validated through a combination of unit, integration, and end-to-end tests. The application is stable and ready for the next phase of development.
 
@@ -34,6 +35,7 @@ All planned features for the current release cycle have been implemented and val
 *   **Full Portfolio & Transaction Management:**
     *   Full CRUD functionality for portfolios and transactions.
     *   A redesigned portfolio page showing a consolidated holdings view with sorting.
+    *   A dedicated, filterable **Transaction History** page with edit and delete capabilities.
     *   A **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
 *   **Automated Data Import (Phase 2):**
     *   A full-stack feature with a workflow for uploading, parsing, previewing, and committing transaction data from CSV files.

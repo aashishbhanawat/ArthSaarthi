@@ -6183,3 +6183,93 @@ The root cause was a faulty assertion in the test. The test was waiting for the 
 The fix was to replace this brittle assertion with a more robust set of checks that verify the "Import Preview" page has loaded correctly. The new assertions check for the main page heading, explicitly check that the "Transactions Needing Mapping" section is **not** visible, and confirm that the "Commit" button is visible. This correctly validates the success state without relying on an element that is conditionally rendered.
 
 ---
+
+**Bug ID:** 2025-08-21-01
+**Title:** Edit Transaction modal does not become visible when triggered.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-21
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+When a user clicks the "Edit" button on the Transaction History page, the `TransactionFormModal` is rendered to the DOM but remains invisible. The parent component (`TransactionsPage`) correctly updates its state and passes `isOpen={true}` to the modal, but the modal component itself does not use this prop to control its visibility. This blocks the entire "Edit Transaction" feature.
+**Steps to Reproduce:**
+1. Run the E2E test suite: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit`
+2. Observe the timeout failure in the `should allow editing and deleting a transaction` test.
+**Expected Behavior:**
+The "Edit Transaction" modal should become visible after the "Edit" button is clicked.
+**Actual Behavior:**
+The test times out waiting for the modal to become visible. Debug logs confirm the parent component's logic is correct, isolating the fault to the modal component.
+**Resolution:**
+Refactor `frontend/src/components/Portfolio/TransactionFormModal.tsx` to correctly use the `isOpen` prop to control its visibility. This typically involves passing the prop to an underlying UI library component (e.g., `<Dialog open={isOpen} ...>`).
+
+---
+
+**Bug ID:** 2025-08-22-01
+**Title:** `GET /api/v1/transactions/` endpoint is broken: crashes without filters and returns incomplete data.
+**Module:** Portfolio Management (Backend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-22
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `GET /api/v1/transactions/` endpoint has two critical bugs:
+1.  When called without any query parameters (e.g., on initial load of the Transaction History page), it crashes with a `500 Internal Server Error`. The traceback shows a `TypeError` because the `crud.transaction.get_multi_by_user_with_filters()` method is called without the required `portfolio_id` argument.
+2.  When it *does* succeed (e.g., with a `portfolio_id` filter), it returns an incomplete `Transaction` object that is missing the `portfolio_id` field. This breaks frontend features like "Edit Transaction" which rely on this ID to construct the correct `PUT` request URL.
+**Steps to Reproduce:**
+1.  Run the E2E test suite.
+2.  Observe the `500 Internal Server Error` in the backend logs for the initial `GET /api/v1/transactions/` request.
+3.  Observe the `[DEBUG] handleEdit called with transaction: ...` log in the browser console, noting the missing `portfolio_id` field.
+**Expected Behavior:**
+1.  The endpoint should return all transactions for the user when no filters are applied.
+2.  The endpoint should always return the complete `schemas.Transaction` object, including the `portfolio_id`.
+**Actual Behavior:**
+The endpoint crashes or returns incomplete data, breaking the Transaction History feature.
+**Resolution:**
+1.  Fix the logic in `api/v1/endpoints/transactions.py` to correctly handle calls without a `portfolio_id`.
+2.  Ensure the `crud.transaction.get_multi_by_user_with_filters` method correctly populates and returns all fields required by the `schemas.Transaction` Pydantic model, including `portfolio_id`.
+
+---
+
+**Bug ID:** 2025-08-22-02
+**Title:** "Add Transaction" modal does not open on the Portfolio Detail page.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-22
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+Multiple E2E tests (`analytics`, `data-import-mapping`, `portfolio-and-dashboard`) are failing with 30-second timeouts. The tests fail when attempting to interact with elements inside the "Add Transaction" modal after clicking the "Add Transaction" button. This indicates a regression where the modal is not being rendered or made visible. The root cause is likely in the parent component (`PortfolioDetailPage.tsx`), which is failing to set the `isModalOpen` state that controls the modal's visibility.
+**Steps to Reproduce:**
+1. Run the E2E test suite: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit`
+2. Observe the timeout failures in the `analytics`, `data-import-mapping`, and `portfolio-and-dashboard` test suites.
+**Expected Behavior:**
+The "Add Transaction" modal should become visible after the "Add Transaction" button is clicked.
+**Actual Behavior:**
+The tests time out waiting for the modal to appear, blocking multiple critical user flows.
+**Resolution:**
+Investigate the state management logic in `PortfolioDetailPage.tsx` (or the relevant parent component). Ensure that the state variable controlling the `isOpen` prop of the `AddTransactionModal` is being correctly updated in the `onClick` handler of the "Add Transaction" button.
+
+---
+
+**Bug ID:** 2025-08-22-03
+**Title:** "Create New User" modal does not open on the User Management page.
+**Module:** User Management (Frontend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-22
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The E2E test for admin user management (`admin-user-management.spec.ts`) fails with a timeout because the "Create New User" modal does not appear after the "Create New User" button is clicked. This indicates a regression in the `UserManagementPage.tsx` component, which is failing to set the state that controls the modal's visibility.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+2. Observe the timeout failure in `admin-user-management.spec.ts`.
+**Expected Behavior:**
+The "Create New User" modal should become visible after the button is clicked.
+**Actual Behavior:**
+The test times out waiting for the modal to appear.
+**Resolution:**
+The `UserManagementPage.tsx` component was updated to conditionally render the `UserFormModal` only when its `isFormModalOpen` state is true. This ensures the modal is correctly mounted and displayed when triggered, aligning its behavior with other modals in the application.
+
+---
+

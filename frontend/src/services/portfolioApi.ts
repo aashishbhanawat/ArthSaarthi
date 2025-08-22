@@ -1,5 +1,5 @@
 import apiClient from './api';
-import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate } from '../types/portfolio';
+import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate, TransactionsResponse } from '../types/portfolio';
 import { Asset } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { PortfolioAnalytics } from '../types/analytics';
@@ -35,6 +35,26 @@ export const createAsset = async (ticker: string): Promise<Asset> => {
         ticker_symbol: ticker,
     });
     return response.data;
+};
+
+export const getTransactions = async (
+    portfolioId: string,
+    filters: {
+        asset_id?: string;
+        transaction_type?: 'BUY' | 'SELL';
+        start_date?: string;
+        end_date?: string;
+        skip?: number;
+        limit?: number;
+    }
+): Promise<TransactionsResponse> => {
+    const { data } = await apiClient.get<TransactionsResponse>(
+        `/api/v1/portfolios/${portfolioId}/transactions/`,
+        {
+            params: filters,
+        }
+    );
+    return data;
 };
 
 export const createTransaction = async (
