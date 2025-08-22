@@ -21,6 +21,7 @@ You can specify which suite of tests to run:
 - `backend`: Runs backend (pytest) unit and integration tests.
 - `frontend`: Runs frontend (jest) unit tests.
 - `e2e`: Runs end-to-end (playwright) tests.
+  - `migrations`: Tests the full Alembic migration cycle (upgrade/downgrade).
 
 ### Database Backends
 
