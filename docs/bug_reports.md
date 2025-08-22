@@ -6317,3 +6317,26 @@ The database should be reset successfully.
 The backend crashes with a 500 Internal Server Error.
 **Resolution:**
 The `reset-db` endpoint in `backend/app/api/v1/endpoints/testing.py` was refactored to be database-aware. For SQLite, it now uses `Base.metadata.drop_all/create_all` to reliably reset the database, bypassing the incompatible Alembic downgrade command. For PostgreSQL, it continues to use the standard Alembic downgrade/upgrade cycle.
+
+---
+
+**Bug ID:** 2025-08-22-06
+**Title:** Unrealized P/L percentage is displayed incorrectly by a factor of 100.
+**Module:** Portfolio Management (Backend & Frontend)
+**Reported By:** User
+**Date Reported:** 2025-08-22
+**Classification:** Implementation (Backend/Frontend)
+**Severity:** High
+**Description:**
+On the portfolio holdings page, the "Unrealized P/L %" is displayed with an incorrect value, multiplied by 100. For example, a value of `16.97%` is shown as `1697.14%`. The root cause was that the backend was pre-multiplying the percentage value by 100, and the frontend was multiplying it by 100 again. A related bug in the `HoldingsTable` unit test masked this issue.
+**Steps to Reproduce:**
+1. View the portfolio holdings page.
+2. Observe the "Unrealized P/L %" column.
+**Expected Behavior:**
+A value of `16.97%` should be displayed correctly.
+**Actual Behavior:**
+The value is displayed as `1697.14%`.
+**Resolution:**
+1. The backend calculation in `crud_holding.py` was corrected to return the raw ratio for percentage values (e.g., `0.1697`) instead of a pre-multiplied percentage.
+2. The unit test for `HoldingsTable.test.tsx` was updated with correct mock data (ratios) and assertions to match the expected frontend formatting.
+The `reset-db` endpoint in `backend/app/api/v1/endpoints/testing.py` was refactored to be database-aware. For SQLite, it now uses `Base.metadata.drop_all/create_all` to reliably reset the database, bypassing the incompatible Alembic downgrade command. For PostgreSQL, it continues to use the standard Alembic downgrade/upgrade cycle.

@@ -1,10 +1,10 @@
 import logging
-from alembic import command
-from alembic.config import Config
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
+from alembic import command
+from alembic.config import Config
 from app.core import config
 from app.core import dependencies as deps
 from app.db.base import Base  # Import Base with all models registered
@@ -38,7 +38,7 @@ def reset_db(
 
     if config.settings.DATABASE_TYPE == "sqlite":
         # For SQLite, Alembic downgrades can fail due to limited ALTER TABLE support.
-        # A more robust reset is to drop and recreate all tables directly from the models.
+        # A robust reset is to drop and recreate all tables from the current models.
         logger.info("E2E: Using drop/create all for SQLite.")
         Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
