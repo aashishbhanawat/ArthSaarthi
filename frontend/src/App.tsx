@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
+import GoalsPage from './pages/GoalsPage';
 import NavBar from './components/NavBar';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
@@ -37,6 +38,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/portfolios" element={<PortfolioPage />} />
           <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
           <Route path="/import" element={<DataImportPage />} />
           <Route path="/import/:sessionId/preview" element={<ImportPreviewPage />} />
           <Route element={<AdminRoute />}>

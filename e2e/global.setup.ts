@@ -1,13 +1,8 @@
-import { request, expect } from '@playwright/test';
-
-const adminUser = {
-  email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
-  password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
-};
+import { chromium, request, expect } from '@playwright/test';
 
 async function globalSetup() {
   // For API requests made in this global setup, we need to target the backend directly.
-  const baseURL = process.env.E2E_BACKEND_URL || 'http://backend:8000';
+  const baseURL = process.env.E2E_BACKEND_URL || 'http://localhost:8008';
   console.log(`Global setup using backend URL: ${baseURL}`);
 
   const requestContext = await request.newContext({
@@ -34,12 +29,13 @@ async function globalSetup() {
   }
 
   // 2. Create the initial admin user
-  const adminSetupResponse = await requestContext.post('/api/v1/auth/setup', {
-    data: {
-      full_name: 'Admin User',
-      email: adminUser.email,
-      password: adminUser.password,
-    },
+  const adminUser = {
+    email: process.env.VITE_TEST_ADMIN_EMAIL,
+    password: process.env.VITE_TEST_ADMIN_PASSWORD,
+    is_admin: true,
+  };
+  const adminSetupResponse = await requestContext.post('/api/v1/users/', {
+    data: adminUser,
   });
   expect(adminSetupResponse.ok()).toBeTruthy();
   console.log('Global setup complete: Admin user created.');

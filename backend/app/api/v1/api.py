@@ -8,6 +8,7 @@ from .endpoints import (
     assets,
     auth,
     dashboard,
+    goals,
     import_sessions,
     me,
     portfolios,
@@ -35,3 +36,4 @@ if settings.ENVIRONMENT == "test":
 api_router.include_router(
     import_sessions.router, prefix="/import-sessions", tags=["import-sessions"]
 )
+api_router.include_router(goals.router, prefix="/goals", tags=["goals"])

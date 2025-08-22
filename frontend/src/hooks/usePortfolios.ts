@@ -129,3 +129,10 @@ export const useAssetAnalytics = (portfolioId: string, assetId: string, options:
     ...options,
   });
 };
+
+export const useAssets = () => {
+    return useQuery({
+        queryKey: ['assets'],
+        queryFn: portfolioApi.getAssets,
+    });
+};

@@ -1,0 +1,169 @@
+import uuid
+from typing import Any, List
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app import crud, schemas
+from app.core import dependencies
+from app.models.user import User
+
+router = APIRouter()
+
+
+@router.get("/", response_model=List[schemas.Goal])
+def read_goals(
+    db: Session = Depends(dependencies.get_db),
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Retrieve goals for the current user.
+    """
+    goals = crud.goal.get_multi_by_owner(db=db, user_id=current_user.id)
+    return goals
+
+
+@router.post("/", response_model=schemas.Goal, status_code=201)
+def create_goal(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_in: schemas.GoalCreate,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Create new goal.
+    """
+    goal = crud.goal.create_with_owner(
+        db=db, obj_in=goal_in, user_id=current_user.id
+    )
+    return goal
+
+
+@router.get("/{goal_id}", response_model=schemas.Goal)
+def read_goal(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get goal by ID.
+    """
+    goal = crud.goal.get(db=db, id=goal_id)
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    if goal.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    return goal
+
+
+@router.put("/{goal_id}", response_model=schemas.Goal)
+def update_goal(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    goal_in: schemas.GoalUpdate,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Update a goal.
+    """
+    goal = crud.goal.get(db=db, id=goal_id)
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    if goal.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    goal = crud.goal.update(db=db, db_obj=goal, obj_in=goal_in)
+    return goal
+
+
+@router.delete("/{goal_id}", response_model=schemas.Msg)
+def delete_goal(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Delete a goal.
+    """
+    goal = crud.goal.get(db=db, id=goal_id)
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    if goal.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    crud.goal.remove(db=db, id=goal_id)
+    return {"msg": "Goal deleted successfully"}
+
+
+@router.post("/{goal_id}/links", response_model=schemas.GoalLink, status_code=201)
+def create_goal_link(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    link_in: schemas.GoalLinkCreate,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Create a new link between a goal and an asset/portfolio.
+    """
+    goal = crud.goal.get(db=db, id=goal_id)
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    if goal.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    link = crud.goal_link.create_with_owner(
+        db=db, obj_in=link_in, user_id=current_user.id, goal_id=goal_id
+    )
+    return link
+
+
+@router.delete("/{goal_id}/links/{link_id}", response_model=schemas.Msg)
+def delete_goal_link(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    link_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Delete a link between a goal and an asset/portfolio.
+    """
+    link = crud.goal_link.get(db=db, id=link_id)
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+    if link.user_id != current_user.id or link.goal_id != goal_id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    crud.goal_link.remove(db=db, id=link_id)
+    return {"msg": "Link deleted successfully"}
+
+
+@router.get("/{goal_id}/progress", response_model=schemas.GoalProgress)
+def get_goal_progress(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get the progress of a goal.
+    """
+    goal = crud.goal.get(db=db, id=goal_id)
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    if goal.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    current_value = crud.goal.get_goal_progress(db=db, goal_id=goal_id)
+    progress_percentage = (
+        (current_value / goal.target_amount) * 100 if goal.target_amount > 0 else 0
+    )
+
+    return {
+        "goal_id": goal_id,
+        "current_value": current_value,
+        "target_amount": goal.target_amount,
+        "progress_percentage": progress_percentage,
+    }
