@@ -33,7 +33,7 @@ source ~/venc/Scripts/activate
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."
-(cd backend && "$VIRTUAL_ENV/Scripts/python.exe" -m pyinstaller build-backend.spec)
+(cd backend && "$VIRTUAL_ENV/Scripts/python.exe" -m PyInstaller build-backend.spec)
 
 # 5. Package Electron App for Windows
 echo "Step 5: Packaging Electron app for Windows..."

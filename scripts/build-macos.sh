@@ -32,7 +32,7 @@ source ~/venc/bin/activate
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."
-(cd backend && "$VIRTUAL_ENV/bin/python" -m pyinstaller build-backend.spec)
+(cd backend && "$VIRTUAL_ENV/bin/python" -m PyInstaller build-backend.spec)
 
 # 5. Set Execute Permissions
 echo "Step 5: Setting execute permissions on backend..."
