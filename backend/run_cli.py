@@ -23,9 +23,10 @@ def run_dev_server(
     Starts the Uvicorn server for development and for the Electron app.
     """
     import os
-    import sys
     import subprocess
+    import sys
     from urllib.parse import urlparse
+
     from app.core.config import settings
 
     # This command is for the desktop app, so we assume DEPLOYMENT_MODE is 'desktop'
@@ -36,7 +37,8 @@ def run_dev_server(
         db_path_str = parsed_url.path.lstrip('/')
 
         if not os.path.exists(db_path_str):
-            print(f"--- Database not found at {db_path_str}, initializing new database... ---")
+            print(f"--- Database not found at {db_path_str}, "
+                  "initializing new database... ---")
             subprocess.run([sys.executable, "db", "init-db"], check=True)
             print("--- Database initialization complete. ---")
 

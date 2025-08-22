@@ -45,7 +45,8 @@ class Settings(BaseSettings):
 
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") == "desktop" or values.get("DATABASE_TYPE") == "sqlite":
+        if (values.get("DEPLOYMENT_MODE") == "desktop" or
+                values.get("DATABASE_TYPE") == "sqlite"):
             from pathlib import Path
             # Use a stable directory in the user's home for the database
             app_dir = Path.home() / ".arthsaarthi"
@@ -63,7 +64,8 @@ class Settings(BaseSettings):
 
     @validator("CACHE_TYPE", pre=True, always=True)
     def set_cache_type_for_desktop(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") == "desktop" or values.get("DATABASE_TYPE") == "sqlite":
+        if (values.get("DEPLOYMENT_MODE") == "desktop" or
+                values.get("DATABASE_TYPE") == "sqlite"):
             return "disk"
         return v
 

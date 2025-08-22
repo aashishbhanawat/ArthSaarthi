@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.core.dependencies import get_current_admin_user, get_current_user
+from app.core.dependencies import get_current_admin_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import User, UserCreate, UserUpdate
