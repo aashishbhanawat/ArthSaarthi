@@ -138,6 +138,7 @@ This script is highly configurable:
 *   Run the entire suite: `./run_local_tests.sh all`
 *   Run only linters: `./run_local_tests.sh lint`
 *   Run backend tests against PostgreSQL: `./run_local_tests.sh backend --db postgres`
+*   Run only migration tests: `./run_local_tests.sh migrations`
 *   See all options: `./run_local_tests.sh --help`
 
 ---
