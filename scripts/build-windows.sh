@@ -7,6 +7,11 @@ set -x
 
 echo "--- Starting Windows Build ---"
 
+# Create a clean virtual environment
+echo "Creating a clean virtual environment..."
+rm -rf ~/venc
+python -m venv ~/venc
+
 # Clean up previous builds
 echo "Cleaning up previous builds..."
 rm -rf backend/dist backend/build frontend/dist-electron
@@ -21,10 +26,10 @@ echo "Step 2: Building frontend..."
 
 # 3. Install Backend Dependencies
 echo "Step 3: Installing backend dependencies..."
-# This assumes the user has a virtual environment named 'venc' in their home directory
-# In a more robust setup, this would be handled by a configuration file or a setup script.
-source ~/venc/bin/activate
-(cd backend && "$VIRTUAL_ENV/Scripts/pip.exe" install --target="$VIRTUAL_ENV/Lib/site-packages" -r requirements-windows.txt)
+source ~/venc/Scripts/activate
+(cd backend && "$VIRTUAL_ENV/Scripts/pip.exe" install -r requirements-windows.txt)
+(cd backend && "$VIRTUAL_ENV/Scripts/pip.exe" install pyinstaller)
+
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."
