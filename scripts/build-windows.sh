@@ -28,7 +28,7 @@ source ~/venc/bin/activate
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."
-(cd backend && pyinstaller build-backend.spec)
+(cd backend && python -m pyinstaller build-backend.spec)
 
 # 5. Package Electron App for Windows
 echo "Step 5: Packaging Electron app for Windows..."
