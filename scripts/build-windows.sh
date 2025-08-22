@@ -24,11 +24,11 @@ echo "Step 3: Installing backend dependencies..."
 # This assumes the user has a virtual environment named 'venc' in their home directory
 # In a more robust setup, this would be handled by a configuration file or a setup script.
 source ~/venc/bin/activate
-(cd backend && pip install -r requirements-windows.txt)
+(cd backend && "$VIRTUAL_ENV/Scripts/pip" install -r requirements-windows.txt)
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."
-(cd backend && python -m pyinstaller build-backend.spec)
+(cd backend && "$VIRTUAL_ENV/Scripts/python" -m pyinstaller build-backend.spec)
 
 # 5. Package Electron App for Windows
 echo "Step 5: Packaging Electron app for Windows..."
