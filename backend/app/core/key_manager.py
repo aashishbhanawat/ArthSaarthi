@@ -1,8 +1,10 @@
-import hashlib
 import os
 from pathlib import Path
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 # Define the path for storing the encrypted master key.
 # This should be in a user-specific, hidden directory.
@@ -48,9 +50,14 @@ class KeyManager:
 
     def _derive_wrapping_key(self, password: str, salt: bytes) -> bytes:
         """Derive a 32-byte key from a password using PBKDF2."""
-        return hashlib.pbkdf2_hmac(
-            "sha256", password.encode("utf-8"), salt, PBKDF2_ITERATIONS, dklen=32
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=PBKDF2_ITERATIONS,
+            backend=default_backend(),
         )
+        return kdf.derive(password.encode("utf-8"))
 
     def generate_and_wrap_master_key(self, password: str) -> None:
         """

@@ -5,22 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.core.dependencies import get_current_admin_user, get_current_user
+from app.core.dependencies import get_current_admin_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import User, UserCreate, UserUpdate
 
 router = APIRouter()
-
-
-@router.get("/me", response_model=User)
-def read_user_me(
-    current_user: UserModel = Depends(get_current_user),
-):
-    """
-    Get current user's profile.
-    """
-    return current_user
 
 
 @router.get("/", response_model=List[User])

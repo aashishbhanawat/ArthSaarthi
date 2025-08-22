@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const apiProxyTarget = env.VITE_API_PROXY_TARGET || "http://backend:8000";
 
   return {
+    base: './',
     define: {
       // Expose the app version from package.json to the app
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version),

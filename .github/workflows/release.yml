@@ -55,24 +55,42 @@ jobs:
           prerelease: false
 
   build-installers:
-    name: Build Installer for ${{ matrix.os }}
+    name: Build Installer for ${{ matrix.os_name }}
     needs: create-release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-latest
+            os_name: Windows
             build_script: ./scripts/build-windows.sh
-            asset_name: my-app.exe
           - os: macos-latest
+            os_name: macOS
             build_script: ./scripts/build-macos.sh
-            asset_name: my-app.dmg
           - os: ubuntu-latest
+            os_name: Linux
             build_script: ./scripts/build-linux.sh
-            asset_name: my-app-linux
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev
+          sudo gem install fpm
 
       - name: Make build script executable
         if: runner.os != 'Windows'
@@ -82,15 +100,49 @@ jobs:
         run: ${{ matrix.build_script }}
         shell: bash
 
-      - name: Upload Release Asset
+      - name: Upload Windows Asset
+        if: runner.os == 'Windows'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./${{ matrix.asset_name }}
-          asset_name: ${{ matrix.asset_name }}
-          asset_content_type: application/octet-stream
+          asset_path: frontend/dist-electron/ArthSaarthi Setup*.exe
+          asset_name: ArthSaarthi-Windows-Setup-${{ github.ref_name }}.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+
+      - name: Upload macOS Asset
+        if: runner.os == 'macOS'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: frontend/dist-electron/*.dmg
+          asset_name: ArthSaarthi-macOS-${{ github.ref_name }}.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Upload Linux AppImage
+        if: runner.os == 'Linux'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: frontend/dist-electron/*.AppImage
+          asset_name: ArthSaarthi-Linux-${{ github.ref_name }}.AppImage
+          asset_content_type: application/vnd.appimage
+
+      - name: Upload Linux Deb
+        if: runner.os == 'Linux'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: frontend/dist-electron/*.deb
+          asset_name: ArthSaarthi-Linux-${{ github.ref_name }}.deb
+          asset_content_type: application/vnd.debian.binary-package
 
   upload-docs-and-source:
     name: Upload Docs and Source Code
