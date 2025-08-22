@@ -37,21 +37,8 @@ else:
         def get_current_prices(
             self, assets: List[Dict[str, Any]]
         ) -> Dict[str, Dict[str, Decimal]]:
-            prices_data = {}
-            tickers_to_fetch = []
-
-            # Handle mock data for E2E tests to ensure deterministic results
-            non_mock_assets = []
-            for asset in assets:
-                if asset["ticker_symbol"] == "XIRRTEST":
-                    prices_data["XIRRTEST"] = {
-                        "current_price": Decimal("130.00"),
-                        "previous_close": Decimal("129.00"),
-                    }
-                else:
-                    non_mock_assets.append(asset)
-            # Continue with non-mocked assets
-            assets = non_mock_assets
+            prices_data: Dict[str, Dict[str, Decimal]] = {}
+            tickers_to_fetch: List[Dict[str, Any]] = []
 
             if self.cache_client:
                 for asset in assets:
@@ -122,23 +109,7 @@ else:
         def get_historical_prices(
             self, assets: List[Dict[str, Any]], start_date: date, end_date: date
         ) -> Dict[str, Dict[date, Decimal]]:
-            historical_data = defaultdict(dict)
-
-            # Handle mock data for E2E tests to ensure deterministic results
-            if any(a["ticker_symbol"] == "XIRRTEST" for a in assets):
-                # For XIRRTEST, we return a constant price for simplicity.
-                # We can return a constant price for simplicity.
-                mock_history = {}
-                current_day = start_date
-                while current_day <= end_date:
-                    mock_history[current_day] = Decimal("130.00")
-                    current_day += timedelta(days=1)
-                historical_data["XIRRTEST"] = mock_history
-
-                # Filter out the mock asset so we don't try to fetch it from yfinance
-                assets = [a for a in assets if a["ticker_symbol"] != "XIRRTEST"]
-                if not assets:
-                    return historical_data
+            historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
 
             yfinance_tickers_map = {
                 self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"]): a[
@@ -206,15 +177,6 @@ else:
             Fetches details for a single asset from yfinance.
             Tries to find the asset on NSE, then BSE, then as-is.
             """
-            # Handle mock data for E2E tests to ensure deterministic results
-            if ticker_symbol == "XIRRTEST":
-                return {
-                    "name": "XIRR Test Company",
-                    "asset_type": "Stock",
-                    "exchange": "TEST",
-                    "currency": "INR",
-                }
-
             # Prioritize Indian exchanges
             potential_tickers = [
                 f"{ticker_symbol}.NS",

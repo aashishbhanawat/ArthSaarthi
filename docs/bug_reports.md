@@ -6183,3 +6183,160 @@ The root cause was a faulty assertion in the test. The test was waiting for the 
 The fix was to replace this brittle assertion with a more robust set of checks that verify the "Import Preview" page has loaded correctly. The new assertions check for the main page heading, explicitly check that the "Transactions Needing Mapping" section is **not** visible, and confirm that the "Commit" button is visible. This correctly validates the success state without relying on an element that is conditionally rendered.
 
 ---
+
+**Bug ID:** 2025-08-21-01
+**Title:** Edit Transaction modal does not become visible when triggered.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-21
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+When a user clicks the "Edit" button on the Transaction History page, the `TransactionFormModal` is rendered to the DOM but remains invisible. The parent component (`TransactionsPage`) correctly updates its state and passes `isOpen={true}` to the modal, but the modal component itself does not use this prop to control its visibility. This blocks the entire "Edit Transaction" feature.
+**Steps to Reproduce:**
+1. Run the E2E test suite: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit`
+2. Observe the timeout failure in the `should allow editing and deleting a transaction` test.
+**Expected Behavior:**
+The "Edit Transaction" modal should become visible after the "Edit" button is clicked.
+**Actual Behavior:**
+The test times out waiting for the modal to become visible. Debug logs confirm the parent component's logic is correct, isolating the fault to the modal component.
+**Resolution:**
+Refactor `frontend/src/components/Portfolio/TransactionFormModal.tsx` to correctly use the `isOpen` prop to control its visibility. This typically involves passing the prop to an underlying UI library component (e.g., `<Dialog open={isOpen} ...>`).
+
+---
+
+**Bug ID:** 2025-08-22-01
+**Title:** `GET /api/v1/transactions/` endpoint is broken: crashes without filters and returns incomplete data.
+**Module:** Portfolio Management (Backend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-22
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `GET /api/v1/transactions/` endpoint has two critical bugs:
+1.  When called without any query parameters (e.g., on initial load of the Transaction History page), it crashes with a `500 Internal Server Error`. The traceback shows a `TypeError` because the `crud.transaction.get_multi_by_user_with_filters()` method is called without the required `portfolio_id` argument.
+2.  When it *does* succeed (e.g., with a `portfolio_id` filter), it returns an incomplete `Transaction` object that is missing the `portfolio_id` field. This breaks frontend features like "Edit Transaction" which rely on this ID to construct the correct `PUT` request URL.
+**Steps to Reproduce:**
+1.  Run the E2E test suite.
+2.  Observe the `500 Internal Server Error` in the backend logs for the initial `GET /api/v1/transactions/` request.
+3.  Observe the `[DEBUG] handleEdit called with transaction: ...` log in the browser console, noting the missing `portfolio_id` field.
+**Expected Behavior:**
+1.  The endpoint should return all transactions for the user when no filters are applied.
+2.  The endpoint should always return the complete `schemas.Transaction` object, including the `portfolio_id`.
+**Actual Behavior:**
+The endpoint crashes or returns incomplete data, breaking the Transaction History feature.
+**Resolution:**
+1.  Fix the logic in `api/v1/endpoints/transactions.py` to correctly handle calls without a `portfolio_id`.
+2.  Ensure the `crud.transaction.get_multi_by_user_with_filters` method correctly populates and returns all fields required by the `schemas.Transaction` Pydantic model, including `portfolio_id`.
+
+---
+
+**Bug ID:** 2025-08-22-02
+**Title:** "Add Transaction" modal does not open on the Portfolio Detail page.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-22
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+Multiple E2E tests (`analytics`, `data-import-mapping`, `portfolio-and-dashboard`) are failing with 30-second timeouts. The tests fail when attempting to interact with elements inside the "Add Transaction" modal after clicking the "Add Transaction" button. This indicates a regression where the modal is not being rendered or made visible. The root cause is likely in the parent component (`PortfolioDetailPage.tsx`), which is failing to set the `isModalOpen` state that controls the modal's visibility.
+**Steps to Reproduce:**
+1. Run the E2E test suite: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --build --abort-on-container-exit`
+2. Observe the timeout failures in the `analytics`, `data-import-mapping`, and `portfolio-and-dashboard` test suites.
+**Expected Behavior:**
+The "Add Transaction" modal should become visible after the "Add Transaction" button is clicked.
+**Actual Behavior:**
+The tests time out waiting for the modal to appear, blocking multiple critical user flows.
+**Resolution:**
+Investigate the state management logic in `PortfolioDetailPage.tsx` (or the relevant parent component). Ensure that the state variable controlling the `isOpen` prop of the `AddTransactionModal` is being correctly updated in the `onClick` handler of the "Add Transaction" button.
+
+---
+
+**Bug ID:** 2025-08-22-03
+**Title:** "Create New User" modal does not open on the User Management page.
+**Module:** User Management (Frontend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-22
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The E2E test for admin user management (`admin-user-management.spec.ts`) fails with a timeout because the "Create New User" modal does not appear after the "Create New User" button is clicked. This indicates a regression in the `UserManagementPage.tsx` component, which is failing to set the state that controls the modal's visibility.
+**Steps to Reproduce:**
+1. Run the E2E test suite.
+2. Observe the timeout failure in `admin-user-management.spec.ts`.
+**Expected Behavior:**
+The "Create New User" modal should become visible after the button is clicked.
+**Actual Behavior:**
+The test times out waiting for the modal to appear.
+**Resolution:**
+The `UserManagementPage.tsx` component was updated to conditionally render the `UserFormModal` only when its `isFormModalOpen` state is true. This ensures the modal is correctly mounted and displayed when triggered, aligning its behavior with other modals in the application.
+
+---
+
+**Bug ID:** 2025-08-22-04
+**Title:** E2E test environment for SQLite was unstable due to multiple cascading startup and initialization failures.
+**Module:** E2E Testing, Docker Configuration
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-22
+**Classification:** Test Suite / Configuration
+**Severity:** Critical
+**Description:**
+The E2E test suite for SQLite was completely non-functional due to a series of cascading bugs that prevented the backend container from starting and initializing correctly. The debugging process revealed several distinct root causes:
+1.  **Inconsistent DB Initialization:** The initial strategy of using `alembic upgrade head` failed due to a corrupted migration history (`table users already exists`). Switching to `python -m app.cli init-db` fixed the initial creation but introduced a new problem.
+2.  **Missing Alembic Stamp:** `init-db` creates the schema but does not stamp it with an Alembic version. When the test runner called `/testing/reset-db`, Alembic would try to run migrations from scratch, causing a `table users already exists` error.
+3.  **Missing Server Command:** For a time, the entrypoint script would initialize the database and then exit because the `exec uvicorn` command was missing from the SQLite logic block.
+4.  **Incorrect Port:** After adding the server command, it was configured for the wrong port (`800` instead of `8000`), causing the healthcheck to fail.
+**Steps to Reproduce:**
+1. Run `docker compose -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit`.
+**Expected Behavior:**
+The E2E test environment should start, and tests should run successfully.
+**Actual Behavior:**
+The backend container would fail to start, exit prematurely, or crash upon the first API call from the test runner.
+**Resolution:**
+A series of fixes were applied to `backend/e2e_entrypoint.sh` to create a robust startup sequence for SQLite:
+1.  The script now uses `python -m app.cli init-db` to create a clean schema directly from the models, bypassing the broken migration history.
+2.  It immediately follows up with `alembic stamp head` to mark the database as up-to-date for Alembic.
+3.  It correctly starts the server with `exec uvicorn app.main:app --host 0.0.0.0 --port 8000`.
+
+---
+
+**Bug ID:** 2025-08-22-05
+**Title:** E2E test for SQLite fails during database reset due to Alembic incompatibility.
+**Module:** E2E Testing, Database Migrations, API
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-22
+**Classification:** Test Suite / Implementation (Backend)
+**Severity:** Critical
+**Description:**
+After fixing the container startup issues, the E2E test suite still failed. The backend crashed with a `500 Internal Server Error` when the test runner called `/api/v1/testing/reset-db`. The root cause was that the reset endpoint uses `alembic downgrade base`, which executes migration scripts containing `ALTER TABLE` commands. These commands are not supported by SQLite, causing an `(sqlite3.OperationalError) near "ALTER": syntax error`.
+**Steps to Reproduce:**
+1. Run `docker compose -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit`.
+**Expected Behavior:**
+The database should be reset successfully.
+**Actual Behavior:**
+The backend crashes with a 500 Internal Server Error.
+**Resolution:**
+The `reset-db` endpoint in `backend/app/api/v1/endpoints/testing.py` was refactored to be database-aware. For SQLite, it now uses `Base.metadata.drop_all/create_all` to reliably reset the database, bypassing the incompatible Alembic downgrade command. For PostgreSQL, it continues to use the standard Alembic downgrade/upgrade cycle.
+
+---
+
+**Bug ID:** 2025-08-22-06
+**Title:** Unrealized P/L percentage is displayed incorrectly by a factor of 100.
+**Module:** Portfolio Management (Backend & Frontend)
+**Reported By:** User
+**Date Reported:** 2025-08-22
+**Classification:** Implementation (Backend/Frontend)
+**Severity:** High
+**Description:**
+On the portfolio holdings page, the "Unrealized P/L %" is displayed with an incorrect value, multiplied by 100. For example, a value of `16.97%` is shown as `1697.14%`. The root cause was that the backend was pre-multiplying the percentage value by 100, and the frontend was multiplying it by 100 again. A related bug in the `HoldingsTable` unit test masked this issue.
+**Steps to Reproduce:**
+1. View the portfolio holdings page.
+2. Observe the "Unrealized P/L %" column.
+**Expected Behavior:**
+A value of `16.97%` should be displayed correctly.
+**Actual Behavior:**
+The value is displayed as `1697.14%`.
+**Resolution:**
+1. The backend calculation in `crud_holding.py` was corrected to return the raw ratio for percentage values (e.g., `0.1697`) instead of a pre-multiplied percentage.
+2. The unit test for `HoldingsTable.test.tsx` was updated with correct mock data (ratios) and assertions to match the expected frontend formatting.
+The `reset-db` endpoint in `backend/app/api/v1/endpoints/testing.py` was refactored to be database-aware. For SQLite, it now uses `Base.metadata.drop_all/create_all` to reliably reset the database, bypassing the incompatible Alembic downgrade command. For PostgreSQL, it continues to use the standard Alembic downgrade/upgrade cycle.

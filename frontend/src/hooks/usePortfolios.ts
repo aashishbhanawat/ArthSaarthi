@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
-import { PortfolioCreate, TransactionCreate, TransactionUpdate } from '../types/portfolio';
+import { PortfolioCreate, TransactionCreate, TransactionUpdate, TransactionsResponse } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
 import { PortfolioAnalytics } from '../types/analytics';
@@ -54,12 +54,6 @@ export const useDeletePortfolio = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['portfolios'] });
         },
-    });
-};
-
-export const useCreateAsset = () => {
-    return useMutation<Asset, Error, string>({
-        mutationFn: (ticker: string) => portfolioApi.createAsset(ticker),
     });
 };
 
@@ -128,4 +122,40 @@ export const useAssetAnalytics = (portfolioId: string, assetId: string, options:
     queryFn: () => portfolioApi.getAssetAnalytics(portfolioId, assetId),
     ...options,
   });
+};
+
+export const useTransactions = (
+  portfolioId: string,
+  filters: {
+    asset_id?: string;
+    transaction_type?: 'BUY' | 'SELL';
+    start_date?: string;
+    end_date?: string;
+    skip?: number;
+    limit?: number;
+  },
+  enabled: boolean = true
+) => {
+  return useQuery<TransactionsResponse, Error>({
+    queryKey: ['transactions', portfolioId, filters],
+    queryFn: () => portfolioApi.getTransactions(portfolioId, filters),
+    enabled: !!portfolioId && enabled,
+    placeholderData: (previousData) => previousData,
+  });
+};
+
+export const usePortfolioAssets = (portfolioId: string) => {
+    return useQuery<Asset[], Error>({
+        queryKey: ['portfolioAssets', portfolioId],
+        queryFn: () => portfolioApi.getPortfolioAssets(portfolioId),
+        enabled: !!portfolioId,
+    });
+};
+
+export const useAssetSearch = (query: string) => {
+    return useQuery<Asset[], Error>({
+        queryKey: ['assetSearch', query],
+        queryFn: () => portfolioApi.lookupAsset(query),
+        enabled: !!query && query.length > 1,
+    });
 };

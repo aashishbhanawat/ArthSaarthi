@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useCreateTransaction, useUpdateTransaction, useCreateAsset } from '../../hooks/usePortfolios';
+import { useCreateTransaction, useUpdateTransaction } from '../../hooks/usePortfolios';
+import { useCreateAsset } from '../../hooks/useAssets'
 import { lookupAsset } from '../../services/portfolioApi';
 import { Asset } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
@@ -8,13 +9,14 @@ import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/p
 interface TransactionFormModalProps {
     portfolioId: string;
     onClose: () => void;
+    isOpen: boolean;
     transactionToEdit?: Transaction;
 }
 
 // Define the shape of our form data
 type TransactionFormInputs = Omit<TransactionCreate, 'asset_id'> & { transaction_date: string };
 
-const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, transactionToEdit }) => {
+const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
     const isEditMode = !!transactionToEdit;
     const { register, handleSubmit, formState: { errors }, reset } = useForm<TransactionFormInputs>();
 
@@ -98,12 +100,23 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
         const mutationOptions = {
             onSuccess: () => onClose(),
-            onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+            onError: (error: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) => {
                 const defaultMessage = isEditMode
                     ? 'An unexpected error occurred while updating the transaction'
                     : 'An unexpected error occurred while adding the transaction';
-                const message = error.response?.data?.detail || defaultMessage;
-                setApiError(message);
+                
+                let errorMessage = defaultMessage;
+                const detail = error.response?.data?.detail;
+
+                if (typeof detail === 'string') {
+                    errorMessage = detail;
+                } else if (Array.isArray(detail) && detail[0]?.msg) {
+                    // Handle FastAPI validation errors which are arrays of objects
+                    errorMessage = detail.map(d => d.msg).join(', ');
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                setApiError(errorMessage);
             }
         };
 
@@ -136,10 +149,12 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         });
     };
 
+    if (!isOpen) return null;
+
     return (
-        <div className="modal-overlay z-30">
-            <div className="modal-content overflow-visible w-11/12 md:w-3/4 lg:max-w-2xl p-6">
-                <h2 className="text-2xl font-bold mb-4">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
+        <div className="modal-overlay z-30" onClick={onClose} data-testid="transaction-form-modal-overlay">
+            <div role="dialog" aria-modal="true" aria-labelledby="transaction-form-modal-title" className="modal-content overflow-visible w-11/12 md:w-3/4 lg:max-w-2xl p-6" onClick={e => e.stopPropagation()} data-testid="transaction-form-modal-content">
+                <h2 id="transaction-form-modal-title" className="text-2xl font-bold mb-4">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
                 <div className="max-h-[70vh] overflow-y-auto px-2 -mr-2">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         {/* Asset Search */}

@@ -24,26 +24,25 @@ export interface PortfolioCreate {
   description?: string | null;
 }
 
-export interface NewAsset {
-    ticker_symbol: string;
-    name: string;
-    asset_type: string;
-    currency: string;
-}
-
 export interface TransactionCreate {
-    asset_id: string;
-    transaction_type: 'BUY' | 'SELL';
-    quantity: number;
-    price_per_unit: number;
-    transaction_date: string;
-    fees?: number;
+  asset_id: string;
+  transaction_type: 'BUY' | 'SELL';
+  quantity: number;
+  price_per_unit: number;
+  transaction_date: string;
+  fees?: number;
 }
 
 export interface TransactionUpdate {
-    transaction_type?: 'BUY' | 'SELL';
-    quantity?: number;
-    price_per_unit?: number;
-    transaction_date?: string;
-    fees?: number;
+  transaction_type?: 'BUY' | 'SELL';
+  quantity?: number;
+  price_per_unit?: number;
+  transaction_date?: string;
+  fees?: number;
+  asset_id?: string;
+}
+
+export interface TransactionsResponse {
+  transactions: Transaction[];
+  total: number;
 }
