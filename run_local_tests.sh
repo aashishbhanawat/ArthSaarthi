@@ -94,7 +94,8 @@ cleanup() {
     kill $FRONTEND_PID 2>/dev/null || print_info "Frontend server was not running."
   fi
 
-  rm -f backend/.env.test.local
+  rm -f backend/.env.test
+  rm -f frontend/.env.development.local
   if [ "$DB_TYPE" == "sqlite" ]; then
     rm -f backend/test.db
   elif [ "$DB_TYPE" == "postgres" ]; then
@@ -111,6 +112,7 @@ install_deps() {
     print_info "Installing all project dependencies..."
     pip install -r backend/requirements-dev.in > /dev/null 2>&1
     (cd frontend && npm install > /dev/null 2>&1)
+    (cd e2e && npm install > /dev/null 2>&1)
     (cd e2e && npx playwright install --with-deps > /dev/null 2>&1)
     print_success "All dependencies installed."
 }
@@ -132,24 +134,33 @@ create_env_file() {
     local frontend_port=$2
 
     if [ "$DB_TYPE" == "sqlite" ]; then
-        cat > backend/.env.test.local << EOF
+        cat > backend/.env.test << EOF
 SECRET_KEY=dummy-secret-key-for-testing
 DATABASE_URL=sqlite:///./test.db
 ENVIRONMENT=test
 CORS_ORIGINS=http://localhost:$frontend_port,http://127.0.0.1:$frontend_port
 PYTHONPATH=/app
-DEPLOYMENT_MODE=desktop
+DEPLOYMENT_MODE=server
 DATABASE_TYPE=sqlite
 CACHE_TYPE=disk
 TESTING=True
 EOF
     elif [ "$DB_TYPE" == "postgres" ]; then
+        print_info "Configuring PostgreSQL for local access..."
+        # This script requires sudo to configure PostgreSQL for local testing.
+        # It replaces the pg_hba.conf file to allow passwordless local connections
+        # and restarts the PostgreSQL service.
+        # This is a temporary measure for the sandboxed environment.
+        sudo cp pg_hba.conf.new /etc/postgresql/16/main/pg_hba.conf
+        sudo systemctl restart postgresql
+        print_success "PostgreSQL configured and restarted."
+
         print_info "Creating test database '$TEST_DB_NAME'..."
         PGPASSWORD=${POSTGRES_PASSWORD:-} psql -h localhost -U "$DEFAULT_POSTGRES_USER" -d "$DEFAULT_POSTGRES_DB" -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" > /dev/null
         PGPASSWORD=${POSTGRES_PASSWORD:-} psql -h localhost -U "$DEFAULT_POSTGRES_USER" -d "$DEFAULT_POSTGRES_DB" -c "CREATE DATABASE $TEST_DB_NAME;" > /dev/null
         print_success "Test database created."
 
-        cat > backend/.env.test.local << EOF
+        cat > backend/.env.test << EOF
 SECRET_KEY=dummy-secret-key-for-testing
 DATABASE_URL=postgresql://${POSTGRES_USER:-$DEFAULT_POSTGRES_USER}:${POSTGRES_PASSWORD:-}@localhost:5432/$TEST_DB_NAME
 REDIS_URL=redis://localhost:6379
@@ -161,13 +172,13 @@ CACHE_TYPE=redis
 TESTING=True
 EOF
     fi
-    print_success "Created .env.test.local for $DB_TYPE backend."
+    print_success "Created .env.test for $DB_TYPE backend."
 }
 
 run_backend_tests() {
     print_info "--- Running Backend Tests (DB: $DB_TYPE) ---"
     create_env_file 0 0 # Ports not needed for backend-only tests
-    (cd backend && python -m dotenv -f .env.test.local run -- pytest -v)
+    (cd backend && python -m dotenv -f .env.test run -- pytest -v)
     print_success "Backend tests passed."
 }
 
@@ -188,8 +199,17 @@ run_e2e_tests() {
 
     create_env_file $backend_port $frontend_port
 
+    # Create .env.development.local for the frontend
+    cat > frontend/.env.development.local << EOF
+VITE_API_PROXY_TARGET=http://localhost:$backend_port
+EOF
+
+    print_info "Initializing database..."
+    (cd backend && python -m dotenv -f .env.test run -- python -m app.cli init-db)
+    print_success "Database initialized."
+
     print_info "Starting backend server..."
-    (cd backend && python -m dotenv -f .env.test.local run -- uvicorn app.main:app --host 0.0.0.0 --port $backend_port) &
+    (cd backend && uvicorn app.main:app --host 0.0.0.0 --port $backend_port --env-file .env.test) &
     BACKEND_PID=$!
     print_info "Waiting for backend to be ready..."
     timeout 60s bash -c "until curl -s -f http://localhost:$backend_port/api/v1/auth/status > /dev/null; do sleep 1; done"
@@ -204,6 +224,7 @@ run_e2e_tests() {
 
     print_info "Running Playwright E2E tests..."
     export E2E_BASE_URL="http://localhost:$frontend_port"
+    export E2E_BACKEND_URL="http://localhost:$backend_port"
     (cd e2e && npx playwright test)
     print_success "E2E tests passed."
 }

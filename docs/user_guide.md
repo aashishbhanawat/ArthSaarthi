@@ -6,9 +6,9 @@ Welcome to ArthSaarthi! This guide will walk you through setting up and using th
 
 ## 1. Initial Installation & Setup
 
-This application is designed to be self-hosted, giving you full control over your data.
+This application is designed to be self-hosted, giving you full control over your data. To get started, you'll need to install and run the application on your own system or server.
 
-➡️ **For detailed installation instructions, please follow the ["How to Run the Project"](../README.md#🚀-how-to-run-the-project) section in the main README file.**
+➡️ **For detailed installation instructions, please see the [Installation Guide](./installation_guide.md).**
 
 ### First-Time Admin Account Creation
 

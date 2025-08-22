@@ -3,7 +3,7 @@ bcrypt
 email-validator
 fastapi
 httpx
-passlib
+passlib[bcrypt]
 psycopg2-binary
 pydantic-settings
 pytest
@@ -23,3 +23,4 @@ pyxirr
 numpy
 pyarrow
 pyinstaller
+requests

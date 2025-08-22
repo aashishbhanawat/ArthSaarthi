@@ -6,6 +6,8 @@ import packageJson from './package.json';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const allowedHostsFromEnv = env.ALLOWED_HOSTS ? env.ALLOWED_HOSTS.split(',') : [];
+  // Determine the API proxy target based on the environment variable
+  const apiProxyTarget = env.VITE_API_PROXY_TARGET || "http://backend:8000";
 
   return {
     base: './',
@@ -25,7 +27,7 @@ export default defineConfig(({ mode }) => {
       ],
       proxy: {
         "/api": {
-          target: "http://backend:8000",
+          target: apiProxyTarget, // Use the dynamically determined target
         },
       },
     },

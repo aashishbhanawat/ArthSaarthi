@@ -16,7 +16,9 @@ anyio==4.10.0
     #   starlette
     #   watchfiles
 bcrypt==3.2.0
-    # via -r backend/requirements.in
+    # via
+    #   -r backend/requirements.in
+    #   passlib
 beautifulsoup4==4.13.4
     # via yfinance
 certifi==2025.8.3
@@ -159,7 +161,9 @@ pyyaml==6.0.2
 redis==6.4.0
     # via -r backend/requirements.in
 requests==2.32.4
-    # via yfinance
+    # via
+    #   -r backend/requirements.in
+    #   yfinance
 rich==14.1.0
     # via typer
 rsa==4.9.1

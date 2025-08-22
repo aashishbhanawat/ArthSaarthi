@@ -8,44 +8,35 @@ services:
     image: pms_backend:latest
     container_name: pms-backend
     restart: unless-stopped
-    command: /app/e2e_entrypoint.sh
+    command: /app/entrypoint.sh
     volumes:
       - ./backend:/app
     env_file:
-      - ./backend/.env.test
+      - ./backend/.env
     environment:
       - PYTHONPATH=/app
+      - DEPLOYMENT_MODE=desktop
       - DATABASE_TYPE=sqlite
       - CACHE_TYPE=disk
     networks:
       - pms_network
+    # Removed the depends_on block for 'db' and 'redis'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   frontend:
     build: ./frontend
     image: pms_frontend:latest
     container_name: pms-frontend
     restart: unless-stopped
+    env_file:
+      - ./frontend/.env
     networks:
       - pms_network
     depends_on:
       backend:
         condition: service_healthy
-
-  e2e-tests:
-    build: ./e2e
-    container_name: pms-e2e-tests
-    command: ["npx", "playwright", "test"]
-    volumes:
-      - ./e2e:/app
-      - /app/node_modules
-    networks:
-      - pms_network
-    depends_on:
-      - frontend
-      - backend

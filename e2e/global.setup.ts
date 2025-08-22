@@ -6,8 +6,9 @@ const adminUser = {
 };
 
 async function globalSetup() {
-  const baseURL = process.env.E2E_BASE_URL || 'http://frontend:3000';
-  console.log(`Using base URL: ${baseURL}`);
+  // For API requests made in this global setup, we need to target the backend directly.
+  const baseURL = process.env.E2E_BACKEND_URL || 'http://backend:8000';
+  console.log(`Global setup using backend URL: ${baseURL}`);
 
   const requestContext = await request.newContext({
     baseURL: baseURL,
