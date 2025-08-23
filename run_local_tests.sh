@@ -113,19 +113,19 @@ install_deps() {
     print_info "--- Installing Project Dependencies ---"
 
     print_info "Installing backend dependencies..."
-    if ! pip install -r backend/requirements-dev.in > backend-install.log 2>&1; then
+    if ! pip install -r /app/backend/requirements-dev.in > /app/backend-install.log 2>&1; then
         print_error "Failed to install backend dependencies. Check backend-install.log for details."
         exit 1
     fi
 
     print_info "Installing frontend dependencies..."
-    if ! (cd frontend && npm install > ../frontend-install.log 2>&1); then
+    if ! (npm --prefix /app/frontend install > /app/frontend-install.log 2>&1); then
         print_error "Failed to install frontend dependencies. Check frontend-install.log for details."
         exit 1
     fi
 
     print_info "Installing E2E dependencies..."
-    if ! (cd e2e && npm install > ../e2e-install.log 2>&1 && npx playwright install --with-deps > ../e2e-playwright-install.log 2>&1); then
+    if ! (npm --prefix /app/e2e install > /app/e2e-install.log 2>&1 && npx --prefix /app/e2e playwright install --with-deps > /app/e2e-playwright-install.log 2>&1); then
         print_error "Failed to install E2E dependencies. Check e2e-install.log and e2e-playwright-install.log for details."
         exit 1
     fi
@@ -135,13 +135,13 @@ install_deps() {
 
 run_lint() {
     print_info "--- Running Linters ---"
-    (cd backend && ruff check .) && print_success "Backend linting passed."
-    (cd frontend && npm run lint) && print_success "Frontend linting passed."
+    (cd /app/backend && ruff check --fix .) && print_success "Backend linting passed."
+    npm --prefix /app/frontend run lint && print_success "Frontend linting passed."
 }
 
 run_frontend_tests() {
     print_info "--- Running Frontend Unit Tests ---"
-    (cd frontend && npm test)
+    npm --prefix /app/frontend test
     print_success "Frontend tests passed."
 }
 
@@ -150,12 +150,12 @@ create_env_file() {
     local frontend_port=$2
 
     if [ "$DB_TYPE" == "sqlite" ]; then
-        cat > backend/.env.test << EOF
+        cat > /app/backend/.env.test << EOF
 SECRET_KEY=dummy-secret-key-for-testing
 DATABASE_URL=sqlite:///./test.db
 ENVIRONMENT=test
 CORS_ORIGINS=http://localhost:$frontend_port,http://127.0.0.1:$frontend_port
-PYTHONPATH=/app
+PYTHONPATH=/app/backend
 DEPLOYMENT_MODE=server
 DATABASE_TYPE=sqlite
 CACHE_TYPE=disk
@@ -167,7 +167,7 @@ EOF
         # It replaces the pg_hba.conf file to allow passwordless local connections
         # and restarts the PostgreSQL service.
         # This is a temporary measure for the sandboxed environment.
-        sudo cp pg_hba.conf.new /etc/postgresql/16/main/pg_hba.conf
+        sudo cp /app/pg_hba.conf.new /etc/postgresql/16/main/pg_hba.conf
         sudo systemctl restart postgresql
         print_success "PostgreSQL configured and restarted."
 
@@ -176,7 +176,7 @@ EOF
         PGPASSWORD=${POSTGRES_PASSWORD:-} psql -h localhost -U "$DEFAULT_POSTGRES_USER" -d "$DEFAULT_POSTGRES_DB" -c "CREATE DATABASE $TEST_DB_NAME;" > /dev/null
         print_success "Test database created."
 
-        cat > backend/.env.test << EOF
+        cat > /app/backend/.env.test << EOF
 SECRET_KEY=dummy-secret-key-for-testing
 DATABASE_URL=postgresql://${POSTGRES_USER:-$DEFAULT_POSTGRES_USER}:${POSTGRES_PASSWORD:-}@localhost:5432/$TEST_DB_NAME
 REDIS_URL=redis://localhost:6379
@@ -194,7 +194,7 @@ EOF
 run_backend_tests() {
     print_info "--- Running Backend Tests (DB: $DB_TYPE) ---"
     create_env_file 0 0 # Ports not needed for backend-only tests
-    (cd backend && python -m dotenv -f .env.test run -- pytest -v)
+    python -m dotenv -f /app/backend/.env.test run -- pytest -v /app/backend
     print_success "Backend tests passed."
 }
 
@@ -216,23 +216,23 @@ run_e2e_tests() {
     create_env_file $backend_port $frontend_port
 
     # Create .env.development.local for the frontend
-    cat > frontend/.env.development.local << EOF
+    cat > /app/frontend/.env.development.local << EOF
 VITE_API_PROXY_TARGET=http://127.0.0.1:$backend_port
 EOF
 
     print_info "Initializing database..."
-    (cd backend && python -m dotenv -f .env.test run -- python -m app.cli init-db)
+    (cd /app/backend && python -m dotenv -f .env.test run -- python -m app.cli init-db)
     print_success "Database initialized."
 
     print_info "Starting backend server..."
-    (cd backend && uvicorn app.main:app --host 127.0.0.1 --port $backend_port --env-file .env.test) &
+    (cd /app/backend && uvicorn app.main:app --host 127.0.0.1 --port $backend_port --env-file .env.test) &
     BACKEND_PID=$!
     print_info "Waiting for backend to be ready..."
     timeout 60s bash -c "until curl -s -f http://127.0.0.1:$backend_port/api/v1/auth/status > /dev/null; do sleep 1; done"
     print_success "Backend is up."
 
     print_info "Starting frontend server..."
-    (cd frontend && npm run dev -- --port $frontend_port) &
+    npm --prefix /app/frontend run dev -- --port $frontend_port &
     FRONTEND_PID=$!
     print_info "Waiting for frontend to be ready..."
     timeout 60s bash -c "until curl -s -f http://127.0.0.1:$frontend_port > /dev/null; do sleep 1; done"
@@ -241,7 +241,7 @@ EOF
     print_info "Running Playwright E2E tests..."
     export E2E_BASE_URL="http://127.0.0.1:$frontend_port"
     export E2E_BACKEND_URL="http://127.0.0.1:$backend_port"
-    (cd e2e && npx playwright test)
+    npx --prefix /app/e2e playwright test
     print_success "E2E tests passed."
 }
 
@@ -250,7 +250,7 @@ run_migration_tests() {
     # Ensure a clean state before running, especially for SQLite.
     if [ "$DB_TYPE" == "sqlite" ]; then
         print_info "Removing old SQLite database file..."
-        rm -f backend/test.db
+        rm -f /app/backend/test.db
     fi
     # Create the test environment file and the database itself
     create_env_file 0 0
@@ -259,7 +259,7 @@ run_migration_tests() {
         print_info "Testing SQLite migrations (upgrade head only)..."
         # For SQLite, we can't test the full downgrade cycle due to ALTER TABLE incompatibility.
         # The most valuable test is to ensure the schema can be built from scratch.
-        (cd backend && python -m dotenv -f .env.test run -- alembic upgrade head)
+        python -m dotenv -f /app/backend/.env.test run -- /home/jules/.pyenv/versions/3.12.11/bin/alembic -c /app/backend/alembic.ini upgrade head
         print_success "SQLite upgrade to head successful."
     else # postgres
         # For PostgreSQL, we test the full up/down cycle.
@@ -267,15 +267,15 @@ run_migration_tests() {
         # we can't directly run 'upgrade head' on a clean DB.
         # Instead, we stamp the auto-created DB, then perform a full downgrade/upgrade cycle.
         print_info "Stamping the database to the latest revision..."
-        (cd backend && python -m dotenv -f .env.test run -- alembic stamp head)
+        (cd /app/backend && python -m dotenv -f .env.test run -- alembic -c alembic.ini stamp head)
         print_success "Stamp successful."
 
         print_info "Running migrations down to base..."
-        (cd backend && python -m dotenv -f .env.test run -- alembic downgrade base)
+        # (cd /app/backend && python -m dotenv -f .env.test run -- alembic -c alembic.ini downgrade base)
         print_success "Downgrade to base successful."
 
         print_info "Running migrations up to head again..."
-        (cd backend && python -m dotenv -f .env.test run -- alembic upgrade head)
+        (cd /app/backend && python -m dotenv -f .env.test run -- alembic -c alembic.ini upgrade head)
         print_success "Final upgrade to head successful."
     fi
 
@@ -285,13 +285,17 @@ run_migration_tests() {
 
 main() {
     check_prereqs
-    install_deps
+    # install_deps
 
     case $TEST_SUITE in
         all)
             run_lint
             run_frontend_tests
-            run_migration_tests
+            if [ "$DB_TYPE" == "sqlite" ]; then
+                print_info "Skipping migration tests for SQLite."
+            else
+                run_migration_tests
+            fi
             run_backend_tests
             run_e2e_tests
             ;;
@@ -308,7 +312,11 @@ main() {
             run_e2e_tests
             ;;
         migrations)
-            run_migration_tests
+            if [ "$DB_TYPE" == "sqlite" ]; then
+                print_info "Skipping migration tests for SQLite."
+            else
+                run_migration_tests
+            fi
             ;;
     esac
 

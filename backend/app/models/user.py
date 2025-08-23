@@ -35,3 +35,6 @@ class User(Base):
     import_sessions = relationship(
         "ImportSession", back_populates="user", cascade="all, delete-orphan"
     )
+    watchlists = relationship(
+        "Watchlist", back_populates="user", cascade="all, delete-orphan"
+    )

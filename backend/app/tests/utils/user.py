@@ -18,9 +18,10 @@ def random_email() -> str:
     return f"{random_lower_string()}@{random_lower_string()}.com"
 
 
-def create_random_user(db: Session):
+def create_random_user(db: Session, client: TestClient = None):
     """
     Creates a random user for testing purposes.
+    If a TestClient is provided, it also fetches and attaches an auth token.
     """
     email = random_email()
     # Generate a password that meets the validation criteria
@@ -39,6 +40,11 @@ def create_random_user(db: Session):
         full_name="Test User", email=email, password=password
     )
     user = crud_user.user.create(db, obj_in=user_in)
+
+    if client:
+        token = get_access_token(client, email, password)
+        user.token = token
+
     return user, password
 
 
