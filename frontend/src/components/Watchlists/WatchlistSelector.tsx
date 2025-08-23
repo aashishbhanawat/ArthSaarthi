@@ -3,9 +3,14 @@ import { useWatchlists } from '../../hooks/useWatchlists';
 import { Watchlist } from '../../types/watchlist';
 
 interface Props {
+    /** Callback function to be invoked when a watchlist is selected. */
     onSelectWatchlist: (watchlist: Watchlist) => void;
 }
 
+/**
+ * Renders a list of user's watchlists and allows for selection.
+ * Fetches watchlist data using the useWatchlists hook.
+ */
 const WatchlistSelector: React.FC<Props> = ({ onSelectWatchlist }) => {
     const { data: watchlists, isLoading, isError } = useWatchlists();
 

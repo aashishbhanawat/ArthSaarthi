@@ -68,6 +68,15 @@ def update_watchlist(
 ) -> Any:
     """
     Update a watchlist.
+
+    Args:
+        db: The database session.
+        watchlist_id: The ID of the watchlist to update.
+        watchlist_in: The new data for the watchlist.
+        current_user: The current authenticated user.
+
+    Returns:
+        The updated watchlist.
     """
     watchlist = crud.watchlist.get(db=db, id=watchlist_id)
     if not watchlist:
@@ -88,6 +97,14 @@ def delete_watchlist(
 ) -> Any:
     """
     Delete a watchlist.
+
+    Args:
+        db: The database session.
+        watchlist_id: The ID of the watchlist to delete.
+        current_user: The current authenticated user.
+
+    Returns:
+        A message indicating that the watchlist was deleted successfully.
     """
     watchlist = crud.watchlist.get(db=db, id=watchlist_id)
     if not watchlist:
@@ -113,6 +130,15 @@ def add_watchlist_item(
 ) -> Any:
     """
     Add an item to a watchlist.
+
+    Args:
+        db: The database session.
+        watchlist_id: The ID of the watchlist to add the item to.
+        item_in: The data for the new item.
+        current_user: The current authenticated user.
+
+    Returns:
+        The created watchlist item.
     """
     watchlist = crud.watchlist.get(db=db, id=watchlist_id)
     if not watchlist:
@@ -136,6 +162,15 @@ def remove_watchlist_item(
 ) -> Any:
     """
     Remove an item from a watchlist.
+
+    Args:
+        db: The database session.
+        watchlist_id: The ID of the watchlist to remove the item from.
+        item_id: The ID of the item to remove.
+        current_user: The current authenticated user.
+
+    Returns:
+        A message indicating that the item was removed successfully.
     """
     watchlist = crud.watchlist.get(db=db, id=watchlist_id)
     if not watchlist:

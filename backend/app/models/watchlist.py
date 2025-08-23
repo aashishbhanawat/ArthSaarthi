@@ -8,6 +8,9 @@ from app.db.custom_types import GUID
 
 
 class Watchlist(Base):
+    """
+    Represents a user-defined watchlist to monitor financial assets.
+    """
     __tablename__ = "watchlists"
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
@@ -21,6 +24,9 @@ class Watchlist(Base):
 
 
 class WatchlistItem(Base):
+    """
+    Represents an item within a watchlist, linking a watchlist to a specific asset.
+    """
     __tablename__ = "watchlist_items"
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)

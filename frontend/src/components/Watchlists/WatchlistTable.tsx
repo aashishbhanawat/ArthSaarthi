@@ -5,10 +5,16 @@ import { useRemoveWatchlistItem } from '../../hooks/useWatchlists';
 import { TrashIcon } from '@heroicons/react/24/outline';
 
 interface Props {
+    /** The currently selected watchlist, or null if none is selected. */
     watchlist: Watchlist | null;
 }
 
+/**
+ * Displays the assets within a selected watchlist in a table.
+ * Allows for the removal of assets from the watchlist.
+ */
 const WatchlistTable: React.FC<Props> = ({ watchlist }) => {
+    // Note: Reusing usePortfolioAssets hook as the underlying API call is the same.
     const { data: assets, isLoading, isError } = usePortfolioAssets(watchlist?.id);
     const removeMutation = useRemoveWatchlistItem();
 
