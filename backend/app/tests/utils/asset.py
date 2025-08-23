@@ -1,20 +1,9 @@
-import random
-import string
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.models.asset import Asset
-
-
-def random_string(length: int = 10) -> str:
-    return "".join(random.choices(string.ascii_uppercase, k=length))
-
-
-def create_random_asset(db: Session) -> Asset:
-    ticker = random_string(4)
-    return create_test_asset(db, ticker_symbol=ticker)
 
 
 def create_test_asset(

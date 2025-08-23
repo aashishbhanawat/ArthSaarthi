@@ -48,11 +48,13 @@ EOF
 }
 
 # --- Argument Parser ---
+E2E_ARGS=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help; exit 0 ;;
         --db) DB_TYPE="$2"; shift ;;
         lint|backend|frontend|e2e|migrations|all) TEST_SUITE=$1 ;;
+        --) shift; E2E_ARGS="$@"; break ;;
         *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
     esac
     shift
@@ -135,13 +137,13 @@ install_deps() {
 
 run_lint() {
     print_info "--- Running Linters ---"
-    (cd backend && ruff check --fix .) && print_success "Backend linting passed."
+    (cd backend && ruff check .) && print_success "Backend linting passed."
     (cd frontend && npm run lint) && print_success "Frontend linting passed."
 }
 
 run_frontend_tests() {
     print_info "--- Running Frontend Unit Tests ---"
-    (cd frontend && npm install && npm test)
+    (cd frontend && npm test)
     print_success "Frontend tests passed."
 }
 
@@ -155,7 +157,7 @@ SECRET_KEY=dummy-secret-key-for-testing
 DATABASE_URL=sqlite:///./test.db
 ENVIRONMENT=test
 CORS_ORIGINS=http://localhost:$frontend_port,http://127.0.0.1:$frontend_port
-PYTHONPATH=.
+PYTHONPATH=/app
 DEPLOYMENT_MODE=server
 DATABASE_TYPE=sqlite
 CACHE_TYPE=disk
@@ -182,7 +184,7 @@ DATABASE_URL=postgresql://${POSTGRES_USER:-$DEFAULT_POSTGRES_USER}:${POSTGRES_PA
 REDIS_URL=redis://localhost:6379
 ENVIRONMENT=test
 CORS_ORIGINS=http://localhost:$frontend_port,http://127.0.0.1:$frontend_port
-PYTHONPATH=.
+PYTHONPATH=/app
 DATABASE_TYPE=postgres
 CACHE_TYPE=redis
 TESTING=True
@@ -241,7 +243,7 @@ EOF
     print_info "Running Playwright E2E tests..."
     export E2E_BASE_URL="http://127.0.0.1:$frontend_port"
     export E2E_BACKEND_URL="http://127.0.0.1:$backend_port"
-    (cd e2e && npx playwright test)
+    (cd e2e && npx playwright test $E2E_ARGS)
     print_success "E2E tests passed."
 }
 
@@ -259,7 +261,7 @@ run_migration_tests() {
         print_info "Testing SQLite migrations (upgrade head only)..."
         # For SQLite, we can't test the full downgrade cycle due to ALTER TABLE incompatibility.
         # The most valuable test is to ensure the schema can be built from scratch.
-        (cd backend && python -m dotenv -f .env.test run -- python -m alembic upgrade head)
+        (cd backend && python -m dotenv -f .env.test run -- alembic upgrade head)
         print_success "SQLite upgrade to head successful."
     else # postgres
         # For PostgreSQL, we test the full up/down cycle.
@@ -267,15 +269,15 @@ run_migration_tests() {
         # we can't directly run 'upgrade head' on a clean DB.
         # Instead, we stamp the auto-created DB, then perform a full downgrade/upgrade cycle.
         print_info "Stamping the database to the latest revision..."
-        (cd backend && python -m dotenv -f .env.test run -- python -m alembic stamp head)
+        (cd backend && python -m dotenv -f .env.test run -- alembic stamp head)
         print_success "Stamp successful."
 
         print_info "Running migrations down to base..."
-        # (cd backend && python -m dotenv -f .env.test run -- python -m alembic downgrade base)
+        (cd backend && python -m dotenv -f .env.test run -- alembic downgrade base)
         print_success "Downgrade to base successful."
 
         print_info "Running migrations up to head again..."
-        (cd backend && python -m dotenv -f .env.test run -- python -m alembic upgrade head)
+        (cd backend && python -m dotenv -f .env.test run -- alembic upgrade head)
         print_success "Final upgrade to head successful."
     fi
 
@@ -291,11 +293,7 @@ main() {
         all)
             run_lint
             run_frontend_tests
-            if [ "$DB_TYPE" == "sqlite" ]; then
-                print_info "Skipping migration tests for SQLite."
-            else
-                run_migration_tests
-            fi
+            run_migration_tests
             run_backend_tests
             run_e2e_tests
             ;;
@@ -312,11 +310,7 @@ main() {
             run_e2e_tests
             ;;
         migrations)
-            if [ "$DB_TYPE" == "sqlite" ]; then
-                print_info "Skipping migration tests for SQLite."
-            else
-                run_migration_tests
-            fi
+            run_migration_tests
             ;;
     esac
 

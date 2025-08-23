@@ -4,182 +4,118 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
-from app.core import dependencies
-from app.models.user import User
+from .... import crud, models, schemas
+from ....core.dependencies import get_current_active_user, get_db
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[schemas.Watchlist])
 def read_watchlists(
-    db: Session = Depends(dependencies.get_db),
-    current_user: User = Depends(dependencies.get_current_user),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Retrieve watchlists for the current user.
+    Retrieve user's watchlists.
     """
-    watchlists = crud.watchlist.get_multi_by_owner(db=db, user_id=current_user.id)
+    watchlists = crud.watchlist.get_by_user(db, user_id=current_user.id)
     return watchlists
 
 
-@router.post("/", response_model=schemas.Watchlist, status_code=201)
+@router.post("/", response_model=schemas.Watchlist)
 def create_watchlist(
     *,
-    db: Session = Depends(dependencies.get_db),
+    db: Session = Depends(get_db),
     watchlist_in: schemas.WatchlistCreate,
-    current_user: User = Depends(dependencies.get_current_user),
+    current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """
     Create new watchlist.
     """
-    watchlist = crud.watchlist.create_with_owner(
-        db=db, obj_in=watchlist_in, user_id=current_user.id
+    watchlist = crud.watchlist.create_with_user(
+        db, obj_in=watchlist_in, user_id=current_user.id
     )
-    db.commit()
     return watchlist
 
 
-@router.get("/{watchlist_id}", response_model=schemas.Watchlist)
-def read_watchlist(
-    *,
-    db: Session = Depends(dependencies.get_db),
-    watchlist_id: uuid.UUID,
-    current_user: User = Depends(dependencies.get_current_user),
-) -> Any:
-    """
-    Get watchlist by ID.
-    """
-    watchlist = crud.watchlist.get(db=db, id=watchlist_id)
-    if not watchlist:
-        raise HTTPException(status_code=404, detail="Watchlist not found")
-    if not current_user.is_admin and (watchlist.user_id != current_user.id):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    return watchlist
-
-
-@router.put("/{watchlist_id}", response_model=schemas.Watchlist)
+@router.put("/{id}", response_model=schemas.Watchlist)
 def update_watchlist(
     *,
-    db: Session = Depends(dependencies.get_db),
-    watchlist_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    id: uuid.UUID,
     watchlist_in: schemas.WatchlistUpdate,
-    current_user: User = Depends(dependencies.get_current_user),
+    current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """
     Update a watchlist.
-
-    Args:
-        db: The database session.
-        watchlist_id: The ID of the watchlist to update.
-        watchlist_in: The new data for the watchlist.
-        current_user: The current authenticated user.
-
-    Returns:
-        The updated watchlist.
     """
-    watchlist = crud.watchlist.get(db=db, id=watchlist_id)
+    watchlist = crud.watchlist.get(db, id=id)
     if not watchlist:
         raise HTTPException(status_code=404, detail="Watchlist not found")
-    if not current_user.is_admin and (watchlist.user_id != current_user.id):
+    if watchlist.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    watchlist = crud.watchlist.update(db=db, db_obj=watchlist, obj_in=watchlist_in)
-    db.commit()
+    watchlist = crud.watchlist.update(db, db_obj=watchlist, obj_in=watchlist_in)
     return watchlist
 
 
-@router.delete("/{watchlist_id}", response_model=schemas.Msg)
+@router.delete("/{id}", response_model=schemas.Watchlist)
 def delete_watchlist(
     *,
-    db: Session = Depends(dependencies.get_db),
-    watchlist_id: uuid.UUID,
-    current_user: User = Depends(dependencies.get_current_user),
+    db: Session = Depends(get_db),
+    id: uuid.UUID,
+    current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """
     Delete a watchlist.
-
-    Args:
-        db: The database session.
-        watchlist_id: The ID of the watchlist to delete.
-        current_user: The current authenticated user.
-
-    Returns:
-        A message indicating that the watchlist was deleted successfully.
     """
-    watchlist = crud.watchlist.get(db=db, id=watchlist_id)
+    watchlist = crud.watchlist.get(db, id=id)
     if not watchlist:
         raise HTTPException(status_code=404, detail="Watchlist not found")
-    if not current_user.is_admin and (watchlist.user_id != current_user.id):
+    if watchlist.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    crud.watchlist.remove(db=db, id=watchlist_id)
-    db.commit()
-    return {"msg": "Watchlist deleted successfully"}
+    watchlist = crud.watchlist.remove(db, id=id)
+    return watchlist
 
 
-@router.post(
-    "/{watchlist_id}/items",
-    response_model=schemas.WatchlistItem,
-    status_code=201,
-)
+@router.post("/{watchlist_id}/items", response_model=schemas.WatchlistItem)
 def add_watchlist_item(
     *,
-    db: Session = Depends(dependencies.get_db),
+    db: Session = Depends(get_db),
     watchlist_id: uuid.UUID,
     item_in: schemas.WatchlistItemCreate,
-    current_user: User = Depends(dependencies.get_current_user),
+    current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """
     Add an item to a watchlist.
-
-    Args:
-        db: The database session.
-        watchlist_id: The ID of the watchlist to add the item to.
-        item_in: The data for the new item.
-        current_user: The current authenticated user.
-
-    Returns:
-        The created watchlist item.
     """
-    watchlist = crud.watchlist.get(db=db, id=watchlist_id)
+    watchlist = crud.watchlist.get(db, id=watchlist_id)
     if not watchlist:
         raise HTTPException(status_code=404, detail="Watchlist not found")
-    if not current_user.is_admin and (watchlist.user_id != current_user.id):
+    if watchlist.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    item = crud.watchlist_item.create_with_owner(
-        db=db, obj_in=item_in, watchlist_id=watchlist_id, user_id=current_user.id
+    item = crud.watchlist.add_item(
+        db, watchlist_id=watchlist_id, asset_id=item_in.asset_id
     )
-    db.commit()
     return item
 
 
-@router.delete("/{watchlist_id}/items/{item_id}", response_model=schemas.Msg)
-def remove_watchlist_item(
+@router.delete("/{watchlist_id}/items/{item_id}", response_model=schemas.WatchlistItem)
+def delete_watchlist_item(
     *,
-    db: Session = Depends(dependencies.get_db),
+    db: Session = Depends(get_db),
     watchlist_id: uuid.UUID,
     item_id: uuid.UUID,
-    current_user: User = Depends(dependencies.get_current_user),
+    current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Remove an item from a watchlist.
-
-    Args:
-        db: The database session.
-        watchlist_id: The ID of the watchlist to remove the item from.
-        item_id: The ID of the item to remove.
-        current_user: The current authenticated user.
-
-    Returns:
-        A message indicating that the item was removed successfully.
+    Delete an item from a watchlist.
     """
-    watchlist = crud.watchlist.get(db=db, id=watchlist_id)
+    watchlist = crud.watchlist.get(db, id=watchlist_id)
     if not watchlist:
         raise HTTPException(status_code=404, detail="Watchlist not found")
-    if not current_user.is_admin and (watchlist.user_id != current_user.id):
+    if watchlist.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    item = crud.watchlist_item.get(db=db, id=item_id)
-    if not item or item.watchlist_id != watchlist_id:
-        raise HTTPException(status_code=404, detail="Item not found in this watchlist")
-    crud.watchlist_item.remove(db=db, id=item_id)
-    db.commit()
-    return {"msg": "Item removed successfully"}
+    item = crud.watchlist.remove_item(db, watchlist_id=watchlist_id, item_id=item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Watchlist item not found")
+    return item

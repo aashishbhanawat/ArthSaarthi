@@ -1,24 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Modal, Button, TextInput } from 'flowbite-react';
+import { Watchlist } from '../../types/watchlist';
 
-interface Props {
-    isOpen: boolean;
-    onClose: () => void;
+interface WatchlistFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+  initialWatchlist?: Watchlist | null;
 }
 
-const WatchlistFormModal: React.FC<Props> = ({ isOpen, onClose }) => {
-    if (!isOpen) return null;
+const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({ isOpen, onClose, onSubmit, initialWatchlist }) => {
+  const [name, setName] = useState('');
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <div className="bg-white p-4 rounded-lg">
-                <h2 className="text-xl font-bold mb-4">Watchlist Form</h2>
-                <p>Watchlist form is coming soon!</p>
-                <button onClick={onClose} className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Close
-                </button>
+  useEffect(() => {
+    if (initialWatchlist) {
+      setName(initialWatchlist.name);
+    } else {
+      setName('');
+    }
+  }, [initialWatchlist, isOpen]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(name);
+  };
+
+  return (
+    <Modal show={isOpen} onClose={onClose}>
+      <Modal.Header>{initialWatchlist ? 'Edit Watchlist' : 'Create New Watchlist'}</Modal.Header>
+      <Modal.Body>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Watchlist Name
+              </label>
+              <TextInput
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="mt-1"
+              />
             </div>
-        </div>
-    );
+          </div>
+        </form>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button onClick={handleSubmit} color="blue">
+          {initialWatchlist ? 'Save' : 'Create'}
+        </Button>
+        <Button color="gray" onClick={onClose}>
+          Cancel
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
 };
 
 export default WatchlistFormModal;

@@ -1,17 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
-import { devices } from '@playwright/test';
-
 export default defineConfig({
   // Look for test files in the "tests" directory, relative to this configuration file.
   testDir: './tests',
-  testMatch: /.*\.spec\.ts/,
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
   // A global setup file to run before all tests.
   globalSetup: require.resolve('./global.setup.ts'),
   /* Run tests in files in parallel */

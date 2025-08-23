@@ -1,63 +1,50 @@
 import uuid
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
-from app.crud.base import CRUDBase
-from app.models.watchlist import Watchlist, WatchlistItem
-from app.schemas.watchlist import (
-    WatchlistCreate,
-    WatchlistItemCreate,
-    WatchlistUpdate,
-)
+from ..models.watchlist import Watchlist, WatchlistItem
+from ..schemas.watchlist import WatchlistCreate, WatchlistUpdate
+from .base import CRUDBase
 
 
 class CRUDWatchlist(CRUDBase[Watchlist, WatchlistCreate, WatchlistUpdate]):
-    """CRUD operations for watchlists."""
+    def get_by_user(self, db: Session, *, user_id: uuid.UUID) -> List[Watchlist]:
+        return db.query(self.model).filter(self.model.user_id == user_id).all()
 
-    def create_with_owner(
+    def create_with_user(
         self, db: Session, *, obj_in: WatchlistCreate, user_id: uuid.UUID
     ) -> Watchlist:
-        """Create a new watchlist for a specific user."""
-        db_obj = Watchlist(**obj_in.model_dump(), user_id=user_id)
+        db_obj = self.model(**obj_in.dict(), user_id=user_id)
         db.add(db_obj)
-        db.flush()
+        db.commit()
         db.refresh(db_obj)
         return db_obj
 
-    def get_multi_by_owner(
-        self, db: Session, *, user_id: uuid.UUID, skip: int = 0, limit: int = 100
-    ) -> List[Watchlist]:
-        """Get all watchlists for a specific user."""
-        return (
-            db.query(self.model)
-            .filter(Watchlist.user_id == user_id)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
-
-
-class CRUDWatchlistItem(CRUDBase[WatchlistItem, WatchlistItemCreate, WatchlistUpdate]):
-    """CRUD operations for watchlist items."""
-
-    def create_with_owner(
-        self,
-        db: Session,
-        *,
-        obj_in: WatchlistItemCreate,
-        watchlist_id: uuid.UUID,
-        user_id: uuid.UUID
+    def add_item(
+        self, db: Session, *, watchlist_id: uuid.UUID, asset_id: uuid.UUID
     ) -> WatchlistItem:
-        """Create a new watchlist item for a specific user and watchlist."""
-        db_obj = WatchlistItem(
-            **obj_in.model_dump(), watchlist_id=watchlist_id, user_id=user_id
-        )
+        db_obj = WatchlistItem(watchlist_id=watchlist_id, asset_id=asset_id)
         db.add(db_obj)
-        db.flush()
+        db.commit()
         db.refresh(db_obj)
         return db_obj
+
+    def remove_item(
+        self, db: Session, *, watchlist_id: uuid.UUID, item_id: uuid.UUID
+    ) -> Optional[WatchlistItem]:
+        item = (
+            db.query(WatchlistItem)
+            .filter(
+                WatchlistItem.id == item_id,
+                WatchlistItem.watchlist_id == watchlist_id,
+            )
+            .first()
+        )
+        if item:
+            db.delete(item)
+            db.commit()
+        return item
 
 
 watchlist = CRUDWatchlist(Watchlist)
-watchlist_item = CRUDWatchlistItem(WatchlistItem)

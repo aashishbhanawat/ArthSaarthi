@@ -1,48 +1,38 @@
 import uuid
-from typing import List, Optional
+from typing import List
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
-
-# Shared properties
-class WatchlistBase(BaseModel):
-    """Base schema for a watchlist, containing shared properties."""
-    name: str
-
-
-# Properties to receive on watchlist creation
-class WatchlistCreate(WatchlistBase):
-    """Schema for creating a new watchlist."""
-    pass
-
-
-# Properties to receive on watchlist update
-class WatchlistUpdate(BaseModel):
-    """Schema for updating an existing watchlist."""
-    name: Optional[str] = None
-
-
-# Properties to return to client
-class Watchlist(WatchlistBase):
-    """Schema for returning a watchlist to the client."""
-    id: uuid.UUID
-    user_id: uuid.UUID
-    items: List = []
-    model_config = ConfigDict(from_attributes=True)
+from .asset import Asset
 
 
 class WatchlistItemBase(BaseModel):
-    """Base schema for a watchlist item."""
     asset_id: uuid.UUID
 
-
 class WatchlistItemCreate(WatchlistItemBase):
-    """Schema for creating a new watchlist item."""
     pass
 
-
 class WatchlistItem(WatchlistItemBase):
-    """Schema for returning a watchlist item to the client."""
     id: uuid.UUID
     watchlist_id: uuid.UUID
-    model_config = ConfigDict(from_attributes=True)
+    asset: Asset
+
+    class Config:
+        orm_mode = True
+
+class WatchlistBase(BaseModel):
+    name: str
+
+class WatchlistCreate(WatchlistBase):
+    pass
+
+class WatchlistUpdate(WatchlistBase):
+    pass
+
+class Watchlist(WatchlistBase):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    items: List[WatchlistItem] = []
+
+    class Config:
+        orm_mode = True

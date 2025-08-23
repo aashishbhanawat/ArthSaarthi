@@ -75,7 +75,7 @@ __all__ = [
     "UserUpdate",
     "Watchlist",
     "WatchlistCreate",
-    "WatchlistUpdate",
     "WatchlistItem",
     "WatchlistItemCreate",
+    "WatchlistUpdate",
 ]

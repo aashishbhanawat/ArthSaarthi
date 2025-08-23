@@ -5,9 +5,9 @@ import { HomeIcon,
   BriefcaseIcon,
   ArrowUpTrayIcon,
   ListBulletIcon,
+  EyeIcon,
   UsersIcon,
   ArrowLeftOnRectangleIcon,
-  EyeIcon,
  } from '@heroicons/react/24/outline';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
@@ -51,15 +51,15 @@ const NavBar: React.FC = () => {
                     <ListBulletIcon className="h-5 w-5" />
                     <span>Transactions</span>
                 </NavLink>
+                <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
+                    <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>
+                </NavLink>
                 <NavLink
                     to="/watchlists"
                     className={({ isActive }) => linkClass(isActive)}
                 >
                     <EyeIcon className="h-5 w-5" />
                     <span>Watchlists</span>
-                </NavLink>
-                <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
-                    <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>
                 </NavLink>
                 {user?.is_admin && deploymentMode === 'server' && (
                     <NavLink to="/admin/users" className={({ isActive }) => linkClass(isActive)}>
