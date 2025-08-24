@@ -99,6 +99,7 @@ A new router will be created at `/api/v1/watchlists`.
 This feature should be implemented in phases to ensure manageable pull requests.
 
 1.  **Phase 1: Backend Foundation.**
+    *   **Status: Done**
     *   Create the `watchlists` and `watchlist_items` database models and generate the Alembic migration.
     *   Implement the Pydantic schemas.
     *   Implement the basic backend CRUD operations and API endpoints for creating, reading, updating, and deleting the watchlists themselves (not the items yet).
