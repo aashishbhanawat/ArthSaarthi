@@ -5,8 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase
 from app.models.goal import Goal, GoalLink
-from app.schemas.goal import (GoalCreate, GoalLinkCreate, GoalLinkUpdate,
-                              GoalUpdate)
+from app.schemas.goal import GoalCreate, GoalLinkCreate, GoalLinkUpdate, GoalUpdate
 
 
 class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
