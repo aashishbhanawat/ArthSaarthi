@@ -27,6 +27,7 @@ echo "Step 2: Building frontend..."
 # 3. Install Backend Dependencies
 echo "Step 3: Installing backend dependencies..."
 source ~/venc/Scripts/activate
+(cd backend && "$VIRTUAL_ENV/Scripts/pip.exe" install pyinstaller==6.10.0)
 (cd backend && "$VIRTUAL_ENV/Scripts/pip.exe" install -r requirements-windows.txt)
 
 
