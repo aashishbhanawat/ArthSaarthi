@@ -1,5 +1,5 @@
-from typing import List
 import uuid
+from typing import List
 
 from sqlalchemy.orm import Session
 

@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.tests.utils.user import create_random_user
 from app.tests.utils.watchlist import create_random_watchlist
 
@@ -60,7 +59,8 @@ def test_read_watchlist_not_owned(client: TestClient, db: Session, get_auth_head
     headers = get_auth_headers(user1.email, password)
     watchlist_for_user2 = create_random_watchlist(db, user_id=user2.id)
 
-    response = client.get(f"/api/v1/watchlists/{watchlist_for_user2.id}", headers=headers)
+    url = f"/api/v1/watchlists/{watchlist_for_user2.id}"
+    response = client.get(url, headers=headers)
     assert response.status_code == 403
 
 
