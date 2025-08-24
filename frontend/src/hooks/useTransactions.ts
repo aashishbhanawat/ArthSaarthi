@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   getTransactions,
   updateTransaction,
@@ -6,17 +6,14 @@ import {
   TransactionFilters,
   TransactionUpdate,
 } from '../services/transactionApi';
+import { TransactionsResponse } from '../types/transaction';
 
 export const useTransactions = (filters: TransactionFilters) => {
   console.log("useTransactions hook called with filters:", filters);
-  return useQuery({
+  return useQuery<TransactionsResponse, Error>({
     queryKey: ['transactions', filters],
     queryFn: () => getTransactions(filters),
-    keepPreviousData: true, // Keep showing old data while new data is fetching for a smoother UX
-    onSuccess: (data) => {
-      console.log("useTransactions data fetched:", data);
-    },
-    onError: (err) => console.log("useTransactions error:", err),
+    placeholderData: keepPreviousData,
   });
 };
 
@@ -53,4 +50,3 @@ export const useDeleteTransaction = () => {
     },
   });
 };
-

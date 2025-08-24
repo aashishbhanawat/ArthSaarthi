@@ -39,10 +39,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             
             reset({
                 transaction_type: transactionToEdit.transaction_type,
-                quantity: transactionToEdit.quantity,
-                price_per_unit: transactionToEdit.price_per_unit,
+                quantity: Number(transactionToEdit.quantity),
+                price_per_unit: Number(transactionToEdit.price_per_unit),
                 transaction_date: formattedDate,
-                fees: transactionToEdit.fees,
+                fees: Number(transactionToEdit.fees),
             });
             setSelectedAsset(transactionToEdit.asset);
             setInputValue(transactionToEdit.asset.name);
@@ -139,7 +139,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         setApiError(null);
         // In edit mode, we should not be able to create a new asset.
         if (isEditMode) return;
-        createAssetMutation.mutate(inputValue.toUpperCase(), {
+        createAssetMutation.mutate({ ticker_symbol: inputValue.toUpperCase() }, {
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },

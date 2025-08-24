@@ -1,7 +1,7 @@
 # Project Handoff Document: ArthSaarthi
 
-**Version:** 1.3.0
-**Date:** 2025-08-22
+**Version:** 0.2.0
+**Date:** 2025-08-23
 **Status:** Completed & Stable
 **Author:** Gemini Code Assist
 
@@ -32,10 +32,10 @@ All planned features for the current release cycle have been implemented and val
 *   **Comprehensive User Management:** Admin-only dashboard for full CRUD operations on all users.
 *   **Dynamic Dashboard:** Consolidated view of total portfolio value, realized/unrealized P/L, top daily market movers, and interactive charts for portfolio history and asset allocation.
 *   **Advanced Portfolio Analytics:** Calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset level.
-*   **Full Portfolio & Transaction Management:**
+*   **Full Portfolio & Transaction CRUD:**
     *   Full CRUD functionality for portfolios and transactions.
     *   A redesigned portfolio page showing a consolidated holdings view with sorting.
-    *   A dedicated, filterable **Transaction History** page with edit and delete capabilities.
+    *   A dedicated, filterable **Transaction History** page with full edit and delete capabilities.
     *   A **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
 *   **Automated Data Import (Phase 2):**
     *   A full-stack feature with a workflow for uploading, parsing, previewing, and committing transaction data from CSV files.

@@ -49,8 +49,10 @@ docker compose -f docker-compose.desktop.yml -f docker-compose.override.yml up -
 
 ### Running Tests with Docker
 
+
 These commands run tests inside isolated Docker containers, which is the most reliable way to replicate the CI environment.
 
+**For a faster and more comprehensive local testing experience, we strongly recommend using the Native (Dockerless) testing script described in the next section.**
 *   **Backend Tests (PostgreSQL):**
     ```bash
     docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
@@ -71,7 +73,6 @@ These commands run tests inside isolated Docker containers, which is the most re
     ```bash
     docker compose -f docker-compose.e2e.sqlite.yml up --build --abort-on-container-exit
     ```
-
 ---
 
 ## 2. Native (Dockerless) Development
@@ -82,8 +83,8 @@ This approach allows you to run the services directly on your host machine.
 *   **Python:** Version 3.9 or higher.
 *   **Node.js:** Version 18.x or higher (which includes `npm`).
 *   **Git:** For cloning the repository.
+*   **(Optional) PostgreSQL Server:** If you choose to use PostgreSQL instead of SQLite. 
 *   **(Optional) PostgreSQL Server:** If you choose to use PostgreSQL instead of SQLite.
-*   **(Optional) Redis Server:** If you choose to use Redis instead of the file-based cache.
 
 ### Environment Setup
 
