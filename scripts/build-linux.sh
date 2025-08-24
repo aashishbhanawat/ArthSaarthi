@@ -7,6 +7,11 @@ set -x
 
 echo "--- Starting Linux Build ---"
 
+# Create a clean virtual environment
+echo "Creating a clean virtual environment..."
+rm -rf ~/venc
+python3 -m venv ~/venc
+
 # Clean up previous builds
 echo "Cleaning up previous builds..."
 rm -rf backend/dist backend/build frontend/dist-electron
@@ -21,14 +26,13 @@ echo "Step 2: Building frontend..."
 
 # 3. Install Backend Dependencies
 echo "Step 3: Installing backend dependencies..."
-# This assumes the user has a virtual environment named 'venc' in their home directory
-# In a more robust setup, this would be handled by a configuration file or a setup script.
 source ~/venc/bin/activate
-(cd backend && pip install -r requirements.txt)
+
+(cd backend && "$VIRTUAL_ENV/bin/pip" install -r requirements.txt)
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."
-(cd backend && pyinstaller build-backend.spec)
+(cd backend && "$VIRTUAL_ENV/bin/python" -m PyInstaller build-backend.spec)
 
 # 5. Set Execute Permissions
 echo "Step 5: Setting execute permissions on backend..."
