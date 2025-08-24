@@ -27,13 +27,17 @@ echo "Step 2: Building frontend..."
 # 3. Install Backend Dependencies
 echo "Step 3: Installing backend dependencies..."
 source ~/venc/bin/activate
+(cd backend && "$VIRTUAL_ENV/bin/pip" install pyinstaller==6.10.0)
 (cd backend && "$VIRTUAL_ENV/bin/pip" install -r requirements.txt)
 
 # 4. Bundle Backend
 echo "Step 4: Bundling backend..."
 (cd backend && "$VIRTUAL_ENV/bin/python" -m PyInstaller build-backend.spec)
 
-# 5. Set Execute Permissions
+# 5. Set Execute Permissions on Backend Executable
+# This is a critical step. Permissions must be set *before* electron-builder
+# packages the app. Modifying the file inside the .app bundle after signing
+# will invalidate the signature and cause macOS Gatekeeper errors.
 echo "Step 5: Setting execute permissions on backend..."
 chmod +x "$(pwd)/backend/dist/arthsaarthi-backend/arthsaarthi-backend"
 
@@ -43,3 +47,4 @@ echo "Step 6: Packaging Electron app for macOS..."
 
 echo "--- macOS Build Finished ---"
 echo "Installer located in frontend/dist-electron/"
+
