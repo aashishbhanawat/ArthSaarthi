@@ -165,7 +165,7 @@ describe('AddTransactionModal', () => {
     fireEvent.click(createButton);
 
     await waitFor(() => {
-      expect(mockCreateAsset).toHaveBeenCalledWith({ ticker: 'NEW' }, expect.any(Object));
+      expect(mockCreateAsset).toHaveBeenCalledWith({ ticker_symbol: 'NEW' }, expect.any(Object));
     });
   });
 });

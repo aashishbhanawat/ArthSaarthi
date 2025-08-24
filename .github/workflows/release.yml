@@ -32,7 +32,7 @@ jobs:
       - name: Build and push Docker images
         env:
           DOCKER_REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
-        run: ./build-and-push.sh ${{ env.VERSION }}
+        run: ./build-and-push.sh ${{ env.VERSION }} --push
 
   create-release:
     name: Create GitHub Release
@@ -40,17 +40,22 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - name: Create Release
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            This is the official release for version ${{ github.ref }}.
-            See the attached assets for different installation options.
+          release_name: Release ${{ env.VERSION }}
+          body_path: release_notes/${{ env.VERSION }}.md
           draft: false
           prerelease: false
 
@@ -175,12 +180,12 @@ jobs:
           asset_name: README.md
           asset_content_type: text/markdown
 
-      - name: Upload Native Setup Guide
+      - name: Upload Installation Guide
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./docs/native_setup_guide.md
-          asset_name: native_setup_guide.md
+          asset_path: ./installation_guide.md
+          asset_name: installation_guide.md
           asset_content_type: text/markdown
