@@ -48,13 +48,11 @@ EOF
 }
 
 # --- Argument Parser ---
-E2E_ARGS=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help; exit 0 ;;
         --db) DB_TYPE="$2"; shift ;;
         lint|backend|frontend|e2e|migrations|all) TEST_SUITE=$1 ;;
-        --) shift; E2E_ARGS="$@"; break ;;
         *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
     esac
     shift
@@ -243,7 +241,7 @@ EOF
     print_info "Running Playwright E2E tests..."
     export E2E_BASE_URL="http://127.0.0.1:$frontend_port"
     export E2E_BACKEND_URL="http://127.0.0.1:$backend_port"
-    (cd e2e && npx playwright test $E2E_ARGS)
+    (cd e2e && npx playwright test)
     print_success "E2E tests passed."
 }
 

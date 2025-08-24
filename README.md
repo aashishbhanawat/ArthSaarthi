@@ -28,7 +28,6 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
     *   A redesigned portfolio page showing a consolidated holdings view with sorting.
     *   A unique **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
 *   **Automated Data Import:** Drastically reduce manual entry with a full-stack feature for uploading, parsing, previewing, and committing transaction data from CSV files (supports Zerodha, ICICI Direct, and generic formats).
-*   **Watchlists:** Create and manage multiple watchlists to track assets you are interested in.
 
 ### On the Horizon (Future Features)
 
@@ -37,7 +36,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Deeper Analytics & Reporting:** Generate capital gains reports for tax filing, benchmark your portfolio against market indices, and analyze diversification by sector, geography, and more.
 *   **Goal-Oriented Planning:** Define financial goals (e.g., "Retirement", "House Down Payment"), link assets to them, and track your progress with projections.
 *   **AI-Powered Insights:** Leverage AI to get suggestions for tax-loss harvesting, portfolio rebalancing, and receive a personalized daily digest of your financial world.
-*   **Market Insights:** Get relevant news feeds, and perform deep-dive research on individual assets.
+*   **Market Insights:** Create watchlists, get relevant news feeds, and perform deep-dive research on individual assets.
 
 ## 🛠️ Technology Stack
 

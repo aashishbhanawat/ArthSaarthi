@@ -28,13 +28,6 @@ from .transaction import (
     TransactionUpdate,
 )
 from .user import User, UserCreate, UserUpdate
-from .watchlist import (
-    Watchlist,
-    WatchlistCreate,
-    WatchlistItem,
-    WatchlistItemCreate,
-    WatchlistUpdate,
-)
 
 __all__ = [
     "Asset",
@@ -73,9 +66,4 @@ __all__ = [
     "User",
     "UserCreate",
     "UserUpdate",
-    "Watchlist",
-    "WatchlistCreate",
-    "WatchlistItem",
-    "WatchlistItemCreate",
-    "WatchlistUpdate",
 ]
