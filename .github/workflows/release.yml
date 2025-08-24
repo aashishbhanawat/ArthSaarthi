@@ -111,7 +111,10 @@ jobs:
       - name: Find Windows Installer
         if: runner.os == 'Windows'
         id: find_exe
-        run: echo "path=$(find frontend/dist-electron -name '*.exe' -type f | head -n 1)" >> $GITHUB_OUTPUT
+        run: |
+          $asset = Get-ChildItem -Path frontend/dist-electron -Filter '*.exe' -Recurse -File | Select-Object -First 1
+          echo "path=$($asset.FullName)" >> $env:GITHUB_OUTPUT
+        shell: powershell
 
       - name: Upload Windows Asset
         if: runner.os == 'Windows'
