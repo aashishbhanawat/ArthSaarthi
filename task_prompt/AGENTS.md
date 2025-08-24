@@ -56,4 +56,10 @@ The script will handle the creation and teardown of the test database, but the s
 ./run_local_tests.sh backend
 ```
 
+**Running a Single Test File:**
+You can also pass arguments directly to the underlying test runner (`pytest` for backend, `playwright` for E2E) to run a specific test file. This is very useful for focused debugging.
+
+* Run a single backend test file: `./run_local_tests.sh backend app/tests/api/v1/test_users.py`
+* Run a single E2E test file: `./run_local_tests.sh e2e tests/portfolio-and-dashboard.spec.ts`
+
 This script is the definitive way to run tests in a non-Dockerized environment. Please refer to the script's help message (`./run_local_tests.sh --help`) for more details.

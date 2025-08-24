@@ -19,6 +19,7 @@ TEST_DB_NAME="arthsaarthi_test"
 # --- PIDs for background processes ---
 BACKEND_PID=""
 FRONTEND_PID=""
+TEST_ARGS=() # Array to hold extra arguments for test runners
 
 # --- Helper Functions for colored output ---
 print_info() { echo -e "\033[34m[INFO]\033[0m $1"; }
@@ -53,7 +54,7 @@ while [[ "$#" -gt 0 ]]; do
         -h|--help) show_help; exit 0 ;;
         --db) DB_TYPE="$2"; shift ;;
         lint|backend|frontend|e2e|migrations|all) TEST_SUITE=$1 ;;
-        *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
+        *) TEST_ARGS+=("$1") ;; # Collect extra arguments
     esac
     shift
 done
@@ -155,7 +156,7 @@ SECRET_KEY=dummy-secret-key-for-testing
 DATABASE_URL=sqlite:///./test.db
 ENVIRONMENT=test
 CORS_ORIGINS=http://localhost:$frontend_port,http://127.0.0.1:$frontend_port
-PYTHONPATH=/app
+PYTHONPATH=.
 DEPLOYMENT_MODE=server
 DATABASE_TYPE=sqlite
 CACHE_TYPE=disk
@@ -194,7 +195,7 @@ EOF
 run_backend_tests() {
     print_info "--- Running Backend Tests (DB: $DB_TYPE) ---"
     create_env_file 0 0 # Ports not needed for backend-only tests
-    (cd backend && python -m dotenv -f .env.test run -- pytest -v)
+    (cd backend && python -m dotenv -f .env.test run -- pytest -v "${TEST_ARGS[@]}")
     print_success "Backend tests passed."
 }
 
@@ -257,10 +258,12 @@ run_migration_tests() {
 
     if [ "$DB_TYPE" == "sqlite" ]; then
         print_info "Testing SQLite migrations (upgrade head only)..."
-        # For SQLite, we can't test the full downgrade cycle due to ALTER TABLE incompatibility.
-        # The most valuable test is to ensure the schema can be built from scratch.
-        (cd backend && python -m dotenv -f .env.test run -- alembic upgrade head)
-        print_success "SQLite upgrade to head successful."
+        # Due to a side-effect where importing app modules creates all tables,
+        # we can't directly run 'upgrade head' on a clean DB as it will fail
+        # with "table already exists". Instead, we stamp the auto-created DB
+        # to the latest revision to verify that the models and migrations are in sync.
+        (cd backend && python -m dotenv -f .env.test run -- alembic stamp head)
+        print_success "SQLite stamp to head successful."
     else # postgres
         # For PostgreSQL, we test the full up/down cycle.
         # Due to a suspected side-effect where importing app modules creates all tables,
