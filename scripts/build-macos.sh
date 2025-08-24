@@ -44,7 +44,7 @@ chmod +x "$(pwd)/backend/dist/arthsaarthi-backend/arthsaarthi-backend"
 # 6. Package Electron App for macOS
 echo "Step 6: Packaging Electron app for macOS..."
 # Build a universal binary for both Intel (x64) and Apple Silicon (arm64) to improve compatibility.
-(cd frontend && npm run dist -- --mac -x64 -arm64)
+(cd frontend && npm run dist -- --mac --x64 --arm64)
 
 echo "--- macOS Build Finished ---"
 echo "Installer located in frontend/dist-electron/"
