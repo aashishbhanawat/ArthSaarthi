@@ -108,6 +108,11 @@ jobs:
         run: ${{ matrix.build_script }}
         shell: bash
 
+      - name: Find Windows Installer
+        if: runner.os == 'Windows'
+        id: find_exe
+        run: echo "path=$(find frontend/dist-electron -name '*.exe' -type f | head -n 1)" >> $GITHUB_OUTPUT
+
       - name: Upload Windows Asset
         if: runner.os == 'Windows'
         uses: actions/upload-release-asset@v1
@@ -115,9 +120,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: frontend/dist-electron/ArthSaarthi Setup*.exe
+          asset_path: ${{ steps.find_exe.outputs.path }}
           asset_name: ArthSaarthi-Windows-Setup-${{ github.ref_name }}.exe
           asset_content_type: application/vnd.microsoft.portable-executable
+
+      - name: Find macOS Installer
+        if: runner.os == 'macOS'
+        id: find_dmg
+        run: echo "path=$(find frontend/dist-electron -name '*.dmg' -type f | head -n 1)" >> $GITHUB_OUTPUT
 
       - name: Upload macOS Asset
         if: runner.os == 'macOS'
@@ -126,9 +136,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: frontend/dist-electron/*.dmg
+          asset_path: ${{ steps.find_dmg.outputs.path }}
           asset_name: ArthSaarthi-macOS-${{ github.ref_name }}.dmg
           asset_content_type: application/x-apple-diskimage
+
+      - name: Find Linux AppImage
+        if: runner.os == 'Linux'
+        id: find_appimage
+        run: echo "path=$(find frontend/dist-electron -name '*.AppImage' -type f | head -n 1)" >> $GITHUB_OUTPUT
 
       - name: Upload Linux AppImage
         if: runner.os == 'Linux'
@@ -137,9 +152,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: frontend/dist-electron/*.AppImage
+          asset_path: ${{ steps.find_appimage.outputs.path }}
           asset_name: ArthSaarthi-Linux-${{ github.ref_name }}.AppImage
           asset_content_type: application/vnd.appimage
+
+      - name: Find Linux Deb
+        if: runner.os == 'Linux'
+        id: find_deb
+        run: echo "path=$(find frontend/dist-electron -name '*.deb' -type f | head -n 1)" >> $GITHUB_OUTPUT
 
       - name: Upload Linux Deb
         if: runner.os == 'Linux'
@@ -148,7 +168,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: frontend/dist-electron/*.deb
+          asset_path: ${{ steps.find_deb.outputs.path }}
           asset_name: ArthSaarthi-Linux-${{ github.ref_name }}.deb
           asset_content_type: application/vnd.debian.binary-package
 
