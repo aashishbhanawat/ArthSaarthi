@@ -115,7 +115,7 @@ For each feature, we'll follow these steps:
     *   **Testing Plan:** The QA Engineer will define unit tests, integration tests, and acceptance criteria.
     *   **E2E Test Plan:** The QA Engineer will also define a high-level E2E test case to be added for the feature.
     *   **Rigorous RCA:** When an error occurs, the AI must analyze the **full stack trace**, validate dependencies by requesting to see imported files, and state its hypothesis before proposing a fix.
-    *   **Local Testing Environment:** For development and testing in a non-Dockerized environment, refer to the instructions in `task_prompt/AGENTS.md`. This guide details how to use the `run_local_tests.sh` script to execute the full test suite.
+    *   **Local Testing Environment:** For development and testing in a non-Dockerized environment, use the `./run_local_tests.sh` script. It can run specific test suites (e.g., `./run_local_tests.sh backend`, `./run_local_tests.sh e2e`) or even single test files (e.g., `./run_local_tests.sh backend app/tests/api/v1/test_users.py`). This is the preferred method for quick, targeted testing.
     *   **Formal Bug Triage:** Before filing a new bug, the AI must search the temporary bug log (`docs/bug_report_temp.md`) for existing issues. It will propose updating an existing bug before creating a new one. The main `docs/bug_reports.md` file is for historical context only.
     *   **No Debugging Loops:** If a proposed fix does not work, the AI must not suggest the same fix again. It must re-evaluate its hypothesis, ask for more information (e.g., different logs, file contents), and propose a new, distinct path forward.
 

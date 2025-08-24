@@ -59,7 +59,7 @@ These commands run tests inside isolated Docker containers, which is the most re
     ```
 *   **Backend Tests (SQLite/Desktop Mode):**
     ```bash
-    docker compose -f docker-compose.test.desktop.yml run --build --rm test-desktop
+    docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml run --build --rm test-desktop
     ```
 *   **Frontend Unit Tests:**
     ```bash
@@ -135,12 +135,23 @@ For a faster feedback loop without Docker, a comprehensive script is provided to
 ./run_local_tests.sh
 ```
 
-This script is highly configurable:
-*   Run the entire suite: `./run_local_tests.sh all`
-*   Run only linters: `./run_local_tests.sh lint`
-*   Run backend tests against PostgreSQL: `./run_local_tests.sh backend --db postgres`
-*   Run only migration tests: `./run_local_tests.sh migrations`
-*   See all options: `./run_local_tests.sh --help`
+This script is highly configurable, allowing you to run the entire suite or target specific parts for faster feedback
+
+Running a Specific Test Suite:  
+* Run the entire suite: ./run_local_tests.sh all 
+* Run only linters: ./run_local_tests.sh lint 
+* Run only backend tests: ./run_local_tests.sh backend 
+* Run only frontend tests: ./run_local_tests.sh frontend 
+* Run only E2E tests: ./run_local_tests.sh e2e 
+* Run only migration tests: ./run_local_tests.sh migrations 
+* Use a PostgreSQL database: ./run_local_tests.sh backend --db postgres 
+* See all options: ./run_local_tests.sh --help 
+ 
+Running a Single Test File or Function: 
+ 
+You can also pass arguments directly to the underlying test runner (pytest for backend, playwright for E2E). 
+* Run a single backend test file: ./run_local_tests.sh backend app/tests/api/v1/test_holdings.py 
+* Run a single E2E test file: ./run_local_tests.sh e2e tests/portfolio-and-dashboard.spec.ts
 
 ---
 
