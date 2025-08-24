@@ -9,25 +9,29 @@
 
 **ArthSaarthi** is a self-hostable, privacy-focused application designed to help users manage their personal investment portfolios. It provides a comprehensive suite of tools for tracking assets, analyzing performance, and making informed financial decisions.
 
-The application can be run as a full-stack web service using Docker, or as a simple, single-user **desktop application** that requires no external database, making it accessible to both technical and non-technical users.
+The application is designed for flexibility and can be deployed in two ways: as a multi-user **web service** using Docker for self-hosting, or as a simple, single-user **desktop application** that requires no external database, making it accessible to both technical and non-technical users.
 
 The project was developed following a rigorous, AI-assisted Agile SDLC, with a strong emphasis on automated testing, comprehensive documentation, and iterative feature implementation.
 
 <!-- Optional: Add a link to a live demo if you have one -->
 <!-- **[Live Demo](https://your-demo-link.com)** -->
 
-## ✨ Features
+## ✨ Core Features
 
-### Currently Available
-
-*   **Secure Authentication & User Management:** Initial admin setup, JWT-based login/logout, and an admin-only dashboard for full CRUD operations on users.
-*   **Comprehensive Dashboard:** Get a bird's-eye view of your financial health with a dynamic dashboard showing total portfolio value, realized/unrealized P&L, top daily market movers, and interactive charts for portfolio history and asset allocation.
-*   **Advanced Portfolio Analytics:** Go beyond simple returns with on-demand calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset level.
-*   **Detailed Portfolio & Transaction Management:**
-    *   Create and manage multiple portfolios with full CRUD functionality for transactions.
-    *   A redesigned portfolio page showing a consolidated holdings view with sorting.
-    *   A unique **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
-*   **Automated Data Import:** Drastically reduce manual entry with a full-stack feature for uploading, parsing, previewing, and committing transaction data from CSV files (supports Zerodha, ICICI Direct, and generic formats).
+*   **Secure Authentication & User Management:** JWT-based authentication, initial admin setup, and a full admin dashboard for Create, Read, Update, and Delete (CRUD) operations on users.
+*   **Dynamic Dashboard:** Get a bird's-eye view of your financial health with a dashboard showing total portfolio value, realized/unrealized P&L, top daily market movers, and interactive charts for portfolio history and asset allocation.
+*   **Advanced Portfolio Analytics:** On-demand calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset levels.
+*   **Full Portfolio & Transaction Management:**
+    *   Full CRUD functionality for portfolios.
+    *   Full CRUD functionality for transactions, including a dedicated, filterable **Transaction History** page.
+*   **Consolidated Holdings View:** A redesigned portfolio page that shows a consolidated holdings table with sorting, replacing a simple transaction list.
+*   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.
+*   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
+    *   Includes pre-built parsers for Zerodha, ICICI Direct, and a generic format.
+    *   Features an advanced UI for on-the-fly **asset alias mapping** for unrecognized ticker symbols.
+*   **Flexible Deployment:**
+    *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
+    *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database and a file-based cache.
 
 ### On the Horizon (Future Features)
 
@@ -41,7 +45,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 ## 🛠️ Technology Stack
 
 *   **Backend:** Python, FastAPI, SQLAlchemy, Alembic (Migrations)
-*   **Frontend:** TypeScript, React, Vite, React Query, Tailwind CSS
+*   **Frontend:** TypeScript, React, Vite, React Query, Tailwind CSS, Chart.js
 *   **Database:** PostgreSQL, SQLite
 *   **Caching:** Redis, DiskCache
 *   **Testing:** Pytest (Backend), Jest & React Testing Library (Frontend), Playwright (E2E)
@@ -57,11 +61,11 @@ To learn how to use the application's features, refer to the **[User Guide](./do
 
 ## 👨‍💻 For Developers
 
-We welcome contributions! If you're interested in the technical details or want to contribute to the project, please check out the following resources:
+This project was built with a strong emphasis on developer experience and maintainability. If you're interested in the technical details or want to contribute, please check out the following resources:
 
-*   **Developer Guide:** Instructions for setting up a development environment, running tests, and understanding the local development workflow.
-*   **Contributing Guide:** Our guide for contributing to the project, including our AI-assisted development process.
-*   **Architecture Overview:** A high-level look at the system's design.
+*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (both Docker and native), running tests, and understanding the local development workflow.
+*   **[Contributing Guide](./CONTRIBUTING.md):** Our guide for contributing to the project, including our AI-assisted development process.
+*   **[Architecture Overview](./docs/architecture.md):** A high-level look at the system's design.
 
 ---
 

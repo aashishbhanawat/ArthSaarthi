@@ -60,12 +60,13 @@ This method uses pre-built Docker images from Docker Hub for a consistent and re
     *   Generate a secure secret key: `openssl rand -hex 32`
     *   Set `CORS_ORIGINS` to the domain name or IP address you will use to access the application. Example: `CORS_ORIGINS=http://localhost,http://192.168.1.50`
 5.  **Start the Application:** This command pulls the official images from Docker Hub and starts all services.
+    *   By default, this will pull the `latest` version. To pull a specific version (e.g., `v0.2.0`), you can set the `APP_VERSION` environment variable before running the command: `export APP_VERSION="v0.2.0"`
     ```bash
     docker-compose up -d
     ```
     *(The `-d` flag runs the services in the background.)*
 6.  **Access the Application:**
-    *   **Frontend:** `http://localhost:3000` (or your server's IP/domain)
+    *   **Frontend:** `http://localhost` (or your server's IP/domain). The application runs on port 80 by default. You can change this by setting the `FRONTEND_PORT` environment variable (e.g., `export FRONTEND_PORT=8080`).
     *   **Backend API Docs:** `http://localhost:8000/docs`
 
 #### First-Time Setup
@@ -128,4 +129,3 @@ You must run the backend and frontend in two separate terminals.
 You can run a native server installation with SQLite and a file-based cache by setting `DATABASE_TYPE=sqlite` and `CACHE_TYPE=disk` in `backend/.env`.
 
 **Security Warning:** This configuration is **not recommended** for a multi-user server environment. The SQLite database file is **not encrypted** in this mode, which poses a security risk. Encryption is only supported in the single-user Desktop Mode.
-

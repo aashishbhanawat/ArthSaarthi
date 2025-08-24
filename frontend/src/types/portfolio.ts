@@ -5,9 +5,9 @@ export interface Transaction {
   asset_id: string;
   portfolio_id: string;
   transaction_type: 'BUY' | 'SELL';
-  quantity: number;
-  price_per_unit: number;
-  fees: number;
+  quantity: string;
+  price_per_unit: string;
+  fees: string;
   transaction_date: string; // ISO 8601 date string
   asset: Asset;
 }

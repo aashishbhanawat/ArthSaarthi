@@ -93,7 +93,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ portfolioId, 
 
     const handleCreateAsset = () => {
         setApiError(null);
-        createAssetMutation.mutate({ ticker: inputValue.toUpperCase() }, {
+        createAssetMutation.mutate({ ticker_symbol: inputValue.toUpperCase() }, {
             onSuccess: (newAsset) => {
                 handleSelectAsset(newAsset);
             },

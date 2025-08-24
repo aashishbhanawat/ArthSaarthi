@@ -8,7 +8,7 @@ Welcome to ArthSaarthi! This guide will walk you through setting up and using th
 
 This application is designed to be self-hosted, giving you full control over your data.
 
-➡️ **For detailed installation instructions, please follow the ["How to Run the Project"](../README.md#🚀-how-to-run-the-project) section in the main README file.**
+➡️ **For detailed installation instructions, please refer to the [Installation Guide](https://github.com/aashishbhanawat/pms/blob/main/installation_guide.md) on the project's GitHub repository.**
 
 ### First-Time Admin Account Creation
 
@@ -84,6 +84,15 @@ The core of the application is tracking your individual buy and sell transaction
 
 The backend includes validation to prevent you from selling more of an asset than you own on a given date. If you attempt this, you will see a specific error message.
 
+### Viewing Transaction History {#viewing-transaction-history}
+
+The application provides a centralized page to view, search, and filter all transactions across all of your portfolios.
+
+1.  Navigate to the **"Transactions"** page from the main navigation bar.
+2.  You will see a paginated table of all your transactions.
+3.  Use the filter controls at the top of the page to narrow down the list by portfolio, transaction type (Buy/Sell), or a specific date range.
+4.  You can also edit or delete any transaction directly from this table using the buttons on each row.
+
 ### Importing Transactions from a CSV File {#importing-transactions}
 
 Instead of adding transactions one by one, you can use the data import feature to upload a CSV file.
@@ -92,7 +101,7 @@ Instead of adding transactions one by one, you can use the data import feature t
 2.  Select the portfolio you want to import the transactions into.
 3.  Select the **Statement Type** (e.g., "Generic CSV", "Zerodha", "ICICI Direct") that matches your file format. This ensures the file is parsed correctly.
 4.  Choose the CSV file from your computer.
-4.  Click **"Upload and Preview"**.
+5.  Click **"Upload and Preview"**.
 6.  The system will show you a preview of the transactions it has parsed, categorized into sections:
     *   **New Transactions:** Valid transactions that can be imported.
     *   **Transactions Requiring Mapping:** Transactions with a ticker symbol that is not recognized by the system (e.g., `INFY-BE` instead of `INFY.NS`).
