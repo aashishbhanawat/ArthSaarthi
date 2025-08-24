@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Goal } from '../../types/goal';
 import GoalDetailView from './GoalDetailView';
-import { Button } from 'src/components/ui/button';
+import { Button } from '@/components/common/Button';
 import { LinkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import ConfirmationModal from '../common/DeleteConfirmationModal';
 

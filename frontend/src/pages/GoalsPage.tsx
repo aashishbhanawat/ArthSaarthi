@@ -5,7 +5,7 @@ import { getPortfolios } from '../services/portfolioApi';
 import { Goal } from '../types/goal';
 import { Portfolio } from '../types/portfolio';
 import { Asset } from '../types/asset';
-import { Button } from 'src/components/ui/button';
+import { Button } from '@/components/common/Button';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import GoalCard from '../components/Goals/GoalCard';
 import GoalFormModal from '../components/modals/GoalFormModal';
