@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 
@@ -47,6 +47,6 @@ class GoalUpdate(BaseModel):
 class Goal(GoalBase):
     id: uuid.UUID
     user_id: uuid.UUID
-    created_at: date
+    created_at: datetime
     links: List[GoalLink] = []
     model_config = ConfigDict(from_attributes=True)
