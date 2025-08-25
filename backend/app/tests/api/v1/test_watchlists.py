@@ -169,8 +169,8 @@ def test_read_watchlist_with_items(
 ):
     # Mock the financial data service
     mock_price_data = {
-        "TSLA": {"price": 180.0, "change": 2.5},
-        "NVDA": {"price": 450.0, "change": -5.0},
+        "TSLA": {"current_price": 180.0, "previous_close": 177.5},
+        "NVDA": {"current_price": 450.0, "previous_close": 455.0},
     }
     mocker.patch(
         "app.services.financial_data_service.financial_data_service.get_current_prices",
