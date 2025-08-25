@@ -3,12 +3,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AddAssetToWatchlistModal from '../../../components/modals/AddAssetToWatchlistModal';
-import * as usePortfolioHooks from '../../../hooks/usePortfolios';
+import * as useAssetsHooks from '../../../hooks/useAssets';
 import { Asset } from '../../../types/asset';
 
-jest.mock('../../../hooks/usePortfolios');
+jest.mock('../../../hooks/useAssets');
 
-const mockUseAssetSearch = usePortfolioHooks.useAssetSearch as jest.Mock;
+const mockUseAssetSearch = useAssetsHooks.useAssetSearch as jest.Mock;
 
 const mockAssets: Asset[] = [
   { id: '1', ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' },
@@ -40,7 +40,7 @@ describe('AddAssetToWatchlistModal', () => {
     mockUseAssetSearch.mockReturnValue({ data: mockAssets, isLoading: false });
     renderComponent({});
 
-    const searchInput = screen.getByLabelText('Search for Asset');
+    const searchInput = screen.getByLabelText('Search for an asset');
     fireEvent.change(searchInput, { target: { value: 'AAPL' } });
 
     await waitFor(() => {
@@ -53,13 +53,13 @@ describe('AddAssetToWatchlistModal', () => {
     mockUseAssetSearch.mockReturnValue({ data: mockAssets, isLoading: false });
     renderComponent({ onAddAsset });
 
-    const searchInput = screen.getByLabelText('Search for Asset');
+    const searchInput = screen.getByLabelText('Search for an asset');
     fireEvent.change(searchInput, { target: { value: 'GOOGL' } });
 
     const searchResult = await screen.findByText('Alphabet Inc. (GOOGL)');
     fireEvent.click(searchResult);
 
-    const addButton = screen.getByRole('button', { name: 'Add Asset' });
+    const addButton = screen.getByRole('button', { name: 'Add Asset to Watchlist' });
     expect(addButton).not.toBeDisabled();
     fireEvent.click(addButton);
 
@@ -68,7 +68,7 @@ describe('AddAssetToWatchlistModal', () => {
 
   it('disables the add button when no asset is selected', () => {
     renderComponent({});
-    const addButton = screen.getByRole('button', { name: 'Add Asset' });
+    const addButton = screen.getByRole('button', { name: 'Add Asset to Watchlist' });
     expect(addButton).toBeDisabled();
   });
 });
