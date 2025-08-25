@@ -1,11 +1,12 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, UseQueryResult, UseMutationResult } from '@tanstack/react-query';
 import AssetLinkModal from '../../../components/modals/AssetLinkModal';
 import * as usePortfolios from '../../../hooks/usePortfolios';
 import * as useGoals from '../../../hooks/useGoals';
 import { Portfolio } from '../../../types/portfolio';
 import { Asset } from '../../../types/asset';
+import { GoalLinkCreateIn, GoalLink } from '../../../types/goal';
 
 const queryClient = new QueryClient();
 
@@ -26,16 +27,16 @@ describe('AssetLinkModal', () => {
     jest.spyOn(usePortfolios, 'usePortfolios').mockReturnValue({
       data: mockPortfolios,
       isLoading: false,
-    } as any);
+    } as UseQueryResult<Portfolio[], Error>);
 
     jest.spyOn(usePortfolios, 'usePortfolioAssets').mockReturnValue({
       data: mockAssets,
       isLoading: false,
-    } as any);
+    } as UseQueryResult<Asset[], Error>);
 
     jest.spyOn(useGoals, 'useCreateGoalLink').mockReturnValue({
       mutate: jest.fn(),
-    } as any);
+    } as unknown as UseMutationResult<GoalLink, Error, { goalId: string; data: GoalLinkCreateIn }, unknown>);
   });
 
   afterEach(() => {

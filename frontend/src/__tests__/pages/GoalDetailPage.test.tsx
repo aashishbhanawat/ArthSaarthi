@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/react-query';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import GoalDetailPage from '../../pages/GoalDetailPage';
 import * as useGoals from '../../hooks/useGoals';
@@ -34,7 +34,7 @@ describe('GoalDetailPage', () => {
       data: mockGoal,
       isLoading: false,
       isError: false,
-    } as any);
+    } as UseQueryResult<Goal, Error>);
   });
 
   afterEach(() => {
