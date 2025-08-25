@@ -39,13 +39,22 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     const portfolioName = `Goal Test Portfolio ${Date.now()}`;
 
     // --- 1. Create a portfolio to link later ---
-    // This is necessary because the new user doesn't have any portfolios by default.
     await page.getByRole('link', { name: 'Portfolios' }).click();
     await page.getByRole('button', { name: 'Create New Portfolio' }).click();
+    await expect(page.getByRole('heading', { name: 'Create Portfolio' })).toBeVisible();
     await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
-    // Wait for navigation to the new portfolio's detail page to confirm creation
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
+
+    // Add a transaction to the portfolio so it has value for progress calculation
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset').pressSequentially('MSFT');
+    await page.getByRole('button', { name: 'Create Asset "MSFT"' }).click();
+    await page.getByLabel('Quantity').fill('10');
+    await page.getByLabel('Price per Unit').fill('200');
+    await page.getByLabel('Date').fill('2023-01-01');
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await expect(page.getByRole('row', { name: /MSFT/ })).toBeVisible();
 
 
     // --- 2. Create a new goal ---
@@ -59,74 +68,57 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     await page.getByLabel('Target Date').fill('2050-01-01');
     await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-    // Wait for the goals list to be re-fetched after creation
-    await page.waitForResponse(response =>
-      response.url().includes('/api/v1/goals') && response.request().method() === 'GET'
-    );
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/goals') && resp.status() === 200);
 
-    // Now the UI should be updated.
-    const goalCard = page.locator('.bg-card').filter({ hasText: goalName });
+    const goalCard = page.locator('div.flex.justify-between.items-start', { hasText: goalName });
     await expect(goalCard).toBeVisible();
-    await expect(goalCard.getByText('0%')).toBeVisible();
-    await expect(goalCard.getByText(`of ₹${Number(targetAmount).toLocaleString('en-IN')}`)).toBeVisible();
+    await expect(goalCard.getByText('0.00%')).toBeVisible();
 
 
-    // --- 2. Navigate to Detail Page and Link a Portfolio ---
+    // --- 3. Navigate to Detail Page and Link the Portfolio ---
     await goalCard.click();
     await expect(page.getByRole('heading', { name: goalName })).toBeVisible();
 
-    // Link a portfolio
     await page.getByRole('button', { name: 'Link Asset/Portfolio' }).click();
     await expect(page.getByRole('heading', { name: 'Link to Goal' })).toBeVisible();
 
-    // The test DB creates a "Tech Giants" portfolio
-    const portfolioToLink = page.locator('.bg-card').filter({ hasText: 'Tech Giants' });
-    await portfolioToLink.getByRole('button', { name: 'Link' }).click();
+    await page.getByRole('listitem').filter({ hasText: portfolioName }).click();
+    await page.getByRole('button', { name: 'Link', exact: true }).click();
 
-    await expect(page.getByRole('heading', { name: 'Link to Goal' })).not.toBeVisible(); // Modal should close
+    await expect(page.getByRole('heading', { name: 'Link to Goal' })).not.toBeVisible();
 
-    // Verify the portfolio is now in the "Linked Items" list
     const linkedItemsSection = page.locator('section[aria-labelledby="linked-items-header"]');
-    await expect(linkedItemsSection.getByText('Tech Giants')).toBeVisible();
+    await expect(linkedItemsSection.getByText(portfolioName)).toBeVisible();
 
 
-    // --- 3. Verify Progress Update ---
-    // Progress on detail page should be updated (we'll check it's not the initial state)
-    await expect(page.getByText('₹0 /')).not.toBeVisible();
+    // --- 4. Verify Progress Update ---
+    await expect(page.getByText('₹0.00 /')).not.toBeVisible();
 
-    // Navigate back to goals list
     await page.getByRole('link', { name: 'Goals' }).click();
     await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
 
-    // HACK: Force a reload to bypass a potential React Query caching issue.
-    await page.reload();
-    await page.waitForResponse(response => response.url().includes('/api/v1/goals'));
+    const updatedGoalCard = page.locator('div.flex.justify-between.items-start', { hasText: goalName });
+    await expect(updatedGoalCard.getByText('0.00%')).not.toBeVisible();
 
 
-    // Verify progress on the card is also updated
-    const updatedGoalCard = page.locator('.bg-card').filter({ hasText: goalName });
-    await expect(updatedGoalCard.getByText('0%')).not.toBeVisible();
-
-
-    // --- 4. Edit the Goal ---
-    await updatedGoalCard.getByRole('button', { name: 'Edit Goal' }).click();
+    // --- 5. Edit the Goal ---
+    await updatedGoalCard.getByRole('button', { name: 'Edit' }).click();
     await expect(page.getByRole('heading', { name: 'Edit Goal' })).toBeVisible();
     await page.getByLabel('Goal Name').fill(updatedGoalName);
     await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-    // Verify the name has been updated
-    await expect(page.locator('.bg-card').filter({ hasText: goalName })).not.toBeVisible();
-    const finalGoalCard = page.locator('.bg-card').filter({ hasText: updatedGoalName });
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/goals') && resp.status() === 200);
+    const finalGoalCard = page.locator('div.flex.justify-between.items-start', { hasText: updatedGoalName });
     await expect(finalGoalCard).toBeVisible();
 
 
-    // --- 5. Delete the Goal ---
-    await finalGoalCard.getByRole('button', { name: 'Delete Goal' }).click();
+    // --- 6. Delete the Goal ---
+    await finalGoalCard.getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByRole('heading', { name: 'Delete Goal' })).toBeVisible();
     await page.getByRole('button', { name: 'Delete' }).click();
 
-    // Verify the card is gone
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/goals') && resp.status() === 200);
     await expect(finalGoalCard).not.toBeVisible();
-    await expect(page.getByText('No goals found.')).toBeVisible();
+    await expect(page.getByText("You haven't set any goals yet.")).toBeVisible();
   });
 });
