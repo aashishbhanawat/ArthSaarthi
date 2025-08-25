@@ -18,3 +18,8 @@ export interface Goal {
 
 export type GoalCreate = Omit<Goal, "id" | "user_id" | "created_at" | "links">;
 export type GoalUpdate = Partial<GoalCreate>;
+
+export interface GoalLinkCreateIn {
+    portfolio_id?: string;
+    asset_id?: string;
+}

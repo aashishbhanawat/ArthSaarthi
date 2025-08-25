@@ -12,6 +12,9 @@ class GoalLinkBase(BaseModel):
     asset_id: Optional[uuid.UUID] = None
 
 
+class GoalLinkCreateIn(GoalLinkBase):
+    pass
+
 class GoalLinkCreate(GoalLinkBase):
     goal_id: uuid.UUID
 

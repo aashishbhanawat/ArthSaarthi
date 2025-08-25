@@ -2,9 +2,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app import crud
+from app import crud, schemas
 from app.core.config import settings
+from app.tests.utils.asset import create_test_asset
 from app.tests.utils.goal import create_random_goal
+from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.user import create_random_user
 
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
@@ -123,3 +125,74 @@ def test_delete_goal_success(client: TestClient, db: Session, get_auth_headers):
 
     db_goal = crud.goal.get(db, id=goal.id)
     assert db_goal is None
+
+
+def test_create_goal_link_portfolio_success(client: TestClient, db: Session, get_auth_headers):
+    """
+    Test successful creation of a link between a goal and a portfolio.
+    """
+    user, password = create_random_user(db)
+    auth_headers = get_auth_headers(user.email, password)
+    goal = create_random_goal(db, user_id=user.id)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Test Portfolio")
+
+    link_in = {"portfolio_id": str(portfolio.id)}
+
+    response = client.post(
+        f"{settings.API_V1_STR}/goals/{goal.id}/links",
+        headers=auth_headers,
+        json=link_in,
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["portfolio_id"] == str(portfolio.id)
+    assert data["goal_id"] == str(goal.id)
+
+
+def test_create_goal_link_asset_success(client: TestClient, db: Session, get_auth_headers):
+    """
+    Test successful creation of a link between a goal and an asset.
+    """
+    user, password = create_random_user(db)
+    auth_headers = get_auth_headers(user.email, password)
+    goal = create_random_goal(db, user_id=user.id)
+    asset = create_test_asset(db, ticker_symbol="AAPL")
+
+    link_in = {"asset_id": str(asset.id)}
+
+    response = client.post(
+        f"{settings.API_V1_STR}/goals/{goal.id}/links",
+        headers=auth_headers,
+        json=link_in,
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["asset_id"] == str(asset.id)
+    assert data["goal_id"] == str(goal.id)
+
+
+def test_delete_goal_link_success(client: TestClient, db: Session, get_auth_headers):
+    """
+    Test successful deletion of a goal link.
+    """
+    user, password = create_random_user(db)
+    auth_headers = get_auth_headers(user.email, password)
+    goal = create_random_goal(db, user_id=user.id)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Test Portfolio")
+    link_in = schemas.GoalLinkCreate(portfolio_id=portfolio.id, goal_id=goal.id)
+    link = crud.goal_link.create_with_owner(db, obj_in=link_in, user_id=user.id)
+    db.commit()
+
+    response = client.delete(
+        f"{settings.API_V1_STR}/goals/{goal.id}/links/{link.id}",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["msg"] == "Link deleted successfully"
+
+    db_link = crud.goal_link.get(db, id=link.id)
+    assert db_link is None

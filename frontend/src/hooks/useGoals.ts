@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as goalApi from '../services/goalApi';
-import { GoalCreate, GoalUpdate } from '../types/goal';
+import { GoalCreate, GoalUpdate, GoalLinkCreateIn } from '../types/goal';
 
 export const useGoals = () => {
   return useQuery({
@@ -25,6 +25,18 @@ export const useCreateGoal = () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
     },
   });
+};
+
+export const useCreateGoalLink = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ goalId, data }: { goalId: string; data: GoalLinkCreateIn }) =>
+            goalApi.createGoalLink(goalId, data),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['goals'] });
+            queryClient.invalidateQueries({ queryKey: ['goal', variables.goalId] });
+        },
+    });
 };
 
 export const useUpdateGoal = () => {
