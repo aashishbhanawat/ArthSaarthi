@@ -55,8 +55,8 @@ describe('WatchlistFormModal', () => {
 
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith('New Watchlist');
-        expect(onClose).toHaveBeenCalled();
       });
+      expect(onClose).toHaveBeenCalled();
     });
   });
 
@@ -77,8 +77,8 @@ describe('WatchlistFormModal', () => {
 
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith('Updated Name');
-        expect(onClose).toHaveBeenCalled();
       });
+      expect(onClose).toHaveBeenCalled();
     });
   });
 

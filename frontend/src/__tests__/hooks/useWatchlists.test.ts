@@ -23,11 +23,8 @@ const createTestQueryClient = () =>
     },
   });
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <QueryClientProvider client={createTestQueryClient()}>
-    {children}
-  </QueryClientProvider>
-);
+// eslint-disable-next-line @typescript-eslint/ban-types
+const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={createTestQueryClient()}>{children}</QueryClientProvider>;
 
 const mockWatchlists: Watchlist[] = [
   { id: '1', name: 'Tech Stocks', user_id: 'user1', created_at: new Date().toISOString(), items: [] },
