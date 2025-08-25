@@ -55,6 +55,10 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
         headers: userAuthHeaders,
         data: { ticker_symbol: 'GOALTEST', name: 'Goal Test Asset', asset_type: 'STOCK' },
     });
+    if (!assetResponse.ok()) {
+      console.log("Failed to create asset. Status:", assetResponse.status());
+      console.log("Response body:", await assetResponse.text());
+    }
     expect(assetResponse.ok()).toBeTruthy();
     const asset = await assetResponse.json();
 
