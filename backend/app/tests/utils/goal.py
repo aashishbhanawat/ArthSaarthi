@@ -1,11 +1,11 @@
-from sqlalchemy.orm import Session
 import random
-from datetime import date
 import uuid
+from datetime import date
+
+from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.models.goal import Goal
-from app.tests.utils.user import create_random_user
 
 
 def create_random_goal(db: Session, *, user_id: uuid.UUID) -> Goal:

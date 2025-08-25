@@ -7,6 +7,7 @@ import AdminRoute from './components/auth/AdminRoute';
 import UserManagementPage from './pages/Admin/UserManagementPage';
 import PortfolioPage from './pages/Portfolio/PortfolioPage';
 import PortfolioDetailPage from './pages/Portfolio/PortfolioDetailPage';
+import GoalsPage from './pages/GoalsPage';
 import DataImportPage from './pages/Import/DataImportPage';
 import ImportPreviewPage from './pages/Import/ImportPreviewPage';
 import TransactionsPage from './pages/TransactionsPage';
@@ -38,6 +39,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/portfolios" element={<PortfolioPage />} />
           <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
           <Route path="/import" element={<DataImportPage />} />
           <Route path="/import/:sessionId/preview" element={<ImportPreviewPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
