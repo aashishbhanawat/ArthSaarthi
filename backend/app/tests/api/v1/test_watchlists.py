@@ -1,8 +1,11 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.tests.utils.user import create_random_user
 from app.tests.utils.watchlist import create_random_watchlist
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_create_watchlist(client: TestClient, db: Session, get_auth_headers):
