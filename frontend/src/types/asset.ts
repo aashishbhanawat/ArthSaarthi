@@ -6,4 +6,6 @@ export interface Asset {
     isin: string | null;
     currency: string | null;
     exchange: string | null;
+    current_price?: number;
+    day_change?: number;
 }
