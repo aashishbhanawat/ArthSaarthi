@@ -42,7 +42,7 @@ else:
 
             if self.cache_client:
                 for asset in assets:
-                    ticker = asset["ticker_symbol"]
+                    ticker = asset.ticker_symbol
                     cache_key = f"price_details:{ticker}"
                     cached_data = self.cache_client.get_json(cache_key)
                     if cached_data:
@@ -60,7 +60,7 @@ else:
 
             yfinance_tickers_str = " ".join(
                 [
-                    self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"])
+                    self._get_yfinance_ticker(a.ticker_symbol, a.exchange)
                     for a in tickers_to_fetch
                 ]
             )
@@ -93,7 +93,7 @@ else:
 
             if self.cache_client:
                 for ticker, data in prices_data.items():
-                    if any(t["ticker_symbol"] == ticker for t in tickers_to_fetch):
+                    if any(t.ticker_symbol == ticker for t in tickers_to_fetch):
                         serializable_data = {
                             "current_price": str(data["current_price"]),
                             "previous_close": str(data["previous_close"]),
