@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -5,6 +6,8 @@ from app import crud
 from app.core.config import settings
 from app.tests.utils.goal import create_random_goal
 from app.tests.utils.user import create_random_user
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_create_goal_success(client: TestClient, db: Session, get_auth_headers):
