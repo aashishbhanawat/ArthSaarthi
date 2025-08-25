@@ -5,14 +5,12 @@ const adminUser = {
   password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
 };
 
+import { login } from '../utils/login';
+
 test.describe.serial('Admin User Management Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Login as admin before each test
-    await page.goto('/');
-    await page.getByLabel('Email address').fill(adminUser.email);
-    await page.getByLabel('Password').fill(adminUser.password);
-    await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    await login(page, adminUser.email, adminUser.password);
   });
 
   test('should allow an admin to create, update, and delete a user', async ({ page }) => {
