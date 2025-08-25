@@ -68,6 +68,8 @@ test.describe('Watchlists Feature', () => {
     await page.getByLabel('Search for an asset').fill('AAPL');
     await page.getByRole('button', { name: 'Apple Inc.' }).click();
     await page.getByRole('button', { name: 'Add Asset to Watchlist' }).click();
+
+    console.log(await page.content());
     await expect(page.getByRole('cell', { name: 'AAPL' })).toBeVisible();
 
     // Remove item
