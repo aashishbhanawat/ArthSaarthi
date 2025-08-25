@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useGoal } from '../../hooks/useGoals';
-import { formatCurrency, formatDate } from '../../utils/formatting';
+import { useGoal } from '../hooks/useGoals';
+import { formatCurrency, formatDate } from '../utils/formatting';
 import AssetLinkModal from '../components/modals/AssetLinkModal';
 
 const GoalDetailPage: React.FC = () => {

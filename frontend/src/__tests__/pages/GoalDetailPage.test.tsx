@@ -44,7 +44,7 @@ describe('GoalDetailPage', () => {
   it('renders goal details correctly', () => {
     render(<GoalDetailPage />, { wrapper });
     expect(screen.getByText('Test Goal')).toBeInTheDocument();
-    expect(screen.getByText(/Target: ₹10,000.00 by 1 Jan 2025/i)).toBeInTheDocument();
+    expect(screen.getByText(/Target: ₹10,000.00 by 01 Jan 2025/i)).toBeInTheDocument();
   });
 
   it('opens the asset link modal when "Link Assets" is clicked', () => {

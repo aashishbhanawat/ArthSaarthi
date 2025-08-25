@@ -97,7 +97,7 @@ def delete_goal(
     return {"msg": "Goal deleted successfully"}
 
 
-@router.post("/{goal_id}/links", response_model=schemas.GoalLink)
+@router.post("/{goal_id}/links", response_model=schemas.GoalLink, status_code=201)
 def create_goal_link(
     *,
     db: Session = Depends(dependencies.get_db),
@@ -115,13 +115,21 @@ def create_goal_link(
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     # Ensure that either portfolio_id or asset_id is provided, but not both
-    if not (link_in.portfolio_id or link_in.asset_id) or (link_in.portfolio_id and link_in.asset_id):
-        raise HTTPException(status_code=400, detail="Either portfolio_id or asset_id must be provided, but not both.")
+    if not (link_in.portfolio_id or link_in.asset_id) or \
+       (link_in.portfolio_id and link_in.asset_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Either portfolio_id or asset_id must be provided, but not both."
+        )
 
     # Additional checks to ensure the user owns the asset or portfolio can be added here
 
-    goal_link_create = schemas.GoalLinkCreate(**link_in.model_dump(), goal_id=goal_id)
-    link = crud.goal_link.create_with_owner(db=db, obj_in=goal_link_create, user_id=current_user.id)
+    goal_link_create = schemas.GoalLinkCreate(
+        **link_in.model_dump(), goal_id=goal_id
+    )
+    link = crud.goal_link.create_with_owner(
+        db=db, obj_in=goal_link_create, user_id=current_user.id
+    )
     db.commit()
     return link
 

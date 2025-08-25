@@ -127,7 +127,9 @@ def test_delete_goal_success(client: TestClient, db: Session, get_auth_headers):
     assert db_goal is None
 
 
-def test_create_goal_link_portfolio_success(client: TestClient, db: Session, get_auth_headers):
+def test_create_goal_link_portfolio_success(
+    client: TestClient, db: Session, get_auth_headers
+):
     """
     Test successful creation of a link between a goal and a portfolio.
     """
@@ -150,7 +152,9 @@ def test_create_goal_link_portfolio_success(client: TestClient, db: Session, get
     assert data["goal_id"] == str(goal.id)
 
 
-def test_create_goal_link_asset_success(client: TestClient, db: Session, get_auth_headers):
+def test_create_goal_link_asset_success(
+    client: TestClient, db: Session, get_auth_headers
+):
     """
     Test successful creation of a link between a goal and an asset.
     """

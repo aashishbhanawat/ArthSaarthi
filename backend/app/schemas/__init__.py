@@ -9,7 +9,15 @@ from .dashboard import (
     PortfolioHistoryResponse,
     TopMover,
 )
-from .goal import Goal, GoalCreate, GoalUpdate, GoalLink, GoalLinkCreate, GoalLinkCreateIn, GoalLinkUpdate
+from .goal import (
+    Goal,
+    GoalCreate,
+    GoalLink,
+    GoalLinkCreate,
+    GoalLinkCreateIn,
+    GoalLinkUpdate,
+    GoalUpdate,
+)
 from .holding import Holding, HoldingsResponse, PortfolioSummary
 from .import_session import (
     ImportSession,
