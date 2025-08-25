@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+import pytest
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -8,6 +9,8 @@ from app.tests.utils.asset import create_test_asset
 from app.tests.utils.goal import create_random_goal
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.user import create_random_user
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_get_goal_analytics_no_links(db: Session):
