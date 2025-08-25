@@ -41,7 +41,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     // --- 1. Create a portfolio to link later ---
     await page.getByRole('link', { name: 'Portfolios' }).click();
     await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await expect(page.getByRole('heading', { name: 'Create Portfolio' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Create New Portfolio' })).toBeVisible();
     await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
