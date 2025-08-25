@@ -24,7 +24,6 @@ class CRUDWatchlistItem(
             user_id=user_id,
         )
         db.add(db_obj)
-        db.flush()
         return db_obj
 
 watchlist_item = CRUDWatchlistItem(WatchlistItem)
