@@ -3,7 +3,7 @@ import { useGoals, useDeleteGoal } from '../hooks/useGoals';
 import GoalCard from '../components/Goals/GoalCard';
 import GoalFormModal from '../components/modals/GoalFormModal';
 import { Goal } from '../../types/goal';
-import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
+import { DeleteConfirmationModal } from '../components/common/DeleteConfirmationModal';
 
 const GoalsPage: React.FC = () => {
   const { data: goals, isLoading, isError, error } = useGoals();

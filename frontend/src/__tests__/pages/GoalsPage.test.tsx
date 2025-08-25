@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, UseQueryResult, UseMutationResult } from '@tanstack/react-query';
 import GoalsPage from '../../pages/GoalsPage';
 import * as useGoals from '../../hooks/useGoals';
 import { Goal } from '../../types/goal';
@@ -22,11 +22,11 @@ describe('GoalsPage', () => {
       data: mockGoals,
       isLoading: false,
       isError: false,
-    } as any);
+    } as UseQueryResult<Goal[], Error>);
 
     jest.spyOn(useGoals, 'useDeleteGoal').mockReturnValue({
         mutate: jest.fn(),
-    } as any);
+    } as unknown as UseMutationResult<void, Error, string, unknown>);
   });
 
   afterEach(() => {
