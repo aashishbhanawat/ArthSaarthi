@@ -106,6 +106,7 @@ This feature should be implemented in phases to ensure manageable pull requests.
     *   Write corresponding backend tests.
 
 2.  **Phase 2: Frontend Watchlist Management.**
+    *   **Status: Done**
     *   Implement the `WatchlistsPage` and the `WatchlistSelector` component.
     *   Implement the `WatchlistFormModal` to create and edit watchlists.
     *   Users should be able to create, rename, and delete watchlists.

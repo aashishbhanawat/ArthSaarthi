@@ -1307,3 +1307,35 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
 *   **Outcome:**
     - The backend foundation for the Watchlists feature is complete and stable.
     - All 94 backend tests are passing, confirming the new feature works and has not introduced any regressions.
+
+---
+
+## 2025-08-24: Frontend for Watchlists (Phase 2)
+
+*   **Task Description:** Implement the frontend UI and data layer for managing watchlists (FR8.1, Phase 2). This included creating the page, components, and hooks for creating, renaming, and deleting watchlists, and then stabilizing the new unit tests.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full-stack of frontend files: `watchlist.ts` (types), `watchlistApi.ts` (API service), `useWatchlists.ts` (React Query hooks), `WatchlistFormModal.tsx`, `WatchlistSelector.tsx`, and the main `WatchlistsPage.tsx`. The page was also added to the main router and navigation bar.
+    2.  **Test Generation:** The AI was prompted to generate a full suite of unit tests for all the new components and hooks.
+    3.  **Systematic Debugging via Log Analysis:** The initial test run failed with multiple errors across all new test files. A systematic, iterative debugging process was used to fix them:
+        *   The AI initially misdiagnosed a persistent ESLint parsing error in `useWatchlists.test.ts`, attempting several incorrect fixes.
+        *   The user provided the correct root cause: the test file contained JSX but had a `.ts` extension instead of `.tsx`. This was a critical insight that the AI had missed.
+        *   After the user's guidance, the AI renamed the file to `useWatchlists.test.tsx`, which immediately fixed the parsing error and allowed the other test failures to be diagnosed correctly.
+        *   The remaining test failures were then fixed, including associating form labels with inputs in the modal and adding `aria-label`s to icon buttons for accessibility.
+
+*   **File Changes:**
+    *   `frontend/src/types/watchlist.ts`: **New** file for watchlist type definitions.
+    *   `frontend/src/services/watchlistApi.ts`: **New** API service for watchlist endpoints.
+    *   `frontend/src/hooks/useWatchlists.ts`: **New** React Query hooks for state management.
+    *   `frontend/src/components/modals/WatchlistFormModal.tsx`: **New** modal for creating/editing watchlists.
+    *   `frontend/src/components/Watchlists/WatchlistSelector.tsx`: **New** component for listing and managing watchlists.
+    *   `frontend/src/pages/WatchlistsPage.tsx`: **New** page to host the feature.
+    *   `frontend/src/components/NavBar.tsx` & `frontend/src/App.tsx`: **Updated** to include the new page.
+    *   `frontend/src/__tests__/`: **New** test files for all of the above, which were created and then debugged. `useWatchlists.test.ts` was renamed to `useWatchlists.test.tsx`.
+
+*   **Verification:**
+    - Ran the full frontend test suite using `./run_local_tests.sh frontend`.
+
+*   **Outcome:**
+    - The frontend for Phase 2 of the Watchlists feature is complete, stable, and fully tested.
+    - All 110 frontend tests are passing.
