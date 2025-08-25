@@ -1,14 +1,13 @@
 from decimal import Decimal
-from unittest.mock import MagicMock
 
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.tests.utils.goal import create_random_goal
-from app.tests.utils.user import create_random_user
-from app.tests.utils.portfolio import create_test_portfolio
-from app.tests.utils.asset import create_test_asset
 from app.schemas.goal import GoalLinkCreate
+from app.tests.utils.asset import create_test_asset
+from app.tests.utils.goal import create_random_goal
+from app.tests.utils.portfolio import create_test_portfolio
+from app.tests.utils.user import create_random_user
 
 
 def test_get_goal_analytics_no_links(db: Session):

@@ -1,6 +1,8 @@
 import random
 import uuid
 from datetime import date
+from decimal import Decimal
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -8,10 +10,9 @@ from app import crud, schemas
 from app.models.goal import Goal
 
 
-from decimal import Decimal
-from typing import Optional
-
-def create_random_goal(db: Session, *, user_id: uuid.UUID, target_amount: Optional[Decimal] = None) -> Goal:
+def create_random_goal(
+    db: Session, *, user_id: uuid.UUID, target_amount: Optional[Decimal] = None
+) -> Goal:
     """
     Test utility to create a random goal.
     """
