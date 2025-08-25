@@ -69,12 +69,11 @@ test.describe('Watchlists Feature', () => {
     await page.getByRole('button', { name: 'Apple Inc.' }).click();
     await page.getByRole('button', { name: 'Add Asset to Watchlist' }).click();
 
-    console.log(await page.content());
-    await expect(page.getByRole('cell', { name: 'AAPL' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'AAPL', exact: true })).toBeVisible();
 
     // Remove item
     await page.getByRole('button', { name: 'Remove Apple Inc. from watchlist' }).click();
-    await expect(page.getByRole('cell', { name: 'AAPL' })).not.toBeVisible();
+    await expect(page.getByRole('cell', { name: 'AAPL', exact: true })).not.toBeVisible();
 
     // Cleanup
     page.on('dialog', dialog => dialog.accept());
