@@ -1339,3 +1339,34 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
 *   **Outcome:**
     - The frontend for Phase 2 of the Watchlists feature is complete, stable, and fully tested.
     - All 110 frontend tests are passing.
+
+---
+
+## 2025-08-24: Full-Stack for Watchlist Item Management (Phase 3)
+
+*   **Task Description:** Implement the full-stack functionality for adding and removing assets from a watchlist (FR8.1, Phase 3).
+
+*   **Key Prompts & Interactions:**
+    1.  **Backend Implementation:** A series of prompts were used to implement the backend functionality. This included creating a new `CRUDWatchlistItem` class, adding the corresponding API endpoints (`POST /items`, `DELETE /items/{item_id}`), and updating the `GET /{id}` endpoint to eager load asset details for display on the frontend.
+    2.  **Backend Testing & Debugging:** The AI generated new tests for the item management endpoints. An initial test failure (`AttributeError: asset`) was traced to an incorrect use of a Pydantic schema instead of a SQLAlchemy model in a `joinedload` call. Another failure (`AssertionError: assert 200 == 201`) was fixed by adding the correct `status_code` to the endpoint decorator. A final failure was due to a brittle, order-dependent assertion, which was fixed by making the test check for the presence of items in any order.
+    3.  **Frontend Implementation:** The AI was prompted to generate the frontend data layer (API service functions and React Query hooks) and UI components (`WatchlistTable`, `AddAssetToWatchlistModal`) to support the new functionality. These were then integrated into the main `WatchlistsPage`.
+    4.  **Frontend Testing:** A full suite of tests was generated for the new components and updated for the existing ones. All tests passed on the first try after the previous phase's stabilization efforts.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_watchlist_item.py`: **New** file for item-specific CRUD.
+    *   `backend/app/api/v1/endpoints/watchlists.py`: **Updated** with new endpoints and eager loading.
+    *   `backend/app/schemas/watchlist.py`: **Updated** to include nested asset details in responses.
+    *   `backend/app/tests/api/v1/test_watchlists.py`: **Updated** with tests for item management.
+    *   `frontend/src/services/watchlistApi.ts`: **Updated** with new functions for item management.
+    *   `frontend/src/hooks/useWatchlists.ts`: **Updated** with new hooks for fetching single watchlists and managing items.
+    *   `frontend/src/components/Watchlists/WatchlistTable.tsx`: **New** component.
+    *   `frontend/src/components/modals/AddAssetToWatchlistModal.tsx`: **New** component.
+    *   `frontend/src/pages/WatchlistsPage.tsx`: **Updated** to integrate the new components.
+    *   `frontend/src/__tests__/`: **New** and **updated** test files for the new functionality.
+
+*   **Verification:**
+    - Ran the full backend test suite using `./run_local_tests.sh backend` (98 tests passed).
+    - Ran the full frontend test suite using `./run_local_tests.sh frontend` (122 tests passed).
+
+*   **Outcome:**
+    - The full-stack functionality for adding and removing items from a watchlist is complete, stable, and fully tested. The project is ready for the final phase of the feature.

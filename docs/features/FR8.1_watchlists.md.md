@@ -112,6 +112,7 @@ This feature should be implemented in phases to ensure manageable pull requests.
     *   Users should be able to create, rename, and delete watchlists.
 
 3.  **Phase 3: Full-Stack Item Management.**
+    *   **Status: Done**
     *   Implement the backend API endpoints for adding and removing assets from a watchlist.
     *   Implement the frontend `AddAssetToWatchlistModal` and the logic in the `WatchlistTable` to remove items.
     *   Write corresponding full-stack tests.

@@ -117,7 +117,9 @@ def test_add_item_to_watchlist(client: TestClient, db: Session, get_auth_headers
     assert data["watchlist_id"] == str(watchlist.id)
 
 
-def test_add_duplicate_item_to_watchlist_fails(client: TestClient, db: Session, get_auth_headers):
+def test_add_duplicate_item_to_watchlist_fails(
+    client: TestClient, db: Session, get_auth_headers
+):
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
     watchlist = create_random_watchlist(db, user_id=user.id)
@@ -168,8 +170,16 @@ def test_read_watchlist_with_items(client: TestClient, db: Session, get_auth_hea
     watchlist = create_random_watchlist(db, user_id=user.id)
     asset1 = create_test_asset(db, ticker_symbol="TSLA")
     asset2 = create_test_asset(db, ticker_symbol="NVDA")
-    client.post(f"/api/v1/watchlists/{watchlist.id}/items", headers=headers, json={"asset_id": str(asset1.id)})
-    client.post(f"/api/v1/watchlists/{watchlist.id}/items", headers=headers, json={"asset_id": str(asset2.id)})
+    client.post(
+        f"/api/v1/watchlists/{watchlist.id}/items",
+        headers=headers,
+        json={"asset_id": str(asset1.id)},
+    )
+    client.post(
+        f"/api/v1/watchlists/{watchlist.id}/items",
+        headers=headers,
+        json={"asset_id": str(asset2.id)},
+    )
 
     response = client.get(f"/api/v1/watchlists/{watchlist.id}", headers=headers)
     assert response.status_code == 200

@@ -2,21 +2,20 @@ import uuid
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import crud
 from app.core.dependencies import get_current_active_user
 from app.db.session import get_db
-from sqlalchemy.orm import joinedload
 from app.models.user import User as UserModel
 from app.models.watchlist import Watchlist as WatchlistModel
 from app.models.watchlist import WatchlistItem as WatchlistItemModel
 from app.schemas.watchlist import (
     Watchlist,
     WatchlistCreate,
-    WatchlistUpdate,
     WatchlistItem,
     WatchlistItemCreate,
+    WatchlistUpdate,
 )
 
 router = APIRouter()
@@ -75,7 +74,11 @@ def read_watchlist(
     return watchlist
 
 
-@router.post("/{watchlist_id}/items", response_model=WatchlistItem, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{watchlist_id}/items",
+    response_model=WatchlistItem,
+    status_code=status.HTTP_201_CREATED,
+)
 def add_watchlist_item(
     *,
     db: Session = Depends(get_db),
