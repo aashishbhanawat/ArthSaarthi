@@ -8,6 +8,7 @@ from app import crud
 from app.core.dependencies import get_current_active_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
+from app.services.financial_data_service import financial_data_service
 from app.models.watchlist import Watchlist as WatchlistModel
 from app.models.watchlist import WatchlistItem as WatchlistItemModel
 from app.schemas.watchlist import (
@@ -71,6 +72,17 @@ def read_watchlist(
         raise HTTPException(status_code=404, detail="Watchlist not found")
     if watchlist.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    # Enrich with live data
+    if watchlist.items:
+        tickers = [item.asset.ticker_symbol for item in watchlist.items]
+        price_data = financial_data_service.get_current_prices(tickers)
+        for item in watchlist.items:
+            data = price_data.get(item.asset.ticker_symbol)
+            if data:
+                item.asset.current_price = data.get("price")
+                item.asset.day_change = data.get("change")
+
     return watchlist
 
 

@@ -77,4 +77,25 @@ describe('WatchlistTable', () => {
       itemId: 'item1',
     });
   });
+
+  it('renders price data with correct colors', () => {
+    const watchlistWithPrices: Watchlist = {
+      ...mockWatchlist,
+      items: [
+        { ...mockWatchlist.items[0], asset: { ...mockWatchlist.items[0].asset, current_price: 150, day_change: 2.5 } },
+        { ...mockWatchlist.items[1], asset: { ...mockWatchlist.items[1].asset, current_price: 2800, day_change: -10 } },
+        { id: 'item3', asset_id: 'asset3', asset: { id: 'asset3', ticker_symbol: 'MSFT', name: 'Microsoft', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ', day_change: 0 } },
+      ],
+    };
+    renderComponent({ watchlist: watchlistWithPrices });
+
+    // Check prices are formatted
+    expect(screen.getByText('₹150.00')).toBeInTheDocument();
+    expect(screen.getByText('₹2,800.00')).toBeInTheDocument();
+
+    // Check P&L colors
+    expect(screen.getByText('₹2.50')).toHaveClass('text-green-600');
+    expect(screen.getByText('-₹10.00')).toHaveClass('text-red-600');
+    expect(screen.getByText('₹0.00')).toHaveClass('text-gray-900');
+  });
 });

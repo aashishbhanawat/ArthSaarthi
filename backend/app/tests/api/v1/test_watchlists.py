@@ -164,7 +164,17 @@ def test_remove_item_from_watchlist(client: TestClient, db: Session, get_auth_he
     assert len(data["items"]) == 0
 
 
-def test_read_watchlist_with_items(client: TestClient, db: Session, get_auth_headers):
+def test_read_watchlist_with_items(client: TestClient, db: Session, get_auth_headers, mocker):
+    # Mock the financial data service
+    mock_price_data = {
+        "TSLA": {"price": 180.0, "change": 2.5},
+        "NVDA": {"price": 450.0, "change": -5.0},
+    }
+    mocker.patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value=mock_price_data,
+    )
+
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
     watchlist = create_random_watchlist(db, user_id=user.id)
@@ -185,6 +195,14 @@ def test_read_watchlist_with_items(client: TestClient, db: Session, get_auth_hea
     assert response.status_code == 200
     data = response.json()
     assert len(data["items"]) == 2
-    returned_tickers = {item["asset"]["ticker_symbol"] for item in data["items"]}
-    assert "TSLA" in returned_tickers
-    assert "NVDA" in returned_tickers
+
+    # Create a map of ticker to item for easier assertion
+    items_by_ticker = {item["asset"]["ticker_symbol"]: item for item in data["items"]}
+    assert "TSLA" in items_by_ticker
+    assert "NVDA" in items_by_ticker
+
+    # Check that the price data was added
+    assert items_by_ticker["TSLA"]["asset"]["current_price"] == 180.0
+    assert items_by_ticker["TSLA"]["asset"]["day_change"] == 2.5
+    assert items_by_ticker["NVDA"]["asset"]["current_price"] == 450.0
+    assert items_by_ticker["NVDA"]["asset"]["day_change"] == -5.0
