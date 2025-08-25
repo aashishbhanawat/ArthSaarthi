@@ -9,6 +9,7 @@ import { Watchlist } from '../../types/watchlist';
 // Mock child components and hooks
 jest.mock('../../hooks/useWatchlists');
 jest.mock('../../components/Watchlists/WatchlistSelector', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
   return function DummyWatchlistSelector({ onSelectWatchlist }: { onSelectWatchlist: (id: string) => void }) {
     return React.createElement(
@@ -19,12 +20,14 @@ jest.mock('../../components/Watchlists/WatchlistSelector', () => {
   };
 });
 jest.mock('../../components/Watchlists/WatchlistTable', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
   return function DummyWatchlistTable() {
     return React.createElement('div', { 'data-testid': 'watchlist-table-mock' });
   };
 });
 jest.mock('../../components/modals/AddAssetToWatchlistModal', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const React = require('react');
     return function DummyAddAssetToWatchlistModal({ isOpen }: { isOpen: boolean }) {
       return isOpen ? React.createElement('div', { 'data-testid': 'add-asset-modal-mock' }) : null;
