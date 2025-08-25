@@ -12,7 +12,6 @@ const adminUser = {
 };
 
 test.describe.serial('Goal Planning & Tracking Feature', () => {
-  let userAuthHeaders: { [key: string]: string };
   let portfolioId: string;
   const portfolioName = `Goal Test Portfolio ${Date.now()}`;
 
@@ -39,7 +38,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     });
     expect(userLoginResponse.ok()).toBeTruthy();
     const { access_token: userToken } = await userLoginResponse.json();
-    userAuthHeaders = { Authorization: `Bearer ${userToken}` };
+    const userAuthHeaders = { Authorization: `Bearer ${userToken}` };
 
     // 4. Create Portfolio for the new user
     const portfolioCreateResponse = await request.post('/api/v1/portfolios/', {
@@ -55,18 +54,14 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
         headers: userAuthHeaders,
         data: { ticker_symbol: 'GOALTEST', name: 'Goal Test Asset', asset_type: 'STOCK' },
     });
-    if (!assetResponse.ok()) {
-      console.log("Failed to create asset. Status:", assetResponse.status());
-      console.log("Response body:", await assetResponse.text());
-    }
-    expect(assetResponse.ok()).toBeTruthy();
+    expect(assetResponse.ok(), `Failed to create asset: ${await assetResponse.text()}`).toBeTruthy();
     const asset = await assetResponse.json();
 
     const txnResponse = await request.post(`/api/v1/portfolios/${portfolioId}/transactions/`, {
         headers: userAuthHeaders,
         data: { asset_id: asset.id, transaction_type: 'BUY', quantity: 10, price_per_unit: 100, transaction_date: new Date().toISOString(), fees: 1 },
     });
-    expect(txnResponse.ok()).toBeTruthy();
+    expect(txnResponse.ok(), `Failed to create transaction: ${await txnResponse.text()}`).toBeTruthy();
   });
 
   test.beforeEach(async ({ page }) => {
@@ -115,6 +110,10 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
 
     await page.getByRole('link', { name: 'Goals' }).click();
     await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
+
+    // Using reload as a robust way to ensure cache is not stale
+    await page.reload();
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/goals') && resp.status() === 200);
 
     const updatedGoalCard = page.locator('div.flex.justify-between.items-start', { hasText: goalName });
     await expect(updatedGoalCard.getByText('0.00%')).not.toBeVisible();
