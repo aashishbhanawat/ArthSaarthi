@@ -53,3 +53,8 @@ class Goal(GoalBase):
     created_at: datetime
     links: List[GoalLink] = []
     model_config = ConfigDict(from_attributes=True)
+
+
+class GoalWithAnalytics(Goal):
+    current_value: Decimal
+    progress: float

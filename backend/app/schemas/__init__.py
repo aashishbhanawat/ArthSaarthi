@@ -17,6 +17,7 @@ from .goal import (
     GoalLinkCreateIn,
     GoalLinkUpdate,
     GoalUpdate,
+    GoalWithAnalytics,
 )
 from .holding import Holding, HoldingsResponse, PortfolioSummary
 from .import_session import (
@@ -57,6 +58,7 @@ __all__ = [
     "GoalLinkCreate",
     "GoalLinkCreateIn",
     "GoalLinkUpdate",
+    "GoalWithAnalytics",
     "Holding",
     "HoldingsResponse",
     "ImportSession",

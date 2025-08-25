@@ -13,8 +13,8 @@ const GoalDetailPage: React.FC = () => {
     if (isError) return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
     if (!goal) return <div className="text-center p-8">Goal not found.</div>;
 
-    const currentAmount = 0; // Placeholder
-    const progress = goal.target_amount > 0 ? (currentAmount / goal.target_amount) * 100 : 0;
+    const currentAmount = goal.current_value ?? 0;
+    const progress = goal.progress ?? 0;
 
     return (
         <div>

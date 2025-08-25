@@ -14,6 +14,8 @@ export interface Goal {
   created_at: string; // ISO datetime string
   user_id: string;
   links: GoalLink[];
+  current_value?: number;
+  progress?: number;
 }
 
 export type GoalCreate = Omit<Goal, "id" | "user_id" | "created_at" | "links">;

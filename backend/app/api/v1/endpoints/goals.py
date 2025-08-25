@@ -37,7 +37,7 @@ def create_goal(
     return goal
 
 
-@router.get("/{goal_id}", response_model=schemas.Goal)
+@router.get("/{goal_id}", response_model=schemas.GoalWithAnalytics)
 def read_goal(
     *,
     db: Session = Depends(dependencies.get_db),
@@ -45,14 +45,16 @@ def read_goal(
     current_user: models.User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
-    Get goal by ID.
+    Get goal by ID with analytics.
     """
     goal = crud.goal.get(db=db, id=goal_id)
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
     if goal.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    return goal
+
+    analytics = crud.goal.get_goal_analytics(db=db, goal=goal)
+    return {**goal.__dict__, **analytics}
 
 
 @router.put("/{goal_id}", response_model=schemas.Goal)

@@ -10,10 +10,8 @@ interface GoalCardProps {
 }
 
 const GoalCard: React.FC<GoalCardProps> = ({ goal, onEdit, onDelete }) => {
-  // Progress calculation will be implemented in a later phase.
-  // For now, we'll use a placeholder value.
-  const currentAmount = 0; // Placeholder
-  const progress = goal.target_amount > 0 ? (currentAmount / goal.target_amount) * 100 : 0;
+  const currentAmount = goal.current_value ?? 0;
+  const progress = goal.progress ?? 0;
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-4 flex justify-between items-start">
