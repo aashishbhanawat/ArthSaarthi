@@ -56,9 +56,8 @@ describe('AddAssetToWatchlistModal', () => {
     const searchInput = screen.getByLabelText('Search for Asset');
     fireEvent.change(searchInput, { target: { value: 'GOOGL' } });
 
-    await waitFor(() => {
-      fireEvent.click(screen.getByText('Alphabet Inc. (GOOGL)'));
-    });
+    const searchResult = await screen.findByText('Alphabet Inc. (GOOGL)');
+    fireEvent.click(searchResult);
 
     const addButton = screen.getByRole('button', { name: 'Add Asset' });
     expect(addButton).not.toBeDisabled();

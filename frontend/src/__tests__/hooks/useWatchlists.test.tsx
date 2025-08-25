@@ -8,10 +8,16 @@ import {
   useUpdateWatchlist,
   useDeleteWatchlist,
   useWatchlist,
+  useWatchlists,
+  useCreateWatchlist,
+  useUpdateWatchlist,
+  useDeleteWatchlist,
+  useWatchlist,
   useAddWatchlistItem,
   useRemoveWatchlistItem,
 } from '../../hooks/useWatchlists';
 import { Watchlist, WatchlistItemCreate } from '../../types/watchlist';
+import { Asset } from '../../types/asset';
 
 // Mock the API module
 jest.mock('../../services/watchlistApi');
@@ -114,7 +120,8 @@ describe('Watchlist Hooks', () => {
   describe('useAddWatchlistItem', () => {
     it('should call addWatchlistItem and invalidate queries on success', async () => {
       const newItem: WatchlistItemCreate = { asset_id: 'asset3' };
-      mockedWatchlistApi.addWatchlistItem.mockResolvedValue({ id: 'item3', ...newItem, asset: {} as any, watchlist_id: '1', user_id: 'user1' });
+      const mockAsset: Asset = { id: 'asset3', ticker_symbol: 'TSLA', name: 'Tesla Inc.', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' };
+      mockedWatchlistApi.addWatchlistItem.mockResolvedValue({ id: 'item3', ...newItem, asset: mockAsset, watchlist_id: '1', user_id: 'user1' });
 
       const { result } = renderHook(() => useAddWatchlistItem(), { wrapper });
 
