@@ -164,7 +164,9 @@ def test_remove_item_from_watchlist(client: TestClient, db: Session, get_auth_he
     assert len(data["items"]) == 0
 
 
-def test_read_watchlist_with_items(client: TestClient, db: Session, get_auth_headers, mocker):
+def test_read_watchlist_with_items(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
     # Mock the financial data service
     mock_price_data = {
         "TSLA": {"price": 180.0, "change": 2.5},

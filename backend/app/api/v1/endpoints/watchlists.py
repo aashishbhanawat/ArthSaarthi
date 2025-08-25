@@ -8,7 +8,6 @@ from app import crud
 from app.core.dependencies import get_current_active_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
-from app.services.financial_data_service import financial_data_service
 from app.models.watchlist import Watchlist as WatchlistModel
 from app.models.watchlist import WatchlistItem as WatchlistItemModel
 from app.schemas.watchlist import (
@@ -18,6 +17,7 @@ from app.schemas.watchlist import (
     WatchlistItemCreate,
     WatchlistUpdate,
 )
+from app.services.financial_data_service import financial_data_service
 
 router = APIRouter()
 
