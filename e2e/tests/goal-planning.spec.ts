@@ -33,15 +33,24 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
   });
 
   test('User can create, view, link, edit, and delete a financial goal', async ({ page }) => {
-    // Navigate to the goals page first
-    await page.getByRole('link', { name: 'Goals' }).click();
-    await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
-
     const goalName = 'Retirement Fund';
     const updatedGoalName = 'Early Retirement Fund';
     const targetAmount = '1000000';
+    const portfolioName = `Goal Test Portfolio ${Date.now()}`;
 
-    // --- 1. Create a new goal ---
+    // --- 1. Create a portfolio to link later ---
+    // This is necessary because the new user doesn't have any portfolios by default.
+    await page.getByRole('link', { name: 'Portfolios' }).click();
+    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
+    await page.getByLabel('Name').fill(portfolioName);
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    // Wait for navigation to the new portfolio's detail page to confirm creation
+    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
+
+
+    // --- 2. Create a new goal ---
+    await page.getByRole('link', { name: 'Goals' }).click();
+    await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
     await page.getByRole('button', { name: 'Create New Goal' }).click();
     await expect(page.getByRole('heading', { name: 'Create New Goal' })).toBeVisible();
 
