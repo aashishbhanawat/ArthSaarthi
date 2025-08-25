@@ -75,7 +75,10 @@ def read_watchlist(
 
     # Enrich with live data
     if watchlist.items:
-        assets_to_fetch = [item.asset for item in watchlist.items]
+        assets_to_fetch = [
+            {"ticker_symbol": item.asset.ticker_symbol, "exchange": item.asset.exchange}
+            for item in watchlist.items
+        ]
         price_data = financial_data_service.get_current_prices(assets_to_fetch)
         for item in watchlist.items:
             data = price_data.get(item.asset.ticker_symbol)
