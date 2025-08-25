@@ -3,11 +3,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as watchlistApi from '../../services/watchlistApi';
 import {
   useWatchlists,
+  useWatchlists,
   useCreateWatchlist,
   useUpdateWatchlist,
   useDeleteWatchlist,
+  useWatchlist,
+  useAddWatchlistItem,
+  useRemoveWatchlistItem,
 } from '../../hooks/useWatchlists';
-import { Watchlist } from '../../types/watchlist';
+import { Watchlist, WatchlistItemCreate } from '../../types/watchlist';
 
 // Mock the API module
 jest.mock('../../services/watchlistApi');
@@ -93,6 +97,48 @@ describe('Watchlist Hooks', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(mockedWatchlistApi.deleteWatchlist).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('useWatchlist', () => {
+    it('should return a single watchlist data on success', async () => {
+      mockedWatchlistApi.getWatchlist.mockResolvedValue(mockWatchlists[0]);
+
+      const { result } = renderHook(() => useWatchlist('1'), { wrapper });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual(mockWatchlists[0]);
+    });
+  });
+
+  describe('useAddWatchlistItem', () => {
+    it('should call addWatchlistItem and invalidate queries on success', async () => {
+      const newItem: WatchlistItemCreate = { asset_id: 'asset3' };
+      mockedWatchlistApi.addWatchlistItem.mockResolvedValue({ id: 'item3', ...newItem, asset: {} as any, watchlist_id: '1', user_id: 'user1' });
+
+      const { result } = renderHook(() => useAddWatchlistItem(), { wrapper });
+
+      act(() => {
+        result.current.mutate({ watchlistId: '1', item: newItem });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockedWatchlistApi.addWatchlistItem).toHaveBeenCalledWith('1', newItem);
+    });
+  });
+
+  describe('useRemoveWatchlistItem', () => {
+    it('should call removeWatchlistItem and invalidate queries on success', async () => {
+      mockedWatchlistApi.removeWatchlistItem.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useRemoveWatchlistItem(), { wrapper });
+
+      act(() => {
+        result.current.mutate({ watchlistId: '1', itemId: 'item1' });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockedWatchlistApi.removeWatchlistItem).toHaveBeenCalledWith('1', 'item1');
     });
   });
 });

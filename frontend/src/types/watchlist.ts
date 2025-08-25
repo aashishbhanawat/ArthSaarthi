@@ -1,6 +1,9 @@
+import { Asset } from './asset';
+
 export interface WatchlistItem {
   id: string;
   asset_id: string;
+  asset: Asset;
 }
 
 export interface Watchlist {

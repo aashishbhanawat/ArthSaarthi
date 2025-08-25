@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel, ConfigDict
+from .asset import Asset
 
 
 # Schemas for WatchlistItem
@@ -19,6 +20,9 @@ class WatchlistItemCreate(WatchlistItemBase):
 # Properties to return to client
 class WatchlistItem(WatchlistItemBase):
     id: uuid.UUID
+    watchlist_id: uuid.UUID
+    user_id: uuid.UUID
+    asset: Asset
 
     model_config = ConfigDict(from_attributes=True)
 

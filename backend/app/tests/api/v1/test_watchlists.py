@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.tests.utils.asset import create_test_asset
 from app.tests.utils.user import create_random_user
 from app.tests.utils.watchlist import create_random_watchlist
 
@@ -97,3 +98,83 @@ def test_delete_watchlist(client: TestClient, db: Session, get_auth_headers):
     # Verify it's gone
     response = client.get(f"/api/v1/watchlists/{watchlist.id}", headers=headers)
     assert response.status_code == 404
+
+
+def test_add_item_to_watchlist(client: TestClient, db: Session, get_auth_headers):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    watchlist = create_random_watchlist(db, user_id=user.id)
+    asset = create_test_asset(db, ticker_symbol="AAPL")
+
+    response = client.post(
+        f"/api/v1/watchlists/{watchlist.id}/items",
+        headers=headers,
+        json={"asset_id": str(asset.id)},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["asset_id"] == str(asset.id)
+    assert data["watchlist_id"] == str(watchlist.id)
+
+
+def test_add_duplicate_item_to_watchlist_fails(client: TestClient, db: Session, get_auth_headers):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    watchlist = create_random_watchlist(db, user_id=user.id)
+    asset = create_test_asset(db, ticker_symbol="GOOG")
+    # Add it once
+    client.post(
+        f"/api/v1/watchlists/{watchlist.id}/items",
+        headers=headers,
+        json={"asset_id": str(asset.id)},
+    )
+    # Try to add it again
+    response = client.post(
+        f"/api/v1/watchlists/{watchlist.id}/items",
+        headers=headers,
+        json={"asset_id": str(asset.id)},
+    )
+    assert response.status_code == 400
+
+
+def test_remove_item_from_watchlist(client: TestClient, db: Session, get_auth_headers):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    watchlist = create_random_watchlist(db, user_id=user.id)
+    asset = create_test_asset(db, ticker_symbol="MSFT")
+    # Add the item
+    response = client.post(
+        f"/api/v1/watchlists/{watchlist.id}/items",
+        headers=headers,
+        json={"asset_id": str(asset.id)},
+    )
+    item_id = response.json()["id"]
+
+    # Remove it
+    response = client.delete(
+        f"/api/v1/watchlists/{watchlist.id}/items/{item_id}", headers=headers
+    )
+    assert response.status_code == 200
+
+    # Verify it's gone
+    response = client.get(f"/api/v1/watchlists/{watchlist.id}", headers=headers)
+    data = response.json()
+    assert len(data["items"]) == 0
+
+
+def test_read_watchlist_with_items(client: TestClient, db: Session, get_auth_headers):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    watchlist = create_random_watchlist(db, user_id=user.id)
+    asset1 = create_test_asset(db, ticker_symbol="TSLA")
+    asset2 = create_test_asset(db, ticker_symbol="NVDA")
+    client.post(f"/api/v1/watchlists/{watchlist.id}/items", headers=headers, json={"asset_id": str(asset1.id)})
+    client.post(f"/api/v1/watchlists/{watchlist.id}/items", headers=headers, json={"asset_id": str(asset2.id)})
+
+    response = client.get(f"/api/v1/watchlists/{watchlist.id}", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 2
+    returned_tickers = {item["asset"]["ticker_symbol"] for item in data["items"]}
+    assert "TSLA" in returned_tickers
+    assert "NVDA" in returned_tickers
