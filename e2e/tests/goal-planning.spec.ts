@@ -50,9 +50,10 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     portfolioId = portfolio.id;
 
     // 5. Create an Asset and a Transaction to give the portfolio value
+    // Use a real ticker symbol that the backend financial service can validate
     const assetResponse = await request.post('/api/v1/assets/', {
         headers: userAuthHeaders,
-        data: { ticker_symbol: 'GOALTEST', name: 'Goal Test Asset', asset_type: 'STOCK' },
+        data: { ticker_symbol: 'GOOG', name: 'Google', asset_type: 'STOCK' },
     });
     expect(assetResponse.ok(), `Failed to create asset: ${await assetResponse.text()}`).toBeTruthy();
     const asset = await assetResponse.json();
@@ -86,6 +87,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
 
     await page.waitForResponse(resp => resp.url().includes('/api/v1/goals') && resp.status() === 200);
 
+    // Use a robust locator for the card
     const goalCard = page.locator('div.flex.justify-between.items-start', { hasText: goalName });
     await expect(goalCard).toBeVisible();
     await expect(goalCard.getByText('0.00%')).toBeVisible();
@@ -110,10 +112,6 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
 
     await page.getByRole('link', { name: 'Goals' }).click();
     await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
-
-    // Using reload as a robust way to ensure cache is not stale
-    await page.reload();
-    await page.waitForResponse(resp => resp.url().includes('/api/v1/goals') && resp.status() === 200);
 
     const updatedGoalCard = page.locator('div.flex.justify-between.items-start', { hasText: goalName });
     await expect(updatedGoalCard.getByText('0.00%')).not.toBeVisible();
