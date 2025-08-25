@@ -59,7 +59,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         await page.getByRole('button', { name: 'Add Transaction' }).click();
         await page.getByLabel('Asset').fill('RELIANCE');
         const createAssetButton = page.getByRole('button', { name: 'Create Asset "RELIANCE"' });
-        
+
         // Wait for the asset creation API call to complete before proceeding.
         const createAssetResponse = page.waitForResponse(resp => resp.url().includes('/api/v1/assets') && resp.status() === 201);
         await createAssetButton.click();
@@ -68,7 +68,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         await expect(createAssetButton).not.toBeVisible();
         await page.getByRole('button', { name: 'Cancel' }).click();
 
-        // 2. Upload a file with an unrecognized symbol 'RIL'        
+        // 2. Upload a file with an unrecognized symbol 'RIL'
         await page.getByRole('link', { name: 'Import' }).click();
         await expect(page.getByRole('heading', { name: 'Import Transactions' })).toBeVisible();
 
@@ -82,7 +82,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
             mimeType: 'text/csv',
             buffer: Buffer.from(csvContent),
         });
-        
+
         await page.getByRole('button', { name: 'Upload and Preview' }).click();
         // 3. Verify it needs mapping
         await expect(page.getByRole('heading', { name: 'Transactions Needing Mapping (1)' })).toBeVisible();
@@ -94,7 +94,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         await expect(page.getByRole('heading', { name: 'Map Unrecognized Symbol' })).toBeVisible();
 
         await page.getByPlaceholder('Type to search by name or ticker...').fill('RELIANCE');
-        
+
         // Explicitly wait for the network call to finish before checking the UI
         await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
 
@@ -113,11 +113,11 @@ test.describe.serial('Data Import with Asset Mapping', () => {
 
         // Navigate to portfolio and verify transaction
         await page.waitForURL(`**/portfolios/${portfolioId}`);
-        
+
         // Verify the new holding appears in the HoldingsTable with specific locators
         const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
         const relianceRow = holdingsTable.getByRole('row', { name: /RELIANCE/ });
-        
+
         await expect(relianceRow).toBeVisible();
         await expect(relianceRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
 
@@ -143,7 +143,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
             mimeType: 'text/csv',
             buffer: Buffer.from(csvContent),
         });
-        
+
         await page.getByRole('button', { name: 'Upload and Preview' }).click();
 
         // 3. Verify it appears directly in "New Transactions"

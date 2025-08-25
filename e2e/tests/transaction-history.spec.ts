@@ -172,7 +172,7 @@ test.describe.serial('Transaction History Page', () => {
     await rowToEdit.getByRole('button', { name: 'Delete' }).click();
     const deleteModal = page.getByRole('dialog');
     await expect(deleteModal.getByRole('heading', { name: 'Delete Transaction' })).toBeVisible();
-    
+
     const deleteResponse = page.waitForResponse(resp => resp.url().includes('/transactions/') && resp.request().method() === 'DELETE' && resp.status() === 200);
     await deleteModal.getByRole('button', { name: 'Confirm Delete' }).click();
     await deleteResponse;
