@@ -10,6 +10,7 @@ from .crud_transaction import transaction
 from .crud_user import user
 from .crud_watchlist import watchlist
 from .crud_watchlist_item import watchlist_item
+from .crud_goal import goal, goal_link
 
 __all__ = [
     "asset",
@@ -24,4 +25,6 @@ __all__ = [
     "user",
     "watchlist",
     "watchlist_item",
+    "goal",
+    "goal_link",
 ]

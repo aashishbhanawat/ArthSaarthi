@@ -41,3 +41,4 @@ class User(Base):
     watchlist_items = relationship(
         "WatchlistItem", back_populates="user", cascade="all, delete-orphan"
     )
+    goals = relationship("Goal", back_populates="user", cascade="all, delete-orphan")
