@@ -1,3 +1,37 @@
+---
+
+## 2025-08-26: Stabilize Watchlist E2E and Frontend Tests
+
+*   **Task Description:** The E2E test suite for the recently implemented Watchlist feature (FR8.1) was failing. The primary goal was to diagnose the root cause, fix the bugs, and get all test suites (E2E, frontend, backend) to a stable, passing state.
+
+*   **Key Prompts & Interactions:**
+    1.  **Systematic Debugging via Log Analysis:** The core of this task was a long and iterative debugging process. At each stage, the failing test log (from Playwright or Jest) was analyzed to form a hypothesis. This was a process of elimination that uncovered multiple, layered bugs.
+    2.  **User-Provided Logs & Manual Testing Insights:** The user's feedback was critical. They provided backend logs with a full traceback that was not visible to the AI, which pinpointed the root cause of the main bug. They also provided feedback from manual testing that identified a minor UI glitch.
+    3.  **Iterative Fixing:** For each identified bug, a targeted fix was applied. This included:
+        *   **Environment:** Fixing the test environment's dependency installation by updating `backend/requirements-dev.in`.
+        *   **State Management:** Removing a duplicate React Query `QueryClientProvider` that was breaking cache invalidation.
+        *   **Backend:** Fixing a `DetachedInstanceError` in the `remove_watchlist_item` endpoint by eagerly loading the `asset` relationship before deletion.
+        *   **Frontend:** Fixing a UI state bug where the page would not reset after a watchlist was deleted, and fixing a minor UI glitch in the "Add Asset" modal.
+        *   **Tests:** Updating the E2E test to use more robust locators and updating the frontend unit test to account for a change in a function signature.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/watchlists.py`: **Updated** the `remove_watchlist_item` endpoint to prevent a `DetachedInstanceError`.
+    *   `frontend/src/components/modals/AddAssetToWatchlistModal.tsx`: **Updated** to fix a minor UI glitch.
+    *   `frontend/src/components/Watchlists/WatchlistSelector.tsx`: **Updated** to correctly handle UI state after a watchlist is deleted.
+    *   `frontend/src/__tests__/components/Watchlists/WatchlistSelector.test.tsx`: **Updated** a unit test to align with the new code.
+    *   `e2e/tests/watchlists.spec.ts`: **Updated** to use more robust locators.
+    *   `frontend/src/main.tsx` & `frontend/src/App.tsx`: **Updated** to remove a duplicate `QueryClientProvider`.
+    *   `backend/requirements-dev.in`: **Updated** to include base requirements.
+    *   `backend/app/crud/base.py`: **Updated** to remove a speculative `db.flush()` that was added during debugging.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (98), frontend tests (123), and E2E tests (14) passed.
+
+*   **Outcome:**
+    - The entire test suite is now stable and passing. The Watchlist feature is fully functional and verified. This task highlights the importance of systematic debugging and the value of detailed logs in uncovering complex, multi-layered bugs.
+
+---
+
 # Workflow & AI Interaction History
 
 This document serves as a chronological log of the development process for **ArthSaarthi**, specifically detailing the interactions with the GenAI code assistant.
@@ -1268,3 +1302,105 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
 *   `docs/project_handoff_summary.md`
 *   `docs/LEARNING_LOG.md`
 *   `docs/workflow_history.md`
+
+---
+
+## 2025-08-24: Backend for Watchlists (Phase 1)
+
+*   **Task Description:** Implement the backend foundation for the Watchlists feature (FR8.1). This included creating the database models, Pydantic schemas, CRUD logic, and API endpoints for basic watchlist management.
+
+*   **Key Prompts & Interactions:**
+    1.  **Code Generation:** A series of prompts were used to generate the new files for the feature, following the existing project structure: `watchlist.py` for models and schemas, `crud_watchlist.py` for business logic, and `watchlists.py` for API endpoints.
+    2.  **Alembic Migration:** A significant challenge was encountered while trying to generate the database migration. The AI assistant (Jules) systematically debugged the issue:
+        *   Identified that `alembic` was not in the PATH.
+        *   Attempted to run it via `python -m`, which failed.
+        *   Correctly deduced from `pytest` logs that a `pipx` environment was being used, but was unable to find the `alembic` executable there.
+        *   The user provided guidance to `pip install alembic` and to be prepared to write the migration manually.
+        *   After installing, a `ModuleNotFoundError` for `pydantic` occurred, which was fixed by installing all dependencies from `requirements.txt`.
+        *   Next, a database connection error (`could not translate host name "db"`) occurred. The AI correctly diagnosed this as a Docker-specific environment variable and attempted to override it.
+        *   This led to a `Target database is not up to date` error, which was then followed by an `(sqlite3.OperationalError) near "ALTER": syntax error` when trying to upgrade the local DB.
+    3.  **Manual Migration:** Acknowledging the user's advice and the environmental complexity, the AI pivoted to creating the migration script manually, which was successful.
+    4.  **Test Generation & Debugging:** The AI generated a full test suite for the new endpoints. The tests initially failed with an `AttributeError` because the new `crud.watchlist` object was not exposed in `crud/__init__.py`. The AI identified and fixed this import issue, leading to a fully passing test suite.
+
+*   **File Changes:**
+    *   `backend/app/models/watchlist.py`: **New** file with `Watchlist` and `WatchlistItem` models.
+    *   `backend/app/models/user.py` & `asset.py`: **Updated** with `back_populates` relationships.
+    *   `backend/app/schemas/watchlist.py`: **New** file with Pydantic schemas.
+    *   `backend/app/crud/crud_watchlist.py`: **New** file with business logic for watchlists.
+    *   `backend/app/crud/__init__.py`: **Updated** to expose the new `watchlist` CRUD object.
+    *   `backend/app/api/v1/endpoints/watchlists.py`: **New** file with API endpoints for watchlist CRUD.
+    *   `backend/app/api/v1/api.py`: **Updated** to include the new `watchlists` router.
+    *   `backend/alembic/versions/dff8e00ff3d0_....py`: **New** manually created database migration.
+    *   `backend/app/tests/api/v1/test_watchlists.py`: **New** test suite for the feature.
+    *   `backend/app/tests/utils/watchlist.py`: **New** test helper for creating watchlists.
+
+*   **Verification:**
+    - Ran the new test suite in isolation using `./run_local_tests.sh backend app/tests/api/v1/test_watchlists.py`.
+    - Ran the full backend test suite using `./run_local_tests.sh backend`.
+
+*   **Outcome:**
+    - The backend foundation for the Watchlists feature is complete and stable.
+    - All 94 backend tests are passing, confirming the new feature works and has not introduced any regressions.
+
+---
+
+## 2025-08-24: Frontend for Watchlists (Phase 2)
+
+*   **Task Description:** Implement the frontend UI and data layer for managing watchlists (FR8.1, Phase 2). This included creating the page, components, and hooks for creating, renaming, and deleting watchlists, and then stabilizing the new unit tests.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full-stack of frontend files: `watchlist.ts` (types), `watchlistApi.ts` (API service), `useWatchlists.ts` (React Query hooks), `WatchlistFormModal.tsx`, `WatchlistSelector.tsx`, and the main `WatchlistsPage.tsx`. The page was also added to the main router and navigation bar.
+    2.  **Test Generation:** The AI was prompted to generate a full suite of unit tests for all the new components and hooks.
+    3.  **Systematic Debugging via Log Analysis:** The initial test run failed with multiple errors across all new test files. A systematic, iterative debugging process was used to fix them:
+        *   The AI initially misdiagnosed a persistent ESLint parsing error in `useWatchlists.test.ts`, attempting several incorrect fixes.
+        *   The user provided the correct root cause: the test file contained JSX but had a `.ts` extension instead of `.tsx`. This was a critical insight that the AI had missed.
+        *   After the user's guidance, the AI renamed the file to `useWatchlists.test.tsx`, which immediately fixed the parsing error and allowed the other test failures to be diagnosed correctly.
+        *   The remaining test failures were then fixed, including associating form labels with inputs in the modal and adding `aria-label`s to icon buttons for accessibility.
+
+*   **File Changes:**
+    *   `frontend/src/types/watchlist.ts`: **New** file for watchlist type definitions.
+    *   `frontend/src/services/watchlistApi.ts`: **New** API service for watchlist endpoints.
+    *   `frontend/src/hooks/useWatchlists.ts`: **New** React Query hooks for state management.
+    *   `frontend/src/components/modals/WatchlistFormModal.tsx`: **New** modal for creating/editing watchlists.
+    *   `frontend/src/components/Watchlists/WatchlistSelector.tsx`: **New** component for listing and managing watchlists.
+    *   `frontend/src/pages/WatchlistsPage.tsx`: **New** page to host the feature.
+    *   `frontend/src/components/NavBar.tsx` & `frontend/src/App.tsx`: **Updated** to include the new page.
+    *   `frontend/src/__tests__/`: **New** test files for all of the above, which were created and then debugged. `useWatchlists.test.ts` was renamed to `useWatchlists.test.tsx`.
+
+*   **Verification:**
+    - Ran the full frontend test suite using `./run_local_tests.sh frontend`.
+
+*   **Outcome:**
+    - The frontend for Phase 2 of the Watchlists feature is complete, stable, and fully tested.
+    - All 110 frontend tests are passing.
+
+---
+
+## 2025-08-24: Full-Stack for Watchlist Item Management (Phase 3)
+
+*   **Task Description:** Implement the full-stack functionality for adding and removing assets from a watchlist (FR8.1, Phase 3).
+
+*   **Key Prompts & Interactions:**
+    1.  **Backend Implementation:** A series of prompts were used to implement the backend functionality. This included creating a new `CRUDWatchlistItem` class, adding the corresponding API endpoints (`POST /items`, `DELETE /items/{item_id}`), and updating the `GET /{id}` endpoint to eager load asset details for display on the frontend.
+    2.  **Backend Testing & Debugging:** The AI generated new tests for the item management endpoints. An initial test failure (`AttributeError: asset`) was traced to an incorrect use of a Pydantic schema instead of a SQLAlchemy model in a `joinedload` call. Another failure (`AssertionError: assert 200 == 201`) was fixed by adding the correct `status_code` to the endpoint decorator. A final failure was due to a brittle, order-dependent assertion, which was fixed by making the test check for the presence of items in any order.
+    3.  **Frontend Implementation:** The AI was prompted to generate the frontend data layer (API service functions and React Query hooks) and UI components (`WatchlistTable`, `AddAssetToWatchlistModal`) to support the new functionality. These were then integrated into the main `WatchlistsPage`.
+    4.  **Frontend Testing:** A full suite of tests was generated for the new components and updated for the existing ones. All tests passed on the first try after the previous phase's stabilization efforts.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_watchlist_item.py`: **New** file for item-specific CRUD.
+    *   `backend/app/api/v1/endpoints/watchlists.py`: **Updated** with new endpoints and eager loading.
+    *   `backend/app/schemas/watchlist.py`: **Updated** to include nested asset details in responses.
+    *   `backend/app/tests/api/v1/test_watchlists.py`: **Updated** with tests for item management.
+    *   `frontend/src/services/watchlistApi.ts`: **Updated** with new functions for item management.
+    *   `frontend/src/hooks/useWatchlists.ts`: **Updated** with new hooks for fetching single watchlists and managing items.
+    *   `frontend/src/components/Watchlists/WatchlistTable.tsx`: **New** component.
+    *   `frontend/src/components/modals/AddAssetToWatchlistModal.tsx`: **New** component.
+    *   `frontend/src/pages/WatchlistsPage.tsx`: **Updated** to integrate the new components.
+    *   `frontend/src/__tests__/`: **New** and **updated** test files for the new functionality.
+
+*   **Verification:**
+    - Ran the full backend test suite using `./run_local_tests.sh backend` (98 tests passed).
+    - Ran the full frontend test suite using `./run_local_tests.sh frontend` (122 tests passed).
+
+*   **Outcome:**
+    - The full-stack functionality for adding and removing items from a watchlist is complete, stable, and fully tested. The project is ready for the final phase of the feature.
