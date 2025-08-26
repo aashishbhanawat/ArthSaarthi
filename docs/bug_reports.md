@@ -6474,3 +6474,25 @@ The user has reported several UI layout issues that degrade the user experience 
 2.  Refactor the footer of `AddAssetToWatchlistModal.tsx` to use a single flexbox container that correctly aligns the selected asset information and the action buttons.
 
 ---
+
+**Bug ID:** 2025-08-26-07
+**Title:** `WatchlistsPage` unit test fails due to outdated text assertion.
+**Module:** Watchlists (Test Suite)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-08-26
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test case "renders placeholder text when no watchlist is selected" in `WatchlistsPage.test.tsx` fails with a `TestingLibraryElementError`. The test asserts for the text "Select a Watchlist", but the component was refactored to use the `WatchlistEmptyState` component, which now renders the heading "No watchlist selected". The unit test was not updated to reflect this UI change.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `docker-compose run --rm frontend npm test`.
+2. Observe the failure in `WatchlistsPage.test.tsx`.
+**Expected Behavior:**
+The test should assert for the correct text that is present in the DOM when no watchlist is selected.
+**Actual Behavior:**
+The test fails with `Unable to find an element with the text: Select a Watchlist`.
+**Resolution:**
+Update the assertion in `src/__tests__/pages/WatchlistsPage.test.tsx` to use `getByText('No watchlist selected')` instead of `getByText('Select a Watchlist')`.
+
+---
+---

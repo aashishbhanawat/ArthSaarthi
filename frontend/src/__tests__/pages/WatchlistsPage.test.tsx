@@ -64,7 +64,7 @@ describe('WatchlistsPage', () => {
 
   it('renders placeholder text when no watchlist is selected', () => {
     renderComponent();
-    expect(screen.getByText('Select a Watchlist')).toBeInTheDocument();
+    expect(screen.getByText('No watchlist selected')).toBeInTheDocument();
   });
 
   it('fetches and displays the selected watchlist details', () => {
