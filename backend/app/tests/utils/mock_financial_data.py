@@ -10,7 +10,7 @@ class MockFinancialDataService:
     ) -> Dict[str, Dict[str, Decimal]]:
         prices = {}
         for asset in assets:
-            ticker = asset["ticker_symbol"]
+            ticker = asset.ticker_symbol
             prices[ticker] = {
                 "current_price": Decimal(f"{100.0 + len(ticker)}"),
                 "previous_close": Decimal(f"{99.0 + len(ticker)}"),
@@ -22,7 +22,7 @@ class MockFinancialDataService:
     ) -> Dict[str, Dict[date, Decimal]]:
         prices = defaultdict(dict)
         for asset in assets:
-            ticker = asset["ticker_symbol"]
+            ticker = asset.ticker_symbol
             current_day = start_date
             price = 100.0 + len(ticker)
             while current_day <= end_date:

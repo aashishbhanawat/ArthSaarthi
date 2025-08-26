@@ -35,14 +35,14 @@ else:
             return ticker_symbol
 
         def get_current_prices(
-            self, assets: List[Dict[str, Any]]
+            self, assets: List[Any]
         ) -> Dict[str, Dict[str, Decimal]]:
             prices_data: Dict[str, Dict[str, Decimal]] = {}
-            tickers_to_fetch: List[Dict[str, Any]] = []
+            tickers_to_fetch: List[Any] = []
 
             if self.cache_client:
                 for asset in assets:
-                    ticker = asset["ticker_symbol"]
+                    ticker = asset.ticker_symbol
                     cache_key = f"price_details:{ticker}"
                     cached_data = self.cache_client.get_json(cache_key)
                     if cached_data:
@@ -60,7 +60,7 @@ else:
 
             yfinance_tickers_str = " ".join(
                 [
-                    self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"])
+                    self._get_yfinance_ticker(a.ticker_symbol, a.exchange)
                     for a in tickers_to_fetch
                 ]
             )
@@ -93,7 +93,7 @@ else:
 
             if self.cache_client:
                 for ticker, data in prices_data.items():
-                    if any(t["ticker_symbol"] == ticker for t in tickers_to_fetch):
+                    if any(t.ticker_symbol == ticker for t in tickers_to_fetch):
                         serializable_data = {
                             "current_price": str(data["current_price"]),
                             "previous_close": str(data["previous_close"]),
@@ -107,14 +107,12 @@ else:
             return prices_data
 
         def get_historical_prices(
-            self, assets: List[Dict[str, Any]], start_date: date, end_date: date
+            self, assets: List[Any], start_date: date, end_date: date
         ) -> Dict[str, Dict[date, Decimal]]:
             historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
 
             yfinance_tickers_map = {
-                self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"]): a[
-                    "ticker_symbol"
-                ]
+                self._get_yfinance_ticker(a.ticker_symbol, a.exchange): a.ticker_symbol
                 for a in assets
             }
             yfinance_tickers_str = " ".join(yfinance_tickers_map.keys())
