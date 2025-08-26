@@ -13,10 +13,6 @@ import TransactionsPage from './pages/TransactionsPage';
 import WatchlistsPage from './pages/WatchlistsPage';
 import ErrorBoundary from './components/ErrorBoundary';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const queryClient = new QueryClient();
-
 const AppLayout = () => (
   <div className="grid grid-cols-[auto_1fr] min-h-screen bg-gray-50">
     <NavBar />
@@ -55,9 +51,7 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AppRoutes />
-      </QueryClientProvider>
+      <AppRoutes />
     </ErrorBoundary>
   );
 }

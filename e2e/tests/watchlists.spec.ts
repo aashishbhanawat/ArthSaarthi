@@ -69,12 +69,14 @@ test.describe('Watchlists Feature', () => {
     await page.getByRole('button', { name: 'Apple Inc.' }).click();
     await page.getByRole('button', { name: 'Add Asset to Watchlist' }).click();
 
-    console.log(await page.content());
-    await expect(page.getByRole('cell', { name: 'AAPL', exact: true })).toBeVisible();
+    // Wait for the modal to close before asserting, to give time for the async refetch
+    await expect(page.getByRole('heading', { name: 'Add Asset to Watchlist' })).not.toBeVisible();
+
+    await expect(page.getByText('AAPL')).toBeVisible();
 
     // Remove item
     await page.getByRole('button', { name: 'Remove Apple Inc. from watchlist' }).click();
-    await expect(page.getByRole('cell', { name: 'AAPL', exact: true })).not.toBeVisible();
+    await expect(page.getByText('AAPL')).not.toBeVisible();
 
     // Cleanup
     page.on('dialog', dialog => dialog.accept());
