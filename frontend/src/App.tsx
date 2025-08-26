@@ -10,11 +10,8 @@ import PortfolioDetailPage from './pages/Portfolio/PortfolioDetailPage';
 import DataImportPage from './pages/Import/DataImportPage';
 import ImportPreviewPage from './pages/Import/ImportPreviewPage';
 import TransactionsPage from './pages/TransactionsPage';
+import WatchlistsPage from './pages/WatchlistsPage';
 import ErrorBoundary from './components/ErrorBoundary';
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const queryClient = new QueryClient();
 
 const AppLayout = () => (
   <div className="grid grid-cols-[auto_1fr] min-h-screen bg-gray-50">
@@ -41,6 +38,7 @@ function AppRoutes() {
           <Route path="/import" element={<DataImportPage />} />
           <Route path="/import/:sessionId/preview" element={<ImportPreviewPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/watchlists" element={<WatchlistsPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
           </Route>
@@ -53,9 +51,7 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AppRoutes />
-      </QueryClientProvider>
+      <AppRoutes />
     </ErrorBoundary>
   );
 }

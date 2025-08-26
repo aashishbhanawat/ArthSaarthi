@@ -1,7 +1,7 @@
 # Project Handoff Document: ArthSaarthi
 
 **Version:** 0.2.0
-**Date:** 2025-08-23
+**Date:** 2025-08-26
 **Status:** Completed & Stable
 **Author:** Gemini Code Assist
 
@@ -18,9 +18,9 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 ## 2. Final Status
 
 *   **Overall Status:** **Stable**
-*   **Backend Tests:** **100% Passing**
-*   **Frontend Tests:** **100% Passing**
-*   **E2E Tests:** **12/12 Passing**
+*   **Backend Tests:** **98/98 Passing**
+*   **Frontend Tests:** **123/123 Passing**
+*   **E2E Tests:** **14/14 Passing**
 
 All planned features for the current release cycle have been implemented and validated through a combination of unit, integration, and end-to-end tests. The application is stable and ready for the next phase of development.
 
@@ -48,6 +48,9 @@ All planned features for the current release cycle have been implemented and val
 *   **Pluggable Caching Layer:**
     *   The hard dependency on Redis has been removed and replaced with a flexible caching abstraction.
     *   The application now supports both Redis (default for Docker) and a file-based `diskcache` (default for SQLite/local deployments), configured via a `CACHE_TYPE` environment variable.
+*   **Market Insights (Watchlists):**
+    *   Full CRUD functionality for creating and managing watchlists.
+    *   Ability to add and remove assets from a watchlist.
 
 ---
 
