@@ -1,5 +1,14 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, Date, ForeignKey, CheckConstraint, TIMESTAMP
+
+from sqlalchemy import (
+    TIMESTAMP,
+    CheckConstraint,
+    Column,
+    Date,
+    ForeignKey,
+    Numeric,
+    String,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -18,7 +27,12 @@ class Goal(Base):
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.now())
 
     user = relationship("User", back_populates="goals")
-    links = relationship("GoalLink", back_populates="goal", cascade="all, delete-orphan")
+    links = relationship(
+        "GoalLink",
+        back_populates="goal",
+        cascade="all, delete-orphan",
+    )
+
 
 class GoalLink(Base):
     __tablename__ = "goal_links"
@@ -36,7 +50,8 @@ class GoalLink(Base):
 
     __table_args__ = (
         CheckConstraint(
-            '(portfolio_id IS NOT NULL AND asset_id IS NULL) OR (portfolio_id IS NULL AND asset_id IS NOT NULL)',
-            name='check_goal_link_target'
+            "(portfolio_id IS NOT NULL AND asset_id IS NULL) OR "
+            "(portfolio_id IS NULL AND asset_id IS NOT NULL)",
+            name="check_goal_link_target",
         ),
     )
