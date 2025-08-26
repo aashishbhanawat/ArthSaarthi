@@ -10,16 +10,20 @@ from app.core import dependencies
 router = APIRouter()
 
 
-@router.get("/", response_model=List[schemas.Goal])
+@router.get("/", response_model=List[schemas.GoalWithAnalytics])
 def read_goals(
     db: Session = Depends(dependencies.get_db),
     current_user: models.User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
-    Retrieve goals for the current user.
+    Retrieve goals for the current user with analytics.
     """
     goals = crud.goal.get_multi_by_owner(db=db, user_id=current_user.id)
-    return goals
+    goals_with_analytics = []
+    for goal in goals:
+        analytics = crud.goal.get_goal_analytics(db=db, goal=goal)
+        goals_with_analytics.append({**goal.__dict__, **analytics})
+    return goals_with_analytics
 
 
 @router.post("/", response_model=schemas.Goal, status_code=201)

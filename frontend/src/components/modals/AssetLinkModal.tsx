@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePortfolios, usePortfolioAssets } from '../../hooks/usePortfolios';
 import { useCreateGoalLink } from '../../hooks/useGoals';
 import { Portfolio } from '../../types/portfolio';
@@ -19,6 +20,7 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, goalId
   const { data: portfolios, isLoading: isLoadingPortfolios } = usePortfolios();
   const { data: assets, isLoading: isLoadingAssets } = usePortfolioAssets(selectedPortfolio?.id);
 
+  const queryClient = useQueryClient();
   const createGoalLinkMutation = useCreateGoalLink();
 
   const handleLink = () => {
@@ -31,6 +33,8 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, goalId
 
     createGoalLinkMutation.mutate({ goalId, data: linkData }, {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['goals'] });
+        queryClient.invalidateQueries({ queryKey: ['goal', goalId] });
         onClose();
       },
     });

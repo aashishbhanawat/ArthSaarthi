@@ -18,7 +18,6 @@ class GoalLinkBase(BaseModel):
 class GoalLinkCreateIn(GoalLinkBase):
     pass
 
-
 class GoalLinkCreate(GoalLinkBase):
     goal_id: uuid.UUID
 

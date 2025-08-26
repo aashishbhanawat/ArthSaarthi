@@ -74,7 +74,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     const targetAmount = '1000000';
 
     // --- 1. Create a new goal ---
-    await page.getByRole('link', { name: 'Goals' }).click();
+    await page.locator('nav').getByRole('link', { name: 'Goals' }).click();
     await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
     await page.getByRole('button', { name: 'Create New Goal' }).click();
     await expect(page.getByRole('heading', { name: 'Create New Goal' })).toBeVisible();
@@ -88,7 +88,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
 
     const goalCard = page.locator('div.flex.justify-between.items-start', { hasText: goalName });
     await expect(goalCard).toBeVisible();
-    await expect(goalCard.getByText('0.00%')).toBeVisible();
+    await expect(goalCard.getByText(/Progress \(0.00%\)/)).toBeVisible();
 
     // --- 2. Navigate to Detail Page and Link the Portfolio ---
     await goalCard.click();
@@ -110,13 +110,16 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     await expect(linkedItemsSection.getByText(portfolioName)).toBeVisible();
 
     // --- 3. Verify Progress Update ---
-    await expect(page.getByText('₹0.00 /')).not.toBeVisible();
+    // The detail page should also update, so we can assert here.
+    await expect(page.getByText(/Progress \(\d+\.\d{2}%\)/)).not.toContainText('(0.00%)');
 
-    await page.getByRole('link', { name: 'Goals' }).click();
+    // Now navigate back to the list and check there too
+    await page.locator('nav').getByRole('link', { name: 'Goals' }).click();
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/goals')); // Wait for the refetch
     await expect(page.getByRole('heading', { name: 'Financial Goals' })).toBeVisible();
 
     const updatedGoalCard = page.locator('div.flex.justify-between.items-start', { hasText: goalName });
-    await expect(updatedGoalCard.getByText('0.00%')).not.toBeVisible();
+    await expect(updatedGoalCard.getByText(/Progress \(\d+\.\d{2}%\)/)).not.toContainText('(0.00%)');
 
     // --- 4. Edit the Goal ---
     await updatedGoalCard.getByRole('button', { name: 'Edit' }).click();

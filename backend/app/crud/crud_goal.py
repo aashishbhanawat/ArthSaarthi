@@ -1,8 +1,8 @@
 import uuid
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload
 
 from app import models
 from app.crud import crud_analytics, crud_transaction
@@ -52,17 +52,6 @@ def _get_standalone_asset_current_value(
 
 
 class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
-    def get(self, db: Session, id: uuid.UUID) -> Optional[Goal]:
-        return (
-            db.query(self.model)
-            .options(
-                joinedload(self.model.links).joinedload(GoalLink.portfolio),
-                joinedload(self.model.links).joinedload(GoalLink.asset),
-            )
-            .filter(self.model.id == id)
-            .first()
-        )
-
     def get_goal_analytics(self, db: Session, goal: Goal) -> Dict[str, Any]:
         current_value = Decimal("0.0")
         for link in goal.links:
@@ -99,6 +88,10 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
         return (
             db.query(self.model)
             .filter(Goal.user_id == user_id)
+            .options(
+                selectinload(Goal.links).selectinload(GoalLink.portfolio),
+                selectinload(Goal.links).selectinload(GoalLink.asset),
+            )
             .offset(skip)
             .limit(limit)
             .all()

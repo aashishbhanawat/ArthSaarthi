@@ -98,8 +98,6 @@ cleanup() {
 
   rm -f backend/.env.test
   rm -f frontend/.env.development.local
-  git clean -fd
-  git reset --hard
   if [ "$DB_TYPE" == "sqlite" ]; then
     rm -f backend/test.db
   elif [ "$DB_TYPE" == "postgres" ]; then

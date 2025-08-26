@@ -2,7 +2,7 @@ import { Asset } from './asset';
 import { Portfolio } from './portfolio';
 
 export interface GoalLink {
-  id:string;
+  id: string;
   goal_id: string;
   portfolio_id?: string;
   asset_id?: string;
