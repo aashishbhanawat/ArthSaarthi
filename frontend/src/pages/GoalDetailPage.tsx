@@ -25,7 +25,7 @@ const GoalDetailPage: React.FC = () => {
                 <div className="flex justify-between items-center mt-2">
                     <h1 className="text-3xl font-bold">{goal.name}</h1>
                     <button onClick={() => setLinkModalOpen(true)} className="btn btn-primary">
-                        Link Assets
+                        Link Asset/Portfolio
                     </button>
                 </div>
                 <p className="text-gray-600 mt-1">
@@ -51,11 +51,20 @@ const GoalDetailPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="mt-8 bg-white shadow-md rounded-lg p-6">
-                <h2 className="text-2xl font-bold mb-4">Linked Assets</h2>
-                {/* This section will be implemented in a later step */}
-                <p className="text-gray-500">No assets linked yet.</p>
-            </div>
+            <section className="mt-8 bg-white shadow-md rounded-lg p-6" aria-labelledby="linked-items-header">
+                <h2 id="linked-items-header" className="text-2xl font-bold mb-4">Linked Items</h2>
+                {goal.links && goal.links.length > 0 ? (
+                    <ul className="space-y-2">
+                        {goal.links.map(link => (
+                            <li key={link.id} className="p-2 bg-gray-100 rounded">
+                                {link.portfolio ? link.portfolio.name : link.asset?.name || 'Unknown'}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-gray-500">No portfolios or assets linked yet.</p>
+                )}
+            </section>
 
             <AssetLinkModal
                 isOpen={isLinkModalOpen}

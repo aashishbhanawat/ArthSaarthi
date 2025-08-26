@@ -1,6 +1,6 @@
 import uuid
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -51,7 +51,21 @@ def _get_standalone_asset_current_value(
     return net_quantity * current_price
 
 
+from sqlalchemy.orm import joinedload
+
+
 class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
+    def get(self, db: Session, id: uuid.UUID) -> Optional[Goal]:
+        return (
+            db.query(self.model)
+            .options(
+                joinedload(self.model.links).joinedload(GoalLink.portfolio),
+                joinedload(self.model.links).joinedload(GoalLink.asset),
+            )
+            .filter(self.model.id == id)
+            .first()
+        )
+
     def get_goal_analytics(self, db: Session, goal: Goal) -> Dict[str, Any]:
         current_value = Decimal("0.0")
         for link in goal.links:

@@ -3,7 +3,13 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 
+from typing import Optional
 from pydantic import BaseModel, ConfigDict
+from .portfolio import Portfolio
+from .asset import Asset
+
+from .asset import Asset
+from .portfolio import Portfolio
 
 
 # GoalLink Schemas
@@ -23,10 +29,16 @@ class GoalLinkUpdate(BaseModel):
     pass
 
 
+from .asset import Asset
+from .portfolio import Portfolio
+
+
 class GoalLink(GoalLinkBase):
     id: uuid.UUID
     goal_id: uuid.UUID
     user_id: uuid.UUID
+    portfolio: Optional[Portfolio] = None
+    asset: Optional[Asset] = None
     model_config = ConfigDict(from_attributes=True)
 
 

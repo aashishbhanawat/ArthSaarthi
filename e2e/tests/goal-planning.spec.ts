@@ -95,13 +95,16 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     await expect(page.getByRole('heading', { name: goalName })).toBeVisible();
 
     await page.getByRole('button', { name: 'Link Asset/Portfolio' }).click();
-    await expect(page.getByRole('heading', { name: 'Link to Goal' })).toBeVisible();
+
+    // Wait for the modal to appear
+    await expect(page.locator('.modal-overlay')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Link Asset or Portfolio to Goal' })).toBeVisible();
 
     // Correctly click the list item with the portfolio name, then click the main "Link" button
     await page.getByRole('listitem').filter({ hasText: portfolioName }).click();
     await page.getByRole('button', { name: 'Link', exact: true }).click();
 
-    await expect(page.getByRole('heading', { name: 'Link to Goal' })).not.toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Link Asset or Portfolio to Goal' })).not.toBeVisible();
 
     const linkedItemsSection = page.locator('section[aria-labelledby="linked-items-header"]');
     await expect(linkedItemsSection.getByText(portfolioName)).toBeVisible();
