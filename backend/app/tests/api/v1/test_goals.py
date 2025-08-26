@@ -1,10 +1,11 @@
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from app.tests.utils.user import create_random_user
+
 from app.tests.utils.goal import create_random_goal
-import uuid
-from datetime import datetime, date
+from app.tests.utils.user import create_random_user
 
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
@@ -15,7 +16,7 @@ def test_create_goal(client: TestClient, db: Session, get_auth_headers):
     goal_data = {
         "name": "Buy a car",
         "target_amount": 25000.00,
-        "target_date": "2025-12-31"
+        "target_date": "2025-12-31",
     }
     response = client.post(
         "/api/v1/goals/",
@@ -84,7 +85,11 @@ def test_update_goal(client: TestClient, db: Session, get_auth_headers):
     response = client.put(
         f"/api/v1/goals/{goal.id}",
         headers=headers,
-        json={"name": new_name, "target_amount": new_target_amount, "target_date": new_target_date},
+        json={
+            "name": new_name,
+            "target_amount": new_target_amount,
+            "target_date": new_target_date,
+        },
     )
     assert response.status_code == 200
     data = response.json()
