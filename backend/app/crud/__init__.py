@@ -8,6 +8,8 @@ from .crud_portfolio import portfolio
 from .crud_testing import testing
 from .crud_transaction import transaction
 from .crud_user import user
+from .crud_watchlist import watchlist
+from .crud_watchlist_item import watchlist_item
 
 __all__ = [
     "asset",
@@ -21,4 +23,6 @@ __all__ = [
     "testing",
     "transaction",
     "user",
+    "watchlist",
+    "watchlist_item",
 ]

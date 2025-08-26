@@ -15,6 +15,7 @@ from .endpoints import (
     testing,
     transactions,
     users,
+    watchlists,
 )
 
 api_router = APIRouter()

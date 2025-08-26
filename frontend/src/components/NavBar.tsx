@@ -61,6 +61,13 @@ const NavBar: React.FC = () => {
                 <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
                     <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>
                 </NavLink>
+                <NavLink
+                    to="/watchlists"
+                    className={({ isActive }) => linkClass(isActive)}
+                >
+                    <EyeIcon className="h-5 w-5" />
+                    <span>Watchlists</span>
+                </NavLink>
                 {user?.is_admin && deploymentMode === 'server' && (
                     <NavLink to="/admin/users" className={({ isActive }) => linkClass(isActive)}>
                         <UsersIcon className="h-5 w-5" />
