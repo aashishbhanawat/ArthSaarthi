@@ -1,3 +1,86 @@
+---
+
+**Bug ID:** 2025-08-26-01
+**Title:** Backend crashes with DetachedInstanceError on watchlist item deletion.
+**Module:** Watchlists (Backend)
+**Reported By:** User via E2E Test Log
+**Date Reported:** 2025-08-26
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `DELETE /api/v1/watchlists/{id}/items/{id}` endpoint fails with a 500 Internal Server Error. The root cause is a `DetachedInstanceError` from SQLAlchemy. The endpoint successfully deletes the item from the database but then attempts to return the deleted object. When FastAPI tries to serialize this object for the response, it needs to access the object's `asset` relationship. Because the object is now detached from the database session, SQLAlchemy cannot lazy-load this relationship, causing the error.
+**Steps to Reproduce:**
+1. Add an item to a watchlist.
+2. Attempt to delete the item via the API.
+**Expected Behavior:**
+The item should be deleted, and the API should return a 200 OK response with the deleted item's data.
+**Actual Behavior:**
+The API returns a 500 Internal Server Error.
+**Resolution:**
+The `remove_watchlist_item` endpoint in `backend/app/api/v1/endpoints/watchlists.py` was refactored to eagerly load the `asset` relationship using `options(joinedload(WatchlistItemModel.asset))` *before* deleting the object. This ensures the object has all the necessary data for serialization before it is detached from the session.
+
+---
+
+**Bug ID:** 2025-08-26-02
+**Title:** Frontend state management is broken due to duplicate React Query providers.
+**Module:** Core Frontend, State Management
+**Reported By:** Gemini Code Assist
+**Date Reported:** 2025-08-26
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The application's state management was fundamentally broken because it was being wrapped by two separate `<QueryClientProvider>` components, one in `main.tsx` and another in `App.tsx`. This created two different `QueryClient` instances and two separate caches. As a result, when a mutation in one part of the component tree tried to invalidate a query, it would not affect the query being used in another part of the tree, leading to a stale UI that would not update.
+**Steps to Reproduce:**
+1. Trigger any mutation that should cause a different part of the UI to refetch its data (e.g., add an item to a watchlist).
+**Expected Behavior:**
+The query should be invalidated, and the UI should update with the new data.
+**Actual Behavior:**
+The UI remains unchanged, displaying stale data from the cache of the other `QueryClient`.
+**Resolution:**
+Removed the duplicate `QueryClient` and `<QueryClientProvider>` from `frontend/src/App.tsx`, ensuring that the entire application is wrapped by a single provider in `frontend/src/main.tsx`.
+
+---
+
+**Bug ID:** 2025-08-26-03
+**Title:** Test environment is missing backend dependencies.
+**Module:** Test Suite, Dependencies
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-26
+**Classification:** Configuration
+**Severity:** Critical
+**Description:**
+The E2E test suite failed to run because the backend application would crash with a `ModuleNotFoundError`. The test runner script (`run_local_tests.sh`) was installing dependencies from `backend/requirements-dev.in` but this file did not include the main application dependencies from `backend/requirements.in`.
+**Steps to Reproduce:**
+1. Run the E2E test suite with `./run_local_tests.sh e2e`.
+**Expected Behavior:**
+The backend application should start successfully with all dependencies installed.
+**Actual Behavior:**
+The backend crashes with `ModuleNotFoundError: No module named 'requests'`.
+**Resolution:**
+Added `-r requirements.in` to the top of `backend/requirements-dev.in` to ensure all application dependencies are installed in the test environment.
+
+---
+
+**Bug ID:** 2025-08-26-04
+**Title:** UI does not reset correctly after a watchlist is deleted.
+**Module:** Watchlists (Frontend)
+**Reported By:** Gemini Code Assist via E2E Test Log
+**Date Reported:** 2025-08-26
+**Classification:** Implementation (Frontend)
+**Severity:** High
+**Description:**
+When a user deletes the currently selected watchlist, the main view does not update. The `<h1>` title continues to show the name of the now-deleted watchlist. This caused an E2E test to fail with a strict mode violation because it found two elements with the same text on the page (one in the selector list, which had not yet updated, and one in the main view's title).
+**Steps to Reproduce:**
+1. Create a watchlist and select it.
+2. Delete the selected watchlist.
+**Expected Behavior:**
+The main view should reset, for example by clearing the selected watchlist and showing a "Select a Watchlist" message.
+**Actual Behavior:**
+The main view continues to show the title of the deleted watchlist.
+**Resolution:**
+The `handleDelete` function in `WatchlistSelector.tsx` was updated. It now uses the `onSuccess` callback of the `deleteWatchlist.mutate` function to check if the deleted watchlist was the currently selected one. If so, it calls `onSelectWatchlist(null)` to reset the parent component's state.
+
+---
 # Bug Reports
 
 This document serves as the official bug log for **ArthSaarthi**. All issues discovered during testing must be documented here before work on a fix begins.

@@ -3,6 +3,7 @@
 **Feature ID:** FR8.1
 **Title:** Watchlists
 **User Story:** As a user, I want to create and manage lists of assets that I don't own, so I can monitor their performance and make informed decisions about future investments.
+**Status:** Implemented (Phases 1-3). Phase 4 (Real-time Data) is pending.
 
 ---
 
