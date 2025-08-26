@@ -31,7 +31,14 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
 
 
 class CRUDGoalLink(CRUDBase[GoalLink, GoalLinkCreate, GoalLinkUpdate]):
-    pass
+    def create_with_owner(
+        self, db: Session, *, obj_in: GoalLinkCreate, user_id: uuid.UUID
+    ) -> GoalLink:
+        db_obj = GoalLink(**obj_in.model_dump(), user_id=user_id)
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
 
 
 goal = CRUDGoal(Goal)

@@ -4,6 +4,7 @@ import GoalCard from '../components/Goals/GoalCard';
 import GoalFormModal from '../components/modals/GoalFormModal';
 import { Goal, GoalCreate, GoalUpdate } from '../types/goal';
 import { PlusIcon } from '@heroicons/react/24/solid';
+import GoalDetailView from '../components/Goals/GoalDetailView';
 
 const GoalsPage: React.FC = () => {
   const { data: goals, isLoading, error } = useGoals();
@@ -13,6 +14,7 @@ const GoalsPage: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
   const handleCreate = () => {
     setEditingGoal(null);
@@ -36,10 +38,30 @@ const GoalsPage: React.FC = () => {
     } else {
       createGoal.mutate(goalData as GoalCreate);
     }
+    setIsModalOpen(false);
   };
+
+  const handleSelectGoal = (id: string) => {
+    setSelectedGoalId(id);
+  };
+
+  const handleBack = () => {
+    setSelectedGoalId(null);
+  }
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>An error occurred: {(error as Error).message}</div>;
+
+  if (selectedGoalId) {
+    return (
+        <div className="p-4 sm:p-6 lg:p-8">
+            <button onClick={handleBack} className="btn btn-sm btn-outline mb-4">
+                &larr; Back to Goals
+            </button>
+            <GoalDetailView goalId={selectedGoalId} />
+        </div>
+    )
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -58,6 +80,7 @@ const GoalsPage: React.FC = () => {
             goal={goal}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onSelect={handleSelectGoal}
           />
         ))}
       </div>
