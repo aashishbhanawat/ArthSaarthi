@@ -77,7 +77,7 @@ describe('WatchlistSelector', () => {
     const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
     fireEvent.click(deleteButtons[1]);
     expect(window.confirm).toHaveBeenCalled();
-    expect(mockDeleteMutate).toHaveBeenCalledWith('2');
+    expect(mockDeleteMutate).toHaveBeenCalledWith('2', expect.any(Object));
   });
 
   it('submits the form for creating a watchlist', async () => {
