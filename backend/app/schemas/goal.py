@@ -3,10 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from typing import Optional
 from pydantic import BaseModel, ConfigDict
-from .portfolio import Portfolio
-from .asset import Asset
 
 from .asset import Asset
 from .portfolio import Portfolio
@@ -21,16 +18,13 @@ class GoalLinkBase(BaseModel):
 class GoalLinkCreateIn(GoalLinkBase):
     pass
 
+
 class GoalLinkCreate(GoalLinkBase):
     goal_id: uuid.UUID
 
 
 class GoalLinkUpdate(BaseModel):
     pass
-
-
-from .asset import Asset
-from .portfolio import Portfolio
 
 
 class GoalLink(GoalLinkBase):

@@ -84,6 +84,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     const createAssetButton = page.getByRole('button', { name: `Create Asset "${newAssetName}"` });
     await expect(createAssetButton).toBeVisible();
     await createAssetButton.click();
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/') && resp.status() === 200);
     await expect(createAssetButton).not.toBeVisible();
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('150.00');

@@ -2,7 +2,7 @@ import uuid
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import models
 from app.crud import crud_analytics, crud_transaction
@@ -49,9 +49,6 @@ def _get_standalone_asset_current_value(
     current_price = price_info["current_price"]
 
     return net_quantity * current_price
-
-
-from sqlalchemy.orm import joinedload
 
 
 class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
