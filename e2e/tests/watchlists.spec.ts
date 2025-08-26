@@ -75,7 +75,7 @@ test.describe('Watchlists Feature', () => {
     await expect(page.getByText('AAPL')).toBeVisible();
 
     // Remove item
-    await page.getByRole('button', { name: 'Remove Apple Inc. from watchlist' }).click();
+    await page.getByRole('button', { name: 'Remove AAPL' }).click();
     await expect(page.getByText('AAPL')).not.toBeVisible();
 
     // Cleanup

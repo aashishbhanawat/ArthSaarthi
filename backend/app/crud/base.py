@@ -53,6 +53,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj = db.get(self.model, id)
         if obj:
             db.delete(obj)
+            db.flush()
         return obj
 
     def create_with_owner(
