@@ -92,33 +92,27 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
             )}
           </div>
         </div>
-
-        {selectedAsset && (
-          <div className="alert alert-info mt-4">
-            <div className="flex-1">
-              <span className="label-text">Selected: {selectedAsset.name}</span>
-            </div>
-            <button
-              onClick={() => setSelectedAsset(null)}
-              className="btn btn-ghost btn-sm"
-              aria-label="Clear selection"
-            >
-              <XMarkIcon className="h-4 w-4" />
-            </button>
+        
+        <div className="modal-action mt-6 flex justify-between items-center w-full">
+          <div className="flex-1 min-w-0">
+            {selectedAsset && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-semibold">Selected:</span>
+                <span className="truncate" title={selectedAsset.name}>{selectedAsset.name}</span>
+                <button
+                  onClick={() => setSelectedAsset(null)}
+                  className="btn btn-ghost btn-xs btn-circle"
+                  aria-label="Clear selection"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
-        )}
-
-        <div className="modal-action">
-          <button type="button" onClick={onClose} className="btn btn-ghost">
-            Cancel
-          </button>
-          <button
-            onClick={handleAdd}
-            className="btn btn-primary"
-            disabled={!selectedAsset}
-          >
-            Add Asset to Watchlist
-          </button>
+          <div className="flex-shrink-0 flex items-center gap-2">
+            <button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>
+            <button onClick={handleAdd} className="btn btn-primary" disabled={!selectedAsset}>Add Asset to Watchlist</button>
+          </div>
         </div>
       </div>
     </div>

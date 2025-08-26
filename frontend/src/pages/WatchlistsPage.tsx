@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import WatchlistSelector from '../components/Watchlists/WatchlistSelector';
 import WatchlistTable from '../components/Watchlists/WatchlistTable';
-import AddAssetToWatchlistModal from '../components/modals/AddAssetToWatchlistModal';
+import { WatchlistEmptyState } from '../components/Watchlists/WatchlistEmptyState';
+import AddAssetToWatchlistModal from '../components/modals/AddAssetToWatchlistModal'; // Assuming this is a default export
 import { useWatchlist, useAddWatchlistItem } from '../hooks/useWatchlists';
 import { PlusIcon } from '@heroicons/react/24/solid';
 
@@ -28,27 +29,32 @@ const WatchlistsPage: React.FC = () => {
           />
         </div>
         <div className="lg:col-span-3">
-          <div className="bg-base-100 p-4 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold">
-                {selectedWatchlist ? selectedWatchlist.name : 'Select a Watchlist'}
-              </h1>
-              {selectedWatchlistId && (
+          {selectedWatchlistId ? (
+            <div className="bg-base-100 p-4 rounded-lg shadow">
+              <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">
+                  {selectedWatchlist ? selectedWatchlist.name : 'Loading...'}
+                </h1>
                 <button
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-primary btn-sm flex items-center gap-2"
                   onClick={() => setIsAddModalOpen(true)}
+                  disabled={!selectedWatchlist}
                 >
                   <PlusIcon className="h-4 w-4 mr-2" />
                   Add Asset
                 </button>
-              )}
+              </div>
+              <WatchlistTable
+                watchlist={selectedWatchlist}
+                isLoading={isLoading}
+                error={error}
+              />
             </div>
-            <WatchlistTable
-              watchlist={selectedWatchlist}
-              isLoading={isLoading}
-              error={error}
-            />
-          </div>
+          ) : (
+            <div className="bg-base-100 p-4 rounded-lg shadow h-full flex items-center justify-center">
+              <WatchlistEmptyState />
+            </div>
+          )}
         </div>
       </div>
       <AddAssetToWatchlistModal

@@ -3,12 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as watchlistApi from '../../services/watchlistApi';
 import {
   useWatchlists,
-  useWatchlists,
-  useCreateWatchlist,
-  useUpdateWatchlist,
-  useDeleteWatchlist,
-  useWatchlist,
-  useWatchlists,
   useCreateWatchlist,
   useUpdateWatchlist,
   useDeleteWatchlist,
