@@ -12,14 +12,13 @@ const adminUser = {
 };
 
 test.describe.serial('Goal Planning & Tracking Feature', () => {
-  let portfolioId: string;
   const portfolioName = `Goal Test Portfolio ${Date.now()}`;
 
   // Setup: Create a user and a portfolio with a transaction via API
   test.beforeAll(async ({ request }) => {
     // 1. Get Admin Token
     const adminLoginResponse = await request.post('/api/v1/auth/login', {
-      form: { username: adminUser.email, password: admin_user.password },
+      form: { username: adminUser.email, password: adminUser.password },
     });
     expect(adminLoginResponse.ok()).toBeTruthy();
     const { access_token: adminToken } = await adminLoginResponse.json();
@@ -31,6 +30,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
       data: { ...standardUser, is_admin: false },
     });
     expect(userCreateResponse.ok()).toBeTruthy();
+    const user = await userCreateResponse.json();
 
     // 3. Login as Standard User to get their token
     const userLoginResponse = await request.post('/api/v1/auth/login', {
@@ -47,7 +47,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     });
     expect(portfolioCreateResponse.ok()).toBeTruthy();
     const portfolio = await portfolioCreateResponse.json();
-    portfolioId = portfolio.id;
+    const portfolioId = portfolio.id;
 
     // 5. Create an Asset and a Transaction to give the portfolio value
     const assetResponse = await request.post('/api/v1/assets/', {
@@ -97,6 +97,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     await page.getByRole('button', { name: 'Link Asset/Portfolio' }).click();
     await expect(page.getByRole('heading', { name: 'Link to Goal' })).toBeVisible();
 
+    // Correctly click the list item with the portfolio name, then click the main "Link" button
     await page.getByRole('listitem').filter({ hasText: portfolioName }).click();
     await page.getByRole('button', { name: 'Link', exact: true }).click();
 
