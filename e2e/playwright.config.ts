@@ -10,9 +10,7 @@ export default defineConfig({
   workers: 1, // Opt out of parallel execution by setting workers to 1
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://frontend:3000',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-    trace: 'retain-on-failure',
+    trace: 'on-first-retry',
   },
   timeout: 30 * 1000, // 30 seconds
 });

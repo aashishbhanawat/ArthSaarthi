@@ -3,7 +3,6 @@
 **Feature ID:** FR13
 **Title:** Goal Planning & Tracking
 **User Story:** As a user, I want to define my financial goals, link my investments to them, and track my progress over time, so that I can stay motivated and make informed decisions to reach my financial targets.
-**Status:** Complete
 
 ---
 

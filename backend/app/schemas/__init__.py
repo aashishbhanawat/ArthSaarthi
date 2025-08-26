@@ -9,16 +9,6 @@ from .dashboard import (
     PortfolioHistoryResponse,
     TopMover,
 )
-from .goal import (
-    Goal,
-    GoalCreate,
-    GoalLink,
-    GoalLinkCreate,
-    GoalLinkCreateIn,
-    GoalLinkUpdate,
-    GoalUpdate,
-    GoalWithAnalytics,
-)
 from .holding import Holding, HoldingsResponse, PortfolioSummary
 from .import_session import (
     ImportSession,
@@ -51,14 +41,6 @@ __all__ = [
     "AnalyticsResponse",
     "AssetAnalytics",
     "DashboardSummary",
-    "Goal",
-    "GoalCreate",
-    "GoalUpdate",
-    "GoalLink",
-    "GoalLinkCreate",
-    "GoalLinkCreateIn",
-    "GoalLinkUpdate",
-    "GoalWithAnalytics",
     "Holding",
     "HoldingsResponse",
     "ImportSession",

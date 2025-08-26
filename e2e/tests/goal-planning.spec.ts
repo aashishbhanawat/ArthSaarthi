@@ -52,7 +52,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     // 5. Create an Asset and a Transaction to give the portfolio value
     const assetResponse = await request.post('/api/v1/assets/', {
         headers: userAuthHeaders,
-        data: { ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'STOCK' },
+        data: { ticker_symbol: 'GOOGL' },
     });
     expect(assetResponse.ok(), `Failed to create asset: ${await assetResponse.text()}`).toBeTruthy();
     const asset = await assetResponse.json();
@@ -97,7 +97,6 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     await page.getByRole('button', { name: 'Link Asset/Portfolio' }).click();
     await expect(page.getByRole('heading', { name: 'Link to Goal' })).toBeVisible();
 
-    // Correctly click the list item with the portfolio name, then click the main "Link" button
     await page.getByRole('listitem').filter({ hasText: portfolioName }).click();
     await page.getByRole('button', { name: 'Link', exact: true }).click();
 

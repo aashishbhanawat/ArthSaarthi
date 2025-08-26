@@ -121,19 +121,6 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             .all()
         )
 
-    def get_multi_by_asset_and_user(
-        self, db: Session, *, asset_id: uuid.UUID, user_id: uuid.UUID
-    ) -> List[Transaction]:
-        return (
-            db.query(self.model)
-            .filter(
-                Transaction.asset_id == asset_id,
-                Transaction.user_id == user_id,
-            )
-            .order_by(Transaction.transaction_date)
-            .all()
-        )
-
     def get_by_details(
         self,
         db: Session,

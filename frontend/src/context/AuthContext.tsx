@@ -57,9 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data } = await api.get<User>('/api/v1/users/me');
       setUser(data);
     } catch (err) {
-      // The axios interceptor already handles 403 errors by logging out.
-      // We don't want to log out on other transient errors (e.g., network error on startup).
-      console.error("Failed to fetch user data:", err);
+      logout();
     } finally {
       setIsLoading(false);
     }
