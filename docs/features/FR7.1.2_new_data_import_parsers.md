@@ -8,7 +8,7 @@
 
 ## 1. Objective
 
-This document outlines the implementation plan for adding new, specific parsers to the existing "Automated Data Import" framework. This work is highly self-contained and ideal for parallel development by the AI assistant **Jules**.
+This document outlines the implementation plan for adding new, specific parsers to the existing "Automated Data Import" framework.
 
 The goal is to create two new parsers:
 1.  A parser for Consolidated Account Statements (CAS) for Mutual Funds, typically provided by CAMS or Karvy.
@@ -82,5 +82,3 @@ This feature will be implemented in two distinct phases, one for each parser.
 4.  **Write Unit Tests:** Create a comprehensive unit test in `test_enps_parser.py` that uses the `sample_enps.pdf` to verify that the parser correctly extracts and transforms the data.
 
 ---
-
-This phased approach provides a clear and isolated path for Jules to develop the new parsers, significantly enhancing the application's data import capabilities.
