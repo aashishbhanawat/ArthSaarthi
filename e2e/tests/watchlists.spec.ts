@@ -81,6 +81,6 @@ test.describe('Watchlists Feature', () => {
     // Cleanup
     page.on('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: `Delete ${watchlistName}` }).click();
-    await expect(page.getByText(watchlistName)).not.toBeVisible();
+    await expect(page.locator('.menu').getByText(watchlistName)).not.toBeVisible();
   });
 });

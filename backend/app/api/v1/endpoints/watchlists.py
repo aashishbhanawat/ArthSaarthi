@@ -146,19 +146,25 @@ def remove_watchlist_item(
     """
     Remove an item from a watchlist.
     """
-    watchlist = crud.watchlist.get(db, id=watchlist_id)
-    if not watchlist:
-        raise HTTPException(status_code=404, detail="Watchlist not found")
-    if watchlist.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+    # Eagerly load the item with its asset to prevent DetachedInstanceError
+    item = (
+        db.query(WatchlistItemModel)
+        .options(joinedload(WatchlistItemModel.asset))
+        .filter(WatchlistItemModel.id == item_id)
+        .first()
+    )
 
-    item = crud.watchlist_item.get(db, id=item_id)
     if not item or item.watchlist_id != watchlist_id:
         raise HTTPException(status_code=404, detail="Watchlist item not found")
 
-    deleted_item = crud.watchlist_item.remove(db, id=item_id)
+    # Also check that the item belongs to the current user
+    if item.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    # Now delete the object we just fetched
+    db.delete(item)
     db.commit()
-    return deleted_item
+    return item
 
 
 @router.put("/{watchlist_id}", response_model=Watchlist)

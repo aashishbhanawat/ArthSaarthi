@@ -11,7 +11,7 @@ import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 
 interface WatchlistSelectorProps {
   selectedWatchlistId: string | null;
-  onSelectWatchlist: (id: string) => void;
+  onSelectWatchlist: (id: string | null) => void;
 }
 
 const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
@@ -38,7 +38,13 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
 
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this watchlist?')) {
-      deleteWatchlist.mutate(id);
+      deleteWatchlist.mutate(id, {
+        onSuccess: () => {
+          if (selectedWatchlistId === id) {
+            onSelectWatchlist(null);
+          }
+        },
+      });
     }
   };
 

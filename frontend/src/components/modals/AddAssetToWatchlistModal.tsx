@@ -85,9 +85,9 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
                     </button>
                   </li>
                 ))}
-                {!isLoading && filteredResults.length === 0 && (
-                  <li><a>No results found</a></li>
-                )}
+                {!isLoading &&
+                  filteredResults.length === 0 &&
+                  !selectedAsset && <li><a>No results found</a></li>}
               </ul>
             )}
           </div>
