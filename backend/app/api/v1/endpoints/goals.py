@@ -95,3 +95,61 @@ def delete_goal(
     crud.goal.remove(db=db, id=goal_id)
     db.commit()
     return {"msg": "Goal deleted successfully"}
+
+
+@router.post("/{goal_id}/links", response_model=schemas.GoalLink, status_code=201)
+def create_goal_link(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    link_in: schemas.GoalLinkCreate,
+    current_user: models.User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Link an asset or portfolio to a goal.
+    """
+    goal = crud.goal.get(db=db, id=goal_id)
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    if goal.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    # Ensure the link_in.goal_id matches the goal_id from the path
+    if link_in.goal_id != goal_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Goal ID in path and body do not match",
+        )
+
+    link = crud.goal_link.create_with_owner(
+        db=db, obj_in=link_in, user_id=current_user.id
+    )
+    return link
+
+
+@router.delete("/{goal_id}/links/{link_id}", response_model=schemas.Msg)
+def delete_goal_link(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    goal_id: uuid.UUID,
+    link_id: uuid.UUID,
+    current_user: models.User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Unlink an asset or portfolio from a goal.
+    """
+    goal = crud.goal.get(db=db, id=goal_id)
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    if goal.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    link = crud.goal_link.get(db=db, id=link_id)
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+    if link.user_id != current_user.id or link.goal_id != goal_id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    crud.goal_link.remove(db=db, id=link_id)
+    db.commit()
+    return {"msg": "Link deleted successfully"}
