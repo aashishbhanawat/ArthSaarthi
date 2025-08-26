@@ -33,17 +33,11 @@ def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decima
         elif t.transaction_type.lower() == "sell":
             live_holdings[ticker]["quantity"] -= t.quantity
 
-    tickers_with_holdings = [
-        ticker for ticker, data in live_holdings.items() if data["quantity"] > 0
+    assets_to_price = [
+        {"ticker_symbol": ticker, "exchange": data["exchange"]}
+        for ticker, data in live_holdings.items()
+                if data["quantity"] > 0
     ]
-    if not tickers_with_holdings:
-        return Decimal("0.0")
-
-    assets_to_price = (
-        db.query(crud.asset.model)
-        .filter(crud.asset.model.ticker_symbol.in_(tickers_with_holdings))
-        .all()
-    )
 
     if not assets_to_price:
         return Decimal("0.0")
@@ -96,8 +90,13 @@ def _get_single_portfolio_history(
     if not portfolio_assets:
         return []
 
+    asset_details_list = [
+        {"ticker_symbol": asset.ticker_symbol, "exchange": asset.exchange}
+        for asset in portfolio_assets
+    ]
+
     historical_prices = financial_data_service.get_historical_prices(
-        assets=portfolio_assets, start_date=start_date, end_date=end_date
+        assets=asset_details_list, start_date=start_date, end_date=end_date
     )
 
     history_points = []
@@ -349,7 +348,9 @@ def _get_asset_current_value(
     if net_quantity <= 0:
         return Decimal("0.0")
 
-    asset_to_price = [asset]
+    asset_to_price = [
+        {"ticker_symbol": asset.ticker_symbol, "exchange": asset.exchange}
+    ]
     current_prices_details = financial_data_service.get_current_prices(asset_to_price)
 
     if asset.ticker_symbol not in current_prices_details:
