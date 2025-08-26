@@ -197,46 +197,6 @@ This guide documents common setup and runtime issues and their solutions.
 
 *After applying any of these fixes, always remember to rebuild your Docker containers (`docker-compose up --build`) to ensure the changes take effect.*
 
----
-
-### 15. Backend crashes with `DetachedInstanceError` on DELETE
-
-*   **Symptom:** An API endpoint that deletes an object from the database fails with a `500 Internal Server Error`. The backend logs show `DetachedInstanceError: Parent instance <...> is not bound to a Session; lazy load operation of attribute '...' cannot proceed`.
-
-*   **Cause:** This happens when you delete an object from the database and then try to return that same object in the API response. After `db.commit()`, the SQLAlchemy object becomes "detached" from the session. If your Pydantic `response_model` for the endpoint includes a related field (e.g., returning a `WatchlistItem` that includes its `asset`), FastAPI/Pydantic will try to access that relationship. Because the object is detached, SQLAlchemy tries to lazy-load the relationship from the database, but it can't, which causes the crash.
-
-*   **Solution:** You must eagerly load any required relationships *before* you delete the object. This ensures all the data needed for the response is already loaded into the object's memory before it's detached from the session.
-
-    *   **Incorrect (will crash):**
-        ```python
-        @router.delete("/items/{item_id}")
-        def delete_item(item_id: int, db: Session = Depends(get_db)):
-            item = crud.item.remove(db, id=item_id) # Fetches and deletes
-            db.commit()
-            return item # Crashes here if response_model needs item.related_thing
-        ```
-
-    *   **Correct:**
-        ```python
-        from sqlalchemy.orm import joinedload
-
-        @router.delete("/items/{item_id}")
-        def delete_item(item_id: int, db: Session = Depends(get_db)):
-            # Eagerly load the item AND its relationship first
-            item = (
-                db.query(ItemModel)
-                .options(joinedload(ItemModel.related_thing))
-                .filter(ItemModel.id == item_id)
-                .first()
-            )
-            # ... (add checks for not found, permissions, etc.)
-
-            # Now delete the object that has the data pre-loaded
-            db.delete(item)
-            db.commit()
-            return item # Works because item.related_thing is already loaded
-        ```
-
 ### 12. Frontend tests fail with "Cannot find module" for libraries like Heroicons.
 
 *   **Symptom:** The Jest test suite fails with errors like `Cannot find module '@heroicons/react/24/solid' from 'src/...'`. This happens even if the library is correctly installed.

@@ -22,6 +22,5 @@ class Asset(Base):
     aliases = relationship(
         "AssetAlias", back_populates="asset", cascade="all, delete-orphan"
     )
-    watchlist_items = relationship("WatchlistItem", back_populates="asset")
 
     __table_args__ = (UniqueConstraint("ticker_symbol", name="uq_ticker_symbol"),)

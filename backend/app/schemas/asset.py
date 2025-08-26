@@ -34,5 +34,4 @@ class AssetInDBBase(AssetCreate):
 
 # Properties to return to client
 class Asset(AssetInDBBase):
-    current_price: float | None = None
-    day_change: float | None = None
+    pass

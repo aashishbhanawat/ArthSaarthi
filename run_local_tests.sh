@@ -95,8 +95,6 @@ cleanup() {
   if [ -n "$FRONTEND_PID" ]; then
     kill $FRONTEND_PID 2>/dev/null || print_info "Frontend server was not running."
   fi
-  # Force kill any orphaned vite processes that might be left over from previous runs
-  pkill -f "node /app/frontend/node_modules/.bin/vite" || true
 
   rm -f backend/.env.test
   rm -f frontend/.env.development.local

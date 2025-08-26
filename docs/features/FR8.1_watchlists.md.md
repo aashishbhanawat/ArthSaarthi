@@ -3,7 +3,6 @@
 **Feature ID:** FR8.1
 **Title:** Watchlists
 **User Story:** As a user, I want to create and manage lists of assets that I don't own, so I can monitor their performance and make informed decisions about future investments.
-**Status:** Implemented (Phases 1-3). Phase 4 (Real-time Data) is pending.
 
 ---
 
@@ -100,20 +99,17 @@ A new router will be created at `/api/v1/watchlists`.
 This feature should be implemented in phases to ensure manageable pull requests.
 
 1.  **Phase 1: Backend Foundation.**
-    *   **Status: Done**
     *   Create the `watchlists` and `watchlist_items` database models and generate the Alembic migration.
     *   Implement the Pydantic schemas.
     *   Implement the basic backend CRUD operations and API endpoints for creating, reading, updating, and deleting the watchlists themselves (not the items yet).
     *   Write corresponding backend tests.
 
 2.  **Phase 2: Frontend Watchlist Management.**
-    *   **Status: Done**
     *   Implement the `WatchlistsPage` and the `WatchlistSelector` component.
     *   Implement the `WatchlistFormModal` to create and edit watchlists.
     *   Users should be able to create, rename, and delete watchlists.
 
 3.  **Phase 3: Full-Stack Item Management.**
-    *   **Status: Done**
     *   Implement the backend API endpoints for adding and removing assets from a watchlist.
     *   Implement the frontend `AddAssetToWatchlistModal` and the logic in the `WatchlistTable` to remove items.
     *   Write corresponding full-stack tests.

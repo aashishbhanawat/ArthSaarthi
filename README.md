@@ -32,7 +32,6 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
     *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database and a file-based cache.
-*   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.
 
 ### On the Horizon (Future Features)
 
@@ -41,7 +40,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Deeper Analytics & Reporting:** Generate capital gains reports for tax filing, benchmark your portfolio against market indices, and analyze diversification by sector, geography, and more.
 *   **Goal-Oriented Planning:** Define financial goals (e.g., "Retirement", "House Down Payment"), link assets to them, and track your progress with projections.
 *   **AI-Powered Insights:** Leverage AI to get suggestions for tax-loss harvesting, portfolio rebalancing, and receive a personalized daily digest of your financial world.
-*   **Market Insights:** Get relevant news feeds and perform deep-dive research on individual assets.
+*   **Market Insights:** Create watchlists, get relevant news feeds, and perform deep-dive research on individual assets.
 
 ## 🛠️ Technology Stack
 

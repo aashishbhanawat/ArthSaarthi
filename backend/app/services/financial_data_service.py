@@ -112,7 +112,7 @@ else:
             historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
 
             yfinance_tickers_map = {
-                self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"]):a[
+                self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"]): a[
                     "ticker_symbol"
                 ]
                 for a in assets

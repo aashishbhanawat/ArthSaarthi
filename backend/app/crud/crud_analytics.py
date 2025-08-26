@@ -36,7 +36,7 @@ def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decima
     assets_to_price = [
         {"ticker_symbol": ticker, "exchange": data["exchange"]}
         for ticker, data in live_holdings.items()
-                if data["quantity"] > 0
+        if data["quantity"] > 0
     ]
 
     if not assets_to_price:
