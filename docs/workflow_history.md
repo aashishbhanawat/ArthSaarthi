@@ -1268,3 +1268,52 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
 *   `docs/project_handoff_summary.md`
 *   `docs/LEARNING_LOG.md`
 *   `docs/workflow_history.md`
+
+---
+
+## 2025-08-25: Implement Goal Planning & Tracking (FR13)
+
+*   **Task Description:** A major initiative to implement the "Goal Planning & Tracking" feature (FR13) from scratch. This was a full-stack effort executed in four distinct phases, involving significant backend and frontend development, iterative debugging, and comprehensive testing.
+
+*   **Key Prompts & Interactions:**
+    1.  **Phased Implementation:** The entire feature was built using a structured, phased approach, with prompts guiding the AI through each stage: Backend Foundation, Frontend UI, Asset Linking, and Analytics.
+    2.  **Systematic Debugging via Log Analysis:** Each phase involved a cycle of "Implement -> Test -> Debug". At each step, failing `pytest` or `npm test` logs were provided to the AI. This was critical for resolving a wide array of issues.
+    3.  **Bug Triage & Fixing:** For each issue, the "report a bug" and "apply the fix" prompts were used to systematically document and resolve bugs. This included:
+        *   **Backend:** Correcting dependency management in `requirements-dev.in`, manually fixing a complex Alembic database migration, resolving `ImportError`s by updating `__init__.py` files, and fixing a circular import between CRUD modules.
+        *   **Frontend:** Fixing incorrect relative import paths in tests, resolving `TypeError`s in test utilities, and updating components to handle new API data structures.
+
+*   **File Changes (Phase 1: Backend Foundation):**
+    *   `backend/app/models/goal.py`: **New** file with `Goal` and `GoalLink` SQLAlchemy models.
+    *   `backend/app/schemas/goal.py`: **New** file with Pydantic schemas for goals.
+    *   `backend/app/crud/crud_goal.py`, `crud_goal_link.py`: **New** CRUD modules.
+    *   `backend/app/api/v1/endpoints/goals.py`: **New** API router for goals.
+    *   `backend/app/tests/api/v1/test_goals.py`: **New** backend test suite.
+    *   `backend/alembic/versions/...`: **New** database migration file.
+
+*   **File Changes (Phase 2: Frontend Goal Management):**
+    *   `frontend/src/types/goal.ts`: **New** file with TypeScript types.
+    *   `frontend/src/services/goalApi.ts`, `frontend/src/hooks/useGoals.ts`: **New** data layer for goals.
+    *   `frontend/src/pages/GoalsPage.tsx`: **New** page to display and manage goals.
+    *   `frontend/src/components/Goal/`: **New** directory with `GoalCard.tsx` and `GoalFormModal.tsx`.
+    *   `frontend/src/__tests__/`: **New** unit tests for the goal components and hooks.
+
+*   **File Changes (Phase 3: Asset Linking):**
+    *   `frontend/src/pages/GoalDetailPage.tsx`: **New** page to show goal details and linked assets.
+    *   `frontend/src/components/Goal/AssetLinkModal.tsx`: **New** modal to link assets to a goal.
+    *   `backend/app/tests/api/v1/test_goal_links.py`: **New** tests for the linking/unlinking endpoints.
+    *   `frontend/src/__tests__/`: **New** tests for the detail page and linking modal.
+
+*   **File Changes (Phase 4: Analytics & Projections):**
+    *   `backend/app/crud/crud_goal.py`: **Updated** to calculate the current value of linked assets.
+    *   `backend/app/schemas/goal.py`: **Updated** with a `GoalWithAnalytics` schema.
+    *   `frontend/src/types/goal.ts`: **Updated** to include analytics data.
+    *   `frontend/src/pages/GoalDetailPage.tsx`, `frontend/src/components/Goal/GoalCard.tsx`: **Updated** to display goal progress.
+    *   `backend/app/tests/crud/test_goal_crud.py`: **New** tests for the analytics calculation.
+
+*   **Verification:**
+    - Ran the full backend test suite (92 passed).
+    - Ran the full frontend test suite (110 passed).
+    - Ran the full E2E test suite (12 passed).
+
+*   **Outcome:**
+    - The "Goal Planning & Tracking" feature is fully implemented, tested, and stable. The phased approach allowed for systematic development and debugging, resulting in a robust and well-tested feature.
