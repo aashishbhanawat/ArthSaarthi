@@ -19,7 +19,7 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
   test.beforeAll(async ({ request }) => {
     // 1. Get Admin Token
     const adminLoginResponse = await request.post('/api/v1/auth/login', {
-      form: { username: adminUser.email, password: adminUser.password },
+      form: { username: adminUser.email, password: admin_user.password },
     });
     expect(adminLoginResponse.ok()).toBeTruthy();
     const { access_token: adminToken } = await adminLoginResponse.json();
@@ -50,10 +50,9 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
     portfolioId = portfolio.id;
 
     // 5. Create an Asset and a Transaction to give the portfolio value
-    // Use a real ticker symbol that the backend financial service can validate
     const assetResponse = await request.post('/api/v1/assets/', {
         headers: userAuthHeaders,
-        data: { ticker_symbol: 'GOOG', name: 'Google', asset_type: 'STOCK' },
+        data: { ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'STOCK' },
     });
     expect(assetResponse.ok(), `Failed to create asset: ${await assetResponse.text()}`).toBeTruthy();
     const asset = await assetResponse.json();
@@ -87,7 +86,6 @@ test.describe.serial('Goal Planning & Tracking Feature', () => {
 
     await page.waitForResponse(resp => resp.url().includes('/api/v1/goals') && resp.status() === 200);
 
-    // Use a robust locator for the card
     const goalCard = page.locator('div.flex.justify-between.items-start', { hasText: goalName });
     await expect(goalCard).toBeVisible();
     await expect(goalCard.getByText('0.00%')).toBeVisible();
