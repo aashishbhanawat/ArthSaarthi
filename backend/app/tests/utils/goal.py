@@ -7,9 +7,10 @@ from app.models import Goal
 from app.schemas import GoalCreate
 
 
-def create_random_goal(db: Session, user_id: str) -> Goal:
+def create_random_goal(db: Session, user_id: str, target_amount: float = None) -> Goal:
     name = f"Test Goal {random.randint(1, 1000)}"
-    target_amount = random.uniform(1000, 50000)
+    if target_amount is None:
+        target_amount = random.uniform(1000, 50000)
     target_date = date.today() + timedelta(days=random.randint(30, 365))
     goal_in = GoalCreate(
         name=name,

@@ -1,6 +1,6 @@
 import uuid
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,7 +25,13 @@ class GoalUpdate(BaseModel):
 class Goal(GoalBase):
     id: uuid.UUID
     user_id: uuid.UUID
+    links: List["GoalLink"] = []
     model_config = ConfigDict(from_attributes=True)
+
+
+class GoalWithAnalytics(Goal):
+    current_amount: float
+    progress: float
 
 
 # Schemas for GoalLink
