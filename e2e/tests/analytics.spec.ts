@@ -62,12 +62,13 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
     await page.getByLabel('Asset').pressSequentially(assetName);
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetName}"` });
-    await expect(createAssetButton).toBeVisible();
-    await createAssetButton.click();
+    const listItemBuy = page.locator(`li:has-text("${assetName}")`);
+    await expect(listItemBuy).toBeVisible();
+    await listItemBuy.click();
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('200');
     await page.getByLabel('Date').fill('2023-01-01');
+    await page.screenshot({ path: 'analytics_test.png' });
     await page.getByRole('button', { name: 'Save Transaction' }).click();    
     await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ })).toBeVisible();
 
@@ -81,6 +82,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Quantity').fill('5');
     await page.getByLabel('Price per Unit').fill('220');
     await page.getByLabel('Date').fill('2023-06-01');
+    await page.screenshot({ path: 'analytics_test.png' });
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // Verify the holding quantity was updated from 10 to 5

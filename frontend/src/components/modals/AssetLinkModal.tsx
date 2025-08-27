@@ -29,7 +29,11 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
       <div className="modal-box">
         <h3 className="font-bold text-lg">Link Asset or Portfolio to "{goal.name}"</h3>
         <div className="form-control w-full py-4">
+          <label className="label" htmlFor="assetSearch">
+            <span className="label-text">Search for an asset...</span>
+          </label>
           <input
+            id="assetSearch"
             type="text"
             placeholder="Search for an asset..."
             className="input input-bordered w-full"
