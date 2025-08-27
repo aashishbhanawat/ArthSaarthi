@@ -23,14 +23,12 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             # In server mode, email is not encrypted, so we can query it.
             return db.query(User).filter(User.email == email).first()
 
-    def create(
-        self, db: Session, *, obj_in: UserCreate, is_admin: bool = False
-    ) -> User:
+    def create(self, db: Session, *, obj_in: UserCreate) -> User:
         db_obj = User(
             email=obj_in.email,
             hashed_password=get_password_hash(obj_in.password),
             full_name=obj_in.full_name,
-            is_admin=is_admin,
+            is_admin=obj_in.is_admin,
         )
         db.add(db_obj)
         db.flush()

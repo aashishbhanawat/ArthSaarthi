@@ -18,7 +18,9 @@ def random_email() -> str:
     return f"{random_lower_string()}@{random_lower_string()}.com"
 
 
-def create_random_user(db: Session):
+def create_random_user(
+    db: Session, *, is_admin: bool = False
+) -> tuple[schemas.user.User, str]:
     """
     Creates a random user for testing purposes.
     """
@@ -36,9 +38,11 @@ def create_random_user(db: Session):
     password = "".join(password_chars)
 
     user_in = schemas.user.UserCreate(
-        full_name="Test User", email=email, password=password
+        full_name="Test User", email=email, password=password, is_admin=is_admin
     )
     user = crud_user.user.create(db, obj_in=user_in)
+    db.commit()
+    db.refresh(user)
     return user, password
 
 
