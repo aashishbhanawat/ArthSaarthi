@@ -46,7 +46,7 @@ describe('AssetLinkModal', () => {
 
     it('searches for assets when search term is entered', async () => {
         renderWithClient(<AssetLinkModal isOpen={true} onClose={onClose} onLink={onLink} goal={mockGoal} />);
-        fireEvent.change(screen.getByPlaceholderText('Type to search for assets...'), { target: { value: 'AAPL' } });
+        fireEvent.change(screen.getByPlaceholderText('Start typing to search for assets...'), { target: { value: 'AAPL' } });
         await waitFor(() => {
             expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
         });
@@ -61,7 +61,7 @@ describe('AssetLinkModal', () => {
 
     it('calls onLink with asset_id when an asset is linked', async () => {
         renderWithClient(<AssetLinkModal isOpen={true} onClose={onClose} onLink={onLink} goal={mockGoal} />);
-        fireEvent.change(screen.getByPlaceholderText('Type to search for assets...'), { target: { value: 'AAPL' } });
+        fireEvent.change(screen.getByPlaceholderText('Start typing to search for assets...'), { target: { value: 'AAPL' } });
         await waitFor(() => {
             expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
         });

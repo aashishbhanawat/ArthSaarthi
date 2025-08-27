@@ -5,6 +5,7 @@ import { useDeleteGoal } from '../../hooks/useGoals';
 import DeleteGoalModal from './DeleteGoalModal';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatCurrency, formatDate } from '../../utils/formatting';
 
 interface GoalListProps {
   goals: Goal[];
@@ -53,9 +54,9 @@ const GoalList: React.FC<GoalListProps> = ({ goals }) => {
                   <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-indigo-600 truncate">{goal.name}</p>
                       <p className="mt-1 flex items-center text-sm text-gray-500">
-                        <span>Target: ${goal.target_amount.toLocaleString()}</span>
+                        <span>Target: {formatCurrency(goal.target_amount)}</span>
                         <span className="mx-2">|</span>
-                        <span>Date: {new Date(goal.target_date).toLocaleDateString()}</span>
+                        <span>Date: {formatDate(goal.target_date)}</span>
                       </p>
                   </div>
                 </Link>

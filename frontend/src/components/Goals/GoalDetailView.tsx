@@ -76,7 +76,7 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
             <div className="flex justify-between items-center">
                 <h2 className="card-title">Linked Items</h2>
                 <button onClick={() => setIsLinkModalOpen(true)} className="btn btn-secondary btn-sm">
-                    <LinkIcon className="h-4 w-4 mr-2" />
+                    <LinkIcon className="h-5 w-5 mr-2" />
                     Link Item
                 </button>
             </div>
