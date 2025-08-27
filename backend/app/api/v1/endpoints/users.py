@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.core.dependencies import get_current_admin_user
+from app.core.dependencies import get_current_admin_user, get_current_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
-from app.schemas.user import User, UserCreate, UserUpdate
+from app.schemas.user import User, UserCreate, UserUpdate, UserUpdateMe
 
 router = APIRouter()
 
@@ -23,6 +23,22 @@ def list_users(
     """
     users = crud.user.get_multi(db)
     return users
+
+
+@router.put("/me", response_model=User)
+def update_user_me(
+    *,
+    db: Session = Depends(get_db),
+    user_in: UserUpdateMe,
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Update own user.
+    """
+    user = crud.user.update_me(db=db, db_obj=current_user, obj_in=user_in)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)

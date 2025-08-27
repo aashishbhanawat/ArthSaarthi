@@ -65,6 +65,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.60.0",
     "react-router-dom": "^6.23.1",
+    "@headlessui/react": "^2.1.2",
     "portfinder": "^1.0.32",
     "electron-is-dev": "^3.0.1"
   },

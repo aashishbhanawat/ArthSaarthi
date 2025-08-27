@@ -20,3 +20,8 @@ export type UserUpdate = Partial<{
   is_admin: boolean;
   password?: string;
 }>;
+
+export type UserPasswordChange = {
+  old_password: string;
+  new_password: string;
+};

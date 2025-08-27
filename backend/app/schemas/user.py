@@ -77,6 +77,11 @@ class UserUpdate(BaseModel):
         }
     )
 
+
+class UserUpdateMe(BaseModel):
+    full_name: Optional[str] = None
+
+
 class UserPasswordChange(BaseModel):
     old_password: str
     new_password: str
