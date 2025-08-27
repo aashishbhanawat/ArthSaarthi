@@ -47,7 +47,11 @@ test.describe('Goal Planning Feature', () => {
     await page.getByRole('button', { name: 'Link Item' }).click();
     const linkModal = page.locator('.modal-content');
     await expect(linkModal).toBeVisible();
+
+    const assetSearchPromise = page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
     await linkModal.getByLabel('Search Assets').fill(assetToLink);
+    await assetSearchPromise;
+
     const searchResult = linkModal.locator('.space-y-2 > div', { hasText: assetToLink });
     await expect(searchResult).toBeVisible();
     await searchResult.getByRole('button', { name: 'Link' }).click();
