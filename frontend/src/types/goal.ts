@@ -4,6 +4,9 @@ export interface Goal {
   target_amount: number;
   target_date: string; // or Date
   user_id: string;
+  links: GoalLink[];
+  current_amount: number;
+  progress: number;
 }
 
 export interface GoalLink {

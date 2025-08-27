@@ -48,7 +48,7 @@ def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decima
     for ticker, data in live_holdings.items():
         if data["quantity"] > 0 and ticker in current_prices_details:
             price_info = current_prices_details[ticker]
-            current_price = price_info["current_price"]
+            current_price = Decimal(str(price_info["current_price"]))
             total_value += data["quantity"] * current_price
 
     return total_value
@@ -357,7 +357,7 @@ def _get_asset_current_value(
         return Decimal("0.0")
 
     price_info = current_prices_details[asset.ticker_symbol]
-    current_price = price_info["current_price"]
+    current_price = Decimal(str(price_info["current_price"]))
 
     return net_quantity * current_price
 

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.goal import create_random_goal
 from app.tests.utils.portfolio import create_test_portfolio
+from app.tests.utils.transaction import create_test_transaction
 from app.tests.utils.user import create_random_user
 
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
@@ -169,3 +170,42 @@ def test_delete_goal_link(client: TestClient, db: Session, get_auth_headers):
     assert response.status_code == 200
     data = response.json()
     assert data["msg"] == "Link deleted successfully"
+
+
+def test_read_goal_with_analytics(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
+    # Mock the financial data service to return a fixed price
+    mock_price_data = {
+        "AAPL": {"current_price": 150.0, "previous_close": 145.0},
+    }
+    mocker.patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value=mock_price_data,
+    )
+
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    goal = create_random_goal(db, user_id=user.id, target_amount=100000)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Test Portfolio")
+    asset = create_test_asset(db, ticker_symbol="AAPL")
+    # Create a transaction to give the asset a value
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="AAPL",
+        quantity=100,
+        price_per_unit=100,
+    )
+
+    # Link the asset to the goal
+    link_data = {"goal_id": str(goal.id), "asset_id": str(asset.id)}
+    client.post(f"/api/v1/goals/{goal.id}/links", headers=headers, json=link_data)
+
+    response = client.get(f"/api/v1/goals/{goal.id}", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(goal.id)
+    assert data["target_amount"] == 100000
+    assert data["current_amount"] == 15000  # 100 shares * $150
+    assert data["progress"] == 15.0
