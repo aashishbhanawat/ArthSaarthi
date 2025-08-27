@@ -66,20 +66,29 @@ test.describe('Goal Planning Feature', () => {
     // Verify the name has been updated on the detail page
     await expect(page.getByRole('heading', { name: updatedGoalName, level: 1 })).toBeVisible();
 
-    // 5. Navigate back to the list and delete the goal
+    // 5. Delete the goal
     await page.getByRole('link', { name: '← Back to Goals' }).click();
     await expect(page.getByRole('heading', { name: 'Goals', level: 1 })).toBeVisible();
 
     const updatedGoalInList = page.locator(`li:has-text("${updatedGoalName}")`);
     await expect(updatedGoalInList).toBeVisible();
 
-    // Set up listener for the confirmation dialog BEFORE clicking delete
-    page.on('dialog', dialog => dialog.accept());
+    // Click the delete button on the list item
+    await updatedGoalInList.getByRole('button').click();
 
-    const deleteRequestPromise = page.waitForResponse(resp => resp.url().includes('/api/v1/goals/') && resp.request().method() === 'DELETE');
+    // The custom modal should appear
+    const deleteModal = page.locator('.modal-content', { hasText: 'Delete Goal' });
+    await expect(deleteModal).toBeVisible();
 
-    await updatedGoalInList.getByRole('button', { name: '' }).locator('svg').click(); // Clicks the trash icon
+    // Set up promise to wait for the DELETE request BEFORE clicking the confirm button
+    const deleteRequestPromise = page.waitForResponse(resp =>
+        resp.url().includes('/api/v1/goals/') && resp.request().method() === 'DELETE'
+    );
 
+    // Click the confirm button in the modal
+    await deleteModal.getByRole('button', { name: 'Delete' }).click();
+
+    // Wait for the API call to complete
     await deleteRequestPromise;
 
     // Verify the goal is no longer in the list
