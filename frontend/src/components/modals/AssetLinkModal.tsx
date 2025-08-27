@@ -14,8 +14,8 @@ interface AssetLinkModalProps {
 
 const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink, goal }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: portfolios } = usePortfolios();
-  const { data: assets } = useAssetSearch(searchTerm);
+  const { data: portfolios, isLoading: isLoadingPortfolios } = usePortfolios();
+  const { data: assets, isLoading: isLoadingAssets } = useAssetSearch(searchTerm);
 
   const handleLink = (link: { portfolio_id?: string; asset_id?: string }) => {
     onLink(link);
@@ -24,59 +24,85 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
 
   if (!isOpen) return null;
 
+  const alreadyLinked = (type: 'asset' | 'portfolio', id: string): boolean => {
+    if (!goal?.links) return false;
+    if (type === 'asset') {
+        return goal.links.some(link => link.asset_id === id);
+    }
+    return goal.links.some(link => link.portfolio_id === id);
+  }
+
+  const renderPortfolios = () => (
+    <div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">Portfolios</h3>
+        {isLoadingPortfolios ? <p>Loading...</p> : (
+            <div className="space-y-2">
+                {portfolios?.map((portfolio: Portfolio) => (
+                    <div key={portfolio.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <p className="font-semibold">{portfolio.name}</p>
+                        <button onClick={() => handleLink({ portfolio_id: portfolio.id })} className="btn btn-sm btn-secondary" disabled={alreadyLinked('portfolio', portfolio.id)}>
+                            {alreadyLinked('portfolio', portfolio.id) ? 'Linked' : 'Link Portfolio'}
+                        </button>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+  );
+
+  const renderAssets = () => (
+    <div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">Assets</h3>
+        {isLoadingAssets ? <p>Searching...</p> : (
+            <div className="space-y-2">
+                {assets?.map((asset: Asset) => (
+                     <div key={asset.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <div>
+                            <p className="font-semibold">{asset.name}</p>
+                            <p className="text-sm text-gray-500">{asset.ticker_symbol}</p>
+                        </div>
+                        <button onClick={() => handleLink({ asset_id: asset.id })} className="btn btn-sm btn-secondary" disabled={alreadyLinked('asset', asset.id)}>
+                             {alreadyLinked('asset', asset.id) ? 'Linked' : 'Link Asset'}
+                        </button>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+  );
+
+
   return (
-    <div className="modal modal-open">
-      <div className="modal-box">
-        <h3 className="font-bold text-lg">Link Asset or Portfolio to "{goal.name}"</h3>
-        <div className="form-control w-full py-4">
-          <label className="label" htmlFor="assetSearch">
-            <span className="label-text">Search for an asset...</span>
-          </label>
-          <input
-            id="assetSearch"
-            type="text"
-            placeholder="Search for an asset..."
-            className="input input-bordered w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="grid grid-cols-1 gap-4">
-          {searchTerm ? (
-            assets?.map((asset: Asset) => (
-              <div key={asset.id} className="card bg-base-200 shadow-md">
-                <div className="card-body">
-                  <h4 className="card-title">{asset.name}</h4>
-                  <p>{asset.ticker_symbol}</p>
-                  <div className="card-actions justify-end">
-                    <button onClick={() => handleLink({ asset_id: asset.id })} className="btn btn-sm btn-primary">
-                      Link Asset
-                    </button>
-                  </div>
+    <div className="modal-overlay">
+        <div className="modal-content max-w-lg">
+            <div className="modal-header">
+                <h2 className="text-2xl font-bold">Link Asset or Portfolio to "{goal.name}"</h2>
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+            <div className="p-6">
+                <div className="form-group">
+                    <label htmlFor="asset-search" className="form-label">
+                        Search Assets
+                    </label>
+                    <input
+                        id="asset-search"
+                        type="text"
+                        placeholder="Search for an asset..."
+                        className="form-input"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
-              </div>
-            ))
-          ) : (
-            portfolios?.map((portfolio: Portfolio) => (
-              <div key={portfolio.id} className="card bg-base-200 shadow-md">
-                <div className="card-body">
-                  <h4 className="card-title">{portfolio.name}</h4>
-                  <div className="card-actions justify-end">
-                    <button onClick={() => handleLink({ portfolio_id: portfolio.id })} className="btn btn-sm btn-primary">
-                      Link Portfolio
-                    </button>
-                  </div>
+                <div className="mt-6">
+                    {searchTerm ? renderAssets() : renderPortfolios()}
                 </div>
-              </div>
-            ))
-          )}
+                <div className="flex items-center justify-end pt-6 border-t mt-6">
+                    <button type="button" onClick={onClose} className="btn btn-secondary">
+                        Close
+                    </button>
+                </div>
+            </div>
         </div>
-        <div className="modal-action mt-4">
-          <button type="button" onClick={onClose} className="btn btn-ghost">
-            Cancel
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
