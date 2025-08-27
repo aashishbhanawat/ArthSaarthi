@@ -32,7 +32,7 @@ test.describe('Goal Planning Feature', () => {
     await createModal.getByLabel('Goal Name').fill(goalName);
     await createModal.getByLabel('Target Amount').fill('100000');
     await createModal.getByLabel('Target Date').fill('2030-01-01');
-    await createModal.getByRole('button', { name: 'Save' }).click();
+    await createModal.getByRole('button', { name: 'Create Goal' }).click();
 
     // Verify the new goal is in the list
     const goalInList = page.locator(`li:has-text("${goalName}")`);
@@ -48,26 +48,27 @@ test.describe('Goal Planning Feature', () => {
     const linkModal = page.locator('.modal-content');
     await expect(linkModal).toBeVisible();
     await linkModal.getByLabel('Search Assets').fill(assetToLink);
-    await expect(linkModal.locator(`div:has-text("${assetToLink}")`)).toBeVisible();
-    await linkModal.getByRole('button', { name: 'Link' }).first().click();
+    const searchResult = linkModal.locator('.space-y-2 > div', { hasText: assetToLink });
+    await expect(searchResult).toBeVisible();
+    await searchResult.getByRole('button', { name: 'Link' }).click();
 
     // Verify the asset is linked on the detail page
     const linkedItemsCard = page.locator('.card', { hasText: 'Linked Items' });
-    await expect(linkedItemsCard.getByText(assetToLink)).toBeVisible();
+    await expect(linkedItemsCard.getByText('Apple Inc.')).toBeVisible();
 
     // 4. Edit the goal
     await page.getByRole('button', { name: 'Edit' }).click();
     const editModal = page.locator('.modal-content');
     await expect(editModal.getByRole('heading', { name: 'Edit Goal' })).toBeVisible();
     await editModal.getByLabel('Goal Name').fill(updatedGoalName);
-    await editModal.getByRole('button', { name: 'Save' }).click();
+    await editModal.getByRole('button', { name: 'Save Changes' }).click();
 
     // Verify the name has been updated on the detail page
     await expect(page.getByRole('heading', { name: updatedGoalName, level: 1 })).toBeVisible();
 
     // 5. Navigate back to the list and delete the goal
     await page.getByRole('link', { name: '← Back to Goals' }).click();
-    await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Goals', level: 1 })).toBeVisible();
 
     const updatedGoalInList = page.locator(`li:has-text("${updatedGoalName}")`);
     await expect(updatedGoalInList).toBeVisible();
@@ -75,7 +76,11 @@ test.describe('Goal Planning Feature', () => {
     // Set up listener for the confirmation dialog BEFORE clicking delete
     page.on('dialog', dialog => dialog.accept());
 
+    const deleteRequestPromise = page.waitForResponse(resp => resp.url().includes('/api/v1/goals/') && resp.request().method() === 'DELETE');
+
     await updatedGoalInList.getByRole('button', { name: '' }).locator('svg').click(); // Clicks the trash icon
+
+    await deleteRequestPromise;
 
     // Verify the goal is no longer in the list
     await expect(updatedGoalInList).not.toBeVisible();

@@ -84,8 +84,8 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
                 {goal.links.length > 0 ? goal.links.map(link => (
                     <div key={link.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
                         <div>
-                            <p className="font-semibold">{link.item_name}</p>
-                            <p className="text-sm text-gray-500">{link.item_type}</p>
+                            <p className="font-semibold">{link.asset?.name || link.portfolio?.name}</p>
+                            <p className="text-sm text-gray-500">{link.asset ? `Asset: ${link.asset.ticker_symbol}` : 'Portfolio'}</p>
                         </div>
                         <button
                             onClick={() => handleUnlink(link.id)}

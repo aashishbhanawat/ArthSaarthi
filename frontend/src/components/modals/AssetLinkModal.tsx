@@ -41,7 +41,7 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
                     <div key={portfolio.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
                         <p className="font-semibold">{portfolio.name}</p>
                         <button onClick={() => handleLink({ portfolio_id: portfolio.id })} className="btn btn-sm btn-secondary" disabled={alreadyLinked('portfolio', portfolio.id)}>
-                            {alreadyLinked('portfolio', portfolio.id) ? 'Linked' : 'Link Portfolio'}
+                            {alreadyLinked('portfolio', portfolio.id) ? 'Linked' : 'Link'}
                         </button>
                     </div>
                 ))}
@@ -62,7 +62,7 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
                             <p className="text-sm text-gray-500">{asset.ticker_symbol}</p>
                         </div>
                         <button onClick={() => handleLink({ asset_id: asset.id })} className="btn btn-sm btn-secondary" disabled={alreadyLinked('asset', asset.id)}>
-                             {alreadyLinked('asset', asset.id) ? 'Linked' : 'Link Asset'}
+                             {alreadyLinked('asset', asset.id) ? 'Linked' : 'Link'}
                         </button>
                     </div>
                 ))}
@@ -76,7 +76,7 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
     <div className="modal-overlay">
         <div className="modal-content max-w-lg">
             <div className="modal-header">
-                <h2 className="text-2xl font-bold">Link Asset or Portfolio to "{goal.name}"</h2>
+                <h2 className="text-2xl font-bold">Link Item to "{goal.name}"</h2>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
             </div>
             <div className="p-6">
@@ -87,7 +87,7 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
                     <input
                         id="asset-search"
                         type="text"
-                        placeholder="Search for an asset..."
+                        placeholder="Type to search for assets..."
                         className="form-input"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}

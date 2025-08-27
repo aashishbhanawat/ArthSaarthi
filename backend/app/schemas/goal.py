@@ -51,7 +51,23 @@ class GoalLinkUpdate(BaseModel):
     pass
 
 
+# Add minimal schemas for nested objects to avoid circular imports
+# and expose necessary fields.
+class AssetInGoalLink(BaseModel):
+    id: uuid.UUID
+    name: str
+    ticker_symbol: str
+    model_config = ConfigDict(from_attributes=True)
+
+class PortfolioInGoalLink(BaseModel):
+    id: uuid.UUID
+    name: str
+    model_config = ConfigDict(from_attributes=True)
+
+
 class GoalLink(GoalLinkBase):
     id: uuid.UUID
     user_id: uuid.UUID
+    asset: Optional[AssetInGoalLink] = None
+    portfolio: Optional[PortfolioInGoalLink] = None
     model_config = ConfigDict(from_attributes=True)

@@ -113,7 +113,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary" disabled={isPending || !name.trim() || !targetAmount || !targetDate}>
-                {isPending ? 'Saving...' : 'Save'}
+                {isPending ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Goal')}
               </button>
             </div>
           </form>
