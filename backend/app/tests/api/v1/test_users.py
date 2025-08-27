@@ -67,7 +67,9 @@ def test_update_user_me_success(client: TestClient, db: Session, get_auth_header
     headers = get_auth_headers(user.email, password)
     new_name = "New Full Name"
 
-    response = client.put("/api/v1/users/me", headers=headers, json={"full_name": new_name})
+    response = client.put(
+        "/api/v1/users/me", headers=headers, json={"full_name": new_name}
+    )
 
     assert response.status_code == 200
     updated_user = response.json()
