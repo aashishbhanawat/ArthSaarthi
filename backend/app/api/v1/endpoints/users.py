@@ -45,7 +45,10 @@ def create_user(
         user_id=current_user.id,
         event_type="USER_CREATED",
         ip_address=request.client.host,
-        details={"created_user_id": new_user.id, "created_user_email": new_user.email},
+        details={
+            "created_user_id": str(new_user.id),
+            "created_user_email": new_user.email,
+        },
     )
 
     return new_user
@@ -117,7 +120,7 @@ def delete_user(
         event_type="USER_DELETED",
         ip_address=request.client.host,
         details={
-            "deleted_user_id": deleted_user.id,
+            "deleted_user_id": str(deleted_user.id),
             "deleted_user_email": deleted_user.email,
         },
     )
