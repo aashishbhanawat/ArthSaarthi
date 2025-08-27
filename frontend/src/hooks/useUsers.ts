@@ -41,6 +41,7 @@ export const useUpdatePassword = () => {
 };
 
 export const useUpdateMe = () => {
+  const queryClient = useQueryClient();
   const { setUser } = useAuth();
   return useMutation({
     mutationFn: (userData: { full_name: string }) => userApi.updateMe(userData),
@@ -48,6 +49,8 @@ export const useUpdateMe = () => {
       if (setUser) {
         setUser(data);
       }
+      // Invalidate the 'me' query to refetch the user's data
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
     onError: (error: { response?: { data?: { detail?: string } } }) => {
       console.error('Error updating user:', error);

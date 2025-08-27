@@ -22,6 +22,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION;
 
 const NavBar: React.FC = () => {
     const { user, logout, deploymentMode } = useAuth();
+    console.log('NavBar user:', user);
 
     const baseLinkClass = "py-2 px-3 rounded-md transition-colors";
     const inactiveLinkClass = "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
