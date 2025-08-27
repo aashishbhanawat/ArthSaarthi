@@ -4,12 +4,14 @@ import { Goal } from '../../types/goal';
 import { useDeleteGoal } from '../../hooks/useGoals';
 import DeleteGoalModal from './DeleteGoalModal';
 import { TrashIcon } from '@heroicons/react/24/outline';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface GoalListProps {
   goals: Goal[];
 }
 
 const GoalList: React.FC<GoalListProps> = ({ goals }) => {
+  const queryClient = useQueryClient();
   const [isModalOpen, setModalOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
   const deleteGoalMutation = useDeleteGoal();
@@ -23,6 +25,7 @@ const GoalList: React.FC<GoalListProps> = ({ goals }) => {
     if (goalToDelete) {
       deleteGoalMutation.mutate(goalToDelete.id, {
         onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['goals'] });
           setModalOpen(false);
           setGoalToDelete(null);
         },

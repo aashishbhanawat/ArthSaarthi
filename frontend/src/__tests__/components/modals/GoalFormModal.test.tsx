@@ -39,7 +39,7 @@ describe('GoalFormModal', () => {
       fireEvent.change(screen.getByLabelText('Target Amount'), { target: { value: '50000' } });
       fireEvent.change(screen.getByLabelText('Target Date'), { target: { value: '2026-01-01' } });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Create Goal' }));
 
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith({
@@ -64,7 +64,7 @@ describe('GoalFormModal', () => {
 
       fireEvent.change(screen.getByLabelText('Goal Name'), { target: { value: 'Updated Goal Name' } });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith({
@@ -79,15 +79,15 @@ describe('GoalFormModal', () => {
 
   it('disables save button when form is incomplete', () => {
     renderWithClient(<GoalFormModal isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Create Goal' })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Goal Name'), { target: { value: 'Test' } });
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Create Goal' })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Target Amount'), { target: { value: '1000' } });
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Create Goal' })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Target Date'), { target: { value: '2025-01-01' } });
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Create Goal' })).not.toBeDisabled();
   });
 });
