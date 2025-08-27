@@ -1,3 +1,37 @@
+## 2025-08-26: Implement & Stabilize Audit Logging Engine (FR-2.2)
+
+*   **Task Description:** Implement a full-stack Audit Logging Engine to track key user and system events. This was a backend-heavy feature that involved creating new database models, services, and API integrations, followed by a significant multi-stage debugging effort to stabilize the test suite.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the backend foundation, including the `AuditLog` model, Pydantic schemas, `CRUDAuditLog` class, and a central `log_event` service. This service was then integrated into the `auth` and `users` endpoints to log login attempts, user creation, and user deletion.
+    2.  **Database Migration:** The initial attempt to auto-generate an Alembic migration failed. The AI then pivoted to creating the migration script manually to add the `audit_logs` table.
+    3.  **Systematic Debugging via Log Analysis:** The initial test run after implementation failed with 8 errors. A multi-stage debugging process was required:
+        *   **User Correction:** The AI assistant initially misread the test summary and attempted to submit the code with failing tests. The user provided a critical correction, prompting a deeper investigation into the failures.
+        *   **TypeError in `CRUDUser.create`:** The first class of errors was a `TypeError` because the `CRUDUser.create` method did not accept an `is_admin` keyword argument being passed from the `/auth/setup` endpoint. This was fixed by updating the method signature in `crud_user.py`.
+        *   **UUID Serialization Error:** The second class of errors was a `TypeError: Object of type UUID is not JSON serializable`. This occurred when the SQLite backend tried to serialize the `details` field of the audit log, which contained raw UUID objects. The fix was to explicitly convert all UUIDs to strings in the `users.py` endpoint before passing them to the `log_event` service.
+    4.  **Final Verification:** After applying the fixes, the full test suite was run again, and all tests passed.
+
+*   **File Changes:**
+    *   `backend/app/models/audit_log.py`: **New** file with the `AuditLog` SQLAlchemy model.
+    *   `backend/app/schemas/audit_log.py`: **New** file with the `AuditLog` Pydantic schemas.
+    *   `backend/app/crud/crud_audit_log.py`: **New** file for the audit log CRUD class.
+    *   `backend/app/crud/crud_user.py`: **Updated** the `create` method to accept an `is_admin` override.
+    *   `backend/app/crud/__init__.py`: **Updated** to expose the new `audit_log` CRUD object.
+    *   `backend/app/services/audit_logger.py`: **New** file for the centralized `log_event` service.
+    *   `backend/alembic/versions/067d0411efbc_add_audit_logs_table.py`: **New** manually-created database migration.
+    *   `backend/app/api/v1/endpoints/auth.py`: **Updated** to log `USER_LOGIN_SUCCESS` and `USER_LOGIN_FAILURE` events.
+    *   `backend/app/api/v1/endpoints/users.py`: **Updated** to log `USER_CREATED` and `USER_DELETED` events and to serialize UUIDs in log details.
+    *   `backend/app/tests/services/test_audit_logger.py`: **New** unit test for the audit logger service.
+    *   `backend/app/tests/api/v1/test_auth.py`: **Updated** with tests for login-related audit events.
+    *   `backend/app/tests/api/v1/test_users_admin.py`: **Updated** with tests for user management audit events.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (99), frontend tests (123), and E2E tests (14) passed.
+
+*   **Outcome:**
+    - The Audit Logging Engine is now fully implemented, tested, and stable. The development process for this feature highlighted the importance of careful test log analysis and the critical role of human oversight in the AI-assisted workflow.
+
+---
 ---
 
 ## 2025-08-26: Stabilize Watchlist E2E and Frontend Tests
@@ -52,7 +86,7 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 *   **File Changes:**
     *   `backend/app/api/v1/endpoints/users.py`: Created CRUD endpoints for users. Added `/me` endpoint for individual user profiles.
-    *   `backend/app/crud/crud_user.py`: Implemented `get_users`, `get_user`, `update_user`, and `remove` functions.
+    *   `backend/app/crud/crud_user.py`: Implemented `get_users`, `get_user`, `update_user`, `remove` functions.
     *   `backend/app/schemas/user.py`: Added `UserUpdate` schema and OpenAPI examples.
     *   `backend/app/core/dependencies.py`: Added `get_current_admin_user` dependency to protect admin routes.
     *   `backend/app/tests/api/v1/test_users_admin.py`: Added a comprehensive test suite for all user management endpoints.
@@ -335,7 +369,7 @@ Its purpose is to build an experience history that can be used as a reference fo
     1.  **Feature Implementation:** A series of prompts were used to generate the new CRUD logic in `crud_dashboard.py`, the new API endpoints in `endpoints/dashboard.py`, and the corresponding Pydantic schemas.
     2.  **Systematic Debugging via Log Analysis:** The core of the interaction was a highly iterative debugging loop. At each step, the failing `pytest` log was provided to the AI. This was critical for identifying and fixing a cascade of `ImportError` and `AttributeError` issues related to missing singleton instances, incorrect model imports, and schema mismatches.
     3.  **Bug Filing:** For each distinct class of error, the "File a Bug" prompt was used to generate a formal bug report for `docs/bug_reports.md` before a fix was requested.
-    4.  **Context Resynchronization:** The AI's context for several files was outdated. The user provided the full, current content of the problematic files, which allowed the AI to resynchronize and provide accurate patches.
+    4.  **Context Resynchronization:** The AI's context for several files was outdated. The user provided the full, current content of the problematic files, which allowed the AI to resynchronize and provide an accurate patch.
 
 *   **File Changes:**
     *   `backend/app/crud/crud_dashboard.py`: Refactored to a class-based structure and added `get_history` and `get_allocation` logic.
