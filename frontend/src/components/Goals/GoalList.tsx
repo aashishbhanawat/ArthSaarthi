@@ -52,7 +52,7 @@ const GoalList: React.FC<GoalListProps> = ({ goals }) => {
               <div className="flex items-center justify-between">
                 <Link to={`/goals/${goal.id}`} className="block hover:bg-gray-50 -m-4 p-4 flex-grow">
                   <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-indigo-600 truncate">{goal.name}</p>
+                      <p className="text-xl font-semibold text-blue-600">{goal.name}</p>
                       <p className="mt-1 flex items-center text-sm text-gray-500">
                         <span>Target: {formatCurrency(goal.target_amount)}</span>
                         <span className="mx-2">|</span>
