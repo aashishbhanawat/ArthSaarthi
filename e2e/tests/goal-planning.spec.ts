@@ -52,10 +52,10 @@ test.describe('Goal Planning Feature', () => {
     await linkModal.getByLabel('Search Assets').fill(assetToLink);
     await assetSearchPromise;
 
-    const searchResult = linkModal.locator('.space-y-2 > div', { hasText: assetToLink });
+    const searchResult = linkModal.locator('li', { hasText: assetToLink });
     await expect(searchResult).toBeVisible();
     await searchResult.getByRole('button', { name: 'Link' }).click();
-
+    
     // Verify the asset is linked on the detail page
     const linkedItemsCard = page.locator('.card', { hasText: 'Linked Items' });
     await expect(linkedItemsCard.getByText('Apple Inc.')).toBeVisible();

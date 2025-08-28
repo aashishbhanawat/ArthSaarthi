@@ -22,7 +22,7 @@ const GoalsPage: React.FC = () => {
   if (isError) return <div className="text-center p-8 text-red-500">Error: {(error as Error).message}</div>;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Goals</h1>
         <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
