@@ -55,7 +55,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     const portfolioRow = page.locator('.card', { hasText: new RegExp(portfolioName) });
     await expect(portfolioRow).toBeVisible();
-    await portfolioRow.getByRole('button', { name: 'Delete' }).click();
+    await portfolioRow.getByRole('button', { name: `Delete portfolio ${portfolioName}` }).click();
 
     await expect(page.getByRole('dialog')).toBeVisible(); // Verify the modal is open
     // Scope the search to the dialog to click the correct "Delete" button

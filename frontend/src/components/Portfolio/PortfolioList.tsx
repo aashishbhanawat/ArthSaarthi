@@ -39,7 +39,11 @@ const PortfolioList: React.FC<PortfolioListProps> = ({ portfolios }) => {
                         <Link to={`/portfolios/${portfolio.id}`} className="text-xl font-semibold text-blue-600 hover:underline">
                             {portfolio.name}
                         </Link>
-                        <button onClick={() => handleDeleteClick(portfolio)} className="btn btn-sm btn-ghost text-red-600 hover:bg-red-50" disabled={deletePortfolioMutation.isPending} >
+                        <button
+                            onClick={() => handleDeleteClick(portfolio)}
+                            className="btn btn-sm btn-ghost text-red-600 hover:bg-red-50"
+                            disabled={deletePortfolioMutation.isPending}
+                            aria-label={`Delete portfolio ${portfolio.name}`}>
                             <TrashIcon className="h-5 w-5" />
                         </button>
                     </div>
