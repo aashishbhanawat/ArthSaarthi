@@ -8,7 +8,14 @@ const queryClient = new QueryClient();
 
 const mockUseUpdateMe = jest.spyOn(useUsers, 'useUpdateMe');
 
-const renderWithProviders = (ui: React.ReactElement, authValue: any) => {
+import { User } from '../../../types/user';
+
+// Define a type for the AuthContext value
+interface AuthContextType {
+  user: Partial<User> | null;
+  setUser: jest.Mock;
+}
+const renderWithProviders = (ui: React.ReactElement, authValue: AuthContextType) => {
     return render(
         <QueryClientProvider client={queryClient}>
             <AuthContext.Provider value={authValue}>
