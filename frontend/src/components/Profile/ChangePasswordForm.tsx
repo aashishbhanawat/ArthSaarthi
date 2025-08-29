@@ -13,6 +13,7 @@ const ChangePasswordForm: React.FC = () => {
     useEffect(() => {
         if (currentPassword || newPassword || confirmPassword) {
             reset();
+            setError('');
         }
     }, [currentPassword, newPassword, confirmPassword, reset]);
 
