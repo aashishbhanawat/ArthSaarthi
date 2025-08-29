@@ -22,15 +22,15 @@ describe('ChangePasswordForm', () => {
 
         renderWithProviders(<ChangePasswordForm />);
 
-        fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: 'oldPassword123' } });
-        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'newPassword123' } });
-        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: 'newPassword123' } });
+        fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: 'OldPassword123!' } });
+        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'NewPassword123!' } });
+        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: 'NewPassword123!' } });
 
         fireEvent.click(screen.getByRole('button', { name: /change password/i }));
 
         await waitFor(() => {
             expect(mutate).toHaveBeenCalledWith(
-                { old_password: 'oldPassword123', new_password: 'newPassword123' },
+                { old_password: 'OldPassword123!', new_password: 'NewPassword123!' },
                 expect.any(Object)
             );
         });
@@ -41,8 +41,8 @@ describe('ChangePasswordForm', () => {
         mockUseUpdatePassword.mockReturnValue({ mutate: jest.fn(), isPending: false, isSuccess: false, error: null, reset });
         renderWithProviders(<ChangePasswordForm />);
 
-        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'newPassword123' } });
-        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: 'differentPassword' } });
+        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'NewPassword123!' } });
+        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: 'DifferentPassword123!' } });
 
         fireEvent.click(screen.getByRole('button', { name: /change password/i }));
 

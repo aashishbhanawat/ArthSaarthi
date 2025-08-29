@@ -44,7 +44,17 @@ const ChangePasswordForm: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && <div className="alert alert-error">{error}</div>}
                     {isSuccess && <div className="alert alert-success">Password updated successfully!</div>}
-                    {apiError && <div className="alert alert-error">{(apiError as any).response?.data?.detail || 'An error occurred'}</div>}
+                    {apiError && (
+                        <div className="alert alert-error">
+                            {((error: unknown) => {
+                                if (typeof error === 'object' && error !== null && 'response' in error) {
+                                    const axiosError = error as { response?: { data?: { detail?: string } } };
+                                    return axiosError.response?.data?.detail || 'An error occurred';
+                                }
+                                return 'An error occurred';
+                            })(apiError)}
+                        </div>
+                    )}
 
                     <div className="form-control">
                         <label className="label" htmlFor="current-password">
