@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (data: { access_token: string, deployment_mode: 'server' | 'desktop' }) => void;
   logout: () => void;
   register: (email: string) => Promise<void>;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -86,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoading, error, deploymentMode, login, logout, register }}>
+    <AuthContext.Provider value={{ token, user, isLoading, error, deploymentMode, login, logout, register, setUser }}>
       {children}
     </AuthContext.Provider>
   );

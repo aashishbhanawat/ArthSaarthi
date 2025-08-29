@@ -29,12 +29,12 @@ test.describe.serial('Profile Management', () => {
         await expect(page.getByText(updatedName)).toBeVisible();
 
         // 4. Change password
-        const newPassword = 'newPassword456';
+        const newPassword = 'newPassword456!';
         await page.getByLabel('Current Password').fill(adminUser.password);
-        await page.getByLabel('New Password').fill(newPassword);
-        await page.getByLabel('Confirm New Password').fill(newPassword);
+        await page.locator('#new-password').fill(newPassword);
+        await page.locator('#confirm-password').fill(newPassword);
         await page.getByRole('button', { name: 'Change Password' }).click();
-        await expect(page.getByText('Password updated successfully')).toBeVisible();
+        await expect(page.getByText('Password updated successfully!')).toBeVisible();
 
         // 5. Logout
         await page.getByText(updatedName).click();
@@ -48,14 +48,23 @@ test.describe.serial('Profile Management', () => {
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
         await expect(page.getByText(updatedName)).toBeVisible();
 
-        // 7. Logout again
+        // 7. Change password back to original
+        await page.getByText(updatedName).click();
+        await page.getByRole('menuitem', { name: 'Profile Settings' }).click();
+        await page.getByLabel('Current Password').fill(newPassword);
+        await page.locator('#new-password').fill(adminUser.password);
+        await page.locator('#confirm-password').fill(adminUser.password);
+        await page.getByRole('button', { name: 'Change Password' }).click();
+        await expect(page.getByText('Password updated successfully!')).toBeVisible();
+
+        // 8. Logout again
         await page.getByText(updatedName).click();
         await page.getByRole('menuitem', { name: 'Logout' }).click();
         await expect(page.getByRole('heading', { name: 'Sign in to your account' })).toBeVisible();
 
-        // 8. Verify login fails with old password
+        // 9. Verify login fails with new password
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password').fill(newPassword);
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByText('Incorrect email or password')).toBeVisible();
     });
