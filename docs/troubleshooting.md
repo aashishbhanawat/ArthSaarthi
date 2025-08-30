@@ -199,6 +199,27 @@ This guide documents common setup and runtime issues and their solutions.
 
 ---
 
+### 16. Backend tests fail with `UnsupportedCompilationError` or `TypeError: is not JSON serializable`
+
+*   **Symptom:** The backend test suite passes when run against PostgreSQL but fails when run against the local SQLite database with errors like `sqlalchemy.exc.UnsupportedCompilationError: Compiler <...> can't render element of type <JSONB>` or `TypeError: Object of type UUID is not JSON serializable`.
+
+*   **Cause:** This is caused by subtle differences in how database backends and their SQLAlchemy dialects handle data types.
+    1.  **`JSONB` vs. `JSON`:** `JSONB` is a binary, optimized JSON type specific to PostgreSQL. The SQLite dialect doesn't know how to handle it.
+    2.  **UUID Serialization:** The standard Python `json` library, which the SQLite driver often uses, does not know how to serialize `uuid.UUID` objects by default. The PostgreSQL driver might handle this conversion implicitly, masking the issue.
+
+*   **Solution:**
+    1.  **Use Generic Types:** In your SQLAlchemy models, always prefer generic types over database-specific ones if you need to support multiple backends. Use `from sqlalchemy.types import JSON` instead of `from sqlalchemy.dialects.postgresql import JSONB`.
+    2.  **Explicitly Cast Data:** Never assume a database driver will correctly serialize complex Python objects for a JSON field. Before inserting a dictionary into a `JSON` column, explicitly cast any non-standard types to strings.
+        ```python
+        # Incorrect (may fail on SQLite)
+        details = {"user_id": some_uuid_object}
+
+        # Correct (will work everywhere)
+        details = {"user_id": str(some_uuid_object)}
+        ```
+
+---
+
 ### 15. Backend crashes with `DetachedInstanceError` on DELETE
 
 *   **Symptom:** An API endpoint that deletes an object from the database fails with a `500 Internal Server Error`. The backend logs show `DetachedInstanceError: Parent instance <...> is not bound to a Session; lazy load operation of attribute '...' cannot proceed`.

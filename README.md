@@ -18,7 +18,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ## ✨ Core Features
 
-*   **Secure Authentication & User Management:** JWT-based authentication, initial admin setup, and a full admin dashboard for Create, Read, Update, and Delete (CRUD) operations on users.
+*   **Secure Authentication & Administration:** JWT-based authentication, initial admin setup, a full admin dashboard for user management (CRUD), and a backend **Audit Logging Engine** to record all sensitive events.
 *   **Dynamic Dashboard:** Get a bird's-eye view of your financial health with a dashboard showing total portfolio value, realized/unrealized P&L, top daily market movers, and interactive charts for portfolio history and asset allocation.
 *   **Advanced Portfolio Analytics:** On-demand calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset levels.
 *   **Full Portfolio & Transaction Management:**

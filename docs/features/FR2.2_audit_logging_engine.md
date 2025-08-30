@@ -84,3 +84,15 @@ The `log_event` function will be called from the API endpoint layer at the point
 
 This plan provides a clear, backend-focused path to implement a critical security feature with no impact on other ongoing development work.
 
+---
+
+## 5. Status
+
+**Status:** Done
+**Completion Date:** 2025-08-26
+**Workflow History:** [2025-08-26: Implement & Stabilize Audit Logging Engine (FR-2.2)](../workflow_history.md#2025-08-26-implement--stabilize-audit-logging-engine-fr-22)
+
+### Implementation Notes
+*   The `JSONB` type in the initial design was changed to the more generic `JSON` type to ensure compatibility with the SQLite database used in the local test environment.
+*   UUIDs stored in the `details` JSON field must be explicitly cast to `str()` before being passed to the logging service to prevent serialization errors in the SQLite dialect.
+*   The `CRUDUser.create` method was updated to accept an `is_admin` override to handle the specific requirements of the initial admin setup endpoint.

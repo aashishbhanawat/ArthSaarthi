@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from app.schemas import token as token_schema
 from app.schemas.auth import Status
 from app.schemas.msg import Msg
 from app.schemas.user import User, UserCreate, UserPasswordChange
+from app.services.audit_logger import log_event
 
 router = APIRouter()
 
@@ -56,43 +57,61 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=token_schema.Token)
 def login_for_access_token(
-    db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
+    request: Request,
+    db: Session = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     logger.info(f"Login attempt for user: {form_data.username}")
+    ip_address = request.client.host
 
-    if settings.DEPLOYMENT_MODE == "desktop":
-        # In desktop mode, we must first unlock the master key.
-        # This will fail if the password is wrong.
-        if not key_manager.unlock_master_key(password=form_data.password):
-            logger.warning(
-                f"Desktop mode login failed for user: {form_data.username} - "
-                "Master key unlock failed."
-            )
+    try:
+        if settings.DEPLOYMENT_MODE == "desktop":
+            if not key_manager.unlock_master_key(password=form_data.password):
+                logger.warning(
+                    f"Desktop mode login failed for user: {form_data.username} - "
+                    "Master key unlock failed."
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect email or password",
+                )
+
+        user = crud.user.authenticate(
+            db, email=form_data.username, password=form_data.password
+        )
+        if not user:
+            logger.warning(f"Login failed for user: {form_data.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
             )
 
-    user = crud.user.authenticate(
-        db, email=form_data.username, password=form_data.password
-    )
-    if not user:
-        logger.warning(f"Login failed for user: {form_data.username}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+        log_event(
+            db,
+            user_id=user.id,
+            event_type="USER_LOGIN_SUCCESS",
+            ip_address=ip_address,
         )
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = security.create_access_token(
-        subject=user.email, expires_delta=access_token_expires
-    )
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "deployment_mode": settings.DEPLOYMENT_MODE,
-    }
+
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = security.create_access_token(
+            subject=user.email, expires_delta=access_token_expires
+        )
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "deployment_mode": settings.DEPLOYMENT_MODE,
+        }
+    except HTTPException as e:
+        log_event(
+            db,
+            user_id=None,
+            event_type="USER_LOGIN_FAILURE",
+            ip_address=ip_address,
+            details={"email": form_data.username, "reason": e.detail},
+        )
+        e.headers = {"WWW-Authenticate": "Bearer"}
+        raise e
 
 
 @router.post("/me/change-password", response_model=Msg)

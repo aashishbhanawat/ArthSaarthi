@@ -1,5 +1,27 @@
 ---
 
+## 2025-08-26: Database Dialect Differences (SQLite vs. PostgreSQL)
+
+### 1. What Happened?
+
+During the implementation of the Audit Logging feature, the backend test suite failed with two distinct `TypeError` exceptions, but only when running against the **SQLite** database used for local testing. The same code would likely have worked without issue against the production PostgreSQL database.
+
+### 2. How Did the Process Help?
+
+*   **Isolating the Environment:** The CI/CD setup, which runs tests against different database backends, was critical. It allowed us to identify issues that were specific to one database dialect.
+*   **Systematic Debugging:** By analyzing the tracebacks, we identified two separate root causes:
+    1.  **`UnsupportedCompilationError` for `JSONB`:** The first error was because the `AuditLog` model used the `JSONB` data type, which is a PostgreSQL-specific optimization. The SQLAlchemy dialect for SQLite does not know how to compile this type, causing a crash. The fix was to use the more generic `JSON` type, which works across most backends.
+    2.  **`TypeError: Object of type UUID is not JSON serializable`:** The second error occurred when trying to store a dictionary containing a `uuid.UUID` object into the `JSON` details column. While some database drivers might handle this conversion implicitly, the standard Python `json` library used by the SQLite driver does not. The fix was to explicitly convert the UUID to a string (`str(my_uuid)`) before putting it in the dictionary.
+
+### 3. Outcome & New Learning
+
+*   The Audit Logging feature is now stable and works correctly with both PostgreSQL and SQLite.
+*   **Key Learnings:**
+    1.  **Design for Portability:** When a project needs to support multiple database backends, always default to the most generic, standard SQL data types possible (e.g., `JSON` instead of `JSONB`, `TIMESTAMP` instead of `TIMESTAMP WITH TIME ZONE` unless timezones are strictly required). Avoid vendor-specific features unless absolutely necessary.
+    2.  **Explicit is Better Than Implicit:** Do not rely on database drivers to implicitly understand how to serialize complex Python objects (like `UUID` or `datetime`) into JSON. Always perform explicit type casting (`str()`, `.isoformat()`) before inserting data into a JSON field. This makes the code more robust and less dependent on the specific behavior of a given database driver.
+
+---
+
 ## 2025-08-26: The Importance of Full-Stack, Root Cause Analysis
 
 ### 1. What Happened?
