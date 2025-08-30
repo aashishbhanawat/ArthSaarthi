@@ -8,6 +8,7 @@ from .endpoints import (
     assets,
     auth,
     dashboard,
+    goals,
     import_sessions,
     me,
     portfolios,
@@ -25,6 +26,7 @@ api_router.include_router(me.router, prefix="/users", tags=["users"])
 if settings.DEPLOYMENT_MODE != "desktop":
     api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfolios"])
+api_router.include_router(goals.router, prefix="/goals", tags=["goals"])
 api_router.include_router(watchlists.router, prefix="/watchlists", tags=["watchlists"])
 api_router.include_router(assets.router, prefix="/assets", tags=["assets"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])

@@ -11,6 +11,8 @@ import DataImportPage from './pages/Import/DataImportPage';
 import ImportPreviewPage from './pages/Import/ImportPreviewPage';
 import TransactionsPage from './pages/TransactionsPage';
 import WatchlistsPage from './pages/WatchlistsPage';
+import GoalsPage from './pages/GoalsPage';
+import GoalDetailPage from './pages/GoalDetailPage';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const AppLayout = () => (
@@ -39,6 +41,8 @@ function AppRoutes() {
           <Route path="/import/:sessionId/preview" element={<ImportPreviewPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/watchlists" element={<WatchlistsPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/goals/:goalId" element={<GoalDetailPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
           </Route>
