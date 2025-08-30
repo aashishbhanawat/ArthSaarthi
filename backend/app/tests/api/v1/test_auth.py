@@ -198,6 +198,8 @@ def test_change_password_success(client: TestClient, db: Session, get_auth_heade
     )
 
     # 3. Assert: Verify the success response.
+    if response.status_code != 200:
+        print(response.json())
     assert response.status_code == 200
     assert response.json() == {"msg": "Password updated successfully"}
 
