@@ -2,32 +2,6 @@
 
 This document serves as the official bug log for **ArthSaarthi**. All issues discovered during testing must be documented here before work on a fix begins.
 
----
-
-**Bug ID:** 2025-08-30-01
-**Title:** Critical data-loss bug in password change for desktop mode.
-**Module:** Core Backend, Security, Key Management
-**Reported By:** Jules (AI Assistant) via Backend Test Failure
-**Date Reported:** 2025-08-30
-**Classification:** Implementation (Backend)
-**Severity:** Critical
-**Description:**
-When a user changes their password in the desktop application, the `KeyManager.change_password` function incorrectly generates a completely new master encryption key instead of re-wrapping the existing one. All existing user data, which was encrypted with the old master key, becomes permanently unreadable. This would result in total data loss for any user who changes their password.
-**Steps to Reproduce:**
-1. Run the application in `desktop` mode.
-2. Create a user and add some data.
-3. Log out and log back in to confirm data is readable.
-4. Use the API to change the user's password.
-5. Attempt to log in with the new password.
-**Expected Behavior:**
-The user should be able to log in with the new password, and all their existing data should be readable.
-**Actual Behavior:**
-The login fails with a `cryptography.exceptions.InvalidTag` error, because the new master key cannot decrypt the old data.
-**Resolution:**
-The `KeyManager.change_password` method was refactored. It now correctly unlocks the existing master key using the old password, and then calls a new private method (`_wrap_and_save_master_key`) to re-encrypt the *same* key with the new password. This ensures data integrity is maintained across password changes.
-
----
-
 ### Bug Report Template
 
 Copy and paste the template below to file a new bug report.
@@ -6519,4 +6493,26 @@ The test fails with `Unable to find an element with the text: Select a Watchlist
 Update the assertion in `src/__tests__/pages/WatchlistsPage.test.tsx` to use `getByText('No watchlist selected')` instead of `getByText('Select a Watchlist')`.
 
 ---
----
+
+**Bug ID:** 2025-08-30-01
+**Title:** Critical data-loss bug in password change for desktop mode.
+**Module:** Core Backend, Security, Key Management
+**Reported By:** Jules (AI Assistant) via Backend Test Failure
+**Date Reported:** 2025-08-30
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+When a user changes their password in the desktop application, the `KeyManager.change_password` function incorrectly generates a completely new master encryption key instead of re-wrapping the existing one. All existing user data, which was encrypted with the old master key, becomes permanently unreadable. This would result in total data loss for any user who changes their password.
+**Steps to Reproduce:**
+1. Run the application in `desktop` mode.
+2. Create a user and add some data.
+3. Log out and log back in to confirm data is readable.
+4. Use the API to change the user's password.
+5. Attempt to log in with the new password.
+**Expected Behavior:**
+The user should be able to log in with the new password, and all their existing data should be readable.
+**Actual Behavior:**
+The login fails with a `cryptography.exceptions.InvalidTag` error, because the new master key cannot decrypt the old data.
+**Resolution:**
+The `KeyManager.change_password` method was refactored. It now correctly unlocks the existing master key using the old password, and then calls a new private method (`_wrap_and_save_master_key`) to re-encrypt the *same* key with the new password. This ensures data integrity is maintained across password changes.
+

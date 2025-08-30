@@ -1,150 +1,3 @@
----
-
-## 2025-08-30: Implement User Profile Management & Fix Critical Encryption Bug (FR1.5)
-
-*   **Task Description:** Implement the full-stack "User Profile Management" feature, allowing users to update their full name and change their password. This task involved a significant, multi-stage debugging effort to identify and fix a critical security bug in the desktop application's encryption key management.
-
-*   **Key Prompts & Interactions:**
-    1.  **Initial Implementation:** A series of prompts were used to generate the backend API endpoints (`/users/me`, `/auth/me/change-password`), Pydantic schemas, and CRUD logic. On the frontend, prompts were used to create the `ProfilePage`, `UpdateProfileForm`, `ChangePasswordForm`, React Query hooks, and a new `userApi` service.
-    2.  **E2E Test Creation:** An E2E test (`profile-management.spec.ts`) was created to validate the feature. This test initially caused state pollution issues with other tests, which was resolved by creating a new, isolated user within the test itself.
-    3.  **UI/UX Refinement:** Based on user feedback, the UI was refactored to match the application's design system, and a custom toast notification system was implemented to replace blocking `alert()` popups.
-    4.  **Deep Debugging & Root Cause Analysis:** A backend test, `test_change_password_success`, was consistently failing in the `desktop` mode environment with a `cryptography.exceptions.InvalidTag` error.
-        *   The initial hypothesis that data needed to be re-encrypted was incorrect.
-        *   After guidance from the user, a deep dive into the `KeyManager` class revealed the root cause: the `change_password` function was incorrectly generating a **new** master key instead of re-wrapping the **existing** one.
-        *   This was a critical security and data integrity bug that would have resulted in permanent data loss for users who changed their password.
-    5.  **Critical Bug Fix:** The `KeyManager` was refactored to correctly decrypt the master key with the old password, and then re-wrap the *same* key with the new password, preserving all user data.
-    6.  **Environment & Tooling Issues:** The final test run was blocked by a `permission denied` error with Docker. The user provided the crucial information that `sudo` was required, which unblocked the process and allowed the final verification to complete.
-    7.  **Final Cleanup:** After a final review, accidental snapshot test artifacts were removed from the repository.
-
-*   **File Changes:**
-    *   `backend/app/core/key_manager.py`: **Updated** to fix the critical password change bug.
-    *   `backend/app/schemas/user.py`: **Updated** with `UserUpdateMe` and `UserPasswordChange` schemas.
-    *   `backend/app/crud/crud_user.py`: **Updated** with `update_me` method.
-    *   `backend/app/api/v1/endpoints/me.py`: **New** file with the `PUT /me` endpoint.
-    *   `backend/app/tests/api/v1/test_auth.py`: **Restored** accidentally deleted password change tests.
-    *   `frontend/src/pages/ProfilePage.tsx`: **New** page.
-    *   `frontend/src/components/Profile/`: **New** directory with `UpdateProfileForm.tsx` and `ChangePasswordForm.tsx`.
-    *   `frontend/src/hooks/useProfile.ts`: **New** React Query hooks.
-    *   `frontend/src/services/userApi.ts`: **New** API service.
-    *   `frontend/src/context/ToastContext.tsx`: **New** context for toast notifications.
-    *   `e2e/tests/profile-management.spec.ts`: **New** E2E test suite for the feature.
-    *   `e2e/tests/profile-management.spec.ts-snapshots/`: **Deleted** snapshot files.
-
-*   **Verification:**
-    - Ran the full backend test suite for desktop mode using `sudo docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml run --rm test-desktop`. All 108 tests passed.
-    - Ran the full E2E test suite.
-    - Received manual E2E test pass confirmation from the user.
-
-*   **Outcome:**
-    - The "User Profile Management" feature is fully implemented, tested, and stable.
-    - A critical data-loss bug in the core encryption logic was identified and fixed, significantly improving application security and robustness.
----
-
-## 2025-08-27: Implement Goal Planning & Tracking (FR13)
-
-*   **Task Description:** Implement the core full-stack "Goal Planning & Tracking" feature. This allows users to define financial goals, link assets or portfolios to them, and track their current progress based on the market value of linked items. Advanced features like contribution planning and future value projections are out of scope for this task.
-
-*   **Key Prompts & Interactions:**
-    1.  **Backend Implementation:** A series of prompts were used to generate the backend foundation, including the `Goal` and `GoalLink` models, Pydantic schemas, CRUD logic, and API endpoints. The Alembic migration script was also generated.
-    2.  **Backend Analytics:** The `get_goal_with_analytics` function was implemented in `crud_goal.py` to calculate the current progress towards a goal by summing the value of all linked portfolios and assets.
-    3.  **Backend Testing:** A full suite of backend tests was generated for the new endpoints, including a test for the analytics calculation which required mocking the financial data service.
-    4.  **Frontend Implementation:** A series of prompts were used to generate the frontend UI and data layer. This included the `GoalsPage`, `GoalList`, `GoalCard`, `GoalDetailView`, `GoalFormModal`, and `AssetLinkModal` components, along with the corresponding types, API services, and React Query hooks.
-    5.  **Frontend Testing:** A comprehensive suite of unit tests was generated for the new hooks and components.
-
-*   **File Changes:**
-    *   `backend/app/models/goal.py`: **New** file with `Goal` and `GoalLink` models.
-    *   `backend/app/schemas/goal.py`: **New** file with Pydantic schemas.
-    *   `backend/app/crud/crud_goal.py`: **New** file with business logic for goals.
-    *   `backend/app/api/v1/endpoints/goals.py`: **New** file with API endpoints.
-    *   `backend/app/tests/api/v1/test_goals.py`: **New** test suite for the feature.
-    *   `backend/alembic/versions/b649d33505f4_...`: **New** database migration.
-    *   `frontend/src/pages/GoalsPage.tsx`: **New** page.
-    *   `frontend/src/pages/GoalDetailPage.tsx`: **New** page.
-    *   `frontend/src/components/Goals/`: **New** directory with `GoalCard.tsx`, `GoalDetailView.tsx`, `GoalList.tsx`.
-    *   `frontend/src/components/modals/GoalFormModal.tsx`: **New** modal.
-    *   `frontend/src/components/modals/AssetLinkModal.tsx`: **New** modal.
-    *   `frontend/src/hooks/useGoals.ts`: **New** React Query hooks.
-    *   `frontend/src/services/goalApi.ts`: **New** API service.
-    *   `frontend/src/types/goal.ts`: **New** type definitions.
-    *   `frontend/src/__tests__/`: **New** test files for all new components and hooks.
-    *   `frontend/src/App.tsx` & `frontend/src/components/NavBar.tsx`: **Updated** to include the new pages.
-
-*   **Verification:**
-    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests, frontend tests, and E2E tests passed.
-
-*   **Outcome:**
-    - The core "Goal Planning & Tracking" feature is implemented, tested, and stable.
-
----
-
-## 2025-08-26: Implement & Stabilize Audit Logging Engine (FR-2.2)
-
-*   **Task Description:** Implement a full-stack Audit Logging Engine to track key user and system events. This was a backend-heavy feature that involved creating new database models, services, and API integrations, followed by a significant multi-stage debugging effort to stabilize the test suite.
-
-*   **Key Prompts & Interactions:**
-    1.  **Initial Implementation:** A series of prompts were used to generate the backend foundation, including the `AuditLog` model, Pydantic schemas, `CRUDAuditLog` class, and a central `log_event` service. This service was then integrated into the `auth` and `users` endpoints to log login attempts, user creation, and user deletion.
-    2.  **Database Migration:** The initial attempt to auto-generate an Alembic migration failed. The AI then pivoted to creating the migration script manually to add the `audit_logs` table.
-    3.  **Systematic Debugging via Log Analysis:** The initial test run after implementation failed with 8 errors. A multi-stage debugging process was required:
-        *   **User Correction:** The AI assistant initially misread the test summary and attempted to submit the code with failing tests. The user provided a critical correction, prompting a deeper investigation into the failures.
-        *   **TypeError in `CRUDUser.create`:** The first class of errors was a `TypeError` because the `CRUDUser.create` method did not accept an `is_admin` keyword argument being passed from the `/auth/setup` endpoint. This was fixed by updating the method signature in `crud_user.py`.
-        *   **UUID Serialization Error:** The second class of errors was a `TypeError: Object of type UUID is not JSON serializable`. This occurred when the SQLite backend tried to serialize the `details` field of the audit log, which contained raw UUID objects. The fix was to explicitly convert all UUIDs to strings in the `users.py` endpoint before passing them to the `log_event` service.
-    4.  **Final Verification:** After applying the fixes, the full test suite was run again, and all tests passed.
-
-*   **File Changes:**
-    *   `backend/app/models/audit_log.py`: **New** file with the `AuditLog` SQLAlchemy model.
-    *   `backend/app/schemas/audit_log.py`: **New** file with the `AuditLog` Pydantic schemas.
-    *   `backend/app/crud/crud_audit_log.py`: **New** file for the audit log CRUD class.
-    *   `backend/app/crud/crud_user.py`: **Updated** the `create` method to accept an `is_admin` override.
-    *   `backend/app/crud/__init__.py`: **Updated** to expose the new `audit_log` CRUD object.
-    *   `backend/app/services/audit_logger.py`: **New** file for the centralized `log_event` service.
-    *   `backend/alembic/versions/067d0411efbc_add_audit_logs_table.py`: **New** manually-created database migration.
-    *   `backend/app/api/v1/endpoints/auth.py`: **Updated** to log `USER_LOGIN_SUCCESS` and `USER_LOGIN_FAILURE` events.
-    *   `backend/app/api/v1/endpoints/users.py`: **Updated** to log `USER_CREATED` and `USER_DELETED` events and to serialize UUIDs in log details.
-    *   `backend/app/tests/services/test_audit_logger.py`: **New** unit test for the audit logger service.
-    *   `backend/app/tests/api/v1/test_auth.py`: **Updated** with tests for login-related audit events.
-    *   `backend/app/tests/api/v1/test_users_admin.py`: **Updated** with tests for user management audit events.
-
-*   **Verification:**
-    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (99), frontend tests (123), and E2E tests (14) passed.
-
-*   **Outcome:**
-    - The Audit Logging Engine is now fully implemented, tested, and stable. The development process for this feature highlighted the importance of careful test log analysis and the critical role of human oversight in the AI-assisted workflow.
-
----
----
-
-## 2025-08-26: Stabilize Watchlist E2E and Frontend Tests
-
-*   **Task Description:** The E2E test suite for the recently implemented Watchlist feature (FR8.1) was failing. The primary goal was to diagnose the root cause, fix the bugs, and get all test suites (E2E, frontend, backend) to a stable, passing state.
-
-*   **Key Prompts & Interactions:**
-    1.  **Systematic Debugging via Log Analysis:** The core of this task was a long and iterative debugging process. At each stage, the failing test log (from Playwright or Jest) was analyzed to form a hypothesis. This was a process of elimination that uncovered multiple, layered bugs.
-    2.  **User-Provided Logs & Manual Testing Insights:** The user's feedback was critical. They provided backend logs with a full traceback that was not visible to the AI, which pinpointed the root cause of the main bug. They also provided feedback from manual testing that identified a minor UI glitch.
-    3.  **Iterative Fixing:** For each identified bug, a targeted fix was applied. This included:
-        *   **Environment:** Fixing the test environment's dependency installation by updating `backend/requirements-dev.in`.
-        *   **State Management:** Removing a duplicate React Query `QueryClientProvider` that was breaking cache invalidation.
-        *   **Backend:** Fixing a `DetachedInstanceError` in the `remove_watchlist_item` endpoint by eagerly loading the `asset` relationship before deletion.
-        *   **Frontend:** Fixing a UI state bug where the page would not reset after a watchlist was deleted, and fixing a minor UI glitch in the "Add Asset" modal.
-        *   **Tests:** Updating the E2E test to use more robust locators and updating the frontend unit test to account for a change in a function signature.
-
-*   **File Changes:**
-    *   `backend/app/api/v1/endpoints/watchlists.py`: **Updated** the `remove_watchlist_item` endpoint to prevent a `DetachedInstanceError`.
-    *   `frontend/src/components/modals/AddAssetToWatchlistModal.tsx`: **Updated** to fix a minor UI glitch.
-    *   `frontend/src/components/Watchlists/WatchlistSelector.tsx`: **Updated** to correctly handle UI state after a watchlist is deleted.
-    *   `frontend/src/__tests__/components/Watchlists/WatchlistSelector.test.tsx`: **Updated** a unit test to align with the new code.
-    *   `e2e/tests/watchlists.spec.ts`: **Updated** to use more robust locators.
-    *   `frontend/src/main.tsx` & `frontend/src/App.tsx`: **Updated** to remove a duplicate `QueryClientProvider`.
-    *   `backend/requirements-dev.in`: **Updated** to include base requirements.
-    *   `backend/app/crud/base.py`: **Updated** to remove a speculative `db.flush()` that was added during debugging.
-
-*   **Verification:**
-    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (98), frontend tests (123), and E2E tests (14) passed.
-
-*   **Outcome:**
-    - The entire test suite is now stable and passing. The Watchlist feature is fully functional and verified. This task highlights the importance of systematic debugging and the value of detailed logs in uncovering complex, multi-layered bugs.
-
----
-
 # Workflow & AI Interaction History
 
 This document serves as a chronological log of the development process for **ArthSaarthi**, specifically detailing the interactions with the GenAI code assistant.
@@ -1517,3 +1370,150 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
 
 *   **Outcome:**
     - The full-stack functionality for adding and removing items from a watchlist is complete, stable, and fully tested. The project is ready for the final phase of the feature.
+
+---
+
+## 2025-08-26: Stabilize Watchlist E2E and Frontend Tests
+
+*   **Task Description:** The E2E test suite for the recently implemented Watchlist feature (FR8.1) was failing. The primary goal was to diagnose the root cause, fix the bugs, and get all test suites (E2E, frontend, backend) to a stable, passing state.
+
+*   **Key Prompts & Interactions:**
+    1.  **Systematic Debugging via Log Analysis:** The core of this task was a long and iterative debugging process. At each stage, the failing test log (from Playwright or Jest) was analyzed to form a hypothesis. This was a process of elimination that uncovered multiple, layered bugs.
+    2.  **User-Provided Logs & Manual Testing Insights:** The user's feedback was critical. They provided backend logs with a full traceback that was not visible to the AI, which pinpointed the root cause of the main bug. They also provided feedback from manual testing that identified a minor UI glitch.
+    3.  **Iterative Fixing:** For each identified bug, a targeted fix was applied. This included:
+        *   **Environment:** Fixing the test environment's dependency installation by updating `backend/requirements-dev.in`.
+        *   **State Management:** Removing a duplicate React Query `QueryClientProvider` that was breaking cache invalidation.
+        *   **Backend:** Fixing a `DetachedInstanceError` in the `remove_watchlist_item` endpoint by eagerly loading the `asset` relationship before deletion.
+        *   **Frontend:** Fixing a UI state bug where the page would not reset after a watchlist was deleted, and fixing a minor UI glitch in the "Add Asset" modal.
+        *   **Tests:** Updating the E2E test to use more robust locators and updating the frontend unit test to account for a change in a function signature.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/watchlists.py`: **Updated** the `remove_watchlist_item` endpoint to prevent a `DetachedInstanceError`.
+    *   `frontend/src/components/modals/AddAssetToWatchlistModal.tsx`: **Updated** to fix a minor UI glitch.
+    *   `frontend/src/components/Watchlists/WatchlistSelector.tsx`: **Updated** to correctly handle UI state after a watchlist is deleted.
+    *   `frontend/src/__tests__/components/Watchlists/WatchlistSelector.test.tsx`: **Updated** a unit test to align with the new code.
+    *   `e2e/tests/watchlists.spec.ts`: **Updated** to use more robust locators.
+    *   `frontend/src/main.tsx` & `frontend/src/App.tsx`: **Updated** to remove a duplicate `QueryClientProvider`.
+    *   `backend/requirements-dev.in`: **Updated** to include base requirements.
+    *   `backend/app/crud/base.py`: **Updated** to remove a speculative `db.flush()` that was added during debugging.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (98), frontend tests (123), and E2E tests (14) passed.
+
+*   **Outcome:**
+    - The entire test suite is now stable and passing. The Watchlist feature is fully functional and verified. This task highlights the importance of systematic debugging and the value of detailed logs in uncovering complex, multi-layered bugs.
+
+---
+
+## 2025-08-26: Implement & Stabilize Audit Logging Engine (FR-2.2)
+
+*   **Task Description:** Implement a full-stack Audit Logging Engine to track key user and system events. This was a backend-heavy feature that involved creating new database models, services, and API integrations, followed by a significant multi-stage debugging effort to stabilize the test suite.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the backend foundation, including the `AuditLog` model, Pydantic schemas, `CRUDAuditLog` class, and a central `log_event` service. This service was then integrated into the `auth` and `users` endpoints to log login attempts, user creation, and user deletion.
+    2.  **Database Migration:** The initial attempt to auto-generate an Alembic migration failed. The AI then pivoted to creating the migration script manually to add the `audit_logs` table.
+    3.  **Systematic Debugging via Log Analysis:** The initial test run after implementation failed with 8 errors. A multi-stage debugging process was required:
+        *   **User Correction:** The AI assistant initially misread the test summary and attempted to submit the code with failing tests. The user provided a critical correction, prompting a deeper investigation into the failures.
+        *   **TypeError in `CRUDUser.create`:** The first class of errors was a `TypeError` because the `CRUDUser.create` method did not accept an `is_admin` keyword argument being passed from the `/auth/setup` endpoint. This was fixed by updating the method signature in `crud_user.py`.
+        *   **UUID Serialization Error:** The second class of errors was a `TypeError: Object of type UUID is not JSON serializable`. This occurred when the SQLite backend tried to serialize the `details` field of the audit log, which contained raw UUID objects. The fix was to explicitly convert all UUIDs to strings in the `users.py` endpoint before passing them to the `log_event` service.
+    4.  **Final Verification:** After applying the fixes, the full test suite was run again, and all tests passed.
+
+*   **File Changes:**
+    *   `backend/app/models/audit_log.py`: **New** file with the `AuditLog` SQLAlchemy model.
+    *   `backend/app/schemas/audit_log.py`: **New** file with the `AuditLog` Pydantic schemas.
+    *   `backend/app/crud/crud_audit_log.py`: **New** file for the audit log CRUD class.
+    *   `backend/app/crud/crud_user.py`: **Updated** the `create` method to accept an `is_admin` override.
+    *   `backend/app/crud/__init__.py`: **Updated** to expose the new `audit_log` CRUD object.
+    *   `backend/app/services/audit_logger.py`: **New** file for the centralized `log_event` service.
+    *   `backend/alembic/versions/067d0411efbc_add_audit_logs_table.py`: **New** manually-created database migration.
+    *   `backend/app/api/v1/endpoints/auth.py`: **Updated** to log `USER_LOGIN_SUCCESS` and `USER_LOGIN_FAILURE` events.
+    *   `backend/app/api/v1/endpoints/users.py`: **Updated** to log `USER_CREATED` and `USER_DELETED` events and to serialize UUIDs in log details.
+    *   `backend/app/tests/services/test_audit_logger.py`: **New** unit test for the audit logger service.
+    *   `backend/app/tests/api/v1/test_auth.py`: **Updated** with tests for login-related audit events.
+    *   `backend/app/tests/api/v1/test_users_admin.py`: **Updated** with tests for user management audit events.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (99), frontend tests (123), and E2E tests (14) passed.
+
+*   **Outcome:**
+    - The Audit Logging Engine is now fully implemented, tested, and stable. The development process for this feature highlighted the importance of careful test log analysis and the critical role of human oversight in the AI-assisted workflow.
+
+---
+
+## 2025-08-27: Implement Goal Planning & Tracking (FR13)
+
+*   **Task Description:** Implement the core full-stack "Goal Planning & Tracking" feature. This allows users to define financial goals, link assets or portfolios to them, and track their current progress based on the market value of linked items. Advanced features like contribution planning and future value projections are out of scope for this task.
+
+*   **Key Prompts & Interactions:**
+    1.  **Backend Implementation:** A series of prompts were used to generate the backend foundation, including the `Goal` and `GoalLink` models, Pydantic schemas, CRUD logic, and API endpoints. The Alembic migration script was also generated.
+    2.  **Backend Analytics:** The `get_goal_with_analytics` function was implemented in `crud_goal.py` to calculate the current progress towards a goal by summing the value of all linked portfolios and assets.
+    3.  **Backend Testing:** A full suite of backend tests was generated for the new endpoints, including a test for the analytics calculation which required mocking the financial data service.
+    4.  **Frontend Implementation:** A series of prompts were used to generate the frontend UI and data layer. This included the `GoalsPage`, `GoalList`, `GoalCard`, `GoalDetailView`, `GoalFormModal`, and `AssetLinkModal` components, along with the corresponding types, API services, and React Query hooks.
+    5.  **Frontend Testing:** A comprehensive suite of unit tests was generated for the new hooks and components.
+
+*   **File Changes:**
+    *   `backend/app/models/goal.py`: **New** file with `Goal` and `GoalLink` models.
+    *   `backend/app/schemas/goal.py`: **New** file with Pydantic schemas.
+    *   `backend/app/crud/crud_goal.py`: **New** file with business logic for goals.
+    *   `backend/app/api/v1/endpoints/goals.py`: **New** file with API endpoints.
+    *   `backend/app/tests/api/v1/test_goals.py`: **New** test suite for the feature.
+    *   `backend/alembic/versions/b649d33505f4_...`: **New** database migration.
+    *   `frontend/src/pages/GoalsPage.tsx`: **New** page.
+    *   `frontend/src/pages/GoalDetailPage.tsx`: **New** page.
+    *   `frontend/src/components/Goals/`: **New** directory with `GoalCard.tsx`, `GoalDetailView.tsx`, `GoalList.tsx`.
+    *   `frontend/src/components/modals/GoalFormModal.tsx`: **New** modal.
+    *   `frontend/src/components/modals/AssetLinkModal.tsx`: **New** modal.
+    *   `frontend/src/hooks/useGoals.ts`: **New** React Query hooks.
+    *   `frontend/src/services/goalApi.ts`: **New** API service.
+    *   `frontend/src/types/goal.ts`: **New** type definitions.
+    *   `frontend/src/__tests__/`: **New** test files for all new components and hooks.
+    *   `frontend/src/App.tsx` & `frontend/src/components/NavBar.tsx`: **Updated** to include the new pages.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests, frontend tests, and E2E tests passed.
+
+*   **Outcome:**
+    - The core "Goal Planning & Tracking" feature is implemented, tested, and stable.
+
+---
+
+## 2025-08-30: Implement User Profile Management & Fix Critical Encryption Bug (FR1.5)
+
+*   **Task Description:** Implement the full-stack "User Profile Management" feature, allowing users to update their full name and change their password. This task involved a significant, multi-stage debugging effort to identify and fix a critical security bug in the desktop application's encryption key management.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the backend API endpoints (`/users/me`, `/auth/me/change-password`), Pydantic schemas, and CRUD logic. On the frontend, prompts were used to create the `ProfilePage`, `UpdateProfileForm`, `ChangePasswordForm`, React Query hooks, and a new `userApi` service.
+    2.  **E2E Test Creation:** An E2E test (`profile-management.spec.ts`) was created to validate the feature. This test initially caused state pollution issues with other tests, which was resolved by creating a new, isolated user within the test itself.
+    3.  **UI/UX Refinement:** Based on user feedback, the UI was refactored to match the application's design system, and a custom toast notification system was implemented to replace blocking `alert()` popups.
+    4.  **Deep Debugging & Root Cause Analysis:** A backend test, `test_change_password_success`, was consistently failing in the `desktop` mode environment with a `cryptography.exceptions.InvalidTag` error.
+        *   The initial hypothesis that data needed to be re-encrypted was incorrect.
+        *   After guidance from the user, a deep dive into the `KeyManager` class revealed the root cause: the `change_password` function was incorrectly generating a **new** master key instead of re-wrapping the **existing** one.
+        *   This was a critical security and data integrity bug that would have resulted in permanent data loss for users who changed their password.
+    5.  **Critical Bug Fix:** The `KeyManager` was refactored to correctly decrypt the master key with the old password, and then re-wrap the *same* key with the new password, preserving all user data.
+    6.  **Environment & Tooling Issues:** The final test run was blocked by a `permission denied` error with Docker. The user provided the crucial information that `sudo` was required, which unblocked the process and allowed the final verification to complete.
+    7.  **Final Cleanup:** After a final review, accidental snapshot test artifacts were removed from the repository.
+
+*   **File Changes:**
+    *   `backend/app/core/key_manager.py`: **Updated** to fix the critical password change bug.
+    *   `backend/app/schemas/user.py`: **Updated** with `UserUpdateMe` and `UserPasswordChange` schemas.
+    *   `backend/app/crud/crud_user.py`: **Updated** with `update_me` method.
+    *   `backend/app/api/v1/endpoints/me.py`: **New** file with the `PUT /me` endpoint.
+    *   `backend/app/tests/api/v1/test_auth.py`: **Restored** accidentally deleted password change tests.
+    *   `frontend/src/pages/ProfilePage.tsx`: **New** page.
+    *   `frontend/src/components/Profile/`: **New** directory with `UpdateProfileForm.tsx` and `ChangePasswordForm.tsx`.
+    *   `frontend/src/hooks/useProfile.ts`: **New** React Query hooks.
+    *   `frontend/src/services/userApi.ts`: **New** API service.
+    *   `frontend/src/context/ToastContext.tsx`: **New** context for toast notifications.
+    *   `e2e/tests/profile-management.spec.ts`: **New** E2E test suite for the feature.
+    *   `e2e/tests/profile-management.spec.ts-snapshots/`: **Deleted** snapshot files.
+
+*   **Verification:**
+    - Ran the full backend test suite for desktop mode using `sudo docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml run --rm test-desktop`. All 108 tests passed.
+    - Ran the full E2E test suite.
+    - Received manual E2E test pass confirmation from the user.
+
+*   **Outcome:**
+    - The "User Profile Management" feature is fully implemented, tested, and stable.
+    - A critical data-loss bug in the core encryption logic was identified and fixed, significantly improving application security and robustness.
+
+---

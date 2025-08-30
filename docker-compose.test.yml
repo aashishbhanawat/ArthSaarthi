@@ -15,6 +15,7 @@ services:
 
   test:
     build: ./backend
+    image: pms_backend:latest
     container_name: pms-test
     command: ["pytest", "-v"]
     env_file:
@@ -23,7 +24,6 @@ services:
       - ./backend:/app
     environment:
       - PYTHONPATH=/app
-      - DEPLOYMENT_MODE=server
     networks:
       - pms_network
     depends_on:
