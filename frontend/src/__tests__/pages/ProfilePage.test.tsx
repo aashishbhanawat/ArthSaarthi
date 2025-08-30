@@ -34,6 +34,6 @@ describe('ProfilePage', () => {
 
         renderWithProviders(<ProfilePage />, authContextValue);
 
-        expect(screen.getByRole('heading', { name: /profile settings/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /profile & settings/i })).toBeInTheDocument();
     });
 });

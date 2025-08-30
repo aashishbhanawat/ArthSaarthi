@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUpdatePassword } from '../../hooks/useUsers';
 import { UserPasswordChange } from '../../types/user';
 
@@ -18,13 +18,11 @@ const getApiErrorMessage = (error: unknown): string => {
         }
 
         if (Array.isArray(detail) && detail.length > 0 && typeof detail[0] === 'object' && detail[0] !== null && 'msg' in detail[0]) {
-            // Handle Pydantic validation error structure
-            return `${detail[0].loc.join(' -> ')}: ${detail[0].msg}`;
+            return detail[0].msg;
         }
     }
-    return 'An unexpected error occurred';
+    return 'An unexpected error occurred. Please try again.';
 };
-
 
 const ChangePasswordForm: React.FC = () => {
     const [currentPassword, setCurrentPassword] = useState('');
@@ -34,17 +32,21 @@ const ChangePasswordForm: React.FC = () => {
 
     const { mutate: updatePassword, isPending, isSuccess, error: apiError, reset } = useUpdatePassword();
 
+    useEffect(() => {
+        if (currentPassword || newPassword || confirmPassword) {
+            reset();
+            setError('');
+        }
+    }, [currentPassword, newPassword, confirmPassword, reset]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Always clear all previous errors on a new submission
         setError('');
         reset();
-
         if (newPassword !== confirmPassword) {
             setError('New passwords do not match.');
             return;
         }
-
         const passwordData: UserPasswordChange = {
             old_password: currentPassword,
             new_password: newPassword
@@ -59,14 +61,10 @@ const ChangePasswordForm: React.FC = () => {
     };
 
     return (
-        <div className="card bg-white">
+        <div className="card bg-base-100 shadow-xl">
             <div className="card-body">
                 <h2 className="card-title">Change Password</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && <div className="alert alert-error">{error}</div>}
-                    {isSuccess && <div className="alert alert-success">Password updated successfully!</div>}
-                    {apiError && <div className="alert alert-error">{getApiErrorMessage(apiError)}</div>}
-
                     <div className="form-control">
                         <label className="label" htmlFor="current-password">
                             <span className="label-text">Current Password</span>
@@ -105,6 +103,11 @@ const ChangePasswordForm: React.FC = () => {
                             className="input input-bordered"
                             required
                         />
+                    </div>
+                    <div className="pt-2 h-10">
+                        {error && <div className="alert alert-error"><span>{error}</span></div>}
+                        {isSuccess && <div className="alert alert-success"><span>Password updated successfully!</span></div>}
+                        {apiError && <div className="alert alert-error"><span>{getApiErrorMessage(apiError)}</span></div>}
                     </div>
                     <div className="form-control mt-6">
                         <button type="submit" className="btn btn-primary" disabled={isPending}>
