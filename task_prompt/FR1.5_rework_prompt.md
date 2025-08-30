@@ -1,3 +1,25 @@
+# Task: Implement User Profile Management (FR1.5) - Rework
+
+**AI Assistant:** Jules
+**Role:** Full-Stack Developer
+
+---
+
+## 1. Overview
+
+Your task is to implement the **User Profile Management (FR1.5)** feature from scratch. The previous implementation had significant UI and quality issues, so we are discarding it.
+
+This feature will provide users with a dedicated page (`/profile`) to update their personal information (full name) and securely change their password.
+
+Please adhere strictly to the feature plan and the quality requirements outlined below.
+
+---
+
+## 2. Feature Plan
+
+This is the official plan for the feature. Please follow it precisely.
+
+```markdown
 # Feature Plan: User Profile Management (FR1.5)
 
 **Feature ID:** FR1.5
@@ -109,3 +131,58 @@ New endpoints will be added to handle profile updates. They will be protected by
     *   Create a new E2E test file `e2e/tests/profile-management.spec.ts`.
     *   The test will log in, navigate to the profile page, update the user's name, and verify the change is reflected in the `NavBar`.
     *   It will then change the user's password, log out, and verify that the user can log in with the new password.
+```
+
+---
+
+## 3. Quality & Process Requirements
+
+Adherence to these requirements is mandatory for task completion.
+
+*   **UI/UX Consistency:** The new profile page **must** be visually consistent with the existing application. Use the **Dashboard, Portfolios, and Goals pages** as a reference for styling, layout, and component usage (e.g., cards, buttons, forms). The UI must be clean and professional.
+
+*   **UI Verification via E2E Screenshots:** To help you review the final look and feel, you can add screenshot assertions to the E2E test. For example: `await expect(page).toHaveScreenshot('profile-page.png');`.
+
+*   **Mandatory Testing:** All automated tests **must pass** before you submit your work. This includes backend, frontend, and E2E tests. Our CI/CD pipeline will block any merge requests with failing tests. You are responsible for running the tests locally to verify your changes.
+
+*   **Documentation Updates:** As per our project standards, you must update all relevant documentation before finalizing the task. This includes updating the feature plan status, adding a `workflow_history.md` entry, and creating bug reports for any issues you fix. Use the `COMMIT_TEMPLATE.md` as a guide.
+
+*   **Definition of Done:** This task will not be considered complete until all automated tests pass **AND** a manual E2E smoke test of the feature has been successfully performed.
+
+---
+
+## 4. Developer Notes & Resources
+
+Please use these notes to help you during development and testing.
+
+### 4.1. How to Run Tests Locally
+
+**To avoid disk space issues, please use the local test runner script instead of Docker.**
+
+*   **Run the entire suite:** `./run_local_tests.sh all`
+*   **Run only linters:** `./run_local_tests.sh lint`
+*   **Run only backend tests:** `./run_local_tests.sh backend`
+*   **Run only frontend tests:** `./run_local_tests.sh frontend`
+*   **Run only E2E tests:** `./run_local_tests.sh e2e`
+*   **Run only migration tests:** `./run_local_tests.sh migrations`
+*   **Use a PostgreSQL database:** `./run_local_tests.sh backend --db postgres`
+*   **See all options:** `./run_local_tests.sh --help`
+
+### 4.2. How to Debug E2E Tests
+
+If you encounter failures in the E2E tests, use these Playwright debugging tools:
+
+**Using the `playwright` object in the Console (Debug Mode):**
+When Playwright is launched in debug mode (e.g., by setting `PWDEBUG=1`), a special `playwright` object becomes available in the browser's console. This object provides utilities for interacting with and inspecting elements:
+
+*   `playwright.$(selector)`: Highlights the first occurrence of the element matching the provided selector.
+*   `playwright.$$(selector)`: Highlights all occurrences of elements matching the provided selector.
+*   `playwright.inspect(selector)`: Inspects the element matching the selector in the Elements panel of the DevTools.
+*   `playwright.locator(selector)`: Highlights the first occurrence of the element located by the Playwright locator.
+*   `playwright.clear()`: Clears any existing highlights applied by the `playwright` object.
+*   `playwright.selector(element)`: Generates a Playwright selector for a given DOM element.
+
+**Viewing Console Output from Playwright Tests:**
+
+*   **Trace Viewer:** Playwright's Trace Viewer provides a comprehensive view of test execution, including console output, network requests, and DOM snapshots. This is particularly useful for debugging headless tests or reviewing detailed execution traces.
+*   **Terminal Output:** Console logs (e.g., `console.log()`) from your Playwright tests will also appear in the terminal where you are running your tests.

@@ -114,8 +114,23 @@ For transactions in the "Requiring Mapping" section, you must map the unrecogniz
 2.  Click **"Commit Transactions"** to save the selected transactions to your portfolio.
 
 ---
+## 5. Tracking Your Goals {#managing-goals}
 
-## 5. User Management (Admin Only) {#user-management}
+The Goals feature allows you to set financial targets and link your investments to track your progress.
+
+### Creating a Goal
+1.  Navigate to the **Goals** page from the main menu.
+2.  Click **"Create Goal"**.
+3.  In the modal, provide a name, a target amount, and a target date.
+
+### Linking Investments to a Goal
+1.  From the Goals page, click **"View"** on any goal card to go to its detail page.
+2.  In the "Linked Items" section, click **"Link Item"**.
+3.  A modal will appear. You can either select one of your existing portfolios or search for a specific asset to link to the goal.
+4.  The system will automatically calculate your progress towards the goal based on the current value of all linked items.
+---
+
+## 6. User Management (Admin Only) {#user-management}
 
 If you are logged in as an administrator, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
 
@@ -125,6 +140,6 @@ If you are logged in as an administrator, you will see a **"User Management"** l
 
 ---
 
-## 6. Getting Help & Reporting Bugs {#getting-help}
+## 7. Getting Help & Reporting Bugs {#getting-help}
 
 If you encounter a bug or have a feature request, please **open an issue on the project's GitHub repository**. Your feedback is essential for improving the application!

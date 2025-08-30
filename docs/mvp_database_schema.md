@@ -79,7 +79,47 @@ This document outlines the initial database schema required to support the featu
 | `portfolio_id`     | `UUID`              | `FOREIGN KEY (portfolios.id)`, `NOT NULL` |
 | `created_at`       | `TIMESTAMP(timezone)` | `NOT NULL`, `SERVER_DEFAULT(now())`       |
 
-## 6. Relationships
+## 6. `audit_logs` Table
+
+*   **Purpose:** Stores a secure audit trail of all security-sensitive events.
+*   **Schema:**
+
+| Column Name   | Data Type         | Constraints                               |
+| :------------ | :---------------- | :---------------------------------------- |
+| `id`          | `UUID`            | `PRIMARY KEY`                             |
+| `user_id`     | `UUID`            | `FOREIGN KEY (users.id)`, `NULLABLE`      |
+| `event_type`  | `String`          | `NOT NULL`                                |
+| `details`     | `JSON`            | `NULLABLE`                                |
+| `ip_address`  | `String`          | `NULLABLE`                                |
+| `timestamp`   | `TIMESTAMP(timezone=True)` | `NOT NULL`, `SERVER_DEFAULT(now())`       |
+
+## 7. `goals` Table
+
+*   **Purpose:** Stores the core details of each financial goal defined by a user.
+*   **Schema:**
+
+| Column Name     | Data Type | Constraints                               |
+| --------------- | --------- | ----------------------------------------- |
+| `id`            | `UUID`    | `PRIMARY KEY`                             |
+| `name`          | `String`  | `NOT NULL`                                |
+| `target_amount` | `Numeric` | `NOT NULL`                                |
+| `target_date`   | `Date`    | `NOT NULL`                                |
+| `user_id`       | `UUID`    | `FOREIGN KEY (users.id)`, `NOT NULL`      |
+
+## 8. `goal_links` Table
+
+*   **Purpose:** Links assets or entire portfolios to specific goals.
+*   **Schema:**
+
+| Column Name    | Data Type | Constraints                               |
+| -------------- | --------- | ----------------------------------------- |
+| `id`           | `UUID`    | `PRIMARY KEY`                             |
+| `goal_id`      | `UUID`    | `FOREIGN KEY (goals.id)`, `NOT NULL`      |
+| `portfolio_id` | `UUID`    | `FOREIGN KEY (portfolios.id)`, `NULLABLE` |
+| `asset_id`     | `UUID`    | `FOREIGN KEY (assets.id)`, `NULLABLE`     |
+| `user_id`      | `UUID`    | `FOREIGN KEY (users.id)`, `NOT NULL`      |
+
+## 9. Relationships
 *   A **User** can have many **Portfolios**.
 *   A **Portfolio** can have many **Transactions**.
 *   An **Asset** can be involved in many **Transactions**.

@@ -51,6 +51,8 @@ All planned features for the current release cycle have been implemented and val
 *   **Market Insights (Watchlists):**
     *   Full CRUD functionality for creating and managing watchlists.
     *   Ability to add and remove assets from a watchlist.
+*   **Goal Planning & Tracking (Core):**
+    *   Implemented the core full-stack feature allowing users to define financial goals, link assets or portfolios to them, and track current progress based on the market value of linked items.
 *   **Security & Administration:**
     *   A backend **Audit Logging Engine** that securely records all sensitive user and system events (logins, user creation/deletion) to a dedicated database table for monitoring and compliance.
 

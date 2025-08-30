@@ -1,3 +1,40 @@
+## 2025-08-27: Implement Goal Planning & Tracking (FR13)
+
+*   **Task Description:** Implement the core full-stack "Goal Planning & Tracking" feature. This allows users to define financial goals, link assets or portfolios to them, and track their current progress based on the market value of linked items. Advanced features like contribution planning and future value projections are out of scope for this task.
+
+*   **Key Prompts & Interactions:**
+    1.  **Backend Implementation:** A series of prompts were used to generate the backend foundation, including the `Goal` and `GoalLink` models, Pydantic schemas, CRUD logic, and API endpoints. The Alembic migration script was also generated.
+    2.  **Backend Analytics:** The `get_goal_with_analytics` function was implemented in `crud_goal.py` to calculate the current progress towards a goal by summing the value of all linked portfolios and assets.
+    3.  **Backend Testing:** A full suite of backend tests was generated for the new endpoints, including a test for the analytics calculation which required mocking the financial data service.
+    4.  **Frontend Implementation:** A series of prompts were used to generate the frontend UI and data layer. This included the `GoalsPage`, `GoalList`, `GoalCard`, `GoalDetailView`, `GoalFormModal`, and `AssetLinkModal` components, along with the corresponding types, API services, and React Query hooks.
+    5.  **Frontend Testing:** A comprehensive suite of unit tests was generated for the new hooks and components.
+
+*   **File Changes:**
+    *   `backend/app/models/goal.py`: **New** file with `Goal` and `GoalLink` models.
+    *   `backend/app/schemas/goal.py`: **New** file with Pydantic schemas.
+    *   `backend/app/crud/crud_goal.py`: **New** file with business logic for goals.
+    *   `backend/app/api/v1/endpoints/goals.py`: **New** file with API endpoints.
+    *   `backend/app/tests/api/v1/test_goals.py`: **New** test suite for the feature.
+    *   `backend/alembic/versions/b649d33505f4_...`: **New** database migration.
+    *   `frontend/src/pages/GoalsPage.tsx`: **New** page.
+    *   `frontend/src/pages/GoalDetailPage.tsx`: **New** page.
+    *   `frontend/src/components/Goals/`: **New** directory with `GoalCard.tsx`, `GoalDetailView.tsx`, `GoalList.tsx`.
+    *   `frontend/src/components/modals/GoalFormModal.tsx`: **New** modal.
+    *   `frontend/src/components/modals/AssetLinkModal.tsx`: **New** modal.
+    *   `frontend/src/hooks/useGoals.ts`: **New** React Query hooks.
+    *   `frontend/src/services/goalApi.ts`: **New** API service.
+    *   `frontend/src/types/goal.ts`: **New** type definitions.
+    *   `frontend/src/__tests__/`: **New** test files for all new components and hooks.
+    *   `frontend/src/App.tsx` & `frontend/src/components/NavBar.tsx`: **Updated** to include the new pages.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests, frontend tests, and E2E tests passed.
+
+*   **Outcome:**
+    - The core "Goal Planning & Tracking" feature is implemented, tested, and stable.
+
+---
+
 ## 2025-08-26: Implement & Stabilize Audit Logging Engine (FR-2.2)
 
 *   **Task Description:** Implement a full-stack Audit Logging Engine to track key user and system events. This was a backend-heavy feature that involved creating new database models, services, and API integrations, followed by a significant multi-stage debugging effort to stabilize the test suite.
