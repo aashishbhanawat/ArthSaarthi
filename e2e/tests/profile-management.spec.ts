@@ -46,8 +46,8 @@ test.describe('User Profile Management', () => {
     await expect(page).toHaveURL(/.*\/dashboard/);
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-    // 2. Navigate to the profile page using the main nav link
-    await page.locator('nav').getByRole('link', { name: 'Profile' }).click();
+    // 2. Navigate to the profile page using the link in the user menu
+    await page.locator('div.mt-auto').getByRole('link', { name: 'Profile' }).click();
     await expect(page).toHaveURL(/.*\/profile/);
     await expect(page.getByRole('heading', { name: 'User Profile' })).toBeVisible();
 

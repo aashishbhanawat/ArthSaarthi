@@ -18,7 +18,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 
 const AppLayout = () => (
-  <div className="grid grid-cols-[auto_1fr] min-h-screen bg-gray-50">
+  <div className="grid grid-cols-[auto_1fr] h-screen bg-gray-50">
     <NavBar />
     <main className="p-8 overflow-y-auto">
       <Outlet />

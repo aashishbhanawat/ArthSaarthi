@@ -40,13 +40,6 @@ const NavBar: React.FC = () => {
                     <span>Dashboard</span>
                 </NavLink>
                 <NavLink
-                    to="/profile"
-                    className={({ isActive }) => linkClass(isActive)}
-                >
-                    <UserCircleIcon className="h-5 w-5" />
-                    <span>Profile</span>
-                </NavLink>
-                <NavLink
                     to="/portfolios"
                     className={({ isActive }) => linkClass(isActive)}
                 >
