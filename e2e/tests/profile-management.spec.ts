@@ -43,10 +43,11 @@ test.describe('User Profile Management', () => {
     await page.getByLabel('Email address').fill(testUser.email);
     await page.getByLabel('Password').fill(testUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page).toHaveURL(/.*\/dashboard/);
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-    // 2. Navigate to the profile page
-    await page.getByRole('link', { name: 'Profile' }).click();
+    // 2. Navigate to the profile page using the main nav link
+    await page.locator('nav').getByRole('link', { name: 'Profile' }).click();
     await expect(page).toHaveURL(/.*\/profile/);
     await expect(page.getByRole('heading', { name: 'User Profile' })).toBeVisible();
 
@@ -56,10 +57,11 @@ test.describe('User Profile Management', () => {
     await updateProfileForm.getByLabel('Full Name').fill(newFullName);
     await updateProfileForm.getByRole('button', { name: 'Save Changes' }).click();
 
-    // The alert dialog should show success. We will accept it.
-    page.once('dialog', dialog => dialog.accept());
+    // Assert that the success toast is shown
+    await expect(page.locator('text=Profile updated successfully!')).toBeVisible();
 
-    await expect(updateProfileForm.getByLabel('Full Name')).toHaveValue(newFullName);
+    // Assert that the full name in the nav bar is updated
+    await expect(page.locator(`text=${newFullName}`)).toBeVisible();
 
     // 4. Change the password
     const newPassword = 'NewValidPassword456!';
@@ -69,8 +71,8 @@ test.describe('User Profile Management', () => {
     await changePasswordForm.getByLabel('Confirm New Password').fill(newPassword);
     await changePasswordForm.getByRole('button', { name: 'Update Password' }).click();
 
-    // Accept the success dialog
-    page.once('dialog', dialog => dialog.accept());
+    // Assert that the success toast is shown
+    await expect(page.locator('text=Password changed successfully!')).toBeVisible();
 
     // 5. Logout
     await page.getByRole('button', { name: 'Logout' }).click();
@@ -80,6 +82,7 @@ test.describe('User Profile Management', () => {
     await page.getByLabel('Email address').fill(testUser.email);
     await page.getByLabel('Password').fill(newPassword);
     await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page).toHaveURL(/.*\/dashboard/);
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 });

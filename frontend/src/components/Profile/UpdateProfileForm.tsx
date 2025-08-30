@@ -30,11 +30,11 @@ const UpdateProfileForm = () => {
   return (
     <div className="card">
       <div className="card-body">
-        <h2 className="card-title">Update Profile Information</h2>
+        <h2 className="text-2xl font-bold mb-4">Update Profile Information</h2>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="form-control">
-            <label htmlFor="fullName" className="label">
-              <span className="label-text">Full Name</span>
+          <div className="form-group">
+            <label htmlFor="fullName" className="form-label">
+              Full Name
             </label>
             <input
               type="text"
@@ -42,20 +42,20 @@ const UpdateProfileForm = () => {
               {...register('full_name', {
                 required: 'Full name is required',
               })}
-              className={`input input-bordered w-full ${errors.full_name ? 'input-error' : ''}`}
+              className={`form-input font-bold ${errors.full_name ? 'border-red-500' : ''}`}
             />
-            {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
+            {errors.full_name && <p className="text-red-500 text-xs italic mt-1">{errors.full_name.message}</p>}
           </div>
 
-          <div className="form-control mt-4">
-            <label htmlFor="email" className="label">
-              <span className="label-text">Email</span>
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">
+              Email
             </label>
             <input
               type="email"
               id="email"
               value={user?.email || ''}
-              className="input input-bordered w-full bg-gray-100"
+              className="form-input bg-gray-100"
               readOnly
               disabled
             />

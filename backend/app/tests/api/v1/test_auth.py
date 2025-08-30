@@ -181,6 +181,7 @@ def test_setup_admin_user_invalid_password(
     assert "detail" in response.json()
 
 
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_change_password_success(client: TestClient, db: Session, get_auth_headers):
     """
     Test successfully changing the password for the current user.
@@ -206,6 +207,7 @@ def test_change_password_success(client: TestClient, db: Session, get_auth_heade
     assert login_response.status_code == 200
 
 
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_change_password_incorrect_old_password(
     client: TestClient, db: Session, get_auth_headers
 ):
@@ -230,6 +232,7 @@ def test_change_password_incorrect_old_password(
     assert response.json() == {"detail": "Incorrect old password"}
 
 
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 @pytest.mark.parametrize(
     "new_password",
     [

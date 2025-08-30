@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateProfile, changePassword } from '../services/userApi';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { UserUpdateMe, UserPasswordChange } from '../types/user';
 
 interface ApiError {
@@ -15,30 +16,30 @@ interface ApiError {
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   const { setUser } = useAuth();
+  const { showToast } = useToast();
 
   return useMutation({
     mutationFn: (data: UserUpdateMe) => updateProfile(data),
     onSuccess: (updatedUser) => {
-      // Update the user in the auth context
       setUser(updatedUser);
-      // Invalidate user-related queries if any
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      alert('Profile updated successfully!');
+      showToast('Profile updated successfully!', 'success');
     },
     onError: (error: ApiError) => {
-      alert(`Error updating profile: ${error.response?.data?.detail || error.message}`);
+      showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
     },
   });
 };
 
 export const useChangePassword = () => {
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: (data: UserPasswordChange) => changePassword(data),
     onSuccess: () => {
-      alert('Password changed successfully!');
+      showToast('Password changed successfully!', 'success');
     },
     onError: (error: ApiError) => {
-      alert(`Error changing password: ${error.response?.data?.detail || error.message}`);
+      showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
     },
   });
 };

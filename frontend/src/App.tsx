@@ -15,6 +15,7 @@ import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './context/ToastContext';
 
 const AppLayout = () => (
   <div className="grid grid-cols-[auto_1fr] min-h-screen bg-gray-50">
@@ -57,7 +58,9 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <AppRoutes />
+      <ToastProvider>
+        <AppRoutes />
+      </ToastProvider>
     </ErrorBoundary>
   );
 }

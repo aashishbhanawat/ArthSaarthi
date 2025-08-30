@@ -44,37 +44,37 @@ const ChangePasswordForm = () => {
   return (
     <div className="card mt-8">
       <div className="card-body">
-        <h2 className="card-title">Change Password</h2>
+        <h2 className="text-2xl font-bold mb-4">Change Password</h2>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="form-control">
-            <label htmlFor="old_password" className="label">
-              <span className="label-text">Current Password</span>
+          <div className="form-group">
+            <label htmlFor="old_password" className="form-label">
+              Current Password
             </label>
             <input
               type="password"
               id="old_password"
               {...register('old_password', { required: 'Current password is required' })}
-              className={`input input-bordered w-full ${errors.old_password ? 'input-error' : ''}`}
+              className={`form-input font-bold ${errors.old_password ? 'border-red-500' : ''}`}
             />
-            {errors.old_password && <p className="text-red-500 text-xs mt-1">{errors.old_password.message}</p>}
+            {errors.old_password && <p className="text-red-500 text-xs italic mt-1">{errors.old_password.message}</p>}
           </div>
 
-          <div className="form-control mt-4">
-            <label htmlFor="new_password" className="label">
-              <span className="label-text">New Password</span>
+          <div className="form-group">
+            <label htmlFor="new_password" className="form-label">
+              New Password
             </label>
             <input
               type="password"
               id="new_password"
               {...register('new_password', passwordValidation)}
-              className={`input input-bordered w-full ${errors.new_password ? 'input-error' : ''}`}
+              className={`form-input font-bold ${errors.new_password ? 'border-red-500' : ''}`}
             />
-            {errors.new_password && <p className="text-red-500 text-xs mt-1">{errors.new_password.message}</p>}
+            {errors.new_password && <p className="text-red-500 text-xs italic mt-1">{errors.new_password.message}</p>}
           </div>
 
-          <div className="form-control mt-4">
-            <label htmlFor="confirmPassword" className="label">
-              <span className="label-text">Confirm New Password</span>
+          <div className="form-group">
+            <label htmlFor="confirmPassword" className="form-label">
+              Confirm New Password
             </label>
             <input
               type="password"
@@ -83,9 +83,9 @@ const ChangePasswordForm = () => {
                 required: 'Please confirm your new password',
                 validate: (value) => value === newPassword || 'Passwords do not match',
               })}
-              className={`input input-bordered w-full ${errors.confirmPassword ? 'input-error' : ''}`}
+              className={`form-input font-bold ${errors.confirmPassword ? 'border-red-500' : ''}`}
             />
-            {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+            {errors.confirmPassword && <p className="text-red-500 text-xs italic mt-1">{errors.confirmPassword.message}</p>}
           </div>
 
           <div className="flex items-center justify-end mt-6">
