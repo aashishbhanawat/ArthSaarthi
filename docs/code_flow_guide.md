@@ -218,3 +218,53 @@ The `POST /api/v1/import-sessions/` endpoint orchestrates the first half of the 
 3.  The backend endpoint iterates through the selected transactions. For each one, it creates a `Transaction` database record using `crud.transaction.create_with_portfolio`.
 4.  The entire operation is wrapped in a single database transaction. If all transactions are created successfully, the session status is updated to `COMPLETED` and the changes are committed.
 5.  If any error occurs, the entire transaction is rolled back, ensuring the database is not left in a partially updated state.
+
+---
+
+## 5. Cross-Cutting Concern: Audit Logging
+
+The Audit Logging Engine is a cross-cutting concern that is invoked from various parts of the application. It provides a centralized way to record security-sensitive events.
+
+### Step 1: Event Trigger (e.g., `endpoints/auth.py`)
+
+An auditable event occurs within an API endpoint. For example, a user attempts to log in.
+
+```python
+# backend/app/api/v1/endpoints/auth.py
+
+@router.post("/login/access-token")
+def login_access_token(...):
+    user = crud.user.authenticate(...)
+    if not user:
+        # Log the failed attempt
+        log_event(db, event_type="USER_LOGIN_FAILURE", ...)
+        raise HTTPException(...)
+
+    # Log the successful attempt
+    log_event(db, user_id=user.id, event_type="USER_LOGIN_SUCCESS", ...)
+    return {"access_token": ..., "token_type": "bearer"}
+```
+
+### Step 2: The Logging Service (`services/audit_logger.py`)
+
+The endpoint calls the `log_event` function. This service acts as the single point of entry for all audit logging.
+
+1.  **Schema Creation:** It takes the raw data (user ID, event type, IP address, details) and packages it into an `AuditLogCreate` Pydantic schema.
+2.  **Data Sanitization:** It ensures that any complex data types (like UUIDs in the `details` dictionary) are converted to JSON-serializable formats (like strings) before being passed to the database layer.
+
+### Step 3: Database Interaction (`crud/crud_audit_log.py`)
+
+The `log_event` service calls the `create` method in the `CRUDAuditLog` module. This CRUD class is responsible for the direct database interaction. It creates an `AuditLog` SQLAlchemy model instance and commits it to the `audit_logs` table in the database.
+
+```python
+# backend/app/crud/crud_audit_log.py
+
+class CRUDAuditLog(CRUDBase[AuditLog, AuditLogCreate, AuditLogUpdate]):
+    def create(self, db: Session, *, obj_in: AuditLogCreate) -> AuditLog:
+        # ... logic to create the db_obj ...
+        db.add(db_obj)
+        db.flush() # Flush to get the ID without committing the full transaction
+        return db_obj
+```
+
+*   **Key Takeaway:** The flow is designed to be simple and decoupled. API endpoints don't need to know about the database schema; they just call a central service. The service handles the business logic of preparing the log entry, and the CRUD layer handles the raw database operation. This makes it easy to add new audit events anywhere in the application with a single function call.
