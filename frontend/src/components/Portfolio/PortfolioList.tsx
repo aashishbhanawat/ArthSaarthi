@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Portfolio } from '../../types/portfolio';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { useDeletePortfolio } from '../../hooks/usePortfolios';
 import DeletePortfolioModal from './DeletePortfolioModal';
 
@@ -38,8 +39,12 @@ const PortfolioList: React.FC<PortfolioListProps> = ({ portfolios }) => {
                         <Link to={`/portfolios/${portfolio.id}`} className="text-xl font-semibold text-blue-600 hover:underline">
                             {portfolio.name}
                         </Link>
-                        <button onClick={() => handleDeleteClick(portfolio)} className="btn btn-danger text-sm py-1 px-3" disabled={deletePortfolioMutation.isPending} >
-                            Delete
+                        <button
+                            onClick={() => handleDeleteClick(portfolio)}
+                            className="btn btn-sm btn-ghost text-red-600 hover:bg-red-50"
+                            disabled={deletePortfolioMutation.isPending}
+                            aria-label={`Delete portfolio ${portfolio.name}`}>
+                            <TrashIcon className="h-5 w-5" />
                         </button>
                     </div>
                 ))}

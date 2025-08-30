@@ -55,7 +55,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     const portfolioRow = page.locator('.card', { hasText: new RegExp(portfolioName) });
     await expect(portfolioRow).toBeVisible();
-    await portfolioRow.getByRole('button', { name: 'Delete' }).click();
+    await portfolioRow.getByRole('button', { name: `Delete portfolio ${portfolioName}` }).click();
 
     await expect(page.getByRole('dialog')).toBeVisible(); // Verify the modal is open
     // Scope the search to the dialog to click the correct "Delete" button
@@ -81,10 +81,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
     await page.getByLabel('Asset').pressSequentially(newAssetName);
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${newAssetName}"` });
-    await expect(createAssetButton).toBeVisible();
-    await createAssetButton.click();
-    await expect(createAssetButton).not.toBeVisible();
+    const listItem = page.locator(`li:has-text("${newAssetName}")`);
+    await expect(listItem).toBeVisible();
+    await listItem.click();
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('150.00');
     await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
@@ -108,10 +107,10 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
 
     // Use a direct locator strategy that is more robust for this component.
-    const listItem = page.locator(`li:has-text("${newAssetName}")`);
+    const listItemSell = page.locator(`li:has-text("${newAssetName}")`);
     // Wait for the search result to appear and then press Enter to select it. This is more stable than clicking.
-    await expect(listItem).toBeVisible(); // Ensure the item is there
-    await listItem.click(); // Click the item directly to ensure selection
+    await expect(listItemSell).toBeVisible(); // Ensure the item is there
+    await listItemSell.click(); // Click the item directly to ensure selection
 
     await page.getByLabel('Quantity').fill('5');
     await page.getByLabel('Price per Unit').fill('160.00');
@@ -140,10 +139,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
     await page.getByLabel('Asset').pressSequentially(assetName);
-    // Handle asset creation since it does not exist in the mock service
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetName}"` });
-    await expect(createAssetButton).toBeVisible();
-    await createAssetButton.click();
+    const listItem = page.locator(`li:has-text("${assetName}")`);
+    await expect(listItem).toBeVisible();
+    await listItem.click();
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('175.00');
     await page.getByLabel('Date').fill('2023-01-15'); // Use a fixed past date
@@ -193,9 +191,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // Asset 1: 10 GOOGL @ $150
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset').pressSequentially('GOOGL'); // Asset already exists from a previous test
-    // Wait for the lookup and select the existing asset from the list
-    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
     const listItem = page.locator(`li:has-text("GOOGL")`);
+    await expect(listItem).toBeVisible();
     await listItem.click();
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('150');

@@ -44,6 +44,34 @@ async function globalSetup() {
   expect(adminSetupResponse.ok()).toBeTruthy();
   console.log('Global setup complete: Admin user created.');
 
+  // 3. Login as admin to get a token for seeding
+  const loginResponse = await requestContext.post('/api/v1/auth/login', {
+    form: {
+      username: adminUser.email,
+      password: adminUser.password,
+    },
+  });
+  expect(loginResponse.ok()).toBeTruthy();
+  const { access_token } = await loginResponse.json();
+
+  // 4. Seed some assets
+  const assetsToSeed = ['AAPL', 'GOOGL', 'MSFT'];
+  for (const ticker of assetsToSeed) {
+    const createAssetResponse = await requestContext.post('/api/v1/assets/', {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+      data: {
+        ticker_symbol: ticker,
+      },
+    });
+    // It might fail if the asset already exists, which is fine for setup
+    if (!createAssetResponse.ok()) {
+      console.log(`Could not create asset ${ticker}, it might already exist.`);
+    }
+  }
+  console.log(`Global setup complete: Seeded ${assetsToSeed.length} assets.`);
+
   await requestContext.dispose();
 }
 
