@@ -21,6 +21,10 @@ export type UserUpdate = Partial<{
   password?: string;
 }>;
 
+export type UserUpdateMe = {
+  full_name?: string;
+};
+
 export type UserPasswordChange = {
   old_password: string;
   new_password: string;

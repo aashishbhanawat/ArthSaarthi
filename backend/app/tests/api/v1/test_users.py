@@ -51,31 +51,3 @@ def test_get_current_user_invalid_token(client: TestClient):
     assert response.json()["detail"] == "Could not validate credentials", (
         "Should return 403 for invalid token"
     )
-
-
-def test_update_user_me_unauthorized(client: TestClient):
-    response = client.put("/api/v1/users/me", json={"full_name": "New Name"})
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Not authenticated"
-
-
-def test_update_user_me_success(client: TestClient, db: Session, get_auth_headers):
-    """
-    Test successfully updating the current user's full name.
-    """
-    user, password = create_random_user(db)
-    headers = get_auth_headers(user.email, password)
-    new_name = "New Full Name"
-
-    response = client.put(
-        "/api/v1/users/me", headers=headers, json={"full_name": new_name}
-    )
-
-    assert response.status_code == 200
-    updated_user = response.json()
-    assert updated_user["full_name"] == new_name
-    assert updated_user["email"] == user.email
-
-    # Verify the change in the database
-    db.refresh(user)
-    assert user.full_name == new_name

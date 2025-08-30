@@ -1,99 +1,100 @@
 import React, { useState, useEffect } from 'react';
-import { useUpdatePassword } from '../../hooks/useUsers';
-import { UserPasswordChange } from '../../types/user';
+import { useChangePassword } from '../../hooks/useProfile';
 
 const ChangePasswordForm: React.FC = () => {
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [localError, setLocalError] = useState('');
 
-    const { mutate: updatePassword, isPending, isSuccess, error: apiError, reset } = useUpdatePassword();
+  const { mutate: changePassword, isPending: isUpdating, isSuccess, error: apiError, reset } = useChangePassword();
 
-    useEffect(() => {
-        if (currentPassword || newPassword || confirmPassword) {
-            reset();
-            setError('');
-        }
-    }, [currentPassword, newPassword, confirmPassword, reset]);
+  const apiErrorMessage = (apiError as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (newPassword !== confirmPassword) {
-            setError('New passwords do not match.');
-            return;
-        }
-        setError('');
-        const passwordData: UserPasswordChange = {
-            old_password: currentPassword,
-            new_password: newPassword
-        };
-        updatePassword(passwordData, {
-            onSuccess: () => {
-                setCurrentPassword('');
-                setNewPassword('');
-                setConfirmPassword('');
-            },
-        });
-    };
+  useEffect(() => {
+    // If the form is successful, clear local errors.
+    if (isSuccess) {
+      setLocalError('');
+    }
+  }, [isSuccess]);
 
-    return (
-        <div className="card bg-white">
-            <div className="card-body">
-                <h2 className="card-title">Change Password</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && <div className="alert alert-error">{error}</div>}
-                    {isSuccess && <div className="alert alert-success">Password updated successfully!</div>}
-                    {apiError && <div className="alert alert-error">{(apiError as any).response?.data?.detail || 'An error occurred'}</div>}
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError('');
+    reset(); // Reset the mutation state (isSuccess, error)
 
-                    <div className="form-control">
-                        <label className="label" htmlFor="current-password">
-                            <span className="label-text">Current Password</span>
-                        </label>
-                        <input
-                            id="current-password"
-                            type="password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            className="input input-bordered"
-                            required
-                        />
-                    </div>
-                    <div className="form-control">
-                        <label className="label" htmlFor="new-password">
-                            <span className="label-text">New Password</span>
-                        </label>
-                        <input
-                            id="new-password"
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="input input-bordered"
-                            required
-                        />
-                    </div>
-                    <div className="form-control">
-                        <label className="label" htmlFor="confirm-password">
-                            <span className="label-text">Confirm New Password</span>
-                        </label>
-                        <input
-                            id="confirm-password"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="input input-bordered"
-                            required
-                        />
-                    </div>
-                    <div className="form-control mt-6">
-                        <button type="submit" className="btn btn-primary" disabled={isPending}>
-                            {isPending ? 'Changing...' : 'Change Password'}
-                        </button>
-                    </div>
-                </form>
+    if (newPassword !== confirmPassword) {
+      setLocalError('New passwords do not match.');
+      return;
+    }
+
+    changePassword({ old_password: oldPassword, new_password: newPassword }, {
+      onSuccess: () => {
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    });
+  };
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h3 className="card-title">Change Password</h3>
+      </div>
+      <div className="card-body">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div className="form-group">
+              <label htmlFor="currentPassword">Current Password</label>
+              <input
+                id="currentPassword"
+                type="password"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                className="form-input"
+                required
+                disabled={isUpdating}
+              />
             </div>
-        </div>
-    );
+            <div className="form-group">
+              <label htmlFor="newPassword">New Password</label>
+              <input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="form-input"
+                required
+                disabled={isUpdating}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirm New Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="form-input"
+                required
+                disabled={isUpdating}
+              />
+            </div>
+          </div>
+          {(localError || apiErrorMessage) && (
+            <p role="alert" className="text-red-500 text-sm mt-2">{localError || apiErrorMessage}</p>
+          )}
+          {isSuccess && <p role="status" className="text-green-500 text-sm mt-2">Password updated successfully!</p>}
+          <div className="card-footer">
+            <button type="submit" className="btn btn-primary" disabled={isUpdating}>
+              {isUpdating ? 'Updating...' : 'Update Password'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default ChangePasswordForm;

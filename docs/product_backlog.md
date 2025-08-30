@@ -94,10 +94,19 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Watchlists (FR8.1):** Users can create, manage, and track custom lists of financial assets.
     -   **Status: ✅ Complete**
 
+## Release 6: Security & Administration
+
+**Status: ✅ COMPLETE (as of 2025-08-26)**
+
+**Features:**
+
+-   **Audit Logging Engine (FR2.2):** A backend engine to securely log all sensitive user and system events.
+    -   **Status: ✅ Complete**
+
 ## Future Releases
 
 -   **User Profile Management (FR1.5, FR1.6):** Implement user profile settings and a forgotten password reset flow.
--   **Administration Enhancements (FR2.2, FR2.3):** Add a security audit logging engine and a log viewer for admins.
+-   **Administration Enhancements (FR2.3):** Add a log viewer for admins to review audit trails.
 -   **Dashboard Enhancements (FR3.4):** Add a "Privacy Mode" toggle to the dashboard.
 -   **Advanced Transaction Management (FR4.5, FR4.6):**
     -   Add tracking for income (dividends, interest).

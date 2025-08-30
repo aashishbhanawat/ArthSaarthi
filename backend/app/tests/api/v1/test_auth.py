@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.models.audit_log import AuditLog
 from app.models.user import User as UserModel
 
 
@@ -68,29 +69,51 @@ def test_setup_admin_user_fails_if_user_exists(client: TestClient):
     assert response.json() == {"detail": "An admin account already exists."}
 
 
-def test_login_success(client: TestClient, admin_user_data: dict):
-    # First, create the user via the setup endpoint
-    client.post("/api/v1/auth/setup", json=admin_user_data)
+def test_login_success_creates_audit_log(
+    client: TestClient, db: Session, admin_user_data: dict
+):
+    # Arrange: Create the user
+    user_response = client.post("/api/v1/auth/setup", json=admin_user_data)
+    user_id = user_response.json()["id"]
 
-    # Then, attempt to log in
+    # Act: Log in
     login_data = {
         "username": admin_user_data["email"],
         "password": admin_user_data["password"],
     }
     response = client.post("/api/v1/auth/login", data=login_data)
 
+    # Assert: Check token and audit log
     assert response.status_code == 200
     token = response.json()
     assert "access_token" in token
     assert token["token_type"] == "bearer"
 
+    log_entry = db.query(AuditLog).filter_by(event_type="USER_LOGIN_SUCCESS").first()
+    assert log_entry is not None
+    assert str(log_entry.user_id) == user_id
+    assert log_entry.ip_address == "testclient"
 
-def test_login_wrong_password(client: TestClient, admin_user_data: dict):
+
+def test_login_wrong_password_creates_audit_log(
+    client: TestClient, db: Session, admin_user_data: dict
+):
+    # Arrange: Create user
     client.post("/api/v1/auth/setup", json=admin_user_data)
+
+    # Act: Attempt login with wrong password
     login_data = {"username": admin_user_data["email"], "password": "wrongpassword!1"}
     response = client.post("/api/v1/auth/login", data=login_data)
+
+    # Assert: Check response and audit log
     assert response.status_code == 401
     assert response.json()["detail"] == "Incorrect email or password"
+
+    log_entry = db.query(AuditLog).filter_by(event_type="USER_LOGIN_FAILURE").first()
+    assert log_entry is not None
+    assert log_entry.user_id is None
+    assert log_entry.ip_address == "testclient"
+    assert log_entry.details["email"] == admin_user_data["email"]
 
 
 def test_login_nonexistent_user(client: TestClient):
@@ -156,3 +179,70 @@ def test_setup_admin_user_invalid_password(
     assert response.status_code == 422
     assert "detail" in response.json()
 
+
+def test_change_password_success(client: TestClient, db: Session, admin_user_data: dict):
+    # Arrange: Create and log in user
+    user_response = client.post("/api/v1/auth/setup", json=admin_user_data)
+    assert user_response.status_code == 200
+
+    login_data = {
+        "username": admin_user_data["email"],
+        "password": admin_user_data["password"],
+    }
+    login_response = client.post("/api/v1/auth/login", data=login_data)
+    assert login_response.status_code == 200
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Act: Change password
+    new_password = "NewValidPassword123!"
+    change_password_data = {
+        "old_password": admin_user_data["password"],
+        "new_password": new_password,
+    }
+    response = client.post(
+        "/api/v1/auth/me/change-password",
+        headers=headers,
+        json=change_password_data,
+    )
+
+    # Assert: Check response
+    assert response.status_code == 200
+    assert response.json() == {"msg": "Password updated successfully"}
+
+    # Verify new password works for login
+    new_login_data = {"username": admin_user_data["email"], "password": new_password}
+    response = client.post("/api/v1/auth/login", data=new_login_data)
+    assert response.status_code == 200
+
+
+def test_change_password_incorrect_old_password(
+    client: TestClient, db: Session, admin_user_data: dict
+):
+    # Arrange: Create and log in user
+    user_response = client.post("/api/v1/auth/setup", json=admin_user_data)
+    assert user_response.status_code == 200
+
+    login_data = {
+        "username": admin_user_data["email"],
+        "password": admin_user_data["password"],
+    }
+    login_response = client.post("/api/v1/auth/login", data=login_data)
+    assert login_response.status_code == 200
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Act: Attempt to change password with incorrect old password
+    change_password_data = {
+        "old_password": "wrongoldpassword",
+        "new_password": "NewValidPassword123!",
+    }
+    response = client.post(
+        "/api/v1/auth/me/change-password",
+        headers=headers,
+        json=change_password_data,
+    )
+
+    # Assert
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Incorrect old password"}

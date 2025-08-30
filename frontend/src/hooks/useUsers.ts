@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as adminApi from '../services/adminApi';
-import * as userApi from '../services/userApi';
-import { UserCreate, UserUpdate, UserPasswordChange } from '../types/user';
-import { useAuth } from '../context/AuthContext';
+import { UserCreate, UserUpdate } from '../types/user';
 
 const USERS_QUERY_KEY = 'users';
 
@@ -25,35 +23,6 @@ export const useCreateUser = () => {
       // It's good practice to handle errors, maybe show a toast notification
       console.error('Error creating user:', error);
       // You can throw the error to be caught by the component's onSubmit
-      throw error;
-    },
-  });
-};
-
-export const useUpdatePassword = () => {
-  return useMutation<void, Error, UserPasswordChange>({
-    mutationFn: (passwordData: UserPasswordChange) => userApi.updatePassword(passwordData),
-    onError: (error: { response?: { data?: { detail?: string } } }) => {
-      console.error('Error updating password:', error);
-      throw error;
-    },
-  });
-};
-
-export const useUpdateMe = () => {
-  const queryClient = useQueryClient();
-  const { setUser } = useAuth();
-  return useMutation({
-    mutationFn: (userData: { full_name: string }) => userApi.updateMe(userData),
-    onSuccess: (data) => {
-      if (setUser) {
-        setUser(data);
-      }
-      // Invalidate the 'me' query to refetch the user's data
-      queryClient.invalidateQueries({ queryKey: ['me'] });
-    },
-    onError: (error: { response?: { data?: { detail?: string } } }) => {
-      console.error('Error updating user:', error);
       throw error;
     },
   });

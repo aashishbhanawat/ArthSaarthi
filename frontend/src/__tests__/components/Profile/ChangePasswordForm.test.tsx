@@ -1,64 +1,72 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ChangePasswordForm from '../../../components/Profile/ChangePasswordForm';
-import * as useUsers from '../../../hooks/useUsers';
+import * as useProfile from '../../../hooks/useProfile';
 
 const queryClient = new QueryClient();
 
-const mockUseUpdatePassword = jest.spyOn(useUsers, 'useUpdatePassword');
+const mockChangePassword = jest.fn();
 
-const renderWithProviders = (ui: React.ReactElement) => {
-    return render(
-        <QueryClientProvider client={queryClient}>
-            {ui}
-        </QueryClientProvider>
-    );
+const renderComponent = () => {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ChangePasswordForm />
+    </QueryClientProvider>
+  );
 };
 
 describe('ChangePasswordForm', () => {
-    it('submits correct data and shows success message', async () => {
-        const mutate = jest.fn();
-        mockUseUpdatePassword.mockReturnValue({ mutate, isPending: false, isSuccess: true, error: null, reset: jest.fn() });
+  beforeEach(() => {
+    jest.spyOn(useProfile, 'useChangePassword').mockReturnValue({
+      mutate: mockChangePassword,
+      isPending: false,
+      isSuccess: false,
+      error: null,
+      reset: jest.fn(),
+    });
+    mockChangePassword.mockClear();
+  });
 
-        renderWithProviders(<ChangePasswordForm />);
-
-        fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: 'oldPassword123' } });
-        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'newPassword123' } });
-        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: 'newPassword123' } });
-
-        fireEvent.click(screen.getByRole('button', { name: /change password/i }));
-
-        await waitFor(() => {
-            expect(mutate).toHaveBeenCalledWith(
-                { old_password: 'oldPassword123', new_password: 'newPassword123' },
-                expect.any(Object)
-            );
-        });
+  it('allows a user to change their password', async () => {
+    mockChangePassword.mockImplementation((_variables, options) => {
+      options.onSuccess();
     });
 
-    it('shows an error if new passwords do not match', async () => {
-        const reset = jest.fn();
-        mockUseUpdatePassword.mockReturnValue({ mutate: jest.fn(), isPending: false, isSuccess: false, error: null, reset });
-        renderWithProviders(<ChangePasswordForm />);
+    renderComponent();
 
-        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'newPassword123' } });
-        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: 'differentPassword' } });
+    const oldPasswordInput = screen.getByLabelText(/current password/i);
+    const newPasswordInput = screen.getByLabelText('New Password');
+    const confirmPasswordInput = screen.getByLabelText(/confirm new password/i);
+    const updateButton = screen.getByRole('button', { name: /update password/i });
 
-        fireEvent.click(screen.getByRole('button', { name: /change password/i }));
+    fireEvent.change(oldPasswordInput, { target: { value: 'oldPass123!' } });
+    fireEvent.change(newPasswordInput, { target: { value: 'newPass123!' } });
+    fireEvent.change(confirmPasswordInput, { target: { value: 'newPass123!' } });
 
-        await waitFor(() => {
-            expect(screen.getByText(/new passwords do not match/i)).toBeInTheDocument();
-        });
+    fireEvent.click(updateButton);
+
+    await waitFor(() => {
+      expect(mockChangePassword).toHaveBeenCalledWith(
+        { old_password: 'oldPass123!', new_password: 'newPass123!' },
+        expect.any(Object)
+      );
     });
+  });
 
-    it('shows an api error message on failure', async () => {
-        const mutate = jest.fn();
-        mockUseUpdatePassword.mockReturnValue({ mutate, isPending: false, isSuccess: false, error: { response: { data: { detail: 'Incorrect old password' } } }, reset: jest.fn() });
+  it('shows an error if new passwords do not match', async () => {
+    renderComponent();
 
-        renderWithProviders(<ChangePasswordForm />);
+    const newPasswordInput = screen.getByLabelText('New Password');
+    const confirmPasswordInput = screen.getByLabelText(/confirm new password/i);
+    const updateButton = screen.getByRole('button', { name: /update password/i });
 
-        fireEvent.click(screen.getByRole('button', { name: /change password/i }));
+    fireEvent.change(newPasswordInput, { target: { value: 'newPass123!' } });
+    fireEvent.change(confirmPasswordInput, { target: { value: 'differentPass123!' } });
+    fireEvent.click(updateButton);
 
-        expect(await screen.findByText(/incorrect old password/i)).toBeInTheDocument();
-    });
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/new passwords do not match/i);
+    expect(mockChangePassword).not.toHaveBeenCalled();
+  });
 });

@@ -10,7 +10,7 @@ export default defineConfig({
   workers: 1, // Opt out of parallel execution by setting workers to 1
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://frontend:3000',
-    trace: 'on',
+    trace: 'on-first-retry',
   },
-  timeout: 60 * 1000, // 60 seconds
+  timeout: 30 * 1000, // 30 seconds
 });

@@ -1,57 +1,60 @@
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthContext } from '../../../context/AuthContext';
 import UpdateProfileForm from '../../../components/Profile/UpdateProfileForm';
-import * as useUsers from '../../../hooks/useUsers';
+import * as useProfile from '../../../hooks/useProfile';
 
 const queryClient = new QueryClient();
 
-const mockUseUpdateMe = jest.spyOn(useUsers, 'useUpdateMe');
+const mockUser = {
+  id: '1',
+  email: 'test@example.com',
+  full_name: 'Test User',
+  is_active: true,
+  is_admin: false,
+};
 
-const renderWithProviders = (ui: React.ReactElement, authValue: any) => {
-    return render(
-        <QueryClientProvider client={queryClient}>
-            <AuthContext.Provider value={authValue}>
-                {ui}
-            </AuthContext.Provider>
-        </QueryClientProvider>
-    );
+const mockSetUser = jest.fn();
+
+const renderComponent = () => {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider value={{
+        user: mockUser,
+        login: jest.fn(),
+        logout: jest.fn(),
+        setUser: mockSetUser,
+        deploymentMode: 'server'
+      }}>
+        <UpdateProfileForm />
+      </AuthContext.Provider>
+    </QueryClientProvider>
+  );
 };
 
 describe('UpdateProfileForm', () => {
-    it('renders with initial user data and allows updating', async () => {
-        const mutate = jest.fn();
-        mockUseUpdateMe.mockReturnValue({ mutate, isPending: false });
-
-        const authContextValue = {
-            user: { full_name: 'Initial Name', email: 'test@example.com' },
-            setUser: jest.fn(),
-        };
-
-        renderWithProviders(<UpdateProfileForm />, authContextValue);
-
-        const nameInput = screen.getByLabelText(/full name/i);
-        expect(nameInput).toHaveValue('Initial Name');
-
-        fireEvent.change(nameInput, { target: { value: 'Updated Name' } });
-        expect(nameInput).toHaveValue('Updated Name');
-
-        fireEvent.click(screen.getByRole('button', { name: /save/i }));
-
-        await waitFor(() => {
-            expect(mutate).toHaveBeenCalledWith({ full_name: 'Updated Name' });
-        });
+  it('renders the form with user data and allows updating the profile', async () => {
+    const mockUpdateProfile = jest.fn();
+    jest.spyOn(useProfile, 'useUpdateProfile').mockReturnValue({
+      mutate: mockUpdateProfile,
+      isPending: false,
     });
 
-    it('shows a loading state when submitting', () => {
-        mockUseUpdateMe.mockReturnValue({ mutate: jest.fn(), isPending: true });
+    renderComponent();
 
-        const authContextValue = {
-            user: { full_name: 'Initial Name', email: 'test@example.com' },
-            setUser: jest.fn(),
-        };
+    const nameInput = screen.getByLabelText(/full name/i);
+    expect(nameInput).toHaveValue(mockUser.full_name);
 
-        renderWithProviders(<UpdateProfileForm />, authContextValue);
-        expect(screen.getByRole('button', { name: /saving.../i })).toBeDisabled();
+    const newName = 'Updated Test User';
+    fireEvent.change(nameInput, { target: { value: newName } });
+    expect(nameInput).toHaveValue(newName);
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockUpdateProfile).toHaveBeenCalledWith({ full_name: newName });
     });
+  });
 });

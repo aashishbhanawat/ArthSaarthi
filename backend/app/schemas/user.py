@@ -14,6 +14,7 @@ class UserBase(BaseModel):
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     password: str
+    is_admin: bool = False
 
     model_config = ConfigDict(
         json_schema_extra={

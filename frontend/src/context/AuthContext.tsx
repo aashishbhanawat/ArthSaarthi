@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [logout]);
 
   useEffect(() => {
-    console.log('AuthContext token:', token);
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUserData();

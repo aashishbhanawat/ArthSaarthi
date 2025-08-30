@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate, UserUpdateMe
+from app.schemas.user import UserCreate, UserUpdate
 
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
@@ -23,14 +23,13 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             # In server mode, email is not encrypted, so we can query it.
             return db.query(User).filter(User.email == email).first()
 
-    def create(
-        self, db: Session, *, obj_in: UserCreate, is_admin: bool = False
-    ) -> User:
+    def create(self, db: Session, *, obj_in: UserCreate, is_admin: bool = None) -> User:
+        admin_status = is_admin if is_admin is not None else obj_in.is_admin
         db_obj = User(
             email=obj_in.email,
             hashed_password=get_password_hash(obj_in.password),
             full_name=obj_in.full_name,
-            is_admin=is_admin,
+            is_admin=admin_status,
         )
         db.add(db_obj)
         db.flush()
@@ -44,15 +43,6 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         else:
             update_data = obj_in.model_dump(exclude_unset=True)
         return super().update(db, db_obj=db_obj, obj_in=update_data)
-
-    def update_me(self, db: Session, *, db_obj: User, obj_in: UserUpdateMe) -> User:
-        update_data = obj_in.model_dump(exclude_unset=True)
-        if "full_name" in update_data:
-            db_obj.full_name = update_data["full_name"]
-        db.add(db_obj)
-        db.flush()
-        db.refresh(db_obj)
-        return db_obj
 
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
         user = self.get_by_email(db, email=email)
