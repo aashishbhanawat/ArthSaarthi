@@ -131,9 +131,9 @@ This document outlines the functional and non-functional requirements for the Ar
 ### FR13: Advanced Goal Planning & Tracking (New Section)
 -   **FR13.1: Goal Definition.** Users must be able to define specific financial goals with a name, target amount, and target date. `📝 Planned`
 -   **FR13.2: Asset Linking.** Users must be able to link entire portfolios or individual assets to one or more defined goals. `📝 Planned`
--   **FR13.3: Contribution Planning.** The system should calculate the required contribution rate (e.g., monthly) needed to achieve a goal. `📝 Planned`
--   **FR13.4: Projection & Analysis.** The system must project the future value of linked assets and determine if the user is on track to meet their goal. `📝 Planned`
--   **FR13.5: Goal Dashboard.** Each goal must have a visual dashboard showing progress, projection charts, and on/off-track status. `📝 Planned`
+-   **FR13.3: Contribution Planning.** The system should calculate the required contribution rate (e.g., monthly) needed to achieve a goal. `✅ Done`
+-   **FR13.4: Projection & Analysis.** The system must project the future value of linked assets and determine if the user is on track to meet their goal. `✅ Done`
+-   **FR13.5: Goal Dashboard.** Each goal must have a visual dashboard showing progress, projection charts, and on/off-track status. `✅ Done`
 
 ### FR14: Future Scope (Renumbered)
 -   **FR14.1: Two-Factor Authentication (2FA).** `📝 Planned`

@@ -85,14 +85,16 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Dedicated Transaction History Page (FR4.8):** Move the full transaction list to a separate, filterable page with filters for date range, type, and asset.
     -   **Status: 📝 Planned**
 
-## Release 5: Market Insights
+## Release 5: Goal Management & Insights
 
-**Status: ✅ COMPLETE (as of 2025-08-26)**
+**Status: ⚠️ Partially Implemented**
 
 **Features:**
 
 -   **Watchlists (FR8.1):** Users can create, manage, and track custom lists of financial assets.
     -   **Status: ✅ Complete**
+-   **Goal Planning & Tracking (FR13):** Implement core goal definition, asset linking, and basic progress tracking.
+    -   **Status: ⚠️ Partially Implemented**
 
 ## Release 6: Security & Administration
 
@@ -115,7 +117,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Advanced Asset Support (FR4):** Add support for FDs, RDs, PPF, NPS, Bonds, RSUs, ESPPs.
 -   **Advanced Analytics (FR6):** Implement remaining metrics like TWR, MWR, Beta, Alpha, and benchmarking.
 -   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
--   **Goal Planning & Tracking (FR13):** Implement the goal definition and progress tracking module.
+-   **Goal Planning & Tracking (FR13 - Enhancements):** Implement contribution planning and future value projections.
 -   **Notifications & Alerts (FR9):** Price alerts, due date reminders via Telegram/Push.
 -   **AI-Powered Insights (FR10):**
     -   Tax-saving suggestions, risk analysis, and portfolio rebalancing suggestions.
