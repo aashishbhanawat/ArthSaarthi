@@ -181,16 +181,18 @@ def test_setup_admin_user_invalid_password(
 
 
 @pytest.mark.usefixtures("pre_unlocked_key_manager")
-def test_change_password_success(client: TestClient, db: Session, get_auth_headers, admin_user_data):
+def test_change_password_success(
+    client: TestClient, db: Session, get_auth_headers, admin_user_data
+):
     """
-    Test successfully changing the password for the current user.
+    Test successfully changing the password for the a user.
     """
     # 1. Arrange: Use the admin user created by the fixtures
     user_email = admin_user_data["email"]
     old_password = admin_user_data["password"]
 
-    # In desktop mode, the first user's password unlocks the key manager.
-    # We need to create that user first before we can get a token or change the password.
+    # In desktop mode, the first user's password unlocks the key manager. We need
+    # to create that user first before we can get a token or change the password.
     client.post("/api/v1/auth/setup", json=admin_user_data)
 
     headers = get_auth_headers(user_email, old_password)
@@ -253,7 +255,11 @@ def test_change_password_incorrect_old_password(
     ],
 )
 def test_change_password_invalid_new_password(
-    client: TestClient, db: Session, get_auth_headers, admin_user_data, new_password: str
+    client: TestClient,
+    db: Session,
+    get_auth_headers,
+    admin_user_data,
+    new_password: str,
 ):
     """
     Test that changing password fails with an invalid new password.
