@@ -48,12 +48,12 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
 
   return (
     <div className="modal-overlay">
-        <div className="modal-content max-w-lg overflow-visible">
+        <div className="modal-content w-full max-w-lg overflow-visible flex flex-col h-[32rem]"> {/* Set a height and flex layout */}
             <div className="modal-header">
                 <h2 className="text-2xl font-bold">Link Item to "{goal.name}"</h2>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
             </div>
-            <div className="p-6">
+            <div className="p-6 flex flex-col flex-grow">
                 <div className="form-group relative">
                     <label htmlFor="asset-search" className="form-label">
                         Search Assets or Select a Portfolio
@@ -104,7 +104,7 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end pt-4 mt-72"> {/* mt-72 is a hack to push button below dropdown */}
+                <div className="flex items-center justify-end pt-4 mt-auto"> {/* Use mt-auto to push to the bottom */}
                     <button type="button" onClick={onClose} className="btn btn-secondary">
                         Close
                     </button>
