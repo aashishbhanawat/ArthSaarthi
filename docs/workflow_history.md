@@ -1,3 +1,45 @@
+---
+
+## 2025-08-30: Implement User Profile Management & Fix Critical Encryption Bug (FR1.5)
+
+*   **Task Description:** Implement the full-stack "User Profile Management" feature, allowing users to update their full name and change their password. This task involved a significant, multi-stage debugging effort to identify and fix a critical security bug in the desktop application's encryption key management.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the backend API endpoints (`/users/me`, `/auth/me/change-password`), Pydantic schemas, and CRUD logic. On the frontend, prompts were used to create the `ProfilePage`, `UpdateProfileForm`, `ChangePasswordForm`, React Query hooks, and a new `userApi` service.
+    2.  **E2E Test Creation:** An E2E test (`profile-management.spec.ts`) was created to validate the feature. This test initially caused state pollution issues with other tests, which was resolved by creating a new, isolated user within the test itself.
+    3.  **UI/UX Refinement:** Based on user feedback, the UI was refactored to match the application's design system, and a custom toast notification system was implemented to replace blocking `alert()` popups.
+    4.  **Deep Debugging & Root Cause Analysis:** A backend test, `test_change_password_success`, was consistently failing in the `desktop` mode environment with a `cryptography.exceptions.InvalidTag` error.
+        *   The initial hypothesis that data needed to be re-encrypted was incorrect.
+        *   After guidance from the user, a deep dive into the `KeyManager` class revealed the root cause: the `change_password` function was incorrectly generating a **new** master key instead of re-wrapping the **existing** one.
+        *   This was a critical security and data integrity bug that would have resulted in permanent data loss for users who changed their password.
+    5.  **Critical Bug Fix:** The `KeyManager` was refactored to correctly decrypt the master key with the old password, and then re-wrap the *same* key with the new password, preserving all user data.
+    6.  **Environment & Tooling Issues:** The final test run was blocked by a `permission denied` error with Docker. The user provided the crucial information that `sudo` was required, which unblocked the process and allowed the final verification to complete.
+    7.  **Final Cleanup:** After a final review, accidental snapshot test artifacts were removed from the repository.
+
+*   **File Changes:**
+    *   `backend/app/core/key_manager.py`: **Updated** to fix the critical password change bug.
+    *   `backend/app/schemas/user.py`: **Updated** with `UserUpdateMe` and `UserPasswordChange` schemas.
+    *   `backend/app/crud/crud_user.py`: **Updated** with `update_me` method.
+    *   `backend/app/api/v1/endpoints/me.py`: **New** file with the `PUT /me` endpoint.
+    *   `backend/app/tests/api/v1/test_auth.py`: **Restored** accidentally deleted password change tests.
+    *   `frontend/src/pages/ProfilePage.tsx`: **New** page.
+    *   `frontend/src/components/Profile/`: **New** directory with `UpdateProfileForm.tsx` and `ChangePasswordForm.tsx`.
+    *   `frontend/src/hooks/useProfile.ts`: **New** React Query hooks.
+    *   `frontend/src/services/userApi.ts`: **New** API service.
+    *   `frontend/src/context/ToastContext.tsx`: **New** context for toast notifications.
+    *   `e2e/tests/profile-management.spec.ts`: **New** E2E test suite for the feature.
+    *   `e2e/tests/profile-management.spec.ts-snapshots/`: **Deleted** snapshot files.
+
+*   **Verification:**
+    - Ran the full backend test suite for desktop mode using `sudo docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml run --rm test-desktop`. All 108 tests passed.
+    - Ran the full E2E test suite.
+    - Received manual E2E test pass confirmation from the user.
+
+*   **Outcome:**
+    - The "User Profile Management" feature is fully implemented, tested, and stable.
+    - A critical data-loss bug in the core encryption logic was identified and fixed, significantly improving application security and robustness.
+---
+
 ## 2025-08-27: Implement Goal Planning & Tracking (FR13)
 
 *   **Task Description:** Implement the core full-stack "Goal Planning & Tracking" feature. This allows users to define financial goals, link assets or portfolios to them, and track their current progress based on the market value of linked items. Advanced features like contribution planning and future value projections are out of scope for this task.

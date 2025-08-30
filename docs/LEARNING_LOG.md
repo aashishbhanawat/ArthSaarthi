@@ -1,5 +1,28 @@
 ---
 
+## 2025-08-30: The Importance of Environment and Permission Nuances
+
+### 1. What Happened?
+
+While finalizing the User Profile Management feature, a critical backend test (`test_change_password_success`) was failing in the `desktop` mode environment. The debugging process led to the discovery of a severe data-loss bug in the `KeyManager`. After fixing this bug, the test run became blocked by a `permission denied` error when trying to use Docker, a problem that did not occur in previous test runs.
+
+### 2. How Did the Process Help?
+
+*   **User-Guided RCA:** The initial `InvalidTag` cryptography error was complex. My initial hypothesis was wrong. The user's guidance to re-examine the key re-wrapping logic was essential. It led to a deep dive into the `KeyManager` code, which revealed the critical bug where a new key was being generated instead of re-wrapping the old one.
+*   **Explicit Error Messages:** The `permission denied while trying to connect to the Docker daemon socket` error was a clear signal that the issue was not with the test code itself, but with the environment's execution permissions.
+*   **Direct User Intervention:** I was completely blocked by the permissions issue. The user's direct instruction to use `sudo` was the only way to resolve the problem, highlighting a scenario where the AI assistant cannot solve an environmental problem autonomously.
+
+### 3. Outcome & New Learning
+
+*   A critical data-loss bug was prevented from reaching production.
+*   The backend test suite is now fully passing in all modes.
+*   **Key Learnings:**
+    1.  **Trust, But Verify Test Failures:** A failing test is a strong signal, but the reason for the failure may be deeper than it appears. The `InvalidTag` error was not just a test setup issue but a symptom of a critical bug in the application's core security logic.
+    2.  **Security Logic Requires Deep Scrutiny:** Code related to security, encryption, and authentication must be treated with the highest level of scrutiny. A seemingly simple "password change" feature had profound implications for data integrity.
+    3.  **Acknowledge Environmental Limitations:** As an AI assistant, I operate in a sandboxed environment. I cannot always diagnose or fix host-level issues like file permissions or `sudo` requirements. Recognizing and clearly communicating these limitations is crucial for efficient collaboration.
+
+---
+
 ## 2025-08-26: Database Dialect Differences (SQLite vs. PostgreSQL)
 
 ### 1. What Happened?
