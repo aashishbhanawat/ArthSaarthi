@@ -105,9 +105,18 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Audit Logging Engine (FR2.2):** A backend engine to securely log all sensitive user and system events.
     -   **Status: ✅ Complete**
 
+## Release 7: User Experience & Security
+
+**Status: ✅ COMPLETE (as of 2025-08-30)**
+
+**Features:**
+
+-   **User Profile Management (FR1.5):** Implement user profile settings page for name and password changes.
+    -   **Status: ✅ Complete**
+
 ## Future Releases
 
--   **User Profile Management (FR1.5, FR1.6):** Implement user profile settings and a forgotten password reset flow.
+-   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
 -   **Administration Enhancements (FR2.3):** Add a log viewer for admins to review audit trails.
 -   **Dashboard Enhancements (FR3.4):** Add a "Privacy Mode" toggle to the dashboard.
 -   **Advanced Transaction Management (FR4.5, FR4.6):**

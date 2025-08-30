@@ -5,6 +5,7 @@ import { User } from '../types/user';
 interface AuthContextType {
   token: string | null;
   user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   isLoading: boolean;
   error: string | null;
   deploymentMode: 'server' | 'desktop' | null;
@@ -85,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoading, error, deploymentMode, login, logout, register }}>
+    <AuthContext.Provider value={{ token, user, setUser, isLoading, error, deploymentMode, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

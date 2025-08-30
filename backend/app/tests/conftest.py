@@ -21,22 +21,23 @@ def pre_unlocked_key_manager(monkeypatch, tmp_path):
     This should be used by any test that performs operations requiring encryption,
     but does not test the key setup/unlocking process itself.
     """
-    if settings.DEPLOYMENT_MODE == "desktop":
-        # Create a temporary key file path for the test
-        temp_key_path = tmp_path / "test-key.dat"
+    if settings.DEPLOYMENT_MODE != "desktop":
+        yield
+        return
 
-        # Use monkeypatch to override the hardcoded KEY_FILE_PATH
-        monkeypatch.setattr("app.core.key_manager.KEY_FILE_PATH", temp_key_path)
+    # Create a temporary key file path for the test
+    temp_key_path = tmp_path / "test-key.dat"
 
-        # This single call generates, wraps, saves, and loads the key.
-        key_manager.generate_and_wrap_master_key("testpassword")
+    # Use monkeypatch to override the hardcoded KEY_FILE_PATH
+    monkeypatch.setattr("app.core.key_manager.KEY_FILE_PATH", temp_key_path)
 
-        yield key_manager
+    # This single call generates, wraps, saves, and loads the key.
+    key_manager.generate_and_wrap_master_key("testpassword")
 
-        # Cleanup: lock the key. The monkeypatch is automatically undone.
-        key_manager._master_key = None
-    else:
-        yield None
+    yield key_manager
+
+    # Cleanup: lock the key. The monkeypatch is automatically undone.
+    key_manager._master_key = None
 
 
 @pytest.fixture(scope="session")

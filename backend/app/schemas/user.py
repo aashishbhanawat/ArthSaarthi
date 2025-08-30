@@ -78,6 +78,12 @@ class UserUpdate(BaseModel):
         }
     )
 
+
+# Properties to receive via API on update for the current user
+class UserUpdateMe(BaseModel):
+    full_name: Optional[str] = None
+
+
 class UserPasswordChange(BaseModel):
     old_password: str
     new_password: str

@@ -9,6 +9,7 @@ import { HomeIcon,
   ArrowLeftOnRectangleIcon,
   EyeIcon,
   TrophyIcon,
+  UserCircleIcon,
  } from '@heroicons/react/24/outline';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
@@ -77,10 +78,17 @@ const NavBar: React.FC = () => {
                 )}
             </nav>
             <div className="mt-auto pt-4 border-t">
-                <div className="text-center text-sm text-gray-600 mb-2 truncate" title={user?.email}>{user?.email}</div>
+                <div className="text-center text-sm text-gray-600 mb-2 truncate" title={user?.email}>{user?.full_name || user?.email}</div>
+                <NavLink
+                    to="/profile"
+                    className="btn btn-secondary w-full flex items-center justify-center mb-2"
+                >
+                    <UserCircleIcon className="h-5 w-5 mr-2" />
+                    <span>Profile</span>
+                </NavLink>
                 <button
                     onClick={logout}
-                    className="btn btn-secondary w-full flex items-center justify-center"
+                    className="btn btn-danger w-full flex items-center justify-center"
                 >
                     <ArrowLeftOnRectangleIcon className="h-5 w-5 mr-2" />
                     <span>Logout</span>
