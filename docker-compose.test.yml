@@ -23,6 +23,7 @@ services:
       - ./backend:/app
     environment:
       - PYTHONPATH=/app
+      - DEPLOYMENT_MODE=server
     networks:
       - pms_network
     depends_on:

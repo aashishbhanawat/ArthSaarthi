@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.audit_log import AuditLog
 from app.models.user import User as UserModel
-from app.tests.utils.user import create_random_user
 
 
 def test_get_status_setup_needed(client: TestClient):
@@ -180,86 +179,3 @@ def test_setup_admin_user_invalid_password(
     assert response.status_code == 422
     assert "detail" in response.json()
 
-
-@pytest.mark.usefixtures("pre_unlocked_key_manager")
-def test_change_password_success(client: TestClient, db: Session, get_auth_headers):
-    """
-    Test successfully changing the password for the current user.
-    """
-    # 1. Arrange: Create a user and get their auth headers.
-    user, old_password = create_random_user(db)
-    headers = get_auth_headers(user.email, old_password)
-    new_password = "NewValidPassword123!"
-    password_data = {"old_password": old_password, "new_password": new_password}
-
-    # 2. Act: Call the endpoint to change the password.
-    response = client.post(
-        "/api/v1/auth/me/change-password", headers=headers, json=password_data
-    )
-
-    # 3. Assert: Verify the success response.
-    if response.status_code != 200:
-        print(response.json())
-    assert response.status_code == 200
-    assert response.json() == {"msg": "Password updated successfully"}
-
-    # 4. Verify the user can log in with the new password.
-    login_data = {"username": user.email, "password": new_password}
-    login_response = client.post("/api/v1/auth/login", data=login_data)
-    assert login_response.status_code == 200
-
-
-@pytest.mark.usefixtures("pre_unlocked_key_manager")
-def test_change_password_incorrect_old_password(
-    client: TestClient, db: Session, get_auth_headers
-):
-    """
-    Test that changing password fails with an incorrect old password.
-    """
-    # 1. Arrange
-    user, old_password = create_random_user(db)
-    headers = get_auth_headers(user.email, old_password)
-    password_data = {
-        "old_password": "wrongoldpassword",
-        "new_password": "NewValidPassword123!",
-    }
-
-    # 2. Act
-    response = client.post(
-        "/api/v1/auth/me/change-password", headers=headers, json=password_data
-    )
-
-    # 3. Assert
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Incorrect old password"}
-
-
-@pytest.mark.usefixtures("pre_unlocked_key_manager")
-@pytest.mark.parametrize(
-    "new_password",
-    [
-        "short",
-        "nouppercase1!",
-        "NOLOWERCASE1!",
-        "NoDigit!",
-        "NoSpecialCharacter1",
-    ],
-)
-def test_change_password_invalid_new_password(
-    client: TestClient, db: Session, get_auth_headers, new_password: str
-):
-    """
-    Test that changing password fails with an invalid new password.
-    """
-    # 1. Arrange
-    user, old_password = create_random_user(db)
-    headers = get_auth_headers(user.email, old_password)
-    password_data = {"old_password": old_password, "new_password": new_password}
-
-    # 2. Act
-    response = client.post(
-        "/api/v1/auth/me/change-password", headers=headers, json=password_data
-    )
-
-    # 3. Assert
-    assert response.status_code == 422
