@@ -55,6 +55,7 @@ All planned features for the current release cycle have been implemented and val
     *   Implemented the core full-stack feature allowing users to define financial goals, link assets or portfolios to them, and track current progress based on the market value of linked items.
 *   **Security & Administration:**
     *   A backend **Audit Logging Engine** that securely records all sensitive user and system events (logins, user creation/deletion) to a dedicated database table for monitoring and compliance.
+    *   **User Profile Management:** A dedicated page for users to update their full name and securely change their password. This includes a critical bug fix to the desktop application's encryption key management to prevent data loss on password change.
 
 ---
 

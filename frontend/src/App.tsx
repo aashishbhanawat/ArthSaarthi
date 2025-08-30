@@ -13,10 +13,12 @@ import TransactionsPage from './pages/TransactionsPage';
 import WatchlistsPage from './pages/WatchlistsPage';
 import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
+import ProfilePage from './pages/ProfilePage';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './context/ToastContext';
 
 const AppLayout = () => (
-  <div className="grid grid-cols-[auto_1fr] min-h-screen bg-gray-50">
+  <div className="grid grid-cols-[auto_1fr] h-screen bg-gray-50">
     <NavBar />
     <main className="p-8 overflow-y-auto">
       <Outlet />
@@ -35,6 +37,7 @@ function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/portfolios" element={<PortfolioPage />} />
           <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
           <Route path="/import" element={<DataImportPage />} />
@@ -55,7 +58,9 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <AppRoutes />
+      <ToastProvider>
+        <AppRoutes />
+      </ToastProvider>
     </ErrorBoundary>
   );
 }

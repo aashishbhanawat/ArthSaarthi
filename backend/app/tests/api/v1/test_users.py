@@ -51,3 +51,27 @@ def test_get_current_user_invalid_token(client: TestClient):
     assert response.json()["detail"] == "Could not validate credentials", (
         "Should return 403 for invalid token"
     )
+
+
+def test_update_user_me(client: TestClient, db: Session, get_auth_headers):
+    """
+    Test successfully updating the current user's profile.
+    """
+    # 1. Arrange: Create a user and get their auth headers
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    new_full_name = "Updated User Name"
+
+    # 2. Act: Call the endpoint to update the user's profile
+    response = client.put(
+        "/api/v1/users/me", headers=headers, json={"full_name": new_full_name}
+    )
+
+    # 3. Assert: Verify the response and the database state
+    assert response.status_code == 200
+    updated_user_data = response.json()
+    assert updated_user_data["full_name"] == new_full_name
+    assert updated_user_data["email"] == user.email
+
+    db.refresh(user)
+    assert user.full_name == new_full_name

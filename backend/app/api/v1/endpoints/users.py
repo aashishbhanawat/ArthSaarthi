@@ -5,13 +5,36 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.core.dependencies import get_current_admin_user
+from app.core.dependencies import get_current_active_user, get_current_admin_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
-from app.schemas.user import User, UserCreate, UserUpdate
+from app.schemas.user import User, UserCreate, UserUpdate, UserUpdateMe
 from app.services.audit_logger import log_event
 
 router = APIRouter()
+
+
+@router.get("/me", response_model=User)
+def read_user_me(current_user: UserModel = Depends(get_current_active_user)):
+    """
+    Get current user.
+    """
+    return current_user
+
+
+@router.put("/me", response_model=User)
+def update_user_me(
+    user_in: UserUpdateMe,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
+):
+    """
+    Update the current user's profile information.
+    """
+    updated_user = crud.user.update_me(db=db, db_obj=current_user, obj_in=user_in)
+    db.commit()
+    db.refresh(updated_user)
+    return updated_user
 
 
 @router.get("/", response_model=List[User])

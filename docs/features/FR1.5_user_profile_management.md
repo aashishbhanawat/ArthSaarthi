@@ -1,7 +1,7 @@
 # Feature Plan: User Profile Management (FR1.5)
 
 **Feature ID:** FR1.5
-**Status:** 📝 Planned
+**Status:** ✅ Done
 **Title:** User Profile Management
 **User Story:** As a logged-in user, I want a dedicated profile/settings page where I can update my personal information and change my password, so that I can manage my own account details securely.
 
@@ -74,6 +74,7 @@ New endpoints will be added to handle profile updates. They will be protected by
     1.  Verify the user's `old_password`.
     2.  If in `desktop` mode, call the `key_manager` to re-encrypt the master key with the new password.
     3.  Hash the `new_password` and update the `hashed_password` in the database.
+*   **`core/key_manager.py`:** During implementation, a critical bug was discovered and fixed in this module. The `change_password` method was incorrectly generating a new master key instead of re-wrapping the existing one, which would have led to data loss. The logic was refactored to ensure the same key is preserved.
 
 ---
 

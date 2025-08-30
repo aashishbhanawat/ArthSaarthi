@@ -20,3 +20,12 @@ export type UserUpdate = Partial<{
   is_admin: boolean;
   password?: string;
 }>;
+
+export interface UserUpdateMe {
+  full_name?: string;
+}
+
+export interface UserPasswordChange {
+  old_password: string;
+  new_password: string;
+}
