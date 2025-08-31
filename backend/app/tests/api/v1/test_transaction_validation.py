@@ -39,16 +39,16 @@ def test_sell_transaction_before_buy_date_fails(
     # 2. Attempt to sell GOOGL *before* the buy date
     sell_date = date(2024, 1, 2)
     sell_transaction_data = {
-        "asset_id": str(asset_id),
+        "ticker_symbol": "GOOGL",
+        "asset_type": "Stock",
         "transaction_type": "SELL",
         "quantity": 5,
         "price_per_unit": 3000,
         "transaction_date": sell_date.isoformat(),
-        "fees": 0.0,
     }
 
     response = client.post(
-        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/",
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
         headers=auth_headers,
         json=sell_transaction_data,
     )

@@ -143,7 +143,7 @@ def test_read_transactions_with_filters_and_pagination(
     assert all(tx["transaction_type"] == "BUY" for tx in data["transactions"])
 
     # 4. Test filter by date range (last 15 days)
-    start_date_str = (datetime.utcnow() - timedelta(days=15)).isoformat()
+    start_date_str = (datetime.utcnow() - timedelta(days=15)).date().isoformat()
     response = client.get(
         f"{base_url}?start_date={start_date_str}", headers=user_headers
     )

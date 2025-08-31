@@ -1,5 +1,5 @@
 import uuid
-from typing import List
+from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -63,39 +63,17 @@ def lookup_ticker_symbol(
     return []
 
 
-@router.post("/", response_model=schemas.Asset, status_code=201)
-def create_asset(
+@router.get("/search-mf/", response_model=List[schemas.AssetSearchResult])
+def search_mutual_funds(
     *,
-    db: Session = Depends(deps.get_db),
-    asset_in: schemas.AssetCreateIn,
-    current_user: User = Depends(deps.get_current_user),
-):
+    query: str = Query(..., min_length=3, max_length=50, alias="q"),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
     """
-    Create a new asset in the system after validating it against an external service.
-    This is used when a user wants to add a transaction for an asset not yet in the DB.
-    The request body only needs the ticker_symbol.
+    Search for Indian Mutual Funds by name or scheme code from the AMFI data source.
     """
-    ticker = asset_in.ticker_symbol.upper()
-    db_asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
-    if db_asset:
-        raise HTTPException(
-            status_code=409,
-            detail="An asset with this ticker symbol already exists.",
-        )
-
-    details = financial_data_service.get_asset_details(ticker)
-    if not details:
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                f"Could not find a valid asset with ticker symbol '{ticker}' on"
-                " supported exchanges."
-            ),
-        )
-
-    new_asset_data = schemas.AssetCreate(ticker_symbol=ticker, **details)
-
-    asset = crud.asset.create(db=db, obj_in=new_asset_data)
-    db.commit()  # Persist the new asset to the database
-    db.refresh(asset)  # Refresh the instance to get the latest state from the DB
-    return asset
+    # The financial_data_service singleton handles caching.
+    results = financial_data_service.search_mutual_funds(query=query)
+    if not results:
+        return []
+    return results

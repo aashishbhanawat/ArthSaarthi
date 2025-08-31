@@ -1517,3 +1517,24 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
     - A critical data-loss bug in the core encryption logic was identified and fixed, significantly improving application security and robustness.
 
 ---
+
+## 2025-08-30: Backend Refactor for Transaction Management & Stabilization (FR4.3.1)
+
+*   **Task Description:** A full-stack refactor of the transaction management feature. This involved changing the API endpoints, implementing on-the-fly asset creation via ticker symbol, and a comprehensive stabilization of the backend test suite to validate the new logic.
+
+*   **Key Prompts & Interactions:**
+    1.  **Refactoring & Test Rewrite:** The AI was prompted to update the transaction test suite, which involved a complete rewrite of `test_portfolios_transactions.py` (renamed to `test_transactions.py`) to align with new, more robust backend logic.
+    2.  **Systematic Debugging via Log Analysis:** The initial implementation introduced a cascade of test failures. A highly iterative "Analyze -> Report -> Fix" workflow was used to resolve them. This included fixing `ImportError`s from unexposed schemas, `AttributeError`s from incomplete mock services, and `TypeError`s from outdated test helper functions.
+    3.  **Final Test Fix:** The final failure was a `422 Unprocessable Entity` error. The AI analyzed the log and identified that the test was sending a full `datetime` string to an endpoint that expected a simple `date` string, and provided the final fix.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/transactions.py`: **Updated** to handle ticker-based creation and improved filtering.
+    *   `backend/app/crud/asset.py`: **Updated** with `get_or_create_by_ticker` logic.
+    *   `backend/app/tests/api/v1/test_transactions.py`: **Rewritten** to test the new transaction API workflow.
+    *   `docs/bug_reports_temp.md`: **Updated** with a new bug report for the test failure.
+    *   `docs/workflow_history.md`: **Updated** with this entry.
+    *   `docs/project_handoff_summary.md`: **Updated** with the latest test counts and date.
+    *   `docs/LEARNING_LOG.md`: **Updated** with a new lesson about API contracts for query parameters.
+
+*   **Outcome:**
+    - The backend now supports a more robust and user-friendly transaction creation workflow. The test suite is fully stable, with all 116 tests passing.

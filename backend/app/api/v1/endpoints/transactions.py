@@ -1,6 +1,6 @@
 import uuid
-from datetime import datetime
-from typing import Any, Optional
+from datetime import date, datetime
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -19,8 +19,8 @@ def read_transactions(
     portfolio_id: Optional[uuid.UUID] = None,
     asset_id: Optional[uuid.UUID] = None,
     transaction_type: Optional[str] = Query(None, enum=["BUY", "SELL"]),
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(dependencies.get_current_user),
@@ -72,34 +72,47 @@ def create_transaction(
     *,
     db: Session = Depends(dependencies.get_db),
     portfolio_id: uuid.UUID,
-    transaction_in: schemas.TransactionCreate,
+    transaction_in: schemas.TransactionCreateWithTicker,
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
     Create new transaction for a portfolio.
+    If the asset does not exist, it will be created.
     """
-    if config.settings.DEBUG:
-        print("--- BACKEND DEBUG: Create Transaction Request ---")
-        print(f"Portfolio ID: {portfolio_id}")
-        print(f"Transaction Payload: {transaction_in.model_dump_json(indent=2)}")
-        print("---------------------------------------------")
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     if portfolio.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
+    # Get or create the asset by its ticker symbol
+    asset = crud.asset.get_or_create_by_ticker(
+        db,
+        ticker_symbol=transaction_in.ticker_symbol,
+        asset_type=transaction_in.asset_type,
+    )
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Could not find or create asset with ticker '{transaction_in.ticker_symbol}'",
+        )
+
+    # Create the final transaction payload with the asset_id
+    transaction_create_schema = schemas.TransactionCreate(
+        asset_id=asset.id, **transaction_in.model_dump(exclude={"ticker_symbol", "asset_type"})
+    )
+
     try:
         transaction = crud.transaction.create_with_portfolio(
-            db=db, obj_in=transaction_in, portfolio_id=portfolio_id
+            db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
         )
     except HTTPException as e:
         raise e
     except Exception as e:
-        # Catch potential database or other internal errors
         raise HTTPException(status_code=400, detail=str(e))
 
     db.commit()
+    db.refresh(transaction)
     return transaction
 
 

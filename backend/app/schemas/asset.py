@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -7,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 # This is a special schema for the POST /assets/ endpoint
 class AssetCreateIn(BaseModel):
     ticker_symbol: str
+    asset_type: Optional[str] = None
 
 
 # Properties to receive on asset creation (internal)
@@ -16,6 +18,7 @@ class AssetCreate(BaseModel):
     asset_type: str
     currency: str | None = None
     exchange: str | None = None
+    isin: str | None = None
 
 
 # Properties to receive on asset update
@@ -36,3 +39,10 @@ class AssetInDBBase(AssetCreate):
 class Asset(AssetInDBBase):
     current_price: float | None = None
     day_change: float | None = None
+
+
+# Properties to return from asset search
+class AssetSearchResult(BaseModel):
+    ticker_symbol: str
+    name: str
+    asset_type: str
