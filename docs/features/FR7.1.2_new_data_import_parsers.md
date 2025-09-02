@@ -53,7 +53,7 @@ This feature will be implemented in two distinct phases, one for each parser.
 **Objective:** Implement a parser for Mutual Fund Consolidated Account Statements (CAS).
 
 #### 4.1. New Files to Create
-
+ 
 *   **Parser:** `backend/app/services/import_parsers/mf_cas_parser.py`
 *   **Unit Test:** `backend/app/tests/services/test_mf_cas_parser.py`
 *   **Test Asset:** `backend/app/tests/assets/sample_cas.pdf` (A sample, anonymized CAS PDF file must be obtained and added for testing).
