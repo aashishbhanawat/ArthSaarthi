@@ -1,9 +1,9 @@
 # ArthSaarthi - Personal Portfolio Management System
 
-[![CI/CD Status](https://github.com/aashishbhanawat/pms/actions/workflows/ci.yml/badge.svg)](https://github.com/aashishbhanawat/pms/actions/workflows/ci.yml)
-[![Backend Tests](https://img.shields.io/badge/Backend_Tests-Passing-brightgreen)](#)
-[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-Passing-brightgreen)](#)
-[![E2E Tests](https://img.shields.io/badge/E2E_Tests-Passing-brightgreen)](#)
+[![CI/CD Status](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml/badge.svg)](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml)
+[![Backend Tests](https://img.shields.io/badge/Backend_Tests-116/116-brightgreen)](#)
+[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-141/141-brightgreen)](#)
+[![E2E Tests](https://img.shields.io/badge/E2E_Tests-15/15-brightgreen)](#)
 
 ---
 
@@ -23,16 +23,17 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Advanced Portfolio Analytics:** On-demand calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset levels.
 *   **Full Portfolio & Transaction Management:**
     *   Full CRUD functionality for portfolios.
-    *   Full CRUD functionality for transactions, including a dedicated, filterable **Transaction History** page.
+    *   Full CRUD functionality for transactions (Stocks & Mutual Funds), including a dedicated, filterable **Transaction History** page.
 *   **Consolidated Holdings View:** A redesigned portfolio page that shows a consolidated holdings table with sorting, replacing a simple transaction list.
 *   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.
 *   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
     *   Includes pre-built parsers for Zerodha, ICICI Direct, and a generic format.
     *   Features an advanced UI for on-the-fly **asset alias mapping** for unrecognized ticker symbols.
+*   **Goal Planning & Tracking (Core):** Define financial goals, link assets or portfolios to them, and track your current progress.
+*   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
     *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database and a file-based cache.
-*   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.
 
 ### On the Horizon (Future Features)
 
@@ -56,7 +57,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ## 🚀 Getting Started
 
-For instructions on how to set up and run the application, please see the **[Installation Guide](./installation_guide.md)**.
+For instructions on how to set up and run the application, please see the **[Installation Guide](./docs/installation_guide.md)**.
 
 To learn how to use the application's features, refer to the **[User Guide](./docs/user_guide.md)**.
 

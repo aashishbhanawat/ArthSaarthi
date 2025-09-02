@@ -61,7 +61,8 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // BUY 10 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByLabel('Asset').pressSequentially(assetName);
+    // Use a more specific locator to avoid ambiguity with "Asset Type"
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
     const listItemBuy = page.locator(`li:has-text("${assetName}")`);
     await expect(listItemBuy).toBeVisible();
     await listItemBuy.click();
@@ -75,7 +76,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // SELL 5 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('SELL');
-    await page.getByLabel('Asset').pressSequentially(assetName);
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
     const listItem = page.locator(`li:has-text("${assetName}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
@@ -117,7 +118,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // BUY 10 shares @ 100, 1 year ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByLabel('Asset').pressSequentially(assetTicker);
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetTicker);
     const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
     await expect(createAssetButton).toBeVisible();
     await createAssetButton.click();
@@ -130,7 +131,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // SELL 5 shares @ 120, 6 months ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Type', { exact: true }).selectOption('SELL');
-    await page.getByLabel('Asset').pressSequentially(assetTicker);
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetTicker);
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
     const listItem = page.locator(`li:has-text("${assetTicker}")`);
     await expect(listItem).toBeVisible();
@@ -151,7 +152,15 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // Wait for the data to load before checking the values
     await expect(modal.getByText('Loading transactions...')).not.toBeVisible({ timeout: 10000 });
 
-    const unrealizedXirrContainer = modal.getByText('Unrealized XIRR').locator('xpath=..');
-    await expect(unrealizedXirrContainer.getByText('8.00%')).toBeVisible();
+    // Verify the Unrealized XIRR calculation.
+    // The open lot is 5 shares bought at 100, 365 days ago. Current value is 5 * 130 = 650.
+    // This is a 30% return over 1 year, so XIRR should be ~30.00%.
+    const unrealizedXirrContainer = modal.getByTestId('summary-unrealized-xirr');
+    const xirrText = await unrealizedXirrContainer.locator('p').last().textContent();
+    expect(xirrText).not.toBeNull();
+    const xirrValue = parseFloat(xirrText!.replace('%', ''));
+    // Assert the value is within a tight tolerance of our expected 30%
+    expect(xirrValue).toBeGreaterThanOrEqual(29.9);
+    expect(xirrValue).toBeLessThanOrEqual(30.1);
   });
 });

@@ -57,7 +57,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
 
         // Create the target asset 'RELIANCE'
         await page.getByRole('button', { name: 'Add Transaction' }).click();
-        await page.getByLabel('Asset').fill('RELIANCE');
+        await page.getByRole('textbox', { name: 'Asset' }).fill('RELIANCE');
         const createAssetButton = page.getByRole('button', { name: 'Create Asset "RELIANCE"' });
         
         // Wait for the asset creation API call to complete before proceeding.

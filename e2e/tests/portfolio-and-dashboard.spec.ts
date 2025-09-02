@@ -79,8 +79,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 2. Add a BUY transaction for a NEW asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByLabel('Asset').pressSequentially(newAssetName);
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
     const listItem = page.locator(`li:has-text("${newAssetName}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
@@ -90,6 +91,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // Verify the new holding appears in the HoldingsTable
+    // This also serves as a wait for the transaction to be processed and the UI to update.
     const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
     await expect(holdingsTable).toBeVisible();
     const googlRow = holdingsTable.getByRole('row', { name: /GOOGL/ });
@@ -99,9 +101,10 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 3. Add a SELL transaction for the same asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Type', { exact: true }).selectOption('SELL');
     // Use pressSequentially to simulate user typing and avoid race conditions with debounced search
-    await page.getByLabel('Asset').pressSequentially(newAssetName);
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
 
     // Wait for the debounced search API call to complete before interacting with the results
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
@@ -122,6 +125,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(googlRow).toBeVisible();
     // Use exact match to avoid ambiguity with other cells that might contain '5'
     await expect(googlRow.getByRole('cell', { name: '5', exact: true })).toBeVisible(); // Quantity updated from 10 to 5
+
+    // Clean up the route handler so it doesn't interfere with other tests.
+    await page.unroute('**/api/v1/assets/');
   });
 
   test('should prevent a user from creating an invalid SELL transaction', async ({ page }) => {
@@ -137,8 +143,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 2. Add a BUY transaction for 10 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByLabel('Asset').pressSequentially(assetName);
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
     const listItem = page.locator(`li:has-text("${assetName}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
@@ -155,8 +162,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 3. Attempt to SELL 20 shares (which is more than owned)
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Type', { exact: true }).selectOption('SELL');
-    await page.getByLabel('Asset').pressSequentially(assetName);
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
     const listItemSell = page.locator(`li:has-text("${assetName}")`);
     await expect(listItemSell).toBeVisible();
@@ -190,7 +198,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 2. Add two different assets
     // Asset 1: 10 GOOGL @ $150
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Asset').pressSequentially('GOOGL'); // Asset already exists from a previous test
+    await page.getByLabel('Asset Type').selectOption('Stock');
+    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially('GOOGL'); // Asset already exists from a previous test
     const listItem = page.locator(`li:has-text("GOOGL")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
@@ -214,5 +224,45 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // as the exact value will change based on the live market price.
     const totalValueCard = page.locator('.card', { hasText: 'Total Value' });
     await expect(totalValueCard).toContainText(/₹[0-9,]+\.\d{2}/);
+  });
+
+  test('should allow adding a mutual fund transaction', async ({ page }) => {
+    const portfolioName = `My MF Portfolio ${Date.now()}`;
+    const mfSearchTerm = 'Axis';
+    const mfFullName = 'Axis Bluechip Fund - Direct Plan - Growth';
+
+    // 1. Create a portfolio to hold transactions
+    await page.getByRole('link', { name: 'Portfolios' }).click();
+    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
+    await page.getByLabel('Name').fill(portfolioName);
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+
+    // 2. Add a BUY transaction for a Mutual Fund
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset Type').selectOption('Mutual Fund');
+    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+
+    // Search for the MF
+    // Use a more specific locator to distinguish from the "Asset Type" dropdown.
+    // The react-select component for MF search has a role of 'combobox'.
+    await page.getByRole('combobox', { name: 'Asset', exact: true }).fill(mfSearchTerm);
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-mf'));
+
+    // Select the MF from the results
+    await page.getByText(mfFullName, { exact: true }).click();
+
+    // Fill the rest of the form
+    await page.getByLabel('Quantity').fill('50');
+    await page.getByLabel('Price per Unit').fill('58.98'); // NAV
+    await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+
+    // 3. Verify the new holding appears in the HoldingsTable
+    const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
+    await expect(holdingsTable).toBeVisible();
+    const mfRow = holdingsTable.getByRole('row', { name: new RegExp(mfFullName) });
+    await expect(mfRow).toBeVisible();
+    await expect(mfRow.getByRole('cell', { name: '50', exact: true })).toBeVisible(); // Quantity
   });
 });

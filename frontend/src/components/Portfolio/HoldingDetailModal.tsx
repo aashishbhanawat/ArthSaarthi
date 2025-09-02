@@ -79,7 +79,9 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
             <div role="dialog" aria-modal="true" aria-labelledby="holding-detail-modal-title" className="modal-content w-full max-w-3xl p-6 border border-gray-200 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <div id="holding-detail-modal-title" className="flex justify-between items-center mb-4">
                     <div>
-                        <h2 className="text-2xl font-bold">{holding.asset_name} ({holding.ticker_symbol})</h2>
+                        <h2 className="text-2xl font-bold">
+                            {holding.asset_name} {holding.asset_type !== 'Mutual Fund' && `(${holding.ticker_symbol})`}
+                        </h2>
                         <p className="text-sm text-gray-500">Transaction History</p>
                     </div>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">

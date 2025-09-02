@@ -24,14 +24,13 @@ export interface PortfolioCreate {
   description?: string | null;
 }
 
-export interface TransactionCreate {
-  asset_id: string;
+export type TransactionCreate = {
   transaction_type: 'BUY' | 'SELL';
   quantity: number;
   price_per_unit: number;
   transaction_date: string;
   fees?: number;
-}
+} & ({ asset_id: string } | { ticker_symbol: string; asset_type: string });
 
 export interface TransactionUpdate {
   transaction_type?: 'BUY' | 'SELL';

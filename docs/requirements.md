@@ -57,9 +57,9 @@ This document outlines the functional and non-functional requirements for the Ar
         -   **FR4.7.3.2: Buy Transaction History.** The drill-down must list all *buy* transactions that constitute the current holding. Each transaction row must include: Buy Date, Quantity, Buy Price, Fees, Invested Amount, Overall Gain (%), Current Value, and CAGR %. `✅ Done`
         -   **FR4.7.3.3: Transaction Actions.** Each transaction row in the drill-down view must provide options to Edit or Delete the transaction. This links to requirement **FR4.4.1**. `✅ Done`
 -   **FR4.8: Dedicated Transaction History Page (Pilot Feedback).**
-    -   **FR4.8.1:** A separate, dedicated page must be created to display the full, raw transaction list for a portfolio. `📝 Planned`
-    -   **FR4.8.2:** By default, this page must only show transactions for the current financial year. `📝 Planned`
-    -   **FR4.8.3:** The page must include filters to view historical transactions by date range, transaction type, and asset. `📝 Planned`
+    -   **FR4.8.1:** A separate, dedicated page must be created to display the full, raw transaction list for a portfolio. `✅ Done`
+    -   **FR4.8.2:** By default, this page must only show transactions for the current financial year. `✅ Done`
+    -   **FR4.8.3:** The page must include filters to view historical transactions by date range, transaction type, and asset. `✅ Done`
 
 ### FR5: Data Integration & Real-time Updates
 
@@ -129,10 +129,10 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR12.5: Rebalancing Suggestions (Advanced).** The system should offer suggested rebalancing actions or show model portfolios that align with the user's determined risk profile. `📝 Planned`
 
 ### FR13: Advanced Goal Planning & Tracking (New Section)
--   **FR13.1: Goal Definition.** Users must be able to define specific financial goals with a name, target amount, and target date. `📝 Planned`
--   **FR13.2: Asset Linking.** Users must be able to link entire portfolios or individual assets to one or more defined goals. `📝 Planned`
--   **FR13.3: Contribution Planning.** The system should calculate the required contribution rate (e.g., monthly) needed to achieve a goal. `✅ Done`
--   **FR13.4: Projection & Analysis.** The system must project the future value of linked assets and determine if the user is on track to meet their goal. `✅ Done`
+-   **FR13.1: Goal Definition.** Users must be able to define specific financial goals with a name, target amount, and target date. `✅ Done`
+-   **FR13.2: Asset Linking.** Users must be able to link entire portfolios or individual assets to one or more defined goals. `✅ Done`
+-   **FR13.3: Contribution Planning.** The system should calculate the required contribution rate (e.g., monthly) needed to achieve a goal. `📝 Planned`
+-   **FR13.4: Projection & Analysis.** The system must project the future value of linked assets and determine if the user is on track to meet their goal. `📝 Planned`
 -   **FR13.5: Goal Dashboard.** Each goal must have a visual dashboard showing progress, projection charts, and on/off-track status. `✅ Done`
 
 ### FR14: Future Scope (Renumbered)

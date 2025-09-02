@@ -78,8 +78,12 @@ class CRUDHolding:
         ]
 
         assets_to_price = [
-            {"ticker_symbol": ticker, "exchange": asset_map[ticker].exchange}
-            for ticker in current_holdings_tickers
+            {
+                "ticker_symbol": ticker,
+                "exchange": asset_map[ticker].exchange,
+                "asset_type": asset_map[ticker].asset_type,
+            }
+            for ticker in current_holdings_tickers if ticker in asset_map
         ]
 
         price_details = financial_data_service.get_current_prices(assets_to_price)
@@ -122,6 +126,7 @@ class CRUDHolding:
                     asset_id=asset.id,
                     ticker_symbol=ticker,
                     asset_name=asset.name,
+                    asset_type=asset.asset_type,
                     quantity=quantity,
                     average_buy_price=average_buy_price,
                     total_invested_amount=total_invested,

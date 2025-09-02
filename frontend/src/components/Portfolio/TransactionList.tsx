@@ -39,8 +39,11 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
               <tr key={tx.id} className="border-t">
                 <td className="p-2">{formatDate(tx.transaction_date)}</td>
                 <td className="p-2">
-                  <div className="font-bold">{tx.asset.ticker_symbol}</div>
-                  <div className="text-sm text-gray-500">{tx.asset.name}</div>
+                  {/* For Mutual Funds, the name is sufficient and the ticker (scheme code) is not user-friendly. */}
+                  {tx.asset.asset_type !== 'Mutual Fund' && <div className="font-bold">{tx.asset.ticker_symbol}</div>}
+                  <div className={`text-sm ${tx.asset.asset_type !== 'Mutual Fund' ? 'text-gray-500' : 'font-semibold text-gray-900'}`}>
+                    {tx.asset.name}
+                  </div>
                 </td>
                 <td className="p-2">
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${

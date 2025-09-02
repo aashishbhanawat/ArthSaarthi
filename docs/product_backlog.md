@@ -80,10 +80,10 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 ## Release 4: Advanced Transaction Filtering
 
-**Status: 🚧 In Progress**
+**Status: ✅ COMPLETE (as of 2025-08-22)**
 
 -   **Dedicated Transaction History Page (FR4.8):** Move the full transaction list to a separate, filterable page with filters for date range, type, and asset.
-    -   **Status: 📝 Planned**
+    -   **Status: ✅ Complete**
 
 ## Release 5: Goal Management & Insights
 

@@ -1517,3 +1517,67 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
     - A critical data-loss bug in the core encryption logic was identified and fixed, significantly improving application security and robustness.
 
 ---
+
+## 2025-08-30: Backend Refactor for Transaction Management & Stabilization (FR4.3.1)
+
+*   **Task Description:** A full-stack refactor of the transaction management feature. This involved changing the API endpoints, implementing on-the-fly asset creation via ticker symbol, and a comprehensive stabilization of the backend test suite to validate the new logic.
+
+*   **Key Prompts & Interactions:**
+    1.  **Refactoring & Test Rewrite:** The AI was prompted to update the transaction test suite, which involved a complete rewrite of `test_portfolios_transactions.py` (renamed to `test_transactions.py`) to align with new, more robust backend logic.
+    2.  **Systematic Debugging via Log Analysis:** The initial implementation introduced a cascade of test failures. A highly iterative "Analyze -> Report -> Fix" workflow was used to resolve them. This included fixing `ImportError`s from unexposed schemas, `AttributeError`s from incomplete mock services, and `TypeError`s from outdated test helper functions.
+    3.  **Final Test Fix:** The final failure was a `422 Unprocessable Entity` error. The AI analyzed the log and identified that the test was sending a full `datetime` string to an endpoint that expected a simple `date` string, and provided the final fix.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/transactions.py`: **Updated** to handle ticker-based creation and improved filtering.
+    *   `backend/app/crud/asset.py`: **Updated** with `get_or_create_by_ticker` logic.
+    *   `backend/app/tests/api/v1/test_transactions.py`: **Rewritten** to test the new transaction API workflow.
+    *   `docs/bug_reports_temp.md`: **Updated** with a new bug report for the test failure.
+    *   `docs/workflow_history.md`: **Updated** with this entry.
+    *   `docs/project_handoff_summary.md`: **Updated** with the latest test counts and date.
+    *   `docs/LEARNING_LOG.md`: **Updated** with a new lesson about API contracts for query parameters.
+
+*   **Outcome:**
+    - The backend now supports a more robust and user-friendly transaction creation workflow. The test suite is fully stable, with all 116 tests passing.
+
+---
+
+## 2025-08-31: Final E2E Test Stabilization & Code Cleanup
+
+*   **Task Description:** A final pass to stabilize the E2E test suite and clean up the codebase. This involved fixing a flaky test for the Advanced Analytics feature by making its assertion more precise, and then resolving a resulting backend linting issue.
+
+*   **Key Prompts & Interactions:**
+    1.  **E2E Test Analysis:** The user provided a failing E2E test log for the analytics feature. The AI analyzed the log and identified that the test was failing due to a hardcoded assertion (`8.00%`) that was not resilient to minor changes in the XIRR calculation based on the current date.
+    2.  **Improving Test Precision:** The user prompted, "But how do we verify XIRR is calculated correctly?". This led to a collaborative effort where the AI calculated the expected XIRR value (30.00%) based on the test's inputs and then updated the E2E test to parse the value from the UI and assert that it was within a tight tolerance of the expected result.
+    3.  **Linting Fix:** After the test was stabilized, the user ran the backend linter, which reported a `line-too-long` error in `mock_financial_data.py`. The AI was prompted to fix this final linting issue.
+
+*   **File Changes:**
+    *   `e2e/tests/analytics.spec.ts`: **Updated** the XIRR test to parse the percentage from the UI and assert it's within a tight tolerance of the expected value (30.00%), making the test both precise and robust.
+    *   `backend/app/tests/utils/mock_financial_data.py`: **Updated** to reformat long dictionary entries to comply with the project's line-length limit.
+    *   `backend/app/tests/utils/mock_financial_data.py`: **Removed** a temporary debug logger that was added in a previous session.
+
+*   **Verification:**
+    - Ran the full E2E test suite using `./run_local_tests.sh e2e`.
+    - Ran the backend linter using `docker compose run --rm backend sh -c "ruff check . --fix"`.
+
+*   **Outcome:**
+    - The Advanced Analytics E2E test is now robust and correctly verifies the calculation.
+    - The backend codebase is fully compliant with linting rules.
+    - The project is in a fully stable state, with all tests passing and all code quality checks met.
+
+---
+
+## 2025-08-31: Final Documentation Update
+
+*   **Task Description:** A final documentation pass to archive recent bug reports and update the project status.
+
+*   **Key Prompts & Interactions:**
+    1.  **Documentation Update Request:** The user requested to update the documentation to reflect recent bug fixes.
+    2.  **AI-led Update:** The AI analyzed the temporary bug log, moved the reports to the main `bug_reports.md` file, and updated the `project_handoff_summary.md` to reflect the latest status.
+
+*   **File Changes:**
+    *   `docs/bug_reports.md`: **Updated** to include the final bug reports from the temporary log.
+    *   `docs/bug_reports_temp.md`: **Cleared** after archiving the reports.
+    *   `docs/project_handoff_summary.md`: **Updated** with the latest date.
+
+*   **Outcome:**
+    - All project documentation is now up-to-date, providing an accurate and comprehensive overview of the project's status, features, and history.

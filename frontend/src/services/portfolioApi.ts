@@ -30,10 +30,16 @@ export const lookupAsset = async (query: string): Promise<Asset[]> => {
     return response.data;
 };
 
-export const createAsset = async (ticker: string): Promise<Asset> => {
-    const response = await apiClient.post<Asset>('/api/v1/assets/', {
-        ticker_symbol: ticker,
-    });
+export type AssetCreationPayload = {
+    ticker_symbol: string;
+    name: string;
+    asset_type: 'STOCK' | 'MUTUAL_FUND' | 'CRYPTO' | 'OTHER';
+    currency?: string;
+    exchange?: string;
+};
+
+export const createAsset = async (payload: AssetCreationPayload): Promise<Asset> => {
+    const response = await apiClient.post<Asset>('/api/v1/assets/', payload);
     return response.data;
 };
 

@@ -1,5 +1,5 @@
 from .analytics import AnalyticsResponse, AssetAnalytics
-from .asset import Asset, AssetCreate, AssetCreateIn, AssetUpdate
+from .asset import Asset, AssetCreate, AssetCreateIn, AssetSearchResult, AssetUpdate
 from .asset_alias import AssetAlias, AssetAliasCreate
 from .dashboard import (
     AssetAllocation,
@@ -33,10 +33,11 @@ from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
     TransactionCreate,
+    TransactionCreateWithTicker,
     TransactionsResponse,
     TransactionUpdate,
 )
-from .user import User, UserCreate, UserUpdate
+from .user import User, UserCreate, UserPasswordChange, UserUpdate, UserUpdateMe
 
 __all__ = [
     "Asset",
@@ -46,6 +47,7 @@ __all__ = [
     "AssetAllocationResponse",
     "AssetCreate",
     "AssetCreateIn",
+    "AssetSearchResult",
     "AssetUpdate",
     "AnalyticsResponse",
     "AssetAnalytics",
@@ -70,11 +72,14 @@ __all__ = [
     "TokenPayload",
     "Transaction",
     "TransactionCreate",
+    "TransactionCreateWithTicker",
     "TransactionUpdate",
     "TransactionsResponse",
     "User",
     "UserCreate",
+    "UserPasswordChange",
     "UserUpdate",
+    "UserUpdateMe",
     "Goal",
     "GoalCreate",
     "GoalUpdate",
