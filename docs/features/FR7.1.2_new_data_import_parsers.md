@@ -3,6 +3,7 @@
 **Feature ID:** FR7.1.2, FR7.1.3
 **Title:** Add New Data Import Parsers for MF CAS and eNPS
 **User Story:** As a user, I want to import my Mutual Fund statements (CAS) and my National Pension System (NPS) statements so that I can automate the tracking of these critical investments.
+**Status:** 📝 Planned
 
 ---
 
@@ -15,7 +16,6 @@ The goal is to create two new parsers:
 2.  A parser for eNPS statements.
 
 This will be a multi-phase project:
-*   **Phase 0 (Prerequisite):** Enhance the core system to robustly handle manual MF transactions, including integrating a reliable NAV data source.
 *   **Phase 1:** Implement the backend parser for MF CAS statements.
 *   **Phase 2:** Implement the backend parser for eNPS statements.
 
@@ -37,60 +37,48 @@ This workstream will build upon the existing **Parser Strategy Pattern** located
 
 ---
 
-## 3. Implementation Plan (Phase 0: Prerequisite - Manual MF Transaction Enhancements)
-
-**Objective:** Ensure the system can correctly handle manual MF transactions before automating the import process. This is a critical prerequisite.
-
-➡️ **For a detailed breakdown of this phase, please see the dedicated feature plan: FR4.3.1 Manual Mutual Fund Transaction Management.**
-
----
-## 4. Implementation Plan (Future Phases)
-
-This feature will be implemented in two distinct phases, one for each parser.
-
-### Phase 1: MF CAS Parser (FR7.1.2)
+## 3. Implementation Plan (Phase 1: MF CAS Parser)
 
 **Objective:** Implement a parser for Mutual Fund Consolidated Account Statements (CAS).
-
-#### 4.1. New Files to Create
-
-*   **Parser:** `backend/app/services/import_parsers/mf_cas_parser.py`
-*   **Unit Test:** `backend/app/tests/services/test_mf_cas_parser.py`
-*   **Test Asset:** `backend/app/tests/assets/sample_cas.pdf` (A sample, anonymized CAS PDF file must be obtained and added for testing).
-
-#### 4.2. Implementation Steps
 
 1.  **Add Dependency:** Add `pdfplumber` to `backend/requirements.txt`.
 2.  **Analyze CAS Format:** Analyze the structure of a typical CAMS/Karvy CAS PDF to identify how transaction data is presented.
 3.  **Implement `MfCasParser`:**
-    *   Create the `MfCasParser` class inheriting from `BaseParser`.
-    *   Implement the `parse` method. This method will use `pdfplumber` to open the PDF, iterate through its pages, and extract the transaction rows.
+    *   Create `backend/app/services/import_parsers/mf_cas_parser.py`.
+    *   Implement the `parse` method using `pdfplumber` to open the PDF, iterate through its pages, and extract the transaction rows.
     *   The logic must correctly identify and parse fields like Fund Name, ISIN, Transaction Date, Transaction Type (Purchase, Redemption, etc.), Amount, Units, and NAV.
     *   The method must return a list of `ParsedTransaction` Pydantic models.
 4.  **Register Parser:** Add the `MfCasParser` to the `ParserFactory` in `parser_factory.py` with a key like `'cams_karvy_cas'`.
-5.  **Write Unit Tests:** Create a comprehensive unit test in `test_mf_cas_parser.py` that uses the `sample_cas.pdf` to verify that the parser correctly extracts and transforms the data.
+5.  **Write Unit Tests:** Create `backend/app/tests/services/test_mf_cas_parser.py` and add a comprehensive unit test that uses a sample, anonymized CAS PDF to verify that the parser correctly extracts and transforms the data.
 
 ---
 
-### Phase 2: eNPS Parser (FR7.1.3)
+## 4. Testing Plan
 
-**Objective:** Implement a parser for eNPS transaction statements.
+This feature will be validated through a multi-layered testing strategy.
 
-#### 4.3. New Files to Create
+### 4.1. Backend Unit Tests
 
-*   **Parser:** `backend/app/services/import_parsers/enps_parser.py`
-*   **Unit Test:** `backend/app/tests/services/test_enps_parser.py`
-*   **Test Asset:** `backend/app/tests/assets/sample_enps.pdf` (A sample, anonymized eNPS statement must be obtained and added for testing).
+*   **`test_mf_cas_parser.py`:**
+    *   A dedicated unit test will be created for the `MfCasParser`.
+    *   It will use a sample, anonymized CAS PDF file as input.
+    *   The test will assert that the `parse` method returns the correct number of transactions.
+    *   It will verify the accuracy of key fields (fund name, date, amount, units, NAV) for a sample transaction.
+    *   Edge cases like handling password-protected PDFs (expecting a graceful failure) and malformed PDFs will be tested.
 
-#### 4.4. Implementation Steps
+### 4.2. Backend Integration Tests
 
-1.  **Analyze eNPS Format:** Analyze the structure of a typical eNPS statement to identify how contribution data is presented.
-2.  **Implement `EnpsParser`:**
-    *   Create the `EnpsParser` class inheriting from `BaseParser`.
-    *   Implement the `parse` method using `pdfplumber` to extract contribution details.
-    *   The logic must correctly identify and parse fields like Contribution Date, Amount, and the different fund allocations (Equity, Corporate Debt, Government Bonds).
-    *   The method must return a list of `ParsedTransaction` Pydantic models.
-3.  **Register Parser:** Add the `EnpsParser` to the `ParserFactory` in `parser_factory.py` with a key like `'enps_statement'`.
-4.  **Write Unit Tests:** Create a comprehensive unit test in `test_enps_parser.py` that uses the `sample_enps.pdf` to verify that the parser correctly extracts and transforms the data.
+*   **`test_import_sessions.py`:**
+    *   An integration test will be added to verify that the `ParserFactory` correctly identifies and uses the new `MfCasParser`.
+    *   The test will upload a sample CAS PDF to the `POST /api/v1/import-sessions/` endpoint with the `source_type` set to `'cams_karvy_cas'`.
+    *   It will then call the preview endpoint and assert that the returned data is correctly parsed, confirming the end-to-end integration of the new parser.
 
----
+### 4.3. E2E Tests (Playwright)
+
+*   A new test case will be added to `e2e/tests/data-import.spec.ts`.
+*   The test will simulate the full user flow:
+    1.  Log in and navigate to the "Import" page.
+    2.  Select a portfolio and choose "MF CAS Statement" from the dropdown.
+    3.  Upload a sample CAS PDF file.
+    4.  Verify that the preview page displays the correctly parsed transactions.
+    5.  Commit the transactions and verify that the new holdings appear correctly in the portfolio's holdings table.
