@@ -55,9 +55,11 @@ test.describe.serial('Automated Data Import E2E Test', () => {
 
         for (const asset of assetsToCreate) {
             const assetCreateResponse = await request.post('/api/v1/assets/', {
-                headers: adminAuthHeaders,
-                data: asset,
+                headers: adminAuthHeaders,                data: { ...asset, asset_type: 'STOCK' }
             });
+            if (!assetCreateResponse.ok()) {
+                console.error(`[DEBUG] Failed to create asset ${asset.ticker_symbol}: ${await assetCreateResponse.text()}`);
+            }
             expect(assetCreateResponse.ok()).toBeTruthy();
         }
       });

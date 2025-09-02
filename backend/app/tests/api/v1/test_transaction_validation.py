@@ -24,7 +24,7 @@ def test_sell_transaction_before_buy_date_fails(
 
     # 1. Buy GOOGL on a specific date
     buy_date = date(2024, 11, 6)
-    buy_transaction = create_test_transaction(
+    create_test_transaction(
         db,
         portfolio_id=portfolio.id,
         ticker="GOOGL",
@@ -34,7 +34,6 @@ def test_sell_transaction_before_buy_date_fails(
         transaction_date=buy_date,
         fees=0.0,
     )
-    asset_id = buy_transaction.asset_id
 
     # 2. Attempt to sell GOOGL *before* the buy date
     sell_date = date(2024, 1, 2)

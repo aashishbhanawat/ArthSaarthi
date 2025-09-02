@@ -9,3 +9,9 @@ export interface Asset {
     current_price?: number;
     day_change?: number;
 }
+
+export interface MutualFundSearchResult {
+    ticker_symbol: string;
+    name: string;
+    asset_type: 'Mutual Fund';
+}

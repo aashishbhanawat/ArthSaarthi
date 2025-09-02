@@ -1,7 +1,7 @@
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from unittest.mock import patch
 
 from app.core.config import settings
 from app.services.financial_data_service import financial_data_service
@@ -40,7 +40,7 @@ def test_search_mutual_funds_success(
     )
 
     response = client.get(
-        f"{settings.API_V1_STR}/assets/search-mf/?q=axis", headers=auth_headers
+        f"{settings.API_V1_STR}/assets/search-mf/?query=axis", headers=auth_headers
     )
 
     assert response.status_code == 200
@@ -63,7 +63,8 @@ def test_search_mutual_funds_no_results(
     mocker.patch.object(financial_data_service, "search_mutual_funds", return_value=[])
 
     response = client.get(
-        f"{settings.API_V1_STR}/assets/search-mf/?q=nonexistent", headers=auth_headers
+        f"{settings.API_V1_STR}/assets/search-mf/?query=nonexistent",
+        headers=auth_headers,
     )
 
     assert response.status_code == 200

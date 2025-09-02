@@ -1,11 +1,9 @@
-from app.core.config import settings
-
 import csv
 import io
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import httpx
 import yfinance as yf
@@ -13,6 +11,7 @@ from pydantic import ValidationError
 
 from app.cache.base import CacheClient
 from app.cache.factory import get_cache_client
+from app.core.config import settings
 
 # Constants
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
@@ -69,10 +68,12 @@ class AmfiIndiaProvider:
                             "scheme_code": scheme_code,
                             "isin": row[1] if row[1] != "N.A." else None,
                             "scheme_name": row[3],
-                            "nav": Decimal(row[4]) if row[4] != "N.A." else Decimal(0),
-                            "date": datetime.strptime(row[5], "%d-%b-%Y").date()
-                            if row[5] != "N.A."
-                            else None,
+                            "nav": str(Decimal(row[4])) if row[4] != "N.A." else "0.0",
+                            "date": (
+                                datetime.strptime(row[5], "%d-%b-%Y").date().isoformat()
+                                if row[5] != "N.A."
+                                else None
+                            ),
                         }
                     except (ValueError, IndexError):
                         continue  # Skip malformed rows
@@ -129,6 +130,83 @@ class AmfiIndiaProvider:
                     }
                 )
         return results[:50]  # Limit results
+
+    def get_historical_prices(
+        self, assets: List[Dict[str, Any]], start_date: date, end_date: date
+    ) -> Dict[str, Dict[date, Decimal]]:
+        """
+        Fetches historical NAV for a list of mutual fund assets from mfapi.in.
+        """
+        historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
+        if not self.cache_client:
+            # Caching is highly recommended for this provider
+            pass
+
+        mf_tickers_str = ",".join(sorted([a["ticker_symbol"] for a in assets]))
+        cache_key = (
+            f"mf_history:{mf_tickers_str}:{start_date.isoformat()}:"
+            f"{end_date.isoformat()}"
+        )
+
+        if self.cache_client:
+            cached_data = self.cache_client.get_json(cache_key)
+            if cached_data:
+                for ticker, date_prices in cached_data.items():
+                    for date_str, price_str in date_prices.items():
+                        historical_data[ticker][
+                            datetime.fromisoformat(date_str).date()
+                        ] = Decimal(price_str)
+                return historical_data
+
+        with httpx.Client() as client:
+            for asset in assets:
+                scheme_code = asset["ticker_symbol"]
+                try:
+                    response = client.get(
+                        f"https://api.mfapi.in/mf/{scheme_code}", timeout=10.0
+                    )
+                    response.raise_for_status()
+                    mf_data = response.json()
+
+                    # The API returns a status field on failure
+                    if mf_data.get("status", "").lower() == "fail":
+                        print(
+                            "WARNING: mfapi.in returned failure for scheme code "
+                            f"{scheme_code}.")
+                        continue
+
+                    # The data is nested under the 'data' key
+                    for nav_point in mf_data.get("data", []):
+                        try:
+                            nav_date = datetime.strptime(
+                                nav_point["date"], "%d-%m-%Y"
+                            ).date()
+                            if start_date <= nav_date <= end_date:
+                                historical_data[scheme_code][nav_date] = Decimal(
+                                    nav_point["nav"]
+                                )
+                        except (ValueError, KeyError):
+                            # Skip malformed data points within a successful response
+                            continue
+                except (
+                    httpx.RequestError, httpx.HTTPStatusError, KeyError, ValueError
+                ) as e:
+                    # ValueError for JSON decoding errors
+                    print(
+                        "WARNING: Could not fetch historical NAV for "
+                        f"{scheme_code}: {e}")
+                    continue
+
+        if self.cache_client and historical_data:
+            serializable_data = {
+                t: {d.isoformat(): str(p) for d, p in dp.items()}
+                for t, dp in historical_data.items()
+            }
+            self.cache_client.set_json(
+                cache_key, serializable_data, expire=CACHE_TTL_HISTORICAL_PRICE
+            )
+
+        return historical_data
 
 
 class YFinanceProvider:
@@ -365,11 +443,27 @@ class FinancialDataService:
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
-        # For now, only yfinance supports historical. AMFI is daily NAV.
-        # This can be extended later if we store historical AMFI data.
-        return self.yfinance_provider.get_historical_prices(
-            assets, start_date, end_date
-        )
+        # Separate assets by type for different providers
+        mf_assets = [
+            a for a in assets if a.get("asset_type") == "Mutual Fund"
+        ]
+        other_assets = [
+            a for a in assets if a.get("asset_type") != "Mutual Fund"
+        ]
+
+        historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
+
+        if other_assets:
+            historical_data.update(self.yfinance_provider.get_historical_prices(
+                other_assets, start_date, end_date
+            ))
+
+        if mf_assets:
+            historical_data.update(self.amfi_provider.get_historical_prices(
+                mf_assets, start_date, end_date
+            ))
+
+        return historical_data
 
     def get_asset_details(
         self, ticker_symbol: str, asset_type: Optional[str] = None

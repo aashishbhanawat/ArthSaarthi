@@ -56,6 +56,9 @@ test.describe.serial('Transaction History Page', () => {
       headers: userAuthHeaders,
       data: { ticker_symbol: 'TXN1', name: 'Transaction Asset 1', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' },
     });
+    if (!asset1Response.ok()) {
+      console.error(`[DEBUG] Failed to create asset TXN1: ${await asset1Response.text()}`);
+    }
     expect(asset1Response.ok()).toBeTruthy();
     asset1Id = (await asset1Response.json()).id;
 
@@ -63,6 +66,9 @@ test.describe.serial('Transaction History Page', () => {
       headers: userAuthHeaders,
       data: { ticker_symbol: 'TXN2', name: 'Transaction Asset 2', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' },
     });
+    if (!asset2Response.ok()) {
+      console.error(`[DEBUG] Failed to create asset TXN2: ${await asset2Response.text()}`);
+    }
     expect(asset2Response.ok()).toBeTruthy();
     asset2Id = (await asset2Response.json()).id;
 
@@ -72,15 +78,15 @@ test.describe.serial('Transaction History Page', () => {
       // Recent transactions for filtering
       // Older transactions for pagination
       ...Array.from({ length: 13 }, (_, i) => ({
-        asset_id: asset1Id,
+        asset_id: asset1Id, ticker_symbol: 'TXN1',
         transaction_type: 'BUY',
         quantity: 1,
         price_per_unit: 90 - i,
         transaction_date: new Date(now.getTime() - (30 + i) * 24 * 3600 * 1000).toISOString(),
       })),
-      { asset_id: asset1Id, transaction_type: 'BUY', quantity: 10, price_per_unit: 100, transaction_date: new Date(now.getTime() - 20 * 24 * 3600 * 1000).toISOString() },
-      { asset_id: asset2Id, transaction_type: 'BUY', quantity: 20, price_per_unit: 200, transaction_date: new Date(now.getTime() - 10 * 24 * 3600 * 1000).toISOString() },
-      { asset_id: asset1Id, transaction_type: 'SELL', quantity: 5, price_per_unit: 110, transaction_date: new Date(now.getTime() - 5 * 24 * 3600 * 1000).toISOString() },
+      { asset_id: asset1Id, ticker_symbol: 'TXN1', transaction_type: 'BUY', quantity: 10, price_per_unit: 100, transaction_date: new Date(now.getTime() - 20 * 24 * 3600 * 1000).toISOString() },
+      { asset_id: asset2Id, ticker_symbol: 'TXN2', transaction_type: 'BUY', quantity: 20, price_per_unit: 200, transaction_date: new Date(now.getTime() - 10 * 24 * 3600 * 1000).toISOString() },
+      { asset_id: asset1Id, ticker_symbol: 'TXN1', transaction_type: 'SELL', quantity: 5, price_per_unit: 110, transaction_date: new Date(now.getTime() - 5 * 24 * 3600 * 1000).toISOString() },
     ];
 
     for (const txn of transactions) {
@@ -93,11 +99,6 @@ test.describe.serial('Transaction History Page', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    // Listen for all console events and log them to the test output
-    //page.on('console', msg => {
-    //  console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`);
-    //});
-
     await page.goto('/');
     await page.getByLabel('Email address').fill(testUser.email);
     await page.getByLabel('Password').fill(testUser.password);

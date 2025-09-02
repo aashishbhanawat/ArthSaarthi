@@ -1,5 +1,8 @@
 # Feature Plan: Manual Mutual Fund Transaction Management (FR4.3.1)
 
+**Status: ✅ Done**
+---
+
 **Feature ID:** FR4.3.1
 **Title:** Add Manual Indian Mutual Fund Transaction Support
 **User Story:** As a user, I want to manually add my Indian Mutual Fund transactions by searching for the fund by name or scheme code, so that I can accurately track my MF portfolio.
@@ -81,6 +84,17 @@ This feature will be implemented in a backend-first approach.
     *   Update tests for `AddTransactionModal.test.tsx` to cover the new search and selection functionality.
 
 ---
+
+## 5. Implementation Notes
+
+This feature was successfully implemented and is now a core part of the transaction management workflow.
+
+*   **Backend:** The `AmfiIndiaProvider` was created and integrated into the `FinancialDataService`. The service now correctly dispatches requests to either the AMFI provider (for current NAVs) or the yfinance provider (for stocks). The `/api/v1/assets/search-mf/` endpoint is fully functional.
+*   **Frontend:** The `TransactionFormModal` was enhanced with a `react-select` component that appears when the "Mutual Fund" asset type is chosen. The `useMfSearch` hook provides debounced search results to this component, creating a seamless user experience.
+*   **Historical Data:** A significant enhancement was made during implementation. A public API (`mfapi.in`) was discovered and integrated to provide historical NAV data for mutual funds. This allows the application to perform accurate XIRR calculations for MF holdings, a feature that was not in the original plan.
+*   **Testing:** The feature is covered by backend unit tests (`test_amfi_provider.py`), frontend component tests (`TransactionFormModal.test.tsx`), and a dedicated E2E test case (`should allow adding a mutual fund transaction` in `portfolio-and-dashboard.spec.ts`).
+
+This feature is considered complete and stable.
 
 ## 4. Testing Plan
 

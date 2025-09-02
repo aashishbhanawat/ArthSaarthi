@@ -1,6 +1,5 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -204,7 +203,9 @@ def test_read_transactions_with_filters_and_pagination(
     assert all(tx["transaction_type"] == "BUY" for tx in data["transactions"])
 
     # 4. Test filter by date range (last 15 days)
-    start_date_str = (datetime.now(timezone.utc) - timedelta(days=15)).date().isoformat()
+    start_date_str = (
+        datetime.now(timezone.utc) - timedelta(days=15)
+    ).date().isoformat()
     response = client.get(
         f"{base_url}?portfolio_id={portfolio.id}&start_date={start_date_str}",
         headers=headers,

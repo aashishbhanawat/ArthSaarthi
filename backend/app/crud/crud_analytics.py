@@ -24,19 +24,24 @@ def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decima
     if not transactions:
         return Decimal("0.0")
 
-    live_holdings = defaultdict(lambda: {"quantity": Decimal("0.0"), "exchange": None})
+    live_holdings = defaultdict(
+        lambda: {"quantity": Decimal("0.0"), "exchange": None, "asset_type": None}
+    )
     for t in transactions:
         ticker = t.asset.ticker_symbol
         live_holdings[ticker]["exchange"] = t.asset.exchange
+        live_holdings[ticker]["asset_type"] = t.asset.asset_type
         if t.transaction_type.lower() == "buy":
             live_holdings[ticker]["quantity"] += t.quantity
         elif t.transaction_type.lower() == "sell":
             live_holdings[ticker]["quantity"] -= t.quantity
 
     assets_to_price = [
-        {"ticker_symbol": ticker, "exchange": data["exchange"]}
-        for ticker, data in live_holdings.items()
-                if data["quantity"] > 0
+        {
+            "ticker_symbol": ticker,
+            "exchange": data["exchange"],
+            "asset_type": data["asset_type"],
+        } for ticker, data in live_holdings.items() if data["quantity"] > 0
     ]
 
     if not assets_to_price:
@@ -91,7 +96,11 @@ def _get_single_portfolio_history(
         return []
 
     asset_details_list = [
-        {"ticker_symbol": asset.ticker_symbol, "exchange": asset.exchange}
+        {
+            "ticker_symbol": asset.ticker_symbol,
+            "exchange": asset.exchange,
+            "asset_type": asset.asset_type,
+        }
         for asset in portfolio_assets
     ]
 
@@ -349,7 +358,11 @@ def _get_asset_current_value(
         return Decimal("0.0")
 
     asset_to_price = [
-        {"ticker_symbol": asset.ticker_symbol, "exchange": asset.exchange}
+        {
+            "ticker_symbol": asset.ticker_symbol,
+            "exchange": asset.exchange,
+            "asset_type": asset.asset_type,
+        }
     ]
     current_prices_details = financial_data_service.get_current_prices(asset_to_price)
 
