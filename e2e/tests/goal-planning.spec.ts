@@ -48,9 +48,10 @@ test.describe('Goal Planning Feature', () => {
     const linkModal = page.locator('.modal-content');
     await expect(linkModal).toBeVisible();
 
-    const assetSearchPromise = page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
     await linkModal.getByLabel('Search Assets').fill(assetToLink);
-    await assetSearchPromise;
+
+    // Wait for the debounced search API call to complete before interacting with the results.
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
 
     const searchResult = linkModal.locator('li', { hasText: assetToLink });
     await expect(searchResult).toBeVisible();

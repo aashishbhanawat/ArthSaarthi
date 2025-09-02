@@ -21,7 +21,7 @@ const queryClient = new QueryClient();
 const renderComponent = (sessionId: string) => {
     return render(
         <QueryClientProvider client={queryClient}>
-            <MemoryRouter initialEntries={[`/import/${sessionId}/preview`]}>
+            <MemoryRouter initialEntries={[`/import/${sessionId}/preview`]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Routes>
                     <Route path="/import/:sessionId/preview" element={<ImportPreviewPage />} />
                 </Routes>

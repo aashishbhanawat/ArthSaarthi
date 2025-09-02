@@ -263,6 +263,26 @@ While finalizing the User Profile Management feature, a critical backend test (`
 *   A critical data-loss bug was prevented from reaching production.
 *   The backend test suite is now fully passing in all modes.
 *   **Key Learnings:**
+        1.  **Trust, But Verify Test Failures:** A failing test is a strong signal, but the reason for the failure may be deeper than it appears. The `InvalidTag` error was not just a test setup issue but a symptom of a critical bug in the application's core security logic.
+        2.  **Security Logic Requires Deep Scrutiny:** Code related to security, encryption, and authentication must be treated with the highest level of scrutiny. A seemingly simple "password change" feature had profound implications for data integrity.
+        3.  **Acknowledge Environmental Limitations:** As an AI assistant, I operate in a sandboxed environment. I cannot always diagnose or fix host-level issues like file permissions or `sudo` requirements. Recognizing and clearly communicating these limitations is crucial for efficient collaboration.
+
+---
+
+## 2025-08-30: API Contracts for Query Parameters
+
+### 1. What Happened?
+
+A backend test was failing with a `422 Unprocessable Entity` error. The test was attempting to filter transactions by date and was sending a full `datetime` ISO string (e.g., `2025-08-15T10:00:00.123456`) to the API endpoint. However, the endpoint's signature was defined to expect a simple `date` object, which FastAPI parses from a `YYYY-MM-DD` string format. The mismatch caused a validation error before the endpoint's logic was ever executed.
+
+### 2. How Did the Process Help?
+
+*   **Precise Error Analysis:** The `422` status code and the detailed error message from FastAPI immediately pointed to a data validation issue, not a business logic bug. This allowed for a quick and targeted fix in the test script itself.
+
+### 3. Outcome & New Learning
+
+*   The backend test suite is now fully stable.
+*   **Key Learning:** API contracts are not just for request bodies and response payloads; they apply equally to **query parameters**. Tests must send data in the exact format the API expects (e.g., `date` vs. `datetime` string) to avoid validation errors that can mask underlying logic bugs or create false negatives. When defining an endpoint, be explicit about the expected format for query parameters.
     1.  **Trust, But Verify Test Failures:** A failing test is a strong signal, but the reason for the failure may be deeper than it appears. The `InvalidTag` error was not just a test setup issue but a symptom of a critical bug in the application's core security logic.
     2.  **Security Logic Requires Deep Scrutiny:** Code related to security, encryption, and authentication must be treated with the highest level of scrutiny. A seemingly simple "password change" feature had profound implications for data integrity.
     3.  **Acknowledge Environmental Limitations:** As an AI assistant, I operate in a sandboxed environment. I cannot always diagnose or fix host-level issues like file permissions or `sudo` requirements. Recognizing and clearly communicating these limitations is crucial for efficient collaboration.

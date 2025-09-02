@@ -22,6 +22,12 @@ class TransactionCreate(TransactionBase):
     asset_id: uuid.UUID
 
 
+# Properties to receive on transaction creation when ticker is provided
+class TransactionCreateWithTicker(TransactionBase):
+    ticker_symbol: str
+    asset_type: Optional[str] = None
+
+
 # Properties to receive on transaction update
 class TransactionUpdate(TransactionBase):
     transaction_type: Optional[str] = None # type: ignore

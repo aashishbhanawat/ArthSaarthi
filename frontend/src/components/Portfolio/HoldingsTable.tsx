@@ -111,8 +111,11 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                         {sortedHoldings.map((holding) => (
                             <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer" onClick={() => onRowClick(holding)}>
                                 <td className="p-2">
-                                    <div className="font-bold">{holding.ticker_symbol}</div>
-                                    <div className="text-sm text-gray-500 truncate">{holding.asset_name}</div>
+                                    {/* For Mutual Funds, the name is sufficient and the ticker (scheme code) is not user-friendly. */}
+                                    {holding.asset_type !== 'Mutual Fund' && <div className="font-bold">{holding.ticker_symbol}</div>}
+                                    <div className={`text-sm ${holding.asset_type !== 'Mutual Fund' ? 'text-gray-500' : 'font-semibold text-gray-900'} truncate`}>
+                                        {holding.asset_name}
+                                    </div>
                                 </td>
                                 <td className="p-2 text-right font-mono">{Number(holding.quantity).toLocaleString()}</td>
                                 <td className="p-2 text-right font-mono">{formatCurrency(holding.average_buy_price)}</td>

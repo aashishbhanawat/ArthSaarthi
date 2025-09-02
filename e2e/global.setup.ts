@@ -55,22 +55,25 @@ async function globalSetup() {
   const { access_token } = await loginResponse.json();
 
   // 4. Seed some assets
-  const assetsToSeed = ['AAPL', 'GOOGL', 'MSFT'];
-  for (const ticker of assetsToSeed) {
+  const assetsToSeed = [
+    { ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
+    { ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
+    { ticker_symbol: 'MSFT', name: 'Microsoft Corporation', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
+  ];
+  for (const asset of assetsToSeed) {
     const createAssetResponse = await requestContext.post('/api/v1/assets/', {
       headers: {
         Authorization: `Bearer ${access_token}`,
       },
-      data: {
-        ticker_symbol: ticker,
-      },
+      // Send the full, correct payload
+      data: asset,
     });
     // It might fail if the asset already exists, which is fine for setup
     if (!createAssetResponse.ok()) {
-      console.log(`Could not create asset ${ticker}, it might already exist.`);
+      console.log(`Could not create asset ${asset.ticker_symbol}, it might already exist.`);
     }
   }
-  console.log(`Global setup complete: Seeded ${assetsToSeed.length} assets.`);
+  console.log(`Global setup complete: Attempted to seed ${assetsToSeed.length} assets.`);
 
   await requestContext.dispose();
 }

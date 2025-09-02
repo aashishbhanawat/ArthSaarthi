@@ -1,6 +1,11 @@
 # Disclaimer
 
-This application retrieves financial data from multiple publicly available sources, including Yahoo Finance (via the `yfinance` library) for market prices and ICICI Direct for an initial master list of securities.
+This application retrieves financial data from multiple publicly available sources, including:
+
+*   **Yahoo Finance (`yfinance` library):** For real-time stock market prices.
+*   **ICICI Direct:** For an initial master list of securities used to seed the database.
+*   **AMFI India (`amfiindia.com`):** For the latest Mutual Fund Net Asset Values (NAVs).
+*   **MFAPI (`mfapi.in`):** For historical Mutual Fund NAV data.
 
 By using this application, you acknowledge and agree to the following terms:
 
