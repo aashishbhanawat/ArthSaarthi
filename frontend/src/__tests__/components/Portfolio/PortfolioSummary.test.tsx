@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { PrivacyProvider } from '../../../context/PrivacyContext';
 import PortfolioSummary from '../../../components/Portfolio/PortfolioSummary';
 import { PortfolioSummary as PortfolioSummaryType } from '../../../types/holding';
 
@@ -13,23 +14,23 @@ describe('PortfolioSummary', () => {
     };
 
     it('renders loading state correctly', () => {
-        render(<PortfolioSummary summary={undefined} isLoading={true} error={null} />);
+        render(<PrivacyProvider><PortfolioSummary summary={undefined} isLoading={true} error={null} /></PrivacyProvider>);
         const pulseDivs = screen.getAllByText('', { selector: '.animate-pulse div' });
         expect(pulseDivs.length).toBeGreaterThan(0);
     });
 
     it('renders null when there is an error', () => {
-        const { container } = render(<PortfolioSummary summary={undefined} isLoading={false} error={new Error('Failed to fetch')} />);
+        const { container } = render(<PrivacyProvider><PortfolioSummary summary={undefined} isLoading={false} error={new Error('Failed to fetch')} /></PrivacyProvider>);
         expect(container).toBeEmptyDOMElement();
     });
 
     it('renders null when there is no summary data', () => {
-        const { container } = render(<PortfolioSummary summary={undefined} isLoading={false} error={null} />);
+        const { container } = render(<PrivacyProvider><PortfolioSummary summary={undefined} isLoading={false} error={null} /></PrivacyProvider>);
         expect(container).toBeEmptyDOMElement();
     });
 
     it('renders summary data with correct formatting', () => {
-        render(<PortfolioSummary summary={mockSummary} isLoading={false} error={null} />);
+        render(<PrivacyProvider><PortfolioSummary summary={mockSummary} isLoading={false} error={null} /></PrivacyProvider>);
 
         expect(screen.getByText('Total Value')).toBeInTheDocument();
         expect(screen.getByText('₹1,50,000.75')).toBeInTheDocument();
@@ -48,7 +49,7 @@ describe('PortfolioSummary', () => {
     });
 
     it('applies correct colors for P&L values', () => {
-        render(<PortfolioSummary summary={mockSummary} isLoading={false} error={null} />);
+        render(<PrivacyProvider><PortfolioSummary summary={mockSummary} isLoading={false} error={null} /></PrivacyProvider>);
 
         // Positive P&L should be green
         const daysPnl = screen.getByText('₹1,500.25');

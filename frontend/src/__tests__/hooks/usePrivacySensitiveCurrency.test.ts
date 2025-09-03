@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react';
 import { usePrivacySensitiveCurrency, formatCurrency as originalFormatCurrency } from '../../utils/formatting';
 import * as PrivacyContext from '../../context/PrivacyContext';
 

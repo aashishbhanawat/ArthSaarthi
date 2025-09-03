@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { login } from '../utils';
+
+const testUser = {
+  email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
+  password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
+};
 
 test.describe('Privacy Mode E2E Test', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,8 +11,13 @@ test.describe('Privacy Mode E2E Test', () => {
     await page.context().clearCookies();
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
-    await login(page);
-    await page.goto('/dashboard');
+
+    // Login as test user
+    await page.getByLabel('Email address').fill(testUser.email);
+    await page.getByLabel('Password').fill(testUser.password);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+
     // After login, clear privacy mode specifically to ensure a clean slate for each test
     await page.evaluate(() => localStorage.removeItem('privacyMode'));
     await page.reload();
