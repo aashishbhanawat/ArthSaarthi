@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -17,11 +17,30 @@ class Asset(Base):
     currency = Column(String, nullable=False)  # e.g., 'USD', 'INR'
     exchange = Column(String, nullable=False, server_default="N/A")
     isin = Column(String, unique=True, index=True, nullable=True)
+    portfolio_id = Column(GUID, ForeignKey("portfolios.id"), nullable=True)
 
+    portfolio = relationship("Portfolio", back_populates="assets")
     transactions = relationship("Transaction", back_populates="asset")
     aliases = relationship(
         "AssetAlias", back_populates="asset", cascade="all, delete-orphan"
     )
     watchlist_items = relationship("WatchlistItem", back_populates="asset")
+
+    # Relationships to details tables
+    fixed_deposit_details = relationship(
+        "FixedDeposit",
+        back_populates="asset",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    ppf_details = relationship(
+        "PublicProvidentFund",
+        back_populates="asset",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    bond_details = relationship(
+        "Bond", back_populates="asset", uselist=False, cascade="all, delete-orphan"
+    )
 
     __table_args__ = (UniqueConstraint("ticker_symbol", name="uq_ticker_symbol"),)

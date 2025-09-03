@@ -30,7 +30,7 @@ class TransactionCreateWithTicker(TransactionBase):
 
 # Properties to receive on transaction update
 class TransactionUpdate(TransactionBase):
-    transaction_type: Optional[str] = None # type: ignore
+    transaction_type: Optional[str] = None  # type: ignore
     quantity: Optional[Decimal] = None
     price_per_unit: Optional[Decimal] = None
     transaction_date: Optional[datetime] = None

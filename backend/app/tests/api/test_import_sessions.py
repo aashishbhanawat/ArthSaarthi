@@ -266,9 +266,7 @@ def test_commit_import_session_success(
         schemas.ParsedTransaction(**row) for _, row in df.iterrows()
     ]
     commit_payload = {
-        "transactions_to_commit": [
-            tx.model_dump() for tx in transactions_to_commit
-        ],
+        "transactions_to_commit": [tx.model_dump() for tx in transactions_to_commit],
         "aliases_to_create": [],
     }
 
@@ -315,9 +313,7 @@ def test_commit_import_session_asset_not_found(
         )
     ]
     commit_payload = {
-        "transactions_to_commit": [
-            tx.model_dump() for tx in transactions_to_commit
-        ],
+        "transactions_to_commit": [tx.model_dump() for tx in transactions_to_commit],
         "aliases_to_create": [],
     }
 

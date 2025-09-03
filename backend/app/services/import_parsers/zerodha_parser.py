@@ -42,10 +42,9 @@ class ZerodhaParser(BaseParser):
 
         # Handle optional charges column
         if "charges" in df.columns:
-            df_renamed["fees"] = pd.to_numeric(df["charges"], errors='coerce').fillna(0)
+            df_renamed["fees"] = pd.to_numeric(df["charges"], errors="coerce").fillna(0)
         else:
             df_renamed["fees"] = 0
-
 
         # Filter for only buy and sell trades
         df_trades = df_renamed[

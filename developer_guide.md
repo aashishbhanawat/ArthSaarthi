@@ -155,7 +155,38 @@ You can also pass arguments directly to the underlying test runner (pytest for b
 
 ---
 
-## 3. Code Quality & CI/CD
+## 3. Architectural Overview
+
+The application is built with a modern web stack, featuring a FastAPI backend and a React (Vite) frontend.
+
+### Backend
+
+The backend is a standard layered application:
+- **API Layer (`app/api`):** Defines the RESTful API endpoints using FastAPI routers.
+- **CRUD Layer (`app/crud`):** Contains the core business logic and database interactions.
+- **Database Layer (`app/db`):** Defines the SQLAlchemy models and database session management.
+- **Schemas (`app/schemas`):** Pydantic models for data validation and serialization.
+
+### Adding New Asset Types
+
+The application supports two main types of assets:
+
+1.  **Transaction-Based Assets:** These are assets like Stocks and Mutual Funds, where the holding is calculated by processing a series of BUY and SELL transactions.
+2.  **Non-Transaction-Based Assets:** These are assets like Fixed Deposits, Bonds, and PPF accounts. They are added as a single entity and their value is calculated based on their own internal logic (e.g., compound interest), not from transactions.
+
+To add a new **Non-Transaction-Based Asset Type**:
+
+1.  **Create a new SQLAlchemy model** in `app/models/` (e.g., `app/models/new_asset.py`). This model should have a one-to-one relationship with the `Asset` model.
+2.  **Create a new Pydantic schema** in `app/schemas/` for the new asset's creation and data representation.
+3.  **Add a new Alembic migration** to create the new database table.
+4.  **Create a new CRUD function** in `app/crud/crud_fixed_income.py` (or a new CRUD file if appropriate) to handle the creation of the new asset.
+5.  **Add a new API endpoint** in `app/api/v1/endpoints/fixed_income.py` to expose the creation logic.
+6.  **Update `crud.holding.get_portfolio_holdings_and_summary`** to include the new asset type in the portfolio holdings and summary calculations. This involves adding logic to the `_process_fixed_income_assets` function.
+7.  **Update the frontend** to include a new modal and form for creating the asset, and a new row component in the `HoldingsTable` to display it.
+
+---
+
+## 4. Code Quality & CI/CD
 
 *   **Linting:** We use `ruff` for the backend and `eslint` for the frontend. Please run the linters before committing.
 *   **CI/CD:** Our GitHub Actions workflow (in `.github/workflows/ci.yml`) runs all linters and tests on every push and pull request to the `main` branch. All checks must pass before a PR can be merged.

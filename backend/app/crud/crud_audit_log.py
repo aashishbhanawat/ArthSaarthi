@@ -8,4 +8,5 @@ from app.schemas.audit_log import AuditLogCreate
 class CRUDAuditLog(CRUDBase[AuditLog, AuditLogCreate, AuditLogCreate]):
     pass
 
+
 audit_log = CRUDAuditLog(AuditLog)

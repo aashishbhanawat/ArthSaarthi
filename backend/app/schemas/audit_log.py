@@ -12,9 +12,11 @@ class AuditLogBase(BaseModel):
     ip_address: Optional[str] = None
     user_id: Optional[uuid.UUID] = None
 
+
 # Schema for creating new audit log entries
 class AuditLogCreate(AuditLogBase):
     pass
+
 
 # Schema for reading audit log entries, includes fields from the database model
 class AuditLog(AuditLogBase):

@@ -34,11 +34,13 @@ def run_dev_server(
     if settings.DEPLOYMENT_MODE == "desktop":
         # Use urlparse to robustly get the path from the database URL
         parsed_url = urlparse(settings.DATABASE_URL)
-        db_path_str = parsed_url.path.lstrip('/')
+        db_path_str = parsed_url.path.lstrip("/")
 
         if not os.path.exists(db_path_str):
-            print(f"--- Database not found at {db_path_str}, "
-                  "initializing new database... ---")
+            print(
+                f"--- Database not found at {db_path_str}, "
+                "initializing new database... ---"
+            )
             subprocess.run([sys.executable, "db", "init-db"], check=True)
             print("--- Database initialization complete. ---")
 

@@ -12,6 +12,27 @@ export interface Holding {
     days_pnl_percentage: number;
     unrealized_pnl: number;
     unrealized_pnl_percentage: number;
+
+    // Optional fields for Fixed Deposits
+    institution_name?: string;
+    account_number?: string;
+    principal_amount?: number;
+    interest_rate?: number;
+    start_date?: string;
+    maturity_date?: string;
+    payout_type?: 'REINVESTMENT' | 'PAYOUT';
+    compounding_frequency?: 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'ANNUALLY' | 'AT_MATURITY';
+
+    // Optional fields for Bonds
+    isin?: string;
+    face_value?: number;
+    coupon_rate?: number;
+    purchase_price?: number;
+    purchase_date?: string;
+    interest_payout_frequency?: 'ANNUALLY' | 'SEMI_ANNUALLY';
+
+    // Optional fields for PPF
+    opening_date?: string;
 }
 
 export interface HoldingsResponse {

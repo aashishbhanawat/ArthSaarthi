@@ -19,6 +19,7 @@ class AssetCreate(BaseModel):
     currency: str | None = None
     exchange: str | None = None
     isin: str | None = None
+    portfolio_id: uuid.UUID | None = None
 
 
 # Properties to receive on asset update

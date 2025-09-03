@@ -71,9 +71,7 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                     )
 
         progress = (
-            (current_amount / goal.target_amount) * 100
-            if goal.target_amount > 0
-            else 0
+            (current_amount / goal.target_amount) * 100 if goal.target_amount > 0 else 0
         )
 
         return {

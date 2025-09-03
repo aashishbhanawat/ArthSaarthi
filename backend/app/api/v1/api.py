@@ -8,6 +8,7 @@ from .endpoints import (
     assets,
     auth,
     dashboard,
+    fixed_income,
     goals,
     import_sessions,
     me,
@@ -29,6 +30,7 @@ api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfo
 api_router.include_router(goals.router, prefix="/goals", tags=["goals"])
 api_router.include_router(watchlists.router, prefix="/watchlists", tags=["watchlists"])
 api_router.include_router(assets.router, prefix="/assets", tags=["assets"])
+api_router.include_router(fixed_income.router, tags=["assets"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(
     transactions.router, prefix="/transactions", tags=["transactions"]

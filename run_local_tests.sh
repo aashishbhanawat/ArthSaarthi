@@ -267,6 +267,10 @@ run_migration_tests() {
         (cd backend && python -m dotenv -f .env.test run -- alembic stamp head)
         print_success "SQLite stamp to head successful."
     else # postgres
+        print_info "Initializing database..."
+        (cd backend && python -m dotenv -f .env.test run -- python -m app.cli init-db)
+        print_success "Database initialized."
+
         # For PostgreSQL, we test the full up/down cycle.
         # Due to a suspected side-effect where importing app modules creates all tables,
         # we can't directly run 'upgrade head' on a clean DB.

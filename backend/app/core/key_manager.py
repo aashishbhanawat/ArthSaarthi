@@ -25,6 +25,7 @@ class KeyManager:
     A singleton class to manage the master encryption key using an envelope
     encryption pattern.
     """
+
     _instance = None
     _master_key: bytes | None = None
 
@@ -146,6 +147,7 @@ class KeyManager:
         # Ensure the key in memory is the same one we just wrapped
         self._master_key = current_master_key
         return True
+
 
 # Create a single, shared instance of the KeyManager
 key_manager = KeyManager()

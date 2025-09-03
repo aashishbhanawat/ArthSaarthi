@@ -13,6 +13,7 @@ from app.models.user import User
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+
 @router.get("/", response_model=schemas.TransactionsResponse)
 def read_transactions(
     *,
@@ -49,7 +50,7 @@ def read_transactions(
     else:
         # If no portfolio_id is provided, use the same filter function
         # to fetch all transactions for the user.
-        transactions, total = crud.transaction.get_multi_by_user_with_filters( # type: ignore
+        transactions, total = crud.transaction.get_multi_by_user_with_filters(  # type: ignore
             db=db, user_id=current_user.id, portfolio_id=None, skip=skip, limit=limit
         )
     if config.settings.DEBUG:
@@ -85,7 +86,7 @@ def create_transaction(
         print(
             f"User: {current_user.email}, Portfolio ID: {portfolio_id}, "
             f"Payload: {transaction_in.model_dump_json()}"
-    )
+        )
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -94,8 +95,8 @@ def create_transaction(
 
     # Determine the asset_id. The frontend can either provide an existing
     # asset_id or a ticker_symbol for on-the-fly creation.
-    asset_id_to_use = getattr(transaction_in, 'asset_id', None)
-    if not asset_id_to_use and getattr(transaction_in, 'ticker_symbol', None):
+    asset_id_to_use = getattr(transaction_in, "asset_id", None)
+    if not asset_id_to_use and getattr(transaction_in, "ticker_symbol", None):
         asset = crud.asset.get_or_create_by_ticker(
             db,
             ticker_symbol=transaction_in.ticker_symbol,
@@ -103,16 +104,18 @@ def create_transaction(
         )
         if not asset:
             raise HTTPException(
-                status_code=404, detail=(
+                status_code=404,
+                detail=(
                     "Could not find or create asset with ticker "
                     f"'{transaction_in.ticker_symbol}'"
-                )
+                ),
             )
         asset_id_to_use = asset.id
 
     if not asset_id_to_use:
-        raise HTTPException(status_code=422, detail=(
-            "Request must include either a valid asset_id or a ticker_symbol.")
+        raise HTTPException(
+            status_code=422,
+            detail=("Request must include either a valid asset_id or a ticker_symbol."),
         )
 
     # Create the final transaction payload with the asset_id

@@ -26,4 +26,5 @@ class CRUDWatchlistItem(
         db.add(db_obj)
         return db_obj
 
+
 watchlist_item = CRUDWatchlistItem(WatchlistItem)

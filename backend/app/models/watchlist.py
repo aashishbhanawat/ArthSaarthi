@@ -13,9 +13,7 @@ class Watchlist(Base):
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     user_id = Column(GUID, ForeignKey("users.id"), nullable=False)
-    created_at = Column(
-        DateTime, server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
     user = relationship("User", back_populates="watchlists")
     items = relationship(
@@ -32,7 +30,7 @@ class WatchlistItem(Base):
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     watchlist_id = Column(GUID, ForeignKey("watchlists.id"), nullable=False)
     asset_id = Column(GUID, ForeignKey("assets.id"), nullable=False)
-    user_id = Column(GUID, ForeignKey("users.id"), nullable=False) # As per spec
+    user_id = Column(GUID, ForeignKey("users.id"), nullable=False)  # As per spec
 
     watchlist = relationship("Watchlist", back_populates="items")
     asset = relationship("Asset", back_populates="watchlist_items")

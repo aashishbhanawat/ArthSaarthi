@@ -4,12 +4,15 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/react-query';
 import PortfolioDetailPage from '../../../pages/Portfolio/PortfolioDetailPage';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
+import * as fixedIncomeHooks from '../../../hooks/useFixedIncome';
 import { Portfolio } from '../../../types/portfolio';
 import { Holding, PortfolioSummary } from '../../../types/holding';
 import { PortfolioAnalytics } from '../../../types/analytics';
 
 jest.mock('../../../hooks/usePortfolios');
+jest.mock('../../../hooks/useFixedIncome');
 const mockedPortfolioHooks = portfolioHooks as jest.Mocked<typeof portfolioHooks>;
+const mockedFixedIncomeHooks = fixedIncomeHooks as jest.Mocked<typeof fixedIncomeHooks>;
 
 jest.mock('../../../components/Portfolio/TransactionFormModal', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -50,7 +53,13 @@ jest.mock('../../../components/Portfolio/HoldingDetailModal', () => {
     return ({ holding, onClose }: { holding: Holding, onClose: () => void }) => React.createElement('div', { 'data-testid': 'holding-detail-modal' }, `Details for ${holding.ticker_symbol}`, React.createElement('button', { onClick: onClose }, 'Close Modal'));
 });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+    defaultOptions: {
+        mutations: {
+            retry: false,
+        },
+    },
+});
 
 const mockPortfolio: Portfolio = {
   id: 'p-1',
@@ -71,6 +80,7 @@ const mockHoldings: Holding[] = [{ // This needs to be accessible to the Holding
     asset_id: "a-1",
     ticker_symbol: "AAPL",
     asset_name: "Apple Inc.",
+    asset_type: "STOCK",
     quantity: 100,
     average_buy_price: 120,
     total_invested_amount: 12000,
@@ -101,7 +111,13 @@ describe('PortfolioDetailPage', () => {
     mockedPortfolioHooks.usePortfolioSummary.mockReturnValue({ data: mockSummary, isLoading: false, error: null } as UseQueryResult<PortfolioSummary, Error>);
     mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue({ data: { holdings: mockHoldings }, isLoading: false, error: null } as UseQueryResult<{ holdings: Holding[] }, Error>);
     mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue({ data: {} as PortfolioAnalytics, isLoading: false, isError: false } as UseQueryResult<PortfolioAnalytics, Error>);
-  });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockedFixedIncomeHooks.useCreateFixedDeposit.mockReturnValue({ mutate: jest.fn() } as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockedFixedIncomeHooks.useCreateBond.mockReturnValue({ mutate: jest.fn() } as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockedFixedIncomeHooks.useCreatePpf.mockReturnValue({ mutate: jest.fn() } as any);
+    });
 
   it('renders the portfolio name and child components', () => {
     renderComponent();
@@ -113,7 +129,8 @@ describe('PortfolioDetailPage', () => {
 
   it('opens the add transaction modal when the button is clicked', async () => {
     renderComponent();
-    await userEvent.click(screen.getByRole('button', { name: /add transaction/i }));
+    await userEvent.click(screen.getByRole('button', { name: /add new asset/i }));
+    await userEvent.click(screen.getByRole('button', { name: /stock \/ mf transaction/i }));
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /add transaction/i })).toBeInTheDocument();
     });
