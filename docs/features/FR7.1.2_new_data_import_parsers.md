@@ -35,6 +35,20 @@ This workstream will build upon the existing **Parser Strategy Pattern** located
 
 *   Parsing PDF files will likely require a new Python dependency. A library like `pdfplumber` is recommended as it is modern and effective at extracting text and table data from PDFs. This dependency must be added to `backend/requirements.txt`.
 
+### 2.3. Handling Password-Protected PDFs
+
+A significant number of financial statements (especially CAS) are password-protected. The system must handle this gracefully.
+
+1.  **Backend Detection:** When a file is uploaded, the backend parser will first attempt to open it. If it encounters a password-protection error (`pdfplumber.exceptions.PasswordRequired`), it will not fail with a generic 500 error. Instead, it will return a specific `422 Unprocessable Entity` response with a clear error code, such as:
+    ```json
+    { "detail": "PASSWORD_REQUIRED" }
+    ```
+2.  **Frontend Prompt:** The frontend will be designed to recognize this specific `PASSWORD_REQUIRED` error. Upon receiving it, the UI will display a password input field to the user.
+3.  **Re-submission with Password:** The user will enter the password, and the frontend will re-submit the import request. This time, the request will be a `multipart/form-data` request containing both the file and the password.
+4.  **Backend Parsing:** The backend API endpoint will be updated to accept the optional password field. If the password is provided, it will be passed to `pdfplumber` to decrypt and parse the file.
+
+This approach ensures that passwords are only held in memory for the duration of a single request and are never stored in the database, maintaining user privacy and security.
+
 ---
 
 ## 3. Implementation Plan (Phase 0: Prerequisite - Manual MF Transaction Enhancements)
@@ -66,9 +80,42 @@ This feature will be implemented in two distinct phases, one for each parser.
     *   Create the `MfCasParser` class inheriting from `BaseParser`.
     *   Implement the `parse` method. This method will use `pdfplumber` to open the PDF, iterate through its pages, and extract the transaction rows.
     *   The logic must correctly identify and parse fields like Fund Name, ISIN, Transaction Date, Transaction Type (Purchase, Redemption, etc.), Amount, Units, and NAV.
+    *   The `parse` method must accept an optional `password` argument.
     *   The method must return a list of `ParsedTransaction` Pydantic models.
 4.  **Register Parser:** Add the `MfCasParser` to the `ParserFactory` in `parser_factory.py` with a key like `'cams_karvy_cas'`.
-5.  **Write Unit Tests:** Create a comprehensive unit test in `test_mf_cas_parser.py` that uses the `sample_cas.pdf` to verify that the parser correctly extracts and transforms the data.
+5.  **Write Unit Tests:** Create `backend/app/tests/services/test_mf_cas_parser.py`. Add tests for both unprotected and password-protected sample PDFs to verify that the parser correctly extracts and transforms the data in both scenarios.
+
+---
+
+## 4. Testing Plan
+
+This feature will be validated through a multi-layered testing strategy.
+
+### 4.1. Backend Unit Tests
+
+*   **`test_mf_cas_parser.py`:**
+    *   A dedicated unit test will be created for the `MfCasParser`.
+    *   It will use a sample, anonymized CAS PDF file as input.
+    *   The test will assert that the `parse` method returns the correct number of transactions.
+    *   It will verify the accuracy of key fields (fund name, date, amount, units, NAV) for a sample transaction.
+    *   Edge cases like handling password-protected PDFs (expecting a graceful failure) and malformed PDFs will be tested.
+
+### 4.2. Backend Integration Tests
+
+*   **`test_import_sessions.py`:**
+    *   An integration test will be added to verify that the `ParserFactory` correctly identifies and uses the new `MfCasParser`.
+    *   The test will upload a sample CAS PDF to the `POST /api/v1/import-sessions/` endpoint with the `source_type` set to `'cams_karvy_cas'`.
+    *   It will then call the preview endpoint and assert that the returned data is correctly parsed, confirming the end-to-end integration of the new parser.
+
+### 4.3. E2E Tests (Playwright)
+
+*   A new test case will be added to `e2e/tests/data-import.spec.ts`.
+*   The test will simulate the full user flow:
+    1.  Log in and navigate to the "Import" page.
+    2.  Select a portfolio and choose "MF CAS Statement" from the dropdown.
+    3.  Upload a sample CAS PDF file.
+    4.  Verify that the preview page displays the correctly parsed transactions.
+    5.  Commit the transactions and verify that the new holdings appear correctly in the portfolio's holdings table.
 
 ---
 

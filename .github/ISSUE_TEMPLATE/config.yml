@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project Documentation
+    url: https://github.com/aashishbhanawat/ArthSaarthi/tree/main/docs
+    about: Please check our documentation for answers before submitting an issue.
