@@ -1,17 +1,21 @@
-import uuid
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.tests.utils.user import create_random_user
 
-def test_create_fixed_deposit(client: TestClient, db: Session, get_auth_headers) -> None:
+
+def test_create_fixed_deposit(
+    client: TestClient, db: Session, get_auth_headers
+) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
 
     portfolio_data = {"name": "Test Portfolio", "description": "Test portfolio"}
-    response = client.post(f"{settings.API_V1_STR}/portfolios/", headers=auth_headers, json=portfolio_data)
-    assert response.status_code == 200
+    response = client.post(
+        f"{settings.API_V1_STR}/portfolios/", headers=auth_headers, json=portfolio_data
+    )
+    assert response.status_code == 201
     portfolio_id = response.json()["id"]
 
     data = {
@@ -33,13 +37,16 @@ def test_create_fixed_deposit(client: TestClient, db: Session, get_auth_headers)
     assert content["asset_type"] == "FIXED_DEPOSIT"
     assert content["name"] == "Test Bank FD"
 
+
 def test_create_bond(client: TestClient, db: Session, get_auth_headers) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
 
     portfolio_data = {"name": "Test Portfolio", "description": "Test portfolio"}
-    response = client.post(f"{settings.API_V1_STR}/portfolios/", headers=auth_headers, json=portfolio_data)
-    assert response.status_code == 200
+    response = client.post(
+        f"{settings.API_V1_STR}/portfolios/", headers=auth_headers, json=portfolio_data
+    )
+    assert response.status_code == 201
     portfolio_id = response.json()["id"]
 
     data = {
@@ -62,13 +69,16 @@ def test_create_bond(client: TestClient, db: Session, get_auth_headers) -> None:
     assert content["asset_type"] == "BOND"
     assert content["name"] == "Test Bond"
 
+
 def test_create_ppf(client: TestClient, db: Session, get_auth_headers) -> None:
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
 
     portfolio_data = {"name": "Test Portfolio", "description": "Test portfolio"}
-    response = client.post(f"{settings.API_V1_STR}/portfolios/", headers=auth_headers, json=portfolio_data)
-    assert response.status_code == 200
+    response = client.post(
+        f"{settings.API_V1_STR}/portfolios/", headers=auth_headers, json=portfolio_data
+    )
+    assert response.status_code == 201
     portfolio_id = response.json()["id"]
 
     data = {
