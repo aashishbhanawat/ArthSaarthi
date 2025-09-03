@@ -2,7 +2,7 @@ import React from 'react';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
-import { formatCurrency, formatDate, formatPercentage } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatCurrency, formatDate, formatPercentage } from '../../utils/formatting';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface HoldingDetailModalProps {
@@ -73,6 +73,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
         holding.asset_id,
         { enabled: !!holding.asset_id }
     );
+    const formatSensitiveCurrency = usePrivacySensitiveCurrency();
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -96,16 +97,16 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                     </div>
                     <div data-testid="summary-avg-buy-price">
                         <p className="text-sm text-gray-500">Avg. Buy Price</p>
-                        <p className="font-semibold">{formatCurrency(holding.average_buy_price)}</p>
+                        <p className="font-semibold">{formatSensitiveCurrency(holding.average_buy_price)}</p>
                     </div>
                     <div data-testid="summary-current-value">
                         <p className="text-sm text-gray-500">Current Value</p>
-                        <p className="font-semibold">{formatCurrency(holding.current_value)}</p>
+                        <p className="font-semibold">{formatSensitiveCurrency(holding.current_value)}</p>
                     </div>
                     <div data-testid="summary-unrealized-pnl">
                         <p className="text-sm text-gray-500">Unrealized P&L</p>
                         <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(holding.unrealized_pnl)}
+                            {formatSensitiveCurrency(holding.unrealized_pnl)}
                         </p>
                     </div>
                     <div data-testid="summary-realized-xirr">

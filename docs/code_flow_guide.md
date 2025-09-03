@@ -268,3 +268,36 @@ class CRUDAuditLog(CRUDBase[AuditLog, AuditLogCreate, AuditLogUpdate]):
 ```
 
 *   **Key Takeaway:** The flow is designed to be simple and decoupled. API endpoints don't need to know about the database schema; they just call a central service. The service handles the business logic of preparing the log entry, and the CRUD layer handles the raw database operation. This makes it easy to add new audit events anywhere in the application with a single function call.
+
+---
+
+## 6. Cross-Cutting Concern: Privacy Mode
+
+Privacy Mode is a global, client-side feature that allows users to obscure sensitive data. It demonstrates a simple but effective use of React Context for global state management.
+
+### Step 1: State Management (`context/PrivacyContext.tsx`)
+
+1.  **Context Creation:** A `PrivacyContext` is created to hold the global state, which is a simple boolean `isPrivacyMode`.
+2.  **Provider Logic:** The `PrivacyProvider` component manages the state using a `useState` hook.
+3.  **Persistence:** A `useEffect` hook is used to synchronize the `isPrivacyMode` state with the browser's `localStorage`. This ensures the user's preference is remembered across sessions.
+4.  **Custom Hook:** A `usePrivacy` custom hook is exported to provide easy and type-safe access to the context's value (`isPrivacyMode` and `togglePrivacyMode`).
+
+### Step 2: Global Integration (`main.tsx`)
+
+The entire application is wrapped in the `PrivacyProvider` in `main.tsx`. This makes the privacy state available to every component in the tree.
+
+### Step 3: The UI Toggle (`pages/DashboardPage.tsx`)
+
+The eye icon toggle button on the dashboard is the primary UI for this feature.
+
+1.  It calls the `usePrivacy` hook to get the current `isPrivacyMode` state and the `togglePrivacyMode` function.
+2.  It conditionally renders either the `EyeIcon` or `EyeSlashIcon` based on the boolean state.
+3.  The `onClick` handler simply calls `togglePrivacyMode`.
+
+### Step 4: Conditional Formatting (`utils/formatting.ts`)
+
+To avoid applying privacy to all monetary values, a specific hook was created.
+
+1.  **`usePrivacySensitiveCurrency` Hook:** This new hook was created in `formatting.ts`.
+2.  **Logic:** It calls `usePrivacy()` to check `isPrivacyMode`. If `true`, it returns a function that always returns the placeholder `₹**,***.**`. If `false`, it returns the original `formatCurrency` function.
+3.  **Usage:** This hook is then called *only* in components that display high-level, sensitive data (e.g., `SummaryCard.tsx`), ensuring that less sensitive data (like individual asset prices in a table) remains visible.

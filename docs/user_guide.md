@@ -42,6 +42,16 @@ An interactive line chart showing the total value of your portfolios over time. 
 
 A pie chart showing the distribution of your investments across different assets.
 
+### 2.1. Privacy Mode {#privacy-mode}
+
+If you wish to show your dashboard to others without revealing sensitive financial totals, you can use Privacy Mode.
+
+*   **Location:** Look for the "eye" icon in the header of the Dashboard page.
+*   **Toggle:** Clicking this icon will toggle Privacy Mode on or off.
+    *   When **on** (slashed eye icon), all sensitive monetary values (like Total Value and P&L) will be replaced with a placeholder like `₹**,***.**`.
+    *   When **off** (regular eye icon), all values will be visible.
+*   **Persistence:** Your choice is saved in your browser, so the application will remember your preference the next time you visit.
+
 ---
 
 ## 3. Managing Your Portfolios {#managing-portfolios}

@@ -3,7 +3,7 @@
 **Feature ID:** FR3.4
 **Title:** Privacy Mode
 **User Story:** As a user, I want to be able to quickly hide all monetary values in the application with a single click, so that I can show my portfolio structure to others without revealing sensitive financial details.
-**Status:** 📝 Planned
+**Status:** ✅ Implemented
 
 ---
 

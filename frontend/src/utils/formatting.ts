@@ -1,3 +1,5 @@
+import { usePrivacy } from '../context/PrivacyContext';
+
 export const formatCurrency = (value: number | string, currency = 'INR') => {
   const numericValue = Number(value);
   if (isNaN(numericValue) || value === null) {
@@ -27,4 +29,17 @@ export const formatPercentage = (value: number | undefined | null): string => {
     return 'N/A';
   }
   return `${(value * 100).toFixed(2)}%`;
+};
+
+export const usePrivacySensitiveCurrency = () => {
+  const { isPrivacyMode } = usePrivacy();
+
+  const format = (value: number | string, currency = 'INR') => {
+    if (isPrivacyMode) {
+      return '₹**,***.**';
+    }
+    return formatCurrency(value, currency);
+  };
+
+  return format;
 };

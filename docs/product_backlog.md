@@ -114,11 +114,19 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **User Profile Management (FR1.5):** Implement user profile settings page for name and password changes.
     -   **Status: ✅ Complete**
 
+## Release 8: User Experience Enhancements
+
+**Status: ✅ COMPLETE (as of 2025-09-03)**
+
+**Features:**
+
+-   **Privacy Mode (FR3.4):** Add a "Privacy Mode" toggle to the dashboard to obscure sensitive financial data.
+    -   **Status: ✅ Complete**
+
 ## Future Releases
 
 -   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
 -   **Administration Enhancements (FR2.3):** Add a log viewer for admins to review audit trails.
--   **Dashboard Enhancements (FR3.4):** Add a "Privacy Mode" toggle to the dashboard.
 -   **Advanced Transaction Management (FR4.5, FR4.6):**
     -   Add tracking for income (dividends, interest).
     -   Add support for corporate actions (splits, bonuses).

@@ -1,6 +1,6 @@
 import React from 'react';
 import { PortfolioSummary as PortfolioSummaryType } from '../../types/holding';
-import { formatCurrency } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency } from '../../utils/formatting';
 
 interface SummaryItemProps {
     label: string;
@@ -9,6 +9,7 @@ interface SummaryItemProps {
 }
 
 const SummaryItem: React.FC<SummaryItemProps> = ({ label, value, isPnl = false }) => {
+    const formatCurrency = usePrivacySensitiveCurrency();
     const getPnlColor = (pnl: number) => {
         if (pnl > 0) return 'text-green-600';
         if (pnl < 0) return 'text-red-600';
