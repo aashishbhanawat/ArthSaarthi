@@ -1,4 +1,5 @@
-import { render, screen, act, within } from '@testing-library/react';
+/* eslint-disable testing-library/no-node-access */
+import { render, screen, act } from '@testing-library/react';
 import { PrivacyProvider, usePrivacy } from '../../context/PrivacyContext';
 import React from 'react';
 
@@ -23,7 +24,7 @@ describe('PrivacyContext', () => {
         <TestComponent />
       </PrivacyProvider>
     );
-    expect(within(screen.getByTestId('privacy-mode')).getByText('false')).toBeInTheDocument();
+    expect(screen.getByTestId('privacy-mode')).toHaveTextContent(/^false$/);
   });
 
   it('should initialize with the value from localStorage if present', () => {
@@ -33,7 +34,7 @@ describe('PrivacyContext', () => {
         <TestComponent />
       </PrivacyProvider>
     );
-    expect(within(screen.getByTestId('privacy-mode')).getByText('true')).toBeInTheDocument();
+    expect(screen.getByTestId('privacy-mode')).toHaveTextContent(/^true$/);
   });
 
   it('should toggle privacy mode and update localStorage', () => {
@@ -46,21 +47,21 @@ describe('PrivacyContext', () => {
     const toggleButton = screen.getByText('Toggle');
 
     // Initial state
-    expect(within(screen.getByTestId('privacy-mode')).getByText('false')).toBeInTheDocument();
+    expect(screen.getByTestId('privacy-mode')).toHaveTextContent(/^false$/);
     expect(localStorage.getItem('privacyMode')).toBe('false');
 
     // Toggle on
     act(() => {
       toggleButton.click();
     });
-    expect(within(screen.getByTestId('privacy-mode')).getByText('true')).toBeInTheDocument();
+    expect(screen.getByTestId('privacy-mode')).toHaveTextContent(/^true$/);
     expect(localStorage.getItem('privacyMode')).toBe('true');
 
     // Toggle off
     act(() => {
       toggleButton.click();
     });
-    expect(within(screen.getByTestId('privacy-mode')).getByText('false')).toBeInTheDocument();
+    expect(screen.getByTestId('privacy-mode')).toHaveTextContent(/^false$/);
     expect(localStorage.getItem('privacyMode')).toBe('false');
   });
 });
