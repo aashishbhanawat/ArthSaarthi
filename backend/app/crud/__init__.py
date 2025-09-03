@@ -2,6 +2,7 @@ from .crud_asset import asset
 from .crud_asset_alias import asset_alias
 from .crud_audit_log import audit_log
 from .crud_dashboard import dashboard
+from .crud_fixed_income import fixed_income
 from .crud_goal import goal, goal_link
 from .crud_holding import holding
 from .crud_import_session import import_session
@@ -14,6 +15,7 @@ from .crud_watchlist_item import watchlist_item
 
 __all__ = [
     "asset",
+    "fixed_income",
     "asset_alias",
     "audit_log",
     "dashboard",

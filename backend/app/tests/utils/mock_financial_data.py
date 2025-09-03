@@ -27,7 +27,7 @@ class MockFinancialDataService:
         },
         "TCS": {
             "current_price": Decimal("3500.00"),
-            "previous_close": Decimal("3490.00")
+            "previous_close": Decimal("3490.00"),
         },
         "UPDATE": {
             "current_price": Decimal("110.00"),
@@ -35,11 +35,11 @@ class MockFinancialDataService:
         },
         "DELETE": {
             "current_price": Decimal("50.00"),
-            "previous_close": Decimal("51.00")
+            "previous_close": Decimal("51.00"),
         },
         "CALC1": {
             "current_price": Decimal("110.0"),
-            "previous_close": Decimal("109.0")
+            "previous_close": Decimal("109.0"),
         },
         "XIRRTEST": {
             "current_price": Decimal("130.0"),
@@ -47,7 +47,7 @@ class MockFinancialDataService:
         },
         "ASSET1": {
             "current_price": Decimal("100.00"),
-            "previous_close": Decimal("99.00")
+            "previous_close": Decimal("99.00"),
         },
         "ASSET2": {
             "current_price": Decimal("200.00"),
@@ -55,12 +55,12 @@ class MockFinancialDataService:
         },
         "TXN1": {
             "current_price": Decimal("100.00"),
-            "previous_close": Decimal("99.00")
+            "previous_close": Decimal("99.00"),
         },
         "TXN2": {
             "current_price": Decimal("200.00"),
-            "previous_close": Decimal("198.00")}
-        ,
+            "previous_close": Decimal("198.00"),
+        },
     }
 
     MOCK_MF_SEARCH_RESULTS = [

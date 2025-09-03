@@ -218,9 +218,9 @@ def get_import_session_preview(
                 if asset_alias:
                     asset = asset_alias.asset
         if not asset:
-                # If no asset or alias is found, it needs user mapping
-                needs_mapping.append(parsed_transaction)
-                continue
+            # If no asset or alias is found, it needs user mapping
+            needs_mapping.append(parsed_transaction)
+            continue
 
         # 2. Duplicate Detection
         existing_transaction = crud.transaction.get_by_details(

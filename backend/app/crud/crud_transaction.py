@@ -97,7 +97,10 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
         total = query.count()
         transactions = (
-            query.order_by(self.model.transaction_date.desc()).offset(skip).limit(limit).all()
+            query.order_by(self.model.transaction_date.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
         )
         return transactions, total
 

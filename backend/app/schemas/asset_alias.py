@@ -7,8 +7,10 @@ class AssetAliasBase(BaseModel):
     alias_symbol: str
     source: str
 
+
 class AssetAliasCreate(AssetAliasBase):
     asset_id: uuid.UUID
+
 
 class AssetAlias(AssetAliasBase):
     id: uuid.UUID

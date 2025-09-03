@@ -9,6 +9,17 @@ from .dashboard import (
     PortfolioHistoryResponse,
     TopMover,
 )
+from .fixed_income import (
+    Bond,
+    BondCreate,
+    BondUpdate,
+    FixedDeposit,
+    FixedDepositCreate,
+    FixedDepositUpdate,
+    PublicProvidentFund,
+    PublicProvidentFundCreate,
+    PublicProvidentFundUpdate,
+)
 from .goal import (
     Goal,
     GoalCreate,
@@ -87,4 +98,13 @@ __all__ = [
     "GoalLinkCreate",
     "GoalLinkUpdate",
     "GoalWithAnalytics",
+    "FixedDeposit",
+    "FixedDepositCreate",
+    "FixedDepositUpdate",
+    "Bond",
+    "BondCreate",
+    "BondUpdate",
+    "PublicProvidentFund",
+    "PublicProvidentFundCreate",
+    "PublicProvidentFundUpdate",
 ]

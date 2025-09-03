@@ -49,7 +49,7 @@ class IciciParser(BaseParser):
             )
             # Attempt to proceed if at least the core columns are present
             if not all(col in df.columns for col in column_map.keys()):
-                 return []
+                return []
 
         # Rename core columns
         df_renamed = df.rename(columns=column_map)
@@ -62,10 +62,9 @@ class IciciParser(BaseParser):
                     df_renamed[col], errors="coerce"
                 ).fillna(0)
             else:
-                df_renamed[col] = 0 # Add column with 0 if it's missing
+                df_renamed[col] = 0  # Add column with 0 if it's missing
 
         df_renamed["fees"] = df_renamed[fee_columns].sum(axis=1)
-
 
         # Filter for only buy and sell trades
         df_trades = df_renamed[
@@ -79,7 +78,6 @@ class IciciParser(BaseParser):
         df_trades["transaction_date"] = pd.to_datetime(
             df_trades["transaction_date"], format="%d-%b-%Y"
         ).dt.strftime("%Y-%m-%d")
-
 
         for _, row in df_trades.iterrows():
             try:

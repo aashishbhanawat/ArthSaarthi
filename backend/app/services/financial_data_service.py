@@ -172,7 +172,8 @@ class AmfiIndiaProvider:
                     if mf_data.get("status", "").lower() == "fail":
                         print(
                             "WARNING: mfapi.in returned failure for scheme code "
-                            f"{scheme_code}.")
+                            f"{scheme_code}."
+                        )
                         continue
 
                     # The data is nested under the 'data' key
@@ -189,12 +190,16 @@ class AmfiIndiaProvider:
                             # Skip malformed data points within a successful response
                             continue
                 except (
-                    httpx.RequestError, httpx.HTTPStatusError, KeyError, ValueError
+                    httpx.RequestError,
+                    httpx.HTTPStatusError,
+                    KeyError,
+                    ValueError,
                 ) as e:
                     # ValueError for JSON decoding errors
                     print(
                         "WARNING: Could not fetch historical NAV for "
-                        f"{scheme_code}: {e}")
+                        f"{scheme_code}: {e}"
+                    )
                     continue
 
         if self.cache_client and historical_data:
@@ -213,9 +218,7 @@ class YFinanceProvider:
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
 
-    def _get_yfinance_ticker(
-        self, ticker_symbol: str, exchange: Optional[str]
-    ) -> str:
+    def _get_yfinance_ticker(self, ticker_symbol: str, exchange: Optional[str]) -> str:
         """Constructs the correct ticker for yfinance."""
         if exchange == "NSE":
             return f"{ticker_symbol}.NS"
@@ -444,24 +447,24 @@ class FinancialDataService:
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
         # Separate assets by type for different providers
-        mf_assets = [
-            a for a in assets if a.get("asset_type") == "Mutual Fund"
-        ]
-        other_assets = [
-            a for a in assets if a.get("asset_type") != "Mutual Fund"
-        ]
+        mf_assets = [a for a in assets if a.get("asset_type") == "Mutual Fund"]
+        other_assets = [a for a in assets if a.get("asset_type") != "Mutual Fund"]
 
         historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
 
         if other_assets:
-            historical_data.update(self.yfinance_provider.get_historical_prices(
-                other_assets, start_date, end_date
-            ))
+            historical_data.update(
+                self.yfinance_provider.get_historical_prices(
+                    other_assets, start_date, end_date
+                )
+            )
 
         if mf_assets:
-            historical_data.update(self.amfi_provider.get_historical_prices(
-                mf_assets, start_date, end_date
-            ))
+            historical_data.update(
+                self.amfi_provider.get_historical_prices(
+                    mf_assets, start_date, end_date
+                )
+            )
 
         return historical_data
 
@@ -486,6 +489,7 @@ class FinancialDataService:
 
 if settings.ENVIRONMENT == "test":
     from app.tests.utils.mock_financial_data import MockFinancialDataService
+
     financial_data_service = MockFinancialDataService()
 else:
     # Create a singleton instance to be used throughout the application

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction } from '../../hooks/usePortfolios';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
+import AddFixedDepositModal from '../../components/Portfolio/AddFixedDepositModal';
+import AddBondModal from '../../components/Portfolio/AddBondModal';
+import AddPPFAccountModal from '../../components/Portfolio/AddPPFAccountModal';
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
 import HoldingsTable from '../../components/Portfolio/HoldingsTable';
@@ -20,9 +23,13 @@ const PortfolioDetailPage: React.FC = () => {
     const deleteTransactionMutation = useDeleteTransaction();
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
+    const [isAddFixedDepositModalOpen, setAddFixedDepositModalOpen] = useState(false);
+    const [isAddBondModalOpen, setAddBondModalOpen] = useState(false);
+    const [isAddPpfModalOpen, setAddPpfModalOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+    const [isAssetTypeMenuOpen, setAssetTypeMenuOpen] = useState(false);
 
     useEffect(() => {
         // This effect syncs the selectedHolding state with the latest data from the usePortfolioHoldings hook.
@@ -56,6 +63,14 @@ const PortfolioDetailPage: React.FC = () => {
     const handleOpenCreateTransactionModal = () => {
         setTransactionToEdit(undefined);
         setTransactionFormOpen(true);
+    };
+
+    const handleOpenAssetTypeMenu = () => {
+        setAssetTypeMenuOpen(true);
+    };
+
+    const handleCloseAssetTypeMenu = () => {
+        setAssetTypeMenuOpen(false);
     };
 
     const handleOpenEditTransactionModal = (transaction: Transaction) => {
@@ -96,7 +111,52 @@ const PortfolioDetailPage: React.FC = () => {
                         <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary">
                             View History
                         </Link>
-                        <button onClick={handleOpenCreateTransactionModal} className="btn btn-primary">Add Transaction</button>
+                        <div className="relative">
+                            <button onClick={handleOpenAssetTypeMenu} className="btn btn-primary">Add New Asset</button>
+                            {isAssetTypeMenuOpen && (
+                                <>
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                                        <button
+                                            onClick={() => {
+                                                handleOpenCreateTransactionModal();
+                                                handleCloseAssetTypeMenu();
+                                            }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Stock / MF Transaction
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setAddFixedDepositModalOpen(true);
+                                                handleCloseAssetTypeMenu();
+                                            }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Fixed Deposit
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setAddBondModalOpen(true);
+                                                handleCloseAssetTypeMenu();
+                                            }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Bond
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setAddPpfModalOpen(true);
+                                                handleCloseAssetTypeMenu();
+                                            }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            PPF Account
+                                        </button>
+                                    </div>
+                                    <div onClick={handleCloseAssetTypeMenu} className="fixed inset-0 z-0"></div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <p className="text-gray-600 mt-1">{portfolio.description}</p>
@@ -123,6 +183,24 @@ const PortfolioDetailPage: React.FC = () => {
                     transactionToEdit={transactionToEdit}
                 />
             )}
+
+            <AddFixedDepositModal
+                onClose={() => setAddFixedDepositModalOpen(false)}
+                isOpen={isAddFixedDepositModalOpen}
+                portfolioId={portfolio.id}
+            />
+
+            <AddBondModal
+                onClose={() => setAddBondModalOpen(false)}
+                isOpen={isAddBondModalOpen}
+                portfolioId={portfolio.id}
+            />
+
+            <AddPPFAccountModal
+                onClose={() => setAddPpfModalOpen(false)}
+                isOpen={isAddPpfModalOpen}
+                portfolioId={portfolio.id}
+            />
 
             {/* Only show the detail modal if a holding is selected AND no other modal is active */}
             {selectedHolding && !isTransactionFormOpen && !transactionToDelete && (

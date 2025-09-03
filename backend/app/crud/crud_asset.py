@@ -45,7 +45,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         """
         Retrieves all assets that have at least one transaction in the
         specified portfolio.
-         """
+        """
         # Get distinct asset_ids from transactions for the given portfolio
         asset_ids_query = (
             db.query(Transaction.asset_id)
@@ -59,6 +59,33 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
 
         # Fetch the Asset objects corresponding to these IDs
         return db.query(self.model).filter(self.model.id.in_(asset_ids)).all()
+
+    def get_all_by_portfolio(
+        self, db: Session, *, portfolio_id: uuid.UUID
+    ) -> List[Asset]:
+        """
+        Retrieves all assets for a given portfolio, including those with and
+        without transactions.
+        """
+        # Get assets linked via transactions
+        asset_ids_from_transactions = (
+            db.query(Transaction.asset_id)
+            .filter(Transaction.portfolio_id == portfolio_id)
+            .distinct()
+        )
+
+        # Get assets linked directly to the portfolio
+        assets_direct = db.query(self.model).filter(
+            self.model.portfolio_id == portfolio_id
+        )
+
+        # Combine the queries
+        all_assets = assets_direct.union(
+            db.query(self.model).filter(self.model.id.in_(asset_ids_from_transactions))
+        ).all()
+
+        return all_assets
+
     def get_by_ticker(self, db: Session, *, ticker_symbol: str) -> Asset | None:
         return (
             db.query(self.model)

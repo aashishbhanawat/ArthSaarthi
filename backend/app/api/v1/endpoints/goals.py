@@ -32,9 +32,7 @@ def create_goal(
     """
     Create new goal.
     """
-    goal = crud.goal.create_with_owner(
-        db=db, obj_in=goal_in, user_id=current_user.id
-    )
+    goal = crud.goal.create_with_owner(db=db, obj_in=goal_in, user_id=current_user.id)
     return goal
 
 

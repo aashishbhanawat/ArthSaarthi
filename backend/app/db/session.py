@@ -15,6 +15,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 logger = logging.getLogger(__name__)
 
+
 # Dependency to get DB session
 def get_db():
     db = SessionLocal()

@@ -72,9 +72,6 @@ def get_auth_headers(
     return _get_auth_headers
 
 
-
-
-
 @pytest.fixture(scope="function")
 def db() -> Generator[Session, None, None]:
     """

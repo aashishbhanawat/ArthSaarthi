@@ -59,6 +59,7 @@ class AssetInGoalLink(BaseModel):
     ticker_symbol: str
     model_config = ConfigDict(from_attributes=True)
 
+
 class PortfolioInGoalLink(BaseModel):
     id: uuid.UUID
     name: str

@@ -16,9 +16,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_admin = Column(Boolean(), default=False, nullable=False)
     is_active = Column(Boolean(), default=True)
-    created_at = Column(
-        DateTime, server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime,
         server_default=func.now(),
