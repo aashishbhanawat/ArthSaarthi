@@ -84,6 +84,18 @@ The core of the application is tracking your individual buy and sell transaction
 
 The backend includes validation to prevent you from selling more of an asset than you own on a given date. If you attempt this, you will see a specific error message.
 
+### Adding Fixed-Income Assets (FDs, Bonds, etc.) {#adding-fixed-income}
+
+In addition to transaction-based assets like stocks, you can also track fixed-income assets that don't have regular buy/sell transactions.
+
+1.  Navigate to the detail page of the portfolio where you want to add the asset.
+2.  Click the **"Add New Asset"** button. A dropdown menu will appear.
+3.  Select the type of asset you want to add (e.g., "Fixed Deposit", "Bond", "PPF Account").
+4.  A specific form for that asset type will appear. Fill in the required details, such as the principal amount, interest rate, and maturity date.
+5.  Click **"Create"** to add the asset to your portfolio.
+
+The value of these assets will be automatically calculated and updated in your portfolio summary and holdings table.
+
 ### Importing Transactions from a CSV File {#importing-transactions}
 
 Instead of adding transactions one by one, you can use the data import feature to upload a CSV file.

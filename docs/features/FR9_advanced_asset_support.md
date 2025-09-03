@@ -1,7 +1,8 @@
 # Feature Plan: Advanced Asset Support (FR9)
 
-**Status: 📝 Planned**
+**Status: ✅ Implemented**
 ---
+***Note: This document has been updated to reflect the "as-built" implementation of the feature.***
 
 **Feature ID:** FR9
 **Title:** Add Support for Fixed-Income and Other Asset Classes
@@ -17,7 +18,7 @@ The current application excels at tracking market-linked securities like stocks 
 
 ## 2. Requirement Analysis
 
-*This section was completed by the **Requirement Analyst**.*
+*This section describes the final implemented logic.*
 
 ### 2.1. Fixed Deposits (FDs)
 
@@ -89,41 +90,45 @@ A new E2E test file, `e2e/tests/advanced-assets.spec.ts`, will be created to val
     1.  Log in and navigate to a portfolio.
     2.  Use the "Add New Asset" flow to create a new Fixed Deposit.
     3.  Verify that the FD appears correctly in the holdings table with the correct calculated current value.
-*   **Test Case 2: PPF & Contribution Flow:**
-    1.  Create a PPF asset.
-    2.  Navigate to the portfolio detail page and use the "Add Transaction" modal to log a `CONTRIBUTION`.
-    3.  Verify that the `current_balance` of the PPF holding in the table is updated correctly.
+*   **Test Case 2: Public Provident Fund (PPF) Flow:**
+    1.  Log in and navigate to a portfolio.
+    2.  Use the "Add New Asset" flow to create a new PPF account.
+    3.  Verify that the PPF account appears correctly in the holdings table.
 
 ### 2.2. Public Provident Fund (PPF)
 
-#### Data Fields
-PPF is an account, not a single instrument. It requires a different tracking model.
-*   **`account_number`**: String (For user identification)
-*   **`institution_name`**: String (e.g., "Post Office", "ICICI Bank")
-*   **`opening_date`**: Date
-*   **`current_balance`**: Numeric (The primary field, updated by the user or through contributions)
+#### Implementation Model
+To simplify tracking and avoid the complexities of official interest calculations and contribution tracking, the implemented version of PPF tracking treats a PPF account as a simple, non-transactional asset, similar to a Fixed Deposit.
 
-To track contributions, we will reuse the `transactions` table with a specific context:
-*   **`transaction_type`**: `CONTRIBUTION`
-*   **`quantity`**: 1 (fixed)
-*   **`price_per_unit`**: The contribution amount.
+#### Data Fields
+*   **`institution`**: String (e.g., "Post Office", "ICICI Bank")
+*   **`account_number`**: String (Optional, for user identification)
+*   **`principal`**: Numeric (The total amount invested to date)
+*   **`interest_rate`**: Numeric (The current applicable annual interest rate)
+*   **`opening_date`**: Date
 
 #### Valuation Logic
-The official PPF interest calculation is complex (calculated monthly on the lowest balance between the 5th and the end of the month, but credited annually). The interest rate is also subject to quarterly government revisions.
+The valuation uses a simplified compound interest formula, analogous to a reinvestment FD. This provides an estimated current value.
+*   **Current Value = `P * (1 + r/n)^(n*t)`**
+    *   `P` = `principal`
+    *   `r` = `interest_rate` / 100
+    *   `n` = 1 (compounded annually)
+    *   `t` = Time in years from `opening_date` to today.
 
-*   **MVP Approach:** To manage this complexity, the valuation will be user-driven. **Current Value = `current_balance`**. The user is responsible for periodically updating the `current_balance` of their PPF asset to reflect the value from their official statement.
-*   **Future Enhancement:** A more advanced implementation could allow users to log quarterly interest rates and contributions, enabling the application to provide an *estimated* interest calculation.
+This approach deviates from the original plan of tracking individual contributions in favor of providing a simpler, more manageable user experience for the MVP.
 
 #### User Interactions
-1.  **Initial Setup:** User selects "Add New Asset" -> "Government Scheme" -> "PPF". They fill in the account number, institution, and opening date.
-2.  **Logging Contributions:** The user will use the "Add Transaction" flow, select their PPF asset, and add a `CONTRIBUTION` transaction with the amount. This will update the `current_balance` of the PPF asset.
+Adding a PPF account is a one-time setup.
+1.  The user selects "Add New Asset" -> "PPF Account".
+2.  They fill out a dedicated form with the fields listed above.
+3.  No "contribution" transactions are created. The user is expected to update the `principal` amount manually if they make new contributions.
 
 #### Display Requirements
 In the main holdings table, PPF should display:
-*   **Asset Name:** "Public Provident Fund (`account_number`)"
-*   **Key Metric 1:** Institution Name
+*   **Asset Name:** `institution` (e.g., "Post Office PPF")
+*   **Key Metric 1:** Interest Rate
 *   **Key Metric 2:** Maturity Date (15 years from `opening_date`)
-*   **Current Value:** The `current_balance`.
+*   **Current Value:** The calculated current value.
 
 ---
 

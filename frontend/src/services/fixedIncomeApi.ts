@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 import { Asset } from '../types/asset';
 import { FixedDepositCreate, BondCreate, PublicProvidentFundCreate } from '../types/fixed_income';
 

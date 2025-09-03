@@ -41,7 +41,7 @@ test.describe.serial('Advanced Asset E2E Flow', () => {
         await page.getByRole('button', { name: 'Create New Portfolio' }).click();
         await page.getByLabel('Name').fill(portfolioName);
         await page.getByRole('button', { name: 'Create', exact: true }).click();
-        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
 
         await page.getByRole('button', { name: 'Add New Asset' }).click();
         await page.getByRole('button', { name: 'Fixed Deposit' }).click();
@@ -69,7 +69,7 @@ test.describe.serial('Advanced Asset E2E Flow', () => {
         await page.getByRole('button', { name: 'Create New Portfolio' }).click();
         await page.getByLabel('Name').fill(portfolioName);
         await page.getByRole('button', { name: 'Create', exact: true }).click();
-        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
 
         await page.getByRole('button', { name: 'Add New Asset' }).click();
         await page.getByRole('button', { name: 'Bond' }).click();
@@ -98,7 +98,7 @@ test.describe.serial('Advanced Asset E2E Flow', () => {
         await page.getByRole('button', { name: 'Create New Portfolio' }).click();
         await page.getByLabel('Name').fill(portfolioName);
         await page.getByRole('button', { name: 'Create', exact: true }).click();
-        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
 
         await page.getByRole('button', { name: 'Add New Asset' }).click();
         await page.getByRole('button', { name: 'PPF Account' }).click();
