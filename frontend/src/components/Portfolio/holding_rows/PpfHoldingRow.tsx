@@ -19,7 +19,7 @@ const PpfHoldingRow: React.FC<PpfHoldingRowProps> = ({ holding, onRowClick }) =>
                 <div className="font-bold">{holding.asset_name}</div>
                 <div className="text-sm text-gray-500">{holding.institution_name}</div>
             </td>
-            <td className="p-2 text-right font-mono">{holding.institution_name}</td>
+            <td className="p-2 text-right font-mono">N/A</td>
             <td className="p-2 text-right font-mono">{maturityDate ? formatDate(maturityDate.toISOString()) : 'N/A'}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.current_value)}</td>
             <td className="p-2"></td>

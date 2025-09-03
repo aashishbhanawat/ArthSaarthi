@@ -25,7 +25,7 @@ cleanup() {
   rm -f backend/test.db
   print_success "Cleanup complete."
 }
-# trap cleanup EXIT
+trap cleanup EXIT
 
 create_env_file() {
     local backend_port=$1
@@ -79,9 +79,7 @@ EOF
     print_info "Running Playwright E2E tests..."
     export E2E_BASE_URL="http://127.0.0.1:$frontend_port"
     export E2E_BACKEND_URL="http://127.0.0.1:$backend_port"
-    (cd e2e && npx playwright test) || true
-    echo "--- Contents of test-results directory ---"
-    ls -lR test-results
+    (cd e2e && xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npx playwright test)
     print_success "E2E tests passed."
 }
 
