@@ -4,6 +4,7 @@ import HoldingDetailModal from '../../../components/Portfolio/HoldingDetailModal
 import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Holding } from '../../../types/holding';
 import { Transaction } from '../../../types/portfolio';
+import { PrivacyProvider } from '../../../context/PrivacyContext';
 
 const mockHolding: Holding = {
   asset_id: 'asset-1',
@@ -47,13 +48,15 @@ const queryClient = new QueryClient();
 const renderComponent = (onClose = jest.fn(), onEdit = jest.fn(), onDelete = jest.fn()) => {
   return render(
     <QueryClientProvider client={queryClient}>
-      <HoldingDetailModal
-        holding={mockHolding}
-        portfolioId="portfolio-1"
-        onClose={onClose}
-        onEditTransaction={onEdit}
-        onDeleteTransaction={onDelete}
-      />
+      <PrivacyProvider>
+        <HoldingDetailModal
+          holding={mockHolding}
+          portfolioId="portfolio-1"
+          onClose={onClose}
+          onEditTransaction={onEdit}
+          onDeleteTransaction={onDelete}
+        />
+      </PrivacyProvider>
     </QueryClientProvider>
   );
 };

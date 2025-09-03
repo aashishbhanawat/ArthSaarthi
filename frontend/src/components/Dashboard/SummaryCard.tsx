@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCurrency } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency } from '../../utils/formatting';
 
 interface SummaryCardProps {
     title: string;
@@ -8,6 +8,7 @@ interface SummaryCardProps {
 }
 
 const SummaryCard: React.FC<SummaryCardProps> = ({ title, value, isPnl = false }) => {
+    const formatCurrency = usePrivacySensitiveCurrency();
     const getPnlColor = (pnlValue: number) => {
         if (pnlValue > 0) return 'text-green-600';
         if (pnlValue < 0) return 'text-red-600';

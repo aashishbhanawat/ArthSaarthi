@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { PrivacyProvider } from '../../context/PrivacyContext';
 import DashboardPage from '../../pages/DashboardPage';
 import {
   useDashboardSummary,
@@ -70,7 +71,7 @@ describe('DashboardPage', () => {
 
   it('should render loading state', () => {
     mockUseDashboardSummary.mockReturnValue({ isLoading: true });
-    render(<DashboardPage />);
+    render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
     expect(screen.getByText('Loading dashboard data...')).toBeInTheDocument();
   });
 
@@ -81,12 +82,12 @@ describe('DashboardPage', () => {
       error: new Error('Failed to fetch dashboard'),
       data: null,
     });
-    render(<DashboardPage />);
+    render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
     expect(screen.getByText('Error loading dashboard data.')).toBeInTheDocument();
   });
 
   it('should render dashboard with data on success', () => {
-    render(<DashboardPage />);
+    render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
 
     // Check for main title
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
@@ -111,7 +112,7 @@ describe('DashboardPage', () => {
     mockUseDashboardSummary.mockReturnValue({
       isLoading: false, isError: false, error: null, data: { total_value: 1000, total_unrealized_pnl: 0, total_realized_pnl: 0, top_movers: [], asset_allocation: [] }
     });
-    render(<DashboardPage />);
+    render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
     expect(screen.getByText('No market data available')).toBeInTheDocument();
   });
 });

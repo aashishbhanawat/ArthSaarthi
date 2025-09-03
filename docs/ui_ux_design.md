@@ -53,6 +53,15 @@ The user logs in and lands here. This is their main overview page. They can see 
 ### Wireframe Description
 A multi-section layout with a main navigation sidebar on the left.
 
+### 2.1. Privacy Mode
+
+The "Privacy Mode" is a global toggle that allows users to obscure sensitive financial data.
+
+*   **Icon:** The toggle is represented by an eye icon in the top bar.
+    *   **Visible State:** A regular eye icon (`EyeIcon`) indicates that all data is visible.
+    *   **Hidden State:** A slashed eye icon (`EyeSlashIcon`) indicates that sensitive data is obscured.
+*   **Placeholder:** When active, all sensitive monetary values are replaced with a generic placeholder: `₹**,***.**`. This format is designed to mimic the shape of a currency value without revealing any actual numbers.
+
 ```
 +-------------------------------------------------------------------+
 | [NAV] | Top Bar: Search [_________] (👁️) [User Profile]           |

@@ -5,7 +5,7 @@ import { useDeleteGoal } from '../../hooks/useGoals';
 import DeleteGoalModal from './DeleteGoalModal';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { useQueryClient } from '@tanstack/react-query';
-import { formatCurrency, formatDate } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
 
 interface GoalListProps {
   goals: Goal[];
@@ -16,6 +16,7 @@ const GoalList: React.FC<GoalListProps> = ({ goals }) => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
   const deleteGoalMutation = useDeleteGoal();
+  const formatCurrency = usePrivacySensitiveCurrency();
 
   const handleDeleteClick = (goal: Goal) => {
     setGoalToDelete(goal);

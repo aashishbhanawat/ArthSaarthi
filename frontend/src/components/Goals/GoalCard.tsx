@@ -1,6 +1,6 @@
 import React from 'react';
 import { Goal } from '../../types/goal';
-import { formatCurrency, formatDate } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
 
 interface GoalCardProps {
   goal: Goal;
@@ -10,6 +10,7 @@ interface GoalCardProps {
 }
 
 const GoalCard: React.FC<GoalCardProps> = ({ goal, onEdit, onDelete, onSelect }) => {
+  const formatCurrency = usePrivacySensitiveCurrency();
   return (
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
