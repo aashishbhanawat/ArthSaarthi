@@ -41,9 +41,9 @@ test.describe.serial('Advanced Asset E2E Flow', () => {
         await page.getByRole('button', { name: 'Create New Portfolio' }).click();
         await page.getByLabel('Name').fill(portfolioName);
         await page.getByRole('button', { name: 'Create', exact: true }).click();
-        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
-        await page.getByRole('button', { name: 'Add New Asset' }).click();
+        await page.getByRole('button', { name: 'Add Fixed Income' }).click();
         await page.getByRole('button', { name: 'Fixed Deposit' }).click();
 
         await page.getByLabel('Institution Name').fill('E2E Test Bank');
@@ -69,9 +69,9 @@ test.describe.serial('Advanced Asset E2E Flow', () => {
         await page.getByRole('button', { name: 'Create New Portfolio' }).click();
         await page.getByLabel('Name').fill(portfolioName);
         await page.getByRole('button', { name: 'Create', exact: true }).click();
-        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
-        await page.getByRole('button', { name: 'Add New Asset' }).click();
+        await page.getByRole('button', { name: 'Add Fixed Income' }).click();
         await page.getByRole('button', { name: 'Bond' }).click();
 
         await page.getByLabel('Bond Name').fill('E2E Test Bond');
@@ -98,9 +98,9 @@ test.describe.serial('Advanced Asset E2E Flow', () => {
         await page.getByRole('button', { name: 'Create New Portfolio' }).click();
         await page.getByLabel('Name').fill(portfolioName);
         await page.getByRole('button', { name: 'Create', exact: true }).click();
-        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
-        await page.getByRole('button', { name: 'Add New Asset' }).click();
+        await page.getByRole('button', { name: 'Add Fixed Income' }).click();
         await page.getByRole('button', { name: 'PPF Account' }).click();
 
         await page.getByLabel('Institution Name').fill('E2E Test Post Office');

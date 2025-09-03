@@ -29,7 +29,7 @@ const PortfolioDetailPage: React.FC = () => {
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
-    const [isAssetTypeMenuOpen, setAssetTypeMenuOpen] = useState(false);
+    const [isFixedIncomeMenuOpen, setFixedIncomeMenuOpen] = useState(false);
 
     useEffect(() => {
         // This effect syncs the selectedHolding state with the latest data from the usePortfolioHoldings hook.
@@ -65,12 +65,12 @@ const PortfolioDetailPage: React.FC = () => {
         setTransactionFormOpen(true);
     };
 
-    const handleOpenAssetTypeMenu = () => {
-        setAssetTypeMenuOpen(true);
+    const handleOpenFixedIncomeMenu = () => {
+        setFixedIncomeMenuOpen(true);
     };
 
-    const handleCloseAssetTypeMenu = () => {
-        setAssetTypeMenuOpen(false);
+    const handleCloseFixedIncomeMenu = () => {
+        setFixedIncomeMenuOpen(false);
     };
 
     const handleOpenEditTransactionModal = (transaction: Transaction) => {
@@ -111,24 +111,18 @@ const PortfolioDetailPage: React.FC = () => {
                         <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary">
                             View History
                         </Link>
+                        <button onClick={handleOpenCreateTransactionModal} className="btn btn-secondary">
+                            Add Transaction
+                        </button>
                         <div className="relative">
-                            <button onClick={handleOpenAssetTypeMenu} className="btn btn-primary">Add New Asset</button>
-                            {isAssetTypeMenuOpen && (
+                            <button onClick={handleOpenFixedIncomeMenu} className="btn btn-primary">Add Fixed Income</button>
+                            {isFixedIncomeMenuOpen && (
                                 <>
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
                                         <button
                                             onClick={() => {
-                                                handleOpenCreateTransactionModal();
-                                                handleCloseAssetTypeMenu();
-                                            }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                        >
-                                            Stock / MF Transaction
-                                        </button>
-                                        <button
-                                            onClick={() => {
                                                 setAddFixedDepositModalOpen(true);
-                                                handleCloseAssetTypeMenu();
+                                                handleCloseFixedIncomeMenu();
                                             }}
                                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                         >
@@ -137,7 +131,7 @@ const PortfolioDetailPage: React.FC = () => {
                                         <button
                                             onClick={() => {
                                                 setAddBondModalOpen(true);
-                                                handleCloseAssetTypeMenu();
+                                                handleCloseFixedIncomeMenu();
                                             }}
                                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                         >
@@ -146,14 +140,14 @@ const PortfolioDetailPage: React.FC = () => {
                                         <button
                                             onClick={() => {
                                                 setAddPpfModalOpen(true);
-                                                handleCloseAssetTypeMenu();
+                                                handleCloseFixedIncomeMenu();
                                             }}
                                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                         >
                                             PPF Account
                                         </button>
                                     </div>
-                                    <div onClick={handleCloseAssetTypeMenu} className="fixed inset-0 z-0"></div>
+                                    <div onClick={handleCloseFixedIncomeMenu} className="fixed inset-0 z-0"></div>
                                 </>
                             )}
                         </div>
