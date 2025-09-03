@@ -4,10 +4,13 @@ import TopMoversTable from '../components/Dashboard/TopMoversTable';
 import PortfolioHistoryChart from '../components/Dashboard/PortfolioHistoryChart';
 import AssetAllocationChart from '../components/Dashboard/AssetAllocationChart';
 import HelpLink from '../components/HelpLink';
+import { usePrivacy } from '../context/PrivacyContext';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 
 const DashboardPage = () => {
   const { data: summary, isLoading, isError } = useDashboardSummary();
+  const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
 
   if (isLoading) {
     return <div className="text-center p-8">Loading dashboard data...</div>;
@@ -19,9 +22,22 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <HelpLink sectionId="dashboard" />
+      <div className="flex justify-between items-center">
+        <div className="flex items-center">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <HelpLink sectionId="dashboard" />
+        </div>
+        <button
+          onClick={togglePrivacyMode}
+          className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+          aria-label={isPrivacyMode ? 'Show sensitive data' : 'Hide sensitive data'}
+        >
+          {isPrivacyMode ? (
+            <EyeSlashIcon className="h-6 w-6 text-gray-600" />
+          ) : (
+            <EyeIcon className="h-6 w-6 text-gray-600" />
+          )}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

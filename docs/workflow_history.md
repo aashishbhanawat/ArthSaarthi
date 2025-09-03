@@ -6,6 +6,36 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-09-02: Implement Privacy Mode (FR3.4)
+
+*   **Task Description:** Implement a "Privacy Mode" feature that allows users to obscure sensitive monetary values across the application with a single toggle.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** The AI was prompted to implement the feature based on the plan. It correctly created a `PrivacyContext` and refactored the `formatCurrency` utility to use it.
+    2.  **User-led Course Correction:** The user provided critical feedback that the initial approach was too broad, hiding all monetary values including non-sensitive ones like individual stock prices.
+    3.  **Revised Plan & Refactoring:** A new plan was formulated to address the feedback. This involved:
+        *   Resetting all previous changes.
+        *   Creating a new, specific hook (`usePrivacySensitiveCurrency`).
+        *   Selectively applying this hook *only* to high-level summary components (`SummaryCard`, `PortfolioSummary`, etc.) while leaving others untouched.
+    4.  **E2E Test Correction:** The E2E test was updated to verify the new, correct behavior: asserting that summary values are hidden while table values remain visible in privacy mode.
+
+*   **File Changes:**
+    *   `frontend/src/context/PrivacyContext.tsx`: **New** file to manage the global privacy state.
+    *   `frontend/src/utils/formatting.ts`: **Updated** to add the `usePrivacySensitiveCurrency` hook.
+    *   `frontend/src/pages/DashboardPage.tsx`: **Updated** to add the UI toggle.
+    *   `frontend/src/components/Dashboard/SummaryCard.tsx`, `frontend/src/components/Portfolio/PortfolioSummary.tsx`, `frontend/src/components/Goals/...`: **Updated** to use the new selective hook.
+    *   `e2e/tests/privacy-mode.spec.ts`: **New** E2E test to validate the selective obscuring.
+    *   `frontend/src/__tests__/`: **New** unit tests for the context and hook.
+    *   `docs/features/FR3.4_privacy_mode.md`: **Updated** status to "Implemented".
+
+*   **Verification:**
+    - The full test suite will be run before submission.
+
+*   **Outcome:**
+    - The "Privacy Mode" feature is implemented according to the refined user requirements. It correctly hides only high-level sensitive data, providing a better user experience. This task highlights the importance of clear requirements and iterative feedback in an AI-assisted workflow.
+
+---
+
 ## 2025-07-17: Backend for User Management
 
 *   **Task Description:** Implement the backend functionality for the User Management feature, allowing an administrator to perform CRUD operations on users.

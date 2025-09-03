@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useGoal, useCreateGoalLink, useDeleteGoalLink } from '../../hooks/useGoals';
 import AssetLinkModal from '../modals/AssetLinkModal';
-import { formatCurrency, formatDate } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
 import { TrashIcon, LinkIcon } from '@heroicons/react/24/outline';
 
 interface GoalDetailViewProps {
@@ -30,6 +30,7 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const createGoalLink = useCreateGoalLink();
   const deleteGoalLink = useDeleteGoalLink();
+  const formatCurrency = usePrivacySensitiveCurrency();
 
   const handleLink = (linkData: { portfolio_id?: string; asset_id?: string }) => {
     createGoalLink.mutate({ goalId, link: { ...linkData, goal_id: goalId } });
