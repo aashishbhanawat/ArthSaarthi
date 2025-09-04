@@ -39,5 +39,5 @@ assignees: ''
 
 ### 5. Additional Context
 
-*   **Requirement ID:** `(FR4.3.3)`
+*   **Requirement ID:** `(FR4.3.4)`
 *   For the MVP, the complex official interest calculation will be deferred. The value will be driven by user updates and contributions.

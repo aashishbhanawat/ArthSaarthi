@@ -39,5 +39,5 @@ assignees: ''
 
 ### 5. Additional Context
 
-*   **Requirement ID:** `(FR4.3.4)`
+*   **Requirement ID:** `(FR4.3.5)`
 *   For the MVP, the complex NAV-based valuation across different fund choices will be deferred. The value will be driven by user updates and contributions.

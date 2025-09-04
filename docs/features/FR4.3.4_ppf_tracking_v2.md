@@ -2,7 +2,7 @@
 
 **Status: 📝 Planned**
 ---
-**Feature ID:** FR4.3.3
+**Feature ID:** FR4.3.4
 **Title:** Revamp Public Provident Fund (PPF) Tracking with Automated Calculations
 **User Story:** As a user, I want to track my PPF account with automated interest calculations based on official rates, so I can see its true growth without manual updates and have confidence in the data.
 

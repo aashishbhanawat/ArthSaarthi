@@ -39,5 +39,5 @@ assignees: ''
 
 ### 5. Additional Context
 
-*   **Requirement ID:** `(FR4.3.2)`
+*   **Requirement ID:** `(FR4.3.3)`
 *   This is a sub-issue under the "Advanced Asset Support" epic and should be implemented after Fixed Deposits.
