@@ -3,6 +3,7 @@ export interface Holding {
     ticker_symbol: string;
     asset_name: string;
     asset_type: string;
+    group: string;
     quantity: number;
     average_buy_price: number;
     total_invested_amount: number;
@@ -12,6 +13,10 @@ export interface Holding {
     days_pnl_percentage: number;
     unrealized_pnl: number;
     unrealized_pnl_percentage: number;
+    interest_rate: number | null;
+    maturity_date: string | null;
+    opening_date: string | null;
+    isin: string;
 }
 
 export interface HoldingsResponse {

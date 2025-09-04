@@ -10,6 +10,7 @@ class Holding(BaseModel):
     ticker_symbol: str
     asset_name: str
     asset_type: str
+    group: str
     quantity: Decimal
     average_buy_price: Decimal
     total_invested_amount: Decimal

@@ -74,6 +74,11 @@ class MockFinancialDataService:
             "name": "HDFC Index Fund - S&P BSE Sensex Plan - Direct Plan",
             "asset_type": "Mutual Fund",
         },
+        {
+            "ticker_symbol": "140578",
+            "name": "Mirae Asset Large Cap Fund",
+            "asset_type": "Mutual Fund",
+        },
     ]
 
     MOCK_MF_PRICES = {
