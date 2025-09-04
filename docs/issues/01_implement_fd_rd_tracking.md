@@ -40,5 +40,5 @@ assignees: ''
 
 ### 5. Additional Context
 
-*   **Requirement ID:** `(FR4.3.1)`
+*   **Requirement ID:** `(FR4.3.2)`
 *   This is the first issue under the "Advanced Asset Support" epic. The implementation should be designed to be extensible for other fixed-income assets like Bonds and PPF.

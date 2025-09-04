@@ -2,7 +2,7 @@
 
 **Status: 📝 Planned**
 ---
-**Feature ID:** FR4.3.1
+**Feature ID:** FR4.3.2
 **Title:** Implement Tracking for Fixed Deposits (FDs)
 **User Story:** As a user with diverse investments, I want to track my Fixed Deposits (FDs) within the application, so that I can have a complete, holistic view of my entire investment portfolio in one place.
 
