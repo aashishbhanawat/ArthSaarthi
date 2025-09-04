@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
+from app import crud, schemas
 from app.services.financial_data_service import financial_data_service
 
 
@@ -73,7 +73,9 @@ class CRUDHolding:
                     days_pnl_percentage=0.0,
                     unrealized_pnl=current_value - fd.principal_amount,
                     unrealized_pnl_percentage=(
-                        float((current_value - fd.principal_amount) / fd.principal_amount)
+                        float(
+                            (current_value - fd.principal_amount) / fd.principal_amount
+                        )
                         if fd.principal_amount > 0
                         else 0.0
                     ),

@@ -1,5 +1,5 @@
-from typing import List
 import uuid
+from typing import List
 
 from sqlalchemy.orm import Session
 
@@ -10,7 +10,12 @@ from app.schemas.fixed_deposit import FixedDepositCreate, FixedDepositUpdate
 
 class CRUDFixedDeposit(CRUDBase[FixedDeposit, FixedDepositCreate, FixedDepositUpdate]):
     def create_with_portfolio(
-        self, db: Session, *, obj_in: FixedDepositCreate, portfolio_id: uuid.UUID, user_id: uuid.UUID
+        self,
+        db: Session,
+        *,
+        obj_in: FixedDepositCreate,
+        portfolio_id: uuid.UUID,
+        user_id: uuid.UUID,
     ) -> FixedDeposit:
         db_obj = self.model(**obj_in.dict(), portfolio_id=portfolio_id, user_id=user_id)
         db.add(db_obj)

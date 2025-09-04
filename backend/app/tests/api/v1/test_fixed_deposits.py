@@ -1,14 +1,10 @@
 from datetime import date, timedelta
-from decimal import Decimal
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.tests.utils.user import create_random_user
 from app.tests.utils.portfolio import create_test_portfolio
-
-
 from app.tests.utils.user import create_random_user, get_access_token
 
 

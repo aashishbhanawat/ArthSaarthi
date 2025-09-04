@@ -66,6 +66,17 @@ export const useCreateTransaction = () => {
     });
 };
 
+import { FixedDepositCreate } from '../types/portfolio';
+
+export const useCreateFixedDeposit = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ portfolioId, data }: { portfolioId: string; data: FixedDepositCreate }) =>
+            portfolioApi.createFixedDeposit(portfolioId, data),
+        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
+    });
+};
+
 export const usePortfolioAnalytics = (id: string | undefined) => {
     return useQuery<PortfolioAnalytics, Error>({
         queryKey: ['portfolioAnalytics', id],

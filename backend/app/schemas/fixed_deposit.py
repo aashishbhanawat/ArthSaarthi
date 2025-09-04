@@ -1,6 +1,6 @@
+import uuid
 from datetime import date
 from decimal import Decimal
-import uuid
 
 from pydantic import BaseModel
 

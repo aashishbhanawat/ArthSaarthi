@@ -95,7 +95,11 @@ def delete_portfolio(
     return {"msg": "Portfolio deleted successfully"}
 
 
-@router.post("/{portfolio_id}/fixed-deposits/", response_model=schemas.fixed_deposit.FixedDeposit, status_code=201)
+@router.post(
+    "/{portfolio_id}/fixed-deposits/",
+    response_model=schemas.fixed_deposit.FixedDeposit,
+    status_code=201,
+)
 def create_fixed_deposit(
     *,
     db: Session = Depends(dependencies.get_db),
