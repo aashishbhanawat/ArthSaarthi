@@ -56,9 +56,9 @@ async function globalSetup() {
 
   // 4. Seed some assets
   const assetsToSeed = [
-    { ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
-    { ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
-    { ticker_symbol: 'MSFT', name: 'Microsoft Corporation', asset_type: 'Stock', currency: 'USD', exchange: 'NASDAQ' },
+    { ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' },
+    { ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' },
+    { ticker_symbol: 'MSFT', name: 'Microsoft Corporation', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' },
   ];
   for (const asset of assetsToSeed) {
     const createAssetResponse = await requestContext.post('/api/v1/assets/', {

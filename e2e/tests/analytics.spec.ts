@@ -70,8 +70,12 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Price per Unit').fill('200');
     await page.getByLabel('Date').fill('2023-01-01');
     //await page.screenshot({ path: 'analytics_test.png' });
-    await page.getByRole('button', { name: 'Save Transaction' }).click();    
-    await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+
+    const equitiesSection = page.locator('div:has-text("Equities & Mutual Funds") >> ..').first();
+    await expect(equitiesSection).toBeVisible();
+    const holdingRow = equitiesSection.getByRole('row', { name: /MSFT/ });
+    await expect(holdingRow).toBeVisible();
 
     // SELL 5 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
@@ -87,8 +91,8 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // Verify the holding quantity was updated from 10 to 5
-    const holdingRow = page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: /MSFT/ });
-    await expect(holdingRow.getByRole('cell', { name: '5', exact: true })).toBeVisible();
+    const updatedHoldingRow = equitiesSection.getByRole('row', { name: /MSFT/ });
+    await expect(updatedHoldingRow.getByRole('cell', { name: '5', exact: true })).toBeVisible();
 
     // 3. Verify Analytics Card is visible and displays data
     const analyticsCard = page.locator('.card', { hasText: 'Advanced Analytics' });
@@ -126,7 +130,10 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Price per Unit').fill('100');
     await page.getByLabel('Date').fill(getPastDateISO(365));
     await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: new RegExp(assetTicker) })).toBeVisible();
+
+    const equitiesSection = page.locator('div:has-text("Equities & Mutual Funds") >> ..').first();
+    await expect(equitiesSection).toBeVisible();
+    await expect(equitiesSection.getByRole('row', { name: new RegExp(assetTicker) })).toBeVisible();
 
     // SELL 5 shares @ 120, 6 months ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
