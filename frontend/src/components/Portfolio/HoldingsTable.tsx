@@ -58,7 +58,6 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
 type SortKey = keyof Holding;
 type SortDirection = 'ascending' | 'descending';
 
-    console.log('HoldingsTable holdings:', holdings);
     const [sortConfig, setSortConfig] = React.useState<{ [key: string]: { key: SortKey; direction: SortDirection } }>({});
 
     const groupedAndSortedHoldings = useMemo(() => {
@@ -69,10 +68,22 @@ type SortDirection = 'ascending' | 'descending';
             const config = sortConfig[group];
             if (config) {
                 grouped[group].sort((a, b) => {
-                    if (a[config.key] < b[config.key]) {
+                    const aValue = a[config.key];
+                    const bValue = b[config.key];
+
+                    // Handle numeric sorting for string-based numbers from the API
+                    const numA = Number(aValue);
+                    const numB = Number(bValue);
+
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return config.direction === 'ascending' ? numA - numB : numB - numA;
+                    }
+
+                    // Handle string sorting for non-numeric values
+                    if (String(aValue) < String(bValue)) {
                         return config.direction === 'ascending' ? -1 : 1;
                     }
-                    if (a[config.key] > b[config.key]) {
+                    if (String(aValue) > String(bValue)) {
                         return config.direction === 'ascending' ? 1 : -1;
                     }
                     return 0;
