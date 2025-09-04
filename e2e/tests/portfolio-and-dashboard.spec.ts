@@ -96,7 +96,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
     await page.getByRole('combobox', { name: 'Asset', exact: true }).fill('Mirae');
     await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-mf'));
-    await page.getByText(mfName).click();
+    await page.getByText(mfName).click({ force: true });
     await page.getByLabel('Quantity').fill('100');
     await page.getByLabel('Price per Unit').fill('45.50');
     await page.getByLabel('Date').fill('2023-03-05');

@@ -128,8 +128,11 @@ class CRUDHolding:
                 "FIXED_DEPOSIT": "DEPOSITS",
                 "BOND": "BONDS",
                 "PPF": "SCHEMES",
+                "Mutual Fund": "EQUITIES",
             }
-            group = group_map.get(asset.asset_type, "MISCELLANEOUS")
+            group = group_map.get(
+                asset.asset_type.upper().replace(" ", "_"), "MISCELLANEOUS"
+            )
 
             holdings_list.append(
                 schemas.Holding(

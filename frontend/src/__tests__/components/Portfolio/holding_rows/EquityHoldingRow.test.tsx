@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import EquityHoldingRow from '../../../components/Portfolio/EquityHoldingRow';
+import EquityHoldingRow from '../../../../components/Portfolio/holding_rows/EquityHoldingRow';
 import { Holding } from '../../../types/holding';
 
 const mockHolding: Holding = {
