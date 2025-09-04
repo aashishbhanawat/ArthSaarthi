@@ -4,9 +4,9 @@ import { ChevronDownIcon } from '@heroicons/react/24/solid';
 import groupBy from 'lodash.groupby';
 import { Holding } from '../../types/holding';
 import { formatCurrency } from '../../utils/formatting';
-import EquityHoldingRow from './EquityHoldingRow';
-import DepositHoldingRow from './DepositHoldingRow';
-import BondHoldingRow from './BondHoldingRow';
+import EquityHoldingRow from './holding_rows/EquityHoldingRow';
+import DepositHoldingRow from './holding_rows/DepositHoldingRow';
+import BondHoldingRow from './holding_rows/BondHoldingRow';
 // Note: SchemeHoldingRow might not be used in phase 1, but we create it for future use.
 // import SchemeHoldingRow from './SchemeHoldingRow';
 
