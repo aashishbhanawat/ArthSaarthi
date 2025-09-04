@@ -34,11 +34,40 @@ const SECTION_CONFIG: { [key: string]: { title: string; columns: string[] } } = 
 };
 
 const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, error, onRowClick }) => {
+type SortKey = keyof Holding;
+type SortDirection = 'ascending' | 'descending';
+
     console.log('HoldingsTable holdings:', holdings);
-    const groupedHoldings = useMemo(() => {
+    const [sortConfig, setSortConfig] = React.useState<{ [key: string]: { key: SortKey; direction: SortDirection } }>({});
+
+    const groupedAndSortedHoldings = useMemo(() => {
         if (!holdings) return {};
-        return groupBy(holdings, 'group');
-    }, [holdings]);
+        const grouped = groupBy(holdings, 'group');
+
+        for (const group in grouped) {
+            const config = sortConfig[group];
+            if (config) {
+                grouped[group].sort((a, b) => {
+                    if (a[config.key] < b[config.key]) {
+                        return config.direction === 'ascending' ? -1 : 1;
+                    }
+                    if (a[config.key] > b[config.key]) {
+                        return config.direction === 'ascending' ? 1 : -1;
+                    }
+                    return 0;
+                });
+            }
+        }
+        return grouped;
+    }, [holdings, sortConfig]);
+
+    const requestSort = (group: string, key: SortKey) => {
+        let direction: SortDirection = 'ascending';
+        if (sortConfig[group] && sortConfig[group].key === key && sortConfig[group].direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ ...sortConfig, [group]: { key, direction } });
+    };
 
     const sectionOrder = ['EQUITIES', 'DEPOSITS', 'BONDS', 'SCHEMES'];
 
@@ -73,11 +102,16 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
             <h2 className="text-xl font-bold mb-4">Holdings</h2>
             <Accordion.Root type="multiple" defaultValue={sectionOrder} className="space-y-2">
                 {sectionOrder.map((group) => {
-                    const sectionHoldings = groupedHoldings[group];
+                    const sectionHoldings = groupedAndSortedHoldings[group];
                     if (!sectionHoldings) return null;
 
                     const config = SECTION_CONFIG[group];
-                    const totalValue = sectionHoldings.reduce((acc, h) => acc + h.current_value, 0);
+                    const totalValue = sectionHoldings.reduce((acc, h) => acc + Number(h.current_value), 0);
+
+                    const getSortIndicator = (key: SortKey) => {
+                        if (!sortConfig[group] || sortConfig[group].key !== key) return null;
+                        return sortConfig[group].direction === 'ascending' ? ' ▲' : ' ▼';
+                    };
 
                     return (
                         <Accordion.Item key={group} value={group} className="border rounded-lg">
@@ -92,8 +126,8 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                                     <thead>
                                         <tr className="text-left text-gray-600 text-sm">
                                             {config.columns.map((col, index) => (
-                                                <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''}`}>
-                                                    {col}
+                                                <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''} cursor-pointer`} onClick={() => requestSort(group, col.toLowerCase().replace(/ /g, '_') as SortKey)}>
+                                                    {col}{getSortIndicator(col.toLowerCase().replace(/ /g, '_') as SortKey)}
                                                 </th>
                                             ))}
                                         </tr>
