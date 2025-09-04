@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.tests.utils.portfolio import create_test_portfolio
-from app.tests.utils.user import create_random_user, get_access_token
+from app.tests.utils.user import create_random_user
 
 
-def test_create_fixed_deposit(client: TestClient, db: Session) -> None:
+def test_create_fixed_deposit(client: TestClient, db: Session, get_auth_headers) -> None:
     user, password = create_random_user(db)
     portfolio = create_test_portfolio(db, user_id=user.id, name="Test Portfolio")
-    access_token = get_access_token(client, user.email, password)
+    headers = get_auth_headers(user.email, password)
     data = {
         "name": "Test FD",
         "principal_amount": 10000.0,
@@ -24,7 +24,7 @@ def test_create_fixed_deposit(client: TestClient, db: Session) -> None:
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/fixed-deposits/",
         json=data,
-        headers={"Authorization": f"Bearer {access_token}"},
+        headers=headers,
     )
     assert response.status_code == 201
     content = response.json()
