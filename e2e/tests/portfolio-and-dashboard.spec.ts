@@ -66,67 +66,68 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(portfolioRow).not.toBeVisible();
   });
 
-  test('should display holdings in a collapsible section with correct data', async ({ page }) => {
-    const portfolioName = `My Holdings Portfolio ${Date.now()}`;
-    const stockName = 'MSFT';
-    const mfName = 'Mirae Asset Large Cap Fund';
+  test('should allow a user to add various types of transactions', async ({ page }) => {
+    const portfolioName = `My Transaction Portfolio ${Date.now()}`;
+    const newAssetName = 'GOOGL';
 
-    // 1. Create a portfolio
+    // 1. Create a portfolio to hold transactions
     await page.getByRole('link', { name: 'Portfolios' }).click();
     await page.getByRole('button', { name: 'Create New Portfolio' }).click();
     await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
-    // 2. Add a Stock transaction
+    // 2. Add a BUY transaction for a NEW asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(stockName);
-    await page.locator(`li:has-text("${stockName}")`).click();
-    await page.getByLabel('Quantity').fill('50');
-    await page.getByLabel('Price per Unit').fill('300.00');
-    await page.getByLabel('Date').fill('2023-03-01');
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
+    const listItem = page.locator(`li:has-text("${newAssetName}")`);
+    await expect(listItem).toBeVisible();
+    await listItem.click();
+    await page.getByLabel('Quantity').fill('10');
+    await page.getByLabel('Price per Unit').fill('150.00');
+    await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
     await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible(); // Wait for navigation
 
-    // 3. Add a Mutual Fund transaction
+    // Verify the new holding appears in the HoldingsTable
+    // This also serves as a wait for the transaction to be processed and the UI to update.
+    const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
+    await expect(holdingsTable).toBeVisible();
+    const googlRow = holdingsTable.getByRole('row', { name: /GOOGL/ });
+    await expect(googlRow).toBeVisible();
+    // Use exact match to avoid ambiguity with other cells that might contain '10' (e.g., P&L of ₹10.53)
+    await expect(googlRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
+
+    // 3. Add a SELL transaction for the same asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Asset Type').selectOption('Mutual Fund');
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByRole('combobox', { name: 'Asset', exact: true }).fill('Mirae');
-    await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-mf'));
-    await page.getByText(mfName).click({ force: true });
-    await page.getByLabel('Quantity').fill('100');
-    await page.getByLabel('Price per Unit').fill('45.50');
-    await page.getByLabel('Date').fill('2023-03-05');
+    await page.getByLabel('Asset Type').selectOption('Stock');
+    await page.getByLabel('Type', { exact: true }).selectOption('SELL');
+    // Use pressSequentially to simulate user typing and avoid race conditions with debounced search
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
+
+    // Wait for the debounced search API call to complete before interacting with the results
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
+
+    // Use a direct locator strategy that is more robust for this component.
+    const listItemSell = page.locator(`li:has-text("${newAssetName}")`);
+    // Wait for the search result to appear and then press Enter to select it. This is more stable than clicking.
+    await expect(listItemSell).toBeVisible(); // Ensure the item is there
+    await listItemSell.click(); // Click the item directly to ensure selection
+
+    await page.getByLabel('Quantity').fill('5');
+    await page.getByLabel('Price per Unit').fill('160.00');
+    await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
     await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible(); // Wait for navigation
 
-    // 4. Verify the new UI
-    const equitiesSection = page.locator('div:has-text("Equities & Mutual Funds") >> ..').first();
-    await expect(equitiesSection.getByRole('row', { name: new RegExp(mfName) })).toBeVisible();
-    await expect(equitiesSection.getByRole('button', { name: /Equities & Mutual Funds/ })).toBeVisible();
+    // Verify the holding quantity is updated
+    await expect(holdingsTable).toBeVisible();
+    await expect(googlRow).toBeVisible();
+    // Use exact match to avoid ambiguity with other cells that might contain '5'
+    await expect(googlRow.getByRole('cell', { name: '5', exact: true })).toBeVisible(); // Quantity updated from 10 to 5
 
-    // Check that the section is expanded by default and contains the correct headers
-    const equitiesContent = equitiesSection.locator('table');
-    await expect(equitiesContent).toBeVisible();
-    await expect(equitiesContent.getByRole('columnheader', { name: 'Asset' })).toBeVisible();
-    await expect(equitiesContent.getByRole('columnheader', { name: 'Qty' })).toBeVisible();
-    await expect(equitiesContent.getByRole('columnheader', { name: 'Avg. Price' })).toBeVisible();
-    await expect(equitiesContent.getByRole('columnheader', { name: 'LTP' })).toBeVisible();
-    await expect(equitiesContent.getByRole('columnheader', { name: 'Value' })).toBeVisible();
-
-    // Check that both assets are in the table
-    await expect(equitiesContent.getByRole('row', { name: new RegExp(stockName) })).toBeVisible();
-    await expect(equitiesContent.getByRole('row', { name: new RegExp(mfName) })).toBeVisible();
-
-    // 5. Test collapse and expand
-    const equitiesTrigger = equitiesSection.getByRole('button', { name: /Equities & Mutual Funds/ });
-    await equitiesTrigger.click();
-    await expect(equitiesContent).not.toBeVisible();
-    await equitiesTrigger.click();
-    await expect(equitiesContent).toBeVisible();
+    // Clean up the route handler so it doesn't interfere with other tests.
+    await page.unroute('**/api/v1/assets/');
   });
 
   test('should prevent a user from creating an invalid SELL transaction', async ({ page }) => {

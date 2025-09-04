@@ -34,6 +34,7 @@ const SECTION_CONFIG: { [key: string]: { title: string; columns: string[] } } = 
 };
 
 const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, error, onRowClick }) => {
+    console.log('HoldingsTable holdings:', holdings);
     const groupedHoldings = useMemo(() => {
         if (!holdings) return {};
         return groupBy(holdings, 'group');
