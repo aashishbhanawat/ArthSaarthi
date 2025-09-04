@@ -17,18 +17,39 @@ interface HoldingsTableProps {
     onRowClick: (holding: Holding) => void;
 }
 
-const SECTION_CONFIG: { [key: string]: { title: string; columns: string[] } } = {
+const SECTION_CONFIG: { [key: string]: { title: string; columns: { label: string; key: SortKey }[] } } = {
     EQUITIES: {
         title: 'Equities & Mutual Funds',
-        columns: ['Asset', 'Qty', 'Avg. Price', 'LTP', 'Value', "Day's P&L", 'Unrealized P&L', 'Unrealized P&L %'],
+        columns: [
+            { label: 'Asset', key: 'asset_name' },
+            { label: 'Qty', key: 'quantity' },
+            { label: 'Avg. Price', key: 'average_buy_price' },
+            { label: 'LTP', key: 'current_price' },
+            { label: 'Value', key: 'current_value' },
+            { label: "Day's P&L", key: 'days_pnl' },
+            { label: 'Unrealized P&L', key: 'unrealized_pnl' },
+            { label: 'Unrealized P&L %', key: 'unrealized_pnl_percentage' },
+        ],
     },
     DEPOSITS: {
         title: 'Deposits',
-        columns: ['Asset', 'Interest Rate', 'Maturity', 'Invested', 'Current Value'],
+        columns: [
+            { label: 'Asset', key: 'asset_name' },
+            { label: 'Interest Rate', key: 'interest_rate' },
+            { label: 'Maturity', key: 'maturity_date' },
+            { label: 'Invested', key: 'total_invested_amount' },
+            { label: 'Current Value', key: 'current_value' },
+        ],
     },
     BONDS: {
         title: 'Bonds & Debentures',
-        columns: ['Asset', 'Coupon', 'Maturity', 'Invested', 'Mkt. Value'],
+        columns: [
+            { label: 'Asset', key: 'asset_name' },
+            { label: 'Coupon', key: 'interest_rate' },
+            { label: 'Maturity', key: 'maturity_date' },
+            { label: 'Invested', key: 'total_invested_amount' },
+            { label: 'Mkt. Value', key: 'current_value' },
+        ],
     },
     // Add other sections as needed
 };
@@ -126,8 +147,8 @@ type SortDirection = 'ascending' | 'descending';
                                     <thead>
                                         <tr className="text-left text-gray-600 text-sm">
                                             {config.columns.map((col, index) => (
-                                                <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''} cursor-pointer`} onClick={() => requestSort(group, col.toLowerCase().replace(/ /g, '_') as SortKey)}>
-                                                    {col}{getSortIndicator(col.toLowerCase().replace(/ /g, '_') as SortKey)}
+                                                <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''} cursor-pointer`} onClick={() => requestSort(group, col.key)}>
+                                                    {col.label}{getSortIndicator(col.key)}
                                                 </th>
                                             ))}
                                         </tr>
