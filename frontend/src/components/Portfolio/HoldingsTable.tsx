@@ -54,10 +54,10 @@ const SECTION_CONFIG: { [key: string]: { title: string; columns: { label: string
     // Add other sections as needed
 };
 
-const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, error, onRowClick }) => {
 type SortKey = keyof Holding;
 type SortDirection = 'ascending' | 'descending';
 
+const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, error, onRowClick }) => {
     const [sortConfig, setSortConfig] = React.useState<{ [key: string]: { key: SortKey; direction: SortDirection } }>({});
 
     const groupedAndSortedHoldings = useMemo(() => {
