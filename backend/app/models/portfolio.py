@@ -22,3 +22,6 @@ class Portfolio(Base):
     import_sessions = relationship(
         "ImportSession", back_populates="portfolio", cascade="all, delete-orphan"
     )
+    fixed_deposits = relationship(
+        "FixedDeposit", back_populates="portfolio", cascade="all, delete-orphan"
+    )

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { useCreateTransaction, useUpdateTransaction } from '../../hooks/usePortfolios';
+import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit } from '../../hooks/usePortfolios';
 import { useCreateAsset, useMfSearch } from '../../hooks/useAssets';
 import { lookupAsset } from '../../services/portfolioApi';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
@@ -16,12 +16,19 @@ interface TransactionFormModalProps {
 
 // Define the shape of our form data
 type TransactionFormInputs = {
-    asset_type: 'Stock' | 'Mutual Fund';
+    asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit';
     transaction_type: 'BUY' | 'SELL';
     quantity: number;
     price_per_unit: number;
     transaction_date: string; // from date input
     fees?: number;
+    // FD-specific fields
+    deposit_name?: string;
+    principal_amount?: number;
+    interest_rate?: number;
+    maturity_date?: string;
+    compounding_frequency?: 'Annually' | 'Half-Yearly' | 'Quarterly';
+    interest_payout?: 'Cumulative' | 'Payout';
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
@@ -33,6 +40,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const createTransactionMutation = useCreateTransaction();
     const updateTransactionMutation = useUpdateTransaction();
     const createAssetMutation = useCreateAsset();
+    const createFixedDepositMutation = useCreateFixedDeposit();
 
     const [apiError, setApiError] = useState<string | null>(null);
     
@@ -112,26 +120,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     };
 
     const onSubmit = (data: TransactionFormInputs) => {
-        if (assetType === 'Stock' && !selectedAsset) {
-            setApiError("Please select a stock.");
-            return;
-        }
-        if (assetType === 'Mutual Fund' && !selectedMf) {
-            setApiError("Please select a mutual fund.");
-            return;
-        }
-
-        // Destructure to separate form-only fields from the final payload.
-        const { asset_type, ...transactionBaseData } = data;
-
-        const commonPayload: Omit<TransactionUpdate, 'asset_id'> = {
-            ...transactionBaseData,
-            quantity: Number(data.quantity),
-            price_per_unit: Number(data.price_per_unit),
-            fees: data.fees ? Number(data.fees) : 0,
-            transaction_date: new Date(data.transaction_date).toISOString(),
-        };
-
         const mutationOptions = {
             onSuccess: () => onClose(),
             onError: (error: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) => {
@@ -145,7 +133,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 if (typeof detail === 'string') {
                     errorMessage = detail;
                 } else if (Array.isArray(detail) && detail[0]?.msg) {
-                    // Handle FastAPI validation errors which are arrays of objects
                     errorMessage = detail.map(d => d.msg).join(', ');
                 } else if (error.message) {
                     errorMessage = error.message;
@@ -154,27 +141,63 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             }
         };
 
-        if (isEditMode && transactionToEdit) {
-            const payload: TransactionUpdate = commonPayload;
-            updateTransactionMutation.mutate(
-                { portfolioId, transactionId: transactionToEdit.id, data: payload },
-                mutationOptions
-            );
-        } else {
-            let payload: TransactionCreate;
-            if (asset_type === 'Stock' && selectedAsset) {
-                payload = {
-                    ...commonPayload,
-                    asset_id: selectedAsset.id,
-                    ticker_symbol: selectedAsset.ticker_symbol, // Add ticker_symbol to satisfy backend validation
-                };
-            } else if (asset_type === 'Mutual Fund' && selectedMf) {
-                payload = { ...commonPayload, ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' };
-            } else {
-                setApiError("An unexpected error occurred. Please select an asset.");
+        if (assetType === 'Fixed Deposit') {
+            if (isEditMode) {
+                // TODO: Implement FD editing if required
+                setApiError("Editing Fixed Deposits is not yet supported.");
                 return;
             }
-            createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            const fdPayload = {
+                name: data.deposit_name,
+                principal_amount: data.principal_amount,
+                interest_rate: data.interest_rate,
+                start_date: data.transaction_date, // Re-using transaction_date for start_date
+                maturity_date: data.maturity_date,
+                compounding_frequency: data.compounding_frequency,
+                interest_payout: data.interest_payout,
+            };
+            createFixedDepositMutation.mutate({ portfolioId, data: fdPayload }, mutationOptions);
+        } else {
+            if (assetType === 'Stock' && !selectedAsset) {
+                setApiError("Please select a stock.");
+                return;
+            }
+            if (assetType === 'Mutual Fund' && !selectedMf) {
+                setApiError("Please select a mutual fund.");
+                return;
+            }
+
+            const { asset_type, ...transactionBaseData } = data;
+            const commonPayload: Omit<TransactionUpdate, 'asset_id'> = {
+                ...transactionBaseData,
+                quantity: Number(data.quantity),
+                price_per_unit: Number(data.price_per_unit),
+                fees: data.fees ? Number(data.fees) : 0,
+                transaction_date: new Date(data.transaction_date).toISOString(),
+            };
+
+            if (isEditMode && transactionToEdit) {
+                const payload: TransactionUpdate = commonPayload;
+                updateTransactionMutation.mutate(
+                    { portfolioId, transactionId: transactionToEdit.id, data: payload },
+                    mutationOptions
+                );
+            } else {
+                let payload: TransactionCreate;
+                if (asset_type === 'Stock' && selectedAsset) {
+                    payload = {
+                        ...commonPayload,
+                        asset_id: selectedAsset.id,
+                        ticker_symbol: selectedAsset.ticker_symbol,
+                    };
+                } else if (asset_type === 'Mutual Fund' && selectedMf) {
+                    payload = { ...commonPayload, ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' };
+                } else {
+                    setApiError("An unexpected error occurred. Please select an asset.");
+                    return;
+                }
+                createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            }
         }
     };
 
@@ -224,6 +247,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <select id="asset_type" {...register('asset_type')} className="form-input" disabled={isEditMode}>
                                     <option value="Stock">Stock</option>
                                     <option value="Mutual Fund">Mutual Fund</option>
+                                    <option value="Fixed Deposit">Fixed Deposit</option>
                                 </select>
                             </div>
 
@@ -307,39 +331,88 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         }}
                                     />
                                 )}
+                                {assetType === 'Fixed Deposit' && (
+                                    <div className="form-group col-span-2">
+                                        <label htmlFor="deposit_name" className="form-label">Deposit Name</label>
+                                        <input id="deposit_name" type="text" {...register('deposit_name', { required: "Deposit name is required" })} className="form-input" />
+                                        {errors.deposit_name && <p className="text-red-500 text-xs italic">{errors.deposit_name.message}</p>}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Transaction Details */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="form-group">
-                                <label htmlFor="transaction_type" className="form-label">Type</label>
-                                <select id="transaction_type" {...register('transaction_type')} className="form-input">
-                                    <option value="BUY">Buy</option>
-                                    <option value="SELL">Sell</option>
-                                </select>
+                        {assetType !== 'Fixed Deposit' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="form-group">
+                                    <label htmlFor="transaction_type" className="form-label">Type</label>
+                                    <select id="transaction_type" {...register('transaction_type')} className="form-input">
+                                        <option value="BUY">Buy</option>
+                                        <option value="SELL">Sell</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="quantity" className="form-label">Quantity</label>
+                                    <input id="quantity" type="number" step="any" {...register('quantity', { required: "Quantity is required", valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
+                                    {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
+                                    <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: "Price is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                    {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="transaction_date" className="form-label">Date</label>
+                                    <input id="transaction_date" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                    {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                </div>
+                                <div className="form-group col-span-2">
+                                    <label htmlFor="fees" className="form-label">Fees (optional)</label>
+                                    <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                    {errors.fees && <p className="text-red-500 text-xs italic">{errors.fees.message}</p>}
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="quantity" className="form-label">Quantity</label>
-                                <input id="quantity" type="number" step="any" {...register('quantity', { required: "Quantity is required", valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
-                                {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
+                        )}
+
+                        {assetType === 'Fixed Deposit' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="form-group">
+                                    <label htmlFor="principal_amount" className="form-label">Principal Amount</label>
+                                    <input id="principal_amount" type="number" step="any" {...register('principal_amount', { required: "Principal is required", valueAsNumber: true, min: { value: 0.01, message: "Must be positive" } })} className="form-input" />
+                                    {errors.principal_amount && <p className="text-red-500 text-xs italic">{errors.principal_amount.message}</p>}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="interest_rate" className="form-label">Interest Rate (%)</label>
+                                    <input id="interest_rate" type="number" step="any" {...register('interest_rate', { required: "Interest rate is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                    {errors.interest_rate && <p className="text-red-500 text-xs italic">{errors.interest_rate.message}</p>}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="transaction_date" className="form-label">Start Date</label>
+                                    <input id="transaction_date" type="date" {...register('transaction_date', { required: "Start date is required" })} className="form-input" />
+                                    {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="maturity_date" className="form-label">Maturity Date</label>
+                                    <input id="maturity_date" type="date" {...register('maturity_date', { required: "Maturity date is required" })} className="form-input" />
+                                    {errors.maturity_date && <p className="text-red-500 text-xs italic">{errors.maturity_date.message}</p>}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="compounding_frequency" className="form-label">Compounding Frequency</label>
+                                    <select id="compounding_frequency" {...register('compounding_frequency')} className="form-input">
+                                        <option value="Annually">Annually</option>
+                                        <option value="Half-Yearly">Half-Yearly</option>
+                                        <option value="Quarterly">Quarterly</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="interest_payout" className="form-label">Interest Payout</label>
+                                    <select id="interest_payout" {...register('interest_payout')} className="form-input">
+                                        <option value="Cumulative">Cumulative</option>
+                                        <option value="Payout">Payout</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
-                                <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: "Price is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
-                                {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="transaction_date" className="form-label">Date</label>
-                                <input id="transaction_date" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
-                                {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
-                            </div>
-                            <div className="form-group col-span-2">
-                                <label htmlFor="fees" className="form-label">Fees (optional)</label>
-                                <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
-                                {errors.fees && <p className="text-red-500 text-xs italic">{errors.fees.message}</p>}
-                            </div>
-                        </div>
+                        )}
 
                         {apiError && (
                             <div className="alert alert-error mt-2">
@@ -354,13 +427,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 className="btn btn-primary"
                                 disabled={
                                     (isEditMode && updateTransactionMutation.isPending) ||
-                                    (!isEditMode && createTransactionMutation.isPending) ||
+                                    (!isEditMode && (createTransactionMutation.isPending || createFixedDepositMutation.isPending)) ||
                                     (!isEditMode && assetType === 'Stock' && !selectedAsset) ||
                                     (!isEditMode && assetType === 'Mutual Fund' && !selectedMf)}
                             >
                                 {isEditMode
                                     ? (updateTransactionMutation.isPending ? 'Saving...' : 'Save Changes')
-                                    : (createTransactionMutation.isPending ? 'Saving...' : 'Save Transaction')
+                                    : (createTransactionMutation.isPending || createFixedDepositMutation.isPending ? 'Saving...' : 'Save Transaction')
                                 }
                             </button>
                         </div>

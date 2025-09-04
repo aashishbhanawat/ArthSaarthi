@@ -20,6 +20,9 @@ jest.mock('../../../hooks/usePortfolios', () => ({
   useUpdateTransaction: () => ({
     mutate: mockUpdateTransaction,
   }),
+  useCreateFixedDeposit: () => ({
+    mutate: jest.fn(),
+  }),
 }));
 
 jest.mock('../../../hooks/useAssets', () => ({

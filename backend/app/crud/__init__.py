@@ -11,9 +11,11 @@ from .crud_transaction import transaction
 from .crud_user import user
 from .crud_watchlist import watchlist
 from .crud_watchlist_item import watchlist_item
+from .crud_fixed_deposit import fixed_deposit
 
 __all__ = [
     "asset",
+    "fixed_deposit",
     "asset_alias",
     "audit_log",
     "dashboard",

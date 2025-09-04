@@ -1,12 +1,29 @@
 import uuid
 from collections import defaultdict
+from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
+from app import crud, models, schemas
 from app.services.financial_data_service import financial_data_service
+
+
+def _calculate_fd_current_value(
+    principal: Decimal, interest_rate: Decimal, start_date: date, end_date: date
+) -> Decimal:
+    """
+    Calculates the current value of an FD using compound interest.
+    A = P(1 + r/n)^(n*t)
+    Assuming n=1 (compounded annually)
+    """
+    if end_date < start_date:
+        return principal
+    t = Decimal((end_date - start_date).days / 365.25)
+    r = Decimal(interest_rate / 100)
+    current_value = principal * ((1 + r) ** t)
+    return current_value
 
 
 class CRUDHolding:
@@ -24,18 +41,58 @@ class CRUDHolding:
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
+        fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
+            db=db, portfolio_id=portfolio_id
+        )
+
+        # Initialize holdings list and summary totals
+        holdings_list: List[schemas.Holding] = []
+        summary_total_value = Decimal("0.0")
+        summary_total_invested = Decimal("0.0")
+        summary_days_pnl = Decimal("0.0")
+        total_realized_pnl = Decimal("0.0")
+
+        # Process fixed deposits
+        for fd in fixed_deposits:
+            current_value = _calculate_fd_current_value(
+                fd.principal_amount, fd.interest_rate, fd.start_date, date.today()
+            )
+            holdings_list.append(
+                schemas.Holding(
+                    asset_id=fd.id,
+                    ticker_symbol=f"FD-{fd.id.hex[:6]}",
+                    asset_name=fd.name,
+                    asset_type="FIXED_DEPOSIT",
+                    group="DEPOSITS",
+                    quantity=Decimal(1),
+                    average_buy_price=fd.principal_amount,
+                    total_invested_amount=fd.principal_amount,
+                    current_price=current_value,
+                    current_value=current_value,
+                    days_pnl=Decimal(0),
+                    days_pnl_percentage=0.0,
+                    unrealized_pnl=current_value - fd.principal_amount,
+                    unrealized_pnl_percentage=(
+                        float((current_value - fd.principal_amount) / fd.principal_amount)
+                        if fd.principal_amount > 0
+                        else 0.0
+                    ),
+                    interest_rate=fd.interest_rate,
+                    maturity_date=fd.maturity_date,
+                )
+            )
+            summary_total_value += current_value
+            summary_total_invested += fd.principal_amount
 
         if not transactions:
-            return {
-                "summary": schemas.PortfolioSummary(
-                    total_value=Decimal(0),
-                    total_invested_amount=Decimal(0),
-                    days_pnl=Decimal(0),
-                    total_unrealized_pnl=Decimal(0),
-                    total_realized_pnl=Decimal(0),
-                ),
-                "holdings": [],
-            }
+            summary = schemas.PortfolioSummary(
+                total_value=summary_total_value,
+                total_invested_amount=summary_total_invested,
+                days_pnl=summary_days_pnl,
+                total_unrealized_pnl=summary_total_value - summary_total_invested,
+                total_realized_pnl=total_realized_pnl,
+            )
+            return {"summary": summary, "holdings": holdings_list}
 
         # Sort transactions chronologically to process them in order
         transactions.sort(key=lambda tx: tx.transaction_date)
@@ -44,7 +101,6 @@ class CRUDHolding:
         holdings_state = defaultdict(
             lambda: {"quantity": Decimal("0.0"), "total_invested": Decimal("0.0")}
         )
-        total_realized_pnl = Decimal("0.0")
         asset_map = {tx.asset.ticker_symbol: tx.asset for tx in transactions}
 
         for tx in transactions:
@@ -83,15 +139,15 @@ class CRUDHolding:
                 "exchange": asset_map[ticker].exchange,
                 "asset_type": asset_map[ticker].asset_type,
             }
-            for ticker in current_holdings_tickers if ticker in asset_map
+            for ticker in current_holdings_tickers
+            if ticker in asset_map
+            and asset_map[ticker].asset_type.upper() != "FIXED_DEPOSIT"
         ]
 
-        price_details = financial_data_service.get_current_prices(assets_to_price)
-
-        holdings_list: List[schemas.Holding] = []
-        summary_total_value = Decimal("0.0")
-        summary_total_invested = Decimal("0.0")
-        summary_days_pnl = Decimal("0.0")
+        if assets_to_price:
+            price_details = financial_data_service.get_current_prices(assets_to_price)
+        else:
+            price_details = {}
 
         for ticker in current_holdings_tickers:
             asset = asset_map[ticker]
@@ -134,27 +190,29 @@ class CRUDHolding:
                 asset.asset_type.upper().replace(" ", "_"), "MISCELLANEOUS"
             )
 
-            holdings_list.append(
-                schemas.Holding(
-                    asset_id=asset.id,
-                    ticker_symbol=ticker,
-                    asset_name=asset.name,
-                    asset_type=asset.asset_type,
-                    group=group,
-                    quantity=quantity,
-                    average_buy_price=average_buy_price,
-                    total_invested_amount=total_invested,
-                    current_price=current_price,
-                    current_value=current_value,
-                    days_pnl=days_pnl,
-                    days_pnl_percentage=days_pnl_percentage,
-                    unrealized_pnl=unrealized_pnl,
-                    unrealized_pnl_percentage=unrealized_pnl_percentage,
+            # For non-FD assets, create holding object as before
+            if asset.asset_type.upper() != "FIXED_DEPOSIT":
+                holdings_list.append(
+                    schemas.Holding(
+                        asset_id=asset.id,
+                        ticker_symbol=ticker,
+                        asset_name=asset.name,
+                        asset_type=asset.asset_type,
+                        group=group,
+                        quantity=quantity,
+                        average_buy_price=average_buy_price,
+                        total_invested_amount=total_invested,
+                        current_price=current_price,
+                        current_value=current_value,
+                        days_pnl=days_pnl,
+                        days_pnl_percentage=days_pnl_percentage,
+                        unrealized_pnl=unrealized_pnl,
+                        unrealized_pnl_percentage=unrealized_pnl_percentage,
+                    )
                 )
-            )
-            summary_total_value += current_value
-            summary_total_invested += total_invested
-            summary_days_pnl += days_pnl
+                summary_total_value += current_value
+                summary_total_invested += total_invested
+                summary_days_pnl += days_pnl
 
         summary = schemas.PortfolioSummary(
             total_value=summary_total_value,
