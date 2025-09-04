@@ -121,12 +121,26 @@ class CRUDHolding:
                 else 0.0
             )
 
+            group_map = {
+                "STOCK": "EQUITIES",
+                "MUTUAL_FUND": "EQUITIES",
+                "ETF": "EQUITIES",
+                "FIXED_DEPOSIT": "DEPOSITS",
+                "BOND": "BONDS",
+                "PPF": "SCHEMES",
+                "Mutual Fund": "EQUITIES",
+            }
+            group = group_map.get(
+                asset.asset_type.upper().replace(" ", "_"), "MISCELLANEOUS"
+            )
+
             holdings_list.append(
                 schemas.Holding(
                     asset_id=asset.id,
                     ticker_symbol=ticker,
                     asset_name=asset.name,
                     asset_type=asset.asset_type,
+                    group=group,
                     quantity=quantity,
                     average_buy_price=average_buy_price,
                     total_invested_amount=total_invested,
