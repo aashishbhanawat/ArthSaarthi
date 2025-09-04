@@ -1,6 +1,6 @@
 # Feature Plan: Holdings Table Redesign
 
-**Status: 📝 Planned**
+**Status: ✅ Done**
 ---
 **Feature ID:** FR4.7.2
 **Title:** Redesign Holdings View with Collapsible Sections
