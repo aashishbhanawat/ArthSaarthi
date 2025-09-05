@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction } from '../../hooks/usePortfolios';
+import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction, usePortfolioAssets } from '../../hooks/usePortfolios';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
@@ -18,6 +18,7 @@ const PortfolioDetailPage: React.FC = () => {
     const { data: summary, isLoading: isSummaryLoading, error: summaryError } = usePortfolioSummary(portfolioId);
     const { data: holdings, isLoading: isHoldingsLoading, error: holdingsError } = usePortfolioHoldings(portfolioId);
     const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
+    const { data: assets } = usePortfolioAssets(portfolioId);
     const deleteTransactionMutation = useDeleteTransaction();
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
@@ -133,6 +134,7 @@ const PortfolioDetailPage: React.FC = () => {
                     onClose={handleCloseTransactionModal}
                     isOpen={isTransactionFormOpen}
                     portfolioId={portfolio.id}
+                    assets={assets || []}
                     transactionToEdit={transactionToEdit}
                 />
             )}

@@ -7,6 +7,7 @@ import * as portfolioHooks from '../../../hooks/usePortfolios';
 import { Portfolio } from '../../../types/portfolio';
 import { Holding, PortfolioSummary } from '../../../types/holding';
 import { PortfolioAnalytics } from '../../../types/analytics';
+import { Asset } from '../../../types/asset';
 
 jest.mock('../../../hooks/usePortfolios');
 const mockedPortfolioHooks = portfolioHooks as jest.Mocked<typeof portfolioHooks>;
@@ -101,6 +102,7 @@ describe('PortfolioDetailPage', () => {
     mockedPortfolioHooks.usePortfolioSummary.mockReturnValue({ data: mockSummary, isLoading: false, error: null } as UseQueryResult<PortfolioSummary, Error>);
     mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue({ data: { holdings: mockHoldings }, isLoading: false, error: null } as UseQueryResult<{ holdings: Holding[] }, Error>);
     mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue({ data: {} as PortfolioAnalytics, isLoading: false, isError: false } as UseQueryResult<PortfolioAnalytics, Error>);
+    mockedPortfolioHooks.usePortfolioAssets.mockReturnValue({ data: [], isLoading: false, isError: false } as UseQueryResult<Asset[], Error>);
   });
 
   it('renders the portfolio name and child components', () => {
