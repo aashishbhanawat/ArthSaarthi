@@ -12,6 +12,7 @@ class FixedDeposit(Base):
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
+    account_number = Column(String, nullable=True)
     principal_amount = Column(Numeric(18, 2), nullable=False)
     interest_rate = Column(Numeric(5, 2), nullable=False)
     start_date = Column(Date, nullable=False)

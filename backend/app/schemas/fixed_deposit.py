@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class FixedDepositBase(BaseModel):
     name: str
+    account_number: str | None = None
     principal_amount: Decimal
     interest_rate: Decimal
     start_date: date

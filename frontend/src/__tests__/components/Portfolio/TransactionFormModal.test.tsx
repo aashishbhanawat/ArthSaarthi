@@ -1,3 +1,4 @@
+// This is a test comment
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,9 +20,6 @@ jest.mock('../../../hooks/usePortfolios', () => ({
   }),
   useUpdateTransaction: () => ({
     mutate: mockUpdateTransaction,
-  }),
-  useCreateFixedDeposit: () => ({
-    mutate: jest.fn(),
   }),
 }));
 

@@ -146,7 +146,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                     };
 
                     return (
-                        <Accordion.Item key={group} value={group} className="border rounded-lg">
+                        <Accordion.Item key={group} value={group} className="border rounded-lg" data-testid={`holdings-section-${group}`}>
                             <Accordion.Header>
                                 <Accordion.Trigger className="flex justify-between items-center w-full p-4 font-semibold text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg">
                                     <span>{config.title} (Total Value: {formatCurrency(totalValue)})</span>

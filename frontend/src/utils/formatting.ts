@@ -31,6 +31,13 @@ export const formatPercentage = (value: number | undefined | null): string => {
   return `${(value * 100).toFixed(2)}%`;
 };
 
+export const formatInterestRate = (value: number | undefined | null): string => {
+    if (value === null || typeof value === 'undefined' || isNaN(value)) {
+        return 'N/A';
+    }
+    return `${value.toFixed(2)}%`;
+}
+
 export const usePrivacySensitiveCurrency = () => {
   const { isPrivacyMode } = usePrivacy();
 
