@@ -16,7 +16,7 @@ const DepositHoldingRow: React.FC<DepositHoldingRowProps> = ({ holding, onRowCli
                 <div className="font-semibold text-gray-900">{holding.asset_name}</div>
                 <div className="text-sm text-gray-500">{holding.account_number}</div>
             </td>
-            <td className="p-2 text-right font-mono">{formatInterestRate(holding.interest_rate || 0)}</td>
+            <td className="p-2 text-right font-mono">{formatInterestRate(holding.interest_rate)}</td>
             <td className="p-2 text-right font-mono">{holding.maturity_date ? formatDate(holding.maturity_date) : 'N/A'}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.total_invested_amount)}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.current_value)}</td>

@@ -12,5 +12,5 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL || 'http://frontend:3000',
     trace: 'on',
   },
-  timeout: 60 * 1000, // 60 seconds
+  timeout: 30 * 1000, // 30 seconds
 });
