@@ -44,6 +44,7 @@ describe('DepositHoldingRow', () => {
 
         expect(screen.getByText('HDFC Bank FD')).toBeInTheDocument();
         expect(screen.getByText('1234567890')).toBeInTheDocument();
+        expect(screen.getByText('FD')).toBeInTheDocument();
         expect(screen.getByText('7.50%')).toBeInTheDocument();
         expect(screen.getByText('12 Mar 2026')).toBeInTheDocument();
         expect(screen.getByText('₹1,00,000.00')).toBeInTheDocument();

@@ -35,6 +35,7 @@ const SECTION_CONFIG: { [key: string]: { title: string; columns: { label: string
         title: 'Deposits',
         columns: [
             { label: 'Asset', key: 'asset_name' },
+            { label: 'Type', key: 'asset_type' },
             { label: 'Interest Rate', key: 'interest_rate' },
             { label: 'Maturity', key: 'maturity_date' },
             { label: 'Invested', key: 'total_invested_amount' },
