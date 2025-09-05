@@ -22,6 +22,7 @@ def upgrade():
         'fixed_deposits',
         sa.Column('id', GUID(), nullable=False),
         sa.Column('name', sa.String(), nullable=False),
+        sa.Column('account_number', sa.String(), nullable=True),
         sa.Column('principal_amount', sa.Numeric(precision=18, scale=2), nullable=False),
         sa.Column('interest_rate', sa.Numeric(precision=5, scale=2), nullable=False),
         sa.Column('start_date', sa.Date(), nullable=False),

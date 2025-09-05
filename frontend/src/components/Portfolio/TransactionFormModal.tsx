@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useCreateTransaction } from '../../hooks/useTransactions';
+import { useCreateTransaction } from '../../hooks/usePortfolios';
 import { useCreateFixedDeposit } from '../../hooks/usePortfolios';
 import { Asset } from '../../types/asset';
 
