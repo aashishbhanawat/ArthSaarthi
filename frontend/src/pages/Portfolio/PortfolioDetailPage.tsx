@@ -46,12 +46,7 @@ const PortfolioDetailPage: React.FC = () => {
     if (!portfolio) return <div className="text-center p-8">Portfolio not found.</div>;
 
     const handleHoldingClick = (holding: Holding) => {
-        if (holding.group === 'DEPOSITS') {
-            // Potentially open a specific modal for deposits in the future
-            console.log('Deposit holding clicked:', holding);
-        } else {
-            setSelectedHolding(holding);
-        }
+        setSelectedHolding(holding);
     };
 
     const handleCloseDetailModal = () => {
