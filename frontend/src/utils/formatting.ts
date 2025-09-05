@@ -31,11 +31,15 @@ export const formatPercentage = (value: number | undefined | null): string => {
   return `${(value * 100).toFixed(2)}%`;
 };
 
-export const formatInterestRate = (value: number | undefined | null): string => {
-    if (value === null || typeof value === 'undefined' || isNaN(value)) {
+export const formatInterestRate = (value: number | string | undefined | null): string => {
+    if (value === null || typeof value === 'undefined') {
         return 'N/A';
     }
-    return `${value.toFixed(2)}%`;
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) {
+        return 'N/A';
+    }
+    return `${numValue.toFixed(2)}%`;
 }
 
 export const usePrivacySensitiveCurrency = () => {

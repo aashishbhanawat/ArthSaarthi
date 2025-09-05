@@ -29,6 +29,8 @@ type TransactionFormInputs = {
     interestRate?: number;
     startDate?: string;
     maturityDate?: string;
+    compounding_frequency?: 'Annually' | 'Semi-Annually' | 'Quarterly' | 'Monthly';
+    interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually';
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
@@ -151,8 +153,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     interest_rate: data.interestRate!,
                     start_date: data.startDate!,
                     maturity_date: data.maturityDate!,
-                    compounding_frequency: 'Annually', // Or get from form
-                    interest_payout: 'Cumulative' // Or get from form
+                    compounding_frequency: data.compounding_frequency || 'Annually',
+                    interest_payout: data.interest_payout || 'Cumulative'
                 }
             }, mutationOptions);
         } else {
@@ -388,6 +390,25 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <div className="form-group">
                                     <label htmlFor="maturityDate" className="form-label">Maturity Date</label>
                                     <input id="maturityDate" type="date" {...register('maturityDate', { required: "Maturity date is required" })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="compounding_frequency" className="form-label">Compounding</label>
+                                    <select id="compounding_frequency" {...register('compounding_frequency')} className="form-input">
+                                        <option value="Annually">Annually</option>
+                                        <option value="Semi-Annually">Semi-Annually</option>
+                                        <option value="Quarterly">Quarterly</option>
+                                        <option value="Monthly">Monthly</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="interest_payout" className="form-label">Interest Payout</label>
+                                    <select id="interest_payout" {...register('interest_payout')} className="form-input">
+                                        <option value="Cumulative">Cumulative</option>
+                                        <option value="Monthly">Monthly</option>
+                                        <option value="Quarterly">Quarterly</option>
+                                        <option value="Semi-Annually">Semi-Annually</option>
+                                        <option value="Annually">Annually</option>
+                                    </select>
                                 </div>
                             </div>
                         )}
