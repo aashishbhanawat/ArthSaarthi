@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction, usePortfolioAssets } from '../../hooks/usePortfolios';
+import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction } from '../../hooks/usePortfolios';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
@@ -8,7 +8,6 @@ import HoldingsTable from '../../components/Portfolio/HoldingsTable';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
-import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 
 const PortfolioDetailPage: React.FC = () => {
@@ -18,53 +17,40 @@ const PortfolioDetailPage: React.FC = () => {
     const { data: summary, isLoading: isSummaryLoading, error: summaryError } = usePortfolioSummary(portfolioId);
     const { data: holdings, isLoading: isHoldingsLoading, error: holdingsError } = usePortfolioHoldings(portfolioId);
     const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
-    const { data: assets } = usePortfolioAssets(portfolioId);
     const deleteTransactionMutation = useDeleteTransaction();
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
-    const [selectedFdHolding, setSelectedFdHolding] = useState<Holding | null>(null);
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
     useEffect(() => {
+        // This effect syncs the selectedHolding state with the latest data from the usePortfolioHoldings hook.
+        // This is crucial for updating the HoldingDetailModal in-place after a transaction is created, updated, or deleted.
         if (selectedHolding && holdings?.holdings) {
             const updatedHolding = holdings.holdings.find(h => h.asset_id === selectedHolding.asset_id);
             if (updatedHolding) {
+                // Avoid unnecessary re-renders if the data hasn't changed.
                 if (JSON.stringify(updatedHolding) !== JSON.stringify(selectedHolding)) {
                     setSelectedHolding(updatedHolding);
                 }
             } else {
+                // The holding no longer exists (e.g., all shares sold and transaction deleted), so close the modal.
                 setSelectedHolding(null);
             }
         }
-        if (selectedFdHolding && holdings?.holdings) {
-            const updatedHolding = holdings.holdings.find(h => h.asset_id === selectedFdHolding.asset_id);
-            if (updatedHolding) {
-                if (JSON.stringify(updatedHolding) !== JSON.stringify(selectedFdHolding)) {
-                    setSelectedFdHolding(updatedHolding);
-                }
-            } else {
-                setSelectedFdHolding(null);
-            }
-        }
-    }, [holdings, selectedHolding, selectedFdHolding]);
+    }, [holdings, selectedHolding]);
 
     if (isLoading) return <div className="text-center p-8">Loading portfolio details...</div>;
     if (isError) return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
     if (!portfolio) return <div className="text-center p-8">Portfolio not found.</div>;
 
     const handleHoldingClick = (holding: Holding) => {
-        if (holding.asset_type === 'Fixed Deposit') {
-            setSelectedFdHolding(holding);
-        } else {
-            setSelectedHolding(holding);
-        }
+        setSelectedHolding(holding);
     };
 
     const handleCloseDetailModal = () => {
         setSelectedHolding(null);
-        setSelectedFdHolding(null);
     };
 
     const handleOpenCreateTransactionModal = () => {
@@ -134,11 +120,11 @@ const PortfolioDetailPage: React.FC = () => {
                     onClose={handleCloseTransactionModal}
                     isOpen={isTransactionFormOpen}
                     portfolioId={portfolio.id}
-                    assets={assets || []}
                     transactionToEdit={transactionToEdit}
                 />
             )}
 
+            {/* Only show the detail modal if a holding is selected AND no other modal is active */}
             {selectedHolding && !isTransactionFormOpen && !transactionToDelete && (
                 <HoldingDetailModal
                     holding={selectedHolding}
@@ -146,13 +132,6 @@ const PortfolioDetailPage: React.FC = () => {
                     onClose={handleCloseDetailModal}
                     onEditTransaction={handleOpenEditTransactionModal}
                     onDeleteTransaction={handleOpenDeleteModal}
-                />
-            )}
-
-            {selectedFdHolding && (
-                <FixedDepositDetailModal
-                    holding={selectedFdHolding}
-                    onClose={handleCloseDetailModal}
                 />
             )}
 

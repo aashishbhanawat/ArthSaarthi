@@ -1,6 +1,7 @@
 import uuid
+from datetime import date
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -20,6 +21,11 @@ class Holding(BaseModel):
     days_pnl_percentage: float
     unrealized_pnl: Decimal
     unrealized_pnl_percentage: float
+    interest_rate: Optional[Decimal] = None
+    maturity_date: Optional[date] = None
+    account_number: Optional[str] = None
+    isin: Optional[str] = None
+    opening_date: Optional[date] = None
 
     class Config:
         from_attributes = True

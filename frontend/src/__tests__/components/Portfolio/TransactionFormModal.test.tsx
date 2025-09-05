@@ -13,6 +13,7 @@ const mockCreateTransaction = jest.fn();
 const mockUpdateTransaction = jest.fn();
 const mockCreateAsset = jest.fn();
 const mockLookupAsset = jest.fn();
+const mockCreateFixedDeposit = jest.fn();
 
 jest.mock('../../../hooks/usePortfolios', () => ({
   useCreateTransaction: () => ({
@@ -20,6 +21,9 @@ jest.mock('../../../hooks/usePortfolios', () => ({
   }),
   useUpdateTransaction: () => ({
     mutate: mockUpdateTransaction,
+  }),
+  useCreateFixedDeposit: () => ({
+    mutate: mockCreateFixedDeposit,
   }),
 }));
 
@@ -184,6 +188,45 @@ describe('TransactionFormModal', () => {
               price_per_unit: 250,
             }),
           }),
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('submits the form and calls createFixedDeposit mutation', async () => {
+      renderComponent();
+
+      // Switch to Fixed Deposit
+      const assetTypeSelect = screen.getByLabelText(/asset type/i);
+      fireEvent.change(assetTypeSelect, { target: { value: 'Fixed Deposit' } });
+
+      // Fill FD fields
+      fireEvent.change(screen.getByLabelText(/institution name/i), { target: { value: 'Test Bank' } });
+      fireEvent.change(screen.getByLabelText(/fd account number/i), { target: { value: 'FD12345' } });
+      fireEvent.change(screen.getByLabelText(/principal amount/i), { target: { value: '100000' } });
+      fireEvent.change(screen.getByLabelText(/interest rate/i), { target: { value: '6.5' } });
+      fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: '2023-01-01' } });
+      fireEvent.change(screen.getByLabelText(/maturity date/i), { target: { value: '2025-01-01' } });
+
+      // Submit the form
+      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+
+      // Assert the mutation was called with the correct payload
+      await waitFor(() => {
+        expect(mockCreateFixedDeposit).toHaveBeenCalledWith(
+          {
+            portfolioId: 'portfolio-1',
+            data: {
+              name: 'Test Bank',
+              account_number: 'FD12345',
+              principal_amount: 100000,
+              interest_rate: 6.5,
+              start_date: '2023-01-01',
+              maturity_date: '2025-01-01',
+              compounding_frequency: 'Annually',
+              interest_payout: 'Cumulative'
+            },
+          },
           expect.any(Object)
         );
       });

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
-import { PortfolioCreate, TransactionCreate, TransactionUpdate, TransactionsResponse } from '../types/portfolio';
+import { PortfolioCreate, TransactionCreate, TransactionUpdate, TransactionsResponse, FixedDepositCreate } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
 import { PortfolioAnalytics } from '../types/analytics';
@@ -65,8 +65,6 @@ export const useCreateTransaction = () => {
         onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });
 };
-
-import { FixedDepositCreate } from '../types/portfolio';
 
 export const useCreateFixedDeposit = () => {
     const queryClient = useQueryClient();
