@@ -53,12 +53,13 @@ def _calculate_total_interest_paid(fd: models.FixedDeposit, end_date: date) -> D
         return Decimal(0)
 
     payout_frequency_map = {
-        "Monthly": 1,
-        "Quarterly": 3,
-        "Semi-Annually": 6,
-        "Annually": 12,
+        "MONTHLY": 1,
+        "QUARTERLY": 3,
+        "HALF_YEARLY": 6,
+        "SEMI-ANNUALLY": 6,  # Alias for compatibility
+        "ANNUALLY": 12,
     }
-    months_interval = payout_frequency_map.get(fd.interest_payout)
+    months_interval = payout_frequency_map.get(fd.compounding_frequency.upper())
 
     if not months_interval:
         return Decimal(0)
@@ -106,8 +107,6 @@ class CRUDHolding:
         matured_fixed_deposits = [
             fd for fd in all_fixed_deposits if fd.maturity_date < date.today()
         ]
-        logger.info(f"Active FDs: {[fd.id for fd in active_fixed_deposits]}")
-        logger.info(f"Matured FDs: {[fd.id for fd in matured_fixed_deposits]}")
 
         for fd in matured_fixed_deposits:
             if fd.interest_payout != "Cumulative":

@@ -80,10 +80,13 @@ const FixedDepositDetailModal: React.FC<FixedDepositDetailModalProps> = ({ holdi
                 <div className="card mb-4">
                     <h3 className="text-lg font-semibold mb-2">Analytics (XIRR)</h3>
                     {isLoadingAnalytics ? <p>Loading...</p> : analytics && (
-                         <div className="grid grid-cols-2 gap-2 text-sm">
-                            <p><strong>Unrealized XIRR:</strong></p><p>{formatInterestRate(analytics.unrealized_xirr * 100)}</p>
-                            <p><strong>Realized XIRR:</strong></p><p>{analytics.realized_xirr > 0 ? formatInterestRate(analytics.realized_xirr * 100) : 'N/A'}</p>
-                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                            {analytics.realized_xirr > 0 ? (
+                                <><p><strong>Final Realized XIRR:</strong></p><p>{formatInterestRate(analytics.realized_xirr * 100)}</p></>
+                            ) : (
+                                <><p><strong>Annualized Return (XIRR):</strong></p><p>{formatInterestRate(analytics.unrealized_xirr * 100)}</p></>
+                            )}
+                         </div>
                     )}
                 </div>
 

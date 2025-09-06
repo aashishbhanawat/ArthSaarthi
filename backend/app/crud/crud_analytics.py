@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 from pyxirr import xirr
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
+from app import crud, models, schemas
 from app.crud.crud_holding import _calculate_fd_current_value
 from app.schemas.analytics import AnalyticsResponse, AssetAnalytics
 from app.services.financial_data_service import financial_data_service
@@ -180,45 +180,75 @@ def _get_single_portfolio_history(
 
 def _calculate_xirr(db: Session, portfolio_id: uuid.UUID) -> float:
     """
-    Calculates the Extended Internal Rate of Return (XIRR) for a portfolio.
+    Calculates the Extended Internal Rate of Return (XIRR) for a portfolio,
+    considering both transactions and fixed deposits.
     """
+    cash_flows = []
+
+    # 1. Construct cash flows from transactions
     transactions = crud.transaction.get_multi_by_portfolio(
         db=db, portfolio_id=portfolio_id
     )
-    if not transactions:
-        return 0.0
-
-    # 1. Construct cash flows from transactions
-    dates = []
-    values = []
     for tx in transactions:
-        dates.append(tx.transaction_date.date())
         # Buys are cash outflows (-), sells are cash inflows (+)
         amount = tx.quantity * tx.price_per_unit
         if tx.transaction_type == "BUY":
-            values.append(float(-amount))
+            cash_flows.append((tx.transaction_date.date(), float(-amount)))
         else:
-            values.append(float(amount))
+            cash_flows.append((tx.transaction_date.date(), float(amount)))
 
-    # 2. Add the current market value as the final cash inflow
-    current_value = _get_portfolio_current_value(db=db, portfolio_id=portfolio_id)
+    # 2. Construct cash flows from Fixed Deposits
+    fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
+        db=db, portfolio_id=portfolio_id
+    )
+    total_fd_current_value = Decimal("0.0")
 
-    dates.append(date.today())
-    values.append(float(current_value))
+    for fd in fixed_deposits:
+        if fd.maturity_date >= date.today():  # Active FD
+            if fd.interest_payout == "Cumulative":
+                cash_flows.append((fd.start_date, -float(fd.principal_amount)))
+                total_fd_current_value += _calculate_fd_current_value(
+                    principal=fd.principal_amount,
+                    interest_rate=fd.interest_rate,
+                    start_date=fd.start_date,
+                    end_date=date.today(),
+                    compounding_frequency=fd.compounding_frequency,
+                    interest_payout=fd.interest_payout,
+                )
+            else:  # Payout
+                payout_flows = _generate_payout_fd_cash_flows(
+                    fd, date.today(), include_principal_at_end=False
+                )
+                cash_flows.extend(payout_flows)
+                total_fd_current_value += fd.principal_amount
+        else:  # Matured FD
+            if fd.interest_payout == "Cumulative":
+                cash_flows.append((fd.start_date, -float(fd.principal_amount)))
+                maturity_value = _calculate_fd_current_value(
+                    principal=fd.principal_amount,
+                    interest_rate=fd.interest_rate,
+                    start_date=fd.start_date,
+                    end_date=fd.maturity_date,
+                    compounding_frequency=fd.compounding_frequency,
+                    interest_payout=fd.interest_payout,
+                )
+                cash_flows.append((fd.maturity_date, float(maturity_value)))
+            else:  # Payout
+                payout_flows = _generate_payout_fd_cash_flows(
+                    fd, fd.maturity_date, include_principal_at_end=True
+                )
+                cash_flows.extend(payout_flows)
 
-    # 3. Calculate XIRR
-    if not any(v > 0 for v in values) or not any(v < 0 for v in values):
-        return 0.0
+    # 3. Add the current market value of all holdings as the final cash inflow
+    stock_mf_current_value = _get_portfolio_current_value(
+        db=db, portfolio_id=portfolio_id
+    )
+    total_current_value = stock_mf_current_value + total_fd_current_value
+    if total_current_value > 0:
+        cash_flows.append((date.today(), float(total_current_value)))
 
-    try:
-        # Add a small initial guess to help convergence
-        result = xirr(dates, values, guess=0.1)
-        if result is None or np.isnan(result) or np.isinf(result):
-            return 0.0
-        return result
-    except Exception as e:
-        logger.error(f"Could not calculate XIRR for portfolio {portfolio_id}: {e}")
-        return 0.0
+    # 4. Calculate XIRR from the combined cash flows
+    return _calculate_xirr_from_cashflows(cash_flows)
 
 
 def _calculate_sharpe_ratio(db: Session, portfolio_id: uuid.UUID) -> float:
@@ -377,6 +407,45 @@ def _get_asset_current_value(
     return net_quantity * current_price
 
 
+def _generate_payout_fd_cash_flows(
+    fd: models.FixedDeposit, end_date: date, include_principal_at_end: bool
+) -> List[Tuple[date, float]]:
+    """Generates a list of cash flows for a payout-style Fixed Deposit."""
+    cash_flows = [(fd.start_date, -float(fd.principal_amount))]
+
+    payout_frequency_map = {
+        "MONTHLY": 12,
+        "QUARTERLY": 4,
+        "HALF_YEARLY": 2,
+        "SEMI-ANNUALLY": 2,  # Alias for compatibility
+        "ANNUALLY": 1,
+    }
+    payouts_per_year = payout_frequency_map.get(fd.compounding_frequency.upper())
+
+    if not payouts_per_year:
+        if include_principal_at_end:
+            cash_flows.append((end_date, float(fd.principal_amount)))
+        return cash_flows
+
+    interest_per_payout = fd.principal_amount * (
+        fd.interest_rate / Decimal("100.0") / Decimal(payouts_per_year)
+    )
+    months_interval = 12 // payouts_per_year
+    next_payout_date = fd.start_date + relativedelta(months=months_interval)
+
+    while next_payout_date <= end_date:
+        cash_flows.append((next_payout_date, float(interest_per_payout)))
+        next_payout_date += relativedelta(months=months_interval)
+
+    if include_principal_at_end:
+        cash_flows.append((end_date, float(fd.principal_amount)))
+
+    logger.debug(
+        f"Generated cash flows for FD {fd.id} until {end_date}: {cash_flows}"
+    )
+    return cash_flows
+
+
 def get_portfolio_analytics(db: Session, portfolio_id: uuid.UUID) -> AnalyticsResponse:
     """
     Calculates advanced analytics for a given portfolio.
@@ -404,7 +473,13 @@ def get_fixed_deposit_analytics(
     unrealized_xirr = 0.0
     realized_xirr = 0.0
 
-    if fd.interest_payout == "Cumulative":
+    logger.debug(
+        "Calculating analytics for FD %s (Payout Type: %s, Compounding: %s)",
+        fd_id,
+        fd.interest_payout,
+        fd.compounding_frequency,
+    )
+    if fd.interest_payout == "Cumulative":  # Note: The model uses 'Cumulative'
         # Cumulative FD logic for Unrealized XIRR
         current_value = _calculate_fd_current_value(
             principal=fd.principal_amount,
@@ -415,6 +490,10 @@ def get_fixed_deposit_analytics(
             interest_payout=fd.interest_payout,
         )
         current_inflow = (date.today(), float(current_value))
+        logger.debug(
+            "Unrealized cash flows for cumulative FD: %s",
+            [principal_outflow, current_inflow],
+        )
         unrealized_xirr = _calculate_xirr_from_cashflows(
             [principal_outflow, current_inflow]
         )
@@ -430,67 +509,37 @@ def get_fixed_deposit_analytics(
                 interest_payout=fd.interest_payout,
             )
             maturity_inflow = (fd.maturity_date, float(maturity_value))
+            logger.debug(
+                "Realized cash flows for cumulative FD: %s",
+                [principal_outflow, maturity_inflow],
+            )
             realized_xirr = _calculate_xirr_from_cashflows(
                 [principal_outflow, maturity_inflow]
             )
-    else:
-        # Payout FD logic
-        payout_frequency_map = {
-            "Monthly": 12,
-            "Quarterly": 4,
-            "Semi-Annually": 2,
-            "Annually": 1,
-        }
-        payouts_per_year = payout_frequency_map.get(fd.interest_payout)
+    else:  # Treat as Payout if not Cumulative
+        # Payout FD logic for Unrealized XIRR
+        logger.debug("Calculating Unrealized XIRR for Payout FD...")
+        unrealized_cash_flows = _generate_payout_fd_cash_flows(
+            fd, date.today(), include_principal_at_end=True
+        )
+        unrealized_xirr = _calculate_xirr_from_cashflows(unrealized_cash_flows)
 
-        if payouts_per_year:
-            interest_per_payout = fd.principal_amount * (
-                fd.interest_rate
-                / Decimal("100.0")
-                / Decimal(payouts_per_year)
+        # Payout FD logic for Realized XIRR (if matured)
+        if date.today() >= fd.maturity_date:
+            logger.debug("FD is matured. Calculating Realized XIRR for Payout FD...")
+            realized_cash_flows = _generate_payout_fd_cash_flows(
+                fd, fd.maturity_date, include_principal_at_end=True
             )
+            realized_xirr = _calculate_xirr_from_cashflows(realized_cash_flows)
+        else:
+            logger.debug("FD not matured. Realized XIRR is not applicable yet.")
 
-            # Payout FD logic for Unrealized XIRR
-            unrealized_cash_flows = [principal_outflow]
-            if payouts_per_year > 0:
-                months_interval = 12 // payouts_per_year
-                next_payout_date = fd.start_date + relativedelta(
-                    months=months_interval
-                )
-                while next_payout_date <= date.today():
-                    unrealized_cash_flows.append(
-                        (next_payout_date, float(interest_per_payout))
-                    )
-                    next_payout_date += relativedelta(months=months_interval)
-            unrealized_cash_flows.append(
-                (date.today(), float(fd.principal_amount))
-            )
-            unrealized_xirr = _calculate_xirr_from_cashflows(
-                unrealized_cash_flows
-            )
-
-            # Payout FD logic for Realized XIRR (if matured)
-            if date.today() >= fd.maturity_date:
-                realized_cash_flows = [principal_outflow]
-                if payouts_per_year > 0:
-                    months_interval = 12 // payouts_per_year
-                    next_payout_date = fd.start_date + relativedelta(
-                        months=months_interval
-                    )
-                    while next_payout_date <= fd.maturity_date:
-                        realized_cash_flows.append(
-                            (next_payout_date, float(interest_per_payout))
-                        )
-                        next_payout_date += relativedelta(
-                            months=months_interval
-                        )
-                realized_cash_flows.append(
-                    (fd.maturity_date, float(fd.principal_amount))
-                )
-                realized_xirr = _calculate_xirr_from_cashflows(
-                    realized_cash_flows
-                )
-
+    logger.debug(
+        "Final calculated XIRR for FD %s: Unrealized=%s, Realized=%s",
+        fd_id,
+        unrealized_xirr,
+        realized_xirr,
+    )
     return schemas.FixedDepositAnalytics(
         unrealized_xirr=round(unrealized_xirr, 4),
         realized_xirr=round(realized_xirr, 4),

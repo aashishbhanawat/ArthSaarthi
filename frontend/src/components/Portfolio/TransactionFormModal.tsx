@@ -403,11 +403,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <div className="form-group">
                                     <label htmlFor="interest_payout" className="form-label">Interest Payout</label>
                                     <select id="interest_payout" {...register('interest_payout')} className="form-input">
-                                        <option value="Cumulative">Cumulative</option>
-                                        <option value="Monthly">Monthly</option>
-                                        <option value="Quarterly">Quarterly</option>
-                                        <option value="Semi-Annually">Semi-Annually</option>
-                                        <option value="Annually">Annually</option>
+                                        <option value="Cumulative">Cumulative (at maturity)</option>
+                                        <option value="Payout">Periodic Payout</option>
                                     </select>
                                 </div>
                             </div>

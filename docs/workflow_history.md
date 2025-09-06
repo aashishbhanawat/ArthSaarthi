@@ -1625,6 +1625,33 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
 
 ---
 
+## 2025-09-06: Implement & Stabilize Fixed Deposit Tracking (FR4.3.2 & FR4.7.4)
+
+*   **Task Description:** A full-stack implementation of the Fixed Deposit (FD) tracking feature. This was a complex task that involved creating the backend data models, a dedicated drill-down UI, and implementing nuanced financial calculations for XIRR and P&L. The task also included a significant debugging and stabilization effort.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full backend stack for FDs (`FixedDeposit` model, schemas, CRUD, API endpoints) and the corresponding frontend components (`FixedDepositDetailModal`, updates to `TransactionFormModal`).
+    2.  **Iterative Debugging of Financial Logic:** The core of the interaction was a highly iterative debugging loop focused on the financial calculations. The user provided detailed feedback on incorrect or confusing outputs for payout-style FDs, which led to multiple fixes in `crud_analytics.py` and `crud_holding.py` to correctly handle realized gains, maturity values, and XIRR calculations.
+    3.  **Portfolio-Level XIRR Fix:** The user identified that the main portfolio XIRR was not including FDs. The AI was prompted to refactor the `_calculate_xirr` function in `crud_analytics.py` to correctly incorporate cash flows from both cumulative and payout FDs.
+    4.  **Test Suite Stabilization:** The backend test suite failed in `desktop` mode. The AI analyzed the logs, identified the missing `pytestmark` in `test_fixed_deposits.py`, and provided the fix. Subsequent linter errors were also fixed.
+    5.  **Data Integrity Fix:** The user identified a data integrity bug where the "Add FD" form was submitting incorrect data for the `payout_type`. The AI provided the fix to the frontend component.
+
+*   **File Changes:**
+    *   `backend/app/models/fixed_deposit.py`: **New** SQLAlchemy model.
+    *   `backend/app/schemas/fixed_deposit.py`: **New** Pydantic schemas.
+    *   `backend/app/crud/crud_fixed_deposit.py`: **New** CRUD module.
+    *   `backend/app/api/v1/endpoints/fixed_deposits.py`: **New** API router.
+    *   `backend/app/crud/crud_analytics.py`: **Updated** to include FD cash flows in portfolio XIRR and to fix individual FD analytics.
+    *   `backend/app/crud/crud_holding.py`: **Updated** to correctly calculate realized P&L for payout FDs.
+    *   `backend/app/tests/api/v1/test_fixed_deposits.py`: **New** test suite, later fixed for desktop mode.
+    *   `frontend/src/components/Portfolio/FixedDepositDetailModal.tsx`: **New** component for the drill-down view.
+    *   `frontend/src/components/Portfolio/TransactionFormModal.tsx`: **Updated** to include the FD form and fix a data integrity bug.
+
+*   **Outcome:**
+    - The Fixed Deposit tracking feature is fully implemented, tested, and stable.
+    - All backend, frontend, and E2E tests are passing, and all documentation has been updated. The project is ready for the next development cycle.
+---
+
 ## 2025-08-31: Final Documentation Update
 
 *   **Task Description:** A final documentation pass to archive recent bug reports and update the project status.
