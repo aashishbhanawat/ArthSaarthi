@@ -95,6 +95,34 @@ def delete_portfolio(
     return {"msg": "Portfolio deleted successfully"}
 
 
+@router.post(
+    "/{portfolio_id}/fixed-deposits/",
+    response_model=schemas.fixed_deposit.FixedDeposit,
+    status_code=201,
+)
+def create_fixed_deposit(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    fd_in: schemas.fixed_deposit.FixedDepositCreate,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Create new fixed deposit for a portfolio.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    fd = crud.fixed_deposit.create_with_portfolio(
+        db=db, obj_in=fd_in, portfolio_id=portfolio_id, user_id=current_user.id
+    )
+    db.commit()
+    return fd
+
+
 @router.get("/{portfolio_id}/analytics", response_model=schemas.AnalyticsResponse)
 def get_portfolio_analytics(
     *,

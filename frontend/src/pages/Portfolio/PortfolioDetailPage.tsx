@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction } from '../../hooks/usePortfolios';
+import { useDeleteFixedDeposit } from '../../hooks/useFixedDeposits';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
@@ -8,6 +9,7 @@ import HoldingsTable from '../../components/Portfolio/HoldingsTable';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
+import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 
 const PortfolioDetailPage: React.FC = () => {
@@ -18,24 +20,22 @@ const PortfolioDetailPage: React.FC = () => {
     const { data: holdings, isLoading: isHoldingsLoading, error: holdingsError } = usePortfolioHoldings(portfolioId);
     const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
     const deleteTransactionMutation = useDeleteTransaction();
+    const deleteFixedDepositMutation = useDeleteFixedDeposit();
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+    const [fdToDelete, setFdToDelete] = useState<Holding | null>(null);
 
     useEffect(() => {
-        // This effect syncs the selectedHolding state with the latest data from the usePortfolioHoldings hook.
-        // This is crucial for updating the HoldingDetailModal in-place after a transaction is created, updated, or deleted.
         if (selectedHolding && holdings?.holdings) {
             const updatedHolding = holdings.holdings.find(h => h.asset_id === selectedHolding.asset_id);
             if (updatedHolding) {
-                // Avoid unnecessary re-renders if the data hasn't changed.
                 if (JSON.stringify(updatedHolding) !== JSON.stringify(selectedHolding)) {
                     setSelectedHolding(updatedHolding);
                 }
             } else {
-                // The holding no longer exists (e.g., all shares sold and transaction deleted), so close the modal.
                 setSelectedHolding(null);
             }
         }
@@ -82,6 +82,14 @@ const PortfolioDetailPage: React.FC = () => {
                 onSuccess: handleCloseDeleteModal
             });
         }
+        if (fdToDelete && portfolioId) {
+            deleteFixedDepositMutation.mutate({ portfolioId, fdId: fdToDelete.asset_id }, {
+                onSuccess: () => {
+                    handleCloseDetailModal();
+                    setFdToDelete(null);
+                }
+            });
+        }
     };
 
     return (
@@ -124,25 +132,47 @@ const PortfolioDetailPage: React.FC = () => {
                 />
             )}
 
-            {/* Only show the detail modal if a holding is selected AND no other modal is active */}
             {selectedHolding && !isTransactionFormOpen && !transactionToDelete && (
-                <HoldingDetailModal
-                    holding={selectedHolding}
-                    portfolioId={portfolio.id}
-                    onClose={handleCloseDetailModal}
-                    onEditTransaction={handleOpenEditTransactionModal}
-                    onDeleteTransaction={handleOpenDeleteModal}
-                />
+                <>
+                    {selectedHolding.group === 'DEPOSITS' ? (
+                        <FixedDepositDetailModal
+                            holding={selectedHolding}
+                            onClose={handleCloseDetailModal}
+                            onEdit={() => {
+                                // For now, we just close the detail modal and open the transaction modal
+                                // A more specific edit modal could be implemented in the future
+                                handleCloseDetailModal();
+                                handleOpenCreateTransactionModal();
+                            }}
+                            onDelete={() => setFdToDelete(selectedHolding)}
+                        />
+                    ) : (
+                        <HoldingDetailModal
+                            holding={selectedHolding}
+                            portfolioId={portfolio.id}
+                            onClose={handleCloseDetailModal}
+                            onEditTransaction={handleOpenEditTransactionModal}
+                            onDeleteTransaction={handleOpenDeleteModal}
+                        />
+                    )}
+                </>
             )}
 
-            {transactionToDelete && (
+            {(transactionToDelete || fdToDelete) && (
                 <DeleteConfirmationModal
-                    isOpen={!!transactionToDelete}
-                    onClose={handleCloseDeleteModal}
+                    isOpen={!!transactionToDelete || !!fdToDelete}
+                    onClose={() => {
+                        setTransactionToDelete(null);
+                        setFdToDelete(null);
+                    }}
                     onConfirm={handleConfirmDelete}
-                    title="Delete Transaction"
-                    message={`Are you sure you want to delete this ${transactionToDelete.transaction_type} transaction of ${Number(transactionToDelete.quantity).toLocaleString()} units? This action cannot be undone.`}
-                    isDeleting={deleteTransactionMutation.isPending}
+                    title={fdToDelete ? "Delete Fixed Deposit" : "Delete Transaction"}
+                    message={
+                        fdToDelete
+                            ? `Are you sure you want to delete the FD "${fdToDelete.asset_name}"? This action cannot be undone.`
+                            : `Are you sure you want to delete this ${transactionToDelete?.transaction_type} transaction of ${Number(transactionToDelete?.quantity).toLocaleString()} units? This action cannot be undone.`
+                    }
+                    isDeleting={deleteTransactionMutation.isPending || deleteFixedDepositMutation.isPending}
                 />
             )}
         </div>

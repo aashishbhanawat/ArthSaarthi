@@ -42,3 +42,6 @@ class User(Base):
         "WatchlistItem", back_populates="user", cascade="all, delete-orphan"
     )
     goals = relationship("Goal", back_populates="user", cascade="all, delete-orphan")
+    fixed_deposits = relationship(
+        "FixedDeposit", back_populates="user", cascade="all, delete-orphan"
+    )

@@ -35,6 +35,7 @@ const SECTION_CONFIG: { [key: string]: { title: string; columns: { label: string
         title: 'Deposits',
         columns: [
             { label: 'Asset', key: 'asset_name' },
+            { label: 'Type', key: 'asset_type' },
             { label: 'Interest Rate', key: 'interest_rate' },
             { label: 'Maturity', key: 'maturity_date' },
             { label: 'Invested', key: 'total_invested_amount' },
@@ -146,7 +147,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                     };
 
                     return (
-                        <Accordion.Item key={group} value={group} className="border rounded-lg">
+                        <Accordion.Item key={group} value={group} className="border rounded-lg" data-testid={`holdings-section-${group}`}>
                             <Accordion.Header>
                                 <Accordion.Trigger className="flex justify-between items-center w-full p-4 font-semibold text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg">
                                     <span>{config.title} (Total Value: {formatCurrency(totalValue)})</span>

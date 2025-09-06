@@ -6561,3 +6561,25 @@ The linter fails with `E501 Line too long (90 > 88)`.
 The long comment line was broken into two lines to adhere to the 88-character limit.
 
 ---
+
+**Bug ID:** 2025-09-06-01 (Consolidated)
+**Title:** Full-stack implementation and stabilization of Fixed Deposit feature was unstable and failed with multiple cascading issues.
+**Module:** Fixed Deposits (Full Stack), E2E Testing, Core Backend
+**Reported By:** User & Gemini Code Assist
+**Date Reported:** 2025-09-06
+**Classification:** Implementation (Frontend/Backend) / Test Suite
+**Severity:** Critical
+**Description:**
+The implementation of the "Fixed Deposit Tracking" feature (FR4.3.2) and its drill-down view (FR4.7.4) involved a series of cascading bugs that were fixed iteratively.
+1.  **Database & API Layer:** The initial work required creating the full backend stack for FDs, including the model, schemas, CRUD, and API endpoints.
+2.  **Desktop Mode Test Failure:** The backend tests for the new FD endpoints failed in `desktop` mode with a `RuntimeError: Cannot encrypt data: master key is not loaded`. This was because the new test file was missing the `pytestmark` to load the `pre_unlocked_key_manager` fixture.
+3.  **Calculation & Logic Bugs:** Several bugs were found in the XIRR and P&L calculations for payout-style FDs. This included using the wrong frequency field for lookups, incorrect maturity value calculations, and confusing UI displays for realized vs. unrealized gains and XIRR.
+4.  **Portfolio XIRR Incompleteness:** The main portfolio XIRR calculation was found to be incomplete, as it did not include cash flows from any Fixed Deposits, resulting in an incorrect 0% XIRR for FD-only portfolios.
+5.  **Data Integrity Bug:** A data integrity bug was found in the "Add Fixed Deposit" form, where the `compounding_frequency` was being incorrectly saved as the `payout_type`.
+**Resolution:**
+A series of patches were applied across the full stack:
+-   The `test_fixed_deposits.py` file was updated with the correct `pytestmark`.
+-   The `crud_analytics.py` and `crud_holding.py` files were updated to fix all calculation logic for payout FDs, and the `FixedDepositDetailModal.tsx` was updated to display the analytics more intuitively.
+-   The main portfolio XIRR calculation in `crud_analytics.py` was refactored to correctly include all cash flows from both cumulative and payout FDs.
+-   The "Add Fixed Deposit" form in `TransactionFormModal.tsx` was fixed to send the correct `payout_type` values.
+---
