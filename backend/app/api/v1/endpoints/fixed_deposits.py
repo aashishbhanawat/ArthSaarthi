@@ -33,6 +33,7 @@ def read_fixed_deposit(
         start_date=fd.start_date,
         end_date=fd.maturity_date,
         compounding_frequency=fd.compounding_frequency,
+        interest_payout=fd.interest_payout,
     )
     response_data = schemas.FixedDeposit.model_validate(fd).model_dump()
     response_data["maturity_value"] = maturity_value

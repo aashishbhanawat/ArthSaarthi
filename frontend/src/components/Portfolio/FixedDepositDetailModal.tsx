@@ -4,10 +4,13 @@ import { formatDate, formatInterestRate, usePrivacySensitiveCurrency } from '../
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../../services/api';
 import { FixedDepositDetails, FixedDepositAnalytics } from '../../types/portfolio';
+import { XMarkIcon } from '@heroicons/react/24/solid';
 
 interface FixedDepositDetailModalProps {
     holding: Holding;
     onClose: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
 }
 
 const fetchFdDetails = async (fdId: string): Promise<FixedDepositDetails> => {
@@ -20,7 +23,7 @@ const fetchFdAnalytics = async (fdId: string): Promise<FixedDepositAnalytics> =>
     return response.data;
 };
 
-const FixedDepositDetailModal: React.FC<FixedDepositDetailModalProps> = ({ holding, onClose }) => {
+const FixedDepositDetailModal: React.FC<FixedDepositDetailModalProps> = ({ holding, onClose, onEdit, onDelete }) => {
     const formatCurrency = usePrivacySensitiveCurrency();
 
     const { data: details, isLoading: isLoadingDetails } = useQuery({
@@ -35,8 +38,13 @@ const FixedDepositDetailModal: React.FC<FixedDepositDetailModalProps> = ({ holdi
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-2xl font-bold mb-4">Holding Detail: {holding.asset_name}</h2>
+            <div className="modal-content w-full max-w-3xl p-6 border border-gray-200 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-bold">Holding Detail: {holding.asset_name}</h2>
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
+                        <XMarkIcon className="h-6 w-6" />
+                    </button>
+                </div>
 
                 <div className="card mb-4" data-testid="fd-details-section">
                     <h3 className="text-lg font-semibold mb-2">Details</h3>
@@ -75,9 +83,8 @@ const FixedDepositDetailModal: React.FC<FixedDepositDetailModalProps> = ({ holdi
                 </div>
 
                 <div className="flex justify-end space-x-2">
-                    <button className="btn btn-secondary" disabled>Edit FD Details</button>
-                    <button className="btn btn-danger" disabled>Delete FD</button>
-                    <button className="btn btn-primary" onClick={onClose}>Close</button>
+                    <button className="btn btn-secondary" onClick={onEdit}>Edit FD Details</button>
+                    <button className="btn btn-danger" onClick={onDelete}>Delete FD</button>
                 </div>
             </div>
         </div>

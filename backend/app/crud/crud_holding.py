@@ -16,11 +16,16 @@ def _calculate_fd_current_value(
     start_date: date,
     end_date: date,
     compounding_frequency: str,
+    interest_payout: str,
 ) -> Decimal:
     """
-    Calculates the current value of an FD using compound interest.
-    A = P(1 + r/n)^(n*t)
+    Calculates the current value of an FD.
+    For cumulative FDs, it uses compound interest.
+    For payout FDs, it returns the principal.
     """
+    if interest_payout != "Cumulative":
+        return principal
+
     if end_date < start_date:
         return principal
 
@@ -77,6 +82,7 @@ class CRUDHolding:
                 fd.start_date,
                 fd.maturity_date, # Use maturity date for final value
                 fd.compounding_frequency,
+                fd.interest_payout,
             )
             total_realized_pnl += maturity_value - fd.principal_amount
 
@@ -87,6 +93,7 @@ class CRUDHolding:
                 fd.start_date,
                 date.today(),
                 fd.compounding_frequency,
+                fd.interest_payout,
             )
             unrealized_pnl = current_value - fd.principal_amount
             unrealized_pnl_percentage = (

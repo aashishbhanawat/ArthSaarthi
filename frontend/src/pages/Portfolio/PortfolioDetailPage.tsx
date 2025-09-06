@@ -127,6 +127,8 @@ const PortfolioDetailPage: React.FC = () => {
                         <FixedDepositDetailModal
                             holding={selectedHolding}
                             onClose={handleCloseDetailModal}
+                            onEdit={() => {}}
+                            onDelete={() => {}}
                         />
                     ) : (
                         <HoldingDetailModal
