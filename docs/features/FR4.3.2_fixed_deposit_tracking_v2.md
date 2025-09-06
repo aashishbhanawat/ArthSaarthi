@@ -1,6 +1,6 @@
 # Feature Plan (v2): Fixed Deposit (FD) Tracking
 
-**Status: 📝 Planned**
+**Status: ✅ Done**
 ---
 **Feature ID:** FR4.3.2
 **Title:** Implement Tracking for Fixed Deposits (FDs)
@@ -10,32 +10,34 @@
 
 ## 1. Objective
 
-To provide a robust and accurate way for users to track their Fixed Deposits. This plan aligns with the v2 redesign of the holdings view, ensuring FDs are displayed clearly and logically.
+To provide a robust and accurate way for users to track their Fixed Deposits. This feature includes the ability to create, view, and delete FDs, as well as view detailed analytics like XIRR.
 
 ---
 
 ## 2. UI/UX Requirements
 
-*   **Sectioned View:** FDs will be displayed within the new "Fixed Income" collapsible section in the main holdings table, as defined in the `Holdings Table Redesign` feature plan.
-*   **Dedicated Columns:** The "Fixed Income" section will have columns relevant to FDs:
+*   **Sectioned View:** FDs are displayed within the "Deposits" collapsible section in the main holdings table.
+*   **Dedicated Columns:** The "Deposits" section has columns relevant to FDs:
     *   **Columns:** Asset, Type (FD), Interest Rate, Maturity Date, Invested Amount, Current Value.
-*   **Add Asset Flow:** The existing "Add Fixed Deposit" form will be used.
+*   **Add Asset Flow:** A new "Fixed Deposit" option is available in the "Add Transaction" modal, with a dedicated form for FD creation.
+*   **Drill-Down View:** A detailed drill-down modal is available for each FD, showing details, valuation, and XIRR analytics.
+*   **Edit/Delete:** Users can edit and delete their FDs from the drill-down view.
 
 ---
 
 ## 3. Backend Requirements
 
-*   **Data Model:** The existing `FixedDeposit` model is sufficient and captures all necessary details.
-*   **Valuation Logic:** The existing valuation logic in `crud_holding.py` is correct (assuming the `AT_MATURITY` bug is fixed).
-    *   **Cumulative FDs:** `Current Value = P * (1 + r/n)^(n*t)`
-    *   **Payout FDs:** `Current Value = Principal Amount`
-*   **API Integration:** The holdings calculation logic must correctly categorize FDs to be grouped under the "Fixed Income" section in the API response.
+*   **Data Model:** A new `fixed_deposits` table has been added to the database to store FD details.
+*   **Valuation Logic:** The valuation logic in `crud_holding.py` correctly calculates the current value for both cumulative and payout FDs.
+*   **XIRR Analytics:** The backend calculates both unrealized and realized XIRR for FDs.
+*   **Matured FDs:** Matured FDs are excluded from the active holdings list, and their gains are moved to realized PNL.
+*   **API Integration:** New API endpoints have been added for creating, reading, updating, deleting, and getting analytics for FDs.
 
 ---
 
 ## 4. Testing Plan
 
-*   **E2E Tests:** Verify that a newly created FD appears in the "Fixed Income" section of the holdings table.
-*   **Backend Unit Tests:** Ensure the valuation logic for both cumulative and payout FDs is correct.
-*   **Frontend Component Tests:** Test the new `FixedIncomeRow` component to ensure it displays all data correctly.
+*   **E2E Tests:** E2E tests have been added to verify the end-to-end flow of creating, viewing, and deleting FDs.
+*   **Backend Unit Tests:** Unit tests have been added for the new FD endpoints and analytics calculations.
+*   **Frontend Component Tests:** Component tests have been added for the new FD-related components.
 

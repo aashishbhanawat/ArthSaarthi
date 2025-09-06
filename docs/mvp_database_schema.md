@@ -119,7 +119,28 @@ This document outlines the initial database schema required to support the featu
 | `asset_id`     | `UUID`    | `FOREIGN KEY (assets.id)`, `NULLABLE`     |
 | `user_id`      | `UUID`    | `FOREIGN KEY (users.id)`, `NOT NULL`      |
 
-## 9. Relationships
+## 9. `fixed_deposits` Table
+
+*   **Purpose:** Stores the details of each Fixed Deposit.
+*   **Schema:**
+
+| Column Name             | Data Type | Constraints                               |
+| ----------------------- | --------- | ----------------------------------------- |
+| `id`                    | `UUID`    | `PRIMARY KEY`                             |
+| `name`                  | `String`  | `NOT NULL`                                |
+| `account_number`        | `String`  | `NULLABLE`                                |
+| `principal_amount`      | `Numeric` | `NOT NULL`                                |
+| `interest_rate`         | `Numeric` | `NOT NULL`                                |
+| `start_date`            | `Date`    | `NOT NULL`                                |
+| `maturity_date`         | `Date`    | `NOT NULL`                                |
+| `compounding_frequency` | `String`  | `NOT NULL`, `SERVER_DEFAULT('Annually')`  |
+| `interest_payout`       | `String`  | `NOT NULL`, `SERVER_DEFAULT('Cumulative')`|
+| `portfolio_id`          | `UUID`    | `FOREIGN KEY (portfolios.id)`, `NOT NULL` |
+| `user_id`               | `UUID`    | `FOREIGN KEY (users.id)`, `NOT NULL`      |
+
+## 10. Relationships
 *   A **User** can have many **Portfolios**.
+*   A **User** can have many **FixedDeposits**.
 *   A **Portfolio** can have many **Transactions**.
+*   A **Portfolio** can have many **FixedDeposits**.
 *   An **Asset** can be involved in many **Transactions**.

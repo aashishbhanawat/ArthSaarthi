@@ -123,6 +123,28 @@ For transactions in the "Requiring Mapping" section, you must map the unrecogniz
 1.  Use the checkboxes to select which "New" and "Duplicate" transactions you wish to import.
 2.  Click **"Commit Transactions"** to save the selected transactions to your portfolio.
 
+### Tracking Fixed Deposits {#tracking-fixed-deposits}
+
+The application allows you to track your Fixed Deposits (FDs) alongside your other investments.
+
+1.  **Adding a Fixed Deposit:**
+    *   Navigate to the detail page of the portfolio where you want to add the FD.
+    *   Click the **"Add Transaction"** button.
+    *   In the modal, select **"Fixed Deposit"** from the "Asset Type" dropdown.
+    *   Fill in the FD-specific details, such as Institution Name, Principal Amount, Interest Rate, and Maturity Date.
+    *   Click **"Save Transaction"**.
+
+2.  **Viewing Fixed Deposits:**
+    *   FDs are displayed in the "Deposits" section of the holdings table on the portfolio detail page.
+    *   You can click on an FD row to open a detailed drill-down view.
+
+3.  **FD Drill-Down View:**
+    *   The drill-down view provides a comprehensive overview of your FD, including:
+        *   **Details:** Principal amount, interest rate, maturity date, etc.
+        *   **Valuation:** Current value, unrealized gain, and projected maturity value.
+        *   **Analytics:** Unrealized and realized XIRR.
+    *   You can also edit or delete the FD from this view.
+
 ---
 ## 5. Tracking Your Goals {#managing-goals}
 
