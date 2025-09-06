@@ -10,6 +10,7 @@ from pyxirr import xirr
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.crud.crud_holding import _calculate_fd_current_value
 from app.schemas.analytics import AnalyticsResponse, AssetAnalytics
 from app.services.financial_data_service import financial_data_service
 
@@ -385,6 +386,54 @@ def get_portfolio_analytics(db: Session, portfolio_id: uuid.UUID) -> AnalyticsRe
     return AnalyticsResponse(
         xirr=round(xirr_value, 4),
         sharpe_ratio=round(sharpe_ratio_value, 4),
+    )
+
+
+def get_fixed_deposit_analytics(
+    db: Session, fd_id: uuid.UUID
+) -> schemas.FixedDepositAnalytics:
+    """
+    Calculates advanced analytics for a single Fixed Deposit.
+    """
+    fd = crud.fixed_deposit.get(db=db, id=fd_id)
+    if not fd:
+        return schemas.FixedDepositAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
+
+    # For cumulative FDs, cash flows are simple: principal out, value in.
+    # For payout FDs, this would need to be enhanced to include interest payments.
+    principal_outflow = (fd.start_date, -float(fd.principal_amount))
+
+    # Unrealized XIRR
+    current_value = _calculate_fd_current_value(
+        principal=fd.principal_amount,
+        interest_rate=fd.interest_rate,
+        start_date=fd.start_date,
+        end_date=date.today(),
+        compounding_frequency=fd.compounding_frequency,
+    )
+    current_inflow = (date.today(), float(current_value))
+    unrealized_xirr = _calculate_xirr_from_cashflows(
+        [principal_outflow, current_inflow]
+    )
+
+    # Realized XIRR (only if matured)
+    realized_xirr = 0.0
+    if date.today() >= fd.maturity_date:
+        maturity_value = _calculate_fd_current_value(
+            principal=fd.principal_amount,
+            interest_rate=fd.interest_rate,
+            start_date=fd.start_date,
+            end_date=fd.maturity_date,
+            compounding_frequency=fd.compounding_frequency,
+        )
+        maturity_inflow = (fd.maturity_date, float(maturity_value))
+        realized_xirr = _calculate_xirr_from_cashflows(
+            [principal_outflow, maturity_inflow]
+        )
+
+    return schemas.FixedDepositAnalytics(
+        unrealized_xirr=round(unrealized_xirr, 4),
+        realized_xirr=round(realized_xirr, 4),
     )
 
 

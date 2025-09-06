@@ -53,7 +53,7 @@ class CRUDHolding:
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
-        fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
+        all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
 
@@ -63,7 +63,24 @@ class CRUDHolding:
         summary_days_pnl = Decimal("0.0")
         total_realized_pnl = Decimal("0.0")
 
-        for fd in fixed_deposits:
+        active_fixed_deposits = [
+            fd for fd in all_fixed_deposits if fd.maturity_date >= date.today()
+        ]
+        matured_fixed_deposits = [
+            fd for fd in all_fixed_deposits if fd.maturity_date < date.today()
+        ]
+
+        for fd in matured_fixed_deposits:
+            maturity_value = _calculate_fd_current_value(
+                fd.principal_amount,
+                fd.interest_rate,
+                fd.start_date,
+                fd.maturity_date, # Use maturity date for final value
+                fd.compounding_frequency,
+            )
+            total_realized_pnl += maturity_value - fd.principal_amount
+
+        for fd in active_fixed_deposits:
             current_value = _calculate_fd_current_value(
                 fd.principal_amount,
                 fd.interest_rate,

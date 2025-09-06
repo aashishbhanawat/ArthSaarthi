@@ -31,3 +31,7 @@ class FixedDeposit(FixedDepositBase):
 
     class Config:
         from_attributes = True
+
+
+class FixedDepositDetails(FixedDeposit):
+    maturity_value: Decimal

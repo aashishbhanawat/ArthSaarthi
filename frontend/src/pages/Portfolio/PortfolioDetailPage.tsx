@@ -8,6 +8,7 @@ import HoldingsTable from '../../components/Portfolio/HoldingsTable';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
+import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 
 const PortfolioDetailPage: React.FC = () => {
@@ -25,17 +26,13 @@ const PortfolioDetailPage: React.FC = () => {
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
     useEffect(() => {
-        // This effect syncs the selectedHolding state with the latest data from the usePortfolioHoldings hook.
-        // This is crucial for updating the HoldingDetailModal in-place after a transaction is created, updated, or deleted.
         if (selectedHolding && holdings?.holdings) {
             const updatedHolding = holdings.holdings.find(h => h.asset_id === selectedHolding.asset_id);
             if (updatedHolding) {
-                // Avoid unnecessary re-renders if the data hasn't changed.
                 if (JSON.stringify(updatedHolding) !== JSON.stringify(selectedHolding)) {
                     setSelectedHolding(updatedHolding);
                 }
             } else {
-                // The holding no longer exists (e.g., all shares sold and transaction deleted), so close the modal.
                 setSelectedHolding(null);
             }
         }
@@ -124,15 +121,23 @@ const PortfolioDetailPage: React.FC = () => {
                 />
             )}
 
-            {/* Only show the detail modal if a holding is selected AND no other modal is active */}
             {selectedHolding && !isTransactionFormOpen && !transactionToDelete && (
-                <HoldingDetailModal
-                    holding={selectedHolding}
-                    portfolioId={portfolio.id}
-                    onClose={handleCloseDetailModal}
-                    onEditTransaction={handleOpenEditTransactionModal}
-                    onDeleteTransaction={handleOpenDeleteModal}
-                />
+                <>
+                    {selectedHolding.group === 'DEPOSITS' ? (
+                        <FixedDepositDetailModal
+                            holding={selectedHolding}
+                            onClose={handleCloseDetailModal}
+                        />
+                    ) : (
+                        <HoldingDetailModal
+                            holding={selectedHolding}
+                            portfolioId={portfolio.id}
+                            onClose={handleCloseDetailModal}
+                            onEditTransaction={handleOpenEditTransactionModal}
+                            onDeleteTransaction={handleOpenDeleteModal}
+                        />
+                    )}
+                </>
             )}
 
             {transactionToDelete && (

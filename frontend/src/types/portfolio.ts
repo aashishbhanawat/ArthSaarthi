@@ -61,3 +61,12 @@ export interface FixedDeposit extends FixedDepositCreate {
     portfolio_id: string;
     user_id: string;
 }
+
+export interface FixedDepositDetails extends FixedDeposit {
+    maturity_value: number;
+}
+
+export interface FixedDepositAnalytics {
+    unrealized_xirr: number;
+    realized_xirr: number;
+}

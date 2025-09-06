@@ -1,4 +1,4 @@
-from .analytics import AnalyticsResponse, AssetAnalytics
+from .analytics import AnalyticsResponse, AssetAnalytics, FixedDepositAnalytics
 from .asset import Asset, AssetCreate, AssetCreateIn, AssetSearchResult, AssetUpdate
 from .asset_alias import AssetAlias, AssetAliasCreate
 from .dashboard import (
@@ -59,6 +59,7 @@ __all__ = [
     "AssetUpdate",
     "AnalyticsResponse",
     "AssetAnalytics",
+    "FixedDepositAnalytics",
     "DashboardSummary",
     "Holding",
     "HoldingsResponse",
