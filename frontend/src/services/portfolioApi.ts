@@ -1,5 +1,5 @@
 import apiClient from './api';
-import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate, TransactionsResponse } from '../types/portfolio';
+import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate, TransactionsResponse, FixedDepositCreate, FixedDeposit } from '../types/portfolio';
 import { Asset } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { PortfolioAnalytics } from '../types/analytics';
@@ -70,6 +70,36 @@ export const createTransaction = async (
     const response = await apiClient.post<Transaction>(
         `/api/v1/portfolios/${portfolioId}/transactions/`,
         transactionData
+    );
+    return response.data;
+};
+
+export const deleteFixedDeposit = async (
+    portfolioId: string,
+    fdId: string
+): Promise<void> => {
+    await apiClient.delete(`/api/v1/portfolios/${portfolioId}/fixed-deposits/${fdId}`);
+};
+
+export const updateFixedDeposit = async (
+    portfolioId: string,
+    fdId: string,
+    fdData: FixedDepositUpdate
+): Promise<FixedDeposit> => {
+    const response = await apiClient.put<FixedDeposit>(
+        `/api/v1/fixed-deposits/${fdId}`,
+        fdData
+    );
+    return response.data;
+};
+
+export const createFixedDeposit = async (
+    portfolioId: string,
+    fdData: FixedDepositCreate
+): Promise<FixedDeposit> => {
+    const response = await apiClient.post<FixedDeposit>(
+        `/api/v1/portfolios/${portfolioId}/fixed-deposits/`,
+        fdData
     );
     return response.data;
 };

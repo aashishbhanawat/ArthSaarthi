@@ -1,8 +1,20 @@
+import logging
+import sys
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_router
 from app.core.config import settings
+
+# --- Logging Configuration ---
+log_level = logging.DEBUG if settings.DEBUG else logging.INFO
+logging.basicConfig(
+    level=log_level,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stdout,
+)
+# --- End Logging Configuration ---
 
 app = FastAPI(
     title="Personal Portfolio Management System",

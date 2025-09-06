@@ -1,4 +1,4 @@
-from .analytics import AnalyticsResponse, AssetAnalytics
+from .analytics import AnalyticsResponse, AssetAnalytics, FixedDepositAnalytics
 from .asset import Asset, AssetCreate, AssetCreateIn, AssetSearchResult, AssetUpdate
 from .asset_alias import AssetAlias, AssetAliasCreate
 from .dashboard import (
@@ -8,6 +8,11 @@ from .dashboard import (
     PortfolioHistoryPoint,
     PortfolioHistoryResponse,
     TopMover,
+)
+from .fixed_deposit import (
+    FixedDeposit,
+    FixedDepositCreate,
+    FixedDepositUpdate,
 )
 from .goal import (
     Goal,
@@ -42,6 +47,9 @@ from .user import User, UserCreate, UserPasswordChange, UserUpdate, UserUpdateMe
 __all__ = [
     "Asset",
     "AssetAlias",
+    "FixedDeposit",
+    "FixedDepositCreate",
+    "FixedDepositUpdate",
     "AssetAliasCreate",
     "AssetAllocation",
     "AssetAllocationResponse",
@@ -51,6 +59,7 @@ __all__ = [
     "AssetUpdate",
     "AnalyticsResponse",
     "AssetAnalytics",
+    "FixedDepositAnalytics",
     "DashboardSummary",
     "Holding",
     "HoldingsResponse",

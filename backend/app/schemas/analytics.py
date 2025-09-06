@@ -18,3 +18,11 @@ class AssetAnalytics(BaseModel):
     # xirr: float
     realized_xirr: float
     unrealized_xirr: float
+
+
+class FixedDepositAnalytics(BaseModel):
+    """
+    Response model for single fixed deposit analytics.
+    """
+    unrealized_xirr: float
+    realized_xirr: float
