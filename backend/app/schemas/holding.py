@@ -21,6 +21,7 @@ class Holding(BaseModel):
     days_pnl_percentage: float
     unrealized_pnl: Decimal
     unrealized_pnl_percentage: float
+    realized_pnl: Optional[Decimal] = None
     interest_rate: Optional[Decimal] = None
     maturity_date: Optional[date] = None
     account_number: Optional[str] = None

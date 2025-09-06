@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction } from '../../hooks/usePortfolios';
+import { useDeleteFixedDeposit } from '../../hooks/useFixedDeposits';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
@@ -19,11 +20,13 @@ const PortfolioDetailPage: React.FC = () => {
     const { data: holdings, isLoading: isHoldingsLoading, error: holdingsError } = usePortfolioHoldings(portfolioId);
     const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
     const deleteTransactionMutation = useDeleteTransaction();
+    const deleteFixedDepositMutation = useDeleteFixedDeposit();
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+    const [fdToDelete, setFdToDelete] = useState<Holding | null>(null);
 
     useEffect(() => {
         if (selectedHolding && holdings?.holdings) {
@@ -79,6 +82,14 @@ const PortfolioDetailPage: React.FC = () => {
                 onSuccess: handleCloseDeleteModal
             });
         }
+        if (fdToDelete && portfolioId) {
+            deleteFixedDepositMutation.mutate({ portfolioId, fdId: fdToDelete.asset_id }, {
+                onSuccess: () => {
+                    handleCloseDetailModal();
+                    setFdToDelete(null);
+                }
+            });
+        }
     };
 
     return (
@@ -127,8 +138,13 @@ const PortfolioDetailPage: React.FC = () => {
                         <FixedDepositDetailModal
                             holding={selectedHolding}
                             onClose={handleCloseDetailModal}
-                            onEdit={() => {}}
-                            onDelete={() => {}}
+                            onEdit={() => {
+                                // For now, we just close the detail modal and open the transaction modal
+                                // A more specific edit modal could be implemented in the future
+                                handleCloseDetailModal();
+                                handleOpenCreateTransactionModal();
+                            }}
+                            onDelete={() => setFdToDelete(selectedHolding)}
                         />
                     ) : (
                         <HoldingDetailModal
@@ -142,14 +158,21 @@ const PortfolioDetailPage: React.FC = () => {
                 </>
             )}
 
-            {transactionToDelete && (
+            {(transactionToDelete || fdToDelete) && (
                 <DeleteConfirmationModal
-                    isOpen={!!transactionToDelete}
-                    onClose={handleCloseDeleteModal}
+                    isOpen={!!transactionToDelete || !!fdToDelete}
+                    onClose={() => {
+                        setTransactionToDelete(null);
+                        setFdToDelete(null);
+                    }}
                     onConfirm={handleConfirmDelete}
-                    title="Delete Transaction"
-                    message={`Are you sure you want to delete this ${transactionToDelete.transaction_type} transaction of ${Number(transactionToDelete.quantity).toLocaleString()} units? This action cannot be undone.`}
-                    isDeleting={deleteTransactionMutation.isPending}
+                    title={fdToDelete ? "Delete Fixed Deposit" : "Delete Transaction"}
+                    message={
+                        fdToDelete
+                            ? `Are you sure you want to delete the FD "${fdToDelete.asset_name}"? This action cannot be undone.`
+                            : `Are you sure you want to delete this ${transactionToDelete?.transaction_type} transaction of ${Number(transactionToDelete?.quantity).toLocaleString()} units? This action cannot be undone.`
+                    }
+                    isDeleting={deleteTransactionMutation.isPending || deleteFixedDepositMutation.isPending}
                 />
             )}
         </div>

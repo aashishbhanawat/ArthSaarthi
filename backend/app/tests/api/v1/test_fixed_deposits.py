@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from typing import Callable, Dict
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -9,7 +10,9 @@ from app.tests.utils.user import create_random_user
 
 
 def test_create_fixed_deposit(
-    client: TestClient, db: Session, get_auth_headers: dict
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
 ) -> None:
     user, password = create_random_user(db)
     portfolio = create_test_portfolio(db, user_id=user.id, name="Test Portfolio")
@@ -45,7 +48,9 @@ def test_create_fixed_deposit(
 
 
 def test_read_fixed_deposit_with_analytics(
-    client: TestClient, db: Session, get_auth_headers: dict
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
 ) -> None:
     user, password = create_random_user(db)
     portfolio = create_test_portfolio(db, user_id=user.id, name="Test Portfolio")

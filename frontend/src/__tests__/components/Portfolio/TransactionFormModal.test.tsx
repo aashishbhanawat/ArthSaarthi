@@ -213,17 +213,19 @@ describe('TransactionFormModal', () => {
       // Assert the mutation was called with the correct payload
       await waitFor(() => {
         expect(mockCreateFixedDeposit).toHaveBeenCalledWith(
-          expect.objectContaining({
+          {
             portfolioId: 'portfolio-1',
-            data: expect.objectContaining({
+            data: {
               name: 'Test Bank',
               account_number: 'FD12345',
               principal_amount: 100000,
               interest_rate: 6.5,
               start_date: '2023-01-01',
               maturity_date: '2025-01-01',
-            }),
-          }),
+              compounding_frequency: 'Annually',
+              interest_payout: 'Cumulative'
+            },
+          },
           expect.any(Object)
         );
       });

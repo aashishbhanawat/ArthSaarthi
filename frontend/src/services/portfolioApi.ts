@@ -74,6 +74,25 @@ export const createTransaction = async (
     return response.data;
 };
 
+export const deleteFixedDeposit = async (
+    portfolioId: string,
+    fdId: string
+): Promise<void> => {
+    await apiClient.delete(`/api/v1/portfolios/${portfolioId}/fixed-deposits/${fdId}`);
+};
+
+export const updateFixedDeposit = async (
+    portfolioId: string,
+    fdId: string,
+    fdData: FixedDepositUpdate
+): Promise<FixedDeposit> => {
+    const response = await apiClient.put<FixedDeposit>(
+        `/api/v1/fixed-deposits/${fdId}`,
+        fdData
+    );
+    return response.data;
+};
+
 export const createFixedDeposit = async (
     portfolioId: string,
     fdData: FixedDepositCreate

@@ -67,6 +67,11 @@ const FixedDepositDetailModal: React.FC<FixedDepositDetailModalProps> = ({ holdi
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             <p><strong>Current Value:</strong></p><p>{formatCurrency(holding.current_value)}</p>
                             <p><strong>Unrealized Gain:</strong></p><p>{formatCurrency(holding.unrealized_pnl)}</p>
+                            {holding.realized_pnl && holding.realized_pnl > 0 && (
+                                <>
+                                    <p><strong>Realized Gain:</strong></p><p>{formatCurrency(holding.realized_pnl)}</p>
+                                </>
+                            )}
                             <p><strong>Maturity Value:</strong></p><p>{formatCurrency(details.maturity_value)} (Projected)</p>
                         </div>
                     )}

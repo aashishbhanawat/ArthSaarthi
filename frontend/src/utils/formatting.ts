@@ -36,7 +36,7 @@ export const formatInterestRate = (value: number | string | undefined | null): s
         return 'N/A';
     }
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(numValue)) {
+    if (typeof numValue !== 'number' || isNaN(numValue)) {
         return 'N/A';
     }
     return `${numValue.toFixed(2)}%`;

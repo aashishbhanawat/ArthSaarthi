@@ -13,6 +13,7 @@ export interface Holding {
     days_pnl_percentage: number;
     unrealized_pnl: number;
     unrealized_pnl_percentage: number;
+    realized_pnl?: number;
     interest_rate: number | null;
     maturity_date: string | null;
     account_number: string | null;

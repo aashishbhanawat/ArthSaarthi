@@ -1,13 +1,17 @@
+import logging
 import uuid
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List
 
+from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
+from app import crud, models, schemas
 from app.services.financial_data_service import financial_data_service
+
+logger = logging.getLogger(__name__)
 
 
 def _calculate_fd_current_value(
@@ -43,6 +47,34 @@ def _calculate_fd_current_value(
     return current_value
 
 
+def _calculate_total_interest_paid(fd: models.FixedDeposit, end_date: date) -> Decimal:
+    """Calculates the total interest paid for a payout FD up to a given end date."""
+    if fd.interest_payout == "Cumulative":
+        return Decimal(0)
+
+    payout_frequency_map = {
+        "Monthly": 1,
+        "Quarterly": 3,
+        "Semi-Annually": 6,
+        "Annually": 12,
+    }
+    months_interval = payout_frequency_map.get(fd.interest_payout)
+
+    if not months_interval:
+        return Decimal(0)
+
+    payouts_per_year = Decimal("12.0") / Decimal(str(months_interval))
+    payout_rate = fd.interest_rate / Decimal("100.0") / payouts_per_year
+    interest_per_payout = fd.principal_amount * payout_rate
+
+    total_interest = Decimal(0)
+    payout_date = fd.start_date + relativedelta(months=months_interval)
+    while payout_date <= end_date:
+        total_interest += interest_per_payout
+        payout_date += relativedelta(months=months_interval)
+    return total_interest
+
+
 class CRUDHolding:
     """
     CRUD operations for portfolio holdings.
@@ -74,19 +106,30 @@ class CRUDHolding:
         matured_fixed_deposits = [
             fd for fd in all_fixed_deposits if fd.maturity_date < date.today()
         ]
+        logger.info(f"Active FDs: {[fd.id for fd in active_fixed_deposits]}")
+        logger.info(f"Matured FDs: {[fd.id for fd in matured_fixed_deposits]}")
 
         for fd in matured_fixed_deposits:
-            maturity_value = _calculate_fd_current_value(
-                fd.principal_amount,
-                fd.interest_rate,
-                fd.start_date,
-                fd.maturity_date, # Use maturity date for final value
-                fd.compounding_frequency,
-                fd.interest_payout,
-            )
-            total_realized_pnl += maturity_value - fd.principal_amount
+            if fd.interest_payout != "Cumulative":
+                total_realized_pnl += _calculate_total_interest_paid(
+                    fd, fd.maturity_date
+                )
+            else:
+                maturity_value = _calculate_fd_current_value(
+                    fd.principal_amount,
+                    fd.interest_rate,
+                    fd.start_date,
+                    fd.maturity_date, # Use maturity date for final value
+                    fd.compounding_frequency,
+                    fd.interest_payout,
+                )
+                total_realized_pnl += maturity_value - fd.principal_amount
 
         for fd in active_fixed_deposits:
+            total_interest_paid = _calculate_total_interest_paid(fd, date.today())
+            if total_interest_paid > 0:
+                total_realized_pnl += total_interest_paid
+
             current_value = _calculate_fd_current_value(
                 fd.principal_amount,
                 fd.interest_rate,
@@ -117,6 +160,7 @@ class CRUDHolding:
                     days_pnl_percentage=0.0,
                     unrealized_pnl=unrealized_pnl,
                     unrealized_pnl_percentage=unrealized_pnl_percentage,
+                    realized_pnl=total_interest_paid,
                     interest_rate=fd.interest_rate,
                     maturity_date=fd.maturity_date,
                     account_number=fd.account_number,

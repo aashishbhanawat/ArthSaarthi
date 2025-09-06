@@ -56,6 +56,16 @@ export interface FixedDepositCreate {
     interest_payout: 'Cumulative' | 'Payout';
 }
 
+export interface FixedDepositUpdate {
+    name?: string;
+    principal_amount?: number;
+    interest_rate?: number;
+    start_date?: string;
+    maturity_date?: string;
+    compounding_frequency?: 'Annually' | 'Half-Yearly' | 'Quarterly';
+    interest_payout?: 'Cumulative' | 'Payout';
+}
+
 export interface FixedDeposit extends FixedDepositCreate {
     id: string;
     portfolio_id: string;
