@@ -275,6 +275,7 @@ class CRUDHolding:
                     asset_type="RECURRING_DEPOSIT",
                     group="DEPOSITS",
                     quantity=Decimal(1),
+                    average_buy_price=total_invested,
                     total_invested_amount=total_invested,
                     current_price=current_value,
                     current_value=current_value,
@@ -283,6 +284,9 @@ class CRUDHolding:
                     interest_rate=rd.interest_rate,
                     maturity_date=rd.start_date
                     + relativedelta(months=rd.tenure_months),
+                    ticker_symbol=rd.name,
+                    days_pnl=Decimal(0),
+                    days_pnl_percentage=0.0,
                 )
             )
             summary_total_value += current_value
