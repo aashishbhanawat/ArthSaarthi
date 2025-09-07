@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction } from '../../hooks/usePortfolios';
 import { useDeleteFixedDeposit } from '../../hooks/useFixedDeposits';
+import { useDeleteRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
@@ -10,6 +11,7 @@ import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
 import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
+import RecurringDepositDetailModal from '../../components/Portfolio/RecurringDepositDetailModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 
 const PortfolioDetailPage: React.FC = () => {
@@ -21,12 +23,14 @@ const PortfolioDetailPage: React.FC = () => {
     const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
     const deleteTransactionMutation = useDeleteTransaction();
     const deleteFixedDepositMutation = useDeleteFixedDeposit();
+    const deleteRecurringDepositMutation = useDeleteRecurringDeposit();
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
     const [fdToDelete, setFdToDelete] = useState<Holding | null>(null);
+    const [rdToDelete, setRdToDelete] = useState<Holding | null>(null);
 
     useEffect(() => {
         if (selectedHolding && holdings?.holdings) {
@@ -90,6 +94,14 @@ const PortfolioDetailPage: React.FC = () => {
                 }
             });
         }
+        if (rdToDelete && portfolioId) {
+            deleteRecurringDepositMutation.mutate({ portfolioId, rdId: rdToDelete.asset_id }, {
+                onSuccess: () => {
+                    handleCloseDetailModal();
+                    setRdToDelete(null);
+                }
+            });
+        }
     };
 
     return (
@@ -132,19 +144,27 @@ const PortfolioDetailPage: React.FC = () => {
                 />
             )}
 
-            {selectedHolding && !isTransactionFormOpen && !transactionToDelete && (
+            {selectedHolding && !isTransactionFormOpen && !transactionToDelete && !rdToDelete && (
                 <>
-                    {selectedHolding.group === 'DEPOSITS' ? (
+                    {selectedHolding.asset_type === 'FIXED_DEPOSIT' ? (
                         <FixedDepositDetailModal
                             holding={selectedHolding}
                             onClose={handleCloseDetailModal}
                             onEdit={() => {
-                                // For now, we just close the detail modal and open the transaction modal
-                                // A more specific edit modal could be implemented in the future
                                 handleCloseDetailModal();
                                 handleOpenCreateTransactionModal();
                             }}
                             onDelete={() => setFdToDelete(selectedHolding)}
+                        />
+                    ) : selectedHolding.asset_type === 'RECURRING_DEPOSIT' ? (
+                        <RecurringDepositDetailModal
+                            holding={selectedHolding}
+                            onClose={handleCloseDetailModal}
+                            onEdit={() => {
+                                handleCloseDetailModal();
+                                handleOpenCreateTransactionModal();
+                            }}
+                            onDelete={() => setRdToDelete(selectedHolding)}
                         />
                     ) : (
                         <HoldingDetailModal
@@ -158,21 +178,24 @@ const PortfolioDetailPage: React.FC = () => {
                 </>
             )}
 
-            {(transactionToDelete || fdToDelete) && (
+            {(transactionToDelete || fdToDelete || rdToDelete) && (
                 <DeleteConfirmationModal
-                    isOpen={!!transactionToDelete || !!fdToDelete}
+                    isOpen={!!transactionToDelete || !!fdToDelete || !!rdToDelete}
                     onClose={() => {
                         setTransactionToDelete(null);
                         setFdToDelete(null);
+                        setRdToDelete(null);
                     }}
                     onConfirm={handleConfirmDelete}
-                    title={fdToDelete ? "Delete Fixed Deposit" : "Delete Transaction"}
+                    title={fdToDelete ? "Delete Fixed Deposit" : rdToDelete ? "Delete Recurring Deposit" : "Delete Transaction"}
                     message={
                         fdToDelete
                             ? `Are you sure you want to delete the FD "${fdToDelete.asset_name}"? This action cannot be undone.`
+                            : rdToDelete
+                            ? `Are you sure you want to delete the RD "${rdToDelete.asset_name}"? This action cannot be undone.`
                             : `Are you sure you want to delete this ${transactionToDelete?.transaction_type} transaction of ${Number(transactionToDelete?.quantity).toLocaleString()} units? This action cannot be undone.`
                     }
-                    isDeleting={deleteTransactionMutation.isPending || deleteFixedDepositMutation.isPending}
+                    isDeleting={deleteTransactionMutation.isPending || deleteFixedDepositMutation.isPending || deleteRecurringDepositMutation.isPending}
                 />
             )}
         </div>

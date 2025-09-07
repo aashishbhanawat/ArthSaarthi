@@ -9,6 +9,7 @@ from .endpoints import (
     auth,
     dashboard,
     fixed_deposits,
+    recurring_deposits,
     goals,
     import_sessions,
     me,
@@ -33,6 +34,11 @@ api_router.include_router(assets.router, prefix="/assets", tags=["assets"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(
     fixed_deposits.router, prefix="/fixed-deposits", tags=["fixed-deposits"]
+)
+api_router.include_router(
+    recurring_deposits.router,
+    prefix="/recurring-deposits",
+    tags=["recurring-deposits"],
 )
 api_router.include_router(
     transactions.router, prefix="/transactions", tags=["transactions"]

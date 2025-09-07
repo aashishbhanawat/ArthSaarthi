@@ -11,7 +11,7 @@ from pyxirr import xirr
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.crud.crud_holding import _calculate_fd_current_value
+from app.crud.crud_holding import _calculate_fd_current_value, _calculate_rd_value_at_date
 from app.schemas.analytics import AnalyticsResponse, AssetAnalytics
 from app.services.financial_data_service import financial_data_service
 
@@ -239,11 +239,60 @@ def _calculate_xirr(db: Session, portfolio_id: uuid.UUID) -> float:
                 )
                 cash_flows.extend(payout_flows)
 
+    # 2.1. Construct cash flows from Recurring Deposits
+    recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
+        db=db, portfolio_id=portfolio_id
+    )
+    total_rd_current_value = Decimal("0.0")
+
+    for rd in recurring_deposits:
+        maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
+        installments_paid = 0
+        current_installment_date = rd.start_date
+
+        if maturity_date >= date.today():  # Active RD
+            while (
+                current_installment_date <= date.today()
+                and installments_paid < rd.tenure_months
+            ):
+                cash_flows.append(
+                    (current_installment_date, -float(rd.monthly_installment))
+                )
+                current_installment_date += relativedelta(months=1)
+                installments_paid += 1
+
+            current_rd_value = _calculate_rd_value_at_date(
+                rd.monthly_installment,
+                rd.interest_rate,
+                rd.start_date,
+                rd.tenure_months,
+                date.today(),
+            )
+            total_rd_current_value += current_rd_value
+        else:  # Matured RD
+            while installments_paid < rd.tenure_months:
+                cash_flows.append(
+                    (current_installment_date, -float(rd.monthly_installment))
+                )
+                current_installment_date += relativedelta(months=1)
+                installments_paid += 1
+
+            maturity_value = _calculate_rd_value_at_date(
+                rd.monthly_installment,
+                rd.interest_rate,
+                rd.start_date,
+                rd.tenure_months,
+                maturity_date,
+            )
+            cash_flows.append((maturity_date, float(maturity_value)))
+
     # 3. Add the current market value of all holdings as the final cash inflow
     stock_mf_current_value = _get_portfolio_current_value(
         db=db, portfolio_id=portfolio_id
     )
-    total_current_value = stock_mf_current_value + total_fd_current_value
+    total_current_value = (
+        stock_mf_current_value + total_fd_current_value + total_rd_current_value
+    )
     if total_current_value > 0:
         cash_flows.append((date.today(), float(total_current_value)))
 
@@ -543,6 +592,48 @@ def get_fixed_deposit_analytics(
     return schemas.FixedDepositAnalytics(
         unrealized_xirr=round(unrealized_xirr, 4),
         realized_xirr=round(realized_xirr, 4),
+    )
+
+
+def get_recurring_deposit_analytics(
+    db: Session, rd_id: uuid.UUID
+) -> schemas.recurring_deposit.RecurringDepositAnalytics:
+    """
+    Calculates advanced analytics for a single Recurring Deposit.
+    """
+    rd = crud.recurring_deposit.get(db=db, id=rd_id)
+    if not rd:
+        return schemas.recurring_deposit.RecurringDepositAnalytics(unrealized_xirr=0.0)
+
+    cash_flows = []
+    today = date.today()
+
+    # Generate cash flows of monthly installments
+    installments_paid = 0
+    current_installment_date = rd.start_date
+    while (
+        current_installment_date <= today
+        and installments_paid < rd.tenure_months
+    ):
+        cash_flows.append((current_installment_date, -float(rd.monthly_installment)))
+        current_installment_date += relativedelta(months=1)
+        installments_paid += 1
+
+    # Add current value as the final cash inflow
+    current_value = _calculate_rd_value_at_date(
+        rd.monthly_installment,
+        rd.interest_rate,
+        rd.start_date,
+        rd.tenure_months,
+        today,
+    )
+    if current_value > 0:
+        cash_flows.append((today, float(current_value)))
+
+    unrealized_xirr = _calculate_xirr_from_cashflows(cash_flows)
+
+    return schemas.recurring_deposit.RecurringDepositAnalytics(
+        unrealized_xirr=round(unrealized_xirr, 4)
     )
 
 

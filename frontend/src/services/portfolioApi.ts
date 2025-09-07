@@ -1,5 +1,6 @@
 import apiClient from './api';
 import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate, TransactionsResponse, FixedDepositCreate, FixedDeposit } from '../types/portfolio';
+import { RecurringDeposit, RecurringDepositCreate, RecurringDepositUpdate, RecurringDepositDetails, RecurringDepositAnalytics } from '../types/recurring_deposit';
 import { Asset } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { PortfolioAnalytics } from '../types/analytics';
@@ -70,6 +71,52 @@ export const createTransaction = async (
     const response = await apiClient.post<Transaction>(
         `/api/v1/portfolios/${portfolioId}/transactions/`,
         transactionData
+    );
+    return response.data;
+};
+
+export const createRecurringDeposit = async (
+    portfolioId: string,
+    rdData: RecurringDepositCreate
+): Promise<RecurringDeposit> => {
+    const response = await apiClient.post<RecurringDeposit>(
+        `/api/v1/portfolios/${portfolioId}/recurring-deposits/`,
+        rdData
+    );
+    return response.data;
+};
+
+export const getRecurringDeposit = async (
+    rdId: string
+): Promise<RecurringDepositDetails> => {
+    const response = await apiClient.get<RecurringDepositDetails>(
+        `/api/v1/recurring-deposits/${rdId}`
+    );
+    return response.data;
+};
+
+export const updateRecurringDeposit = async (
+    rdId: string,
+    rdData: RecurringDepositUpdate
+): Promise<RecurringDeposit> => {
+    const response = await apiClient.put<RecurringDeposit>(
+        `/api/v1/recurring-deposits/${rdId}`,
+        rdData
+    );
+    return response.data;
+};
+
+export const deleteRecurringDeposit = async (
+    rdId: string
+): Promise<void> => {
+    await apiClient.delete(`/api/v1/recurring-deposits/${rdId}`);
+};
+
+export const getRecurringDepositAnalytics = async (
+    rdId: string
+): Promise<RecurringDepositAnalytics> => {
+    const response = await apiClient.get<RecurringDepositAnalytics>(
+        `/api/v1/recurring-deposits/${rdId}/analytics`
     );
     return response.data;
 };
