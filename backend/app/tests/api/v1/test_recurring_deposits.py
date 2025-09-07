@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, timedelta
+from decimal import Decimal
 from typing import Callable, Dict
 
 from fastapi.testclient import TestClient
@@ -127,15 +128,17 @@ def test_recurring_deposit_valuation():
     from datetime import date
     from decimal import Decimal
 
-    # Values from CRED calculator example
+    # Values from an online RD calculator
     monthly_installment = Decimal("10000")
     interest_rate = Decimal("8")
     start_date = date(2023, 1, 1)
     tenure_months = 12
-    maturity_date = date(2024, 1, 1)
+    maturity_date = start_date.replace(year=start_date.year + 1)
 
-    # The expected maturity value from the website is ₹1,25,293
-    expected_maturity_value = Decimal("125293")
+    # The formula used in the application is a standard one for quarterly compounding.
+    # M = P * [((1+r/400)^n - 1) / (1-(1+r/400)^(-1/3))]
+    # For P=10000, r=8, n=4 (12 months), the value is ~125293.26
+    expected_maturity_value = Decimal("125293.26")
 
     calculated_maturity_value = _calculate_rd_value_at_date(
         monthly_installment=monthly_installment,
@@ -145,5 +148,5 @@ def test_recurring_deposit_valuation():
         calculation_date=maturity_date,
     )
 
-    # Allow a small tolerance for rounding differences
-    assert abs(calculated_maturity_value - expected_maturity_value) < 20
+    # Allow a small tolerance for rounding differences between implementations
+    assert abs(calculated_maturity_value - expected_maturity_value) < 0.01

@@ -486,5 +486,3 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 };
 
 export default TransactionFormModal;
-
-export default TransactionFormModal;

@@ -84,32 +84,44 @@ def _calculate_rd_value_at_date(
     calculation_date: date,
 ) -> Decimal:
     """
-    Calculates the value of a recurring deposit at a specific date by summing the future value of each installment.
+    Calculates the value of a recurring deposit at a specific date using the formula for monthly investments with quarterly compounding.
     """
-    total_value = Decimal("0.0")
-    annual_rate = interest_rate / Decimal("100")
-    n = Decimal(4)  # Compounding quarterly
+    if calculation_date < start_date:
+        return Decimal("0.0")
 
-    current_installment_date = start_date
-    installments_paid = 0
+    # Calculate the number of full months passed since the start date, up to the tenure limit
+    months_passed = (
+        (calculation_date.year - start_date.year) * 12
+        + (calculation_date.month - start_date.month)
+    )
 
-    while installments_paid < tenure_months:
-        # Only calculate for installments paid up to the calculation_date
-        if current_installment_date > calculation_date:
-            break
+    # We should not calculate beyond the tenure
+    months_to_calculate = min(months_passed, tenure_months)
 
-        t_years = Decimal((calculation_date - current_installment_date).days) / Decimal(
-            "365.25"
-        )
-        fv_of_installment = monthly_installment * (
-            (Decimal(1) + annual_rate / n) ** (n * t_years)
-        )
-        total_value += fv_of_installment
+    if months_to_calculate <= 0:
+        return Decimal("0.0")
 
-        current_installment_date += relativedelta(months=1)
-        installments_paid += 1
+    r_quarterly = interest_rate / Decimal("400")
+    n_quarters = months_to_calculate / 3
 
-    return total_value
+    # M = P * [((1+r/400)^n - 1) / (1-(1+r/400)^(-1/3))]
+
+    # Numerator: (1 + r/400)^n - 1
+    numerator = (1 + r_quarterly) ** Decimal(n_quarters) - 1
+
+    # Denominator: 1 - (1 + r/400)^(-1/3)
+    denominator = 1 - (1 + r_quarterly) ** (Decimal("-1") / Decimal("3"))
+
+    if denominator == 0:
+        # Avoid division by zero, though this is unlikely with typical interest rates
+        # Fallback to a simple interest calculation for the total invested amount
+        total_invested = monthly_installment * months_to_calculate
+        simple_interest = total_invested * (interest_rate / 100) * (Decimal(months_to_calculate) / 12)
+        return total_invested + simple_interest
+
+    maturity_value = monthly_installment * (numerator / denominator)
+
+    return maturity_value
 
 
 class CRUDHolding:

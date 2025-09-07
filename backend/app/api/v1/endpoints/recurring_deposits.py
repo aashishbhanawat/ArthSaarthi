@@ -38,9 +38,10 @@ def read_recurring_deposit(
         calculation_date=maturity_date,
     )
 
-    response_data = schemas.recurring_deposit.RecurringDeposit.model_validate(rd).model_dump()
-    response_data["maturity_value"] = maturity_value
-    return response_data
+    return schemas.recurring_deposit.RecurringDepositDetails(
+        **schemas.recurring_deposit.RecurringDeposit.model_validate(rd).model_dump(),
+        maturity_value=maturity_value,
+    )
 
 
 @router.get("/{id}/analytics", response_model=schemas.recurring_deposit.RecurringDepositAnalytics)

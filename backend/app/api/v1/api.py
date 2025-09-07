@@ -35,6 +35,7 @@ api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboar
 api_router.include_router(
     fixed_deposits.router, prefix="/fixed-deposits", tags=["fixed-deposits"]
 )
+# recurring deposits are nested under portfolios
 api_router.include_router(
     recurring_deposits.router,
     prefix="/recurring-deposits",

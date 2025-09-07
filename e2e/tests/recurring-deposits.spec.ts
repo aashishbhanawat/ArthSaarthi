@@ -37,7 +37,7 @@ test.describe.serial('Recurring Deposit E2E Flow', () => {
 
   test('should allow a user to create, view, and delete a recurring deposit', async ({ page }) => {
     const portfolioName = `My RD Portfolio ${Date.now()}`;
-    const rdName = 'My Test RD';
+    const rdName = 'E2E Test RD';
 
     // 1. Create a portfolio
     await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -53,7 +53,7 @@ test.describe.serial('Recurring Deposit E2E Flow', () => {
     await page.getByLabel('Institution Name').fill(rdName);
     await page.getByLabel('Monthly Installment').fill('5000');
     await page.getByLabel('Interest Rate (%)').fill('7.5');
-    await page.getByLabel('Start Date').fill('2023-01-01');
+    await page.getByLabel('Start Date').fill(new Date().toISOString().split('T')[0]);
     await page.getByLabel('Tenure (in months)').fill('12');
 
     await page.getByRole('button', { name: 'Save Transaction' }).click();
@@ -61,7 +61,7 @@ test.describe.serial('Recurring Deposit E2E Flow', () => {
     // 3. Verify the new RD appears in the HoldingsTable
     const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
     await expect(holdingsTable).toBeVisible();
-    const rdRow = holdingsTable.getByRole('row', { name: new RegExp(rdName) });
+    const rdRow = holdingsTable.getByRole('row', { name: rdName });
     await expect(rdRow).toBeVisible();
 
     // 4. Click on the RD to open the detail modal
