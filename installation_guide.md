@@ -49,8 +49,8 @@ This method uses pre-built Docker images from Docker Hub for a consistent and re
 2.  **Download Configuration Files:** Download the `docker-compose.yml` and the production environment template.
     ```bash
     # Note: We are downloading the production compose file and naming it docker-compose.yml for simplicity.
-    curl -L -o docker-compose.yml https://raw.githubusercontent.com/aashishbhanawat/pms/main/docker-compose.prod.yml
-    curl -L -o .env.prod.example https://raw.githubusercontent.com/aashishbhanawat/pms/main/backend/.env.prod.example
+    curl -L -o docker-compose.yml https://raw.githubusercontent.com/aashishbhanawat/ArthSaarthi/main/docker-compose.prod.yml
+    curl -L -o .env.prod.example https://raw.githubusercontent.com/aashishbhanawat/ArthSaarthi/main/backend/.env.prod.example
     ```
 3.  **Create Your Environment File:** Copy the example file. This file will hold your secret keys and domain settings.
     ```bash

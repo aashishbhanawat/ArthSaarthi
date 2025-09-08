@@ -91,7 +91,9 @@ This approach allows you to run the services directly on your host machine.
 1.  **Clone the Repository:**
     ```bash
     git clone <repository_url>
-    cd pms
+    cd ArthSaarthi
+
+
     ```
 2.  **Backend Setup:**
     - Navigate to the backend directory: `cd backend`

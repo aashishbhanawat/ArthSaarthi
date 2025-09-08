@@ -1,7 +1,7 @@
 site_name: ArthSaarthi Documentation
 site_description: 'Technical and user documentation for the ArthSaarthi personal portfolio management system.'
 site_author: 'Aashish Bhanawat'
-site_url: https://aashishbhanawat.github.io/pms/
+site_url: https://aashishbhanawat.github.io/ArthSaarthi/
 
 theme:
   name: material
