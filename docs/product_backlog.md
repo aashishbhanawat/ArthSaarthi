@@ -40,7 +40,7 @@ The goal of the MVP was to deliver a functional core product that allows a user 
 
 ## Release 2: Advanced Asset Management & Analytics
 
-**Status: 🚧 In Progress**
+**Status: ✅ COMPLETE (as of 2025-08-07)**
 
 The goal of this release is to act on the critical feedback from the pilot release, focusing on core usability enhancements and a major redesign of the portfolio detail page to better meet user needs.
 
@@ -88,14 +88,14 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 ## Release 5: Goal Management & Insights
 
-**Status: ⚠️ Partially Implemented**
+**Status: ✅ COMPLETE (as of 2025-08-26)**
 
 **Features:**
 
 -   **Watchlists (FR8.1):** Users can create, manage, and track custom lists of financial assets.
     -   **Status: ✅ Complete**
 -   **Goal Planning & Tracking (FR13):** Implement core goal definition, asset linking, and basic progress tracking.
-    -   **Status: ⚠️ Partially Implemented**
+    -   **Status: ✅ Complete**
 
 ## Release 6: Security & Administration
 
@@ -124,6 +124,20 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Privacy Mode (FR3.4):** Add a "Privacy Mode" toggle to the dashboard to obscure sensitive financial data.
     -   **Status: ✅ Complete**
 
+## Release 9: Advanced Asset Support
+
+**Status: 🚧 In Progress**
+
+**Features:**
+
+-   **Advanced Asset Support (FR4):**
+    -   Fixed Deposits (FDs): **✅ Complete**
+    -   Recurring Deposits (RDs): **✅ Complete**
+    -   Public Provident Fund (PPF): 📝 Planned
+    -   National Pension System (NPS): 📝 Planned
+    -   Bonds: 📝 Planned
+    -   RSUs/ESPPs: 📝 Planned
+
 ## Future Releases
 
 -   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
@@ -132,7 +146,6 @@ The goal of this release was to build a robust and user-friendly system for impo
     -   Add tracking for income (dividends, interest).
     -   Add support for corporate actions (splits, bonuses).
 -   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to support mutual fund transaction imports.
--   **Advanced Asset Support (FR4):** Add support for FDs, RDs, PPF, NPS, Bonds, RSUs, ESPPs.
 -   **Advanced Analytics (FR6):** Implement remaining metrics like TWR, MWR, Beta, Alpha, and benchmarking.
 -   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
 -   **Goal Planning & Tracking (FR13 - Enhancements):** Implement contribution planning and future value projections.

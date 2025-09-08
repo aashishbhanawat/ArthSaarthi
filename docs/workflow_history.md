@@ -4,6 +4,40 @@ This document serves as a chronological log of the development process for **Art
 
 ---
 
+## 2025-09-07: Implement & Stabilize Recurring Deposit Tracking (FR4.3.3)
+
+*   **Task Description:** A full-stack implementation of the Recurring Deposit (RD) tracking feature. This was a complex task that involved creating the backend data models, a dedicated drill-down UI, and implementing financial calculations for valuation and XIRR. The task also included a significant, multi-stage debugging and stabilization effort to resolve issues with the test environment, database migrations, and core application logic.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full backend stack for RDs (`RecurringDeposit` model, schemas, CRUD, API endpoints) and the corresponding frontend components (`RecurringDepositDetailModal`, updates to `TransactionFormModal`).
+    2.  **Iterative Debugging of Core Logic:** The core of the interaction was a highly iterative debugging loop. The user provided detailed feedback from manual testing and code reviews, which uncovered several critical bugs:
+        *   **XIRR Calculation:** The user reported that the XIRR for RDs was incorrect. The AI implemented two different valuation logics (`_calculate_rd_value_at_date`) before settling on a more accurate method based on calculating the future value of each installment. The unit test was updated to match this new, correct value.
+        *   **Backend Crash (`pydantic_core.ValidationError`):** The user reported that the application crashed when viewing a portfolio with an RD that had no `account_number`. The AI diagnosed this as a Pydantic validation error and fixed it by providing a fallback value for the `ticker_symbol` in `crud_holding.py`.
+    3.  **Test Environment Stabilization:** A significant amount of time was spent debugging the test environment. This included:
+        *   Fixing the `run_local_tests.sh` script to correctly initialize the database for backend tests.
+        *   Fixing a `RuntimeError` related to the encryption `KeyManager` not being loaded in tests by adding the `pre_unlocked_key_manager` fixture.
+        *   Fixing numerous linting errors reported by `ruff`.
+    4.  **Manual Database Migration:** The Alembic `autogenerate` command proved to be unreliable in the test environment. After multiple failed attempts, the AI pivoted to creating the database migration script manually to add the `account_number` column.
+
+*   **File Changes:**
+    *   `backend/app/models/recurring_deposit.py`: **New** SQLAlchemy model.
+    *   `backend/app/schemas/recurring_deposit.py`: **New** Pydantic schemas.
+    *   `backend/app/crud/crud_recurring_deposit.py`: **New** CRUD module.
+    *   `backend/app/api/v1/endpoints/recurring_deposits.py`: **New** API router.
+    *   `backend/app/crud/crud_holding.py`: **Updated** to correctly calculate RD holdings and handle missing account numbers.
+    *   `backend/app/crud/crud_analytics.py`: **Updated** to include RDs in portfolio-level XIRR calculations.
+    *   `backend/alembic/versions/2fc13ed78a51_....py`: **New** manually created database migration.
+    *   `backend/app/tests/api/v1/test_recurring_deposits.py`: **New** test suite, later fixed for encryption and valuation logic.
+    *   `frontend/src/components/Portfolio/RecurringDepositDetailModal.tsx`: **New** component for the drill-down view.
+    *   `frontend/src/components/Portfolio/TransactionFormModal.tsx`: **Updated** to include the RD form.
+    *   `run_local_tests.sh`: **Updated** to correctly initialize the database for backend tests.
+
+*   **Outcome:**
+    - The Recurring Deposit tracking feature is fully implemented, tested, and stable.
+    - All backend, frontend, and E2E tests are passing. This task was a testament to the importance of a robust test suite and the ability to debug and overcome complex environmental and logical issues.
+
+---
+
 ## 2025-09-04: Holdings Table Redesign (FR4.7.2)
 
 *   **Task Description:** Implement the "Holdings Table Redesign" feature. This involved a major refactoring of the portfolio detail page to replace the flat holdings table with a new, sectioned view where assets are grouped by class into collapsible accordion sections.

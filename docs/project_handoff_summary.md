@@ -35,7 +35,7 @@ All planned features for the current release cycle have been implemented and val
 *   **Full Portfolio & Transaction CRUD:**
     *   Full CRUD functionality for portfolios and transactions.
     *   A redesigned portfolio page showing a consolidated holdings view with sorting.
-    *   Full CRUD and tracking for **Fixed Deposits (FDs)** with detailed analytics.
+    *   Full CRUD and tracking for **Fixed Deposits (FDs)** and **Recurring Deposits (RDs)** with detailed analytics.
     *   A dedicated, filterable **Transaction History** page with full edit and delete capabilities.
     *   A **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
 *   **Automated Data Import (Phase 2):**
