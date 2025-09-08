@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit } from '../../hooks/usePortfolios';
+import { useCreateRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import { useCreateAsset, useMfSearch } from '../../hooks/useAssets';
 import { lookupAsset } from '../../services/portfolioApi';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
@@ -16,7 +17,7 @@ interface TransactionFormModalProps {
 
 // Define the shape of our form data
 type TransactionFormInputs = {
-    asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit';
+    asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit';
     transaction_type: 'BUY' | 'SELL';
     quantity: number;
     price_per_unit: number;
@@ -31,6 +32,13 @@ type TransactionFormInputs = {
     maturityDate?: string;
     compounding_frequency?: 'Annually' | 'Semi-Annually' | 'Quarterly' | 'Monthly';
     interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually';
+    // RD-specific fields
+    rdName?: string;
+    rdAccountNumber?: string;
+    monthlyInstallment?: number;
+    rdInterestRate?: number;
+    rdStartDate?: string;
+    tenureMonths?: number;
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
@@ -43,6 +51,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const updateTransactionMutation = useUpdateTransaction();
     const createAssetMutation = useCreateAsset();
     const createFixedDepositMutation = useCreateFixedDeposit();
+    const createRecurringDepositMutation = useCreateRecurringDeposit();
 
     const [apiError, setApiError] = useState<string | null>(null);
 
@@ -157,6 +166,18 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     interest_payout: data.interest_payout || 'Cumulative'
                 }
             }, mutationOptions);
+        } else if (assetType === 'Recurring Deposit') {
+            createRecurringDepositMutation.mutate({
+                portfolioId: portfolioId,
+                data: {
+                    name: data.rdName!,
+                    account_number: data.rdAccountNumber!,
+                    monthly_installment: data.monthlyInstallment!,
+                    interest_rate: data.rdInterestRate!,
+                    start_date: data.rdStartDate!,
+                    tenure_months: data.tenureMonths!,
+                }
+            }, mutationOptions);
         } else {
             if (assetType === 'Stock' && !selectedAsset) {
                 setApiError("Please select a stock.");
@@ -246,10 +267,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <option value="Stock">Stock</option>
                                     <option value="Mutual Fund">Mutual Fund</option>
                                     <option value="Fixed Deposit">Fixed Deposit</option>
+                                    <option value="Recurring Deposit">Recurring Deposit</option>
                                 </select>
                             </div>
 
-                            {assetType !== 'Fixed Deposit' && (
+                            {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit') && (
                                 <div className="form-group">
                                     <label htmlFor={assetType === 'Stock' ? 'asset-search' : 'mf-search-input'} className="form-label">Asset</label>
                                     {assetType === 'Stock' && (
@@ -333,7 +355,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                             )}
                         </div>
 
-                        {assetType !== 'Fixed Deposit' && (
+                        {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit') && (
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="form-group">
                                     <label htmlFor="transaction_type" className="form-label">Type</label>
@@ -406,6 +428,35 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         <option value="Cumulative">Cumulative (at maturity)</option>
                                         <option value="Payout">Periodic Payout</option>
                                     </select>
+                                </div>
+                            </div>
+                        )}
+
+                        {assetType === 'Recurring Deposit' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="form-group">
+                                    <label htmlFor="rdName" className="form-label">Institution Name</label>
+                                    <input id="rdName" type="text" {...register('rdName', { required: "Institution name is required" })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="rdAccountNumber" className="form-label">RD Account Number</label>
+                                    <input id="rdAccountNumber" type="text" {...register('rdAccountNumber')} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="monthlyInstallment" className="form-label">Monthly Installment</label>
+                                    <input id="monthlyInstallment" type="number" step="any" {...register('monthlyInstallment', { required: "Monthly installment is required", valueAsNumber: true, min: { value: 0.01, message: "Must be positive" } })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="rdInterestRate" className="form-label">Interest Rate (%)</label>
+                                    <input id="rdInterestRate" type="number" step="any" {...register('rdInterestRate', { required: "Interest rate is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="rdStartDate" className="form-label">Start Date</label>
+                                    <input id="rdStartDate" type="date" {...register('rdStartDate', { required: "Start date is required" })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="tenureMonths" className="form-label">Tenure (in months)</label>
+                                    <input id="tenureMonths" type="number" {...register('tenureMonths', { required: "Tenure is required", valueAsNumber: true, min: { value: 1, message: "Must be at least 1" } })} className="form-input" />
                                 </div>
                             </div>
                         )}

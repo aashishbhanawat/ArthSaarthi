@@ -24,7 +24,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Full Portfolio & Transaction Management:**
     *   Full CRUD functionality for portfolios.
     *   Full CRUD functionality for transactions (Stocks & Mutual Funds), including a dedicated, filterable **Transaction History** page.
-    *   Full CRUD and tracking for **Fixed Deposits (FDs)** with detailed analytics.
+    *   Full CRUD and tracking for **Fixed Deposits (FDs)** and **Recurring Deposits (RDs)** with detailed analytics.
 *   **Consolidated Holdings View:** A redesigned portfolio page that shows a consolidated holdings table with sorting, replacing a simple transaction list.
 *   **Sectioned Holdings Table:** A redesigned holdings table that groups assets by class into collapsible sections for a clearer overview.
 *   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.

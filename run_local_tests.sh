@@ -197,6 +197,9 @@ EOF
 run_backend_tests() {
     print_info "--- Running Backend Tests (DB: $DB_TYPE) ---"
     create_env_file 0 0 # Ports not needed for backend-only tests
+    print_info "Initializing database for backend tests..."
+    (cd backend && python -m dotenv -f .env.test run -- python -m app.cli init-db)
+    print_success "Database initialized."
     (cd backend && python -m dotenv -f .env.test run -- pytest -v "${TEST_ARGS[@]}")
     print_success "Backend tests passed."
 }
