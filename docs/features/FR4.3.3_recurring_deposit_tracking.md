@@ -1,10 +1,10 @@
-# Feature Plan (v2): Recurring Deposit (RD) Tracking
+# Feature Plan: Recurring Deposit (RD) Tracking
 
 **Status: ✅ Done**
 ---
 **Feature ID:** FR4.3.3
 **Title:** Implement Tracking for Recurring Deposits (RDs)
-**User Story:** As a user who makes systematic investments, I want to track my Recurring Deposits (RDs) within the application, so that I can monitor my regular savings and see their projected growth.
+**User Story:** As a user who makes systematic investments, I want to track my Recurring Deposits (RDs) within the application, so that I can monitor my regular savings, see their projected growth, and understand their performance with detailed analytics.
 
 ---
 

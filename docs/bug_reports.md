@@ -6582,4 +6582,25 @@ A series of patches were applied across the full stack:
 -   The `crud_analytics.py` and `crud_holding.py` files were updated to fix all calculation logic for payout FDs, and the `FixedDepositDetailModal.tsx` was updated to display the analytics more intuitively.
 -   The main portfolio XIRR calculation in `crud_analytics.py` was refactored to correctly include all cash flows from both cumulative and payout FDs.
 -   The "Add Fixed Deposit" form in `TransactionFormModal.tsx` was fixed to send the correct `payout_type` values.
+
+---
+
+**Bug ID:** 2025-09-07-01 (Consolidated)
+**Title:** Full-stack implementation and stabilization of Recurring Deposit feature was unstable and failed with multiple cascading issues.
+**Module:** Recurring Deposits (Full Stack), E2E Testing, Core Backend, Database Migrations
+**Reported By:** User & Gemini Code Assist
+**Date Reported:** 2025-09-07
+**Classification:** Implementation (Frontend/Backend) / Test Suite / Environment
+**Severity:** Critical
+**Description:**
+The implementation of the "Recurring Deposit Tracking" feature (FR4.3.3) involved a series of cascading bugs that were fixed iteratively.
+1.  **Calculation & Logic Bugs:** The initial XIRR and valuation logic for RDs was incorrect. The `_calculate_rd_value_at_date` function was refactored to correctly calculate the future value of each installment. The backend also crashed with a `pydantic_core.ValidationError` if an RD was missing an `account_number`.
+2.  **Test Environment Instability:** The local test runner script (`run_local_tests.sh`) was not correctly initializing the database for backend tests. Furthermore, the new test file was missing the `pytestmark` to load the `pre_unlocked_key_manager` fixture, causing a `RuntimeError` in `desktop` mode.
+3.  **Database Migration Failure:** The `alembic autogenerate` command failed to create a correct migration script. The migration had to be created manually to add the `account_number` column to the `recurring_deposits` table.
+**Resolution:**
+A series of patches were applied across the full stack:
+-   The `crud_holding.py` file was updated to fix the valuation logic and to provide a fallback `ticker_symbol` for RDs without an account number, preventing the Pydantic crash.
+-   The `test_recurring_deposits.py` file was updated with the correct `pytestmark` and a more accurate unit test for the valuation logic.
+-   The `run_local_tests.sh` script was fixed to correctly initialize the database before running backend tests.
+-   A manual Alembic migration script was created to correctly update the database schema.
 ---
