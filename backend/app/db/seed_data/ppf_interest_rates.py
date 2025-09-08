@@ -147,7 +147,12 @@ HISTORICAL_PPF_RATES = [
     },
     {
         "start_date": date(2020, 4, 1),
-        "end_date": date(2025, 9, 30),
+        "end_date": date(2023, 12, 31),
         "rate": Decimal("7.1"),
+    },
+    {
+        "start_date": date(2019, 7, 1),
+        "end_date": date(2020, 3, 31),
+        "rate": Decimal("7.9"),
     },
 ]

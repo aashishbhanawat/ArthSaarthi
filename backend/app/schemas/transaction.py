@@ -6,11 +6,12 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 from .asset import Asset
+from .enums import TransactionType
 
 
 # Shared properties
 class TransactionBase(BaseModel):
-    transaction_type: str
+    transaction_type: TransactionType
     quantity: Decimal
     price_per_unit: Decimal
     transaction_date: datetime

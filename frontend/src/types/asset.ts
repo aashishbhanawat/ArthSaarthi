@@ -15,3 +15,14 @@ export interface MutualFundSearchResult {
     name: string;
     asset_type: 'Mutual Fund';
 }
+
+export interface HistoricalInterestRate {
+    id: string;
+    scheme_name: string;
+    start_date: string;
+    end_date: string;
+    rate: number;
+}
+
+export type HistoricalInterestRateCreate = Omit<HistoricalInterestRate, 'id'>;
+export type HistoricalInterestRateUpdate = Partial<HistoricalInterestRateCreate>;

@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.services.financial_data_service import financial_data_service
+from app.services.ppf_service import calculate_ppf_interest
+from app.schemas.enums import AssetType
 
 logger = logging.getLogger(__name__)
 
@@ -280,6 +282,44 @@ class CRUDHolding:
             )
             summary_total_value += current_value
             summary_total_invested += total_invested
+
+        # --- PPF Holdings Calculation ---
+        all_assets_in_portfolio = crud.asset.get_multi_by_portfolio(db, portfolio_id=portfolio_id)
+        ppf_assets = [a for a in all_assets_in_portfolio if a.asset_type == AssetType.PPF]
+
+        for asset in ppf_assets:
+            asset_transactions = [tx for tx in transactions if tx.asset_id == asset.id]
+            interest_transactions = calculate_ppf_interest(db, asset, asset_transactions)
+
+            total_contributions = sum(tx.price_per_unit for tx in asset_transactions if tx.transaction_type == "CONTRIBUTION")
+            total_interest = sum(tx.price_per_unit for tx in interest_transactions)
+            current_balance = total_contributions + total_interest
+
+            holding = schemas.Holding(
+                asset_id=asset.id,
+                ticker_symbol=asset.account_number or "PPF",
+                asset_name=asset.name,
+                asset_type=AssetType.PPF,
+                group="SCHEMES",
+                quantity=Decimal(1),
+                average_buy_price=total_contributions,
+                total_invested_amount=total_contributions,
+                current_price=current_balance,
+                current_value=current_balance,
+                unrealized_pnl=total_interest,
+                unrealized_pnl_percentage=(float(total_interest / total_contributions) if total_contributions else 0.0),
+                realized_pnl=Decimal(0),
+                account_number=asset.account_number,
+                opening_date=asset.opening_date,
+                days_pnl=Decimal(0),
+                days_pnl_percentage=0.0,
+            )
+            holdings_list.append(holding)
+            summary_total_value += current_balance
+            summary_total_invested += total_contributions
+
+        # Remove PPF transactions from the main list
+        transactions = [tx for tx in transactions if tx.asset.asset_type != AssetType.PPF]
 
         if not transactions:
             summary = schemas.PortfolioSummary(

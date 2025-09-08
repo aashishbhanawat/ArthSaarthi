@@ -59,6 +59,30 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
 
         # Fetch the Asset objects corresponding to these IDs
         return db.query(self.model).filter(self.model.id.in_(asset_ids)).all()
+
+    def get_multi_by_portfolio_and_type(
+        self, db: Session, *, portfolio_id: uuid.UUID, asset_type: str
+    ) -> List[Asset]:
+        """
+        Retrieves all assets of a specific type that have at least one transaction
+        in the specified portfolio.
+        """
+        asset_ids_query = (
+            db.query(Transaction.asset_id)
+            .join(Asset, Transaction.asset_id == Asset.id)
+            .filter(
+                Transaction.portfolio_id == portfolio_id,
+                Asset.asset_type == asset_type,
+            )
+            .distinct()
+        )
+        asset_ids = [item[0] for item in asset_ids_query.all()]
+
+        if not asset_ids:
+            return []
+
+        return db.query(self.model).filter(self.model.id.in_(asset_ids)).all()
+
     def get_by_ticker(self, db: Session, *, ticker_symbol: str) -> Asset | None:
         return (
             db.query(self.model)

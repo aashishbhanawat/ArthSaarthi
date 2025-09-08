@@ -66,14 +66,45 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPri
     );
 };
 
+const PPFTransactionRow: React.FC<{ transaction: Transaction; onEdit: (transaction: Transaction) => void; onDelete: (transaction: Transaction) => void; }> = ({ transaction, onEdit, onDelete }) => {
+    const isInterestCredit = transaction.transaction_type === 'INTEREST_CREDIT';
+    return (
+        <tr className="border-t">
+            <td className="p-2">{formatDate(transaction.transaction_date)}</td>
+            <td className={`p-2 font-semibold ${isInterestCredit ? 'text-blue-600' : 'text-green-600'}`}>
+                {isInterestCredit ? 'Interest' : 'Contribution'}
+            </td>
+            <td className="p-2 text-right font-mono">{formatCurrency(transaction.price_per_unit)}</td>
+            <td className="p-2 text-right">
+                {!isInterestCredit && (
+                    <div className="flex items-center justify-end space-x-3">
+                        <button onClick={() => onEdit(transaction)} className="text-gray-500 hover:text-blue-600" title="Edit Transaction">
+                            <PencilSquareIcon className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => onDelete(transaction)} className="text-gray-500 hover:text-red-600" title="Delete Transaction">
+                            <TrashIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                )}
+            </td>
+        </tr>
+    );
+};
+
+
 const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfolioId, onClose, onEditTransaction, onDeleteTransaction }) => {
     const { data: transactions, isLoading, error } = useAssetTransactions(portfolioId, holding.asset_id);
     const { data: analytics, isLoading: isLoadingAnalytics, isError: isErrorAnalytics } = useAssetAnalytics(
         portfolioId,
         holding.asset_id,
-        { enabled: !!holding.asset_id }
+        { enabled: !!holding.asset_id && holding.asset_type !== 'PPF' }
     );
     const formatSensitiveCurrency = usePrivacySensitiveCurrency();
+
+    const isPpf = holding.asset_type === 'PPF';
+
+    const totalContributions = isPpf ? holding.total_invested_amount : 0;
+    const totalInterest = isPpf ? holding.unrealized_pnl : 0;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -90,43 +121,77 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
-                    <div data-testid="summary-quantity">
-                        <p className="text-sm text-gray-500">Quantity</p>
-                        <p className="font-semibold">{Number(holding.quantity).toLocaleString()}</p>
-                    </div>
-                    <div data-testid="summary-avg-buy-price">
-                        <p className="text-sm text-gray-500">Avg. Buy Price</p>
-                        <p className="font-semibold">{formatSensitiveCurrency(holding.average_buy_price)}</p>
-                    </div>
-                    <div data-testid="summary-current-value">
-                        <p className="text-sm text-gray-500">Current Value</p>
-                        <p className="font-semibold">{formatSensitiveCurrency(holding.current_value)}</p>
-                    </div>
-                    <div data-testid="summary-unrealized-pnl">
-                        <p className="text-sm text-gray-500">Unrealized P&L</p>
-                        <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatSensitiveCurrency(holding.unrealized_pnl)}
-                        </p>
-                    </div>
-                    <div data-testid="summary-realized-xirr">
-                        <p className="text-sm text-gray-500">Realized XIRR</p>
-                        <p className="font-semibold">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.realized_xirr)}
-                        </p>
-                    </div>
-                    <div data-testid="summary-unrealized-xirr">
-                        <p className="text-sm text-gray-500">Unrealized XIRR</p>
-                        <p className="font-semibold">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.unrealized_xirr)}
-                        </p>
-                    </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                    {isPpf ? (
+                        <>
+                            <div>
+                                <p className="text-sm text-gray-500">Total Contributions</p>
+                                <p className="font-semibold">{formatSensitiveCurrency(totalContributions)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Total Interest</p>
+                                <p className="font-semibold">{formatSensitiveCurrency(totalInterest)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Current Balance</p>
+                                <p className="font-semibold">{formatSensitiveCurrency(holding.current_value)}</p>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div data-testid="summary-quantity">
+                                <p className="text-sm text-gray-500">Quantity</p>
+                                <p className="font-semibold">{Number(holding.quantity).toLocaleString()}</p>
+                            </div>
+                            <div data-testid="summary-avg-buy-price">
+                                <p className="text-sm text-gray-500">Avg. Buy Price</p>
+                                <p className="font-semibold">{formatSensitiveCurrency(holding.average_buy_price)}</p>
+                            </div>
+                            <div data-testid="summary-current-value">
+                                <p className="text-sm text-gray-500">Current Value</p>
+                                <p className="font-semibold">{formatSensitiveCurrency(holding.current_value)}</p>
+                            </div>
+                            <div data-testid="summary-unrealized-pnl">
+                                <p className="text-sm text-gray-500">Unrealized P&L</p>
+                                <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {formatSensitiveCurrency(holding.unrealized_pnl)}
+                                </p>
+                            </div>
+                            <div data-testid="summary-realized-xirr">
+                                <p className="text-sm text-gray-500">Realized XIRR</p>
+                                <p className="font-semibold">
+                                    {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.realized_xirr)}
+                                </p>
+                            </div>
+                             <div data-testid="summary-unrealized-xirr">
+                                <p className="text-sm text-gray-500">Unrealized XIRR</p>
+                                <p className="font-semibold">
+                                    {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.unrealized_xirr)}
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 <div className="overflow-y-auto max-h-96">
                     {isLoading && <p className="text-center p-4">Loading transactions...</p>}
                     {error && <p className="text-red-500 text-center p-4">Error loading transactions: {error.message}</p>}
-                    {transactions && (
+                    {transactions && isPpf && (
+                        <table className="table-auto w-full">
+                            <thead className="sticky top-0 bg-white shadow-sm">
+                                <tr className="text-left text-gray-600 text-sm">
+                                    <th className="p-2">Date</th>
+                                    <th className="p-2">Type</th>
+                                    <th className="p-2 text-right">Amount</th>
+                                    <th className="p-2 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {transactions.map(tx => <PPFTransactionRow key={tx.id} transaction={tx} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
+                            </tbody>
+                        </table>
+                    )}
+                    {transactions && !isPpf && (
                         <table className="table-auto w-full">
                             <thead className="sticky top-0 bg-white shadow-sm">
                                 <tr className="text-left text-gray-600 text-sm">

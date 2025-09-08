@@ -13,6 +13,7 @@ from .crud_transaction import transaction
 from .crud_user import user
 from .crud_watchlist import watchlist
 from .crud_watchlist_item import watchlist_item
+from .crud_historical_interest_rate import historical_interest_rate
 
 __all__ = [
     "asset",
@@ -31,4 +32,5 @@ __all__ = [
     "watchlist_item",
     "goal",
     "goal_link",
+    "historical_interest_rate",
 ]

@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.core.config import settings
 
 from .endpoints import (
+    admin,
     assets,
     auth,
     dashboard,
@@ -27,6 +28,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(me.router, prefix="/users", tags=["users"])
 if settings.DEPLOYMENT_MODE != "desktop":
     api_router.include_router(users.router, prefix="/users", tags=["users"])
+    api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfolios"])
 api_router.include_router(goals.router, prefix="/goals", tags=["goals"])
 api_router.include_router(watchlists.router, prefix="/watchlists", tags=["watchlists"])

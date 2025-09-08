@@ -48,6 +48,7 @@ function AppRoutes() {
           <Route path="/goals/:goalId" element={<GoalDetailPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
+            <Route path="/admin/interest-rates" element={<InterestRatesPage />} />
           </Route>
         </Route>
       </Route>

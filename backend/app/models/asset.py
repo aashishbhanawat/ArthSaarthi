@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, UniqueConstraint
+from sqlalchemy import Column, Date, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -13,10 +13,14 @@ class Asset(Base):
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     ticker_symbol = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
-    asset_type = Column(String, nullable=False)  # e.g., 'STOCK', 'ETF'
+    asset_type = Column(String, nullable=False)  # e.g., 'STOCK', 'ETF', 'PPF'
     currency = Column(String, nullable=False)  # e.g., 'USD', 'INR'
     exchange = Column(String, nullable=False, server_default="N/A")
     isin = Column(String, unique=True, index=True, nullable=True)
+
+    # PPF-specific fields
+    account_number = Column(String, nullable=True)
+    opening_date = Column(Date, nullable=True)
 
     transactions = relationship("Transaction", back_populates="asset")
     aliases = relationship(

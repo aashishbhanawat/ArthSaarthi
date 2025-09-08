@@ -1,3 +1,40 @@
+[tool.poetry]
+name = "arthasarthi-backend"
+version = "0.1.0"
+description = "Backend for ArthSaarthi"
+authors = ["Your Name <you@example.com>"]
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+alembic = "*"
+bcrypt = "*"
+email-validator = "*"
+fastapi = "*"
+httpx = "*"
+passlib = {extras = ["bcrypt"], version = "*"}
+psycopg2-binary = "*"
+pydantic-settings = "*"
+pytest = "*"
+pytest-mock = "*"
+python-jose = {extras = ["cryptography"], version = "*"}
+python-multipart = "*"
+redis = "*"
+diskcache = "*"
+sqlalchemy = "*"
+sqlalchemy-utils = "*"
+typer = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+yfinance = "*"
+tenacity = "*"
+cryptography = "*"
+pyxirr = "*"
+numpy = "*"
+pyarrow = "*"
+pyinstaller = "*"
+requests = "*"
+pdfplumber = "*"
+
 [tool.ruff]
 line-length = 88
 exclude = [

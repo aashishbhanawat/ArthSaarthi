@@ -1,24 +1,29 @@
 import uuid
+from datetime import date
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
+
+from .enums import AssetType
 
 
 # Properties to receive on asset creation via API
 # This is a special schema for the POST /assets/ endpoint
 class AssetCreateIn(BaseModel):
     ticker_symbol: str
-    asset_type: Optional[str] = None
+    asset_type: Optional[AssetType] = None
 
 
 # Properties to receive on asset creation (internal)
 class AssetCreate(BaseModel):
     ticker_symbol: str
     name: str
-    asset_type: str
+    asset_type: AssetType
     currency: str | None = None
     exchange: str | None = None
     isin: str | None = None
+    account_number: Optional[str] = None
+    opening_date: Optional[date] = None
 
 
 # Properties to receive on asset update

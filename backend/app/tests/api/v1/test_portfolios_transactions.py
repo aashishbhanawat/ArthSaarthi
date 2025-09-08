@@ -63,7 +63,7 @@ def test_create_transaction_with_new_mutual_fund_asset(
     mf_scheme_code = "123456"
     mock_mf_details = {
         "name": "Test Mutual Fund - Growth",
-        "asset_type": "Mutual Fund",
+        "asset_type": "MUTUAL_FUND",
         "exchange": "AMFI",
         "currency": "INR",
         "isin": "INF123456789",
@@ -75,7 +75,7 @@ def test_create_transaction_with_new_mutual_fund_asset(
 
     transaction_payload = {
         "ticker_symbol": mf_scheme_code,
-        "asset_type": "Mutual Fund",
+        "asset_type": "MUTUAL_FUND",
         "transaction_type": "BUY",
         "quantity": 100.5,
         "price_per_unit": 10.50,
@@ -96,7 +96,7 @@ def test_create_transaction_with_new_mutual_fund_asset(
     assert data["asset"]["exchange"] == "AMFI"
 
     financial_data_service.get_asset_details.assert_called_once_with(
-        mf_scheme_code, asset_type="Mutual Fund"
+        mf_scheme_code, asset_type="MUTUAL_FUND"
     )
 
     db_asset = crud.asset.get_by_ticker(db, ticker_symbol=mf_scheme_code)
