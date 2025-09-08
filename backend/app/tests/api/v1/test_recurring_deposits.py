@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Callable, Dict
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -13,12 +14,15 @@ from app.schemas.recurring_deposit import RecurringDepositCreate
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.user import create_random_user
 
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
+
 
 def create_random_rd(
     db: Session, portfolio_id: uuid.UUID, user_id: uuid.UUID
 ) -> RecurringDeposit:
     rd_in = RecurringDepositCreate(
         name="Test RD",
+        account_number="123456789",
         monthly_installment=1000,
         interest_rate=6.5,
         start_date=date.today() - timedelta(days=30),
@@ -39,6 +43,7 @@ def test_create_recurring_deposit(
 
     rd_data = {
         "name": "Test RD",
+        "account_number": "987654321",
         "monthly_installment": 1000,
         "interest_rate": 6.5,
         "start_date": "2024-01-01",
@@ -54,6 +59,7 @@ def test_create_recurring_deposit(
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == rd_data["name"]
+    assert data["account_number"] == rd_data["account_number"]
     assert float(data["monthly_installment"]) == float(rd_data["monthly_installment"])
     assert "id" in data
 
