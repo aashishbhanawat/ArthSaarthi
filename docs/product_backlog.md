@@ -40,7 +40,7 @@ The goal of the MVP was to deliver a functional core product that allows a user 
 
 ## Release 2: Advanced Asset Management & Analytics
 
-**Status: ✅ COMPLETE (as of 2025-08-07)**
+**Status: 🚧 In Progress**
 
 The goal of this release is to act on the critical feedback from the pilot release, focusing on core usability enhancements and a major redesign of the portfolio detail page to better meet user needs.
 
@@ -88,14 +88,14 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 ## Release 5: Goal Management & Insights
 
-**Status: ✅ COMPLETE (as of 2025-08-26)**
+**Status: ⚠️ Partially Implemented**
 
 **Features:**
 
 -   **Watchlists (FR8.1):** Users can create, manage, and track custom lists of financial assets.
     -   **Status: ✅ Complete**
 -   **Goal Planning & Tracking (FR13):** Implement core goal definition, asset linking, and basic progress tracking.
-    -   **Status: ✅ Complete**
+- **Status: ⚠️ Partially Implemented**
 
 ## Release 6: Security & Administration
 

@@ -4,101 +4,6 @@ This document serves as a chronological log of the development process for **Art
 
 ---
 
-## 2025-09-07: Implement & Stabilize Recurring Deposit Tracking (FR4.3.3)
-
-*   **Task Description:** A full-stack implementation of the Recurring Deposit (RD) tracking feature. This was a complex task that involved creating the backend data models, a dedicated drill-down UI, and implementing financial calculations for valuation and XIRR. The task also included a significant, multi-stage debugging and stabilization effort to resolve issues with the test environment, database migrations, and core application logic.
-
-*   **Key Prompts & Interactions:**
-    1.  **Initial Implementation:** A series of prompts were used to generate the full backend stack for RDs (`RecurringDeposit` model, schemas, CRUD, API endpoints) and the corresponding frontend components (`RecurringDepositDetailModal`, updates to `TransactionFormModal`).
-    2.  **Iterative Debugging of Core Logic:** The core of the interaction was a highly iterative debugging loop. The user provided detailed feedback from manual testing and code reviews, which uncovered several critical bugs:
-        *   **XIRR Calculation:** The user reported that the XIRR for RDs was incorrect. The AI implemented two different valuation logics (`_calculate_rd_value_at_date`) before settling on a more accurate method based on calculating the future value of each installment. The unit test was updated to match this new, correct value.
-        *   **Backend Crash (`pydantic_core.ValidationError`):** The user reported that the application crashed when viewing a portfolio with an RD that had no `account_number`. The AI diagnosed this as a Pydantic validation error and fixed it by providing a fallback value for the `ticker_symbol` in `crud_holding.py`.
-    3.  **Test Environment Stabilization:** A significant amount of time was spent debugging the test environment. This included:
-        *   Fixing the `run_local_tests.sh` script to correctly initialize the database for backend tests.
-        *   Fixing a `RuntimeError` related to the encryption `KeyManager` not being loaded in tests by adding the `pre_unlocked_key_manager` fixture.
-        *   Fixing numerous linting errors reported by `ruff`.
-    4.  **Manual Database Migration:** The Alembic `autogenerate` command proved to be unreliable in the test environment. After multiple failed attempts, the AI pivoted to creating the database migration script manually to add the `account_number` column.
-
-*   **File Changes:**
-    *   `backend/app/models/recurring_deposit.py`: **New** SQLAlchemy model.
-    *   `backend/app/schemas/recurring_deposit.py`: **New** Pydantic schemas.
-    *   `backend/app/crud/crud_recurring_deposit.py`: **New** CRUD module.
-    *   `backend/app/api/v1/endpoints/recurring_deposits.py`: **New** API router.
-    *   `backend/app/crud/crud_holding.py`: **Updated** to correctly calculate RD holdings and handle missing account numbers.
-    *   `backend/app/crud/crud_analytics.py`: **Updated** to include RDs in portfolio-level XIRR calculations.
-    *   `backend/alembic/versions/2fc13ed78a51_....py`: **New** manually created database migration.
-    *   `backend/app/tests/api/v1/test_recurring_deposits.py`: **New** test suite, later fixed for encryption and valuation logic.
-    *   `frontend/src/components/Portfolio/RecurringDepositDetailModal.tsx`: **New** component for the drill-down view.
-    *   `frontend/src/components/Portfolio/TransactionFormModal.tsx`: **Updated** to include the RD form.
-    *   `run_local_tests.sh`: **Updated** to correctly initialize the database for backend tests.
-
-*   **Outcome:**
-    - The Recurring Deposit tracking feature is fully implemented, tested, and stable.
-    - All backend, frontend, and E2E tests are passing. This task was a testament to the importance of a robust test suite and the ability to debug and overcome complex environmental and logical issues.
-
----
-
-## 2025-09-04: Holdings Table Redesign (FR4.7.2)
-
-*   **Task Description:** Implement the "Holdings Table Redesign" feature. This involved a major refactoring of the portfolio detail page to replace the flat holdings table with a new, sectioned view where assets are grouped by class into collapsible accordion sections.
-
-*   **Key Prompts & Interactions:**
-    1.  **Initial Implementation:** A series of prompts were used to generate the full-stack implementation. This included updating the backend to add a `group` field to the holdings data, and creating the new frontend components (`HoldingsTable`, `EquityHoldingRow`, `DepositHoldingRow`, `BondHoldingRow`) to render the new UI.
-    2.  **Systematic Debugging via Manual E2E Feedback:** The initial implementation had several bugs that were discovered during manual E2E testing by the user. The user provided detailed feedback, which was used to systematically debug and fix the issues:
-        *   **Frontend Crashing:** The AI diagnosed that this was caused by missing dependencies in the production environment and incorrect file paths for the new components. The fix involved correcting the file paths and instructing the user on how to rebuild the Docker container to install the new dependencies.
-        *   **Incorrect "Total Value" Calculation:** The AI analyzed the user's console logs and identified that the `current_value` was a string, causing a calculation error. This was fixed by converting the value to a number.
-        *   **Incorrect Mutual Fund Display:** The AI fixed a bug where the scheme number was being shown for mutual funds instead of just the name.
-        *   **Missing Sorting Functionality:** The AI implemented sorting for each section and then fixed a bug where numeric columns were being sorted as strings.
-    3.  **E2E Test Stabilization:** A significant amount of time was spent trying to fix a failing E2E test for the mutual fund selection. The AI tried multiple locators and debugging strategies, but was ultimately unable to resolve the issue without the user's direct feedback and insights from their manual testing.
-
-*   **File Changes:**
-    *   `backend/app/schemas/holding.py`: **Updated** to add the `group` field.
-    *   `backend/app/crud/crud_holding.py`: **Updated** to populate the `group` field.
-    *   `frontend/src/types/holding.ts`: **Updated** to include the `group` field.
-    *   `frontend/src/components/Portfolio/HoldingsTable.tsx`: **New** component to render the accordion view.
-    *   `frontend/src/components/Portfolio/holding_rows/`: **New** directory with specialized row components.
-    *   `frontend/src/__tests__/components/Portfolio/holding_rows/`: **New** directory with component tests.
-    *   `e2e/tests/portfolio-and-dashboard.spec.ts`: **Updated** to test the new UI.
-    *   `docs/features/FR4.7.2_holdings_table_redesign.md`: **Updated** status to "Done".
-
-*   **Outcome:**
-    - The "Holdings Table Redesign" feature is complete, stable, and fully verified via manual E2E testing.
-    - This task highlighted the importance of manual testing in catching bugs that might be missed by automated tests, especially when dealing with complex UI interactions.
-
-Its purpose is to build an experience history that can be used as a reference for future projects, to onboard new team members, or to showcase GenAI-assisted development skills. Each entry captures a specific development task, the prompts used, the AI's output, and the final outcome.
-
----
-
-## 2025-09-02: Implement Privacy Mode (FR3.4)
-
-*   **Task Description:** Implement a "Privacy Mode" feature that allows users to obscure sensitive monetary values across the application with a single toggle.
-
-*   **Key Prompts & Interactions:**
-    1.  **Initial Implementation:** The AI was prompted to implement the feature based on the plan. It correctly created a `PrivacyContext` and refactored the `formatCurrency` utility to use it.
-    2.  **User-led Course Correction:** The user provided critical feedback that the initial approach was too broad, hiding all monetary values including non-sensitive ones like individual stock prices.
-    3.  **Revised Plan & Refactoring:** A new plan was formulated to address the feedback. This involved:
-        *   Resetting all previous changes.
-        *   Creating a new, specific hook (`usePrivacySensitiveCurrency`).
-        *   Selectively applying this hook *only* to high-level summary components (`SummaryCard`, `PortfolioSummary`, etc.) while leaving others untouched.
-    4.  **E2E Test Correction:** The E2E test was updated to verify the new, correct behavior: asserting that summary values are hidden while table values remain visible in privacy mode.
-
-*   **File Changes:**
-    *   `frontend/src/context/PrivacyContext.tsx`: **New** file to manage the global privacy state.
-    *   `frontend/src/utils/formatting.ts`: **Updated** to add the `usePrivacySensitiveCurrency` hook.
-    *   `frontend/src/pages/DashboardPage.tsx`: **Updated** to add the UI toggle.
-    *   `frontend/src/components/Dashboard/SummaryCard.tsx`, `frontend/src/components/Portfolio/PortfolioSummary.tsx`, `frontend/src/components/Goals/...`: **Updated** to use the new selective hook.
-    *   `e2e/tests/privacy-mode.spec.ts`: **New** E2E test to validate the selective obscuring.
-    *   `frontend/src/__tests__/`: **New** unit tests for the context and hook.
-    *   `docs/features/FR3.4_privacy_mode.md`: **Updated** status to "Implemented".
-
-*   **Verification:**
-    - The full test suite will be run before submission.
-
-*   **Outcome:**
-    - The "Privacy Mode" feature is implemented according to the refined user requirements. It correctly hides only high-level sensitive data, providing a better user experience. This task highlights the importance of clear requirements and iterative feedback in an AI-assisted workflow.
-
----
-
 ## 2025-07-17: Backend for User Management
 
 *   **Task Description:** Implement the backend functionality for the User Management feature, allowing an administrator to perform CRUD operations on users.
@@ -1701,3 +1606,100 @@ The E2E test suite was failing with multiple timeout errors, primarily in `trans
 
 *   **Outcome:**
     - All project documentation is now up-to-date, providing an accurate and comprehensive overview of the project's status, features, and history.
+
+___
+
+## 2025-09-02: Implement Privacy Mode (FR3.4)
+
+*   **Task Description:** Implement a "Privacy Mode" feature that allows users to obscure sensitive monetary values across the application with a single toggle.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** The AI was prompted to implement the feature based on the plan. It correctly created a `PrivacyContext` and refactored the `formatCurrency` utility to use it.
+    2.  **User-led Course Correction:** The user provided critical feedback that the initial approach was too broad, hiding all monetary values including non-sensitive ones like individual stock prices.
+    3.  **Revised Plan & Refactoring:** A new plan was formulated to address the feedback. This involved:
+        *   Resetting all previous changes.
+        *   Creating a new, specific hook (`usePrivacySensitiveCurrency`).
+        *   Selectively applying this hook *only* to high-level summary components (`SummaryCard`, `PortfolioSummary`, etc.) while leaving others untouched.
+    4.  **E2E Test Correction:** The E2E test was updated to verify the new, correct behavior: asserting that summary values are hidden while table values remain visible in privacy mode.
+
+*   **File Changes:**
+    *   `frontend/src/context/PrivacyContext.tsx`: **New** file to manage the global privacy state.
+    *   `frontend/src/utils/formatting.ts`: **Updated** to add the `usePrivacySensitiveCurrency` hook.
+    *   `frontend/src/pages/DashboardPage.tsx`: **Updated** to add the UI toggle.
+    *   `frontend/src/components/Dashboard/SummaryCard.tsx`, `frontend/src/components/Portfolio/PortfolioSummary.tsx`, `frontend/src/components/Goals/...`: **Updated** to use the new selective hook.
+    *   `e2e/tests/privacy-mode.spec.ts`: **New** E2E test to validate the selective obscuring.
+    *   `frontend/src/__tests__/`: **New** unit tests for the context and hook.
+    *   `docs/features/FR3.4_privacy_mode.md`: **Updated** status to "Implemented".
+
+*   **Verification:**
+    - The full test suite will be run before submission.
+
+*   **Outcome:**
+    - The "Privacy Mode" feature is implemented according to the refined user requirements. It correctly hides only high-level sensitive data, providing a better user experience. This task highlights the importance of clear requirements and iterative feedback in an AI-assisted workflow.
+
+---
+
+## 2025-09-04: Holdings Table Redesign (FR4.7.2)
+
+*   **Task Description:** Implement the "Holdings Table Redesign" feature. This involved a major refactoring of the portfolio detail page to replace the flat holdings table with a new, sectioned view where assets are grouped by class into collapsible accordion sections.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full-stack implementation. This included updating the backend to add a `group` field to the holdings data, and creating the new frontend components (`HoldingsTable`, `EquityHoldingRow`, `DepositHoldingRow`, `BondHoldingRow`) to render the new UI.
+    2.  **Systematic Debugging via Manual E2E Feedback:** The initial implementation had several bugs that were discovered during manual E2E testing by the user. The user provided detailed feedback, which was used to systematically debug and fix the issues:
+        *   **Frontend Crashing:** The AI diagnosed that this was caused by missing dependencies in the production environment and incorrect file paths for the new components. The fix involved correcting the file paths and instructing the user on how to rebuild the Docker container to install the new dependencies.
+        *   **Incorrect "Total Value" Calculation:** The AI analyzed the user's console logs and identified that the `current_value` was a string, causing a calculation error. This was fixed by converting the value to a number.
+        *   **Incorrect Mutual Fund Display:** The AI fixed a bug where the scheme number was being shown for mutual funds instead of just the name.
+        *   **Missing Sorting Functionality:** The AI implemented sorting for each section and then fixed a bug where numeric columns were being sorted as strings.
+    3.  **E2E Test Stabilization:** A significant amount of time was spent trying to fix a failing E2E test for the mutual fund selection. The AI tried multiple locators and debugging strategies, but was ultimately unable to resolve the issue without the user's direct feedback and insights from their manual testing.
+
+*   **File Changes:**
+    *   `backend/app/schemas/holding.py`: **Updated** to add the `group` field.
+    *   `backend/app/crud/crud_holding.py`: **Updated** to populate the `group` field.
+    *   `frontend/src/types/holding.ts`: **Updated** to include the `group` field.
+    *   `frontend/src/components/Portfolio/HoldingsTable.tsx`: **New** component to render the accordion view.
+    *   `frontend/src/components/Portfolio/holding_rows/`: **New** directory with specialized row components.
+    *   `frontend/src/__tests__/components/Portfolio/holding_rows/`: **New** directory with component tests.
+    *   `e2e/tests/portfolio-and-dashboard.spec.ts`: **Updated** to test the new UI.
+    *   `docs/features/FR4.7.2_holdings_table_redesign.md`: **Updated** status to "Done".
+
+*   **Outcome:**
+    - The "Holdings Table Redesign" feature is complete, stable, and fully verified via manual E2E testing.
+    - This task highlighted the importance of manual testing in catching bugs that might be missed by automated tests, especially when dealing with complex UI interactions.
+
+Its purpose is to build an experience history that can be used as a reference for future projects, to onboard new team members, or to showcase GenAI-assisted development skills. Each entry captures a specific development task, the prompts used, the AI's output, and the final outcome.
+
+---
+
+## 2025-09-07: Implement & Stabilize Recurring Deposit Tracking (FR4.3.3)
+
+*   **Task Description:** A full-stack implementation of the Recurring Deposit (RD) tracking feature. This was a complex task that involved creating the backend data models, a dedicated drill-down UI, and implementing financial calculations for valuation and XIRR. The task also included a significant, multi-stage debugging and stabilization effort to resolve issues with the test environment, database migrations, and core application logic.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full backend stack for RDs (`RecurringDeposit` model, schemas, CRUD, API endpoints) and the corresponding frontend components (`RecurringDepositDetailModal`, updates to `TransactionFormModal`).
+    2.  **Iterative Debugging of Core Logic:** The core of the interaction was a highly iterative debugging loop. The user provided detailed feedback from manual testing and code reviews, which uncovered several critical bugs:
+        *   **XIRR Calculation:** The user reported that the XIRR for RDs was incorrect. The AI implemented two different valuation logics (`_calculate_rd_value_at_date`) before settling on a more accurate method based on calculating the future value of each installment. The unit test was updated to match this new, correct value.
+        *   **Backend Crash (`pydantic_core.ValidationError`):** The user reported that the application crashed when viewing a portfolio with an RD that had no `account_number`. The AI diagnosed this as a Pydantic validation error and fixed it by providing a fallback value for the `ticker_symbol` in `crud_holding.py`.
+    3.  **Test Environment Stabilization:** A significant amount of time was spent debugging the test environment. This included:
+        *   Fixing the `run_local_tests.sh` script to correctly initialize the database for backend tests.
+        *   Fixing a `RuntimeError` related to the encryption `KeyManager` not being loaded in tests by adding the `pre_unlocked_key_manager` fixture.
+        *   Fixing numerous linting errors reported by `ruff`.
+    4.  **Manual Database Migration:** The Alembic `autogenerate` command proved to be unreliable in the test environment. After multiple failed attempts, the AI pivoted to creating the database migration script manually to add the `account_number` column.
+
+*   **File Changes:**
+    *   `backend/app/models/recurring_deposit.py`: **New** SQLAlchemy model.
+    *   `backend/app/schemas/recurring_deposit.py`: **New** Pydantic schemas.
+    *   `backend/app/crud/crud_recurring_deposit.py`: **New** CRUD module.
+    *   `backend/app/api/v1/endpoints/recurring_deposits.py`: **New** API router.
+    *   `backend/app/crud/crud_holding.py`: **Updated** to correctly calculate RD holdings and handle missing account numbers.
+    *   `backend/app/crud/crud_analytics.py`: **Updated** to include RDs in portfolio-level XIRR calculations.
+    *   `backend/alembic/versions/2fc13ed78a51_....py`: **New** manually created database migration.
+    *   `backend/app/tests/api/v1/test_recurring_deposits.py`: **New** test suite, later fixed for encryption and valuation logic.
+    *   `frontend/src/components/Portfolio/RecurringDepositDetailModal.tsx`: **New** component for the drill-down view.
+    *   `frontend/src/components/Portfolio/TransactionFormModal.tsx`: **Updated** to include the RD form.
+    *   `run_local_tests.sh`: **Updated** to correctly initialize the database for backend tests.
+
+*   **Outcome:**
+    - The Recurring Deposit tracking feature is fully implemented, tested, and stable.
+    - All backend, frontend, and E2E tests are passing. This task was a testament to the importance of a robust test suite and the ability to debug and overcome complex environmental and logical issues.
+
+---
