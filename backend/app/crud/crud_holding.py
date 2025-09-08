@@ -272,7 +272,7 @@ class CRUDHolding:
                     interest_rate=rd.interest_rate,
                     maturity_date=rd.start_date
                     + relativedelta(months=rd.tenure_months),
-                    ticker_symbol=rd.account_number,
+                    ticker_symbol=rd.account_number or rd.name,
                     account_number=rd.account_number,
                     days_pnl=Decimal(0),
                     days_pnl_percentage=0.0,
