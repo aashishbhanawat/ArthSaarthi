@@ -288,3 +288,24 @@ A backend test was failing with a `422 Unprocessable Entity` error. The test was
     3.  **Acknowledge Environmental Limitations:** As an AI assistant, I operate in a sandboxed environment. I cannot always diagnose or fix host-level issues like file permissions or `sudo` requirements. Recognizing and clearly communicating these limitations is crucial for efficient collaboration.
 
 ---
+
+## 2025-09-07: The Perils of Unreliable Tooling and the Importance of Manual Overrides
+
+### 1. What Happened?
+
+While implementing the Recurring Deposit feature, a significant amount of time was lost trying to use Alembic's `autogenerate` feature to create a simple database migration. The tool repeatedly failed with a variety of errors (`Target database is not up to date`, `sqlite3.OperationalError`, etc.) due to complex interactions with the local test environment's database state.
+
+### 2. How Did the Process Help?
+
+*   **User Guidance:** The user's suggestion to abandon the automated tool and create the migration script manually was the key to unblocking the process. This highlighted a scenario where the AI assistant's persistence with a failing automated tool was less efficient than a direct, manual solution.
+*   **The Value of Simplicity:** The final, manually-created migration script was simple, clear, and correct. The time spent debugging the complex, opaque errors from the `autogenerate` command was ultimately unproductive.
+
+### 3. Outcome & New Learning
+
+*   The required database migration was successfully created.
+*   **Key Learnings:**
+    1.  **Know When to Abandon a Tool:** Automated tools like `autogenerate` are powerful but can be brittle, especially in non-standard environments. If a tool is consistently failing and the underlying task is simple, it is often more efficient to perform the task manually than to continue debugging the tool itself.
+    2.  **Manual Overrides are a Valid Strategy:** The ability to fall back on a manual, well-understood process is a critical skill. For simple schema changes, writing the `op.add_column` command by hand is a reliable and fast alternative to debugging a complex `autogenerate` failure.
+    3.  **Test Environment vs. Production Environment:** The local test environment, especially with SQLite, has different constraints than a production PostgreSQL environment. This experience reinforces the need to be aware of these differences, particularly when dealing with database schema modifications.
+
+---

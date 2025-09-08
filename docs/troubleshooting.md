@@ -326,3 +326,17 @@ This guide documents common setup and runtime issues and their solutions.
         docker-compose pull db backend frontend
         ```
     *   **Action:** If a pull fails, running `docker-compose pull <service_name>` directly can often provide a more specific error message than the generic `up` command. This also helps in caching the images locally for faster and more reliable subsequent builds.
+
+---
+
+### 17. Backend tests fail with `RuntimeError: Cannot encrypt data: master key is not loaded...`
+
+*   **Symptom:** A backend test suite that involves creating a `User` fails with a `RuntimeError` related to the `KeyManager`.
+*   **Cause:** The test requires the use of encrypted database fields (e.g., `User.full_name`). The `KeyManager` is responsible for handling the encryption keys, but it has not been initialized or "unlocked" for the test session. This is a common issue when running in `desktop` mode or any test that uses the `EncryptedString` custom type.
+*   **Solution:** The test file needs to use the `pre_unlocked_key_manager` pytest fixture. This fixture ensures that a valid key is loaded into the `KeyManager` before any tests in the module are run.
+
+    1.  **Import pytest:** Add `import pytest` to the top of your test file.
+    2.  **Apply the fixture:** Add the following line at the module level (at the top of the file, after the imports):
+        ```python
+        pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
+        ```

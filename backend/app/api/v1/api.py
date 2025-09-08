@@ -13,6 +13,7 @@ from .endpoints import (
     import_sessions,
     me,
     portfolios,
+    recurring_deposits,
     testing,
     transactions,
     users,
@@ -33,6 +34,12 @@ api_router.include_router(assets.router, prefix="/assets", tags=["assets"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(
     fixed_deposits.router, prefix="/fixed-deposits", tags=["fixed-deposits"]
+)
+# recurring deposits are nested under portfolios
+api_router.include_router(
+    recurring_deposits.router,
+    prefix="/recurring-deposits",
+    tags=["recurring-deposits"],
 )
 api_router.include_router(
     transactions.router, prefix="/transactions", tags=["transactions"]

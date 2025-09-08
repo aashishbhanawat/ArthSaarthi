@@ -7,6 +7,7 @@ from .crud_goal import goal, goal_link
 from .crud_holding import holding
 from .crud_import_session import import_session
 from .crud_portfolio import portfolio
+from .crud_recurring_deposit import recurring_deposit
 from .crud_testing import testing
 from .crud_transaction import transaction
 from .crud_user import user
@@ -19,6 +20,7 @@ __all__ = [
     "audit_log",
     "dashboard",
     "fixed_deposit",
+    "recurring_deposit",
     "holding",
     "import_session",
     "portfolio",

@@ -76,6 +76,42 @@ def _calculate_total_interest_paid(fd: models.FixedDeposit, end_date: date) -> D
     return total_interest
 
 
+def _calculate_rd_value_at_date(
+    monthly_installment: Decimal,
+    interest_rate: Decimal,
+    start_date: date,
+    tenure_months: int,
+    calculation_date: date,
+) -> Decimal:
+    """
+    Calculates the value of a recurring deposit at a specific date by calculating
+    the future value of each installment.
+    """
+    if calculation_date < start_date:
+        return Decimal("0.0")
+
+    total_value = Decimal("0.0")
+    r = interest_rate / Decimal("100.0")
+    n = Decimal("4.0")  # Quarterly compounding
+
+    # Iterate through each month an installment is made
+    for i in range(tenure_months):
+        installment_date = start_date + relativedelta(months=i)
+
+        if installment_date > calculation_date:
+            break
+
+        # Calculate the time in years from the installment date to the calculation date
+        days_to_grow = (calculation_date - installment_date).days
+        t = Decimal(str(days_to_grow / 365.25))
+
+        # Future value of this single installment
+        fv_installment = monthly_installment * ((1 + r / n) ** (n * t))
+        total_value += fv_installment
+
+    return total_value
+
+
 class CRUDHolding:
     """
     CRUD operations for portfolio holdings.
@@ -92,6 +128,9 @@ class CRUDHolding:
             db=db, portfolio_id=portfolio_id
         )
         all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
+            db=db, portfolio_id=portfolio_id
+        )
+        all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
 
@@ -167,6 +206,80 @@ class CRUDHolding:
             )
             summary_total_value += current_value
             summary_total_invested += fd.principal_amount
+
+        # --- Recurring Deposits ---
+        today = date.today()
+        active_recurring_deposits = [
+            rd
+            for rd in all_recurring_deposits
+            if (rd.start_date + relativedelta(months=rd.tenure_months)) >= today
+        ]
+        matured_recurring_deposits = [
+            rd
+            for rd in all_recurring_deposits
+            if (rd.start_date + relativedelta(months=rd.tenure_months)) < today
+        ]
+
+        for rd in matured_recurring_deposits:
+            maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
+            maturity_value = _calculate_rd_value_at_date(
+                rd.monthly_installment,
+                rd.interest_rate,
+                rd.start_date,
+                rd.tenure_months,
+                maturity_date,
+            )
+            total_invested = rd.monthly_installment * rd.tenure_months
+            total_realized_pnl += maturity_value - total_invested
+
+        for rd in active_recurring_deposits:
+            current_value = _calculate_rd_value_at_date(
+                rd.monthly_installment,
+                rd.interest_rate,
+                rd.start_date,
+                rd.tenure_months,
+                today,
+            )
+
+            installments_paid = 0
+            temp_date = rd.start_date
+            while temp_date <= today and installments_paid < rd.tenure_months:
+                installments_paid += 1
+                temp_date += relativedelta(months=1)
+
+            total_invested = rd.monthly_installment * installments_paid
+            if total_invested <= 0:
+                continue
+
+            unrealized_pnl = current_value - total_invested
+            unrealized_pnl_percentage = (
+                float(unrealized_pnl / total_invested) if total_invested > 0 else 0.0
+            )
+
+            holdings_list.append(
+                schemas.Holding(
+                    asset_id=rd.id,
+                    asset_name=rd.name,
+                    asset_type="RECURRING_DEPOSIT",
+                    group="DEPOSITS",
+                    quantity=Decimal(1),
+                    average_buy_price=total_invested,
+                    total_invested_amount=total_invested,
+                    current_price=current_value,
+                    current_value=current_value,
+                    unrealized_pnl=unrealized_pnl,
+                    unrealized_pnl_percentage=unrealized_pnl_percentage,
+                    interest_rate=rd.interest_rate,
+                    maturity_date=rd.start_date
+                    + relativedelta(months=rd.tenure_months),
+                    ticker_symbol=rd.account_number or rd.name,
+                    account_number=rd.account_number,
+                    days_pnl=Decimal(0),
+                    days_pnl_percentage=0.0,
+                )
+            )
+            summary_total_value += current_value
+            summary_total_invested += total_invested
 
         if not transactions:
             summary = schemas.PortfolioSummary(

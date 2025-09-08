@@ -25,3 +25,6 @@ class Portfolio(Base):
     fixed_deposits = relationship(
         "FixedDeposit", back_populates="portfolio", cascade="all, delete-orphan"
     )
+    recurring_deposits = relationship(
+        "RecurringDeposit", back_populates="portfolio", cascade="all, delete-orphan"
+    )

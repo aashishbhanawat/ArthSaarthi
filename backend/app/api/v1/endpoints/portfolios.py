@@ -123,6 +123,34 @@ def create_fixed_deposit(
     return fd
 
 
+@router.post(
+    "/{portfolio_id}/recurring-deposits/",
+    response_model=schemas.recurring_deposit.RecurringDeposit,
+    status_code=201,
+)
+def create_recurring_deposit(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    rd_in: schemas.recurring_deposit.RecurringDepositCreate,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Create new recurring deposit for a portfolio.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    rd = crud.recurring_deposit.create_with_portfolio(
+        db=db, obj_in=rd_in, portfolio_id=portfolio_id, user_id=current_user.id
+    )
+    db.commit()
+    return rd
+
+
 @router.get("/{portfolio_id}/analytics", response_model=schemas.AnalyticsResponse)
 def get_portfolio_analytics(
     *,
