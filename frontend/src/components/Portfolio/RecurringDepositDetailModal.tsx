@@ -32,6 +32,7 @@ const RecurringDepositDetailModal: React.FC<RecurringDepositDetailModalProps> = 
                     {isLoadingDetails ? <p>Loading...</p> : details && (
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             <p><strong>Institution:</strong></p><p>{details.name}</p>
+                            <p><strong>Account Number:</strong></p><p>{details.account_number}</p>
                             <p><strong>Monthly Installment:</strong></p><p>{formatCurrency(details.monthly_installment)}</p>
                             <p><strong>Interest Rate:</strong></p><p>{formatInterestRate(details.interest_rate)} p.a.</p>
                             <p><strong>Start Date:</strong></p><p>{formatDate(details.start_date)}</p>

@@ -34,6 +34,7 @@ type TransactionFormInputs = {
     interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually';
     // RD-specific fields
     rdName?: string;
+    rdAccountNumber?: string;
     monthlyInstallment?: number;
     rdInterestRate?: number;
     rdStartDate?: string;
@@ -170,6 +171,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 portfolioId: portfolioId,
                 data: {
                     name: data.rdName!,
+                    account_number: data.rdAccountNumber!,
                     monthly_installment: data.monthlyInstallment!,
                     interest_rate: data.rdInterestRate!,
                     start_date: data.rdStartDate!,
@@ -435,6 +437,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <div className="form-group">
                                     <label htmlFor="rdName" className="form-label">Institution Name</label>
                                     <input id="rdName" type="text" {...register('rdName', { required: "Institution name is required" })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="rdAccountNumber" className="form-label">RD Account Number</label>
+                                    <input id="rdAccountNumber" type="text" {...register('rdAccountNumber')} className="form-input" />
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="monthlyInstallment" className="form-label">Monthly Installment</label>

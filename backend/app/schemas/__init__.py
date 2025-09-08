@@ -34,6 +34,13 @@ from .import_session import (
 )
 from .msg import Msg
 from .portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
+from .recurring_deposit import (
+    RecurringDeposit,
+    RecurringDepositAnalytics,
+    RecurringDepositCreate,
+    RecurringDepositDetails,
+    RecurringDepositUpdate,
+)
 from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
@@ -45,6 +52,11 @@ from .transaction import (
 from .user import User, UserCreate, UserPasswordChange, UserUpdate, UserUpdateMe
 
 __all__ = [
+    "RecurringDeposit",
+    "RecurringDepositAnalytics",
+    "RecurringDepositCreate",
+    "RecurringDepositDetails",
+    "RecurringDepositUpdate",
     "Asset",
     "AssetAlias",
     "FixedDeposit",

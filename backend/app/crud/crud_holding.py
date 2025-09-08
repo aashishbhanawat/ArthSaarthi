@@ -84,44 +84,32 @@ def _calculate_rd_value_at_date(
     calculation_date: date,
 ) -> Decimal:
     """
-    Calculates the value of a recurring deposit at a specific date using the formula for monthly investments with quarterly compounding.
+    Calculates the value of a recurring deposit at a specific date by calculating
+    the future value of each installment.
     """
     if calculation_date < start_date:
         return Decimal("0.0")
 
-    # Calculate the number of full months passed since the start date, up to the tenure limit
-    months_passed = (
-        (calculation_date.year - start_date.year) * 12
-        + (calculation_date.month - start_date.month)
-    )
+    total_value = Decimal("0.0")
+    r = interest_rate / Decimal("100.0")
+    n = Decimal("4.0")  # Quarterly compounding
 
-    # We should not calculate beyond the tenure
-    months_to_calculate = min(months_passed, tenure_months)
+    # Iterate through each month an installment is made
+    for i in range(tenure_months):
+        installment_date = start_date + relativedelta(months=i)
 
-    if months_to_calculate <= 0:
-        return Decimal("0.0")
+        if installment_date > calculation_date:
+            break
 
-    r_quarterly = interest_rate / Decimal("400")
-    n_quarters = months_to_calculate / 3
+        # Calculate the time in years from the installment date to the calculation date
+        days_to_grow = (calculation_date - installment_date).days
+        t = Decimal(str(days_to_grow / 365.25))
 
-    # M = P * [((1+r/400)^n - 1) / (1-(1+r/400)^(-1/3))]
+        # Future value of this single installment
+        fv_installment = monthly_installment * ((1 + r / n) ** (n * t))
+        total_value += fv_installment
 
-    # Numerator: (1 + r/400)^n - 1
-    numerator = (1 + r_quarterly) ** Decimal(n_quarters) - 1
-
-    # Denominator: 1 - (1 + r/400)^(-1/3)
-    denominator = 1 - (1 + r_quarterly) ** (Decimal("-1") / Decimal("3"))
-
-    if denominator == 0:
-        # Avoid division by zero, though this is unlikely with typical interest rates
-        # Fallback to a simple interest calculation for the total invested amount
-        total_invested = monthly_installment * months_to_calculate
-        simple_interest = total_invested * (interest_rate / 100) * (Decimal(months_to_calculate) / 12)
-        return total_invested + simple_interest
-
-    maturity_value = monthly_installment * (numerator / denominator)
-
-    return maturity_value
+    return total_value
 
 
 class CRUDHolding:
@@ -284,7 +272,8 @@ class CRUDHolding:
                     interest_rate=rd.interest_rate,
                     maturity_date=rd.start_date
                     + relativedelta(months=rd.tenure_months),
-                    ticker_symbol=rd.name,
+                    ticker_symbol=rd.account_number,
+                    account_number=rd.account_number,
                     days_pnl=Decimal(0),
                     days_pnl_percentage=0.0,
                 )

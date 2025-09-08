@@ -11,7 +11,9 @@ from app.schemas.recurring_deposit import (
 )
 
 
-class CRUDRD(CRUDBase[RecurringDeposit, RecurringDepositCreate, RecurringDepositUpdate]):
+class CRUDRD(
+    CRUDBase[RecurringDeposit, RecurringDepositCreate, RecurringDepositUpdate]
+):
     def create_with_portfolio(
         self,
         db: Session,

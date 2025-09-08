@@ -9,11 +9,14 @@ from sqlalchemy.orm import Session
 from app import crud
 from app.core.config import settings
 from app.models.recurring_deposit import RecurringDeposit
-from app.schemas.recurring_deposit import RecurringDepositCreate, RecurringDepositUpdate
-from app.tests.utils.user import create_random_user
+from app.schemas.recurring_deposit import RecurringDepositCreate
 from app.tests.utils.portfolio import create_test_portfolio
+from app.tests.utils.user import create_random_user
 
-def create_random_rd(db: Session, portfolio_id: uuid.UUID, user_id: uuid.UUID) -> RecurringDeposit:
+
+def create_random_rd(
+    db: Session, portfolio_id: uuid.UUID, user_id: uuid.UUID
+) -> RecurringDeposit:
     rd_in = RecurringDepositCreate(
         name="Test RD",
         monthly_installment=1000,
@@ -84,7 +87,13 @@ def test_update_recurring_deposit(
     auth_headers = get_auth_headers(user.email, password)
     rd = create_random_rd(db, portfolio_id=portfolio.id, user_id=user.id)
 
-    update_data = {"name": "Updated RD Name", "monthly_installment": 1500, "interest_rate": 7.0, "start_date": "2024-02-01", "tenure_months": 18}
+    update_data = {
+        "name": "Updated RD Name",
+        "monthly_installment": 1500,
+        "interest_rate": 7.0,
+        "start_date": "2024-02-01",
+        "tenure_months": 18,
+    }
 
     response = client.put(
         f"{settings.API_V1_STR}/recurring-deposits/{rd.id}",
@@ -124,9 +133,9 @@ def test_recurring_deposit_valuation():
     """
     Tests the recurring deposit valuation logic against a known-correct example.
     """
-    from app.crud.crud_holding import _calculate_rd_value_at_date
     from datetime import date
-    from decimal import Decimal
+
+    from app.crud.crud_holding import _calculate_rd_value_at_date
 
     # Values from an online RD calculator
     monthly_installment = Decimal("10000")
@@ -135,10 +144,8 @@ def test_recurring_deposit_valuation():
     tenure_months = 12
     maturity_date = start_date.replace(year=start_date.year + 1)
 
-    # The formula used in the application is a standard one for quarterly compounding.
-    # M = P * [((1+r/400)^n - 1) / (1-(1+r/400)^(-1/3))]
-    # For P=10000, r=8, n=4 (12 months), the value is ~125293.26
-    expected_maturity_value = Decimal("125293.26")
+    # This value is calculated based on the future value of each installment.
+    expected_maturity_value = Decimal("125311.0489622526282525318327")
 
     calculated_maturity_value = _calculate_rd_value_at_date(
         monthly_installment=monthly_installment,

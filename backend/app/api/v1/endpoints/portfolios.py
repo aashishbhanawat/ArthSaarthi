@@ -3,12 +3,6 @@ from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-import logging
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-import logging
 
 from app import crud, models, schemas
 from app.core import dependencies
@@ -16,7 +10,7 @@ from app.core.config import settings
 from app.crud import crud_analytics
 from app.models.user import User
 
-from . import transactions, recurring_deposits
+from . import transactions
 
 router = APIRouter()
 router.include_router(

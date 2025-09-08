@@ -1,5 +1,6 @@
 export interface RecurringDepositBase {
   name: string;
+  account_number: string;
   monthly_installment: number;
   interest_rate: number;
   start_date: string; // Dates are typically strings in ISO format

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 class RecurringDepositBase(BaseModel):
     name: str
+    account_number: Optional[str] = None
     monthly_installment: Decimal
     interest_rate: Decimal
     start_date: date
@@ -20,6 +21,7 @@ class RecurringDepositCreate(RecurringDepositBase):
 
 class RecurringDepositUpdate(BaseModel):
     name: Optional[str] = None
+    account_number: Optional[str] = None
     monthly_installment: Optional[Decimal] = None
     interest_rate: Optional[Decimal] = None
     start_date: Optional[date] = None

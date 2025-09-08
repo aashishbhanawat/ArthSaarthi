@@ -1,8 +1,7 @@
 import uuid
 from typing import Any
-from datetime import date
-from dateutil.relativedelta import relativedelta
 
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -44,7 +43,10 @@ def read_recurring_deposit(
     )
 
 
-@router.get("/{id}/analytics", response_model=schemas.recurring_deposit.RecurringDepositAnalytics)
+@router.get(
+    "/{id}/analytics",
+    response_model=schemas.recurring_deposit.RecurringDepositAnalytics,
+)
 def get_recurring_deposit_analytics(
     *,
     db: Session = Depends(dependencies.get_db),

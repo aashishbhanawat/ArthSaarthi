@@ -43,8 +43,8 @@ export const useUpdateRecurringDeposit = () => {
 export const useDeleteRecurringDeposit = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ portfolioId, rdId }: { portfolioId: string; rdId: string }) =>
-            portfolioApi.deleteRecurringDeposit(rdId),
+        mutationFn: (variables: { portfolioId: string; rdId: string }) =>
+            portfolioApi.deleteRecurringDeposit(variables.rdId),
         onSuccess: (_, variables) => {
             invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
         },

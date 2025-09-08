@@ -11,7 +11,10 @@ from pyxirr import xirr
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.crud.crud_holding import _calculate_fd_current_value, _calculate_rd_value_at_date
+from app.crud.crud_holding import (
+    _calculate_fd_current_value,
+    _calculate_rd_value_at_date,
+)
 from app.schemas.analytics import AnalyticsResponse, AssetAnalytics
 from app.services.financial_data_service import financial_data_service
 
