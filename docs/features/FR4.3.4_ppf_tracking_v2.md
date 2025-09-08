@@ -69,15 +69,17 @@ A new function will be implemented to calculate the PPF balance dynamically. It 
     *   For each month, it will determine the minimum balance between the 5th and the end of the month.
     *   It will look up the applicable annual interest rate for that specific month from the `historical_interest_rates` table and calculate the monthly interest on this minimum balance (`applicable_rate / 12`).
     *   The sum of all monthly interest amounts for a financial year will be credited on March 31st.
-*   **Interest as Transaction:** At the end of each financial year, the system will automatically create a read-only `INTEREST_CREDIT` transaction for the calculated amount. This provides a clear, auditable history for the user.
+*   **Interest as Transaction (On-Demand Calculation):** The system does not use a background job. The interest calculation is triggered dynamically whenever a user's holdings are calculated (e.g., when viewing the portfolio). The logic iterates through each financial year of the PPF's life.
+    *   **For Completed Financial Years:** If an `INTEREST_CREDIT` transaction for a *completed* year is missing or outdated (because a contribution was added/edited), the system will calculate and create/update it on the spot.
+    *   **For the Current Financial Year:** The interest is calculated on-the-fly to determine the holding's `current_value`, but the `INTEREST_CREDIT` transaction is **not** created in the database until the financial year has concluded. This ensures the `current_value` is always up-to-date, while the transaction history remains clean and accurate.
 
 ### 3.4. Recalculation & Correction Logic
 
-*   **Trigger for Recalculation:** The interest calculation for a given financial year will be automatically re-triggered whenever a user creates, updates, or deletes a `CONTRIBUTION` transaction that falls within that year.
-*   **Correction Process:** When a recalculation is triggered, the system will:
-    1.  Delete the existing `INTEREST_CREDIT` transaction for that financial year.
-    2.  Re-run the interest calculation logic based on the updated contribution history.
-    3.  Create a new, correct `INTEREST_CREDIT` transaction.
+*   **Trigger for Recalculation:** The recalculation process is triggered whenever a user creates, updates, or deletes a `CONTRIBUTION` transaction.
+*   **Correction Process (Smart Recalculation):**
+    1.  When a contribution is modified, the system identifies the financial year of the change.
+    2.  It then deletes all system-generated `INTEREST_CREDIT` transactions for that PPF asset from that financial year *onwards*. This is because a change in one year affects the opening balance of all subsequent years.
+    3.  The next time holdings are calculated, the system will see the missing interest transactions and will re-calculate and create them sequentially, starting only from the first year that was invalidated. This avoids redundant calculations for unchanged years.
 *   **Admin Corrections:** If an administrator corrects a historical interest rate, a background job or manual trigger should be available to re-calculate interest for all affected users and financial years.
 ---
 
