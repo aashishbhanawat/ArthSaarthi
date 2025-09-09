@@ -4,6 +4,7 @@ from .crud_audit_log import audit_log
 from .crud_dashboard import dashboard
 from .crud_fixed_deposit import fixed_deposit
 from .crud_goal import goal, goal_link
+from .crud_historical_interest_rate import historical_interest_rate
 from .crud_holding import holding
 from .crud_import_session import import_session
 from .crud_portfolio import portfolio
@@ -22,6 +23,7 @@ __all__ = [
     "fixed_deposit",
     "recurring_deposit",
     "holding",
+    "historical_interest_rate",
     "import_session",
     "portfolio",
     "testing",

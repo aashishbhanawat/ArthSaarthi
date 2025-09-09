@@ -23,6 +23,11 @@ from .goal import (
     GoalUpdate,
     GoalWithAnalytics,
 )
+from .historical_interest_rate import (
+    HistoricalInterestRate,
+    HistoricalInterestRateCreate,
+    HistoricalInterestRateUpdate,
+)
 from .holding import Holding, HoldingsResponse, PortfolioSummary
 from .import_session import (
     ImportSession,
@@ -108,4 +113,7 @@ __all__ = [
     "GoalLinkCreate",
     "GoalLinkUpdate",
     "GoalWithAnalytics",
+    "HistoricalInterestRate",
+    "HistoricalInterestRateCreate",
+    "HistoricalInterestRateUpdate",
 ]

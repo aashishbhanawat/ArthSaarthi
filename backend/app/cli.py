@@ -319,13 +319,19 @@ def clear_assets_command(
 @app.command("init-db")
 def init_db_command():
     """Initializes the database by creating all tables."""
+    db: Session = next(get_db_session())
     from app.db.base import Base
+    from app.db.initial_data import seed_interest_rates
     from app.db.session import engine
 
     typer.echo("Initializing database...")
     try:
         Base.metadata.create_all(bind=engine)
         typer.secho("Database initialized successfully.", fg=typer.colors.GREEN)
+
+        typer.echo("Seeding initial data...")
+        seed_interest_rates(db)
+        typer.secho("Initial data seeded successfully.", fg=typer.colors.GREEN)
     except Exception as e:
         typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
 

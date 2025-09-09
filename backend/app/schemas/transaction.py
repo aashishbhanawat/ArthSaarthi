@@ -8,6 +8,13 @@ from pydantic import BaseModel, ConfigDict
 from .asset import Asset
 
 
+class TransactionType(str):
+    BUY = "BUY"
+    SELL = "SELL"
+    CONTRIBUTION = "CONTRIBUTION"
+    INTEREST_CREDIT = "INTEREST_CREDIT"
+
+
 # Shared properties
 class TransactionBase(BaseModel):
     transaction_type: str

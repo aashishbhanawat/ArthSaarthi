@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, UniqueConstraint
+from sqlalchemy import Column, Date, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -25,3 +25,5 @@ class Asset(Base):
     watchlist_items = relationship("WatchlistItem", back_populates="asset")
 
     __table_args__ = (UniqueConstraint("ticker_symbol", name="uq_ticker_symbol"),)
+    account_number = Column(String, nullable=True)
+    opening_date = Column(Date, nullable=True)
