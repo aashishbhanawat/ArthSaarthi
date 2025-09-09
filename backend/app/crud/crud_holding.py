@@ -94,22 +94,189 @@ def _calculate_rd_value_at_date(
     r = interest_rate / Decimal("100.0")
     n = Decimal("4.0")  # Quarterly compounding
 
-    # Iterate through each month an installment is made
     for i in range(tenure_months):
         installment_date = start_date + relativedelta(months=i)
 
         if installment_date > calculation_date:
             break
 
-        # Calculate the time in years from the installment date to the calculation date
         days_to_grow = (calculation_date - installment_date).days
         t = Decimal(str(days_to_grow / 365.25))
 
-        # Future value of this single installment
         fv_installment = monthly_installment * ((1 + r / n) ** (n * t))
         total_value += fv_installment
 
     return total_value
+
+
+def _process_ppf_holdings(
+    db: Session, *, portfolio_id: uuid.UUID
+) -> Dict[str, Any]:
+    """
+    Processes all PPF holdings, calculates interest, creates missing interest
+    transactions, and returns the holdings details.
+    """
+    ppf_assets = crud.asset.get_all_by_type_and_portfolio(
+        db, asset_type="PPF", portfolio_id=portfolio_id
+    )
+    if not ppf_assets:
+        return {
+            "holdings": [],
+            "total_value": Decimal("0.0"),
+            "total_investment": Decimal("0.0"),
+        }
+
+    ppf_holdings = []
+    total_ppf_value = Decimal("0.0")
+    total_ppf_investment = Decimal("0.0")
+    today = date.today()
+
+    for asset in ppf_assets:
+        if not asset.opening_date:
+            logger.warning(
+                f"PPF asset {asset.id} is missing an opening date. Skipping."
+            )
+            continue
+
+        all_txs = crud.transaction.get_all_for_asset(db, asset_id=asset.id)
+        all_txs.sort(key=lambda tx: tx.transaction_date)
+
+        contributions = [
+            tx for tx in all_txs if tx.transaction_type == "CONTRIBUTION"
+        ]
+        interest_credits = {
+            tx.transaction_date.date(): tx
+            for tx in all_txs
+            if tx.transaction_type == "INTEREST_CREDIT"
+        }
+
+        start_fy_year = (
+            asset.opening_date.year
+            if asset.opening_date.month > 3
+            else asset.opening_date.year - 1
+        )
+        current_fy_year = today.year if today.month > 3 else today.year - 1
+
+        on_the_fly_interest = Decimal("0.0")
+        running_balance = Decimal("0.0")
+
+        for year in range(start_fy_year, current_fy_year + 1):
+            fy_start = date(year, 4, 1)
+            fy_end = date(year + 1, 3, 31)
+            is_completed_fy = today > fy_end
+
+            fy_contributions = [
+                tx
+                for tx in contributions
+                if fy_start <= tx.transaction_date.date() <= fy_end
+            ]
+
+            balance_at_fy_start = running_balance
+
+            if is_completed_fy and fy_end in interest_credits:
+                interest_tx = interest_credits[fy_end]
+                running_balance += (
+                    sum(c.quantity for c in fy_contributions) + interest_tx.quantity
+                )
+                continue
+
+            monthly_running_balance = balance_at_fy_start
+            total_fy_interest = Decimal("0.0")
+
+            for month_num in range(4, 16):
+                m = month_num if month_num <= 12 else month_num - 12
+                y = year if month_num <= 12 else year + 1
+
+                contributions_before_5th = sum(
+                    tx.quantity
+                    for tx in fy_contributions
+                    if tx.transaction_date.month == m and tx.transaction_date.day <= 5
+                )
+                balance_for_interest_calc = (
+                    monthly_running_balance + contributions_before_5th
+                )
+
+                rate_obj = crud.historical_interest_rate.get_rate_for_date(
+                    db, scheme_name="PPF", a_date=date(y, m, 1)
+                )
+                if not rate_obj:
+                    logger.error(
+                        f"Missing PPF interest rate for {date(y, m, 1)}. "
+                        "Cannot calculate interest."
+                    )
+                    continue
+
+                monthly_interest = balance_for_interest_calc * (
+                    rate_obj.rate / Decimal("100.0") / Decimal("12.0")
+                )
+                total_fy_interest += monthly_interest
+
+                monthly_contributions = sum(
+                    tx.quantity
+                    for tx in fy_contributions
+                    if tx.transaction_date.month == m
+                )
+                monthly_running_balance += monthly_contributions
+
+            if is_completed_fy:
+                new_interest_tx_schema = schemas.TransactionCreate(
+                    asset_id=asset.id,
+                    transaction_type="INTEREST_CREDIT",
+                    transaction_date=fy_end,
+                    quantity=total_fy_interest.quantize(Decimal("0.01")),
+                    price_per_unit=Decimal(1),
+                    fees=Decimal(0),
+                )
+                new_interest_tx = crud.transaction.create_with_portfolio(
+                    db,
+                    portfolio_id=portfolio_id,
+                    obj_in=new_interest_tx_schema,
+                )
+                all_txs.append(new_interest_tx)
+                interest_credits[fy_end] = new_interest_tx
+                running_balance = monthly_running_balance + total_fy_interest
+            else:
+                on_the_fly_interest = total_fy_interest
+                running_balance = monthly_running_balance
+
+        total_investment = sum(c.quantity for c in contributions)
+        total_saved_interest = sum(itx.quantity for itx in interest_credits.values())
+        current_value = total_investment + total_saved_interest + on_the_fly_interest
+        unrealized_pnl = total_saved_interest + on_the_fly_interest
+
+        ppf_holdings.append(
+            schemas.Holding(
+                asset_id=asset.id,
+                ticker_symbol=asset.account_number or "PPF",
+                asset_name=asset.name,
+                asset_type="PPF",
+                group="GOVERNMENT_SCHEMES",
+                quantity=Decimal(1),
+                average_buy_price=total_investment,
+                total_invested_amount=total_investment,
+                current_price=current_value,
+                current_value=current_value,
+                unrealized_pnl=unrealized_pnl,
+                unrealized_pnl_percentage=(
+                    float(unrealized_pnl / total_investment)
+                    if total_investment > 0
+                    else 0.0
+                ),
+                account_number=asset.account_number,
+                opening_date=asset.opening_date,
+                days_pnl=Decimal(0),
+                days_pnl_percentage=0.0,
+                realized_pnl=Decimal(0),
+            )
+        )
+        total_ppf_value += current_value
+        total_ppf_investment += total_investment
+
+    return {
+        "holdings": ppf_holdings,
+        "total_value": total_ppf_value,
+        "total_investment": total_ppf_investment,
+    }
 
 
 class CRUDHolding:
@@ -124,6 +291,8 @@ class CRUDHolding:
         """
         Calculates the consolidated holdings and a summary for a given portfolio.
         """
+        ppf_data = _process_ppf_holdings(db, portfolio_id=portfolio_id)
+
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
@@ -134,9 +303,9 @@ class CRUDHolding:
             db=db, portfolio_id=portfolio_id
         )
 
-        holdings_list: List[schemas.Holding] = []
-        summary_total_value = Decimal("0.0")
-        summary_total_invested = Decimal("0.0")
+        holdings_list: List[schemas.Holding] = ppf_data["holdings"]
+        summary_total_value = ppf_data["total_value"]
+        summary_total_invested = ppf_data["total_investment"]
         summary_days_pnl = Decimal("0.0")
         total_realized_pnl = Decimal("0.0")
 
@@ -157,7 +326,7 @@ class CRUDHolding:
                     fd.principal_amount,
                     fd.interest_rate,
                     fd.start_date,
-                    fd.maturity_date, # Use maturity date for final value
+                    fd.maturity_date,
                     fd.compounding_frequency,
                     fd.interest_payout,
                 )
@@ -207,7 +376,6 @@ class CRUDHolding:
             summary_total_value += current_value
             summary_total_invested += fd.principal_amount
 
-        # --- Recurring Deposits ---
         today = date.today()
         active_recurring_deposits = [
             rd
@@ -281,7 +449,14 @@ class CRUDHolding:
             summary_total_value += current_value
             summary_total_invested += total_invested
 
-        if not transactions:
+        equity_transactions = [
+            tx
+            for tx in transactions
+            if tx.asset.asset_type
+            not in ["PPF", "FIXED_DEPOSIT", "RECURRING_DEPOSIT"]
+        ]
+
+        if not equity_transactions:
             summary = schemas.PortfolioSummary(
                 total_value=summary_total_value,
                 total_invested_amount=summary_total_invested,
@@ -289,16 +464,17 @@ class CRUDHolding:
                 total_unrealized_pnl=summary_total_value - summary_total_invested,
                 total_realized_pnl=total_realized_pnl,
             )
+            holdings_list.sort(key=lambda h: (h.group, h.asset_name))
             return {"summary": summary, "holdings": holdings_list}
 
-        transactions.sort(key=lambda tx: tx.transaction_date)
+        equity_transactions.sort(key=lambda tx: tx.transaction_date)
 
         holdings_state = defaultdict(
             lambda: {"quantity": Decimal("0.0"), "total_invested": Decimal("0.0")}
         )
-        asset_map = {tx.asset.ticker_symbol: tx.asset for tx in transactions}
+        asset_map = {tx.asset.ticker_symbol: tx.asset for tx in equity_transactions}
 
-        for tx in transactions:
+        for tx in equity_transactions:
             ticker = tx.asset.ticker_symbol
             if tx.transaction_type == "BUY":
                 holdings_state[ticker]["quantity"] += tx.quantity
@@ -315,7 +491,9 @@ class CRUDHolding:
                         tx.price_per_unit - avg_buy_price
                     ) * tx.quantity
                     total_realized_pnl += realized_pnl_for_sale
-                    proportion_sold = tx.quantity / holdings_state[ticker]["quantity"]
+                    proportion_sold = (
+                        tx.quantity / holdings_state[ticker]["quantity"]
+                    )
                     holdings_state[ticker]["total_invested"] *= 1 - proportion_sold
                     holdings_state[ticker]["quantity"] -= tx.quantity
 
@@ -334,7 +512,9 @@ class CRUDHolding:
         ]
 
         if assets_to_price:
-            price_details = financial_data_service.get_current_prices(assets_to_price)
+            price_details = financial_data_service.get_current_prices(
+                assets_to_price
+            )
         else:
             price_details = {}
 
@@ -355,9 +535,7 @@ class CRUDHolding:
             current_value = quantity * current_price
             unrealized_pnl = current_value - total_invested
             unrealized_pnl_percentage = (
-                float(unrealized_pnl / total_invested)
-                if total_invested > 0
-                else 0.0
+                float(unrealized_pnl / total_invested) if total_invested > 0 else 0.0
             )
             days_pnl = (current_price - previous_close) * quantity
             days_pnl_percentage = (
@@ -372,7 +550,8 @@ class CRUDHolding:
                 "ETF": "EQUITIES",
                 "FIXED_DEPOSIT": "DEPOSITS",
                 "BOND": "BONDS",
-                "PPF": "SCHEMES",
+                "PPF": "GOVERNMENT_SCHEMES",
+                "RECURRING_DEPOSIT": "DEPOSITS",
                 "Mutual Fund": "EQUITIES",
             }
             group = group_map.get(
@@ -409,6 +588,7 @@ class CRUDHolding:
             total_realized_pnl=total_realized_pnl,
         )
 
+        holdings_list.sort(key=lambda h: (h.group, h.asset_name))
         return {"summary": summary, "holdings": holdings_list}
 
 

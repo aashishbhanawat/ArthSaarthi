@@ -29,5 +29,22 @@ class CRUDHistoricalInterestRate(
             .first()
         )
 
+    def get_rate_for_date(
+        self, db: Session, *, scheme_name: str, a_date: date
+    ) -> HistoricalInterestRate | None:
+        """
+        Retrieves the interest rate for a given scheme that was active on a
+        specific date.
+        """
+        return (
+            db.query(self.model)
+            .filter(
+                self.model.scheme_name == scheme_name,
+                self.model.start_date <= a_date,
+                self.model.end_date >= a_date,
+            )
+            .first()
+        )
+
 
 historical_interest_rate = CRUDHistoricalInterestRate(HistoricalInterestRate)

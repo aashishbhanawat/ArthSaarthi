@@ -17,8 +17,8 @@ interface TransactionFormModalProps {
 
 // Define the shape of our form data
 type TransactionFormInputs = {
-    asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit';
-    transaction_type: 'BUY' | 'SELL';
+    asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit' | 'PPF Account';
+    transaction_type: 'BUY' | 'SELL' | 'CONTRIBUTION';
     quantity: number;
     price_per_unit: number;
     transaction_date: string; // from date input
@@ -39,6 +39,10 @@ type TransactionFormInputs = {
     rdInterestRate?: number;
     rdStartDate?: string;
     tenureMonths?: number;
+    // PPF-specific fields
+    ppfInstitutionName?: string;
+    ppfAccountNumber?: string;
+    ppfOpeningDate?: string;
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
@@ -178,7 +182,30 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     tenure_months: data.tenureMonths!,
                 }
             }, mutationOptions);
+        } else if (assetType === 'PPF Account') {
+            createAssetMutation.mutate({
+                name: data.ppfInstitutionName!,
+                account_number: data.ppfAccountNumber,
+                opening_date: data.ppfOpeningDate!,
+                asset_type: 'PPF',
+                ticker_symbol: `PPF-${data.ppfAccountNumber || Date.now()}`,
+                currency: 'INR',
+            }, mutationOptions);
         } else {
+            if (selectedAsset && selectedAsset.asset_type === 'PPF') {
+                const payload: TransactionCreate = {
+                    asset_id: selectedAsset.id,
+                    transaction_type: 'CONTRIBUTION',
+                    quantity: Number(data.quantity),
+                    price_per_unit: 1, // For contributions, the "price" is 1 and quantity is the amount.
+                    fees: 0,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                    ticker_symbol: selectedAsset.ticker_symbol,
+                };
+                createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+                return; // Exit early
+            }
+
             if (assetType === 'Stock' && !selectedAsset) {
                 setApiError("Please select a stock.");
                 return;
@@ -268,10 +295,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <option value="Mutual Fund">Mutual Fund</option>
                                     <option value="Fixed Deposit">Fixed Deposit</option>
                                     <option value="Recurring Deposit">Recurring Deposit</option>
+                                    <option value="PPF Account">PPF Account</option>
                                 </select>
                             </div>
 
-                            {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit') && (
+                            {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit' && assetType !== 'PPF Account') && (
                                 <div className="form-group">
                                     <label htmlFor={assetType === 'Stock' ? 'asset-search' : 'mf-search-input'} className="form-label">Asset</label>
                                     {assetType === 'Stock' && (
@@ -355,37 +383,64 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                             )}
                         </div>
 
-                        {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit') && (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="form-group">
-                                    <label htmlFor="transaction_type" className="form-label">Type</label>
-                                    <select id="transaction_type" {...register('transaction_type')} className="form-input">
-                                        <option value="BUY">Buy</option>
-                                        <option value="SELL">Sell</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="quantity" className="form-label">Quantity</label>
-                                    <input id="quantity" type="number" step="any" {...register('quantity', { required: "Quantity is required", valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
-                                    {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
-                                    <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: "Price is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
-                                    {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="transaction_date" className="form-label">Date</label>
-                                    <input id="transaction_date" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
-                                    {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
-                                </div>
-                                <div className="form-group col-span-2">
-                                    <label htmlFor="fees" className="form-label">Fees (optional)</label>
-                                    <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
-                                    {errors.fees && <p className="text-red-500 text-xs italic">{errors.fees.message}</p>}
-                                </div>
-                            </div>
-                        )}
+                        {/* Logic to show the correct form based on selection */}
+                        {(() => {
+                            if (selectedAsset?.asset_type === 'PPF') {
+                                // Form for adding a contribution to an existing PPF asset
+                                return (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="form-group">
+                                            <label htmlFor="transaction_type" className="form-label">Type</label>
+                                            <input id="transaction_type" type="text" value="Contribution" className="form-input bg-gray-100" disabled />
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor="quantity" className="form-label">Contribution Amount</label>
+                                            <input id="quantity" type="number" step="any" {...register('quantity', { required: "Amount is required", valueAsNumber: true, min: { value: 0.01, message: "Must be positive" } })} className="form-input" />
+                                            {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
+                                        </div>
+                                        <div className="form-group col-span-2">
+                                            <label htmlFor="transaction_date" className="form-label">Date</label>
+                                            <input id="transaction_date" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                        </div>
+                                    </div>
+                                );
+                            } else if (assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit' && assetType !== 'PPF Account') {
+                                // Standard transaction form for Stocks and MF
+                                return (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="form-group">
+                                            <label htmlFor="transaction_type" className="form-label">Type</label>
+                                            <select id="transaction_type" {...register('transaction_type')} className="form-input">
+                                                <option value="BUY">Buy</option>
+                                                <option value="SELL">Sell</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor="quantity" className="form-label">Quantity</label>
+                                            <input id="quantity" type="number" step="any" {...register('quantity', { required: "Quantity is required", valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
+                                            {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
+                                            <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: "Price is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                            {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor="transaction_date" className="form-label">Date</label>
+                                            <input id="transaction_date" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                        </div>
+                                        <div className="form-group col-span-2">
+                                            <label htmlFor="fees" className="form-label">Fees (optional)</label>
+                                            <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                            {errors.fees && <p className="text-red-500 text-xs italic">{errors.fees.message}</p>}
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return null; // Render nothing if it's a deposit or new PPF account form
+                        })()}
 
                         {assetType === 'Fixed Deposit' && (
                             <div className="grid grid-cols-2 gap-4">
@@ -457,6 +512,23 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <div className="form-group">
                                     <label htmlFor="tenureMonths" className="form-label">Tenure (in months)</label>
                                     <input id="tenureMonths" type="number" {...register('tenureMonths', { required: "Tenure is required", valueAsNumber: true, min: { value: 1, message: "Must be at least 1" } })} className="form-input" />
+                                </div>
+                            </div>
+                        )}
+
+                        {assetType === 'PPF Account' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="form-group col-span-2">
+                                    <label htmlFor="ppfInstitutionName" className="form-label">Institution Name (e.g., SBI, HDFC)</label>
+                                    <input id="ppfInstitutionName" type="text" {...register('ppfInstitutionName', { required: "Institution name is required" })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="ppfAccountNumber" className="form-label">Account Number (optional)</label>
+                                    <input id="ppfAccountNumber" type="text" {...register('ppfAccountNumber')} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="ppfOpeningDate" className="form-label">Opening Date</label>
+                                    <input id="ppfOpeningDate" type="date" {...register('ppfOpeningDate', { required: "Opening date is required" })} className="form-input" />
                                 </div>
                             </div>
                         )}

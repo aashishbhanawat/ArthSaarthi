@@ -1,7 +1,7 @@
 import apiClient from './api';
 import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate, TransactionsResponse, FixedDepositCreate, FixedDeposit } from '../types/portfolio';
 import { RecurringDeposit, RecurringDepositCreate, RecurringDepositUpdate, RecurringDepositDetails, RecurringDepositAnalytics } from '../types/recurring_deposit';
-import { Asset } from '../types/asset';
+import { Asset, PpfAccountCreate } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { PortfolioAnalytics } from '../types/analytics';
 
@@ -34,12 +34,14 @@ export const lookupAsset = async (query: string): Promise<Asset[]> => {
 export type AssetCreationPayload = {
     ticker_symbol: string;
     name: string;
-    asset_type: 'STOCK' | 'MUTUAL_FUND' | 'CRYPTO' | 'OTHER';
+    asset_type: 'STOCK' | 'MUTUAL_FUND' | 'CRYPTO' | 'OTHER' | 'PPF';
     currency?: string;
     exchange?: string;
+    account_number?: string;
+    opening_date?: string;
 };
 
-export const createAsset = async (payload: AssetCreationPayload): Promise<Asset> => {
+export const createAsset = async (payload: AssetCreationPayload | PpfAccountCreate): Promise<Asset> => {
     const response = await apiClient.post<Asset>('/api/v1/assets/', payload);
     return response.data;
 };

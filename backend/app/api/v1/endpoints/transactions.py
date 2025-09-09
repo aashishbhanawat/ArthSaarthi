@@ -13,6 +13,41 @@ from app.models.user import User
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+
+def _trigger_ppf_recalculation(
+    db: Session, *, asset: models.Asset, transaction_date: date
+):
+    """
+    Deletes all future and current year's interest credits for a PPF account
+    to trigger a recalculation on the next holdings view.
+    """
+    if asset.asset_type != "PPF":
+        return
+
+    fy_start_year = (
+        transaction_date.year
+        if transaction_date.month > 3
+        else transaction_date.year - 1
+    )
+    fy_start_date = date(fy_start_year, 4, 1)
+
+    (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == asset.id,
+            models.Transaction.transaction_type == "INTEREST_CREDIT",
+            models.Transaction.transaction_date >= fy_start_date,
+        )
+        .delete(synchronize_session=False)
+    )
+    logger.info(
+        (
+            f"Triggered PPF recalculation for asset {asset.id} "
+            f"from FY starting {fy_start_date}"
+        )
+    )
+
+
 @router.get("/", response_model=schemas.TransactionsResponse)
 def read_transactions(
     *,
@@ -47,17 +82,13 @@ def read_transactions(
             limit=limit,
         )
     else:
-        # If no portfolio_id is provided, use the same filter function
-        # to fetch all transactions for the user.
-        transactions, total = crud.transaction.get_multi_by_user_with_filters( # type: ignore
+        transactions, total = crud.transaction.get_multi_by_user_with_filters(
             db=db, user_id=current_user.id, portfolio_id=None, skip=skip, limit=limit
         )
     if config.settings.DEBUG:
         print("--- BACKEND DEBUG: Read Transactions Response ---")
-        # Log the first transaction to see its structure
         if transactions:
             try:
-                # Directly accessing attributes from the SQLAlchemy model
                 print(f"First transaction ID: {transactions[0].id}")
                 print(f"First transaction Portfolio ID: {transactions[0].portfolio_id}")
             except Exception as e:
@@ -80,42 +111,28 @@ def create_transaction(
     Create new transaction for a portfolio.
     If the asset does not exist, it will be created.
     """
-    if config.settings.DEBUG:
-        print("--- CREATE TRANSACTION ENDPOINT HIT ---")
-        print(
-            f"User: {current_user.email}, Portfolio ID: {portfolio_id}, "
-            f"Payload: {transaction_in.model_dump_json()}"
-    )
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     if portfolio.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    # Determine the asset_id. The frontend can either provide an existing
-    # asset_id or a ticker_symbol for on-the-fly creation.
-    asset_id_to_use = getattr(transaction_in, 'asset_id', None)
-    if not asset_id_to_use and getattr(transaction_in, 'ticker_symbol', None):
-        asset = crud.asset.get_or_create_by_ticker(
+    asset_to_use = None
+    asset_id_to_use = getattr(transaction_in, "asset_id", None)
+    if asset_id_to_use:
+        asset_to_use = crud.asset.get(db, id=asset_id_to_use)
+    elif getattr(transaction_in, "ticker_symbol", None):
+        asset_to_use = crud.asset.get_or_create_by_ticker(
             db,
             ticker_symbol=transaction_in.ticker_symbol,
             asset_type=transaction_in.asset_type,
         )
-        if not asset:
-            raise HTTPException(
-                status_code=404, detail=(
-                    "Could not find or create asset with ticker "
-                    f"'{transaction_in.ticker_symbol}'"
-                )
-            )
-        asset_id_to_use = asset.id
 
-    if not asset_id_to_use:
-        raise HTTPException(status_code=422, detail=(
-            "Request must include either a valid asset_id or a ticker_symbol.")
-        )
+    if not asset_to_use:
+        raise HTTPException(status_code=422, detail="Could not find or create asset.")
 
-    # Create the final transaction payload with the asset_id
+    asset_id_to_use = asset_to_use.id
+
     transaction_create_schema = schemas.TransactionCreate(
         asset_id=asset_id_to_use,
         **transaction_in.model_dump(
@@ -126,6 +143,9 @@ def create_transaction(
     try:
         transaction = crud.transaction.create_with_portfolio(
             db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
+        )
+        _trigger_ppf_recalculation(
+            db, asset=asset_to_use, transaction_date=transaction.transaction_date.date()
         )
     except HTTPException as e:
         raise e
@@ -149,12 +169,6 @@ def update_transaction(
     """
     Update a transaction.
     """
-    if config.settings.DEBUG:
-        logger.warning("--- BACKEND DEBUG: Update Transaction Request ---")
-        logger.warning(f"Transaction ID: {transaction_id}")
-        payload = transaction_in.model_dump_json(indent=2, exclude_unset=True)
-        logger.warning(f"Update Payload: {payload}")
-        logger.warning("---------------------------------------------")
     transaction = crud.transaction.get(db=db, id=transaction_id)
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -164,6 +178,14 @@ def update_transaction(
         )
     if transaction.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    # We pass the original transaction date to handle cases where the date
+    # itself is changed.
+    _trigger_ppf_recalculation(
+        db,
+        asset=transaction.asset,
+        transaction_date=transaction.transaction_date.date(),
+    )
 
     updated_transaction = crud.transaction.update(
         db=db, db_obj=transaction, obj_in=transaction_in
@@ -184,10 +206,6 @@ def delete_transaction(
     """
     Delete a transaction.
     """
-    if config.settings.DEBUG:
-        logger.warning("--- BACKEND DEBUG: Delete Transaction Request ---")
-        logger.warning(f"Transaction ID: {transaction_id}")
-        logger.warning("---------------------------------------------")
     transaction = crud.transaction.get(db=db, id=transaction_id)
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -197,6 +215,12 @@ def delete_transaction(
         )
     if transaction.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    _trigger_ppf_recalculation(
+        db,
+        asset=transaction.asset,
+        transaction_date=transaction.transaction_date.date(),
+    )
 
     crud.transaction.remove(db=db, id=transaction_id)
     db.commit()

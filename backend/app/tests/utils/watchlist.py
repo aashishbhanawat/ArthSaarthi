@@ -1,5 +1,3 @@
-import random
-import string
 import uuid
 
 from sqlalchemy.orm import Session
@@ -7,10 +5,7 @@ from sqlalchemy.orm import Session
 from app import crud
 from app.models.watchlist import Watchlist
 from app.schemas.watchlist import WatchlistCreate
-
-
-def random_lower_string() -> str:
-    return "".join(random.choices(string.ascii_lowercase, k=32))
+from app.tests.utils.user import random_lower_string
 
 
 def create_random_watchlist(db: Session, *, user_id: uuid.UUID) -> Watchlist:

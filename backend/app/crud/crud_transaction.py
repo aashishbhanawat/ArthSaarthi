@@ -35,6 +35,14 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
         return total_buys - total_sells
 
+    def get_all_for_asset(
+        self, db: Session, *, asset_id: uuid.UUID
+    ) -> List[Transaction]:
+        """
+        Retrieves all transactions for a specific asset.
+        """
+        return db.query(self.model).filter(self.model.asset_id == asset_id).all()
+
     # The create_with_portfolio method is now simplified.
     # The complex logic for creating a new asset is removed.
     def create_with_portfolio(

@@ -11,8 +11,9 @@
 ## 1. Implementation Progress
 
 *   [x] **Phase 1: Database Schema & Seeding:** The necessary database models, schemas, and migration scripts have been implemented and tested. The database is now ready to store PPF accounts, contributions, and historical interest rates.
-*   [ ] **Phase 2: Backend Business Logic:** Implement the dynamic valuation and interest calculation logic in `crud_holding.py`.
-*   [ ] **Phase 3: Frontend UI:** Implement the UI for adding and viewing PPF accounts and transactions.
+*   [x] **Phase 2: Backend Business Logic:** Implement the dynamic valuation and interest calculation logic in `crud_holding.py`.
+*   [x] **Phase 3: Frontend UI:** Implement the UI for adding and viewing PPF accounts and transactions.
+*   [ ] **Phase 4: Testing:** Backend unit tests have been implemented and are passing. The E2E test for the full user flow is created but is currently failing due to a timeout issue that needs further investigation.
 
 ---
 
