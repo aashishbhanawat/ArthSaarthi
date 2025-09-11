@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createAsset, lookupAsset, AssetCreationPayload } from '../services/portfolioApi';
-import { searchMutualFunds } from '../services/assetApi';
+import { searchMutualFunds, checkPpfAccount } from '../services/assetApi';
 import { Asset, MutualFundSearchResult } from '../types/asset';
 import { useDebounce } from './useDebounce';
 
@@ -45,18 +45,6 @@ export const useCheckPpfAccount = () => {
                 return false;
             }
             return failureCount < 3;
-        },
-    });
-};
-
-export const useCreatePpfAccountWithContribution = () => {
-    const queryClient = useQueryClient();
-    return useMutation<void, Error, PpfAccountCreateWithContribution>({
-        mutationFn: (variables) => createPpfAccountWithContribution(variables),
-        onSuccess: (data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', variables.portfolioId] });
-            queryClient.invalidateQueries({ queryKey: ['checkPpfAccount'] });
         },
     });
 };

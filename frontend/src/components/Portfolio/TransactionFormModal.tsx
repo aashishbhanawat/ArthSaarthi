@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit } from '../../hooks/usePortfolios';
-import { useAssetSearch, useCreateAsset, useMfSearch, useCheckPpfAccount, useCreatePpfAccountWithContribution } from '../../hooks/useAssets';
-import { PpfAccountCreateWithContribution } from '../../types/asset';
+import { useAssetSearch, useCreateAsset, useMfSearch, useCheckPpfAccount } from '../../hooks/useAssets';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
 import { FixedDepositCreate } from '../../types/portfolio';
 
@@ -38,14 +37,6 @@ type TransactionFormInputs = {
     fd_maturity_date?: string;
     fd_compounding_frequency?: 'Annually' | 'Semi-Annually' | 'Quarterly' | 'Monthly';
     fd_interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually';
-    // For PPF
-    institutionName?: string;
-    accountNumber?: string;
-    openingDate?: string;
-    contributionAmount?: number;
-    contributionDate?: string;
-    newContributionAmount?: number;
-    newContributionDate?: string;
 };
 
 
@@ -64,7 +55,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const updateTransactionMutation = useUpdateTransaction();
     const createAssetMutation = useCreateAsset();
     const createFixedDepositMutation = useCreateFixedDeposit();
-    const createPpfAccountMutation = useCreatePpfAccountWithContribution();
     const { data: ppfAccount, isLoading: isPpfCheckLoading } = useCheckPpfAccount();
 
     // Local State
@@ -119,28 +109,21 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         };
 
         if (assetType === 'PPF Account') {
-            if (ppfAccount) { // Existing PPF account, just add a contribution
+            if (ppfAccount) {
                 const payload: TransactionCreate = {
                     asset_id: ppfAccount.id,
                     transaction_type: 'CONTRIBUTION',
-                    quantity: data.newContributionAmount!,
+                    quantity: data.quantity,
                     price_per_unit: 1,
-                    transaction_date: new Date(data.newContributionDate!).toISOString(),
+                    transaction_date: new Date(data.transaction_date).toISOString(),
                 };
                 createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
-            } else { // No PPF account, create one with the first contribution
-                const payload: PpfAccountCreateWithContribution = {
-                    portfolioId: portfolioId,
-                    institutionName: data.institutionName!,
-                    accountNumber: data.accountNumber,
-                    openingDate: data.openingDate!,
-                    contributionAmount: data.contributionAmount!,
-                    contributionDate: data.contributionDate!,
-                };
-                createPpfAccountMutation.mutate(payload, mutationOptions);
+            } else {
+                setApiError("Please create a PPF account first.");
             }
             return;
         }
+
 
         if (assetType === 'Fixed Deposit') {
             const fdData: FixedDepositCreate = {
@@ -198,58 +181,15 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             if (isPpfCheckLoading) return <div>Checking for existing PPF Account...</div>;
             if (ppfAccount) {
                 return (
-                    <div>
-                        <div className="p-4 border rounded-md bg-gray-50 mb-4">
-                            <h3 className="font-semibold text-lg mb-2">Existing PPF Account</h3>
-                            <p><strong>Institution:</strong> {ppfAccount.name}</p>
-                            <p><strong>Account #:</strong> {ppfAccount.account_number}</p>
-                        </div>
-                        <h3 className="font-semibold text-lg mb-2">Add New Contribution</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="form-group">
-                                <label htmlFor="newContributionAmount" className="form-label">Amount (₹)</label>
-                                <input id="newContributionAmount" type="number" {...register('newContributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="newContributionDate" className="form-label">Date</label>
-                                <input id="newContributionDate" type="date" {...register('newContributionDate', { required: true })} className="form-input" />
-                            </div>
-                        </div>
+                    <div className="form-group">
+                        <label className="form-label">PPF Account</label>
+                        <input type="text" value={ppfAccount.name} className="form-input" disabled />
                     </div>
                 );
             }
             return (
-                <div>
-                    <div className="p-4 border rounded-md mb-4">
-                        <h3 className="font-semibold text-lg mb-2">Create Your PPF Account</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="form-group col-span-2">
-                                <label htmlFor="institutionName" className="form-label">Institution Name</label>
-                                <input id="institutionName" type="text" {...register('institutionName', { required: true })} className="form-input" />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="accountNumber" className="form-label">Account Number</label>
-                                <input id="accountNumber" type="text" {...register('accountNumber')} className="form-input" />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="openingDate" className="form-label">Opening Date</label>
-                                <input id="openingDate" type="date" {...register('openingDate', { required: true })} className="form-input" />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="p-4 border rounded-md">
-                        <h3 className="font-semibold text-lg mb-2">Add First Contribution</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                             <div className="form-group">
-                                <label htmlFor="contributionAmount" className="form-label">Amount (₹)</label>
-                                <input id="contributionAmount" type="number" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="contributionDate" className="form-label">Date</label>
-                                <input id="contributionDate" type="date" {...register('contributionDate', { required: true })} className="form-input" />
-                            </div>
-                        </div>
-                    </div>
+                <div className="alert alert-info">
+                    <p>You do not have a PPF account yet. Please create one from the assets page.</p>
                 </div>
             );
         } else if (assetType === 'Mutual Fund') {
@@ -381,7 +321,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
     return (
         <div className="modal-overlay z-30" onClick={onClose}>
-            <div role="dialog" className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div role="dialog" className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
                 <h2 className="text-2xl font-bold mb-4">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     {apiError && <div className="alert alert-error"><p>{apiError}</p></div>}
@@ -396,24 +336,62 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         </select>
                     </div>
 
-                    {assetType === 'PPF Account' ? renderAssetSelection() : renderAssetSelection()}
+                    {renderAssetSelection()}
 
-                    {assetType !== 'PPF Account' && assetType !== 'Fixed Deposit' && (
-                         <div className="grid grid-cols-2 gap-4">
+                    {assetType === 'PPF Account' && ppfAccount && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="form-group">
+                                <label htmlFor="quantity" className="form-label">Contribution Amount</label>
+                                <input id="quantity" type="number" step="any" {...register('quantity', { required: true, valueAsNumber: true })} className="form-input" />
+                            </div>
                             <div className="form-group">
                                 <label htmlFor="transaction_date" className="form-label">Date</label>
                                 <input id="transaction_date" type="date" {...register('transaction_date', { required: true })} className="form-input" />
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="fees" className="form-label">Fees (Optional)</label>
-                                <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true })} className="form-input" />
-                            </div>
                         </div>
+                    )}
+
+                    {assetType !== 'PPF Account' && assetType !== 'Fixed Deposit' && (
+                        <>
+                            <div className="form-group">
+                                <label className="form-label">Transaction Type</label>
+                                <div className="flex items-center space-x-4">
+                                    <label className="flex items-center">
+                                        <input type="radio" {...register('transaction_type')} value="BUY" className="form-radio" defaultChecked />
+                                        <span className="ml-2">Buy</span>
+                                    </label>
+                                    <label className="flex items-center">
+                                        <input type="radio" {...register('transaction_type')} value="SELL" className="form-radio" />
+                                        <span className="ml-2">Sell</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="form-group">
+                                    <label htmlFor="quantity" className="form-label">Quantity</label>
+                                    <input id="quantity" type="number" step="any" {...register('quantity', { required: true, valueAsNumber: true })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
+                                    <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: true, valueAsNumber: true })} className="form-input" />
+                                </div>
+                            </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="form-group">
+                                    <label htmlFor="transaction_date" className="form-label">Date</label>
+                                    <input id="transaction_date" type="date" {...register('transaction_date', { required: true })} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="fees" className="form-label">Fees (Optional)</label>
+                                    <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true })} className="form-input" />
+                                </div>
+                            </div>
+                        </>
                     )}
 
                     <div className="flex justify-end space-x-4 pt-4">
                         <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
-                        <button type="submit" className="btn btn-primary" disabled={createTransactionMutation.isPending || updateTransactionMutation.isPending || createFixedDepositMutation.isPending || createPpfAccountMutation.isPending}>
+                        <button type="submit" className="btn btn-primary" disabled={createTransactionMutation.isPending || updateTransactionMutation.isPending || createFixedDepositMutation.isPending}>
                             {isEditMode ? 'Save Changes' : 'Save'}
                         </button>
                     </div>

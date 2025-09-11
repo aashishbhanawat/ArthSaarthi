@@ -15,12 +15,3 @@ export interface MutualFundSearchResult {
     name: string;
     asset_type: 'Mutual Fund';
 }
-
-export interface PpfAccountCreateWithContribution {
-    portfolioId: string;
-    institutionName: string;
-    accountNumber?: string;
-    openingDate: string;
-    contributionAmount: number;
-    contributionDate: string;
-}
