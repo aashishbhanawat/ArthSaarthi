@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction } from '../../hooks/usePortfolios';
+import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction, useAssetTransactions } from '../../hooks/usePortfolios';
 import { useDeleteFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useDeleteRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
@@ -12,6 +12,7 @@ import { Transaction } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
 import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
 import RecurringDepositDetailModal from '../../components/Portfolio/RecurringDepositDetailModal';
+import PpfPassbookModal from '../../components/Portfolio/PpfPassbookModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 
 const PortfolioDetailPage: React.FC = () => {
@@ -27,6 +28,7 @@ const PortfolioDetailPage: React.FC = () => {
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
+    const { data: selectedHoldingTransactions } = useAssetTransactions(portfolioId, selectedHolding?.asset_id, { enabled: !!selectedHolding });
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
     const [fdToDelete, setFdToDelete] = useState<Holding | null>(null);
@@ -165,6 +167,12 @@ const PortfolioDetailPage: React.FC = () => {
                                 handleOpenCreateTransactionModal();
                             }}
                             onDelete={() => setRdToDelete(selectedHolding)}
+                        />
+                    ) : selectedHolding.asset_type === 'PPF' ? (
+                        <PpfPassbookModal
+                            holding={selectedHolding}
+                            transactions={selectedHoldingTransactions || []}
+                            onClose={handleCloseDetailModal}
                         />
                     ) : (
                         <HoldingDetailModal

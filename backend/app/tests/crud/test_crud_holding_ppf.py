@@ -1,7 +1,7 @@
-import pytest
 from datetime import date, datetime
 from decimal import Decimal
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 

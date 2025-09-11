@@ -16,11 +16,11 @@ export interface MutualFundSearchResult {
     asset_type: 'Mutual Fund';
 }
 
-export interface PpfAccountCreate {
-    name: string;
-    asset_type: 'PPF';
-    ticker_symbol: string;
-    currency: string;
-    account_number?: string;
-    opening_date: string;
+export interface PpfAccountCreateWithContribution {
+    portfolioId: string;
+    institutionName: string;
+    accountNumber?: string;
+    openingDate: string;
+    contributionAmount: number;
+    contributionDate: string;
 }

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createAsset, lookupAsset, AssetCreationPayload } from '../services/portfolioApi';
-import { searchMutualFunds } from '../services/assetApi';
-import { Asset, MutualFundSearchResult, PpfAccountCreate } from '../types/asset';
+import { searchMutualFunds, checkPpfAccount, createPpfAccountWithContribution } from '../services/assetApi';
+import { Asset, MutualFundSearchResult, PpfAccountCreateWithContribution } from '../types/asset';
 import { useDebounce } from './useDebounce';
 
 // Hook to search for assets
@@ -16,15 +16,32 @@ export const useAssetSearch = (searchTerm: string) => {
 // Hook to create a new asset
 export const useCreateAsset = () => {
   const queryClient = useQueryClient();
-  return useMutation<Asset, Error, AssetCreationPayload | PpfAccountCreate>({
+  return useMutation<Asset, Error, AssetCreationPayload>({
     mutationFn: (variables) => createAsset(variables),
     onSuccess: () => {
-      // Invalidate queries that may be affected by a new asset
       queryClient.invalidateQueries({ queryKey: ['assetSearch'] });
-      queryClient.invalidateQueries({ queryKey: ['portfolioHoldings'] });
-      queryClient.invalidateQueries({ queryKey: ['portfolioSummary'] });
     },
   });
+};
+
+export const useCheckPpfAccount = () => {
+    return useQuery<Asset, Error>({
+        queryKey: ['checkPpfAccount'],
+        queryFn: () => checkPpfAccount(),
+        retry: false, // Don't retry on 404
+    });
+};
+
+export const useCreatePpfAccountWithContribution = () => {
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, PpfAccountCreateWithContribution>({
+        mutationFn: (variables) => createPpfAccountWithContribution(variables),
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', variables.portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', variables.portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['checkPpfAccount'] });
+        },
+    });
 };
 
 // Hook to search for mutual funds with debouncing

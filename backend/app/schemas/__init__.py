@@ -1,5 +1,12 @@
 from .analytics import AnalyticsResponse, AssetAnalytics, FixedDepositAnalytics
-from .asset import Asset, AssetCreate, AssetCreateIn, AssetSearchResult, AssetUpdate
+from .asset import (
+    Asset,
+    AssetCreate,
+    AssetCreateIn,
+    AssetSearchResult,
+    AssetUpdate,
+    PpfAccountCreateWithContribution,
+)
 from .asset_alias import AssetAlias, AssetAliasCreate
 from .dashboard import (
     AssetAllocation,
@@ -116,4 +123,5 @@ __all__ = [
     "HistoricalInterestRate",
     "HistoricalInterestRateCreate",
     "HistoricalInterestRateUpdate",
+    "PpfAccountCreateWithContribution",
 ]

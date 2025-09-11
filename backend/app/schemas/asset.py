@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -59,3 +60,12 @@ class AssetSearchResult(BaseModel):
     ticker_symbol: str
     name: str
     asset_type: str
+
+
+class PpfAccountCreateWithContribution(BaseModel):
+    portfolioId: uuid.UUID
+    institutionName: str
+    accountNumber: Optional[str] = None
+    openingDate: date
+    contributionAmount: Decimal
+    contributionDate: date

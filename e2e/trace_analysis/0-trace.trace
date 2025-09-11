@@ -1,0 +1,32 @@
+{"version":8,"type":"context-options","origin":"library","browserName":"","options":{},"platform":"linux","wallTime":1757566183366,"monotonicTime":2875.896,"sdkLanguage":"javascript","contextId":"request-context@b19c46733142a4598d0da42436dca86a","title":"ppf-tracking.spec.ts:48 › PPF Account Tracking › should create a PPF account with first contribution and then add a second contribution"}
+{"type":"before","callId":"call@5","startTime":2884.249,"class":"APIRequestContext","method":"fetch","params":{"url":"/api/v1/auth/login","method":"POST","formData":[{"name":"username","value":"admin@example.com"},{"name":"password","value":"AdminPass123!"}],"timeout":0},"stepId":"pw:api@5","beforeSnapshot":"before@call@5"}
+{"type":"log","callId":"call@5","time":2893.599,"message":"→ POST http://127.0.0.1:3008/api/v1/auth/login"}
+{"type":"log","callId":"call@5","time":2893.639,"message":"  user-agent: Playwright/1.54.1 (x64; ubuntu 24.04) node/22.17"}
+{"type":"log","callId":"call@5","time":2893.652,"message":"  accept: */*"}
+{"type":"log","callId":"call@5","time":2893.662,"message":"  accept-encoding: gzip,deflate,br"}
+{"type":"log","callId":"call@5","time":2893.673,"message":"  content-type: application/x-www-form-urlencoded"}
+{"type":"log","callId":"call@5","time":2893.682,"message":"  content-length: 53"}
+{"type":"log","callId":"call@5","time":3227.417,"message":"← 200 OK"}
+{"type":"log","callId":"call@5","time":3227.606,"message":"  vary: Origin"}
+{"type":"log","callId":"call@5","time":3227.636,"message":"  date: Thu, 11 Sep 2025 04:49:42 GMT"}
+{"type":"log","callId":"call@5","time":3227.656,"message":"  server: uvicorn"}
+{"type":"log","callId":"call@5","time":3227.67,"message":"  content-length: 208"}
+{"type":"log","callId":"call@5","time":3227.678,"message":"  content-type: application/json"}
+{"type":"log","callId":"call@5","time":3227.686,"message":"  connection: close"}
+{"type":"after","callId":"call@5","endTime":3227.889,"result":{"response":{"url":"http://127.0.0.1:3008/api/v1/auth/login","status":200,"statusText":"OK","headers":[{"name":"Vary","value":"Origin"},{"name":"date","value":"Thu, 11 Sep 2025 04:49:42 GMT"},{"name":"server","value":"uvicorn"},{"name":"content-length","value":"208"},{"name":"content-type","value":"application/json"},{"name":"connection","value":"close"}],"fetchUid":"8041e099f33478fb70a0acc27f49843a"}},"afterSnapshot":"after@call@5"}
+{"type":"before","callId":"call@8","startTime":3236.712,"class":"APIRequestContext","method":"fetch","params":{"url":"/api/v1/users/","method":"POST","headers":[{"name":"Authorization","value":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc1Njc5ODMsInN1YiI6ImFkbWluQGV4YW1wbGUuY29tIn0.SweEkqpC17qYLPgUTMSKLPoJ673q_2MCA8qPR4JJnEQ"}],"jsonData":"{\"name\":\"PPF User E2E\",\"email\":\"ppf.e2e.1757566183312@example.com\",\"password\":\"Password123!\",\"is_admin\":false}","timeout":0},"stepId":"pw:api@7","beforeSnapshot":"before@call@8"}
+{"type":"log","callId":"call@8","time":3238.167,"message":"→ POST http://127.0.0.1:3008/api/v1/users/"}
+{"type":"log","callId":"call@8","time":3238.206,"message":"  user-agent: Playwright/1.54.1 (x64; ubuntu 24.04) node/22.17"}
+{"type":"log","callId":"call@8","time":3238.215,"message":"  accept: */*"}
+{"type":"log","callId":"call@8","time":3238.222,"message":"  accept-encoding: gzip,deflate,br"}
+{"type":"log","callId":"call@8","time":3238.23,"message":"  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc1Njc5ODMsInN1YiI6ImFkbWluQGV4YW1wbGUuY29tIn0.SweEkqpC17qYLPgUTMSKLPoJ673q_2MCA8qPR4JJnEQ"}
+{"type":"log","callId":"call@8","time":3238.237,"message":"  content-type: application/json"}
+{"type":"log","callId":"call@8","time":3238.244,"message":"  content-length: 110"}
+{"type":"log","callId":"call@8","time":3558.276,"message":"← 201 Created"}
+{"type":"log","callId":"call@8","time":3558.304,"message":"  vary: Origin"}
+{"type":"log","callId":"call@8","time":3558.442,"message":"  date: Thu, 11 Sep 2025 04:49:43 GMT"}
+{"type":"log","callId":"call@8","time":3558.457,"message":"  server: uvicorn"}
+{"type":"log","callId":"call@8","time":3558.464,"message":"  content-length: 140"}
+{"type":"log","callId":"call@8","time":3558.471,"message":"  content-type: application/json"}
+{"type":"log","callId":"call@8","time":3558.478,"message":"  connection: close"}
+{"type":"after","callId":"call@8","endTime":3558.872,"result":{"response":{"url":"http://127.0.0.1:3008/api/v1/users/","status":201,"statusText":"Created","headers":[{"name":"Vary","value":"Origin"},{"name":"date","value":"Thu, 11 Sep 2025 04:49:43 GMT"},{"name":"server","value":"uvicorn"},{"name":"content-length","value":"140"},{"name":"content-type","value":"application/json"},{"name":"connection","value":"close"}],"fetchUid":"f848f7b79a525595efd11d893a9355b9"}},"afterSnapshot":"after@call@8"}

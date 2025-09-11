@@ -65,6 +65,23 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         # Fetch the Asset objects corresponding to these IDs
         return db.query(self.model).filter(self.model.id.in_(asset_ids)).all()
 
+    def get_by_type_and_user(
+        self, db: Session, *, asset_type: str, user_id: uuid.UUID
+    ) -> Optional[Asset]:
+        """
+        Retrieves an asset of a specific type associated with a given user.
+        This assumes a user can only have one asset of certain types (like PPF).
+        """
+        return (
+            db.query(Asset)
+            .join(Asset.transactions)
+            .filter(
+                Asset.asset_type == asset_type,
+                Transaction.user_id == user_id,
+            )
+            .first()
+        )
+
     def get_multi_by_portfolio(
         self, db: Session, *, portfolio_id: uuid.UUID
     ) -> List[Asset]:

@@ -1,0 +1,72 @@
+# Page snapshot
+
+```yaml
+- complementary:
+  - img "ArthSaarthi Logo"
+  - heading "ArthSaarthi" [level=2]
+  - navigation:
+    - link "Dashboard":
+      - /url: "#/dashboard"
+    - link "Portfolios":
+      - /url: "#/portfolios"
+    - link "Transactions":
+      - /url: "#/transactions"
+    - link "Import":
+      - /url: "#/import"
+    - link "Watchlists":
+      - /url: "#/watchlists"
+    - link "Goals":
+      - /url: "#/goals"
+  - text: ppf.e2e.1757566183312@example.com
+  - link "Profile":
+    - /url: "#/profile"
+  - button "Logout"
+  - text: "Version: 0.2.0"
+- main:
+  - link "← Back to Portfolios":
+    - /url: "#/portfolios"
+  - heading "PPF Portfolio 1757566188162" [level=1]
+  - link "View History":
+    - /url: "#/transactions?portfolio_id=4f656444-1e00-4052-ab48-488d39a357bf"
+  - button "Add Transaction"
+  - paragraph
+  - paragraph: Total Value
+  - paragraph: ₹0.00
+  - paragraph: Day's P&L
+  - paragraph: ₹0.00
+  - paragraph: Unrealized P&L
+  - paragraph: ₹0.00
+  - paragraph: Realized P&L
+  - paragraph: ₹0.00
+  - paragraph: Total Invested
+  - paragraph: ₹0.00
+  - heading "Advanced Analytics" [level=3]
+  - paragraph: XIRR
+  - paragraph: 0.00%
+  - paragraph: Sharpe Ratio
+  - paragraph: "0.00"
+  - paragraph: You have no current holdings in this portfolio.
+  - paragraph: Add a "BUY" transaction to get started.
+  - dialog:
+    - heading "Add Transaction" [level=2]
+    - text: Asset Type
+    - combobox "Asset Type":
+      - option "Stock"
+      - option "Mutual Fund"
+      - option "PPF Account" [selected]
+    - heading "Create Your PPF Account" [level=3]
+    - text: Institution Name
+    - textbox "Institution Name": E2E PPF Bank
+    - text: Account Number
+    - textbox "Account Number"
+    - text: Opening Date
+    - textbox "Opening Date": 2022-04-15
+    - heading "Add First Contribution" [level=3]
+    - text: Amount (₹)
+    - spinbutton "Amount (₹)": "50000"
+    - text: Date
+    - textbox "Date": 2022-05-20
+    - paragraph: Request failed with status code 422
+    - button "Cancel"
+    - button "Save"
+```

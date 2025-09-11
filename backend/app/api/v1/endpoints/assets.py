@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -87,6 +88,72 @@ def search_mutual_funds(
     if not results:
         return []
     return results
+
+
+@router.get("/check-ppf", response_model=schemas.Asset)
+def check_ppf_account(
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Check if a PPF account exists for the current user.
+    """
+    ppf_asset = crud.asset.get_by_type_and_user(
+        db=db, asset_type="PPF", user_id=current_user.id
+    )
+    if not ppf_asset:
+        raise HTTPException(status_code=404, detail="PPF account not found")
+    return ppf_asset
+
+
+@router.post("/create-ppf-with-contribution", status_code=status.HTTP_201_CREATED)
+def create_ppf_with_contribution(
+    *,
+    db: Session = Depends(deps.get_db),
+    ppf_in: schemas.PpfAccountCreateWithContribution,
+    current_user: models.User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Create a new PPF account and its first contribution.
+    """
+    # This is a simplified approach. A more robust solution would be to
+    # create this logic in a dedicated CRUD function.
+
+    # 1. Create the Asset
+    asset_in = schemas.AssetCreate(
+        name=ppf_in.institutionName,
+        ticker_symbol=f"PPF-{ppf_in.accountNumber or date.today()}",
+        asset_type="PPF",
+        currency="INR",
+        account_number=ppf_in.accountNumber,
+        opening_date=ppf_in.openingDate,
+    )
+    asset = crud.asset.create_with_owner(
+        db=db, obj_in=asset_in, owner_id=current_user.id
+    )
+
+    # 2. Create the first contribution
+    # We need a portfolio to associate the transaction with.
+    # The portfolioId is now passed in the request.
+    portfolio = crud.portfolio.get(db=db, id=ppf_in.portfolioId)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found"
+        )
+
+    transaction_in = schemas.TransactionCreate(
+        asset_id=asset.id,
+        transaction_type="CONTRIBUTION",
+        quantity=ppf_in.contributionAmount,
+        price_per_unit=1,
+        transaction_date=ppf_in.contributionDate,
+    )
+    crud.transaction.create_with_portfolio(
+        db=db, obj_in=transaction_in, portfolio_id=ppf_in.portfolioId
+    )
+
+    db.commit()
+    return {"msg": "PPF Account and first contribution created successfully"}
 
 
 @router.get("/{asset_id}", response_model=schemas.Asset)

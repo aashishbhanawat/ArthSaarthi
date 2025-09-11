@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, UseQueryResult } from '@tanstack/react-query';
 import PortfolioDetailPage from '../../../pages/Portfolio/PortfolioDetailPage';
 import * as portfolioHooks from '../../../hooks/usePortfolios';
-import { Portfolio } from '../../../types/portfolio';
+import { Portfolio, Transaction } from '../../../types/portfolio';
 import { Holding, PortfolioSummary } from '../../../types/holding';
 import { PortfolioAnalytics } from '../../../types/analytics';
 
@@ -101,6 +101,7 @@ describe('PortfolioDetailPage', () => {
     mockedPortfolioHooks.usePortfolioSummary.mockReturnValue({ data: mockSummary, isLoading: false, error: null } as UseQueryResult<PortfolioSummary, Error>);
     mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue({ data: { holdings: mockHoldings }, isLoading: false, error: null } as UseQueryResult<{ holdings: Holding[] }, Error>);
     mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue({ data: {} as PortfolioAnalytics, isLoading: false, isError: false } as UseQueryResult<PortfolioAnalytics, Error>);
+    mockedPortfolioHooks.useAssetTransactions.mockReturnValue({ data: [], isLoading: false, isError: false } as UseQueryResult<Transaction[], Error>);
   });
 
   it('renders the portfolio name and child components', () => {
