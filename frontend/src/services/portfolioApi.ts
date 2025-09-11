@@ -202,3 +202,10 @@ export const getPortfolioAssets = async (portfolioId: string): Promise<Asset[]> 
     const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/assets`);
     return response.data;
 };
+
+export const getAssetsByType = async (portfolioId: string, assetType: string): Promise<Asset[]> => {
+    const response = await apiClient.get<Asset[]>(`/api/v1/portfolios/${portfolioId}/assets/`, {
+        params: { asset_type: assetType },
+    });
+    return response.data;
+};
