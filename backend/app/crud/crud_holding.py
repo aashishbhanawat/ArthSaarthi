@@ -118,12 +118,139 @@ class CRUDHolding:
     This is a read-only CRUD module that calculates holdings based on transactions.
     """
 
+    def _calculate_and_apply_ppf_interest(
+        self, db: Session, *, portfolio_id: uuid.UUID
+    ) -> None:
+        """
+        Calculates and applies PPF interest for completed financial years.
+        This method has side effects (creates transactions) and is called before
+        calculating holdings.
+        """
+        all_transactions = crud.transaction.get_multi_by_portfolio(
+            db=db, portfolio_id=portfolio_id
+        )
+
+        ppf_assets = {
+            tx.asset for tx in all_transactions if tx.asset.asset_type.upper() == "PPF"
+        }
+
+        for asset in ppf_assets:
+            asset_transactions = sorted(
+                [tx for tx in all_transactions if tx.asset_id == asset.id],
+                key=lambda tx: tx.transaction_date,
+            )
+
+            if not asset_transactions:
+                continue
+
+            start_date = asset.opening_date
+            end_date = date.today()
+
+            start_fy = start_date.year if start_date.month > 3 else start_date.year - 1
+            end_fy = end_date.year if end_date.month > 3 else end_date.year - 1
+
+            for year in range(start_fy, end_fy):
+                fy_start = date(year, 4, 1)
+                fy_end = date(year + 1, 3, 31)
+
+                # Check if interest for this FY is already credited
+                interest_credited = any(
+                    tx.transaction_type == "INTEREST_CREDIT"
+                    and tx.transaction_date.date() == fy_end
+                    for tx in asset_transactions
+                )
+                if interest_credited:
+                    continue
+
+                rate_obj = crud.historical_interest_rate.get_rate_for_date(
+                    db, scheme_name="PPF", a_date=fy_start
+                )
+                if not rate_obj:
+                    logger.warning(
+                        "No PPF interest rate found for FY %s-%s for asset %s",
+                        year,
+                        year + 1,
+                        asset.id,
+                    )
+                    continue
+                interest_rate = rate_obj.rate
+
+                # Calculate cumulative balance at the start of the financial year
+                balance = sum(
+                    tx.quantity
+                    if tx.transaction_type
+                    in ("BUY", "CONTRIBUTION", "INTEREST_CREDIT")
+                    else -tx.quantity
+                    for tx in asset_transactions
+                    if tx.transaction_date.date() < fy_start
+                )
+
+                monthly_interest_accrual_base = Decimal("0.0")
+
+                # Iterate from April (4) to March (3 of next year)
+                for month_num in range(4, 16):
+                    current_year = year if month_num <= 12 else year + 1
+                    current_month = month_num if month_num <= 12 else month_num - 12
+
+                    month_start_date = date(current_year, current_month, 1)
+                    month_end_date = month_start_date + relativedelta(
+                        months=1
+                    ) - relativedelta(days=1)
+
+                    # Balance at close of 5th day
+                    balance_at_5th = balance + sum(
+                        tx.quantity
+                        if tx.transaction_type in ("BUY", "CONTRIBUTION")
+                        else -tx.quantity
+                        for tx in asset_transactions
+                        if month_start_date
+                        <= tx.transaction_date.date()
+                        < month_start_date.replace(day=6)
+                    )
+
+                    # Balance at end of month
+                    balance_at_eom = balance_at_5th + sum(
+                        tx.quantity
+                        if tx.transaction_type in ("BUY", "CONTRIBUTION")
+                        else -tx.quantity
+                        for tx in asset_transactions
+                        if month_start_date.replace(day=6)
+                        <= tx.transaction_date.date()
+                        <= month_end_date
+                    )
+
+                    monthly_interest_accrual_base += min(balance_at_5th, balance_at_eom)
+                    balance = balance_at_eom
+
+                interest_for_fy = (
+                    monthly_interest_accrual_base * interest_rate
+                ) / (Decimal("12") * Decimal("100"))
+                interest_for_fy = round(interest_for_fy, 0)
+
+                if interest_for_fy > 0:
+                    interest_tx_in = schemas.TransactionCreate(
+                        asset_id=asset.id,
+                        transaction_type="INTEREST_CREDIT",
+                        quantity=interest_for_fy,
+                        price_per_unit=1,
+                        transaction_date=fy_end,
+                    )
+                    created_tx = crud.transaction.create_with_portfolio(
+                        db, obj_in=interest_tx_in, portfolio_id=portfolio_id
+                    )
+                    # Add to asset_transactions for subsequent calculations
+                    asset_transactions.append(created_tx)
+                    asset_transactions.sort(key=lambda tx: tx.transaction_date)
+        db.commit()
+
     def get_portfolio_holdings_and_summary(
         self, db: Session, *, portfolio_id: uuid.UUID
     ) -> Dict[str, Any]:
         """
         Calculates the consolidated holdings and a summary for a given portfolio.
         """
+        self._calculate_and_apply_ppf_interest(db, portfolio_id=portfolio_id)
+
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
@@ -157,7 +284,7 @@ class CRUDHolding:
                     fd.principal_amount,
                     fd.interest_rate,
                     fd.start_date,
-                    fd.maturity_date, # Use maturity date for final value
+                    fd.maturity_date,  # Use maturity date for final value
                     fd.compounding_frequency,
                     fd.interest_payout,
                 )
@@ -294,17 +421,24 @@ class CRUDHolding:
         transactions.sort(key=lambda tx: tx.transaction_date)
 
         holdings_state = defaultdict(
-            lambda: {"quantity": Decimal("0.0"), "total_invested": Decimal("0.0")}
+            lambda: {
+                "quantity": Decimal("0.0"),
+                "total_invested": Decimal("0.0"),
+                "realized_pnl": Decimal("0.0"),
+            }
         )
         asset_map = {tx.asset.ticker_symbol: tx.asset for tx in transactions}
 
         for tx in transactions:
             ticker = tx.asset.ticker_symbol
-            if tx.transaction_type == "BUY":
+            if tx.transaction_type in ("BUY", "CONTRIBUTION"):
                 holdings_state[ticker]["quantity"] += tx.quantity
                 holdings_state[ticker]["total_invested"] += (
                     tx.quantity * tx.price_per_unit
                 )
+            elif tx.transaction_type == "INTEREST_CREDIT":
+                holdings_state[ticker]["quantity"] += tx.quantity
+                # Interest is not an investment, but adds to the value
             elif tx.transaction_type == "SELL":
                 if holdings_state[ticker]["quantity"] > 0:
                     avg_buy_price = (
@@ -341,9 +475,18 @@ class CRUDHolding:
         for ticker in current_holdings_tickers:
             asset = asset_map[ticker]
             data = holdings_state[ticker]
-            price_info = price_details.get(
-                ticker, {"current_price": Decimal(0), "previous_close": Decimal(0)}
-            )
+
+            # For PPF, current price is always 1
+            if asset.asset_type.upper() == "PPF":
+                price_info = {
+                    "current_price": Decimal(1),
+                    "previous_close": Decimal(1),
+                }
+            else:
+                price_info = price_details.get(
+                    ticker, {"current_price": Decimal(0), "previous_close": Decimal(0)}
+                )
+
             current_price = price_info["current_price"]
             previous_close = price_info["previous_close"]
 
@@ -355,9 +498,7 @@ class CRUDHolding:
             current_value = quantity * current_price
             unrealized_pnl = current_value - total_invested
             unrealized_pnl_percentage = (
-                float(unrealized_pnl / total_invested)
-                if total_invested > 0
-                else 0.0
+                float(unrealized_pnl / total_invested) if total_invested > 0 else 0.0
             )
             days_pnl = (current_price - previous_close) * quantity
             days_pnl_percentage = (

@@ -128,9 +128,7 @@ def create_ppf_with_contribution(
         account_number=ppf_in.accountNumber,
         opening_date=ppf_in.openingDate,
     )
-    asset = crud.asset.create_with_owner(
-        db=db, obj_in=asset_in, owner_id=current_user.id
-    )
+    asset = crud.asset.create(db=db, obj_in=asset_in)
 
     # 2. Create the first contribution
     # We need a portfolio to associate the transaction with.

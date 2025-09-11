@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createAsset, lookupAsset, AssetCreationPayload } from '../services/portfolioApi';
-import { searchMutualFunds, checkPpfAccount, createPpfAccountWithContribution } from '../services/assetApi';
-import { Asset, MutualFundSearchResult, PpfAccountCreateWithContribution } from '../types/asset';
+import { searchMutualFunds } from '../services/assetApi';
+import { Asset, MutualFundSearchResult } from '../types/asset';
 import { useDebounce } from './useDebounce';
 
 // Hook to search for assets
@@ -24,11 +24,28 @@ export const useCreateAsset = () => {
   });
 };
 
+// Hook to search for mutual funds with debouncing
+export const useMfSearch = (searchTerm: string) => {
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  return useQuery<MutualFundSearchResult[], Error>({
+    queryKey: ['mfSearch', debouncedSearchTerm],
+    queryFn: () => searchMutualFunds(debouncedSearchTerm),
+    // Only run the query if the debounced term is long enough
+    enabled: debouncedSearchTerm.length >= 3,
+  });
+};
+
 export const useCheckPpfAccount = () => {
     return useQuery<Asset, Error>({
         queryKey: ['checkPpfAccount'],
         queryFn: () => checkPpfAccount(),
-        retry: false, // Don't retry on 404
+        retry: (failureCount, error: { response?: { status?: number } }) => {
+            if (error.response?.status === 404) {
+                return false;
+            }
+            return failureCount < 3;
+        },
     });
 };
 
@@ -42,16 +59,4 @@ export const useCreatePpfAccountWithContribution = () => {
             queryClient.invalidateQueries({ queryKey: ['checkPpfAccount'] });
         },
     });
-};
-
-// Hook to search for mutual funds with debouncing
-export const useMfSearch = (searchTerm: string) => {
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  return useQuery<MutualFundSearchResult[], Error>({
-    queryKey: ['mfSearch', debouncedSearchTerm],
-    queryFn: () => searchMutualFunds(debouncedSearchTerm),
-    // Only run the query if the debounced term is long enough
-    enabled: debouncedSearchTerm.length >= 3,
-  });
 };

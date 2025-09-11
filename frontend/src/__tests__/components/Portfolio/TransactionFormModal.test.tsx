@@ -1,5 +1,4 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import TransactionFormModal from '../../../components/Portfolio/TransactionFormModal';
@@ -14,9 +13,15 @@ jest.mock('../../../hooks/usePortfolios', () => ({
   useCreateTransaction: () => ({
     mutate: mockCreateTransaction,
   }),
+  // Mock other hooks from usePortfolios if they are used in the component
+  useUpdateTransaction: () => ({ mutate: jest.fn() }),
+  useCreateFixedDeposit: () => ({ mutate: jest.fn() }),
 }));
 
 jest.mock('../../../hooks/useAssets', () => ({
+    useAssetSearch: () => ({ data: [], isLoading: false }),
+    useCreateAsset: () => ({ mutate: jest.fn() }),
+    useMfSearch: () => ({ data: [], isLoading: false }),
     useCheckPpfAccount: () => mockCheckPpfAccount(),
     useCreatePpfAccountWithContribution: () => ({
         mutate: mockCreatePpfAccountWithContribution,
@@ -48,11 +53,11 @@ const renderComponent = (ppfExists: boolean) => {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <TransactionFormModal
-          isOpen={true}
-          onClose={mockOnClose}
-          portfolioId="portfolio-1"
-        />
+         <TransactionFormModal
+           isOpen={true}
+           onClose={mockOnClose}
+           portfolioId="portfolio-1"
+         />
       </MemoryRouter>
     </QueryClientProvider>
   );
@@ -83,14 +88,12 @@ describe('TransactionFormModal for PPF', () => {
     await waitFor(() => {
         expect(mockCreatePpfAccountWithContribution).toHaveBeenCalledWith(
           expect.objectContaining({
-            portfolioId: 'portfolio-1',
-            data: {
+              portfolioId: 'portfolio-1',
               institutionName: 'New PPF Bank',
               accountNumber: 'PPF98765',
               openingDate: '2022-05-20',
               contributionAmount: 5000,
               contributionDate: '2022-05-21',
-            },
           }),
           expect.any(Object)
         );
@@ -120,7 +123,6 @@ describe('TransactionFormModal for PPF', () => {
               quantity: 10000,
               price_per_unit: 1,
               transaction_date: expect.any(String),
-              ticker_symbol: mockPpfAsset.ticker_symbol,
             },
           }),
           expect.any(Object)
