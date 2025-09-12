@@ -80,3 +80,11 @@ export interface FixedDepositAnalytics {
     unrealized_xirr: number;
     realized_xirr: number;
 }
+
+export interface PpfCreate {
+  institution_name: string;
+  account_number?: string;
+  opening_date: string;
+  amount: number;
+  contribution_date: string;
+}

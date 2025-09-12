@@ -31,6 +31,17 @@ export const lookupAsset = async (query: string): Promise<Asset[]> => {
     return response.data;
 };
 
+export const createPpfAccount = async (
+    portfolioId: string,
+    ppfData: PpfCreate
+): Promise<Transaction> => {
+    const response = await apiClient.post<Transaction>(
+        `/api/v1/portfolios/${portfolioId}/ppf`,
+        ppfData
+    );
+    return response.data;
+};
+
 export type AssetCreationPayload = {
     ticker_symbol: string;
     name: string;
@@ -200,5 +211,12 @@ export const getAssetAnalytics = async (portfolioId: string, assetId: string): P
 
 export const getPortfolioAssets = async (portfolioId: string): Promise<Asset[]> => {
     const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/assets`);
+    return response.data;
+};
+
+export const getAssetsByType = async (portfolioId: string, assetType: string): Promise<Asset[]> => {
+    const response = await apiClient.get<Asset[]>(`/api/v1/portfolios/${portfolioId}/assets/`, {
+        params: { asset_type: assetType },
+    });
     return response.data;
 };

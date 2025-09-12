@@ -6,4 +6,5 @@ from app.models.import_session import ImportSession  # noqa
 from app.models.parsed_transaction import ParsedTransaction  # noqa
 from app.models.asset_alias import AssetAlias # noqa
 from app.models.goal import Goal, GoalLink # noqa
+from app.models.historical_interest_rate import HistoricalInterestRate # noqa
 from app.models.fixed_deposit import FixedDeposit # noqa

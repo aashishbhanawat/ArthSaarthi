@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createAsset, lookupAsset, AssetCreationPayload } from '../services/portfolioApi';
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
+import { createAsset, lookupAsset, getAssetsByType, AssetCreationPayload } from '../services/portfolioApi';
 import { searchMutualFunds } from '../services/assetApi';
 import { Asset, MutualFundSearchResult } from '../types/asset';
 import { useDebounce } from './useDebounce';
@@ -33,5 +33,18 @@ export const useMfSearch = (searchTerm: string) => {
     queryFn: () => searchMutualFunds(debouncedSearchTerm),
     // Only run the query if the debounced term is long enough
     enabled: debouncedSearchTerm.length >= 3,
+  });
+};
+
+// Hook to get assets of a specific type for a portfolio
+export const useAssetsByType = (
+  portfolioId: string,
+  assetType: string,
+  options: Omit<UseQueryOptions<Asset[], Error>, 'queryKey' | 'queryFn'> = {}
+) => {
+  return useQuery<Asset[], Error>({
+    queryKey: ['assets', portfolioId, assetType],
+    queryFn: () => getAssetsByType(portfolioId, assetType),
+    ...options,
   });
 };
