@@ -59,8 +59,25 @@ test.describe.serial('PPF Modal Verification', () => {
       // 4. Verify the creation form is visible
       await expect(page.getByRole('heading', { name: 'Create Your PPF Account' })).toBeVisible();
 
-      // 5. Take a screenshot
-      await page.screenshot({ path: 'e2e/screenshots/ppf_modal_new_account.png' });
+      // 5. Fill out the form
+      await page.getByLabel('Institution Name').fill('E2E Test PPF Bank');
+      await page.getByLabel('Account Number').fill('123456789');
+      await page.getByLabel('Opening Date').fill('2022-01-01');
+      await page.getByLabel('Contribution Amount').fill('5000');
+      await page.getByLabel('Contribution Date').fill('2022-01-10');
+
+      // 6. Take a screenshot
+      await page.screenshot({ path: 'e2e/screenshots/ppf_modal_new_account_filled.png' });
+
+      // 7. Submit the form
+      await page.getByRole('button', { name: 'Save Transaction' }).click();
+
+      // 8. Verify the modal is closed and a success message is shown
+      await expect(modal).not.toBeVisible();
+      await expect(page.locator('text=PPF account created successfully')).toBeVisible();
+
+      // 9. Verify the new PPF holding is displayed on the page
+      await expect(page.getByText('E2E Test PPF Bank')).toBeVisible();
 
     } catch (error) {
       console.log('Test failed. Reading error context...');

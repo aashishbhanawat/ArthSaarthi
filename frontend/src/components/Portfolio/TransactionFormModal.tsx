@@ -59,7 +59,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const createFixedDepositMutation = useCreateFixedDeposit();
     const createRecurringDepositMutation = useCreateRecurringDeposit();
     const createPpfAccountMutation = useCreatePpfAccount();
-
     const [apiError, setApiError] = useState<string | null>(null);
 
     // Stock search state
@@ -192,7 +191,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         amount: data.contributionAmount!,
                         contribution_date: data.contributionDate!,
                     }
-                }, mutationOptions);
+                }, {
+                    onSuccess: () => onClose(),
+                });
             }
         } else if (assetType === 'Fixed Deposit') {
             createFixedDepositMutation.mutate({

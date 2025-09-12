@@ -31,6 +31,17 @@ export const lookupAsset = async (query: string): Promise<Asset[]> => {
     return response.data;
 };
 
+export const createPpfAccount = async (
+    portfolioId: string,
+    ppfData: PpfCreate
+): Promise<Transaction> => {
+    const response = await apiClient.post<Transaction>(
+        `/api/v1/portfolios/${portfolioId}/ppf`,
+        ppfData
+    );
+    return response.data;
+};
+
 export type AssetCreationPayload = {
     ticker_symbol: string;
     name: string;
