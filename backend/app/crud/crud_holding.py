@@ -9,6 +9,7 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.crud.crud_ppf import process_ppf_holding
 from app.services.financial_data_service import financial_data_service
 
 logger = logging.getLogger(__name__)
@@ -281,6 +282,20 @@ class CRUDHolding:
             summary_total_value += current_value
             summary_total_invested += total_invested
 
+        # --- PPF Holdings ---
+        all_portfolio_assets = crud.asset.get_multi_by_portfolio(
+            db, portfolio_id=portfolio_id
+        )
+        ppf_assets = [
+            asset for asset in all_portfolio_assets if asset.asset_type == "PPF"
+        ]
+
+        for ppf_asset in ppf_assets:
+            ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id)
+            holdings_list.append(ppf_holding)
+            summary_total_value += ppf_holding.current_value
+            summary_total_invested += ppf_holding.total_invested_amount
+
         if not transactions:
             summary = schemas.PortfolioSummary(
                 total_value=summary_total_value,
@@ -372,7 +387,7 @@ class CRUDHolding:
                 "ETF": "EQUITIES",
                 "FIXED_DEPOSIT": "DEPOSITS",
                 "BOND": "BONDS",
-                "PPF": "SCHEMES",
+                "PPF": "GOVERNMENT_SCHEMES",                
                 "Mutual Fund": "EQUITIES",
             }
             group = group_map.get(

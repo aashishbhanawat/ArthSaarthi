@@ -4,9 +4,9 @@ from typing import List, Optional
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from app import crud, models, schemas
 from app.crud.base import CRUDBase
 from app.models.asset import Asset
-from app.models.transaction import Transaction
 from app.schemas.asset import AssetCreate, AssetUpdate
 from app.services.financial_data_service import financial_data_service
 
@@ -48,8 +48,8 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
          """
         # Get distinct asset_ids from transactions for the given portfolio
         asset_ids_query = (
-            db.query(Transaction.asset_id)
-            .filter(Transaction.portfolio_id == portfolio_id)
+            db.query(models.Transaction.asset_id)
+            .filter(models.Transaction.portfolio_id == portfolio_id)
             .distinct()
         )
         asset_ids = [item[0] for item in asset_ids_query.all()]
@@ -59,6 +59,38 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
 
         # Fetch the Asset objects corresponding to these IDs
         return db.query(self.model).filter(self.model.id.in_(asset_ids)).all()
+
+    def create_ppf_and_first_contribution(
+        self, db: Session, *, portfolio_id: uuid.UUID, ppf_in: schemas.PpfAccountCreate
+    ) -> models.Transaction:
+        """
+        Creates a PPF Asset and its initial contribution transaction.
+        """
+        # 1. Create the Asset
+        asset_in = schemas.AssetCreate(
+            name=ppf_in.institution_name,
+            ticker_symbol=f"PPF-{ppf_in.account_number or uuid.uuid4().hex[:8]}",
+            asset_type="PPF",
+            currency="INR",
+            account_number=ppf_in.account_number,
+            opening_date=ppf_in.opening_date,
+        )
+        new_asset = self.create(db=db, obj_in=asset_in)
+
+        # 2. Create the first contribution transaction
+        transaction_in = schemas.TransactionCreate(
+            asset_id=new_asset.id,
+            transaction_type="CONTRIBUTION",
+            quantity=1,  # For PPF, quantity is 1, price is the amount
+            price_per_unit=ppf_in.amount,
+            transaction_date=ppf_in.contribution_date,
+            fees=0,
+        )
+        new_transaction = crud.transaction.create_with_portfolio(
+            db=db, obj_in=transaction_in, portfolio_id=portfolio_id
+        )
+        return new_transaction
+
     def get_by_ticker(self, db: Session, *, ticker_symbol: str) -> Asset | None:
         return (
             db.query(self.model)

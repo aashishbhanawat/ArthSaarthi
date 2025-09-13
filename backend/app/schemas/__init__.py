@@ -1,5 +1,5 @@
 from .analytics import AnalyticsResponse, AssetAnalytics, FixedDepositAnalytics
-from .asset import Asset, AssetCreate, AssetCreateIn, AssetSearchResult, AssetUpdate
+from .asset import Asset, AssetCreate, AssetCreateIn, AssetSearchResult, AssetUpdate, AssetType
 from .asset_alias import AssetAlias, AssetAliasCreate
 from .dashboard import (
     AssetAllocation,
@@ -29,6 +29,7 @@ from .historical_interest_rate import (
     HistoricalInterestRateUpdate,
 )
 from .holding import Holding, HoldingsResponse, PortfolioSummary
+from .ppf_account import PpfAccountCreate
 from .import_session import (
     ImportSession,
     ImportSessionCommit,
@@ -50,8 +51,10 @@ from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
     TransactionCreate,
+    TransactionCreateFlexible,
     TransactionCreateWithTicker,
     TransactionsResponse,
+    TransactionType,
     TransactionUpdate,
 )
 from .user import User, UserCreate, UserPasswordChange, UserUpdate, UserUpdateMe
@@ -98,6 +101,7 @@ __all__ = [
     "TokenPayload",
     "Transaction",
     "TransactionCreate",
+    "TransactionCreateFlexible",
     "TransactionCreateWithTicker",
     "TransactionUpdate",
     "TransactionsResponse",
@@ -116,4 +120,5 @@ __all__ = [
     "HistoricalInterestRate",
     "HistoricalInterestRateCreate",
     "HistoricalInterestRateUpdate",
+    "PpfAccountCreate",
 ]

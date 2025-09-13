@@ -11,6 +11,7 @@ from .endpoints import (
     fixed_deposits,
     goals,
     import_sessions,
+    ppf_accounts,
     me,
     portfolios,
     recurring_deposits,
@@ -40,6 +41,9 @@ api_router.include_router(
     recurring_deposits.router,
     prefix="/recurring-deposits",
     tags=["recurring-deposits"],
+)
+api_router.include_router(
+    ppf_accounts.router, prefix="/portfolios", tags=["ppf-accounts"]
 )
 api_router.include_router(
     transactions.router, prefix="/transactions", tags=["transactions"]

@@ -1,4 +1,6 @@
 import logging
+import uuid
+from typing import Dict
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -69,3 +71,7 @@ def get_current_admin_user(current_user: User = Depends(get_current_user)):
             status_code=status.HTTP_403_FORBIDDEN, detail="Not an admin user"
         )
     return current_user
+
+
+async def get_path_portfolio_id(portfolio_id: uuid.UUID) -> Dict[str, uuid.UUID]:
+    return {"portfolio_id": portfolio_id}

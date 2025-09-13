@@ -39,10 +39,8 @@ type TransactionFormInputs = {
     rdInterestRate?: number;
     rdStartDate?: string;
     tenureMonths?: number;
-    // PPF-specific fields
-    ppfInstitutionName?: string;
-    ppfAccountNumber?: string;
-    ppfOpeningDate?: string;
+    // PPF-specific fields (reusing generic fields)
+    openingDate?: string;
     contributionAmount?: number;
     contributionDate?: string;
 };
@@ -178,6 +176,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     quantity: 1,
                     price_per_unit: data.contributionAmount!,
                     transaction_date: new Date(data.contributionDate!).toISOString(),
+                    asset_type: 'PPF', // For smart recalculation trigger
                 };
                 createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
             } else {
@@ -185,9 +184,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 createPpfAccountMutation.mutate({
                     portfolioId,
                     data: {
-                        institution_name: data.ppfInstitutionName!,
-                        account_number: data.ppfAccountNumber,
-                        opening_date: data.ppfOpeningDate!,
+                        institution_name: data.institutionName!,
+                        account_number: data.accountNumber,
+                        opening_date: data.openingDate!,
                         amount: data.contributionAmount!,
                         contribution_date: data.contributionDate!,
                     }
@@ -206,7 +205,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     start_date: data.startDate!,
                     maturity_date: data.maturityDate!,
                     compounding_frequency: data.compounding_frequency || 'Annually',
-                    interest_payout: data.interest_payout || 'Cumulative'
+                    interest_payout: data.interest_payout === 'Payout' ? 'Annually' : data.interest_payout || 'Cumulative'
                 }
             }, mutationOptions);
         } else if (assetType === 'Recurring Deposit') {
@@ -425,16 +424,16 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         <h3 className="font-semibold text-lg text-gray-800 mb-2">Create Your PPF Account</h3>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="form-group col-span-2">
-                                                <label htmlFor="ppfInstitutionName" className="form-label">Institution Name (e.g., SBI, HDFC)</label>
-                                                <input id="ppfInstitutionName" type="text" {...register('ppfInstitutionName', { required: true })} className="form-input" />
+                                                <label htmlFor="institutionName" className="form-label">Institution Name (e.g., SBI, HDFC)</label>
+                                                <input id="institutionName" type="text" {...register('institutionName', { required: true })} className="form-input" />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="ppfAccountNumber" className="form-label">Account Number (Optional)</label>
-                                                <input id="ppfAccountNumber" type="text" {...register('ppfAccountNumber')} className="form-input" />
+                                                <label htmlFor="accountNumber" className="form-label">Account Number (Optional)</label>
+                                                <input id="accountNumber" type="text" {...register('accountNumber')} className="form-input" />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="ppfOpeningDate" className="form-label">Opening Date</label>
-                                                <input id="ppfOpeningDate" type="date" {...register('ppfOpeningDate', { required: true })} className="form-input" />
+                                                <label htmlFor="openingDate" className="form-label">Opening Date</label>
+                                                <input id="openingDate" type="date" {...register('openingDate', { required: true })} className="form-input" />
                                             </div>
                                         </div>
                                         <h3 className="font-semibold text-lg text-gray-800 mt-4 mb-2">Add First Contribution</h3>

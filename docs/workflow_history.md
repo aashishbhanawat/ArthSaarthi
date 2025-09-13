@@ -4,6 +4,34 @@ This document serves as a chronological log of the development process for **Art
 
 ---
 
+## 2025-09-13: Implement & Stabilize PPF Tracking Feature (FR4.3.4)
+
+*   **Task Description:** A full-stack implementation of the backend logic for tracking Public Provident Fund (PPF) accounts. This was a highly complex task that involved implementing nuanced financial calculations and a deep, iterative debugging cycle to stabilize the entire backend test suite.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the initial backend logic for PPF valuation in `crud_ppf.py` and the corresponding tests in `test_ppf_holdings.py`.
+    2.  **Systematic Debugging via Log Analysis:** The initial implementation introduced a cascade of over 30 test failures. The core of the work was a highly iterative "Analyze -> Report -> Fix" loop where the user provided the `log.txt` from a failing test run, and the AI diagnosed the root cause and provided a targeted fix. This process was repeated for numerous bugs, including:
+        *   `AttributeError` due to missing or incorrect CRUD methods.
+        *   `TypeError` due to incorrect function call signatures and keyword arguments.
+        *   `ValidationError` from Pydantic due to schema mismatches between the logic and the `Holding` model.
+        *   `422 Unprocessable Entity` errors due to incorrect API endpoint parameter types.
+        *   `AssertionError` due to flawed interest calculation logic, which was fixed by implementing the correct "minimum balance between 5th and end of month" rule.
+        *   `UnboundLocalError` due to incorrect variable initialization.
+        *   `TypeError` in the test suite due to incorrect mocking of the `datetime.date` object.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_ppf.py`: **New** file with the core business logic for PPF interest calculation and holdings processing.
+    *   `backend/app/tests/api/v1/test_ppf_holdings.py`: **New** test suite to validate the PPF feature.
+    *   `backend/app/crud/crud_holding.py`, `backend/app/schemas/holding.py`, `backend/app/api/v1/endpoints/transactions.py`: **Updated** to integrate the PPF logic and fix related bugs.
+
+*   **Verification:**
+    - Ran the full backend test suite using `./run_local_tests.sh backend`.
+
+*   **Outcome:**
+    - The backend for the PPF Tracking feature is complete, stable, and fully tested. All 125 backend tests are now passing. This was a major stabilization effort that touched many parts of the backend codebase.
+
+---
+
 ## 2025-07-17: Backend for User Management
 
 *   **Task Description:** Implement the backend functionality for the User Management feature, allowing an administrator to perform CRUD operations on users.

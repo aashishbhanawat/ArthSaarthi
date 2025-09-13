@@ -1,10 +1,11 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.models.portfolio import Portfolio
 
 
-def create_test_portfolio(db: Session, *, user_id: int, name: str) -> Portfolio:
+def create_test_portfolio(db: Session, *, user_id: uuid.UUID, name: str) -> Portfolio:
     """
     Test utility to create a portfolio for a given user.
     """

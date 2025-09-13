@@ -34,6 +34,12 @@ class TransactionCreateWithTicker(TransactionBase):
     ticker_symbol: str
     asset_type: Optional[str] = None
 
+# A flexible schema for the POST /transactions endpoint that can accept
+# either a ticker_symbol (for lookup/creation) or an asset_id (for existing assets)
+class TransactionCreateFlexible(TransactionBase):
+    ticker_symbol: Optional[str] = None
+    asset_id: Optional[uuid.UUID] = None
+    asset_type: Optional[str] = None # For MF creation or PPF recalculation trigger
 
 # Properties to receive on transaction update
 class TransactionUpdate(TransactionBase):

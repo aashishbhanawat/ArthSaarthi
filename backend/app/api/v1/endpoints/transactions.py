@@ -1,13 +1,14 @@
 import logging
 import uuid
 from datetime import date
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.core import config, dependencies
+from app.crud.crud_ppf import trigger_ppf_recalculation
 from app.models.user import User
 
 router = APIRouter()
@@ -72,14 +73,15 @@ def read_transactions(
 def create_transaction(
     *,
     db: Session = Depends(dependencies.get_db),
-    portfolio_id: uuid.UUID,
-    transaction_in: schemas.TransactionCreateWithTicker,
+    path_params: Dict[str, uuid.UUID] = Depends(dependencies.get_path_portfolio_id),
+    transaction_in: schemas.TransactionCreateFlexible,
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
     Create new transaction for a portfolio.
     If the asset does not exist, it will be created.
     """
+    portfolio_id = path_params["portfolio_id"]
     if config.settings.DEBUG:
         print("--- CREATE TRANSACTION ENDPOINT HIT ---")
         print(
@@ -92,41 +94,43 @@ def create_transaction(
     if portfolio.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    # Determine the asset_id. The frontend can either provide an existing
+    # Determine the asset. The frontend can either provide an existing
     # asset_id or a ticker_symbol for on-the-fly creation.
-    asset_id_to_use = getattr(transaction_in, 'asset_id', None)
-    if not asset_id_to_use and getattr(transaction_in, 'ticker_symbol', None):
-        asset = crud.asset.get_or_create_by_ticker(
+    asset_to_use = None
+    asset_id_from_payload = getattr(transaction_in, "asset_id", None)
+    if asset_id_from_payload:
+        asset_to_use = crud.asset.get(db, id=asset_id_from_payload)
+    elif getattr(transaction_in, "ticker_symbol", None):
+        asset_to_use = crud.asset.get_or_create_by_ticker(
             db,
             ticker_symbol=transaction_in.ticker_symbol,
             asset_type=transaction_in.asset_type,
         )
-        if not asset:
-            raise HTTPException(
-                status_code=404, detail=(
-                    "Could not find or create asset with ticker "
-                    f"'{transaction_in.ticker_symbol}'"
-                )
-            )
-        asset_id_to_use = asset.id
 
-    if not asset_id_to_use:
-        raise HTTPException(status_code=422, detail=(
-            "Request must include either a valid asset_id or a ticker_symbol.")
+    if not asset_to_use:
+        raise HTTPException(
+            status_code=404,
+            detail="Could not find or create a valid asset for the transaction.",
         )
+
+    asset_id_to_use = asset_to_use.id
 
     # Create the final transaction payload with the asset_id
     transaction_create_schema = schemas.TransactionCreate(
         asset_id=asset_id_to_use,
-        **transaction_in.model_dump(
-            exclude={"ticker_symbol", "asset_type", "asset_id"}
-        ),
+        **transaction_in.model_dump(exclude={"ticker_symbol", "asset_type", "asset_id"}),
     )
 
     try:
         transaction = crud.transaction.create_with_portfolio(
             db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
         )
+        # --- Smart Recalculation for PPF ---
+        if asset_to_use.asset_type == "PPF":
+            logger.info(f"Triggering PPF recalculation for asset {asset_to_use.id} due to new contribution.")
+            trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
+        # --- End Smart Recalculation ---
+
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -165,6 +169,12 @@ def update_transaction(
     if transaction.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
+    # --- Smart Recalculation for PPF ---
+    if transaction.asset.asset_type == "PPF":
+        logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} due to transaction update.")
+        trigger_ppf_recalculation(db, asset_id=transaction.asset_id)
+    # --- End Smart Recalculation ---
+
     updated_transaction = crud.transaction.update(
         db=db, db_obj=transaction, obj_in=transaction_in
     )
@@ -197,6 +207,12 @@ def delete_transaction(
         )
     if transaction.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    # --- Smart Recalculation for PPF ---
+    if transaction.asset.asset_type == "PPF":
+        logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} due to transaction deletion.")
+        trigger_ppf_recalculation(db, asset_id=transaction.asset_id)
+    # --- End Smart Recalculation ---
 
     crud.transaction.remove(db=db, id=transaction_id)
     db.commit()
