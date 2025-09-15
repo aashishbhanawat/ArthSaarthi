@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useCreatePpfAccount } from '../../hooks/usePortfolios';
 import { useCreateRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
@@ -30,8 +31,8 @@ type TransactionFormInputs = {
     interestRate?: number;
     startDate?: string;
     maturityDate?: string;
-    compounding_frequency?: 'Annually' | 'Semi-Annually' | 'Quarterly' | 'Monthly';
-    interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually';
+    compounding_frequency?: 'Annually' | 'Semi-Annually' | 'Quarterly' | 'Monthly'; // FD
+    interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually'; // FD
     // RD-specific fields
     rdName?: string;
     rdAccountNumber?: string;
@@ -39,10 +40,10 @@ type TransactionFormInputs = {
     rdInterestRate?: number;
     rdStartDate?: string;
     tenureMonths?: number;
-    // PPF-specific fields (reusing generic fields)
-    openingDate?: string;
+    // PPF-specific fields (reusing generic fields for creation/contribution)
     contributionAmount?: number;
     contributionDate?: string;
+    openingDate?: string;
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
@@ -51,6 +52,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         defaultValues: { asset_type: 'Stock' }
     });
 
+    const queryClient = useQueryClient();
     const createTransactionMutation = useCreateTransaction();
     const updateTransactionMutation = useUpdateTransaction();
     const createAssetMutation = useCreateAsset();
@@ -100,9 +102,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             });
             setSelectedAsset(transactionToEdit.asset);
             setInputValue(transactionToEdit.asset.name);
-            if (transactionToEdit.asset.asset_type === 'Mutual Fund') {
-                setSelectedMf({ name: transactionToEdit.asset.name, ticker_symbol: transactionToEdit.asset.ticker_symbol, asset_type: 'Mutual Fund' });
-            }
         }
     }, [isEditMode, transactionToEdit, reset]);
 
@@ -145,9 +144,33 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         setSelectedMf(mf);
     };
 
+    const handleCreateAsset = () => {
+        if (inputValue) {
+            createAssetMutation.mutate(
+                {
+                    ticker_symbol: inputValue.toUpperCase(),
+                    name: inputValue, // Restore name from original code
+                    asset_type: 'Stock',
+                    currency: 'INR', // Restore currency from original code
+                },
+                {
+                    onSuccess: (newAsset) => {
+                        setSelectedAsset(newAsset);
+                        setSearchResults([]); // Clear search results
+                    },
+                    onError: () => setApiError(`Failed to create asset "${inputValue}".`),
+                }
+            );
+        }
+    };
     const onSubmit = (data: TransactionFormInputs) => {
+        console.log(`[E2E DEBUG] Submitting transaction for portfolioId: ${portfolioId}`, data);
         const mutationOptions = {
-            onSuccess: () => onClose(),
+            onSuccess: () => {
+                // Always invalidate portfolio queries on success to refetch holdings, summary, etc.
+                queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+                onClose();
+            },
             onError: (error: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) => {
                 const defaultMessage = isEditMode
                     ? 'An unexpected error occurred while updating the transaction'
@@ -173,8 +196,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 const payload: TransactionCreate = {
                     asset_id: existingPpfAsset.id,
                     transaction_type: 'CONTRIBUTION',
-                    quantity: 1,
-                    price_per_unit: data.contributionAmount!,
+                    quantity: data.contributionAmount!,
+                    price_per_unit: 1,
                     transaction_date: new Date(data.contributionDate!).toISOString(),
                     asset_type: 'PPF', // For smart recalculation trigger
                 };
@@ -190,9 +213,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         amount: data.contributionAmount!,
                         contribution_date: data.contributionDate!,
                     }
-                }, {
-                    onSuccess: () => onClose(),
-                });
+                }, mutationOptions);
             }
         } else if (assetType === 'Fixed Deposit') {
             createFixedDepositMutation.mutate({
@@ -205,7 +226,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     start_date: data.startDate!,
                     maturity_date: data.maturityDate!,
                     compounding_frequency: data.compounding_frequency || 'Annually',
-                    interest_payout: data.interest_payout === 'Payout' ? 'Annually' : data.interest_payout || 'Cumulative'
+                    interest_payout: data.interest_payout || 'Cumulative'
                 }
             }, mutationOptions);
         } else if (assetType === 'Recurring Deposit') {
@@ -221,77 +242,39 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 }
             }, mutationOptions);
         } else {
-            if (assetType === 'Stock' && !selectedAsset) {
-                setApiError("Please select a stock.");
-                return;
-            }
-            if (assetType === 'Mutual Fund' && !selectedMf) {
-                setApiError("Please select a mutual fund.");
-                return;
-            }
-
-            const { asset_type, ...transactionBaseData } = data;
-            const commonPayload: Omit<TransactionUpdate, 'asset_id'> = {
-                ...transactionBaseData,
-                quantity: Number(data.quantity),
-                price_per_unit: Number(data.price_per_unit),
-                fees: data.fees ? Number(data.fees) : 0,
-                transaction_date: new Date(data.transaction_date).toISOString(),
-            };
-
+            // Handle Stock and Mutual Fund
             if (isEditMode && transactionToEdit) {
-                const payload: TransactionUpdate = commonPayload;
-                updateTransactionMutation.mutate(
-                    { portfolioId, transactionId: transactionToEdit.id, data: payload },
-                    mutationOptions
-                );
+                const payload: TransactionUpdate = {
+                    quantity: data.quantity,
+                    price_per_unit: data.price_per_unit,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                    fees: data.fees || 0,
+                };
+                updateTransactionMutation.mutate({ portfolioId, transactionId: transactionToEdit.id, data: payload }, mutationOptions);
             } else {
+                const commonPayload = {
+                    transaction_type: data.transaction_type,
+                    quantity: data.quantity,
+                    price_per_unit: data.price_per_unit,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                    fees: data.fees || 0,
+                };
                 let payload: TransactionCreate;
-                if (asset_type === 'Stock' && selectedAsset) {
+                if (assetType === 'Stock' && selectedAsset) {
                     payload = {
                         ...commonPayload,
                         asset_id: selectedAsset.id,
-                        ticker_symbol: selectedAsset.ticker_symbol,
+                        ticker_symbol: selectedAsset.ticker_symbol, // Restore ticker symbol as per original code
                     };
-                } else if (asset_type === 'Mutual Fund' && selectedMf) {
+                } else if (assetType === 'Mutual Fund' && selectedMf) {
                     payload = { ...commonPayload, ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' };
                 } else {
-                    setApiError("An unexpected error occurred. Please select an asset.");
+                    setApiError("Please select an asset.");
                     return;
                 }
                 createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
             }
         }
-    };
-
-    const handleCreateAsset = () => {
-        setApiError(null);
-        if (isEditMode) return;
-
-        const payload = {
-            ticker_symbol: inputValue.toUpperCase(),
-            name: inputValue,
-            asset_type: 'STOCK' as const,
-            currency: 'INR',
-        };
-
-        createAssetMutation.mutate(payload, {
-            onSuccess: (newAsset) => {
-                handleSelectAsset(newAsset);
-            },
-            onError: (error: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) => {
-                const defaultMessage = 'Failed to create asset.';
-                let errorMessage = defaultMessage;
-                const detail = error.response?.data?.detail;
-
-                if (typeof detail === 'string') {
-                    errorMessage = detail;
-                } else if (Array.isArray(detail)) {
-                    errorMessage = detail.map(d => d.msg).join(', ');
-                }
-                setApiError(errorMessage);
-            }
-        });
     };
 
     if (!isOpen) return null;
@@ -522,8 +505,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <div className="form-group">
                                     <label htmlFor="interest_payout" className="form-label">Interest Payout</label>
                                     <select id="interest_payout" {...register('interest_payout')} className="form-input">
-                                        <option value="Cumulative">Cumulative (at maturity)</option>
-                                        <option value="Payout">Periodic Payout</option>
+                                        <option value="Cumulative">Cumulative (Re-invested)</option>
+                                        <option value="Payout">Payout (Periodic)</option>
                                     </select>
                                 </div>
                             </div>
@@ -557,13 +540,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 </div>
                             </div>
                         )}
-
+                        
                         {apiError && (
                             <div className="alert alert-error mt-2">
                                 <p>{apiError}</p>
                             </div>
                         )}
-
+                        
                         <div className="flex justify-end space-x-4 pt-4">
                             <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
                             <button
@@ -571,8 +554,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 className="btn btn-primary"
                                 disabled={
                                     (isEditMode && updateTransactionMutation.isPending) ||
-                                    (!isEditMode && createTransactionMutation.isPending) ||
-                                    createPpfAccountMutation.isPending ||
+                                    (!isEditMode && (createTransactionMutation.isPending || createPpfAccountMutation.isPending)) ||
                                     (!isEditMode && assetType === 'Stock' && !selectedAsset) ||
                                     (!isEditMode && assetType === 'Mutual Fund' && !selectedMf)}
                             >

@@ -1,6 +1,6 @@
 # Feature Plan: Public Provident Fund (PPF) Tracking
 
-**Status: 🏗️ In Progress**
+**Status: 🚧 In Progress**
 ---
 **Feature ID:** FR4.3.4
 **Title:** Implement Public Provident Fund (PPF) Tracking with Automated Interest Calculation
@@ -11,9 +11,10 @@
 ## 1. Implementation Progress
 
 *   [x] **Phase 1: Database Schema & Seeding:** The necessary database models, schemas, and migration scripts have been implemented and tested. The database is now ready to store PPF accounts, contributions, and historical interest rates.
-*   [ ] **Phase 2: Backend Business Logic:** The core valuation logic (`_process_ppf_holdings`) and the "Smart Recalculation" logic for handling contribution updates have been fully implemented and stabilized.
-*   [ ] **Phase 3: Frontend UI:** The basic UI for adding PPF accounts and contributions is complete. The dedicated drill-down modal for PPF holdings is now implemented.
-*   [ ] **Phase 4: Testing:** Backend unit tests have been implemented and are passing. The E2E test for the full user flow is created but is currently failing due to a timeout issue that needs further investigation.
+*   [x] **Phase 2: Backend Business Logic:** The core valuation logic (`_process_ppf_holdings`) and the "Smart Recalculation" logic for handling contribution updates have been fully implemented and stabilized.
+*   [x] **Phase 3: Frontend UI:** The basic UI for adding PPF accounts and contributions is complete. The dedicated drill-down modal for PPF holdings is now implemented.
+*   [x] **Phase 4: Testing:** Backend unit tests have been implemented and are passing. The E2E test for the full user flow is also passing.
+*   [ ] **Phase 5: Admin UI for Interest Rates:** Implement the admin-only UI for managing historical interest rates.
 
 ---
 
@@ -180,16 +181,11 @@ To track an existing PPF account, the user follows this process:
 
 A new function will be implemented to calculate the PPF balance dynamically. It will fetch all `CONTRIBUTION` transactions for the PPF asset and apply interest based on the stored official rates.
 
-*   **Phase 1 (Simplified Annual Calculation):**
-    *   For each financial year (Apr 1 - Mar 31), the logic will calculate the opening balance.
-    *   It will sum all contributions made during that year.
-    *   Interest for the year will be calculated on the `(opening balance + total contributions)`. This is a simplified but effective initial approach.
-    *   The final `current_balance` is the sum of all contributions plus all calculated annual interest amounts.
-*   **Phase 2 (Accurate Monthly Calculation - Future Enhancement):**
-    *   The logic will be enhanced to iterate month-by-month.
-    *   For each month, it will determine the minimum balance between the 5th and the end of the month.
-    *   It will look up the applicable annual interest rate for that specific month from the `historical_interest_rates` table and calculate the monthly interest on this minimum balance (`applicable_rate / 12`).
-    *   The sum of all monthly interest amounts for a financial year will be credited on March 31st.
+*   **Accurate Monthly Calculation:**
+    *   The logic iterates month-by-month for each financial year.
+    *   For each month, it determines the minimum balance between the 5th and the end of the month, including any contributions made on or before the 5th.
+    *   It looks up the applicable annual interest rate for that specific month from the `historical_interest_rates` table and calculates the monthly interest on this minimum balance (`applicable_rate / 12`).
+    *   The sum of all monthly interest amounts for a financial year is credited on March 31st.
 *   **Interest as Transaction (On-Demand Calculation):** The system does not use a background job. The interest calculation is triggered dynamically whenever a user's holdings are calculated (e.g., when viewing the portfolio). The logic iterates through each financial year of the PPF's life.
     *   **For Completed Financial Years:** If an `INTEREST_CREDIT` transaction for a *completed* year is missing or outdated (because a contribution was added/edited), the system will calculate and create/update it on the spot.
     *   **For the Current Financial Year:** The interest is calculated on-the-fly to determine the holding's `current_value`, but the `INTEREST_CREDIT` transaction is **not** created in the database until the financial year has concluded. This ensures the `current_value` is always up-to-date, while the transaction history remains clean and accurate.

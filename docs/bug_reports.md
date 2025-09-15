@@ -6604,3 +6604,45 @@ A series of patches were applied across the full stack:
 -   The `run_local_tests.sh` script was fixed to correctly initialize the database before running backend tests.
 -   A manual Alembic migration script was created to correctly update the database schema.
 ---
+
+---
+
+**Bug ID:** 2025-09-15-01
+**Title:** `HoldingDetailModal.test.tsx` fails due to outdated mock data for analytics.
+**Module:** Test Suite (Frontend)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-09-15
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+After the backend analytics API was updated to return XIRR values as percentages (e.g., `12.34`), the unit test for `HoldingDetailModal` was not updated. The test provides mock data in the old rate format (e.g., `realized_xirr: 0.1234`). The component correctly formats this to `0.12%`, but the test assertion expects `12.34%`, causing the test to fail.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `./run_local_tests.sh frontend`.
+2. Observe the `TestingLibraryElementError: Unable to find an element with the text: 12.34%` in `HoldingDetailModal.test.tsx`.
+**Expected Behavior:**
+The tests should provide mock data in the same format as the live API, and the assertions should pass.
+**Actual Behavior:**
+The test failed because it was asserting for a value (`12.34%`) that could not be produced from the outdated mock data (`0.1234`).
+**Resolution:**
+Updated the mock data in `HoldingDetailModal.test.tsx` to provide the XIRR values as percentages (e.g., `realized_xirr: 12.34`). This aligns the test environment with the actual application behavior and resolves the test failure.
+
+---
+
+**Bug ID:** 2025-09-15-02
+**Title:** `AnalyticsCard.test.tsx` fails due to outdated mock data for analytics.
+**Module:** Test Suite (Frontend)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-09-15
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+Similar to the `HoldingDetailModal` bug, the test for `AnalyticsCard.tsx` was not updated after the backend API changed. The test provides mock data in the old rate format (e.g., `xirr: 0.12345`). The component correctly formats this to `0.12%`, but the test assertion expects `12.35%`, causing the test to fail.
+**Steps to Reproduce:**
+1. Run the frontend test suite: `./run_local_tests.sh frontend`.
+2. Observe the `TestingLibraryElementError: Unable to find an element with the text: 12.35%` in `AnalyticsCard.test.tsx`.
+**Expected Behavior:**
+The test should provide mock data in the same format as the live API, and the assertions should pass.
+**Actual Behavior:**
+The test failed because it was asserting for a value (`12.35%`) that could not be produced from the outdated mock data (`0.12345`).
+**Resolution:**
+Updated the mock data in `AnalyticsCard.test.tsx` to provide the XIRR value as a percentage (e.g., `xirr: 12.345`). This aligns the test environment with the actual application behavior and resolves the test failure.

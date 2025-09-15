@@ -1,7 +1,7 @@
 import logging
 import uuid
 from datetime import date
-from typing import Any, Optional, Dict
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -73,21 +73,14 @@ def read_transactions(
 def create_transaction(
     *,
     db: Session = Depends(dependencies.get_db),
-    path_params: Dict[str, uuid.UUID] = Depends(dependencies.get_path_portfolio_id),
-    transaction_in: schemas.TransactionCreateFlexible,
+    transaction_in: schemas.TransactionCreateIn,
+    portfolio_id: uuid.UUID = Query(...),
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
     Create new transaction for a portfolio.
     If the asset does not exist, it will be created.
     """
-    portfolio_id = path_params["portfolio_id"]
-    if config.settings.DEBUG:
-        print("--- CREATE TRANSACTION ENDPOINT HIT ---")
-        print(
-            f"User: {current_user.email}, Portfolio ID: {portfolio_id}, "
-            f"Payload: {transaction_in.model_dump_json()}"
-    )
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -97,10 +90,11 @@ def create_transaction(
     # Determine the asset. The frontend can either provide an existing
     # asset_id or a ticker_symbol for on-the-fly creation.
     asset_to_use = None
-    asset_id_from_payload = getattr(transaction_in, "asset_id", None)
-    if asset_id_from_payload:
-        asset_to_use = crud.asset.get(db, id=asset_id_from_payload)
-    elif getattr(transaction_in, "ticker_symbol", None):
+    if transaction_in.asset_id:
+        asset_to_use = crud.asset.get(db, id=transaction_in.asset_id)
+
+    if not asset_to_use and getattr(transaction_in, "ticker_symbol", None):
+        # This branch handles on-the-fly asset creation
         asset_to_use = crud.asset.get_or_create_by_ticker(
             db,
             ticker_symbol=transaction_in.ticker_symbol,
@@ -110,7 +104,9 @@ def create_transaction(
     if not asset_to_use:
         raise HTTPException(
             status_code=404,
-            detail="Could not find or create a valid asset for the transaction.",
+            detail=(f"Could not find or create asset with ticker "
+                    f"'{transaction_in.ticker_symbol}'"
+                   ),
         )
 
     asset_id_to_use = asset_to_use.id
@@ -118,7 +114,9 @@ def create_transaction(
     # Create the final transaction payload with the asset_id
     transaction_create_schema = schemas.TransactionCreate(
         asset_id=asset_id_to_use,
-        **transaction_in.model_dump(exclude={"ticker_symbol", "asset_type", "asset_id"}),
+        **transaction_in.model_dump(
+            exclude={"ticker_symbol", "asset_type", "asset_id"}
+        ),
     )
 
     try:
@@ -127,7 +125,9 @@ def create_transaction(
         )
         # --- Smart Recalculation for PPF ---
         if asset_to_use.asset_type == "PPF":
-            logger.info(f"Triggering PPF recalculation for asset {asset_to_use.id} due to new contribution.")
+            logger.info(f"Triggering PPF recalculation for asset {asset_to_use.id} "
+                        f"due to new contribution."
+            )
             trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
         # --- End Smart Recalculation ---
 
@@ -171,7 +171,9 @@ def update_transaction(
 
     # --- Smart Recalculation for PPF ---
     if transaction.asset.asset_type == "PPF":
-        logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} due to transaction update.")
+        logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} "
+                    f"due to transaction update."
+        )
         trigger_ppf_recalculation(db, asset_id=transaction.asset_id)
     # --- End Smart Recalculation ---
 
@@ -210,7 +212,9 @@ def delete_transaction(
 
     # --- Smart Recalculation for PPF ---
     if transaction.asset.asset_type == "PPF":
-        logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} due to transaction deletion.")
+        logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} "
+                    f"due to transaction deletion."
+        )
         trigger_ppf_recalculation(db, asset_id=transaction.asset_id)
     # --- End Smart Recalculation ---
 

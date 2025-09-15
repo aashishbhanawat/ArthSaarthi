@@ -90,9 +90,10 @@ test.describe.serial('Transaction History Page', () => {
     ];
 
     for (const txn of transactions) {
-      const txnResponse = await request.post(`/api/v1/portfolios/${portfolioId}/transactions/`, {
+      const txnResponse = await request.post(`/api/v1/transactions/`, {
         headers: userAuthHeaders,
         data: { ...txn, fees: 1 },
+        params: { portfolio_id: portfolioId },
       });
       expect(txnResponse.ok(), `Failed to create transaction: ${await txnResponse.text()}`).toBeTruthy();
     }

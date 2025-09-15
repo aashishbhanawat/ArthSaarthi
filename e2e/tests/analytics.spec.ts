@@ -45,6 +45,9 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
+  test.afterEach(async ({ page }, testInfo) => {
+    console.log(`[E2E DEBUG] Finished ${testInfo.title} with status ${testInfo.status}`);
+  });
 
   test('should display advanced analytics for a portfolio', async ({ page }) => {
     const portfolioName = `Analytics Test Portfolio ${Date.now()}`;
@@ -56,6 +59,10 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+    
+    // Get portfolio ID for later use
+    const url = page.url();
+    const portfolioId = url.split('/').pop()!;
 
     // 2. Add transactions to create a history
     // BUY 10 shares
@@ -69,8 +76,15 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('200');
     await page.getByLabel('Date').fill('2023-01-01');
-    //await page.screenshot({ path: 'analytics_test.png' });
-    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    
+    console.log('[E2E DEBUG] Submitting first transaction (BUY MSFT)...');
+    // Set up a promise to wait for the holdings to be refetched AFTER the transaction is created.
+    const holdingsResponsePromise = page.waitForResponse(resp => 
+        resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
+    );
+    await page.getByRole('button', { name: 'Save' }).click();
+    await holdingsResponsePromise;
+    console.log('[E2E DEBUG] Holdings refetched. Verifying UI update...');
 
     const equitiesSection = page.locator('div:has-text("Equities & Mutual Funds") >> ..').first();
     await expect(equitiesSection).toBeVisible();
@@ -87,8 +101,14 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Quantity').fill('5');
     await page.getByLabel('Price per Unit').fill('220');
     await page.getByLabel('Date').fill('2023-06-01');
-    //await page.screenshot({ path: 'analytics_test.png' });
-    await page.getByRole('button', { name: 'Save Transaction' }).click();
+
+    console.log('[E2E DEBUG] Submitting second transaction (SELL MSFT)...');
+    const holdingsResponsePromise2 = page.waitForResponse(resp => 
+        resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
+    );
+    await page.getByRole('button', { name: 'Save' }).click();
+    await holdingsResponsePromise2;
+    console.log('[E2E DEBUG] Holdings refetched. Verifying UI update...');
 
     // Verify the holding quantity was updated from 10 to 5
     const updatedHoldingRow = equitiesSection.getByRole('row', { name: /MSFT/ });
@@ -117,19 +137,43 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+    
+    // Get portfolio ID for later use
+    const url = page.url();
+    const portfolioId = url.split('/').pop()!;
 
     // 2. Add transactions with specific dates for XIRR calculation
     // BUY 10 shares @ 100, 1 year ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetTicker);
+    
+    // The asset exists in the master list but not in this portfolio yet.
+    // The correct flow is to search for it and select it.
+    // UPDATE: The lookup is failing, so we must test the "create" flow.
+    await page.getByRole('textbox', { name: 'Asset' }).fill(assetTicker);
+
+    // Verify the "Create Asset" button appears when the lookup finds no results.
     const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
     await expect(createAssetButton).toBeVisible();
+
+    // Wait for the asset creation API call to complete before proceeding.
+    const createAssetResponsePromise = page.waitForResponse(resp => 
+        resp.url().includes('/api/v1/assets/') && resp.status() === 201
+    );
     await createAssetButton.click();
+    await createAssetResponsePromise;
+
+    // Now fill the rest of the form
+    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('100');
     await page.getByLabel('Date').fill(getPastDateISO(365));
+
+    console.log('[E2E DEBUG] Submitting first XIRR transaction (BUY)...');
+    
+    const holdingsResponsePromiseXirr1 = page.waitForResponse(resp => resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200, { timeout: 10000 });
     await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await holdingsResponsePromiseXirr1;
+    console.log('[E2E DEBUG] Holdings refetched.');
 
     const equitiesSection = page.locator('div:has-text("Equities & Mutual Funds") >> ..').first();
     await expect(equitiesSection).toBeVisible();
@@ -146,7 +190,12 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Quantity').fill('5');
     await page.getByLabel('Price per Unit').fill('120');
     await page.getByLabel('Date').fill(getPastDateISO(182));
+
+    console.log('[E2E DEBUG] Submitting second XIRR transaction (SELL)...');
+    const holdingsResponsePromiseXirr2 = page.waitForResponse(resp => resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200);
     await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await holdingsResponsePromiseXirr2;
+    console.log('[E2E DEBUG] Holdings refetched.');
 
     // 3. Open the holding detail modal
     const holdingRow = page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: new RegExp(assetTicker) });

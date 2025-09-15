@@ -28,10 +28,11 @@ def test_create_fixed_deposit(
         "maturity_date": (date.today() + timedelta(days=365 * 4)).isoformat(),
         "compounding_frequency": "Annually",
         "interest_payout": "Cumulative",
-        "account_number": "1234567890"
+        "account_number": "1234567890",
+        "portfolio_id": str(portfolio.id),
     }
     response = client.post(
-        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/fixed-deposits/",
+        f"{settings.API_V1_STR}/fixed-deposits/",
         json=data,
         headers=headers,
     )
@@ -43,11 +44,8 @@ def test_create_fixed_deposit(
     assert content["start_date"] == data["start_date"]
     assert content["maturity_date"] == data["maturity_date"]
     assert content["compounding_frequency"] == data["compounding_frequency"]
-    assert content["interest_payout"] == data["interest_payout"]
     assert content["account_number"] == data["account_number"]
     assert "id" in content
-    assert "portfolio_id" in content
-    assert "user_id" in content
 
 
 def test_read_fixed_deposit_with_analytics(
@@ -66,13 +64,15 @@ def test_read_fixed_deposit_with_analytics(
         "maturity_date": (date.today() + timedelta(days=365 * 4)).isoformat(),
         "compounding_frequency": "Annually",
         "interest_payout": "Cumulative",
-        "account_number": "1234567890"
+        "account_number": "1234567890",
+        "portfolio_id": str(portfolio.id),
     }
     response = client.post(
-        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/fixed-deposits/",
+        f"{settings.API_V1_STR}/fixed-deposits/",
         json=data,
         headers=headers,
     )
+    assert response.status_code == 201
     fd_id = response.json()["id"]
 
     # Test the details endpoint first

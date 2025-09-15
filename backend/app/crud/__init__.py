@@ -1,3 +1,4 @@
+from .crud_analytics import analytics
 from .crud_asset import asset
 from .crud_asset_alias import asset_alias
 from .crud_audit_log import audit_log
@@ -16,21 +17,22 @@ from .crud_watchlist import watchlist
 from .crud_watchlist_item import watchlist_item
 
 __all__ = [
+    "analytics",
     "asset",
     "asset_alias",
     "audit_log",
     "dashboard",
     "fixed_deposit",
-    "recurring_deposit",
-    "holding",
+    "goal",
+    "goal_link",
     "historical_interest_rate",
+    "holding",
     "import_session",
     "portfolio",
+    "recurring_deposit",
     "testing",
     "transaction",
     "user",
     "watchlist",
     "watchlist_item",
-    "goal",
-    "goal_link",
 ]

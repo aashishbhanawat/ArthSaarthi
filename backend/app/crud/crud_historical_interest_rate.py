@@ -33,7 +33,8 @@ class CRUDHistoricalInterestRate(
         self, db: Session, *, scheme_name: str, a_date: date
     ) -> HistoricalInterestRate | None:
         """
-        Retrieves the interest rate for a given scheme and date.
+        Retrieves the interest rate for a given scheme that was active on a
+        specific date.
         """
         return (
             db.query(self.model)

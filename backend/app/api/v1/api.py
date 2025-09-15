@@ -2,24 +2,23 @@ import logging
 
 from fastapi import APIRouter
 
-from app.core.config import settings
-
-from .endpoints import (
+from app.api.v1.endpoints import (
     assets,
     auth,
     dashboard,
     fixed_deposits,
     goals,
     import_sessions,
-    ppf_accounts,
     me,
     portfolios,
+    ppf_accounts,
     recurring_deposits,
     testing,
     transactions,
     users,
     watchlists,
 )
+from app.core.config import settings
 
 api_router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -31,24 +30,22 @@ if settings.DEPLOYMENT_MODE != "desktop":
 api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfolios"])
 api_router.include_router(goals.router, prefix="/goals", tags=["goals"])
 api_router.include_router(watchlists.router, prefix="/watchlists", tags=["watchlists"])
+api_router.include_router(
+    ppf_accounts.router, prefix="/ppf-accounts", tags=["ppf-accounts"]
+)
+api_router.include_router(
+    transactions.router, prefix="/transactions", tags=["transactions"]
+)
 api_router.include_router(assets.router, prefix="/assets", tags=["assets"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(
     fixed_deposits.router, prefix="/fixed-deposits", tags=["fixed-deposits"]
 )
-# recurring deposits are nested under portfolios
 api_router.include_router(
     recurring_deposits.router,
     prefix="/recurring-deposits",
     tags=["recurring-deposits"],
 )
-api_router.include_router(
-    ppf_accounts.router, prefix="/portfolios", tags=["ppf-accounts"]
-)
-api_router.include_router(
-    transactions.router, prefix="/transactions", tags=["transactions"]
-)
-
 # Conditionally include the testing router only in the test environment
 logger.warning(f"Current ENVIRONMENT in api.py: '{settings.ENVIRONMENT}'")
 logger.warning(f"CORS confiured: {settings.CORS_ORIGINS}")

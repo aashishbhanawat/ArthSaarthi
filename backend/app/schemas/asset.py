@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -32,6 +33,15 @@ class AssetType(str):
     RECURRING_DEPOSIT = "RECURRING_DEPOSIT"
     PPF = "PPF"
     BOND = "BOND"
+
+
+class PpfAccountCreate(BaseModel):
+    portfolio_id: uuid.UUID
+    institution_name: str
+    account_number: Optional[str] = None
+    opening_date: date
+    amount: Decimal
+    contribution_date: date
 
 
 # Properties to receive on asset update

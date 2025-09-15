@@ -17,11 +17,18 @@ class FixedDepositBase(BaseModel):
 
 
 class FixedDepositCreate(FixedDepositBase):
-    pass
+    portfolio_id: uuid.UUID
 
 
-class FixedDepositUpdate(FixedDepositBase):
-    pass
+class FixedDepositUpdate(BaseModel):
+    name: str | None = None
+    account_number: str | None = None
+    principal_amount: Decimal | None = None
+    interest_rate: Decimal | None = None
+    start_date: date | None = None
+    maturity_date: date | None = None
+    compounding_frequency: str | None = None
+    interest_payout: str | None = None
 
 
 class FixedDeposit(FixedDepositBase):

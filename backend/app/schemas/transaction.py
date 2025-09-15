@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from .asset import Asset
 
@@ -29,17 +29,17 @@ class TransactionCreate(TransactionBase):
     asset_id: uuid.UUID
 
 
-# Properties to receive on transaction creation when ticker is provided
-class TransactionCreateWithTicker(TransactionBase):
-    ticker_symbol: str
+# Flexible input schema for the create_transaction endpoint
+class TransactionCreateIn(TransactionBase):
+    asset_id: Optional[uuid.UUID] = None
+    ticker_symbol: Optional[str] = None
     asset_type: Optional[str] = None
 
-# A flexible schema for the POST /transactions endpoint that can accept
-# either a ticker_symbol (for lookup/creation) or an asset_id (for existing assets)
-class TransactionCreateFlexible(TransactionBase):
-    ticker_symbol: Optional[str] = None
-    asset_id: Optional[uuid.UUID] = None
-    asset_type: Optional[str] = None # For MF creation or PPF recalculation trigger
+    @model_validator(mode="after")
+    def check_asset_provided(self) -> "TransactionCreateIn":
+        if self.asset_id is None and self.ticker_symbol is None:
+            raise ValueError("Either asset_id or ticker_symbol must be provided")
+        return self
 
 # Properties to receive on transaction update
 class TransactionUpdate(TransactionBase):

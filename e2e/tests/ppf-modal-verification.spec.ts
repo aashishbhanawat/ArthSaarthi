@@ -97,8 +97,17 @@ test.describe.serial('PPF Modal Verification', () => {
   test('should display the PPF contribution form when a PPF account exists', async ({ page, request }) => {
     const portfolioName = `My Existing PPF Portfolio ${Date.now()}`;
 
+    // Login as the user via API to get a token for API requests
+    const userLoginResponse = await request.post('/api/v1/auth/login', {
+      form: { username: standardUser.email, password: standardUser.password },
+    });
+    expect(userLoginResponse.ok()).toBeTruthy();
+    const { access_token: userToken } = await userLoginResponse.json();
+    const userAuthHeaders = { Authorization: `Bearer ${userToken}` };
+
     // 1. Create a portfolio via API to be faster
     const createPortfolioResponse = await request.post('/api/v1/portfolios/', {
+        headers: userAuthHeaders,
         data: { name: portfolioName, description: 'Test portfolio with existing PPF', currency: 'INR' },
     });
     expect(createPortfolioResponse.ok()).toBeTruthy();
@@ -106,8 +115,10 @@ test.describe.serial('PPF Modal Verification', () => {
     const portfolioId = portfolio.id;
 
     // 2. Create a PPF account in that portfolio via API
-    const createPpfResponse = await request.post(`/api/v1/portfolios/${portfolioId}/ppf`, {
+    const createPpfResponse = await request.post(`/api/v1/ppf-accounts/`, {
+        headers: userAuthHeaders,
         data: {
+            portfolio_id: portfolioId,
             institution_name: "E2E Test PPF Bank",
             opening_date: "2022-01-01",
             amount: 5000,
@@ -117,7 +128,12 @@ test.describe.serial('PPF Modal Verification', () => {
     expect(createPpfResponse.ok()).toBeTruthy();
 
     // 3. Navigate to the portfolio page
-    await page.goto(`/portfolios/${portfolioId}`);
+    // Direct navigation via page.goto() can be flaky if the frontend state isn't synced.
+    // A more robust method is to navigate via the UI, which ensures all data is loaded correctly.
+    await page.getByRole('link', { name: 'Portfolios' }).click();
+    await expect(page.getByRole('heading', { name: 'Portfolios' })).toBeVisible();
+    // Find the portfolio in the list and click it to navigate to the detail page.
+    await page.getByRole('link', { name: new RegExp(portfolioName) }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
     // 4. Open the "Add Transaction" modal

@@ -39,20 +39,44 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         new_asset_data = AssetCreate(ticker_symbol=ticker_symbol, **details)
         return self.create(db=db, obj_in=new_asset_data)
 
+    def get_all_by_type_and_portfolio(
+        self, db: Session, *, asset_type: str, portfolio_id: uuid.UUID
+    ) -> List[Asset]:
+        """
+        Retrieves all assets of a specific type that have at least one
+        transaction in the specified portfolio.
+        """
+        return (
+            db.query(self.model)
+            .join(models.Transaction)
+            .filter(
+                models.Transaction.portfolio_id == portfolio_id,
+                self.model.asset_type == asset_type,
+            )
+            .distinct()
+            .all()
+        )
+
     def get_multi_by_portfolio(
-        self, db: Session, *, portfolio_id: uuid.UUID
+        self, db: Session, *, portfolio_id: uuid.UUID, asset_type: Optional[str] = None
     ) -> List[Asset]:
         """
         Retrieves all assets that have at least one transaction in the
         specified portfolio.
          """
         # Get distinct asset_ids from transactions for the given portfolio
-        asset_ids_query = (
+        query = (
             db.query(models.Transaction.asset_id)
             .filter(models.Transaction.portfolio_id == portfolio_id)
             .distinct()
         )
-        asset_ids = [item[0] for item in asset_ids_query.all()]
+
+        # Join with Asset to filter by asset_type if provided
+        if asset_type:
+            query = query.join(self.model, self.model.id == models.Transaction.asset_id)
+            query = query.filter(self.model.asset_type == asset_type)
+
+        asset_ids = [item[0] for item in query.all()]
 
         if not asset_ids:
             return []
@@ -81,8 +105,8 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         transaction_in = schemas.TransactionCreate(
             asset_id=new_asset.id,
             transaction_type="CONTRIBUTION",
-            quantity=1,  # For PPF, quantity is 1, price is the amount
-            price_per_unit=ppf_in.amount,
+            quantity=ppf_in.amount,
+            price_per_unit=1,
             transaction_date=ppf_in.contribution_date,
             fees=0,
         )

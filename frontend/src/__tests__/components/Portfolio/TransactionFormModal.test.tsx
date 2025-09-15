@@ -145,7 +145,7 @@ describe('TransactionFormModal', () => {
       fireEvent.change(screen.getByLabelText(/price per unit/i), { target: { value: '150' } });
       fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
 
-      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       await waitFor(() => {
         expect(mockCreateTransaction).toHaveBeenCalledWith(
@@ -184,7 +184,7 @@ describe('TransactionFormModal', () => {
       fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-02-01' } });
 
       // Submit the form
-      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       // Assert the mutation was called with the correct payload
       await waitFor(() => {
@@ -218,11 +218,11 @@ describe('TransactionFormModal', () => {
       fireEvent.change(screen.getByLabelText(/institution name/i), { target: { value: 'Test PPF Bank' } });
       fireEvent.change(screen.getByLabelText(/account number/i), { target: { value: 'PPF123' } });
       fireEvent.change(screen.getByLabelText(/opening date/i), { target: { value: '2023-01-01' } });
-      fireEvent.change(screen.getAllByLabelText(/contribution amount/i)[0], { target: { value: '50000' } });
-      fireEvent.change(screen.getAllByLabelText(/contribution date/i)[0], { target: { value: '2023-01-15' } });
+      fireEvent.change(screen.getByLabelText(/contribution amount/i), { target: { value: '50000' } });
+      fireEvent.change(screen.getByLabelText(/contribution date/i), { target: { value: '2023-01-15' } });
 
       // Submit the form
-      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       // Assert the mutation was called with the correct payload
       await waitFor(() => {
@@ -260,7 +260,7 @@ describe('TransactionFormModal', () => {
       fireEvent.change(screen.getByLabelText(/contribution date/i), { target: { value: '2024-05-10' } });
 
       // Submit the form
-      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       // Assert the mutation was called with the correct payload
       await waitFor(() => {
@@ -269,9 +269,10 @@ describe('TransactionFormModal', () => {
             portfolioId: 'portfolio-1',
             data: {
               asset_id: 'ppf-asset-1',
+              asset_type: 'PPF',
               transaction_type: 'CONTRIBUTION',
-              quantity: 1,
-              price_per_unit: 10000,
+              quantity: 10000,
+              price_per_unit: 1,
               transaction_date: new Date('2024-05-10T00:00:00.000Z').toISOString(),
             },
           }),
@@ -296,7 +297,7 @@ describe('TransactionFormModal', () => {
       fireEvent.change(screen.getByLabelText(/maturity date/i), { target: { value: '2025-01-01' } });
 
       // Submit the form
-      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       // Assert the mutation was called with the correct payload
       await waitFor(() => {
@@ -342,7 +343,9 @@ describe('TransactionFormModal', () => {
           portfolioId: 'portfolio-1',
           transactionId: 'tx-1',
           data: expect.objectContaining({
-            quantity: 20,
+            quantity: 20, // The updated value
+            price_per_unit: 150, // Should remain the same
+            fees: 5, // Should remain the same
           }),
         }, expect.any(Object));
       });
@@ -366,7 +369,7 @@ describe('TransactionFormModal', () => {
     fireEvent.change(screen.getByLabelText(/price per unit/i), { target: { value: '150' } });
     fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(await screen.findByText(/network error/i)).toBeInTheDocument();
   });

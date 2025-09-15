@@ -6,15 +6,16 @@ set -e
 # Conditionally apply database migrations or create schema
 if [ "$DATABASE_TYPE" = "sqlite" ]; then
   echo "Database type is SQLite. Creating schema from models..."
-  python -m app.cli init-db
+  python -m app.cli init-db --create-tables
 else
   echo "Database type is PostgreSQL. Applying Alembic migrations..."
   alembic upgrade head
+  echo "Seeding historical interest rates..."
+  python -m app.cli init-db --no-create-tables
 fi
 
-# Seed the database with master asset data.
-# This is idempotent and safe to run on every startup.
-echo "Seeding initial asset data..."
+# Seed the asset master data from the external source.
+echo "--- Seeding Asset Master Data ---"
 python -m app.cli seed-assets
 
 # Start the application using exec to replace the shell process with the uvicorn process

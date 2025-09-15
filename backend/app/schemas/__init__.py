@@ -1,5 +1,13 @@
-from .analytics import AnalyticsResponse, AssetAnalytics, FixedDepositAnalytics
-from .asset import Asset, AssetCreate, AssetCreateIn, AssetSearchResult, AssetUpdate, AssetType
+from .analytics import AssetAnalytics, FixedDepositAnalytics, PortfolioAnalytics
+from .asset import (
+    Asset,
+    AssetCreate,
+    AssetCreateIn,
+    AssetSearchResult,
+    AssetType,
+    AssetUpdate,
+    PpfAccountCreate,
+)
 from .asset_alias import AssetAlias, AssetAliasCreate
 from .dashboard import (
     AssetAllocation,
@@ -12,6 +20,7 @@ from .dashboard import (
 from .fixed_deposit import (
     FixedDeposit,
     FixedDepositCreate,
+    FixedDepositDetails,
     FixedDepositUpdate,
 )
 from .goal import (
@@ -29,7 +38,6 @@ from .historical_interest_rate import (
     HistoricalInterestRateUpdate,
 )
 from .holding import Holding, HoldingsResponse, PortfolioSummary
-from .ppf_account import PpfAccountCreate
 from .import_session import (
     ImportSession,
     ImportSessionCommit,
@@ -51,8 +59,7 @@ from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
     TransactionCreate,
-    TransactionCreateFlexible,
-    TransactionCreateWithTicker,
+    TransactionCreateIn,
     TransactionsResponse,
     TransactionType,
     TransactionUpdate,
@@ -65,10 +72,13 @@ __all__ = [
     "RecurringDepositCreate",
     "RecurringDepositDetails",
     "RecurringDepositUpdate",
+    "TransactionType",
+    "AssetType",
     "Asset",
     "AssetAlias",
     "FixedDeposit",
     "FixedDepositCreate",
+    "FixedDepositDetails",
     "FixedDepositUpdate",
     "AssetAliasCreate",
     "AssetAllocation",
@@ -77,7 +87,6 @@ __all__ = [
     "AssetCreateIn",
     "AssetSearchResult",
     "AssetUpdate",
-    "AnalyticsResponse",
     "AssetAnalytics",
     "FixedDepositAnalytics",
     "DashboardSummary",
@@ -93,6 +102,7 @@ __all__ = [
     "Portfolio",
     "PortfolioCreate",
     "PortfolioHistoryPoint",
+    "PortfolioAnalytics",
     "PortfolioHistoryResponse",
     "PortfolioSummary",
     "PortfolioUpdate",
@@ -101,8 +111,7 @@ __all__ = [
     "TokenPayload",
     "Transaction",
     "TransactionCreate",
-    "TransactionCreateFlexible",
-    "TransactionCreateWithTicker",
+    "TransactionCreateIn",
     "TransactionUpdate",
     "TransactionsResponse",
     "User",

@@ -1,7 +1,7 @@
 # Project Handoff Document: ArthSaarthi
 
 **Version:** 0.3.0
-**Date:** 2025-09-07
+**Date:** 2025-09-15
 **Status:** Completed & Stable
 **Author:** Gemini Code Assist
 
@@ -18,7 +18,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 ## 2. Final Status
 
 *   **Overall Status:** **Stable**
-*   **Backend Tests:** **123/123 Passing**
+*   **Backend Tests:** **125/125 Passing**
 *   **Frontend Tests:** **146/146 Passing**
 *   **E2E Tests:** **18/18 Passing**
 
@@ -35,7 +35,7 @@ All planned features for the current release cycle have been implemented and val
 *   **Full Portfolio & Transaction CRUD:**
     *   Full CRUD functionality for portfolios and transactions.
     *   A redesigned portfolio page showing a consolidated holdings view with sorting.
-    *   Full CRUD and tracking for **Fixed Deposits (FDs)** and **Recurring Deposits (RDs)** with detailed analytics.
+    *   Full CRUD and tracking for **Fixed Deposits (FDs)**, **Recurring Deposits (RDs)**, and **Public Provident Fund (PPF)** accounts with detailed analytics.
     *   A dedicated, filterable **Transaction History** page with full edit and delete capabilities.
     *   A **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
 *   **Automated Data Import (Phase 2):**
