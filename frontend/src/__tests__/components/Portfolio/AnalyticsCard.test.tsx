@@ -21,7 +21,7 @@ describe('AnalyticsCard', () => {
 
     it('should render success state and format numbers correctly', () => {
         const mockAnalytics: PortfolioAnalytics = {
-            xirr: 12.345,
+            xirr: 0.12345,
             sharpe_ratio: 1.23456,
         };
         render(<AnalyticsCard analytics={mockAnalytics} isLoading={false} error={null} />);

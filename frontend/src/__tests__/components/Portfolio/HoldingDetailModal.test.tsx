@@ -105,7 +105,7 @@ describe('HoldingDetailModal', () => {
 
   it('renders holding details and transaction list correctly', () => {
     jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
-        createUseQueryResultMock({ realized_xirr: 12.34, unrealized_xirr: 23.45, sharpe_ratio: 1.5 })
+        createUseQueryResultMock({ realized_xirr: 0.1234, unrealized_xirr: 0.2345, sharpe_ratio: 1.5 })
     );
 
     renderComponent();
@@ -118,8 +118,8 @@ describe('HoldingDetailModal', () => {
     expect(within(screen.getByTestId('summary-unrealized-pnl')).getByText('₹1,000.00')).toBeInTheDocument();
 
     // Check for analytics data
-    expect(screen.getByText('12.34%')).toBeInTheDocument(); // Asserts that 12.34 is formatted correctly
-    expect(screen.getByText('23.45%')).toBeInTheDocument(); // Asserts that 23.45 is formatted correctly
+    expect(screen.getByText('12.34%')).toBeInTheDocument();
+    expect(screen.getByText('23.45%')).toBeInTheDocument();
 
     // Check for transaction row
     const table = screen.getByRole('table');

@@ -1,9 +1,9 @@
 # ArthSaarthi - Personal Portfolio Management System
 
 [![CI/CD Status](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml/badge.svg)](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml)
-[![Backend Tests](https://img.shields.io/badge/Backend_Tests-125/125-brightgreen)](#)
-[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-146/146-brightgreen)](#)
-[![E2E Tests](https://img.shields.io/badge/E2E_Tests-18/18-brightgreen)](#)
+[![Backend Tests](https://img.shields.io/badge/Backend_Tests-131/131-brightgreen)](#)
+[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-159/159-brightgreen)](#)
+[![E2E Tests](https://img.shields.io/badge/E2E_Tests-21/21-brightgreen)](#)
 
 ---
 
@@ -39,7 +39,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ### On the Horizon (Future Features)
 
-*   **Advanced Asset Support:** Track other instruments like Employee Stock Plans (RSUs/ESPPs) and government schemes like PPF and NPS.
+*   **Advanced Asset Support:** Track other instruments like Employee Stock Plans (RSUs/ESPPs) and government schemes like the National Pension System (NPS).
 *   **Corporate Actions & Income Tracking:** Automatically handle dividends, stock splits, and bonuses, and track income from interest payments.
 *   **Deeper Analytics & Reporting:** Generate capital gains reports for tax filing, benchmark your portfolio against market indices, and analyze diversification by sector, geography, and more.
 *   **Goal-Oriented Planning:** Define financial goals (e.g., "Retirement", "House Down Payment"), link assets to them, and track your progress with projections.

@@ -142,12 +142,12 @@ def test_get_portfolio_analytics_calculation(
 
     # Expected XIRR for buying at 100 and current value being 110 after 1 year is ~10%
     assert "xirr" in data
-    assert data["xirr"] == pytest.approx(10.0, abs=0.1)
+    assert data["xirr"] == pytest.approx(0.10, abs=0.001)
 
     # Assert Sharpe Ratio is calculated and is a float
     assert "sharpe_ratio" in data
     assert isinstance(data["sharpe_ratio"], float)
-    assert data["sharpe_ratio"] != 0.0
+    assert data["sharpe_ratio"] != 0.0  # This will be updated once implemented
 
 
 def test_get_asset_analytics_success(
@@ -276,9 +276,9 @@ def test_get_asset_analytics_calculation_realized_and_unrealized(
     assert response.status_code == 200
     data = response.json()
     # The correct annualized return for a 20% gain over 183 days is ~0.4386
-    assert data["realized_xirr"] == pytest.approx(43.86, abs=0.1)
+    assert data["realized_xirr"] == pytest.approx(0.4386, abs=0.001)
     # The correct annualized return for the remaining holding is ~30%
-    assert data["unrealized_xirr"] == pytest.approx(30.0, abs=0.1)
+    assert data["unrealized_xirr"] == pytest.approx(0.30, abs=0.01)
 
 
 def test_get_ppf_asset_analytics(
@@ -336,7 +336,7 @@ def test_get_ppf_asset_analytics(
     # - 2023-01-01: -100,000 (Contribution)
     # - 2025-01-01: +114,803.11 (Calculated current value)
     # The XIRR for this cashflow over 2 years is ~7.14%
-    expected_xirr = 7.14
+    expected_xirr = 0.0714
     assert "unrealized_xirr" in analytics_data
-    assert analytics_data["unrealized_xirr"] == pytest.approx(expected_xirr, abs=0.1)
+    assert analytics_data["unrealized_xirr"] == pytest.approx(expected_xirr, abs=0.001)
     assert analytics_data["realized_xirr"] == 0.0

@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -7,9 +8,24 @@ from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.core.dependencies import get_current_admin_user
 from app.db.session import get_db
+from app.models.asset import Asset as AssetModel
 from app.models.user import User as UserModel
 
 router = APIRouter()
+
+
+def _trigger_ppf_recalculation(db: Session, from_date: date):
+    """
+    Finds all PPF assets and deletes their interest credits from a given date.
+    This forces a recalculation on the next portfolio valuation.
+    """
+    ppf_assets = db.query(AssetModel).filter(AssetModel.asset_type == "PPF").all()
+    for asset in ppf_assets:
+        crud.transaction.remove_interest_credits_from_date(
+            db=db, asset_id=asset.id, from_date=from_date
+        )
+    # The commit is handled by the calling function to maintain transactional integrity.
+
 
 
 @router.get(
@@ -45,6 +61,10 @@ def create_historical_interest_rate(
     rate = crud.historical_interest_rate.create(db, obj_in=rate_in)
     db.commit()
     db.refresh(rate)
+
+    _trigger_ppf_recalculation(db, from_date=rate.start_date)
+    db.commit()  # Commit the transaction deletions
+
     return rate
 
 
@@ -62,10 +82,27 @@ def update_historical_interest_rate(
     """
     Update an existing historical interest rate. (Admin Only)
     """
-    rate = crud.historical_interest_rate.get(db, id=rate_id)
-    if not rate:
+    db_rate = crud.historical_interest_rate.get(db, id=rate_id)
+    if not db_rate:
         raise HTTPException(status_code=404, detail="Interest rate not found")
-    updated_rate = crud.historical_interest_rate.update(db, db_obj=rate, obj_in=rate_in)
+
+    # Determine if a recalculation is needed
+    recalculation_needed = (
+        rate_in.rate is not None
+        or rate_in.start_date is not None
+        or rate_in.end_date is not None
+    )
+
+    updated_rate = crud.historical_interest_rate.update(
+        db, db_obj=db_rate, obj_in=rate_in
+    )
+
+    if recalculation_needed:
+        # This is a "heavy" operation but ensures data consistency.
+        # A more advanced implementation might use a background job queue.
+        recalc_start_date = rate_in.start_date or db_rate.start_date
+        _trigger_ppf_recalculation(db, from_date=recalc_start_date)
+
     db.commit()
     db.refresh(updated_rate)
     return updated_rate

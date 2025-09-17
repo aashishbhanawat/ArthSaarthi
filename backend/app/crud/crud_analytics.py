@@ -196,8 +196,8 @@ class CRUDAnalytics:
         unrealized_xirr = _calculate_xirr(dates, values)
 
         return schemas.AssetAnalytics(
-            realized_xirr=realized_xirr * 100,
-            unrealized_xirr=unrealized_xirr * 100,
+            realized_xirr=realized_xirr,
+            unrealized_xirr=unrealized_xirr,
         )
 
     def get_fixed_deposit_analytics(
@@ -270,8 +270,8 @@ class CRUDAnalytics:
         logger.debug(f"FD cashflow values: {values}")
         logger.debug(f"FD unrealized/realized XIRR: {unrealized_xirr}/{realized_xirr}")
         return schemas.FixedDepositAnalytics(
-            realized_xirr=realized_xirr * 100,
-            unrealized_xirr=unrealized_xirr * 100,
+            realized_xirr=realized_xirr,
+            unrealized_xirr=unrealized_xirr,
         )
 
     def get_recurring_deposit_analytics(
@@ -323,7 +323,7 @@ class CRUDAnalytics:
         logger.debug(f"RD cashflow values: {values}")
         xirr_value = _calculate_xirr(dates, values)
         logger.debug(f"Calculated RD XIRR: {xirr_value}")
-        return schemas.RecurringDepositAnalytics(unrealized_xirr=xirr_value * 100)
+        return schemas.RecurringDepositAnalytics(unrealized_xirr=xirr_value)
 
     def get_portfolio_analytics(
         self, db: Session, *, portfolio_id: uuid.UUID
@@ -384,10 +384,8 @@ class CRUDAnalytics:
         sharpe_ratio_value = self._calculate_sharpe_ratio(db, portfolio_id)
         xirr_value = _calculate_xirr(dates, values)
 
-        logger.debug(f"Calculated portfolio XIRR: {xirr_value}")
-        logger.debug(f"Calculated Sharpe Ratio: {sharpe_ratio_value}")
         return schemas.PortfolioAnalytics(
-            xirr=xirr_value * 100, sharpe_ratio=sharpe_ratio_value
+            xirr=xirr_value, sharpe_ratio=sharpe_ratio_value
         )
 
     def _calculate_sharpe_ratio(self, db: Session, portfolio_id: uuid.UUID) -> float:

@@ -6670,3 +6670,22 @@ A series of patches were applied across the full stack:
 - The frontend `InterestRateManagementPage.tsx` and `useInterestRates.ts` hook were refactored multiple times to arrive at a stable and correct implementation for the delete mutation.
 - The E2E test in `admin-interest-rates.spec.ts` was updated with a more robust numeric assertion.
 - All related backend and frontend linting issues were resolved.
+
+---
+
+**Bug ID:** 2025-09-17-02 (Consolidated)
+**Title:** Inconsistent handling of XIRR/annualized return values caused display bugs.
+**Module:** Analytics (Full Stack)
+**Reported By:** User
+**Date Reported:** 2025-09-17
+**Classification:** Implementation (Backend/Frontend)
+**Severity:** High
+**Description:**
+Some backend analytics endpoints were returning XIRR as a raw rate (e.g., `0.08`), while others were returning it as a percentage (`8.00`). Similarly, some frontend components expected a raw rate and multiplied by 100, while others expected a percentage and displayed it directly. This led to values being displayed incorrectly (e.g., `800.00%` or `0.08%`).
+**Resolution:**
+A full-stack refactoring was performed to standardize the process.
+- **Backend:** All analytics endpoints in `crud_analytics.py` were updated to consistently return raw rates.
+- **Frontend:** All UI components (`AnalyticsCard`, `HoldingDetailModal`, `PpfHoldingDetailModal`, etc.) were updated to consistently expect raw rates and multiply by 100 for display.
+- **Tests:** All affected backend and frontend unit tests were updated with new mock data and assertions to match the new standard.
+
+---

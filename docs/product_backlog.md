@@ -133,7 +133,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Advanced Asset Support (FR4):**
     -   Fixed Deposits (FDs): **✅ Complete**
     -   Recurring Deposits (RDs): **✅ Complete**
-    -   Public Provident Fund (PPF): 📝 Planned
+    -   Public Provident Fund (PPF): **✅ Complete**
     -   National Pension System (NPS): 📝 Planned
     -   Bonds: 📝 Planned
     -   RSUs/ESPPs: 📝 Planned

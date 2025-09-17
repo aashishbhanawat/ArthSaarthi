@@ -131,13 +131,13 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                     <div data-testid="summary-realized-xirr">
                         <p className="text-sm text-gray-500">Realized XIRR</p>
                         <p className="font-semibold">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${analytics?.realized_xirr?.toFixed(2)}%`}
+                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.realized_xirr ?? 0) * 100).toFixed(2)}%`}
                         </p>
                     </div>
                     <div data-testid="summary-unrealized-xirr">
                         <p className="text-sm text-gray-500">Unrealized XIRR</p>
                         <p className="font-semibold">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${analytics?.unrealized_xirr?.toFixed(2)}%`}
+                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.unrealized_xirr ?? 0) * 100).toFixed(2)}%`}
                         </p>
                     </div>
                 </div>
