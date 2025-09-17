@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -19,7 +20,7 @@ class CRUDHistoricalInterestRate(
 ):
     def get_by_scheme_and_start_date(
         self, db: Session, *, scheme_name: str, start_date: date
-    ) -> HistoricalInterestRate | None:
+    ) -> Optional[HistoricalInterestRate]:
         return (
             db.query(self.model)
             .filter(
@@ -31,19 +32,16 @@ class CRUDHistoricalInterestRate(
 
     def get_rate_for_date(
         self, db: Session, *, scheme_name: str, a_date: date
-    ) -> HistoricalInterestRate | None:
-        """
-        Retrieves the interest rate for a given scheme that was active on a
-        specific date.
-        """
+    ) -> Optional[HistoricalInterestRate]:
         return (
             db.query(self.model)
             .filter(
                 self.model.scheme_name == scheme_name,
                 self.model.start_date <= a_date,
-                self.model.end_date >= a_date,
+                (self.model.end_date >= a_date) | (self.model.end_date.is_(None)),
             )
             .first()
         )
+
 
 historical_interest_rate = CRUDHistoricalInterestRate(HistoricalInterestRate)

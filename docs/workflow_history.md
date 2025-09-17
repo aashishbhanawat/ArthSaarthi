@@ -1756,3 +1756,38 @@ Its purpose is to build an experience history that can be used as a reference fo
 
 ---
 
+## 2025-09-17: Implement Admin UI for Interest Rate Management (FR4.3.4 - Phase 5)
+
+*   **Task Description:** A full-stack implementation of the "Admin Interest Rate Management" feature. This provides administrators with a dedicated UI to perform CRUD (Create, Read, Update, Delete) operations on the historical interest rates used for calculations of government schemes like PPF.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full backend stack (API endpoints in `admin_interest_rates.py`, CRUD logic in `crud_historical_interest_rate.py`) and the full frontend stack (`InterestRateManagementPage.tsx`, `InterestRateTable.tsx`, `InterestRateFormModal.tsx`, `useInterestRates.ts` hooks, and `adminApi.ts` service functions).
+    2.  **E2E Test Generation:** An E2E test (`admin-interest-rates.spec.ts`) was created to validate the full CRUD user flow.
+    3.  **Systematic Debugging via Log Analysis:** The E2E test failed with a timeout on the "delete" step. A deep, iterative debugging process was required to find the root cause.
+        *   The AI first diagnosed an API contract mismatch: the backend `DELETE` endpoint was returning a `200 OK` with a body, while the frontend expected a `204 No Content`. This was fixed.
+        *   The test still failed. The AI then diagnosed a race condition where the `addToast` notification was causing a re-render that pre-empted the modal-closing state update. This was also fixed.
+        *   The test still failed. The AI then diagnosed a subtle bug in the React Query `useMutation` hook pattern, where the component's `onSuccess` callback was replacing the hook's `onSuccess` (which handled cache invalidation). This was refactored to a more robust pattern.
+        *   The test still failed. The user provided critical feedback comparing the failing `DELETE` endpoint (204) with other working `DELETE` endpoints (200 with body). This led to the final, correct diagnosis.
+    4.  **Final Fix:** The backend `DELETE` endpoint was aligned with the application's established pattern (return `200 OK` with the deleted object), and the frontend was updated to match. This resolved the test failure.
+    5.  **Linting & Final Test Stabilization:** The final phase involved fixing all backend and frontend linting errors and stabilizing a flaky E2E test assertion for floating-point values by making the comparison numeric rather than string-based.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/admin_interest_rates.py`: **New** file with CRUD endpoints.
+    *   `backend/app/crud/crud_historical_interest_rate.py`: **New** file with business logic.
+    *   `backend/app/schemas/historical_interest_rate.py`: **Updated** to make `HistoricalInterestRateUpdate` inherit from the base class.
+    *   `backend/app/api/v1/api.py`: **Updated** to include the new admin router.
+    *   `frontend/src/pages/Admin/InterestRateManagementPage.tsx`: **New** page.
+    *   `frontend/src/components/Admin/InterestRateTable.tsx`, `InterestRateFormModal.tsx`: **New** components.
+    *   `frontend/src/hooks/useInterestRates.ts`: **New** React Query hooks.
+    *   `frontend/src/services/adminApi.ts`: **Updated** with new service functions.
+    *   `frontend/src/App.tsx` & `frontend/src/components/NavBar.tsx`: **Updated** to include the new page.
+    *   `e2e/tests/admin-interest-rates.spec.ts`: **New** E2E test suite for the feature.
+    *   `docs/bug_reports.md`: **Updated** with a consolidated report for the E2E test failure.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (125), frontend tests (146), and E2E tests (15) passed.
+
+*   **Outcome:**
+    - The "Admin Interest Rate Management" feature is complete, stable, and fully tested.
+
+---

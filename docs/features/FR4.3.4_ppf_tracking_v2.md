@@ -1,6 +1,6 @@
 # Feature Plan: Public Provident Fund (PPF) Tracking
 
-**Status: 🚧 In Progress**
+**Status: ✅ Done**
 ---
 **Feature ID:** FR4.3.4
 **Title:** Implement Public Provident Fund (PPF) Tracking with Automated Interest Calculation
@@ -296,8 +296,87 @@ A new function will be implemented to calculate the PPF balance dynamically. It 
 *   **Admin Corrections:** If an administrator corrects a historical interest rate, a background job or manual trigger should be available to re-calculate interest for all affected users and financial years.
 ---
 
-## 5. Testing Plan
+## 5. Phase 5: Admin UI for Interest Rates (Planned)
 
+**Status: ✅ Done**
+
+### 5.1. Objective
+
+To create a simple, admin-only interface for managing the historical interest rates for government schemes like PPF. This is crucial for keeping the automated calculations accurate over time as rates change.
+
+### 5.2. UI/UX Flow & Design
+
+A new page will be added to the admin area, accessible via a link in the main navigation for admin users.
+
+#### 5.2.1. User Flow
+
+1.  **Navigation:** An admin user logs in and sees an "Admin" section in the main navigation bar. Clicking it reveals a dropdown with a "Interest Rates" link.
+2.  **View Rates:** The user is taken to the `/admin/interest-rates` page, which displays a table of all existing historical rates.
+3.  **Add Rate:** The user clicks the "Add New Rate" button. A modal (`InterestRateFormModal`) opens.
+4.  **Fill Form:** The user fills in the form with the scheme name (e.g., "PPF"), start date, end date, and the rate.
+5.  **Save:** On save, the modal closes, the new rate is added to the table, and a success notification appears.
+6.  **Edit Rate:** The user clicks the "Edit" button on an existing row. The same modal opens, pre-filled with the rate's data. The user makes changes and saves.
+7.  **Delete Rate:** The user clicks a "Delete" button. A confirmation modal appears. On confirmation, the rate is removed from the table.
+
+#### 5.2.2. Mockup: Main Page
+```
++--------------------------------------------------------------------+
+| NavBar | Top Bar: Search [_________] [User Menu ▼]                 |
+|--------|-----------------------------------------------------------|
+| ...    |  Interest Rate Management                                 |
+| Admin  |                                                           |
+| ...    |  +------------------------------------------------------+ |
+|        |  |                                     [Add New Rate]   | |
+|        |  |------------------------------------------------------| |
+|        |  | Scheme | Start Date | End Date   | Rate    | Actions   | |
+|        |  |--------|------------|------------|---------|-----------| |
+|        |  | PPF    | 2023-04-01 | 2024-03-31 | 7.10%   | [Edit][Del] | |
+|        |  | PPF    | 2022-04-01 | 2023-03-31 | 7.10%   | [Edit][Del] | |
+|        |  +------------------------------------------------------+ |
++--------------------------------------------------------------------+
+```
+
+#### 5.2.3. Mockup: Add/Edit Rate Modal
+
+```text
+┌──────────────────────────────────────────────────┐
+│ Add/Edit Interest Rate                        [X]│
+├──────────────────────────────────────────────────┤
+│                                                  │
+│  Scheme Name                                     │
+│  [ PPF                             ▼ ]           │
+│                                                  │
+│  Start Date               End Date               │
+│  [ 2025-04-01 ]           [ 2026-03-31 ]         │
+│                                                  │
+│  Interest Rate (%)                               │
+│  [ 7.10 ]                                        │
+│                                                  │
+│                               [ Cancel ] [ Save ]│
+└──────────────────────────────────────────────────┘
+```
+
+### 5.3. Backend Requirements
+
+*   **API Endpoints:** A new set of admin-only endpoints will be created under `/api/v1/admin/interest-rates` for full CRUD operations on the `historical_interest_rates` table.
+    *   `GET /`: List all rates.
+    *   `POST /`: Create a new rate.
+    *   `PUT /{rate_id}`: Update a rate.
+    *   `DELETE /{rate_id}`: Delete a rate.
+
+### 5.4. Frontend Implementation Plan
+
+*   **New Page:** `frontend/src/pages/Admin/InterestRateManagementPage.tsx`
+*   **New Components:** `InterestRateTable.tsx`, `InterestRateFormModal.tsx`
+*   **New Data Layer:** `useInterestRates.ts` (hooks), `adminApi.ts` (service functions).
+
+### 5.5. Testing Plan
+
+*   **Backend:** Unit tests for the new admin endpoints.
+*   **Frontend:** Unit tests for the new components.
+*   **E2E:** A new test file `admin-interest-rates.spec.ts` to test the full CRUD flow from the admin UI.
+
+## 6. Testing Plan
 *   **Backend Unit Tests:**
     *   Write extensive tests for the new PPF interest calculation logic (Phase 1) against a known-correct spreadsheet calculation.
     *   Test the automatic creation of the `INTEREST_CREDIT` transaction at the end of a simulated financial year.

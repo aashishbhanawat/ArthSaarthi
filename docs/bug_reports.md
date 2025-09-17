@@ -6646,3 +6646,27 @@ The test should provide mock data in the same format as the live API, and the as
 The test failed because it was asserting for a value (`12.35%`) that could not be produced from the outdated mock data (`0.12345`).
 **Resolution:**
 Updated the mock data in `AnalyticsCard.test.tsx` to provide the XIRR value as a percentage (e.g., `xirr: 12.345`). This aligns the test environment with the actual application behavior and resolves the test failure.
+
+---
+
+**Bug ID:** 2025-09-17-01 (Consolidated)
+**Title:** E2E test for Admin Interest Rate Management was unstable and failed with multiple cascading issues.
+**Module:** Admin (Full Stack), E2E Testing
+**Reported By:** User & Gemini Code Assist
+**Date Reported:** 2025-09-17
+**Classification:** Test Suite / Implementation (Frontend/Backend)
+**Severity:** Critical
+**Description:**
+The E2E test `should allow an admin to create, update, and delete an interest rate` was highly unstable and failed with a variety of timeout errors. The root cause was a series of subtle, layered bugs across the full stack that were only exposed by the end-to-end test. The debugging process involved a long chain of fixes:
+1.  **API Contract Mismatch:** The backend `DELETE` endpoint was initially returning a `200 OK` with a body, while the frontend expected a `204 No Content`. This was fixed, but the test still failed.
+2.  **Frontend Race Condition:** The AI diagnosed a race condition where the `addToast` notification was causing a re-render that pre-empted the modal-closing state update. This was also fixed, but the test still failed.
+3.  **React Query Hook Flaw:** The AI then diagnosed a subtle bug in the `useMutation` hook pattern, where the component's `onSuccess` callback was replacing the hook's `onSuccess` (which handled cache invalidation). This was refactored to a more robust pattern, but the test still failed.
+4.  **Inconsistent API Patterns (Final Root Cause):** The user provided the critical insight that other working `DELETE` endpoints in the application returned a `200 OK` with a message body, not `204`. The interest rate `DELETE` endpoint was inconsistent with the application's established patterns.
+5.  **Flaky Assertion:** A final failure was due to a brittle assertion for a floating-point value (`"5.50"` vs `"5.500"`), which was made more robust by comparing the numeric value instead of the string representation.
+**Resolution:**
+A series of patches were applied across the full stack:
+- The backend `DELETE` endpoint in `admin_interest_rates.py` was aligned with the application's standard pattern, returning a `200 OK` with the deleted object.
+- The frontend `deleteInterestRate` service in `adminApi.ts` was updated to handle the new response.
+- The frontend `InterestRateManagementPage.tsx` and `useInterestRates.ts` hook were refactored multiple times to arrive at a stable and correct implementation for the delete mutation.
+- The E2E test in `admin-interest-rates.spec.ts` was updated with a more robust numeric assertion.
+- All related backend and frontend linting issues were resolved.

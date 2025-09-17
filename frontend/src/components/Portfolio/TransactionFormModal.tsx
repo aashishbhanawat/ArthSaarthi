@@ -164,7 +164,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         }
     };
     const onSubmit = (data: TransactionFormInputs) => {
-        console.log(`[E2E DEBUG] Submitting transaction for portfolioId: ${portfolioId}`, data);
+        // Defensively coalesce NaN to 0. This can happen if the fees input is left blank.
+        if (isNaN(data.fees as number)) {
+            data.fees = 0;
+        }
+
         const mutationOptions = {
             onSuccess: () => {
                 // Always invalidate portfolio queries on success to refetch holdings, summary, etc.

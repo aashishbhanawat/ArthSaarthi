@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    admin_interest_rates,
     assets,
     auth,
     dashboard,
@@ -45,6 +46,11 @@ api_router.include_router(
     recurring_deposits.router,
     prefix="/recurring-deposits",
     tags=["recurring-deposits"],
+)
+api_router.include_router(
+    admin_interest_rates.router,
+    prefix="/admin/interest-rates",
+    tags=["admin-interest-rates"],
 )
 # Conditionally include the testing router only in the test environment
 logger.warning(f"Current ENVIRONMENT in api.py: '{settings.ENVIRONMENT}'")
