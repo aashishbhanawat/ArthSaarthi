@@ -7,8 +7,7 @@ import { formatCurrency } from '../../utils/formatting';
 import EquityHoldingRow from './holding_rows/EquityHoldingRow';
 import DepositHoldingRow from './holding_rows/DepositHoldingRow';
 import BondHoldingRow from './holding_rows/BondHoldingRow';
-// Note: SchemeHoldingRow might not be used in phase 1, but we create it for future use.
-// import SchemeHoldingRow from './SchemeHoldingRow';
+import SchemeHoldingRow from './holding_rows/SchemeHoldingRow';
 
 interface HoldingsTableProps {
     holdings: Holding[] | undefined;
@@ -50,6 +49,15 @@ const SECTION_CONFIG: { [key: string]: { title: string; columns: { label: string
             { label: 'Maturity', key: 'maturity_date' },
             { label: 'Invested', key: 'total_invested_amount' },
             { label: 'Mkt. Value', key: 'current_value' },
+        ],
+    },
+    GOVERNMENT_SCHEMES: {
+        title: 'Government Schemes',
+        columns: [
+            { label: 'Asset', key: 'asset_type' },
+            { label: 'Institution', key: 'asset_name' },
+            { label: 'Opening Date', key: 'opening_date' },
+            { label: 'Current Balance', key: 'current_value' },
         ],
     },
     // Add other sections as needed
@@ -102,7 +110,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
         setSortConfig({ ...sortConfig, [group]: { key, direction } });
     };
 
-    const sectionOrder = ['EQUITIES', 'DEPOSITS', 'BONDS', 'SCHEMES'];
+    const sectionOrder = ['EQUITIES', 'DEPOSITS', 'BONDS', 'GOVERNMENT_SCHEMES'];
 
     if (isLoading) {
         return (
@@ -174,8 +182,8 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                                                     return <DepositHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
                                                 case 'BONDS':
                                                     return <BondHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                // case 'SCHEMES':
-                                                //     return <SchemeHoldingRow key={holding.asset_id} holding={holding} />;
+                                                case 'GOVERNMENT_SCHEMES':
+                                                    return <SchemeHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
                                                 default:
                                                     return null;
                                             }

@@ -10,9 +10,9 @@ import { Asset, MutualFundSearchResult } from '../../../types/asset';
 // Mocks
 const mockCreateTransaction = jest.fn();
 const mockUpdateTransaction = jest.fn();
-const mockCreateAsset = jest.fn();
 const mockLookupAsset = jest.fn();
 const mockCreateFixedDeposit = jest.fn();
+const mockCreatePpfAccount = jest.fn();
 
 jest.mock('../../../hooks/usePortfolios', () => ({
   useCreateTransaction: () => ({
@@ -24,22 +24,32 @@ jest.mock('../../../hooks/usePortfolios', () => ({
   useCreateFixedDeposit: () => ({
     mutate: mockCreateFixedDeposit,
   }),
+  useCreatePpfAccount: () => ({
+    mutate: mockCreatePpfAccount,
+  }),
 }));
 
+// Mock the entire module
 jest.mock('../../../hooks/useAssets', () => ({
+  ...jest.requireActual('../../../hooks/useAssets'), // import and retain default behavior
+  useAssetsByType: jest.fn(), // mock useAssetsByType
   useAssetSearch: jest.fn(),
-  useCreateAsset: () => ({
-    mutate: mockCreateAsset,
-  }),
   useMfSearch: jest.fn(),
 }));
+
 
 jest.mock('../../../services/portfolioApi', () => ({
   // Use a function factory to avoid hoisting issues with mockLookupAsset
   lookupAsset: (...args: unknown[]) => mockLookupAsset(...args),
 }));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false, // Prevent retries in tests
+    },
+  },
+});
 
 const mockAssets: Asset[] = [
   { id: 'asset-1', ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD', isin: null, exchange: 'NASDAQ' },
@@ -91,16 +101,16 @@ const renderComponent = (transactionToEdit: Transaction | null = null) => {
 describe('TransactionFormModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
+    // Default mock for useAssetsByType
+    (assetHooks.useAssetsByType as jest.Mock).mockReturnValue({
+        data: [],
+        isLoading: false,
+    });
     mockLookupAsset.mockResolvedValue(mockAssets);
     (assetHooks.useMfSearch as jest.Mock).mockReturnValue({
       data: mockMfSearchResults,
       isLoading: false,
     });
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   describe('Create Mode', () => {
@@ -135,7 +145,7 @@ describe('TransactionFormModal', () => {
       fireEvent.change(screen.getByLabelText(/price per unit/i), { target: { value: '150' } });
       fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
 
-      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       await waitFor(() => {
         expect(mockCreateTransaction).toHaveBeenCalledWith(
@@ -174,7 +184,7 @@ describe('TransactionFormModal', () => {
       fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-02-01' } });
 
       // Submit the form
-      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       // Assert the mutation was called with the correct payload
       await waitFor(() => {
@@ -186,6 +196,85 @@ describe('TransactionFormModal', () => {
               quantity: 50,
               price_per_unit: 250,
             }),
+          }),
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('submits the form and calls createPpfAccount mutation for a new PPF account', async () => {
+      // Ensure the hook returns no existing PPF accounts
+      (assetHooks.useAssetsByType as jest.Mock).mockReturnValue({ data: [], isLoading: false });
+      renderComponent();
+
+      // Switch to PPF Account
+      const assetTypeSelect = screen.getByLabelText(/asset type/i);
+      fireEvent.change(assetTypeSelect, { target: { value: 'PPF Account' } });
+
+      // Wait for the UI to update and show the creation form
+      expect(await screen.findByText(/create your ppf account/i)).toBeInTheDocument();
+
+      // Fill PPF fields
+      fireEvent.change(screen.getByLabelText(/institution name/i), { target: { value: 'Test PPF Bank' } });
+      fireEvent.change(screen.getByLabelText(/account number/i), { target: { value: 'PPF123' } });
+      fireEvent.change(screen.getByLabelText(/opening date/i), { target: { value: '2023-01-01' } });
+      fireEvent.change(screen.getByLabelText(/contribution amount/i), { target: { value: '50000' } });
+      fireEvent.change(screen.getByLabelText(/contribution date/i), { target: { value: '2023-01-15' } });
+
+      // Submit the form
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+      // Assert the mutation was called with the correct payload
+      await waitFor(() => {
+        expect(mockCreatePpfAccount).toHaveBeenCalledWith(
+          {
+            portfolioId: 'portfolio-1',
+            data: {
+              institution_name: 'Test PPF Bank',
+              account_number: 'PPF123',
+              opening_date: '2023-01-01',
+              amount: 50000,
+              contribution_date: '2023-01-15',
+            },
+          },
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('submits the form and calls createTransaction for an existing PPF account', async () => {
+      const mockPpfAsset = { id: 'ppf-asset-1', name: 'Existing PPF', asset_type: 'PPF', account_number: '123' };
+      (assetHooks.useAssetsByType as jest.Mock).mockReturnValue({ data: [mockPpfAsset], isLoading: false });
+
+      renderComponent();
+
+      // Switch to PPF Account
+      const assetTypeSelect = screen.getByLabelText(/asset type/i);
+      fireEvent.change(assetTypeSelect, { target: { value: 'PPF Account' } });
+
+      // Wait for the UI to update and show the contribution form
+      expect(await screen.findByText(/existing ppf account/i)).toBeInTheDocument();
+
+      // Fill contribution fields
+      fireEvent.change(screen.getByLabelText(/contribution amount/i), { target: { value: '10000' } });
+      fireEvent.change(screen.getByLabelText(/contribution date/i), { target: { value: '2024-05-10' } });
+
+      // Submit the form
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+      // Assert the mutation was called with the correct payload
+      await waitFor(() => {
+        expect(mockCreateTransaction).toHaveBeenCalledWith(
+          expect.objectContaining({
+            portfolioId: 'portfolio-1',
+            data: {
+              asset_id: 'ppf-asset-1',
+              asset_type: 'PPF',
+              transaction_type: 'CONTRIBUTION',
+              quantity: 10000,
+              price_per_unit: 1,
+              transaction_date: new Date('2024-05-10T00:00:00.000Z').toISOString(),
+            },
           }),
           expect.any(Object)
         );
@@ -208,7 +297,7 @@ describe('TransactionFormModal', () => {
       fireEvent.change(screen.getByLabelText(/maturity date/i), { target: { value: '2025-01-01' } });
 
       // Submit the form
-      fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       // Assert the mutation was called with the correct payload
       await waitFor(() => {
@@ -254,7 +343,9 @@ describe('TransactionFormModal', () => {
           portfolioId: 'portfolio-1',
           transactionId: 'tx-1',
           data: expect.objectContaining({
-            quantity: 20,
+            quantity: 20, // The updated value
+            price_per_unit: 150, // Should remain the same
+            fees: 5, // Should remain the same
           }),
         }, expect.any(Object));
       });
@@ -278,7 +369,7 @@ describe('TransactionFormModal', () => {
     fireEvent.change(screen.getByLabelText(/price per unit/i), { target: { value: '150' } });
     fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /save transaction/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(await screen.findByText(/network error/i)).toBeInTheDocument();
   });

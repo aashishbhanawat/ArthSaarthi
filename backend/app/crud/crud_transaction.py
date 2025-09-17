@@ -108,6 +108,12 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             db.query(self.model).filter(self.model.portfolio_id == portfolio_id).all()
         )
 
+    def get_multi_by_asset(
+        self, db: Session, *, asset_id: uuid.UUID
+    ) -> List[Transaction]:
+        """Retrieves all transactions for a specific asset."""
+        return db.query(self.model).filter(self.model.asset_id == asset_id).all()
+
     def get_multi_by_portfolio_and_asset(
         self, db: Session, *, portfolio_id: uuid.UUID, asset_id: uuid.UUID
     ) -> List[Transaction]:

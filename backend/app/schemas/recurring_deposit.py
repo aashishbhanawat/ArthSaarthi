@@ -16,7 +16,7 @@ class RecurringDepositBase(BaseModel):
 
 
 class RecurringDepositCreate(RecurringDepositBase):
-    pass
+    portfolio_id: uuid.UUID
 
 
 class RecurringDepositUpdate(BaseModel):

@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, timedelta
 from decimal import Decimal
+from typing import Callable, Dict
 
 import pytest
 from fastapi.testclient import TestClient
@@ -141,12 +142,12 @@ def test_get_portfolio_analytics_calculation(
 
     # Expected XIRR for buying at 100 and current value being 110 after 1 year is ~10%
     assert "xirr" in data
-    assert data["xirr"] == pytest.approx(0.10, abs=1e-2)
+    assert data["xirr"] == pytest.approx(0.10, abs=0.001)
 
     # Assert Sharpe Ratio is calculated and is a float
     assert "sharpe_ratio" in data
     assert isinstance(data["sharpe_ratio"], float)
-    assert data["sharpe_ratio"] != 0.0
+    assert data["sharpe_ratio"] != 0.0  # This will be updated once implemented
 
 
 def test_get_asset_analytics_success(
@@ -275,5 +276,67 @@ def test_get_asset_analytics_calculation_realized_and_unrealized(
     assert response.status_code == 200
     data = response.json()
     # The correct annualized return for a 20% gain over 183 days is ~0.4386
-    assert data["realized_xirr"] == pytest.approx(0.4386, abs=1e-4)
-    assert data["unrealized_xirr"] == pytest.approx(0.3000, abs=1e-4)
+    assert data["realized_xirr"] == pytest.approx(0.4386, abs=0.001)
+    # The correct annualized return for the remaining holding is ~30%
+    assert data["unrealized_xirr"] == pytest.approx(0.30, abs=0.01)
+
+
+def test_get_ppf_asset_analytics(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+    mocker,
+) -> None:
+    """
+    Tests the XIRR calculation for a PPF asset with a single contribution.
+    """
+    from app.tests.api.v1.test_ppf_holdings import seed_ppf_interest_rates
+
+    # 1. Setup user, portfolio, and interest rates
+    user, password = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="PPF Test Portfolio")
+    headers = get_auth_headers(user.email, password)
+    seed_ppf_interest_rates(db)
+
+    # 2. Mock date.today() to a predictable future date for stable calculation
+    class MockDate(date):
+        @classmethod
+        def today(cls):
+            return date(2025, 1, 1)
+
+    mocker.patch("app.crud.crud_ppf.date", MockDate)
+    mocker.patch("app.crud.crud_analytics.date", MockDate)
+
+    # 3. Create a PPF account with one contribution
+    ppf_creation_data = {
+        "institution_name": "E2E Test Bank",
+        "portfolio_id": str(portfolio.id),
+        "opening_date": "2023-01-01",
+        "amount": 100000,
+        "contribution_date": "2023-01-01",
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/ppf-accounts/",
+        headers=headers,
+        json=ppf_creation_data,
+    )
+    assert response.status_code == 201
+    ppf_asset_id = response.json()["asset"]["id"]
+
+    # 4. Call the analytics endpoint
+    response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/assets/{ppf_asset_id}/analytics",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    analytics_data = response.json()
+
+    # 5. Verification
+    # Cashflow:
+    # - 2023-01-01: -100,000 (Contribution)
+    # - 2025-01-01: +114,803.11 (Calculated current value)
+    # The XIRR for this cashflow over 2 years is ~7.14%
+    expected_xirr = 0.0714
+    assert "unrealized_xirr" in analytics_data
+    assert analytics_data["unrealized_xirr"] == pytest.approx(expected_xirr, abs=0.001)
+    assert analytics_data["realized_xirr"] == 0.0

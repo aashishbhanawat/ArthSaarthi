@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit } from '../../hooks/usePortfolios';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useCreatePpfAccount } from '../../hooks/usePortfolios';
 import { useCreateRecurringDeposit } from '../../hooks/useRecurringDeposits';
-import { useCreateAsset, useMfSearch } from '../../hooks/useAssets';
+import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
 import { lookupAsset } from '../../services/portfolioApi';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
@@ -17,8 +18,8 @@ interface TransactionFormModalProps {
 
 // Define the shape of our form data
 type TransactionFormInputs = {
-    asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit';
-    transaction_type: 'BUY' | 'SELL';
+    asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit' | 'PPF Account';
+    transaction_type: 'BUY' | 'SELL' | 'CONTRIBUTION';
     quantity: number;
     price_per_unit: number;
     transaction_date: string; // from date input
@@ -30,8 +31,8 @@ type TransactionFormInputs = {
     interestRate?: number;
     startDate?: string;
     maturityDate?: string;
-    compounding_frequency?: 'Annually' | 'Semi-Annually' | 'Quarterly' | 'Monthly';
-    interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually';
+    compounding_frequency?: 'Annually' | 'Semi-Annually' | 'Quarterly' | 'Monthly'; // FD
+    interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually'; // FD
     // RD-specific fields
     rdName?: string;
     rdAccountNumber?: string;
@@ -39,6 +40,10 @@ type TransactionFormInputs = {
     rdInterestRate?: number;
     rdStartDate?: string;
     tenureMonths?: number;
+    // PPF-specific fields (reusing generic fields for creation/contribution)
+    contributionAmount?: number;
+    contributionDate?: string;
+    openingDate?: string;
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
@@ -47,12 +52,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         defaultValues: { asset_type: 'Stock' }
     });
 
+    const queryClient = useQueryClient();
     const createTransactionMutation = useCreateTransaction();
     const updateTransactionMutation = useUpdateTransaction();
     const createAssetMutation = useCreateAsset();
     const createFixedDepositMutation = useCreateFixedDeposit();
     const createRecurringDepositMutation = useCreateRecurringDeposit();
-
+    const createPpfAccountMutation = useCreatePpfAccount();
     const [apiError, setApiError] = useState<string | null>(null);
 
     // Stock search state
@@ -70,6 +76,17 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const { data: mfSearchResults, isLoading: isMfSearching } = useMfSearch(mfSearchInput);
     const [selectedMf, setSelectedMf] = useState<MutualFundSearchResult | null>(null);
 
+    // --- PPF Account State & Hooks ---
+    const { data: ppfAssets, isLoading: isLoadingPpfAssets } = useAssetsByType(
+        portfolioId,
+        'PPF',
+        {
+            enabled: assetType === 'PPF Account',
+        }
+    );
+    const existingPpfAsset = ppfAssets?.[0];
+
+
     useEffect(() => {
         if (isEditMode && transactionToEdit) {
             // Format date for input[type=date] which expects 'YYYY-MM-DD'
@@ -85,9 +102,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             });
             setSelectedAsset(transactionToEdit.asset);
             setInputValue(transactionToEdit.asset.name);
-            if (transactionToEdit.asset.asset_type === 'Mutual Fund') {
-                setSelectedMf({ name: transactionToEdit.asset.name, ticker_symbol: transactionToEdit.asset.ticker_symbol, asset_type: 'Mutual Fund' });
-            }
         }
     }, [isEditMode, transactionToEdit, reset]);
 
@@ -130,9 +144,37 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         setSelectedMf(mf);
     };
 
+    const handleCreateAsset = () => {
+        if (inputValue) {
+            createAssetMutation.mutate(
+                {
+                    ticker_symbol: inputValue.toUpperCase(),
+                    name: inputValue, // Restore name from original code
+                    asset_type: 'Stock',
+                    currency: 'INR', // Restore currency from original code
+                },
+                {
+                    onSuccess: (newAsset) => {
+                        setSelectedAsset(newAsset);
+                        setSearchResults([]); // Clear search results
+                    },
+                    onError: () => setApiError(`Failed to create asset "${inputValue}".`),
+                }
+            );
+        }
+    };
     const onSubmit = (data: TransactionFormInputs) => {
+        // Defensively coalesce NaN to 0. This can happen if the fees input is left blank.
+        if (isNaN(data.fees as number)) {
+            data.fees = 0;
+        }
+
         const mutationOptions = {
-            onSuccess: () => onClose(),
+            onSuccess: () => {
+                // Always invalidate portfolio queries on success to refetch holdings, summary, etc.
+                queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+                onClose();
+            },
             onError: (error: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) => {
                 const defaultMessage = isEditMode
                     ? 'An unexpected error occurred while updating the transaction'
@@ -152,7 +194,32 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             }
         };
 
-        if (assetType === 'Fixed Deposit') {
+        if (assetType === 'PPF Account') {
+            if (existingPpfAsset) {
+                // Add a new contribution to an existing PPF account
+                const payload: TransactionCreate = {
+                    asset_id: existingPpfAsset.id,
+                    transaction_type: 'CONTRIBUTION',
+                    quantity: data.contributionAmount!,
+                    price_per_unit: 1,
+                    transaction_date: new Date(data.contributionDate!).toISOString(),
+                    asset_type: 'PPF', // For smart recalculation trigger
+                };
+                createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            } else {
+                // Create a new PPF account and the first contribution
+                createPpfAccountMutation.mutate({
+                    portfolioId,
+                    data: {
+                        institution_name: data.institutionName!,
+                        account_number: data.accountNumber,
+                        opening_date: data.openingDate!,
+                        amount: data.contributionAmount!,
+                        contribution_date: data.contributionDate!,
+                    }
+                }, mutationOptions);
+            }
+        } else if (assetType === 'Fixed Deposit') {
             createFixedDepositMutation.mutate({
                 portfolioId: portfolioId,
                 data: {
@@ -179,77 +246,39 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 }
             }, mutationOptions);
         } else {
-            if (assetType === 'Stock' && !selectedAsset) {
-                setApiError("Please select a stock.");
-                return;
-            }
-            if (assetType === 'Mutual Fund' && !selectedMf) {
-                setApiError("Please select a mutual fund.");
-                return;
-            }
-
-            const { asset_type, ...transactionBaseData } = data;
-            const commonPayload: Omit<TransactionUpdate, 'asset_id'> = {
-                ...transactionBaseData,
-                quantity: Number(data.quantity),
-                price_per_unit: Number(data.price_per_unit),
-                fees: data.fees ? Number(data.fees) : 0,
-                transaction_date: new Date(data.transaction_date).toISOString(),
-            };
-
+            // Handle Stock and Mutual Fund
             if (isEditMode && transactionToEdit) {
-                const payload: TransactionUpdate = commonPayload;
-                updateTransactionMutation.mutate(
-                    { portfolioId, transactionId: transactionToEdit.id, data: payload },
-                    mutationOptions
-                );
+                const payload: TransactionUpdate = {
+                    quantity: data.quantity,
+                    price_per_unit: data.price_per_unit,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                    fees: data.fees || 0,
+                };
+                updateTransactionMutation.mutate({ portfolioId, transactionId: transactionToEdit.id, data: payload }, mutationOptions);
             } else {
+                const commonPayload = {
+                    transaction_type: data.transaction_type,
+                    quantity: data.quantity,
+                    price_per_unit: data.price_per_unit,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                    fees: data.fees || 0,
+                };
                 let payload: TransactionCreate;
-                if (asset_type === 'Stock' && selectedAsset) {
+                if (assetType === 'Stock' && selectedAsset) {
                     payload = {
                         ...commonPayload,
                         asset_id: selectedAsset.id,
-                        ticker_symbol: selectedAsset.ticker_symbol,
+                        ticker_symbol: selectedAsset.ticker_symbol, // Restore ticker symbol as per original code
                     };
-                } else if (asset_type === 'Mutual Fund' && selectedMf) {
+                } else if (assetType === 'Mutual Fund' && selectedMf) {
                     payload = { ...commonPayload, ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' };
                 } else {
-                    setApiError("An unexpected error occurred. Please select an asset.");
+                    setApiError("Please select an asset.");
                     return;
                 }
                 createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
             }
         }
-    };
-
-    const handleCreateAsset = () => {
-        setApiError(null);
-        if (isEditMode) return;
-
-        const payload = {
-            ticker_symbol: inputValue.toUpperCase(),
-            name: inputValue,
-            asset_type: 'STOCK' as const,
-            currency: 'INR',
-        };
-
-        createAssetMutation.mutate(payload, {
-            onSuccess: (newAsset) => {
-                handleSelectAsset(newAsset);
-            },
-            onError: (error: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) => {
-                const defaultMessage = 'Failed to create asset.';
-                let errorMessage = defaultMessage;
-                const detail = error.response?.data?.detail;
-
-                if (typeof detail === 'string') {
-                    errorMessage = detail;
-                } else if (Array.isArray(detail)) {
-                    errorMessage = detail.map(d => d.msg).join(', ');
-                }
-                setApiError(errorMessage);
-            }
-        });
     };
 
     if (!isOpen) return null;
@@ -268,10 +297,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <option value="Mutual Fund">Mutual Fund</option>
                                     <option value="Fixed Deposit">Fixed Deposit</option>
                                     <option value="Recurring Deposit">Recurring Deposit</option>
+                                    <option value="PPF Account">PPF Account</option>
                                 </select>
                             </div>
 
-                            {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit') && (
+                            {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit' && assetType !== 'PPF Account') && (
                                 <div className="form-group">
                                     <label htmlFor={assetType === 'Stock' ? 'asset-search' : 'mf-search-input'} className="form-label">Asset</label>
                                     {assetType === 'Stock' && (
@@ -355,7 +385,61 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                             )}
                         </div>
 
-                        {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit') && (
+                        {(assetType === 'PPF Account') && (
+                            isLoadingPpfAssets ? <p>Loading PPF details...</p> : (
+                                existingPpfAsset ? (
+                                    <div>
+                                        <div className="p-4 border rounded-md bg-gray-50 mb-4">
+                                            <h3 className="font-semibold text-lg text-gray-800">Existing PPF Account</h3>
+                                            <p className="text-sm text-gray-600">Institution: {existingPpfAsset.name}</p>
+                                            <p className="text-sm text-gray-600">Account #: {existingPpfAsset.account_number}</p>
+                                        </div>
+                                        <h3 className="font-semibold text-lg text-gray-800 mb-2">Add New Contribution</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <label htmlFor="contributionAmount" className="form-label">Contribution Amount (₹)</label>
+                                                <input id="contributionAmount" type="number" step="any" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="contributionDate" className="form-label">Contribution Date</label>
+                                                <input id="contributionDate" type="date" {...register('contributionDate', { required: true })} className="form-input" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <h3 className="font-semibold text-lg text-gray-800 mb-2">Create Your PPF Account</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group col-span-2">
+                                                <label htmlFor="institutionName" className="form-label">Institution Name (e.g., SBI, HDFC)</label>
+                                                <input id="institutionName" type="text" {...register('institutionName', { required: true })} className="form-input" />
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="accountNumber" className="form-label">Account Number (Optional)</label>
+                                                <input id="accountNumber" type="text" {...register('accountNumber')} className="form-input" />
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="openingDate" className="form-label">Opening Date</label>
+                                                <input id="openingDate" type="date" {...register('openingDate', { required: true })} className="form-input" />
+                                            </div>
+                                        </div>
+                                        <h3 className="font-semibold text-lg text-gray-800 mt-4 mb-2">Add First Contribution</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <label htmlFor="contributionAmount" className="form-label">Contribution Amount (₹)</label>
+                                                <input id="contributionAmount" type="number" step="any" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="contributionDate" className="form-label">Contribution Date</label>
+                                                <input id="contributionDate" type="date" {...register('contributionDate', { required: true })} className="form-input" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            )
+                        )}
+
+                        {(assetType !== 'Fixed Deposit' && assetType !== 'Recurring Deposit' && assetType !== 'PPF Account') && (
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="form-group">
                                     <label htmlFor="transaction_type" className="form-label">Type</label>
@@ -425,8 +509,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <div className="form-group">
                                     <label htmlFor="interest_payout" className="form-label">Interest Payout</label>
                                     <select id="interest_payout" {...register('interest_payout')} className="form-input">
-                                        <option value="Cumulative">Cumulative (at maturity)</option>
-                                        <option value="Payout">Periodic Payout</option>
+                                        <option value="Cumulative">Cumulative (Re-invested)</option>
+                                        <option value="Payout">Payout (Periodic)</option>
                                     </select>
                                 </div>
                             </div>
@@ -460,13 +544,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 </div>
                             </div>
                         )}
-
+                        
                         {apiError && (
                             <div className="alert alert-error mt-2">
                                 <p>{apiError}</p>
                             </div>
                         )}
-
+                        
                         <div className="flex justify-end space-x-4 pt-4">
                             <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
                             <button
@@ -474,13 +558,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 className="btn btn-primary"
                                 disabled={
                                     (isEditMode && updateTransactionMutation.isPending) ||
-                                    (!isEditMode && createTransactionMutation.isPending) ||
+                                    (!isEditMode && (createTransactionMutation.isPending || createPpfAccountMutation.isPending)) ||
                                     (!isEditMode && assetType === 'Stock' && !selectedAsset) ||
                                     (!isEditMode && assetType === 'Mutual Fund' && !selectedMf)}
                             >
                                 {isEditMode
                                     ? (updateTransactionMutation.isPending ? 'Saving...' : 'Save Changes')
-                                    : (createTransactionMutation.isPending ? 'Saving...' : 'Save Transaction')
+                                    : (createTransactionMutation.isPending || createPpfAccountMutation.isPending ? 'Saving...' : 'Save Transaction')
                                 }
                             </button>
                         </div>

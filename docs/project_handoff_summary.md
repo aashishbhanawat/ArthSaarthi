@@ -1,7 +1,7 @@
 # Project Handoff Document: ArthSaarthi
 
 **Version:** 0.3.0
-**Date:** 2025-09-07
+**Date:** 2025-09-17
 **Status:** Completed & Stable
 **Author:** Gemini Code Assist
 
@@ -18,9 +18,9 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 ## 2. Final Status
 
 *   **Overall Status:** **Stable**
-*   **Backend Tests:** **123/123 Passing**
-*   **Frontend Tests:** **146/146 Passing**
-*   **E2E Tests:** **18/18 Passing**
+*   **Backend Tests:** **131/131 Passing**
+*   **Frontend Tests:** **159/159 Passing**
+*   **E2E Tests:** **21/21 Passing**
 
 All planned features for the current release cycle have been implemented and validated through a combination of unit, integration, and end-to-end tests. The application is stable and ready for the next phase of development.
 
@@ -34,8 +34,8 @@ All planned features for the current release cycle have been implemented and val
 *   **Advanced Portfolio Analytics:** Calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset level.
 *   **Full Portfolio & Transaction CRUD:**
     *   Full CRUD functionality for portfolios and transactions.
-    *   A redesigned portfolio page showing a consolidated holdings view with sorting.
-    *   Full CRUD and tracking for **Fixed Deposits (FDs)** and **Recurring Deposits (RDs)** with detailed analytics.
+    *   A redesigned portfolio page showing a consolidated holdings view with sorting and collapsible sections.
+    *   Full CRUD and tracking for **Fixed Deposits (FDs)**, **Recurring Deposits (RDs)**, and **Public Provident Fund (PPF)** accounts with detailed analytics.
     *   A dedicated, filterable **Transaction History** page with full edit and delete capabilities.
     *   A **Holdings Drill-Down View** to inspect the specific transactions that constitute a current holding.
 *   **Automated Data Import (Phase 2):**
@@ -57,6 +57,7 @@ All planned features for the current release cycle have been implemented and val
 *   **Security & Administration:**
     *   A backend **Audit Logging Engine** that securely records all sensitive user and system events (logins, user creation/deletion) to a dedicated database table for monitoring and compliance.
     *   **User Profile Management:** A dedicated page for users to update their full name and securely change their password. This includes a critical bug fix to the desktop application's encryption key management to prevent data loss on password change.
+    *   **Interest Rate Management:** A dedicated admin UI for managing the historical interest rates used for government scheme calculations.
 
 ---
 
@@ -151,8 +152,9 @@ The application can be run with either PostgreSQL (default) or SQLite.
 The application is in a strong position for future development. With the core portfolio management and data import features now stable, the following are recommended next steps based on the product backlog:
 
 1.  **Advanced Asset Support:** Add support for other asset classes like Fixed Deposits (FDs), Public Provident Fund (PPF), and Bonds.
-2.  **Corporate Actions:** Implement functionality to handle corporate actions like stock splits, dividends, and mergers.
-3.  **Risk Profile Management:** Implement the risk questionnaire and portfolio alignment dashboard.
+2.  **Advanced Asset Support:** Add support for other asset classes like National Pension System (NPS) and Bonds.
+3.  **Corporate Actions:** Implement functionality to handle corporate actions like stock splits, dividends, and mergers.
+4.  **Risk Profile Management:** Implement the risk questionnaire and portfolio alignment dashboard.
 
 ---
 

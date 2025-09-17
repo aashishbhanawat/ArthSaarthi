@@ -7,6 +7,7 @@ import TransactionFormModal from '../../components/Portfolio/TransactionFormModa
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
 import HoldingsTable from '../../components/Portfolio/HoldingsTable';
+import PpfHoldingDetailModal from '../../components/Portfolio/PpfHoldingDetailModal';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
@@ -146,7 +147,16 @@ const PortfolioDetailPage: React.FC = () => {
 
             {selectedHolding && !isTransactionFormOpen && !transactionToDelete && !rdToDelete && (
                 <>
-                    {selectedHolding.asset_type === 'FIXED_DEPOSIT' ? (
+                    {selectedHolding.asset_type === 'PPF' ? (
+                        <PpfHoldingDetailModal
+                            isOpen={!!selectedHolding}
+                            holding={selectedHolding}
+                            portfolioId={portfolio.id}
+                            onClose={handleCloseDetailModal}
+                            onEdit={handleOpenEditTransactionModal}
+                            onDelete={handleOpenDeleteModal}
+                        />
+                    ) : selectedHolding.asset_type === 'FIXED_DEPOSIT' ? (
                         <FixedDepositDetailModal
                             holding={selectedHolding}
                             onClose={handleCloseDetailModal}

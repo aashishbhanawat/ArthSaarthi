@@ -107,12 +107,16 @@ def mock_db_session_with_data(mocker):
     mock_query_object = mocker.Mock()
 
     def query_side_effect(model):
+        # Set a default return value for delete()
+        mock_query_object.delete.return_value = 0
+        # Set specific return values for models we are testing against
         if model.__name__ == "Transaction":
             mock_query_object.delete.return_value = 5  # 5 transactions deleted
         elif model.__name__ == "Portfolio":
             mock_query_object.delete.return_value = 2  # 2 portfolios deleted
         elif model.__name__ == "Asset":
             mock_query_object.delete.return_value = 10  # 10 assets deleted
+        # For any other model, it will return 0, and no message will be printed.
         return mock_query_object
 
     mock_db.query.side_effect = query_side_effect
@@ -122,23 +126,31 @@ def mock_db_session_with_data(mocker):
 
 def test_clear_assets_with_confirmation(mocker, mock_db_session_with_data):
     """Tests the clear-assets command with user confirmation."""
-    result = runner.invoke(main_app, ["db", "clear-assets"], input="y\n")
+    result = runner.invoke(main_app, ["db", "clear-assets"], input="y\n") # noqa: E501
+    print(
+        f"\n--- STDOUT for test_clear_assets_with_confirmation ---\n{result.stdout}\n"
+        "----------------------------------------------------"
+    )
 
     assert result.exit_code == 0
     assert "Are you sure you want to proceed?" in result.stdout
-    assert "Successfully deleted 5 transactions." in result.stdout
-    assert "Successfully deleted 2 portfolios." in result.stdout
-    assert "Successfully deleted 10 assets." in result.stdout
+    assert "Deleted 5 rows from transactions." in result.stdout
+    assert "Deleted 2 rows from portfolios." in result.stdout
+    assert "Deleted 10 rows from assets." in result.stdout
     assert mock_db_session_with_data.commit.call_count == 1
 
 
 def test_clear_assets_with_force(mocker, mock_db_session_with_data):
     """Tests the clear-assets command with the --force flag."""
-    result = runner.invoke(main_app, ["db", "clear-assets", "--force"])
+    result = runner.invoke(main_app, ["db", "clear-assets", "--force"]) # noqa: E501
+    print(
+        f"\n--- STDOUT for test_clear_assets_with_force ---\n{result.stdout}\n"
+        "-------------------------------------------------"
+    )
 
     assert result.exit_code == 0
     assert "Are you sure you want to proceed?" not in result.stdout
-    assert "Successfully deleted 5 transactions." in result.stdout
-    assert "Successfully deleted 2 portfolios." in result.stdout
-    assert "Successfully deleted 10 assets." in result.stdout
+    assert "Deleted 5 rows from transactions." in result.stdout
+    assert "Deleted 2 rows from portfolios." in result.stdout
+    assert "Deleted 10 rows from assets." in result.stdout
     assert mock_db_session_with_data.commit.call_count == 1

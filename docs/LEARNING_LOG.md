@@ -309,3 +309,21 @@ While implementing the Recurring Deposit feature, a significant amount of time w
     3.  **Test Environment vs. Production Environment:** The local test environment, especially with SQLite, has different constraints than a production PostgreSQL environment. This experience reinforces the need to be aware of these differences, particularly when dealing with database schema modifications.
 
 ---
+
+## 2025-09-15: The Importance of Synchronized Test Mocks
+
+### 1. What Happened?
+
+After a backend change, two frontend unit tests (`HoldingDetailModal.test.tsx` and `AnalyticsCard.test.tsx`) began to fail. The backend analytics API was updated to return XIRR values as percentages (e.g., `7.14`) instead of raw rates (e.g., `0.0714`). The frontend components were correctly formatting these new values, but the unit tests were still providing mock data in the old rate format. This caused the components to render values like `0.07%` in the test environment, which then failed the assertions that were correctly expecting `7.14%`.
+
+### 2. How Did the Process Help?
+
+*   **Targeted Log Analysis:** The Jest test logs clearly showed the discrepancy between the expected and received text (`Expected: 12.34%, Received: 0.12%`). This immediately pointed to a data format issue rather than a component logic bug.
+*   **Understanding the Full Stack:** Recognizing that the backend had recently changed its API contract was the key to understanding *why* the mock data was wrong.
+
+### 3. Outcome & New Learning
+
+*   The frontend unit test suite is now fully stable and passing.
+*   **Key Learning: Test Mocks are API Contracts.** Unit test mocks for API calls are a critical part of the contract between the frontend and backend. When a backend developer changes the shape or format of an API response, it is not enough to just update the frontend component that consumes it. All unit tests that mock that API call must also be updated with the new data structure. Failing to do so creates "test debt" and leads to a brittle test suite that fails for reasons unrelated to the component's actual logic. This emphasizes the need for clear communication or for full-stack developers to be mindful of the entire data flow when making changes.
+
+---

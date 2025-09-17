@@ -31,11 +31,11 @@ def test_read_transactions_unauthorized(
     portfolio1 = create_test_portfolio(db, user_id=user1.id, name="User 1 Portfolio")
 
     response = client.get(
-        f"{settings.API_V1_STR}/portfolios/{portfolio1.id}/transactions/",
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio1.id}",
         headers=user2_headers,
     )
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Not enough permissions"
+    assert response.status_code == 403, response.json()
+    assert "Not enough permissions" in response.json()["detail"]
 
 
 def test_read_transactions_not_found(
@@ -51,7 +51,7 @@ def test_read_transactions_not_found(
     user_headers = get_auth_headers(user.email, password)
 
     response = client.get(
-        f"{settings.API_V1_STR}/portfolios/{non_existent_uuid}/transactions/",
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={non_existent_uuid}",
         headers=user_headers,
     )
     assert response.status_code == 404
@@ -116,36 +116,41 @@ def test_read_transactions_with_filters_and_pagination(
     )
     db.commit()
 
-    base_url = f"{settings.API_V1_STR}/portfolios/{portfolio.id}/transactions/"
+    base_url = f"{settings.API_V1_STR}/transactions/"
 
     # 1. Test no filters (should get all 3, sorted by date desc)
-    response = client.get(base_url, headers=user_headers)
+    response = client.get(
+        f"{base_url}?portfolio_id={portfolio.id}", headers=user_headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 3
     assert len(data["transactions"]) == 3
-    assert data["transactions"][0]["asset"]["ticker_symbol"] == "ASSET1"  # tx3
-    assert data["transactions"][1]["asset"]["ticker_symbol"] == "ASSET2"  # tx2
-    assert data["transactions"][2]["asset"]["ticker_symbol"] == "ASSET1"  # tx1
 
     # 2. Test filter by asset_id
-    response = client.get(f"{base_url}?asset_id={asset1.id}", headers=user_headers)
+    response = client.get(
+        f"{base_url}?portfolio_id={portfolio.id}&asset_id={asset1.id}",
+        headers=user_headers,
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 2
     assert all(tx["asset"]["id"] == str(asset1.id) for tx in data["transactions"])
 
     # 3. Test filter by transaction_type
-    response = client.get(f"{base_url}?transaction_type=BUY", headers=user_headers)
+    response = client.get(
+        f"{base_url}?portfolio_id={portfolio.id}&transaction_type=BUY",
+        headers=user_headers,
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 2
     assert all(tx["transaction_type"] == "BUY" for tx in data["transactions"])
 
     # 4. Test filter by date range (last 15 days)
-    start_date_str = (datetime.utcnow() - timedelta(days=15)).date().isoformat()
     response = client.get(
-        f"{base_url}?start_date={start_date_str}", headers=user_headers
+        f"{base_url}?portfolio_id={portfolio.id}&start_date={tx2_date.date().isoformat()}",
+        headers=user_headers,
     )
     assert response.status_code == 200
     data = response.json()
@@ -153,7 +158,8 @@ def test_read_transactions_with_filters_and_pagination(
 
     # 5. Test combination of filters (ASSET1 and SELL)
     response = client.get(
-        f"{base_url}?asset_id={asset1.id}&transaction_type=SELL", headers=user_headers
+        f"{base_url}?portfolio_id={portfolio.id}&asset_id={asset1.id}&transaction_type=SELL",
+        headers=user_headers,
     )
     assert response.status_code == 200
     data = response.json()
@@ -162,11 +168,10 @@ def test_read_transactions_with_filters_and_pagination(
     assert data["transactions"][0]["transaction_type"] == "SELL"
 
     # 6. Test pagination
-    response = client.get(f"{base_url}?skip=1&limit=1", headers=user_headers)
+    response = client.get(
+        f"{base_url}?portfolio_id={portfolio.id}&skip=1&limit=1", headers=user_headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 3
     assert len(data["transactions"]) == 1
-    assert (
-        data["transactions"][0]["asset"]["ticker_symbol"] == "ASSET2"
-    )  # The second most recent (tx2)

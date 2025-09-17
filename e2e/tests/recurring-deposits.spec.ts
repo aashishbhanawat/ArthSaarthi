@@ -46,6 +46,10 @@ test.describe.serial('Recurring Deposit E2E Flow', () => {
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
+    // Get portfolio ID for later use in waiting for the correct API response
+    const url = page.url();
+    const portfolioId = url.split('/').pop()!;
+
     // 2. Add a Recurring Deposit
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Recurring Deposit');
@@ -56,7 +60,9 @@ test.describe.serial('Recurring Deposit E2E Flow', () => {
     await page.getByLabel('Start Date').fill(new Date().toISOString().split('T')[0]);
     await page.getByLabel('Tenure (in months)').fill('12');
 
+    const holdingsResponsePromise = page.waitForResponse(resp => resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`));
     await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await holdingsResponsePromise;
 
     // 3. Verify the new RD appears in the HoldingsTable
     const holdingsTable = page.locator('.card', { hasText: 'Holdings' });

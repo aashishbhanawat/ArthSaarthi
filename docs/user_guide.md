@@ -79,7 +79,7 @@ The core of the application is tracking your individual buy and sell transaction
 
 ### Adding a Transaction {#adding-transaction}
 
-1.  Navigate to the detail page of the portfolio where you want to add a transaction.
+1.  Navigate to the detail page of the portfolio where you want to add a market-traded asset (like a Stock or Mutual Fund).
 2.  Click the **"Add Transaction"** button.
 3.  The "Add Transaction" modal will appear. Fill in the following details:
     *   **Asset:** Start typing the ticker symbol (e.g., 'AAPL', 'BTC-USD').
@@ -123,30 +123,42 @@ For transactions in the "Requiring Mapping" section, you must map the unrecogniz
 1.  Use the checkboxes to select which "New" and "Duplicate" transactions you wish to import.
 2.  Click **"Commit Transactions"** to save the selected transactions to your portfolio.
 
-### Tracking Fixed Deposits {#tracking-fixed-deposits}
+---
 
-The application allows you to track your Fixed Deposits (FDs) alongside your other investments.
+## 5. Tracking Other Asset Types
 
-1.  **Adding a Fixed Deposit:**
-    *   Navigate to the detail page of the portfolio where you want to add the FD.
-    *   Click the **"Add Transaction"** button.
-    *   In the modal, select **"Fixed Deposit"** from the "Asset Type" dropdown.
-    *   Fill in the FD-specific details, such as Institution Name, Principal Amount, Interest Rate, and Maturity Date.
-    *   Click **"Save Transaction"**.
+The "Add Transaction" modal is also your gateway to tracking non-market assets like Fixed Deposits, Recurring Deposits, and PPF accounts.
 
-2.  **Viewing Fixed Deposits:**
-    *   FDs are displayed in the "Deposits" section of the holdings table on the portfolio detail page.
-    *   You can click on an FD row to open a detailed drill-down view.
+### 5.1. Tracking Fixed Deposits (FDs) {#tracking-fixed-deposits}
 
-3.  **FD Drill-Down View:**
-    *   The drill-down view provides a comprehensive overview of your FD, including:
-        *   **Details:** Principal amount, interest rate, maturity date, etc.
-        *   **Valuation:** Current value, unrealized gain, and projected maturity value.
-        *   **Analytics:** Unrealized and realized XIRR.
-    *   You can also edit or delete the FD from this view.
+1.  **Adding an FD:** From the "Add Transaction" modal, select **"Fixed Deposit"** from the "Asset Type" dropdown. Fill in the FD-specific details, such as Institution Name, Principal Amount, Interest Rate, and Maturity Date, then save.
+2.  **Viewing an FD:** FDs are displayed in the "Deposits" section of the holdings table. Clicking on an FD row opens a detailed drill-down view with its current value, projected maturity value, and XIRR analytics. You can also edit or delete the FD from this view.
+
+### 5.2. Tracking Recurring Deposits (RDs) {#tracking-recurring-deposits}
+
+1.  **Adding an RD:** From the "Add Transaction" modal, select **"Recurring Deposit"** from the "Asset Type" dropdown. Fill in the RD-specific details, such as Institution Name, Monthly Installment, Interest Rate, and Tenure.
+2.  **Viewing an RD:** RDs are displayed in the "Deposits" section of the holdings table. Clicking on an RD row opens a detailed drill-down view with its current value, projected maturity value, and XIRR analytics.
+
+### 5.3. Tracking Public Provident Fund (PPF) {#tracking-ppf}
+
+The application has a specialized workflow for PPF accounts, as users typically only have one.
+
+1.  **Adding Your First PPF Account:**
+    *   From the "Add Transaction" modal, select **"PPF Account"** from the "Asset Type" dropdown.
+    *   Because no PPF account exists, the form will show fields to **create the account** (Institution Name, Account Number, Opening Date) and fields for your **first contribution** (Amount, Date).
+    *   Fill out all fields and click "Save". This will create both the PPF asset and its first transaction in one step.
+
+2.  **Adding Subsequent Contributions:**
+    *   The next time you select "PPF Account" from the "Asset Type" dropdown, the application will detect that you already have a PPF account.
+    *   The form will now show your existing account details as read-only and will only ask for the **Contribution Amount** and **Contribution Date** for your new transaction.
+
+3.  **Viewing PPF Details:**
+    *   Your PPF account is displayed in the "Government Schemes" section of the holdings table.
+    *   Clicking on the PPF row opens a special **passbook-style drill-down view**.
+    *   This view shows a summary of your total contributions, interest earned, and the current balance. It also provides a chronological history of all your contributions and the system-generated interest credits for each financial year.
 
 ---
-## 5. Tracking Your Goals {#managing-goals}
+## 6. Tracking Your Goals {#managing-goals}
 
 The Goals feature allows you to set financial targets and link your investments to track your progress.
 
@@ -162,7 +174,7 @@ The Goals feature allows you to set financial targets and link your investments 
 4.  The system will automatically calculate your progress towards the goal based on the current value of all linked items.
 ---
 
-## 6. User Management (Admin Only) {#user-management}
+## 7. User Management (Admin Only) {#user-management}
 
 If you are logged in as an administrator, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
 
@@ -172,6 +184,6 @@ If you are logged in as an administrator, you will see a **"User Management"** l
 
 ---
 
-## 7. Getting Help & Reporting Bugs {#getting-help}
+## 8. Getting Help & Reporting Bugs {#getting-help}
 
 If you encounter a bug or have a feature request, please **open an issue on the project's GitHub repository**. Your feedback is essential for improving the application!

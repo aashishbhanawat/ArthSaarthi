@@ -1,10 +1,10 @@
 import logging
 
+from alembic.config import Config
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from alembic import command
-from alembic.config import Config
 from app.core import config
 from app.core import dependencies as deps
 from app.db.base import Base  # Import Base with all models registered

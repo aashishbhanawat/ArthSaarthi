@@ -1,19 +1,34 @@
 import collections
 import csv
 import io
+import json
 import pathlib
+import uuid
 import zipfile
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Any, Type
 
 import requests
 import typer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
+from app import crud, models, schemas
 from app.db.session import SessionLocal
 from app.models.asset import Asset
+from app.models.asset_alias import AssetAlias
+from app.models.audit_log import AuditLog
+from app.models.fixed_deposit import FixedDeposit
+from app.models.goal import Goal, GoalLink
+from app.models.historical_interest_rate import HistoricalInterestRate
+from app.models.import_session import ImportSession
+from app.models.parsed_transaction import ParsedTransaction
 from app.models.portfolio import Portfolio
+from app.models.recurring_deposit import RecurringDeposit
 from app.models.transaction import Transaction
+from app.models.user import User
+from app.models.watchlist import Watchlist, WatchlistItem
 
 app = typer.Typer(help="Database commands.")
 
@@ -55,6 +70,43 @@ def get_db_session():
         db.close()
 
 
+def _validate_and_clean_asset_row(
+    row: dict, exchange: str, config: dict, debug: bool, debug_rows_printed: int
+) -> tuple[dict | None, int]:
+    """Validates and cleans a row from the asset master file."""
+    series = row.get(config["series_col"], "").strip()
+    if not config["series_filter"](series):
+        if series and debug and debug_rows_printed < 5:
+            typer.echo(
+                f"\n[DEBUG] Skipping {exchange} row due to Series '{series}'.",
+                err=True,
+            )
+            debug_rows_printed += 1
+        return None, debug_rows_printed
+
+    ticker = row.get(config["ticker_col"])
+    name = row.get(config["name_col"])
+    isin = row.get(config["isin_col"])
+
+    if not all([ticker, name, isin]):
+        if debug and debug_rows_printed < 5:
+            typer.echo(
+                (
+                    f"\n[DEBUG] Skipping {exchange} row due to missing"
+                    f" essential data. Ticker: '{ticker}', Name: '{name}',"
+                    f" ISIN: '{isin}'."
+                ),
+                err=True,
+            )
+            debug_rows_printed += 1
+        return None, debug_rows_printed
+
+    cleaned_data = {
+        "isin": isin.strip(), "ticker": ticker.strip(), "name": name.strip()
+    }
+    return cleaned_data, debug_rows_printed
+
+
 def _parse_and_seed_exchange_data(
     db: Session,
     reader: csv.DictReader,
@@ -67,7 +119,6 @@ def _parse_and_seed_exchange_data(
     created_count = 0
     skipped_count = 0
     debug_rows_printed = 0
-    MAX_DEBUG_ROWS = 5
     config = EXCHANGE_CONFIGS[exchange]
     skipped_series_counts = collections.Counter()
 
@@ -76,53 +127,27 @@ def _parse_and_seed_exchange_data(
         assets_to_process, label=f"Processing {exchange} assets"
     ) as progress:
         for row in progress:
-            series = row.get(config["series_col"], "").strip()
-            if not config["series_filter"](series):
+            cleaned_data, debug_rows_printed = _validate_and_clean_asset_row(
+                row, exchange, config, debug, debug_rows_printed
+            )
+            if not cleaned_data:
+                series = row.get(config["series_col"], "").strip()
                 if series:
                     skipped_series_counts[series] += 1
-                if debug and debug_rows_printed < MAX_DEBUG_ROWS:
-                    typer.echo(
-                        f"\n[DEBUG] Skipping {exchange} row due to Series '{series}'.",
-                        err=True,
-                    )
-                    debug_rows_printed += 1
-                continue
-
-            ticker = row.get(config["ticker_col"])
-            name = row.get(config["name_col"])
-            isin = row.get(config["isin_col"])
-
-            # Skip if essential data is missing
-            if not all([ticker, name, isin]):
-                if debug and debug_rows_printed < MAX_DEBUG_ROWS:
-                    typer.echo(
-                        (
-                            f"\n[DEBUG] Skipping {exchange} row due to missing"
-                            f" essential data. Ticker: '{ticker}', Name: '{name}',"
-                            f" ISIN: '{isin}'."
-                        ),
-                        err=True,
-                    )
-                    debug_rows_printed += 1
-                continue
-
-            # Clean up the values
-            isin = isin.strip()
-            ticker = ticker.strip()
-            name = name.strip()
-
-            if not all([isin, ticker, name]):
                 continue
 
             # Check if asset with this ISIN or Ticker already exists
-            if isin in existing_isins or ticker in existing_tickers:
+            if (
+                cleaned_data["isin"] in existing_isins
+                or cleaned_data["ticker"] in existing_tickers
+            ):
                 skipped_count += 1
                 continue
 
             asset_data = {
-                "name": name,
-                "ticker_symbol": ticker,
-                "isin": isin,
+                "name": cleaned_data["name"],
+                "ticker_symbol": cleaned_data["ticker"],
+                "isin": cleaned_data["isin"],
                 "asset_type": "STOCK",
                 "currency": "INR",
                 "exchange": exchange,
@@ -132,8 +157,8 @@ def _parse_and_seed_exchange_data(
                 crud.asset.create(db=db, obj_in=asset_in)
                 created_count += 1
                 # Add to sets to prevent duplicates from other files in the same run
-                existing_isins.add(isin)
-                existing_tickers.add(ticker)
+                existing_isins.add(cleaned_data["isin"])
+                existing_tickers.add(cleaned_data["ticker"])
             except IntegrityError:
                 db.rollback()
                 skipped_count += 1
@@ -295,37 +320,132 @@ def clear_assets_command(
 
     db: Session = next(get_db_session())
     try:
-        typer.echo("Deleting all transactions, portfolios, and assets...")
-        num_transactions_deleted = db.query(Transaction).delete()
-        num_portfolios_deleted = db.query(Portfolio).delete()
-        num_assets_deleted = db.query(Asset).delete()
+        typer.echo("Deleting all user-generated financial data...")
+
+        # Order is important to respect foreign key constraints
+        models_to_delete: list[Type[models.Base]] = [ # type: ignore
+            ParsedTransaction,
+            ImportSession,
+            GoalLink,
+            WatchlistItem,
+            Transaction,
+            FixedDeposit,
+            RecurringDeposit,
+            Goal,
+            Watchlist,
+            Portfolio,
+            Asset,
+        ]
+
+        total_deleted = 0
+        for model in models_to_delete:
+            num_deleted = db.query(model).delete()
+            if num_deleted > 0:
+                typer.echo(
+                    f"Deleted {num_deleted} rows from {model.__tablename__}."
+                )
+                total_deleted += num_deleted
+
         db.commit()
-        typer.secho(
-            f"Successfully deleted {num_transactions_deleted} transactions.",
-            fg=typer.colors.GREEN,
-        )
-        typer.secho(
-            f"Successfully deleted {num_portfolios_deleted} portfolios.",
-            fg=typer.colors.GREEN,
-        )
-        typer.secho(
-            f"Successfully deleted {num_assets_deleted} assets.", fg=typer.colors.GREEN
-        )
+
+        if total_deleted > 0:
+            typer.secho(
+                f"Successfully deleted {total_deleted} records.",
+                fg=typer.colors.GREEN,
+            )
+        else:
+            typer.secho("No financial data found to delete.", fg=typer.colors.YELLOW)
+
     except Exception as e:
         db.rollback()
         typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
 
 
 @app.command("init-db")
-def init_db_command():
-    """Initializes the database by creating all tables."""
-    from app.db.base import Base
-    from app.db.session import engine
+def init_db_command(
+    create_tables: bool = typer.Option(
+        True, help="Create tables from models. Should be false if using Alembic."
+    )
+):
+    """Initializes the database by creating tables and/or seeding data."""
+    db: Session = next(get_db_session())
+    from app.db.initial_data import seed_interest_rates
 
-    typer.echo("Initializing database...")
-    try:
+    if create_tables:
+        from app.db.base import Base
+        from app.db.session import engine
+        typer.echo("Initializing database tables...")
         Base.metadata.create_all(bind=engine)
-        typer.secho("Database initialized successfully.", fg=typer.colors.GREEN)
+        typer.secho("Database tables initialized successfully.", fg=typer.colors.GREEN)
+
+    typer.echo("Seeding initial data...")
+    try:
+        seed_interest_rates(db)
+        db.commit()
+        typer.secho("Initial data seeded successfully.", fg=typer.colors.GREEN)
+    except Exception as e:
+        typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
+
+
+@app.command("dump-table")
+def dump_table_command(
+    table_name: str = typer.Argument(..., help="The name of the table to dump."),
+):
+    """Dumps the contents of a specific database table to the console."""
+    db: Session = next(get_db_session())
+    try:
+        # A simple way to map table names to models. This is not exhaustive.
+        model_map = {
+            "assets": Asset,
+            "portfolios": Portfolio,
+            "transactions": Transaction,
+            "users": User,
+            "historical_interest_rates": HistoricalInterestRate,
+            "goals": Goal,
+            "goal_links": GoalLink,
+            "watchlists": Watchlist,
+            "watchlist_items": WatchlistItem,
+            "fixed_deposits": FixedDeposit,
+            "recurring_deposits": RecurringDeposit,
+            "import_sessions": ImportSession,
+            "parsed_transactions": ParsedTransaction,
+            "asset_aliases": AssetAlias,
+            "audit_logs": AuditLog,
+        }
+        model = model_map.get(table_name)
+        if not model:
+            typer.secho(
+                f"Error: Table '{table_name}' not found in model map.",
+                fg=typer.colors.RED,
+            )
+            typer.echo("Available tables: " + ", ".join(sorted(model_map.keys())))
+            return
+
+        typer.echo(f"--- Dumping contents of table: {table_name} ---")
+        records = db.query(model).all()
+
+        if not records:
+            typer.secho("Table is empty.", fg=typer.colors.YELLOW)
+            return
+
+        def custom_serializer(o: Any) -> str:
+            if isinstance(o, (datetime, date)):
+                return o.isoformat()
+            if isinstance(o, Decimal):
+                return f"{o:.2f}"
+            if isinstance(o, uuid.UUID):
+                return str(o)
+            raise TypeError(
+                f"Object of type {type(o).__name__} is not JSON serializable"
+            )
+
+        for record in records:
+            # Remove internal SQLAlchemy state for cleaner output
+            record_dict = {
+                c.name: getattr(record, c.name) for c in record.__table__.columns
+            }
+            typer.echo(json.dumps(record_dict, indent=2, default=custom_serializer))
+
     except Exception as e:
         typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
 
