@@ -37,7 +37,8 @@ class AmfiIndiaProvider:
         data: Dict[str, Dict[str, Any]] = {}
         try:
             # Use httpx for async-friendly requests, though we use it sync here
-            with httpx.Client() as client:
+            # Enable follow_redirects=True to handle the 302 from amfiindia.com
+            with httpx.Client(follow_redirects=True) as client:
                 response = client.get(self.AMFI_URL, timeout=15.0)
                 response.raise_for_status()
 

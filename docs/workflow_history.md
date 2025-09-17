@@ -1704,3 +1704,90 @@ Its purpose is to build an experience history that can be used as a reference fo
     - All backend, frontend, and E2E tests are passing. This task was a testament to the importance of a robust test suite and the ability to debug and overcome complex environmental and logical issues.
 
 ---
+
+## 2025-09-13: Implement & Stabilize PPF Tracking Feature (FR4.3.4)
+
+*   **Task Description:** A full-stack implementation of the backend logic for tracking Public Provident Fund (PPF) accounts. This was a highly complex task that involved implementing nuanced financial calculations and a deep, iterative debugging cycle to stabilize the entire backend test suite.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the initial backend logic for PPF valuation in `crud_ppf.py` and the corresponding tests in `test_ppf_holdings.py`.
+    2.  **Systematic Debugging via Log Analysis:** The initial implementation introduced a cascade of over 30 test failures. The core of the work was a highly iterative "Analyze -> Report -> Fix" loop where the user provided the `log.txt` from a failing test run, and the AI diagnosed the root cause and provided a targeted fix. This process was repeated for numerous bugs, including:
+        *   `AttributeError` due to missing or incorrect CRUD methods.
+        *   `TypeError` due to incorrect function call signatures and keyword arguments.
+        *   `ValidationError` from Pydantic due to schema mismatches between the logic and the `Holding` model.
+        *   `422 Unprocessable Entity` errors due to incorrect API endpoint parameter types.
+        *   `AssertionError` due to flawed interest calculation logic, which was fixed by implementing the correct "minimum balance between 5th and end of month" rule.
+        *   `UnboundLocalError` due to incorrect variable initialization.
+        *   `TypeError` in the test suite due to incorrect mocking of the `datetime.date` object.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_ppf.py`: **New** file with the core business logic for PPF interest calculation and holdings processing.
+    *   `backend/app/tests/api/v1/test_ppf_holdings.py`: **New** test suite to validate the PPF feature.
+    *   `backend/app/crud/crud_holding.py`, `backend/app/schemas/holding.py`, `backend/app/api/v1/endpoints/transactions.py`: **Updated** to integrate the PPF logic and fix related bugs.
+
+*   **Verification:**
+    - Ran the full backend test suite using `./run_local_tests.sh backend`.
+
+*   **Outcome:**
+    - The backend for the PPF Tracking feature is complete, stable, and fully tested. All 125 backend tests are now passing. This was a major stabilization effort that touched many parts of the backend codebase.
+
+---
+
+## 2025-09-15: Stabilize Frontend Unit Test Suite
+
+*   **Task Description:** A final stabilization pass on the frontend unit test suite, which had two remaining failures after recent backend changes to the analytics API.
+
+*   **Key Prompts & Interactions:**
+    1.  **Log Analysis:** The user provided the `log.txt` from the failing `npm test` run. The AI analyzed the log and identified the two failing test suites: `HoldingDetailModal.test.tsx` and `AnalyticsCard.test.tsx`.
+    2.  **Root Cause Analysis:** The AI diagnosed the root cause as a data mismatch between the test mocks and the component logic. The backend API was updated to return XIRR values as percentages (e.g., `7.14`), but the frontend unit tests were still mocking the data as raw rates (e.g., `0.0714`). The components were correctly formatting the small number to `0.07%`, causing the test assertions for `7.14%` to fail.
+    3.  **Targeted Fix:** The AI provided a single, consolidated fix to update the mock data in both `HoldingDetailModal.test.tsx` and `AnalyticsCard.test.tsx`, aligning the tests with the current application behavior.
+
+*   **File Changes:**
+    *   `frontend/src/__tests__/components/Portfolio/HoldingDetailModal.test.tsx`: **Updated** mock data to use percentage values.
+    *   `frontend/src/__tests__/components/Portfolio/AnalyticsCard.test.tsx`: **Updated** mock data to use percentage values.
+    *   `docs/workflow_history.md`: **Updated** with this entry.
+
+*   **Verification:**
+    - Ran the full frontend test suite using `./run_local_tests.sh frontend`.
+
+*   **Outcome:**
+    - The entire frontend test suite is now stable, with all 146 tests passing.
+    - The project is in a fully "green" state across all test suites (backend, frontend, and E2E).
+
+---
+
+## 2025-09-17: Implement Admin UI for Interest Rate Management (FR4.3.4 - Phase 5)
+
+*   **Task Description:** A full-stack implementation of the "Admin Interest Rate Management" feature. This provides administrators with a dedicated UI to perform CRUD (Create, Read, Update, Delete) operations on the historical interest rates used for calculations of government schemes like PPF.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the full backend stack (API endpoints in `admin_interest_rates.py`, CRUD logic in `crud_historical_interest_rate.py`) and the full frontend stack (`InterestRateManagementPage.tsx`, `InterestRateTable.tsx`, `InterestRateFormModal.tsx`, `useInterestRates.ts` hooks, and `adminApi.ts` service functions).
+    2.  **E2E Test Generation:** An E2E test (`admin-interest-rates.spec.ts`) was created to validate the full CRUD user flow.
+    3.  **Systematic Debugging via Log Analysis:** The E2E test failed with a timeout on the "delete" step. A deep, iterative debugging process was required to find the root cause.
+        *   The AI first diagnosed an API contract mismatch: the backend `DELETE` endpoint was returning a `200 OK` with a body, while the frontend expected a `204 No Content`. This was fixed.
+        *   The test still failed. The AI then diagnosed a race condition where the `addToast` notification was causing a re-render that pre-empted the modal-closing state update. This was also fixed.
+        *   The test still failed. The AI then diagnosed a subtle bug in the React Query `useMutation` hook pattern, where the component's `onSuccess` callback was replacing the hook's `onSuccess` (which handled cache invalidation). This was refactored to a more robust pattern.
+        *   The test still failed. The user provided critical feedback comparing the failing `DELETE` endpoint (204) with other working `DELETE` endpoints (200 with body). This led to the final, correct diagnosis.
+    4.  **Final Fix:** The backend `DELETE` endpoint was aligned with the application's established pattern (return `200 OK` with the deleted object), and the frontend was updated to match. This resolved the test failure.
+    5.  **Linting & Final Test Stabilization:** The final phase involved fixing all backend and frontend linting errors and stabilizing a flaky E2E test assertion for floating-point values by making the comparison numeric rather than string-based.
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/admin_interest_rates.py`: **New** file with CRUD endpoints.
+    *   `backend/app/crud/crud_historical_interest_rate.py`: **New** file with business logic.
+    *   `backend/app/schemas/historical_interest_rate.py`: **Updated** to make `HistoricalInterestRateUpdate` inherit from the base class.
+    *   `backend/app/api/v1/api.py`: **Updated** to include the new admin router.
+    *   `frontend/src/pages/Admin/InterestRateManagementPage.tsx`: **New** page.
+    *   `frontend/src/components/Admin/InterestRateTable.tsx`, `InterestRateFormModal.tsx`: **New** components.
+    *   `frontend/src/hooks/useInterestRates.ts`: **New** React Query hooks.
+    *   `frontend/src/services/adminApi.ts`: **Updated** with new service functions.
+    *   `frontend/src/App.tsx` & `frontend/src/components/NavBar.tsx`: **Updated** to include the new page.
+    *   `e2e/tests/admin-interest-rates.spec.ts`: **New** E2E test suite for the feature.
+    *   `docs/bug_reports.md`: **Updated** with a consolidated report for the E2E test failure.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (125), frontend tests (146), and E2E tests (15) passed.
+
+*   **Outcome:**
+    - The "Admin Interest Rate Management" feature is complete, stable, and fully tested.
+
+---

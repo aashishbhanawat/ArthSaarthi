@@ -2,7 +2,7 @@ import uuid
 from typing import Any
 
 from dateutil.relativedelta import relativedelta
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -10,6 +10,34 @@ from app.core import dependencies
 from app.crud.crud_holding import _calculate_rd_value_at_date
 
 router = APIRouter()
+
+
+@router.post(
+    "/",
+    response_model=schemas.recurring_deposit.RecurringDeposit,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_recurring_deposit(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    rd_in: schemas.RecurringDepositCreate,
+    current_user: models.User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Create new recurring deposit.
+    """
+    portfolio = crud.portfolio.get(db=db, id=rd_in.portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Portfolio not found or not owned by user"
+        )
+
+    rd = crud.recurring_deposit.create_with_portfolio(
+        db=db, obj_in=rd_in, user_id=current_user.id
+    )
+    db.commit()
+    db.refresh(rd)
+    return rd
 
 
 @router.get("/{id}", response_model=schemas.recurring_deposit.RecurringDepositDetails)
@@ -62,7 +90,7 @@ def get_recurring_deposit_analytics(
     if not current_user.is_admin and (rd.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    return crud.crud_analytics.get_recurring_deposit_analytics(db=db, rd_id=id)
+    return crud.analytics.get_recurring_deposit_analytics(db=db, rd=rd)
 
 
 @router.put("/{id}", response_model=schemas.recurring_deposit.RecurringDeposit)

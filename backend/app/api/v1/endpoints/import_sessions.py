@@ -302,7 +302,9 @@ def commit_import_session(
                 quantity=Decimal(str(parsed_tx.quantity)),
                 price_per_unit=Decimal(str(parsed_tx.price_per_unit)),
                 transaction_date=pd.to_datetime(parsed_tx.transaction_date),
-                fees=Decimal(str(parsed_tx.fees)),
+                fees=Decimal(str(parsed_tx.fees)),  # The ticker_symbol is intentionally
+                # omitted here. The transaction is created using the asset_id resolved
+                # from the alias, preventing a new lookup.
             )
 
             crud.transaction.create_with_portfolio(

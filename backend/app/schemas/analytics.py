@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class AnalyticsResponse(BaseModel):
+class PortfolioAnalytics(BaseModel):
     """
     Response model for portfolio analytics data.
     """

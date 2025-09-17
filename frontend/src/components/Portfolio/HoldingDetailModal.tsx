@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
-import { usePrivacySensitiveCurrency, formatCurrency, formatDate, formatPercentage } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatCurrency, formatDate } from '../../utils/formatting';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface HoldingDetailModalProps {
@@ -68,12 +68,31 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPri
 
 const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfolioId, onClose, onEditTransaction, onDeleteTransaction }) => {
     const { data: transactions, isLoading, error } = useAssetTransactions(portfolioId, holding.asset_id);
-    const { data: analytics, isLoading: isLoadingAnalytics, isError: isErrorAnalytics } = useAssetAnalytics(
-        portfolioId,
-        holding.asset_id,
-        { enabled: !!holding.asset_id }
-    );
+    const { data: analytics, isLoading: isLoadingAnalytics, isError: isErrorAnalytics } = useAssetAnalytics(portfolioId, holding.asset_id);
     const formatSensitiveCurrency = usePrivacySensitiveCurrency();
+
+    const openTransactions = useMemo(() => {
+        if (!transactions) return [];
+
+        const sortedTxs = [...transactions].sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
+
+        const buys = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'BUY')));
+        const sells = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'SELL')));
+
+        for (const sell of sells) {
+            let sellQuantityToMatch = Number(sell.quantity);
+            for (const buy of buys) {
+                if (sellQuantityToMatch <= 0) break;
+                const buyQuantity = Number(buy.quantity);
+                if (buyQuantity > 0) {
+                    const matchQuantity = Math.min(sellQuantityToMatch, buyQuantity);
+                    buy.quantity = String(buyQuantity - matchQuantity);
+                    sellQuantityToMatch -= matchQuantity;
+                }
+            }
+        }
+        return buys.filter((buy: Transaction) => Number(buy.quantity) > 0.000001);
+    }, [transactions]);
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -112,13 +131,13 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                     <div data-testid="summary-realized-xirr">
                         <p className="text-sm text-gray-500">Realized XIRR</p>
                         <p className="font-semibold">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.realized_xirr)}
+                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.realized_xirr ?? 0) * 100).toFixed(2)}%`}
                         </p>
                     </div>
                     <div data-testid="summary-unrealized-xirr">
                         <p className="text-sm text-gray-500">Unrealized XIRR</p>
                         <p className="font-semibold">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatPercentage(analytics?.unrealized_xirr)}
+                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.unrealized_xirr ?? 0) * 100).toFixed(2)}%`}
                         </p>
                     </div>
                 </div>
@@ -140,7 +159,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                                 </tr>
                             </thead>
                             <tbody>
-                                {transactions.map(tx => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
+                                {openTransactions.map(tx => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
                             </tbody>
                         </table>
                     )}

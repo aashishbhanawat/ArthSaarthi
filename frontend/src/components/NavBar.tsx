@@ -10,6 +10,7 @@ import { HomeIcon,
   EyeIcon,
   TrophyIcon,
   UserCircleIcon,
+  ScaleIcon,
  } from '@heroicons/react/24/outline';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
@@ -71,10 +72,16 @@ const NavBar: React.FC = () => {
                     <span>Goals</span>
                 </NavLink>
                 {user?.is_admin && deploymentMode === 'server' && (
-                    <NavLink to="/admin/users" className={({ isActive }) => linkClass(isActive)}>
-                        <UsersIcon className="h-5 w-5" />
-                        <span>User Management</span>
-                    </NavLink>
+                    <>
+                        <NavLink to="/admin/users" className={({ isActive }) => linkClass(isActive)}>
+                            <UsersIcon className="h-5 w-5" />
+                            <span>User Management</span>
+                        </NavLink>
+                        <NavLink to="/admin/interest-rates" className={({ isActive }) => linkClass(isActive)}>
+                            <ScaleIcon className="h-5 w-5" />
+                            <span>Interest Rates</span>
+                        </NavLink>
+                    </>
                 )}
             </nav>
             <div className="mt-auto pt-4 border-t">

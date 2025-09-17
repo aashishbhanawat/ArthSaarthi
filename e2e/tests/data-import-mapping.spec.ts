@@ -57,16 +57,26 @@ test.describe.serial('Data Import with Asset Mapping', () => {
 
         // Create the target asset 'RELIANCE'
         await page.getByRole('button', { name: 'Add Transaction' }).click();
-        await page.getByRole('textbox', { name: 'Asset' }).fill('RELIANCE');
-        const createAssetButton = page.getByRole('button', { name: 'Create Asset "RELIANCE"' });
-        
-        // Wait for the asset creation API call to complete before proceeding.
-        const createAssetResponse = page.waitForResponse(resp => resp.url().includes('/api/v1/assets') && resp.status() === 201);
-        await createAssetButton.click();
-        await createAssetResponse;
+        await page.getByRole('textbox', { name: 'Asset' }).pressSequentially('RELIANCE');
 
-        await expect(createAssetButton).not.toBeVisible();
-        await page.getByRole('button', { name: 'Cancel' }).click();
+        // Wait for the lookup to find the asset and create it on the fly
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup/'));
+
+        // Now click the result
+        await page.locator('li:has-text("RELIANCE")').click();
+
+        // Fill out the rest of the form to make it valid
+        await page.getByLabel('Quantity').fill('1');
+        await page.getByLabel('Price per Unit').fill('1');
+        await page.getByLabel('Date').fill('2023-01-01');
+
+        const createTransactionResponse = page.waitForResponse(resp => resp.url().includes('/transactions/') && resp.status() === 201);
+        await page.getByRole('button', { name: 'Save Transaction' }).click();
+        await createTransactionResponse;
+ 
+        // After a successful save, the modal closes automatically.
+        // We verify this by asserting the modal is no longer visible.
+        await expect(page.getByRole('dialog', { name: 'Add Transaction' })).not.toBeVisible();
 
         // 2. Upload a file with an unrecognized symbol 'RIL'        
         await page.getByRole('link', { name: 'Import' }).click();
@@ -108,18 +118,18 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         const newTransactionRow = page.locator('tr', { hasText: 'RIL' });
         await expect(newTransactionRow).toBeVisible();
 
+        // After clicking commit, the app automatically navigates to the portfolio page.
+        // We will wait for that navigation to complete and then verify the result on the destination page.
+        const navigationPromise = page.waitForURL(`**/portfolios/${portfolioId}`);
         await page.getByRole('button', { name: /Commit \d+ Transactions/ }).click();
-        await expect(page.getByText('Successfully committed 1 transactions.')).toBeVisible();
-
-        // Navigate to portfolio and verify transaction
-        await page.waitForURL(`**/portfolios/${portfolioId}`);
+        await navigationPromise;
         
         // Verify the new holding appears in the HoldingsTable with specific locators
         const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
         const relianceRow = holdingsTable.getByRole('row', { name: /RELIANCE/ });
         
         await expect(relianceRow).toBeVisible();
-        await expect(relianceRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
+        await expect(relianceRow.getByRole('cell', { name: '11', exact: true })).toBeVisible(); // Quantity (1 from setup + 10 from import)
 
         // IMPORTANT: Navigate away to a stable page BEFORE this test finishes.
         // This prevents the PortfolioDetailPage's latent crash from affecting the next test.

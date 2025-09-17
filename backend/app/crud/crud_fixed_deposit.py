@@ -14,12 +14,13 @@ class CRUDFixedDeposit(CRUDBase[FixedDeposit, FixedDepositCreate, FixedDepositUp
         db: Session,
         *,
         obj_in: FixedDepositCreate,
-        portfolio_id: uuid.UUID,
         user_id: uuid.UUID,
     ) -> FixedDeposit:
-        db_obj = self.model(**obj_in.dict(), portfolio_id=portfolio_id, user_id=user_id)
+        db_obj = self.model(
+            **obj_in.model_dump(), user_id=user_id
+        )
         db.add(db_obj)
-        db.commit()
+        db.flush()
         db.refresh(db_obj)
         return db_obj
 

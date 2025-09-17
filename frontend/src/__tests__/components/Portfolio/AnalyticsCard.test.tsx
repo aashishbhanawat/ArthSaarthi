@@ -27,7 +27,7 @@ describe('AnalyticsCard', () => {
         render(<AnalyticsCard analytics={mockAnalytics} isLoading={false} error={null} />);
 
         // XIRR should be formatted as a percentage with 2 decimal places
-        expect(screen.getByText('12.35%')).toBeInTheDocument();
+        expect(screen.getByText('12.35%')).toBeInTheDocument(); // 12.345 becomes 12.35
         expect(screen.getByText('XIRR')).toBeInTheDocument();
         // Sharpe Ratio should be formatted as a number with 2 decimal places
         expect(screen.getByText('1.23')).toBeInTheDocument();

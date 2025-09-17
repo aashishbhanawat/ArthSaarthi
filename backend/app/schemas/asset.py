@@ -1,4 +1,6 @@
 import uuid
+from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -19,6 +21,27 @@ class AssetCreate(BaseModel):
     currency: str | None = None
     exchange: str | None = None
     isin: str | None = None
+    account_number: Optional[str] = None
+    opening_date: Optional[date] = None
+
+
+class AssetType(str):
+    STOCK = "STOCK"
+    ETF = "ETF"
+    MUTUAL_FUND = "MUTUAL_FUND"
+    FIXED_DEPOSIT = "FIXED_DEPOSIT"
+    RECURRING_DEPOSIT = "RECURRING_DEPOSIT"
+    PPF = "PPF"
+    BOND = "BOND"
+
+
+class PpfAccountCreate(BaseModel):
+    portfolio_id: uuid.UUID
+    institution_name: str
+    account_number: Optional[str] = None
+    opening_date: date
+    amount: Decimal
+    contribution_date: date
 
 
 # Properties to receive on asset update

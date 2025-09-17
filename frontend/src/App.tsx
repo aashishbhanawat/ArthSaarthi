@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
+import InterestRateManagementPage from './pages/Admin/InterestRateManagementPage';
 import NavBar from './components/NavBar';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
@@ -48,6 +49,7 @@ function AppRoutes() {
           <Route path="/goals/:goalId" element={<GoalDetailPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
+            <Route path="/admin/interest-rates" element={<InterestRateManagementPage />} />
           </Route>
         </Route>
       </Route>

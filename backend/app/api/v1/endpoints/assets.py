@@ -23,10 +23,23 @@ def create_asset(
     """
     Create new asset.
     """
+    # --- START OF DEBUG LOGS ---
     if settings.DEBUG:
-        print("--- CREATE ASSET ENDPOINT HIT ---")
-        print(f"User: {current_user.email}, Payload: {asset_in.model_dump_json()}")
+        print("\n--- BACKEND DEBUG: CREATE ASSET ENDPOINT HIT ---")
+        print(f"User: {current_user.email}")
+        print(f"Received Payload: {asset_in.model_dump_json(indent=2)}")
+
     asset = crud.asset.get_by_ticker(db, ticker_symbol=asset_in.ticker_symbol)
+
+    if settings.DEBUG:
+        if asset:
+            print(f"Asset with ticker '{asset_in.ticker_symbol}' "
+                  f"already exists in DB. ID: {asset.id}")
+        else:
+            print(f"Asset with ticker '{asset_in.ticker_symbol}' "
+                  f"does NOT exist in DB. Proceeding with creation.")
+        print("-------------------------------------------------\n")
+    # --- END OF DEBUG LOGS ---
     if asset:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -59,18 +72,49 @@ def lookup_ticker_symbol(
     current_user: User = Depends(deps.get_current_user),
 ):
     """
-    Search for an asset by its ticker symbol or name from the local database.
-    The database is expected to be seeded with a master list of assets.
+    Search for an asset by its ticker symbol or name.
+    It first searches the local database. If not found, it queries the
+    external financial data service. If found there, it creates the asset
+    locally and returns it.
     """
+    # 1. Search local database
     assets = crud.asset.search_by_name_or_ticker(db, query=query)
+    if assets:
+        if settings.DEBUG:
+            print("--- BACKEND DEBUG: Asset Lookup ---")
+            print(f"Found {len(assets)} assets locally for query: '{query}'")
+            print("---------------------------------")
+        return assets
+
+    # 2. If not found locally, query external service (case-insensitive for ticker)
     if settings.DEBUG:
         print("--- BACKEND DEBUG: Asset Lookup ---")
-        print(f"Received query: '{query}'")
-        print(f"Found {len(assets)} assets.")
+        print(f"No local asset found for '{query}'. Querying external service...")
         print("---------------------------------")
-    if assets:
-        return assets
-    return []
+
+    details = financial_data_service.get_asset_details(ticker_symbol=query.upper())
+
+    if not details:
+        if settings.DEBUG:
+            print("--- BACKEND DEBUG: Asset Lookup ---")
+            print(f"No asset found in external service for '{query.upper()}'.")
+            print("---------------------------------")
+        return []
+
+    # 3. If found externally, create it locally
+    details["ticker_symbol"] = query.upper()
+    asset_in = schemas.AssetCreate(**details)
+
+    new_asset = crud.asset.create(db=db, obj_in=asset_in)
+    db.commit()
+    db.refresh(new_asset)
+
+    if settings.DEBUG:
+        print("--- BACKEND DEBUG: Asset Lookup ---")
+        print(f"Created new asset from external service: {new_asset.name}")
+        print("---------------------------------")
+
+    return [new_asset]
 
 
 @router.get("/search-mf/", response_model=List[schemas.AssetSearchResult])

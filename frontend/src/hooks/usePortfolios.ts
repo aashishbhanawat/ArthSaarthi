@@ -1,9 +1,19 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
-import { PortfolioCreate, TransactionCreate, TransactionUpdate, TransactionsResponse, FixedDepositCreate } from '../types/portfolio';
+import { PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate, TransactionsResponse, FixedDepositCreate, PpfCreate } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
-import { PortfolioAnalytics } from '../types/analytics';
+import { PortfolioAnalytics, AssetAnalytics } from '../types/analytics';
+import { useToast } from '../context/ToastContext';
+
+interface ApiError {
+  response?: {
+    data?: {
+      detail?: string;
+    };
+  };
+  message: string;
+}
 
 // Helper function to invalidate all queries related to portfolio and dashboard data
 const invalidatePortfolioAndDashboardQueries = (queryClient: QueryClient, portfolioId: string) => {
@@ -59,19 +69,49 @@ export const useDeletePortfolio = () => {
 
 export const useCreateTransaction = () => {
     const queryClient = useQueryClient();
+    const { showToast } = useToast();
     return useMutation({
         mutationFn: ({ portfolioId, data }: { portfolioId: string; data: TransactionCreate }) =>
             portfolioApi.createTransaction(portfolioId, data),
-        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
+        onSuccess: (_, variables) => {
+            invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
+            showToast('Transaction added successfully', 'success');
+        },
+        onError: (error: ApiError) => {
+            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+        },
+    });
+};
+
+export const useCreatePpfAccount = () => {
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
+    return useMutation({
+        mutationFn: ({ portfolioId, data }: { portfolioId: string; data: PpfCreate }) =>
+            portfolioApi.createPpfAccount(portfolioId, data),
+        onSuccess: (_, variables) => {
+            invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
+            showToast('PPF account created successfully', 'success');
+        },
+        onError: (error: ApiError) => {
+            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+        },
     });
 };
 
 export const useCreateFixedDeposit = () => {
     const queryClient = useQueryClient();
+    const { showToast } = useToast();
     return useMutation({
         mutationFn: ({ portfolioId, data }: { portfolioId: string; data: FixedDepositCreate }) =>
             portfolioApi.createFixedDeposit(portfolioId, data),
-        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
+        onSuccess: (_, variables) => {
+            invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
+            showToast('Fixed Deposit created successfully', 'success');
+        },
+        onError: (error: ApiError) => {
+            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+        },
     });
 };
 
@@ -117,19 +157,19 @@ export const usePortfolioHoldings = (id: string | undefined) => {
     });
 };
 
-export const useAssetTransactions = (portfolioId: string | undefined, assetId: string | undefined) => {
-    return useQuery({
+export const useAssetTransactions = (portfolioId?: string, assetId?: string) => {
+    return useQuery<Transaction[], Error>({
         queryKey: ['assetTransactions', portfolioId, assetId],
         queryFn: () => portfolioApi.getAssetTransactions(portfolioId!, assetId!),
         enabled: !!portfolioId && !!assetId,
     });
 };
 
-export const useAssetAnalytics = (portfolioId: string, assetId: string, options: { enabled: boolean }) => {
-  return useQuery<PortfolioAnalytics, Error>({
+export const useAssetAnalytics = (portfolioId?: string, assetId?: string) => {
+  return useQuery<AssetAnalytics, Error>({
     queryKey: ['assetAnalytics', portfolioId, assetId],
-    queryFn: () => portfolioApi.getAssetAnalytics(portfolioId, assetId),
-    ...options,
+    queryFn: () => portfolioApi.getAssetAnalytics(portfolioId!, assetId!),
+    enabled: !!portfolioId && !!assetId,
   });
 };
 
@@ -153,11 +193,11 @@ export const useTransactions = (
   });
 };
 
-export const usePortfolioAssets = (portfolioId: string) => {
+export const usePortfolioAssets = (portfolioId: string, enabled: boolean = true) => {
     return useQuery<Asset[], Error>({
         queryKey: ['portfolioAssets', portfolioId],
         queryFn: () => portfolioApi.getPortfolioAssets(portfolioId),
-        enabled: !!portfolioId,
+        enabled: !!portfolioId && enabled,
     });
 };
 

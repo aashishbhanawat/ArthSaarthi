@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -9,6 +9,32 @@ from app.core import dependencies
 from app.crud.crud_holding import _calculate_fd_current_value
 
 router = APIRouter()
+
+
+@router.post(
+    "/", response_model=schemas.FixedDeposit, status_code=status.HTTP_201_CREATED
+)
+def create_fixed_deposit(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    fd_in: schemas.FixedDepositCreate,
+    current_user: models.User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Create new fixed deposit.
+    """
+    portfolio = crud.portfolio.get(db=db, id=fd_in.portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Portfolio not found or not owned by user"
+        )
+
+    fd = crud.fixed_deposit.create_with_portfolio(
+        db=db, obj_in=fd_in, user_id=current_user.id
+    )
+    db.commit()
+    db.refresh(fd)
+    return fd
 
 
 @router.get("/{fd_id}", response_model=schemas.fixed_deposit.FixedDepositDetails)
@@ -56,27 +82,8 @@ def get_fd_analytics(
     if not current_user.is_admin and (fd.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    return crud.crud_analytics.get_fixed_deposit_analytics(db=db, fd_id=fd_id)
-
-
-@router.delete("/{fd_id}")
-def delete_fixed_deposit(
-    *,
-    db: Session = Depends(dependencies.get_db),
-    fd_id: uuid.UUID,
-    current_user: models.User = Depends(dependencies.get_current_user),
-) -> Any:
-    """
-    Delete a fixed deposit.
-    """
-    fd = crud.fixed_deposit.get(db=db, id=fd_id)
-    if not fd:
-        raise HTTPException(status_code=404, detail="Fixed Deposit not found")
-    if not current_user.is_admin and (fd.user_id != current_user.id):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-
-    crud.fixed_deposit.remove(db=db, id=fd_id)
-    return {"ok": True}
+    analytics = crud.analytics.get_fixed_deposit_analytics(db=db, fd=fd)
+    return analytics
 
 
 @router.put("/{fd_id}", response_model=schemas.FixedDeposit)
@@ -96,4 +103,26 @@ def update_fixed_deposit(
     if not current_user.is_admin and (fd.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     fd = crud.fixed_deposit.update(db=db, db_obj=fd, obj_in=fd_in)
+    db.commit()
+    db.refresh(fd)
     return fd
+
+@router.delete("/{fd_id}", response_model=schemas.Msg)
+def delete_fixed_deposit(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    fd_id: uuid.UUID,
+    current_user: models.User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Delete a fixed deposit.
+    """
+    fd = crud.fixed_deposit.get(db=db, id=fd_id)
+    if not fd:
+        raise HTTPException(status_code=404, detail="Fixed Deposit not found")
+    if not current_user.is_admin and (fd.user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    crud.fixed_deposit.remove(db=db, id=fd_id)
+    db.commit()
+    return {"msg": "Fixed deposit deleted successfully"}
