@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import Column, Date, String, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from app.db.base_class import Base
 from app.db.custom_types import GUID
@@ -23,6 +23,9 @@ class Asset(Base):
         "AssetAlias", back_populates="asset", cascade="all, delete-orphan"
     )
     watchlist_items = relationship("WatchlistItem", back_populates="asset")
+
+    # Add the relationship to the Bond model
+    bond: Mapped["Bond"] = relationship("Bond", back_populates="asset", cascade="all, delete-orphan")
 
     __table_args__ = (UniqueConstraint("ticker_symbol", name="uq_ticker_symbol"),)
     account_number = Column(String, nullable=True)
