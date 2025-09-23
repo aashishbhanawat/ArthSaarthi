@@ -17,7 +17,7 @@ The goal is to create two new parsers:
 This will be a multi-phase project:
 *   **Phase 0 (Prerequisite):** Enhance the core system to robustly handle manual MF transactions, including integrating a reliable NAV data source.
 *   **Phase 1:** Implement the backend parser for MF CAS statements.
-*   **Phase 2:** Implement the backend parser for eNPS statements.
+*   **Phase 2 (On Hold):** Implement the backend parser for eNPS statements.
 
 ---
 
@@ -119,7 +119,7 @@ This feature will be validated through a multi-layered testing strategy.
 
 ---
 
-### Phase 2: eNPS Parser (FR7.1.3)
+### Phase 2: eNPS Parser (FR7.1.3) - On Hold
 
 **Objective:** Implement a parser for eNPS transaction statements.
 
