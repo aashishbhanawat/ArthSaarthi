@@ -1,6 +1,7 @@
 import collections
 import csv
 import io
+import re
 import json
 import pathlib
 import uuid
@@ -17,6 +18,8 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.db.session import SessionLocal
 from app.models.asset import Asset
+from app.schemas.bond import BondCreate
+from app.models.bond import Bond
 from app.models.asset_alias import AssetAlias
 from app.models.audit_log import AuditLog
 from app.models.fixed_deposit import FixedDeposit
@@ -28,6 +31,7 @@ from app.models.portfolio import Portfolio
 from app.models.recurring_deposit import RecurringDeposit
 from app.models.transaction import Transaction
 from app.models.user import User
+from app.schemas.enums import BondType
 from app.models.watchlist import Watchlist, WatchlistItem
 
 app = typer.Typer(help="Database commands.")
@@ -45,21 +49,85 @@ EXCHANGE_CONFIGS = {
         "name_col": "CompanyName",
         "isin_col": "ISINCode",
         "series_col": "Series",
-        # Filter for equity-like series
-        "series_filter": lambda s: s in ("EQ", "BE", "SM"),
+        "face_value_col": "FaceValue",
     },
     "BSE": {
         "filename": BSE_MASTER_FILE,
         "ticker_col": "ScripID",
-        "name_col": "CompanyName",
+        "name_col": "ScripName",
         "isin_col": "ISINCode",
         "series_col": "Series",
-        # Exclude known non-equity series
-        "series_filter": lambda s: s not in ("DR", "F", "G"),
+        "face_value_col": "FaceValue",
     },
 }
 
 # --- Helper Functions ---
+
+
+def _classify_asset(
+    ticker: str, name: str, series: str, exchange: str, debug: bool = False
+) -> tuple[str | None, BondType | None]:
+    """Maps asset attributes to its asset_type and bond_type."""
+    series = series.upper()
+    name = name.upper()
+    ticker = ticker.upper()
+
+    # 1. Highest Priority: Specific bond patterns that are unambiguous
+    if "T-BILL" in name or re.match(r"^\d{2,3}(TB|T|D)\d{5,6}$", ticker):
+        return "BOND", BondType.TBILL
+
+    # 2. Exchange-specific bond logic
+    if exchange == "BSE":
+        # CG + 4-digit coupon + letter + 4-digit number (e.g., CG1110S9803)
+        if re.match(r"^CG\d{4}[A-Z]\d{4}$", ticker):
+            return "BOND", BondType.GOVERNMENT
+        # GS + date pattern (e.g., GS12SEP2041, GS06NOV73, GS17JUN28C)
+        if re.match(r"^GS\d{2}[A-Z]{3}(\d{4}|\d{2})[A-Z]?$", ticker):
+            return "BOND", BondType.GOVERNMENT
+        # SGB + various patterns of month, year, and series number
+        if re.match(r"^SGB[A-Z0-9]+", ticker):
+            return "BOND", BondType.SGB
+        # Corporate bond pattern: e.g., 81ABFL33
+        if re.match(r"^\d+[A-Z]+\d+$", ticker):
+            return "BOND", BondType.CORPORATE
+        # Fallback for BSE corporate bonds based on name keywords
+        bond_keywords = ["%", "NCD", "BOND", "PERP", " SR", " BD "]
+        if any(keyword in name for keyword in bond_keywords):
+            return "BOND", BondType.CORPORATE
+        # Fallback for State Govt bonds based on name keywords
+        govt_keywords = ["STATE", " ELEC", "POWER CORP"]
+        # Use 'any' but exclude private companies that contain 'LTD'
+        if any(keyword in name for keyword in govt_keywords) and not any(
+            ex in name for ex in ["LTD", "LIMITED"]
+        ):
+            return "BOND", BondType.GOVERNMENT
+    else:  # Default to NSE logic
+        if series == "GB":
+            return "BOND", BondType.SGB
+        if series in ("GS", "SG"):
+            return "BOND", BondType.GOVERNMENT
+        if series == "TB":
+            return "BOND", BondType.TBILL
+
+        # Corporate bonds on NSE often start with specific letters.
+        # This rule is now structured to explicitly EXCLUDE known stock series.
+        BOND_PREFIXES = ("N", "Y", "Z", "D", "S", "U", "M")
+        STOCK_SERIES_EXCEPTIONS = {"DR", "ST"}
+        OTHER_EXCLUSIONS = {"MF", "ME", "SP", "SL", "SI", "SO", "SQ"}
+        NUMERIC_EXCEPTIONS = {"24", "25", "47", "50", "57", "60", "65", "71"}
+
+        if series.startswith(BOND_PREFIXES) and series not in STOCK_SERIES_EXCEPTIONS:
+            # If it's another known exclusion or a numeric exception, skip it.
+            if series in OTHER_EXCLUSIONS or (len(series) > 1 and series[1:] in NUMERIC_EXCEPTIONS):
+                return None, None
+            # Otherwise, it's a corporate bond.
+            return "BOND", BondType.CORPORATE
+
+    # 3. Last fallback: Check for common stock series if no bond patterns matched.
+    if series in {"EQ", "BE", "SM", "DR", "A", "B", "T", "M", "C", "ST"}:
+        return "STOCK", None
+
+    return None, None # Default return for unclassified assets
 
 
 def get_db_session():
@@ -74,21 +142,24 @@ def _validate_and_clean_asset_row(
     row: dict, exchange: str, config: dict, debug: bool, debug_rows_printed: int
 ) -> tuple[dict | None, int]:
     """Validates and cleans a row from the asset master file."""
-    series = row.get(config["series_col"], "").strip()
-    if not config["series_filter"](series):
+    series = row.get(config["series_col"], "").strip().upper()
+    ticker = row.get(config["ticker_col"], "")
+    name = row.get(config["name_col"], "")
+    asset_type, bond_type = _classify_asset(ticker, name, series, exchange)
+    if not asset_type:
         if series and debug and debug_rows_printed < 5:
             typer.echo(
-                f"\n[DEBUG] Skipping {exchange} row due to Series '{series}'.",
+                f"\n[DEBUG] Skipping {exchange} row due to unclassified Series '{series}'.",
                 err=True,
             )
+            typer.echo(f"  - Ticker: {ticker}, Name: {name}", err=True)
             debug_rows_printed += 1
         return None, debug_rows_printed
 
-    ticker = row.get(config["ticker_col"])
-    name = row.get(config["name_col"])
     isin = row.get(config["isin_col"])
 
-    if not all([ticker, name, isin]):
+    # We need a name and at least one of (ticker or isin) to track an asset.
+    if not name or not (ticker or isin):
         if debug and debug_rows_printed < 5:
             typer.echo(
                 (
@@ -101,8 +172,21 @@ def _validate_and_clean_asset_row(
             debug_rows_printed += 1
         return None, debug_rows_printed
 
+    face_value_str = row.get(config["face_value_col"], "0").strip()
+    try:
+        face_value = Decimal(face_value_str)
+        if face_value <= 0:
+            face_value = None
+    except Exception:
+        face_value = None
+
     cleaned_data = {
-        "isin": isin.strip(), "ticker": ticker.strip(), "name": name.strip()
+        "isin": isin.strip(),
+        "ticker": ticker.strip(),
+        "name": name.strip(),
+        "asset_type": asset_type,
+        "bond_type": bond_type,
+        "face_value": face_value,
     }
     return cleaned_data, debug_rows_printed
 
@@ -121,6 +205,10 @@ def _parse_and_seed_exchange_data(
     debug_rows_printed = 0
     config = EXCHANGE_CONFIGS[exchange]
     skipped_series_counts = collections.Counter()
+
+    # The field names in the file might have quotes, let's strip them.
+    if reader.fieldnames:
+        reader.fieldnames = [field.strip().strip('"') for field in reader.fieldnames]
 
     assets_to_process = list(reader)
     with typer.progressbar(
@@ -148,13 +236,26 @@ def _parse_and_seed_exchange_data(
                 "name": cleaned_data["name"],
                 "ticker_symbol": cleaned_data["ticker"],
                 "isin": cleaned_data["isin"],
-                "asset_type": "STOCK",
+                "asset_type": cleaned_data["asset_type"],
                 "currency": "INR",
                 "exchange": exchange,
             }
             try:
                 asset_in = schemas.AssetCreate(**asset_data)
-                crud.asset.create(db=db, obj_in=asset_in)
+                asset = crud.asset.create(db=db, obj_in=asset_in)
+
+                # If it's a bond, create the associated bond record
+                if asset.asset_type == "BOND" and cleaned_data["bond_type"]:
+                    bond_in = BondCreate(
+                        asset_id=asset.id,
+                        bond_type=cleaned_data["bond_type"],
+                        # Placeholder date, user must enrich this on first transaction
+                        maturity_date=date(1970, 1, 1),
+                        isin=asset.isin,
+                        face_value=cleaned_data.get("face_value"),
+                    )
+                    crud.bond.create(db=db, obj_in=bond_in)
+
                 created_count += 1
                 # Add to sets to prevent duplicates from other files in the same run
                 existing_isins.add(cleaned_data["isin"])
@@ -178,10 +279,6 @@ def _process_asset_file(
 ) -> tuple[int, int, collections.Counter]:
     """Reads a CSV file stream and triggers the seeding process."""
     reader = csv.DictReader(file_content)
-    # The field names in the file might have quotes, let's strip them.
-    if reader.fieldnames:
-        reader.fieldnames = [field.strip().strip('"') for field in reader.fieldnames]
-
     created, skipped, skipped_series = _parse_and_seed_exchange_data(
         db, reader, exchange, existing_isins, existing_tickers, debug=debug
     )
@@ -334,6 +431,7 @@ def clear_assets_command(
             Goal,
             Watchlist,
             Portfolio,
+            Bond,
             Asset,
         ]
 
@@ -411,6 +509,7 @@ def dump_table_command(
             "parsed_transactions": ParsedTransaction,
             "asset_aliases": AssetAlias,
             "audit_logs": AuditLog,
+            "bonds": Bond,
         }
         model = model_map.get(table_name)
         if not model:

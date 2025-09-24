@@ -327,3 +327,22 @@ After a backend change, two frontend unit tests (`HoldingDetailModal.test.tsx` a
 *   **Key Learning: Test Mocks are API Contracts.** Unit test mocks for API calls are a critical part of the contract between the frontend and backend. When a backend developer changes the shape or format of an API response, it is not enough to just update the frontend component that consumes it. All unit tests that mock that API call must also be updated with the new data structure. Failing to do so creates "test debt" and leads to a brittle test suite that fails for reasons unrelated to the component's actual logic. This emphasizes the need for clear communication or for full-stack developers to be mindful of the entire data flow when making changes.
 
 ---
+
+## 2025-09-24: Control Flow Analysis vs. Symptomatic Patching
+
+### 1. What Happened?
+
+While stabilizing the `seed-assets` command, a significant amount of time was spent in a loop fixing a classification bug in the `_classify_asset` function. The function was incorrectly classifying stock series like 'DR' and 'ST'.
+
+*   **Symptomatic Patching:** My initial attempts involved treating the symptoms. I first changed a `return None, None` to `pass`, which caused a different bug. Then, I changed it back. This back-and-forth happened because I was focused on the immediate line of code causing the failure, not the overall function logic.
+*   **Root Cause Discovery:** The user correctly pointed out we were stuck in a loop. A deeper analysis revealed the root cause was not the `pass` or `return` statement itself, but the entire structure of the `if series.startswith(...)` block. It was too broad and was incorrectly catching stock series that it should have ignored.
+
+### 2. How Did the Process Help?
+
+*   **User Feedback:** The user's observation that we were "stuck in a loop" was the critical feedback that forced a re-evaluation of the entire approach.
+*   **Structural Refactoring:** The final, successful fix was not another patch. It was a complete refactoring of the conditional logic to be more explicit: `if series.startswith(BOND_PREFIXES) and series not in STOCK_SERIES_EXCEPTIONS:`. This addressed the problem at its source.
+
+### 3. Outcome & New Learning
+
+*   The asset classification logic is now robust and correct.
+*   **Key Learning: Analyze Control Flow, Don't Just Patch Symptoms.** When a bug fix seems to oscillate between two incorrect states, it's a strong signal that the underlying control flow or logical structure is flawed. Instead of patching the immediate line, step back and analyze the entire function or block. A structural refactoring is often the correct and permanent solution, whereas continuing to patch the symptoms leads to wasted cycles and instability.

@@ -1822,3 +1822,39 @@ Its purpose is to build an experience history that can be used as a reference fo
     - All 140 backend tests are passing. The project is ready for the frontend implementation phase.
 
 ---
+
+### Task: Stabilize the Asset Seeder
+
+**Date:** 2025-09-24
+**AI Assistant:** Gemini Code Assist
+**Goal:** To debug and fix the `seed-assets` command, which was failing to import and classify thousands of assets correctly.
+
+**Summary of AI's Output:**
+The AI assistant guided a systematic debugging process by analyzing the `log.txt` file after each run of the seeder.
+
+1.  **Initial Analysis:** The AI identified that the `bonds` table was empty and that many assets were being misclassified as `STOCK` due to a flawed logical order in the `_classify_asset` function.
+2.  **Iterative Refinement:** Through a series of prompts and log analyses, the AI identified several other issues: overly restrictive logic for NSE corporate bonds, a parsing failure for the BSE master file, and overly strict data validation rules.
+3.  **Final Solution:** The AI provided a series of patches to `backend/app/cli.py` that:
+    *   Restored the correct classification priority (specific bond patterns first).
+    *   Made the NSE bond classification logic more robust.
+    *   Moved the CSV header cleaning logic to the correct function to ensure it runs for all files.
+    *   Relaxed the validation rules to be more permissive while still ensuring data quality.
+    *   Added a final `return None, None` to `_classify_asset` to prevent unhandled `TypeError` exceptions.
+4.  **Cleanup:** The AI also performed a minor cleanup on `clean.sh`.
+
+**File Changes:**
+
+*   `modified`: `backend/app/cli.py` - Refactored `_classify_asset`, `_validate_and_clean_asset_row`, and `_parse_and_seed_exchange_data` to fix all classification and parsing bugs.
+*   `modified`: `clean.sh` - Added `log2.txt` to the list of files to be removed.
+*   `modified`: `docs/bug_reports.md` - Added a consolidated bug report for the seeder stabilization.
+*   `modified`: `docs/workflow_history.md` - Added this entry.
+*   `modified`: `docs/LEARNING_LOG.md` - Added an entry about the importance of control flow analysis over symptomatic patching.
+
+| Step            | Command                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| Verification    | `docker compose run --rm backend python run_cli.py db seed-assets --debug > log.txt`                  |
+|                 | `docker compose run --rm backend python run_cli.py db dump-table assets >> log.txt`                   |
+|                 | `docker compose run --rm backend python run_cli.py db dump-table bonds >> log.txt`                    |
+|                 | Manually inspect `log.txt` to confirm assets and bonds are created and classified correctly.          |
+| Outcome         | **Success.** The asset seeder is now stable, correctly parsing both NSE and BSE files and classifying thousands of assets and bonds that were previously skipped or misclassified. |
+| Verification    | `docker compose run --rm backend python run_cli.py db seed-assets --debug`                            |

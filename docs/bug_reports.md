@@ -6689,3 +6689,33 @@ A full-stack refactoring was performed to standardize the process.
 - **Tests:** All affected backend and frontend unit tests were updated with new mock data and assertions to match the new standard.
 
 ---
+
+**Bug ID:** 2025-09-24-01 (Consolidated)
+**Title:** Asset seeder (`seed-assets`) was unstable and failed to import thousands of assets.
+**Module:** Core Backend, Data Seeding
+**Reported By:** User & Gemini Code Assist via Manual Test & Log Analysis
+**Date Reported:** 2025-09-24
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `seed-assets` command was highly unstable and failed to correctly classify or import thousands of assets, particularly from the BSE master file. The debugging process revealed several distinct root causes:
+1.  **Misclassification of Bonds:** An initial logic change in `_classify_asset` prioritized checking for stock series (e.g., 'C', 'A'), causing thousands of corporate and government bonds to be misclassified as stocks and not correctly saved.
+2.  **Flawed NSE Bond Logic:** The logic for identifying NSE corporate bonds was too broad and contained flawed `pass`/`return None, None` statements that either misclassified stocks as bonds or skipped them entirely.
+3.  **BSE File Parsing Failure:** The header-cleaning logic in `_process_asset_file` was only being applied to the first file (NSE). This caused the seeder to fail to read the `ticker` and `isin` columns for the BSE file, leading to ~4,000 assets being skipped due to "missing essential data".
+4.  **Overly Strict Validation:** The validation logic required an asset to have a ticker, name, AND ISIN. This was too strict and caused valid assets (with a name and ISIN but no ticker) to be skipped.
+5.  **Unhandled `TypeError`:** A code path in `_classify_asset` for unclassified assets could return `None` instead of a tuple, causing a `TypeError` that was caught by a generic exception handler, masking the root cause of many skipped rows.
+**Steps to Reproduce:**
+1. Run `docker compose run --rm backend python run_cli.py db seed-assets --debug`.
+2. Observe the `log.txt` file for a large number of skipped assets and an empty `bonds` table.
+**Expected Behavior:**
+The seeder should correctly classify and import all valid stocks and bonds from both NSE and BSE master files.
+**Actual Behavior:**
+The seeder misclassified bonds, failed to parse BSE data correctly, and skipped thousands of valid assets.
+**Resolution:**
+A series of patches were applied to `backend/app/cli.py`:
+1.  The logic in `_classify_asset` was reordered to prioritize specific bond patterns before falling back to general stock series checks.
+2.  The NSE corporate bond logic was refactored to be more explicit and robust.
+3.  The header-stripping logic was moved to `_parse_and_seed_exchange_data` to ensure it runs for every file.
+4.  The validation logic in `_validate_and_clean_asset_row` was relaxed to require a name and at least one of (ticker or ISIN).
+5.  A default `return None, None` was added to `_classify_asset` to ensure it always returns a tuple.
+---
