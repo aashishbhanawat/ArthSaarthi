@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from .asset import Asset
+# from .asset import Asset  <- This direct import causes the circular dependency
 
 
 class TransactionType(str):
@@ -55,7 +55,7 @@ class TransactionUpdate(TransactionBase):
 class Transaction(TransactionBase):
     id: uuid.UUID
     portfolio_id: uuid.UUID
-    asset: Asset
+    asset: "Asset"
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.transaction import TransactionCreate
+
 from .enums import BondType, PaymentFrequency
 
 
@@ -23,6 +25,11 @@ class BondCreate(BondBase):
     asset_id: UUID
 
 
+# Properties to receive on item creation via the special bond+transaction endpoint
+class BondWithTransactionCreate(BaseModel):
+    bond_data: BondBase
+    transaction_data: TransactionCreate
+
 # Properties to receive on item update
 class BondUpdate(BondBase):
     pass
@@ -40,4 +47,3 @@ class BondInDBBase(BondBase):
 # Properties to return to client
 class Bond(BondInDBBase):
     pass
-

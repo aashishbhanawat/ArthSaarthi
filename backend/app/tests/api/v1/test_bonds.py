@@ -41,12 +41,23 @@ def test_create_bond(
         exchange="NSE",
     )
     asset = crud.asset.create(db, obj_in=asset_in)
-    data = {
-        "asset_id": str(asset.id),
+
+    bond_data = {
         "bond_type": "CORPORATE",
         "face_value": 1000.0,
         "coupon_rate": 7.5,
         "maturity_date": "2030-01-15",
+    }
+    transaction_data = {
+        "asset_id": str(asset.id),
+        "transaction_type": "BUY",
+        "quantity": 10,
+        "price_per_unit": 995.0,
+        "transaction_date": date.today().isoformat(),
+    }
+    data = {
+        "bond_data": bond_data,
+        "transaction_data": transaction_data,
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/bonds/",
@@ -76,10 +87,20 @@ def test_create_bond_for_non_bond_asset(
         exchange="NSE",
     )
     asset = crud.asset.create(db, obj_in=asset_in)
-    data = {
-        "asset_id": str(asset.id),
+    bond_data = {
         "bond_type": "CORPORATE",
         "maturity_date": "2030-01-15",
+    }
+    transaction_data = {
+        "asset_id": str(asset.id),
+        "transaction_type": "BUY",
+        "quantity": 10,
+        "price_per_unit": 995.0,
+        "transaction_date": date.today().isoformat(),
+    }
+    data = {
+        "bond_data": bond_data,
+        "transaction_data": transaction_data,
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/bonds/",
@@ -100,10 +121,20 @@ def test_create_bond_for_nonexistent_asset(
     user = crud.user.get_by_email(db, email=normal_user_data["email"])
     portfolio = create_test_portfolio(db, user_id=user.id, name="Bond Portfolio")
     non_existent_asset_id = str(uuid4())
-    data = {
-        "asset_id": non_existent_asset_id,
+    bond_data = {
         "bond_type": "CORPORATE",
         "maturity_date": "2030-01-15",
+    }
+    transaction_data = {
+        "asset_id": non_existent_asset_id,
+        "transaction_type": "BUY",
+        "quantity": 10,
+        "price_per_unit": 995.0,
+        "transaction_date": date.today().isoformat(),
+    }
+    data = {
+        "bond_data": bond_data,
+        "transaction_data": transaction_data,
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/bonds/",
@@ -130,19 +161,32 @@ def test_create_duplicate_bond_for_asset(
     )
     asset = crud.asset.create(db, obj_in=asset_in)
     create_random_bond(db, asset_id=asset.id)  # First bond created
-    data = {
-        "asset_id": str(asset.id),
-        "bond_type": "GOVERNMENT",
+    bond_data = {
+        "bond_type": "GOVERNMENT",  # New type to verify update
         "maturity_date": "2040-01-01",
+        "coupon_rate": 8.0,
+    }
+    transaction_data = {
+        "asset_id": str(asset.id),
+        "transaction_type": "BUY",
+        "quantity": 10,
+        "price_per_unit": 995.0,
+        "transaction_date": date.today().isoformat(),
+    }
+    data = {
+        "bond_data": bond_data,
+        "transaction_data": transaction_data,
     }
     response = client.post(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/bonds/",
         headers=normal_user_token_headers,
         json=data,
     )
-    assert response.status_code == 409
+    # The endpoint now supports "upsert" logic. It should succeed and update the bond.
+    assert response.status_code == 201
     content = response.json()
-    assert content["detail"] == "Bond details for this asset already exist."
+    assert content["bond_type"] == "GOVERNMENT"
+    assert float(content["coupon_rate"]) == 8.0
 
 
 def test_read_bond(

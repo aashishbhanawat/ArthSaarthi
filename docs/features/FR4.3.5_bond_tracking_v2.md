@@ -10,8 +10,8 @@
 ## 1. Implementation Progress
 
 *   [x] **Phase 1: Backend Implementation:** Create the database model, Pydantic schemas, CRUD logic, and API endpoints for creating and managing bonds.
-*   [ ] **Phase 2: Frontend Data Layer:** Create TypeScript types (`bond.ts`), API service functions (`bondApi.ts`), and React Query hooks (`useBonds.ts`).
-*   [ ] **Phase 3: Frontend UI - Add Transaction:** Update the `TransactionFormModal` to include the "Bond" asset type and the detailed form for capturing bond attributes as per the mockups.
+*   [x] **Phase 2: Frontend Data Layer:** Create TypeScript types (`bond.ts`), API service functions (`bondApi.ts`), and React Query hooks (`useBonds.ts`).
+*   [x] **Phase 3: Frontend UI - Add Transaction:** Update the `TransactionFormModal` to include the "Bond" asset type and the detailed form for capturing bond attributes as per the mockups.
 *   [ ] **Phase 4: Frontend UI - Display & Details:** Implement the `BondHoldingRow` for the main holdings table and create the `BondDetailModal` for the drill-down view.
 *   [ ] **Phase 5: E2E Testing:** Create an end-to-end test to validate the full user flow of adding and tracking a bond.
 

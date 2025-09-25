@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, List
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -68,6 +68,7 @@ def read_assets(
 @router.get("/lookup/", response_model=List[schemas.Asset])
 def lookup_ticker_symbol(
     query: str = Query(..., min_length=2, max_length=50),
+    asset_type: Optional[str] = None,
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user),
 ):
@@ -78,13 +79,21 @@ def lookup_ticker_symbol(
     locally and returns it.
     """
     # 1. Search local database
-    assets = crud.asset.search_by_name_or_ticker(db, query=query)
+    assets = crud.asset.search_by_name_or_ticker(db, query=query, asset_type=asset_type)
     if assets:
         if settings.DEBUG:
             print("--- BACKEND DEBUG: Asset Lookup ---")
             print(f"Found {len(assets)} assets locally for query: '{query}'")
             print("---------------------------------")
         return assets
+
+    # If asset_type is BOND and no local assets were found, do not query external service.
+    if asset_type == "BOND":
+        if settings.DEBUG:
+            print("--- BACKEND DEBUG: Asset Lookup ---")
+            print(f"No local BOND asset found for '{query}'. External lookup is disabled for bonds.")
+            print("---------------------------------")
+        return []
 
     # 2. If not found locally, query external service (case-insensitive for ticker)
     if settings.DEBUG:
@@ -98,6 +107,24 @@ def lookup_ticker_symbol(
         if settings.DEBUG:
             print("--- BACKEND DEBUG: Asset Lookup ---")
             print(f"No asset found in external service for '{query.upper()}'.")
+            print("---------------------------------")
+        return []
+
+    # 2a. If an asset_type filter was provided, ensure the external result matches.
+    if asset_type and details.get("asset_type", "").upper() != asset_type.upper():
+        if settings.DEBUG:
+            print("--- BACKEND DEBUG: Asset Lookup ---")
+            print(f"External asset found, but type '{details.get('asset_type')}' "
+                  f"does not match requested type '{asset_type}'. Discarding.")
+            print("---------------------------------")
+        return []
+
+    # 2a. If an asset_type filter was provided, ensure the external result matches.
+    if asset_type and details.get("asset_type", "").upper() != asset_type.upper():
+        if settings.DEBUG:
+            print("--- BACKEND DEBUG: Asset Lookup ---")
+            print(f"External asset found, but type '{details.get('asset_type')}' "
+                  f"does not match requested type '{asset_type}'. Discarding.")
             print("---------------------------------")
         return []
 

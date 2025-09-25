@@ -1858,3 +1858,37 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
 |                 | Manually inspect `log.txt` to confirm assets and bonds are created and classified correctly.          |
 | Outcome         | **Success.** The asset seeder is now stable, correctly parsing both NSE and BSE files and classifying thousands of assets and bonds that were previously skipped or misclassified. |
 | Verification    | `docker compose run --rm backend python run_cli.py db seed-assets --debug`                            |
+
+---
+
+## 2025-09-24: Implement Frontend UI for Bond Tracking (FR4.3.5 - Phases 2 & 3)
+
+*   **Task Description:** A full-stack implementation of the frontend UI for adding bond transactions. This included creating the data layer (types, API services, React Query hooks) and updating the main transaction form to handle the "Bond" asset type with its specific fields. The task also involved a significant debugging effort to fix a series of cascading backend and frontend test failures that were uncovered during the process.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the frontend data layer (`types/bond.ts`, `hooks/usePortfolios.ts`, `services/portfolioApi.ts`) and to refactor the `TransactionFormModal.tsx` to include the new bond-specific form fields and logic.
+    2.  **Systematic Debugging via Log Analysis:** The initial implementation introduced a cascade of over 10 test failures across the backend and frontend. A highly iterative "Analyze -> Report -> Fix" workflow was used to resolve them:
+        *   **Frontend `TypeError`:** The `TransactionFormModal` test suite crashed because it was not mocking the new `useCreateBond` hook. This was the first and most direct bug.
+        *   **E2E Test Timeout:** The analytics E2E test began timing out. The AI diagnosed a logic error in the test script where it was waiting for an API call (`POST /assets/`) that would never happen at that point in the user flow. The `waitForResponse` was moved to the correct step.
+        *   **Backend Circular Import (`ImportError`):** After fixing the frontend tests, the application failed to start. The AI diagnosed a circular dependency loop between the `asset`, `bond`, and `transaction` Pydantic schemas. This was fixed by using a forward reference (`"Asset"`) in `transaction.py`.
+        *   **Backend `PydanticUserError`:** The application still failed to start, this time with a `PydanticUserError` because the forward references were not being resolved. This was fixed by adding `model_rebuild()` calls to the schema files.
+        *   **Backend `NameError`:** The `model_rebuild()` call itself then failed with a `NameError`. The AI diagnosed that the rebuild was happening before all modules were loaded. The fix was to move all `model_rebuild()` calls to a central location (`schemas/__init__.py`).
+    3.  **Final Test Stabilization:** After the application was stable, a final backend test failure was identified in `test_bonds.py`. The test was asserting for an outdated `409 Conflict` error, but the endpoint had been correctly updated to use "upsert" logic. The test was updated to assert for the new, correct behavior (`201 Created`).
+
+*   **File Changes:**
+    *   `frontend/src/types/bond.ts`: **New** file for bond type definitions.
+    *   `frontend/src/hooks/usePortfolios.ts`: **Updated** with `useCreateBond` hook.
+    *   `frontend/src/services/portfolioApi.ts`: **Updated** with `createBondTransaction` function.
+    *   `frontend/src/components/Portfolio/TransactionFormModal.tsx`: **Updated** to include the bond form and logic.
+    *   `frontend/src/__tests__/components/Portfolio/TransactionFormModal.test.tsx`: **Updated** to mock the `useCreateBond` hook.
+    *   `e2e/tests/analytics.spec.ts`: **Updated** to fix a test logic error causing a timeout.
+    *   `backend/app/schemas/`: **Updated** `asset.py`, `transaction.py`, and `__init__.py` to resolve circular dependencies.
+    *   `backend/app/tests/api/v1/test_bonds.py`: **Updated** to align with the new "upsert" logic.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (140), frontend tests (159), and E2E tests (21) passed.
+
+*   **Outcome:**
+    - The frontend UI for adding bond transactions is complete and stable.
+    - All related test failures and regressions have been resolved, and the entire project is in a "green" state.
+| Verification    | `docker compose run --rm backend python run_cli.py db seed-assets --debug`                            |

@@ -1,9 +1,9 @@
 import collections
 import csv
 import io
-import re
 import json
 import pathlib
+import re
 import uuid
 import zipfile
 from datetime import date, datetime
@@ -18,10 +18,9 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.db.session import SessionLocal
 from app.models.asset import Asset
-from app.schemas.bond import BondCreate
-from app.models.bond import Bond
 from app.models.asset_alias import AssetAlias
 from app.models.audit_log import AuditLog
+from app.models.bond import Bond
 from app.models.fixed_deposit import FixedDeposit
 from app.models.goal import Goal, GoalLink
 from app.models.historical_interest_rate import HistoricalInterestRate
@@ -31,8 +30,9 @@ from app.models.portfolio import Portfolio
 from app.models.recurring_deposit import RecurringDeposit
 from app.models.transaction import Transaction
 from app.models.user import User
-from app.schemas.enums import BondType
 from app.models.watchlist import Watchlist, WatchlistItem
+from app.schemas.bond import BondCreate
+from app.schemas.enums import BondType
 
 app = typer.Typer(help="Database commands.")
 
@@ -85,7 +85,7 @@ def _classify_asset(
         if re.match(r"^GS\d{2}[A-Z]{3}(\d{4}|\d{2})[A-Z]?$", ticker):
             return "BOND", BondType.GOVERNMENT
         # SGB + various patterns of month, year, and series number
-        if re.match(r"^SGB[A-Z0-9]+", ticker):
+        if re.match(r"^SGB[A-Z0-9]+", ticker) or series == "GB":
             return "BOND", BondType.SGB
         # Corporate bond pattern: e.g., 81ABFL33
         if re.match(r"^\d+[A-Z]+\d+$", ticker):
@@ -197,6 +197,7 @@ def _parse_and_seed_exchange_data(
     exchange: str,
     existing_isins: set,
     existing_tickers: set,
+    existing_composite_keys: set[tuple[str, str, str]],
     debug: bool = False,
 ) -> tuple[int, int, collections.Counter]:
     """Parses asset data from a CSV reader and seeds the database."""
@@ -232,6 +233,20 @@ def _parse_and_seed_exchange_data(
                 skipped_count += 1
                 continue
 
+            # Check if asset with this (name, asset_type, currency) already exists
+            # This handles the 'uq_asset_name_type_currency' constraint.
+            composite_key = (cleaned_data["name"], cleaned_data["asset_type"], "INR")
+            if composite_key in existing_composite_keys:
+                if debug and debug_rows_printed < 5:
+                    typer.echo(
+                        (f"\n[DEBUG] Skipping {exchange} row due to duplicate composite key:"
+                         f" Name: '{cleaned_data['name']}', Type: '{cleaned_data['asset_type']}',"
+                         f" Currency: 'INR'."), err=True
+                    )
+                    debug_rows_printed += 1
+                skipped_count += 1
+                continue
+
             asset_data = {
                 "name": cleaned_data["name"],
                 "ticker_symbol": cleaned_data["ticker"],
@@ -257,9 +272,11 @@ def _parse_and_seed_exchange_data(
                     crud.bond.create(db=db, obj_in=bond_in)
 
                 created_count += 1
+                existing_isins.add(cleaned_data["isin"])
                 # Add to sets to prevent duplicates from other files in the same run
                 existing_isins.add(cleaned_data["isin"])
                 existing_tickers.add(cleaned_data["ticker"])
+                existing_composite_keys.add(composite_key)
             except IntegrityError:
                 db.rollback()
                 skipped_count += 1
@@ -275,12 +292,13 @@ def _process_asset_file(
     db: Session,
     existing_isins: set,
     existing_tickers: set,
+    existing_composite_keys: set[tuple[str, str, str]],
     debug: bool = False,
 ) -> tuple[int, int, collections.Counter]:
     """Reads a CSV file stream and triggers the seeding process."""
     reader = csv.DictReader(file_content)
     created, skipped, skipped_series = _parse_and_seed_exchange_data(
-        db, reader, exchange, existing_isins, existing_tickers, debug=debug
+        db, reader, exchange, existing_isins, existing_tickers, existing_composite_keys, debug=debug
     )
     typer.echo(
         f"\n{exchange} processing complete. Created: {created}, Skipped: {skipped}"
@@ -326,9 +344,15 @@ def seed_assets_command(
             r[0] for r in db.query(Asset.isin).filter(Asset.isin.isnot(None)).all()
         }
         existing_tickers = {r[0] for r in db.query(Asset.ticker_symbol).all()}
+        # NEW: Fetch existing composite keys (name, asset_type, currency)
+        existing_composite_keys = {
+            (a.name, a.asset_type, a.currency)
+            for a in db.query(Asset.name, Asset.asset_type, Asset.currency).all()
+        }
         typer.echo(
             f"Found {len(existing_isins)} existing ISINs and"
-            f" {len(existing_tickers)} tickers."
+            f" {len(existing_tickers)} tickers and"
+            f" {len(existing_composite_keys)} composite keys."
         )
 
         total_created, total_skipped = 0, 0
@@ -345,8 +369,8 @@ def seed_assets_command(
                     )
                     continue
                 with open(file_path, mode="r", encoding="utf-8", errors="ignore") as f:
-                    created, skipped, skipped_series = _process_asset_file(
-                        f, exchange, db, existing_isins, existing_tickers, debug=debug
+                    created, skipped, skipped_series = _process_asset_file( # type: ignore
+                        f, exchange, db, existing_isins, existing_tickers, existing_composite_keys, debug=debug
                     )
                     total_created += created
                     total_skipped += skipped
@@ -370,13 +394,9 @@ def seed_assets_command(
                         text_stream = io.TextIOWrapper(
                             thefile, encoding="utf-8", errors="ignore"
                         )
-                        created, skipped, skipped_series = _process_asset_file(
-                            text_stream,
-                            exchange,
-                            db,
-                            existing_isins,
-                            existing_tickers,
-                            debug=debug,
+                        created, skipped, skipped_series = _process_asset_file( # type: ignore
+                            text_stream, exchange, db, existing_isins, existing_tickers,
+                            existing_composite_keys, debug=debug,
                         )
                         total_created += created
                         total_skipped += skipped

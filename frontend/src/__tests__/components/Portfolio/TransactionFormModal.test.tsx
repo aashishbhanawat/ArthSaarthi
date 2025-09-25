@@ -13,6 +13,7 @@ const mockUpdateTransaction = jest.fn();
 const mockLookupAsset = jest.fn();
 const mockCreateFixedDeposit = jest.fn();
 const mockCreatePpfAccount = jest.fn();
+const mockCreateBond = jest.fn();
 
 jest.mock('../../../hooks/usePortfolios', () => ({
   useCreateTransaction: () => ({
@@ -26,6 +27,9 @@ jest.mock('../../../hooks/usePortfolios', () => ({
   }),
   useCreatePpfAccount: () => ({
     mutate: mockCreatePpfAccount,
+  }),
+  useCreateBond: () => ({
+    mutate: mockCreateBond,
   }),
 }));
 
@@ -126,7 +130,7 @@ describe('TransactionFormModal', () => {
         fireEvent.change(assetInput, { target: { value: 'Apple' } });
         
         await waitFor(() => {
-            expect(mockLookupAsset).toHaveBeenCalledWith('Apple');
+            expect(mockLookupAsset).toHaveBeenCalledWith('Apple', 'STOCK');
         });
         
         fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));

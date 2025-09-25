@@ -234,14 +234,24 @@ class YFinanceProvider:
             for asset in assets:
                 ticker = asset["ticker_symbol"]
                 cache_key = f"price_details:{ticker}"
+                not_found_cache_key = f"asset_details_not_found:{ticker.upper()}"
+
                 cached_data = self.cache_client.get_json(cache_key)
                 if cached_data:
                     prices_data[ticker] = {
                         "current_price": Decimal(cached_data["current_price"]),
                         "previous_close": Decimal(cached_data["previous_close"]),
                     }
-                else:
-                    tickers_to_fetch.append(asset)
+                    continue
+
+                if self.cache_client.get_json(not_found_cache_key):
+                    prices_data[ticker] = {
+                        "current_price": Decimal("0.0"),
+                        "previous_close": Decimal("0.0"),
+                    }
+                    continue
+
+                tickers_to_fetch.append(asset)
         else:
             tickers_to_fetch = assets
 
@@ -281,6 +291,15 @@ class YFinanceProvider:
         except (Exception, ValidationError) as e:
             print(f"WARNING: Error fetching batch data from yfinance: {e}")
 
+        # After the batch call, identify which tickers failed and cache their failure.
+        if self.cache_client:
+            fetched_tickers = set(prices_data.keys())
+            for asset in tickers_to_fetch:
+                if asset["ticker_symbol"] not in fetched_tickers:
+                    cache_key = f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
+                    self.cache_client.set_json(
+                        cache_key, {"not_found": True}, expire=CACHE_TTL_HISTORICAL_PRICE
+                    )
         if self.cache_client:
             for ticker, data in prices_data.items():
                 if any(t["ticker_symbol"] == ticker for t in tickers_to_fetch):
@@ -301,11 +320,23 @@ class YFinanceProvider:
     ) -> Dict[str, Dict[date, Decimal]]:
         historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
 
+        # Filter out assets that are known to be invalid from negative cache
+        assets_to_fetch = []
+        if self.cache_client:
+            for asset in assets:
+                not_found_cache_key = (
+                    f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
+                )
+                if not self.cache_client.get_json(not_found_cache_key):
+                    assets_to_fetch.append(asset)
+        else:
+            assets_to_fetch = assets
+
         yfinance_tickers_map = {
             self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"]): a[
                 "ticker_symbol"
             ]
-            for a in assets
+            for a in assets_to_fetch
         }
         yfinance_tickers_str = " ".join(yfinance_tickers_map.keys())
 
@@ -350,6 +381,16 @@ class YFinanceProvider:
             print(f"WARNING: Error fetching historical data from yfinance: {e}")
             return {}
 
+        # After the batch call, identify which tickers failed and cache their failure.
+        if self.cache_client:
+            fetched_tickers = set(historical_data.keys())
+            for asset in assets_to_fetch:
+                if asset["ticker_symbol"] not in fetched_tickers:
+                    cache_key = f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
+                    self.cache_client.set_json(
+                        cache_key, {"not_found": True}, expire=CACHE_TTL_HISTORICAL_PRICE
+                    )
+
         if self.cache_client:
             serializable_data = {}
             for ticker, date_prices in historical_data.items():
@@ -367,18 +408,42 @@ class YFinanceProvider:
         Fetches details for a single asset from yfinance.
         Tries to find the asset on NSE, then BSE, then as-is.
         """
-        # Prioritize Indian exchanges
-        potential_tickers = [
-            f"{ticker_symbol}.NS",
-            f"{ticker_symbol}.BO",
-            ticker_symbol,
-        ]
-        for yf_ticker_str in potential_tickers:
-            try:
-                ticker_obj = yf.Ticker(yf_ticker_str)
-                info = ticker_obj.info
+        # Negative Caching: Check if we've previously failed to find this ticker.
+        if self.cache_client:
+            cache_key = f"asset_details_not_found:{ticker_symbol.upper()}"
+            if settings.DEBUG:
+                print(f"DEBUG: Checking negative cache for asset details: {ticker_symbol.upper()}")
+            if self.cache_client.get_json(cache_key):
+                if settings.DEBUG:
+                    print(f"DEBUG: Negative cache HIT for {ticker_symbol.upper()}. Skipping external lookup.")
+                return None
 
-                # Check for enough info to be considered valid
+        # Find a valid yfinance Ticker object first
+        ticker_obj = None
+        for yf_ticker_str in [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]:
+            try:
+                # The history check is a more reliable way to see if a ticker is valid
+                # than just creating the object.
+                temp_ticker = yf.Ticker(yf_ticker_str)
+                if not temp_ticker.history(period="1d").empty:
+                    ticker_obj = temp_ticker
+                    break
+            except (yf.exceptions.YFTzMissingError, yf.exceptions.YFNotImplementedError) as e:
+                # This indicates a definitive "not found" from yfinance.
+                # We don't cache here, but let the loop continue. If all fail,
+                # the final negative cache will be set.
+                if settings.DEBUG:
+                    print(f"DEBUG: yfinance history check for {yf_ticker_str} failed with YFTzMissingError/YFNotImplementedError, trying next. Error: {e}")
+                continue
+            except Exception as e: # Catch other unexpected errors (network, etc.)
+                if settings.DEBUG:
+                    print(f"WARNING: yfinance history check for {yf_ticker_str} failed with unexpected error, trying next. Error: {e}")
+                continue
+
+        if ticker_obj:
+            if settings.DEBUG: print(f"DEBUG: Found valid yfinance object for {ticker_symbol} as {ticker_obj.ticker}")
+            try:
+                info = ticker_obj.info
                 if info and info.get("shortName"):
                     asset_type_map = {
                         "EQUITY": "Stock",
@@ -394,9 +459,21 @@ class YFinanceProvider:
                         "exchange": info.get("exchange"),
                         "currency": info.get("currency", "INR"),
                     }
-            except Exception:
-                # yfinance often raises generic exceptions for invalid tickers
-                continue
+            except (IndexError, KeyError):
+                if self.cache_client:
+                    if settings.DEBUG: print(f"DEBUG: Caching NEGATIVE result for {ticker_symbol} due to missing info data (KeyError/IndexError).")
+                    cache_key = f"asset_details_not_found:{ticker_symbol.upper()}"
+                    self.cache_client.set_json(cache_key, {"not_found": True}, expire=CACHE_TTL_HISTORICAL_PRICE)
+                return None
+            except Exception as e:
+                if settings.DEBUG: print(f"WARNING: yfinance info lookup for {ticker_obj.ticker} failed: {e}")
+                return None
+
+        # If we get here, no valid Ticker object was found at all.
+        if self.cache_client:
+            if settings.DEBUG: print(f"DEBUG: Caching NEGATIVE result for {ticker_symbol} because no valid yfinance Ticker object was found after all attempts.")
+            cache_key = f"asset_details_not_found:{ticker_symbol.upper()}"
+            self.cache_client.set_json(cache_key, {"not_found": True}, expire=CACHE_TTL_HISTORICAL_PRICE)
         return None
 
 

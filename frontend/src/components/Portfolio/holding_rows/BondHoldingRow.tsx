@@ -1,6 +1,6 @@
 import React from 'react';
 import { Holding } from '../../../types/holding';
-import { formatCurrency, formatPercentage } from '../../../utils/formatting';
+import { formatCurrency, formatPercentage, formatDate } from '../../../utils/formatting';
 
 interface BondHoldingRowProps {
     holding: Holding;

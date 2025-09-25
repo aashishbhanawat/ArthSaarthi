@@ -9,6 +9,7 @@ import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
 import HoldingsTable from '../../components/Portfolio/HoldingsTable';
 import PpfHoldingDetailModal from '../../components/Portfolio/PpfHoldingDetailModal';
 import { Holding } from '../../types/holding';
+import BondDetailModal from '../../components/Portfolio/BondDetailModal';
 import { Transaction } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
 import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
@@ -174,6 +175,14 @@ const PortfolioDetailPage: React.FC = () => {
                                 handleCloseDetailModal();
                                 handleOpenCreateTransactionModal();
                             }}
+                            onDelete={() => setRdToDelete(selectedHolding)}
+                        />
+                    ) : selectedHolding.asset_type === 'BOND' ? (
+                        <BondDetailModal
+                            holding={selectedHolding}
+                            portfolioId={portfolio.id}
+                            onClose={handleCloseDetailModal}
+                            onEditTransaction={handleOpenEditTransactionModal}
                             onDelete={() => setRdToDelete(selectedHolding)}
                         />
                     ) : (

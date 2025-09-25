@@ -17,6 +17,9 @@ from .dashboard import (
     PortfolioHistoryResponse,
     TopMover,
 )
+from .bond import (
+    BondWithTransactionCreate,
+)
 from .fixed_deposit import (
     FixedDeposit,
     FixedDepositCreate,
@@ -126,8 +129,13 @@ __all__ = [
     "GoalLinkCreate",
     "GoalLinkUpdate",
     "GoalWithAnalytics",
+    "BondWithTransactionCreate",
     "HistoricalInterestRate",
     "HistoricalInterestRateCreate",
     "HistoricalInterestRateUpdate",
     "PpfAccountCreate",
 ]
+
+# Manually update forward references to resolve circular dependencies
+Asset.model_rebuild()
+Transaction.model_rebuild()

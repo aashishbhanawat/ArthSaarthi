@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
+import { BondCreate, BondUpdate } from '../types/bond';
 import { PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate, TransactionsResponse, FixedDepositCreate, PpfCreate } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
@@ -112,6 +113,39 @@ export const useCreateFixedDeposit = () => {
         onError: (error: ApiError) => {
             showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
         },
+    });
+};
+
+export const useCreateBond = () => {
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
+    return useMutation({
+        mutationFn: ({ portfolioId, bondData, transactionData }: { portfolioId: string; bondData: BondCreate, transactionData: TransactionCreate }) =>
+            portfolioApi.createBond(portfolioId, bondData, transactionData),
+        onSuccess: (_, variables) => {
+            invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
+            showToast('Bond added successfully', 'success');
+        },
+        onError: (error: ApiError) => {
+            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+        },
+    });
+};
+
+export const useUpdateBond = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ portfolioId, bondId, data }: { portfolioId: string; bondId: string; data: BondUpdate }) =>
+            portfolioApi.updateBond(bondId, data),
+        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
+    });
+};
+
+export const useDeleteBond = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ portfolioId, bondId }: { portfolioId: string; bondId: string }) => portfolioApi.deleteBond(bondId),
+        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });
 };
 
