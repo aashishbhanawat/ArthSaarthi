@@ -3,7 +3,9 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+
+from .bond import Bond as BondSchema
 
 
 class Holding(BaseModel):
@@ -27,9 +29,38 @@ class Holding(BaseModel):
     account_number: Optional[str] = None
     isin: Optional[str] = None
     opening_date: Optional[date] = None
+    bond: Optional[BondSchema] = None
 
     class Config:
         from_attributes = True
+
+    @model_validator(mode="after")
+    def apply_fallbacks_and_enrich(self) -> "Holding":
+        if self.bond:
+            self.interest_rate = self.bond.coupon_rate
+            self.maturity_date = self.bond.maturity_date
+            if not self.isin:
+                self.isin = self.bond.isin
+
+        # For assets like bonds where a live price might not be available,
+        # fall back to using the average buy price to avoid showing a 100% loss.
+        if ((self.current_price is None or self.current_price == 0) and
+                self.average_buy_price > 0):
+            self.current_price = self.average_buy_price
+            self.current_value = self.quantity * self.average_buy_price
+            self.unrealized_pnl = Decimal("0.0")
+            self.unrealized_pnl_percentage = 0.0
+        else:
+            # For market-traded assets with a valid current price, ensure P&L is
+            # calculated.
+            # Exclude assets like PPF which have their own specialized P&L calculation.
+            if self.asset_type not in ["PPF"]:
+                self.unrealized_pnl = self.current_value - self.total_invested_amount
+                if self.total_invested_amount > 0:
+                    self.unrealized_pnl_percentage = float(
+                        self.unrealized_pnl / self.total_invested_amount)
+
+        return self
 
 
 class HoldingsResponse(BaseModel):

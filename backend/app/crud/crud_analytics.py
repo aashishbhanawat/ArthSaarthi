@@ -61,6 +61,12 @@ def _get_realized_and_unrealized_cash_flows(
     # Create copies to avoid mutation and to track remaining quantities.
     buys = [t.model_copy(deep=True) for t in sorted_txs if t.transaction_type == "BUY"]
     sells = [t for t in sorted_txs if t.transaction_type == "SELL"]
+    other_cash_flows = [
+        t
+        for t in sorted_txs
+        if t.transaction_type
+        in ("COUPON", "INTEREST_CREDIT", "DIVIDEND", "CONTRIBUTION")
+    ]
 
     realized_cash_flows = []
 
@@ -109,6 +115,15 @@ def _get_realized_and_unrealized_cash_flows(
             unrealized_cash_flows.append(
                 (buy_tx.transaction_date.date(), float(-buy_tx.quantity * buy_price))
             )
+
+    # Add other positive cash flows (coupons, dividends, etc.) to unrealized flows
+    for cf_tx in other_cash_flows:
+        # Contributions are outflows, others are inflows
+        if cf_tx.transaction_type == "CONTRIBUTION":
+            amount = float(-cf_tx.quantity)
+        else:
+            amount = float(cf_tx.quantity * cf_tx.price_per_unit)
+        unrealized_cash_flows.append((cf_tx.transaction_date.date(), amount))
 
     return realized_cash_flows, unrealized_cash_flows
 
@@ -190,6 +205,12 @@ class CRUDAnalytics:
         if holding.current_value > 0:
             dates.append(date.today())
             values.append(holding.current_value)
+
+        logger.debug(f"Asset ID: {asset_id}")
+        logger.debug(f"Transaction Types: "
+                     f"{[tx.transaction_type for tx in transactions]}")
+        logger.debug(f"Cashflow Dates: {dates}")
+        logger.debug(f"Cashflow Values: {values}")
 
         logger.debug(f"Unrealized cashflow dates: {dates}")
         logger.debug(f"Unrealized cashflow values: {values}")

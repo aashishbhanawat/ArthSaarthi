@@ -87,11 +87,13 @@ def lookup_ticker_symbol(
             print("---------------------------------")
         return assets
 
-    # If asset_type is BOND and no local assets were found, do not query external service.
+    # If asset_type is BOND and no local assets were found, do not query external
+    # service.
     if asset_type == "BOND":
         if settings.DEBUG:
             print("--- BACKEND DEBUG: Asset Lookup ---")
-            print(f"No local BOND asset found for '{query}'. External lookup is disabled for bonds.")
+            print(f"No local BOND asset found for '{query}'. "
+                  "External lookup is disabled for bonds.")
             print("---------------------------------")
         return []
 

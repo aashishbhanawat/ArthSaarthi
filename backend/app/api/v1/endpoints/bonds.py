@@ -26,16 +26,17 @@ def create_bond(
     asset = crud.asset.get(db, id=bond_and_tx_in.transaction_data.asset_id)
     if not asset:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Asset with ID {bond_and_tx_in.transaction_data.asset_id} not found.",
+            status_code=status.HTTP_404_NOT_FOUND, detail=(
+                f"Asset with ID {bond_and_tx_in.transaction_data.asset_id} not found.")
         )
 
     # Check if the asset is actually a bond
     if asset.asset_type.upper() != "BOND":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Asset with ID {bond_and_tx_in.transaction_data.asset_id} is not a BOND type asset.",
-        )
+            detail=(f"Asset with ID {bond_and_tx_in.transaction_data.asset_id} "
+                    "is not a BOND type asset.")
+         )
 
     # Check if bond details already exist for this asset
     existing_bond = crud.bond.get_by_asset_id(
@@ -97,7 +98,8 @@ def read_bond(
     """
     bond = crud.bond.get(db=db, id=bond_id)
     if not bond:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found")
     # Add ownership check if necessary in the future
     return bond
 
@@ -115,7 +117,8 @@ def update_bond(
     """
     bond = crud.bond.get(db=db, id=bond_id)
     if not bond:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Bond not found")
     # Add ownership check if necessary
     bond = crud.bond.update(db=db, db_obj=bond, obj_in=bond_in)
     db.commit()
@@ -135,8 +138,9 @@ def delete_bond(
     """
     bond = crud.bond.get(db=db, id=bond_id)
     if not bond:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found")
-    # Add ownership check if necessary
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Bond not found")
+     # Add ownership check if necessary
     crud.bond.remove(db=db, id=bond_id)
     db.commit()
     return {"msg": "Bond deleted successfully"}

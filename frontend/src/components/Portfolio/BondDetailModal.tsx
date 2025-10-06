@@ -2,7 +2,7 @@ import React from 'react';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
-import { usePrivacySensitiveCurrency, formatCurrency, formatDate, formatPercentage } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatCurrency, formatDate } from '../../utils/formatting';
 import { XMarkIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface BondDetailModalProps {
@@ -10,7 +10,7 @@ interface BondDetailModalProps {
     portfolioId: string;
     onClose: () => void;
     onEditTransaction: (transaction: Transaction) => void;
-    onDeleteTransaction: (transaction: Transaction) => void;
+    onDeleteTransaction: (transaction: Transaction) => void; // This was correct, but the parent component was passing the wrong function
 }
 
 const BondDetailModal: React.FC<BondDetailModalProps> = ({
@@ -47,18 +47,30 @@ const BondDetailModal: React.FC<BondDetailModalProps> = ({
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
                     <div>
                         <p className="text-sm text-gray-500">Coupon</p>
-                        <p className="font-semibold">{formatPercentage(holding.interest_rate || 0)}</p>
+                        <p className="font-semibold">{`${Number(holding.interest_rate || 0).toFixed(2)}%`}</p>
                     </div>
                     <div>
                         <p className="text-sm text-gray-500">Maturity</p>
-                        <p className="font-semibold">{holding.maturity_date}</p>
+                        <p className="font-semibold">{holding.maturity_date ? formatDate(holding.maturity_date) : 'N/A'}</p>
                     </div>
                     <div>
                         <p className="text-sm text-gray-500">Current Value</p>
                         <p className="font-semibold">{formatSensitiveCurrency(holding.current_value)}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Unrealized P&L</p>
+                        <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatSensitiveCurrency(holding.unrealized_pnl)}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Realized P&L</p>
+                        <p className={`font-semibold ${holding.realized_pnl && holding.realized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatSensitiveCurrency(holding.realized_pnl || 0)}
+                        </p>
                     </div>
                     <div>
                         <p className="text-sm text-gray-500">Annualized (XIRR)</p>
@@ -111,4 +123,3 @@ const BondDetailModal: React.FC<BondDetailModalProps> = ({
 };
 
 export default BondDetailModal;
-

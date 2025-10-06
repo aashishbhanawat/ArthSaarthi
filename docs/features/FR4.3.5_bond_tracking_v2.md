@@ -1,6 +1,6 @@
 # Feature Plan (v2): Bond & T-Bill Tracking
 
-**Status: 🚧 In Progress**
+**Status: ✅ Done**
 **Feature ID:** FR4.3.5
 **Title:** Implement Flexible Tracking for Bonds (Corporate, Govt, SGBs, T-Bills)
 **User Story:** As an investor in fixed-income securities, I want to track my various types of bonds (Corporate, Government, SGBs, T-Bills), so that I can accurately monitor their market value, coupon payments, and overall contribution to my portfolio.
@@ -12,8 +12,8 @@
 *   [x] **Phase 1: Backend Implementation:** Create the database model, Pydantic schemas, CRUD logic, and API endpoints for creating and managing bonds.
 *   [x] **Phase 2: Frontend Data Layer:** Create TypeScript types (`bond.ts`), API service functions (`bondApi.ts`), and React Query hooks (`useBonds.ts`).
 *   [x] **Phase 3: Frontend UI - Add Transaction:** Update the `TransactionFormModal` to include the "Bond" asset type and the detailed form for capturing bond attributes as per the mockups.
-*   [ ] **Phase 4: Frontend UI - Display & Details:** Implement the `BondHoldingRow` for the main holdings table and create the `BondDetailModal` for the drill-down view.
-*   [ ] **Phase 5: E2E Testing:** Create an end-to-end test to validate the full user flow of adding and tracking a bond.
+*   [x] **Phase 4: Frontend UI - Display & Details:** Implement the `BondHoldingRow` for the main holdings table and create the `BondDetailModal` for the drill-down view.
+*   [x] **Phase 5: E2E Testing:** Create an end-to-end test to validate the full user flow of adding and tracking a bond.
 
 ---
 
@@ -196,8 +196,7 @@ The service will be refactored to support multiple data providers for different 
 #### 4.2.2. Fallback Strategy
 The `crud_holding.py` logic will be updated to use the following fallback chain for valuation:
 1.  **Primary Source (New Bond API):** For any bond with an ISIN, attempt to fetch a live market price from the new, dedicated bond pricing provider. This is the preferred method.
-2.  **Secondary Source (`yfinance`):** If the primary source fails, attempt to fetch a price from `yfinance` using the ticker symbol. This is a best-effort secondary source.
-3.  **Commodity Fallback (SGBs):** If no market price is available for an SGB, fall back to valuing it based on the current price of Gold, fetched by the `FinancialDataService`. `Value = Gold Price * Quantity (grams)`.
+2.  **Secondary Source (`yfinance`):** If the primary source fails, attempt to fetch a price from `yfinance` using the ticker symbol. This is a best-effort secondary source. **Note:** This was found to be unreliable for most Indian bonds.
 4.  **Accretion Fallback (T-Bills):** For T-Bills, which are zero-coupon, the value will be calculated based on time-based accretion from the purchase price towards the face value at maturity.
 5.  **Final Fallback (Book Value):** If all other methods fail for any bond type, the system will value the holding at its book value (average cost basis). This ensures that the asset is never valued at zero.
 
@@ -269,9 +268,38 @@ To ensure accurate performance measurement, the analytics engine must be updated
 
 ## 6. Testing Plan
 
-*   **Backend Unit Tests:** Write new valuation tests for each bond type (tradable, SGB, non-traded fallback). Mock the `FinancialDataService` to return predictable prices.
-*   **Frontend Component Tests:** Write unit tests for the new `BondDetailModal` and `BondHoldingRow` components.
-*   **E2E Tests:**
-    1. Create a tradable bond and verify its value is updated based on a mock market price.
-    2. Create an SGB and verify its value is updated based on a mock gold price.
-    3. Verify the bond appears correctly in the "Fixed Income" section of the holdings table.
+*   **Backend Unit Tests:**
+    *   Write valuation tests for each bond type (Corporate, Government, SGB, T-Bill).
+    *   Create specific tests for each step of the valuation fallback strategy:
+        *   Primary API price fetch.
+        *   `yfinance` fallback.
+        *   SGB valuation via gold price.
+        *   T-Bill valuation via accretion model.
+        *   Book value as the final fallback.
+    *   Test XIRR calculation with and without `COUPON` transactions.
+
+*   **Frontend Component Tests:**
+    *   Write unit tests for the `BondDetailModal` to ensure all data points are displayed correctly.
+    *   Write unit tests for the `BondHoldingRow` component.
+    *   Test the dynamic form variations in `TransactionFormModal` for SGBs and T-Bills.
+
+*   **E2E (End-to-End) Tests:**
+    1.  **Full Lifecycle (Tradable Bond):**
+        *   Create a new user-defined Corporate bond.
+        *   Verify it appears correctly in the holdings table.
+        *   Add a manual `COUPON` transaction for this bond.
+        *   Open the detail modal and verify that the transaction history, valuation, and XIRR are correct.
+        *   Sell a partial quantity of the bond.
+        *   Verify holdings and analytics are updated correctly.
+        *   Delete the bond holding and confirm it is removed from the portfolio.
+    2.  **SGB (Sovereign Gold Bond) Flow:**
+        *   Add a transaction for a pre-seeded SGB.
+        *   Verify the form correctly shows `Quantity (grams)` and a read-only `2.50%` coupon rate.
+        *   Verify its valuation is correctly calculated based on a mocked gold price.
+    3.  **T-Bill (Treasury Bill) Flow:**
+        *   Add a transaction for a T-Bill.
+        *   Verify the form correctly shows a disabled `Coupon Rate` of `0.00%`.
+        *   Verify its valuation is calculated using the accretion model (time-based value increase towards face value).
+    4.  **Valuation Fallback (Book Value):**
+        *   Create a bond with no ISIN or valid ticker.
+        *   Verify that all market price fetches fail and the bond's current value defaults to its book value (invested amount).

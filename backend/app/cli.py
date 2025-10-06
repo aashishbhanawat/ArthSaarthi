@@ -73,35 +73,55 @@ def _classify_asset(
     ticker = ticker.upper()
 
     # 1. Highest Priority: Specific bond patterns that are unambiguous
-    if "T-BILL" in name or re.match(r"^\d{2,3}(TB|T|D)\d{5,6}$", ticker):
+    if "T-BILL" in name or re.match(r"^\d{2,3}(TB|T|D)\d{4,6}$", ticker):
         return "BOND", BondType.TBILL
 
     # 2. Exchange-specific bond logic
     if exchange == "BSE":
         # CG + 4-digit coupon + letter + 4-digit number (e.g., CG1110S9803)
-        if re.match(r"^CG\d{4}[A-Z]\d{4}$", ticker):
+        # High-confidence BSE bond patterns
+        if re.match(r"^CG\d{4}[A-Z]\d{4}$", ticker) or re.match(
+            r"^GS\d{2}[A-Z]{3}(\d{4}|\d{2})[A-Z]?$", ticker
+        ):
             return "BOND", BondType.GOVERNMENT
-        # GS + date pattern (e.g., GS12SEP2041, GS06NOV73, GS17JUN28C)
-        if re.match(r"^GS\d{2}[A-Z]{3}(\d{4}|\d{2})[A-Z]?$", ticker):
-            return "BOND", BondType.GOVERNMENT
-        # SGB + various patterns of month, year, and series number
         if re.match(r"^SGB[A-Z0-9]+", ticker) or series == "GB":
             return "BOND", BondType.SGB
-        # Corporate bond pattern: e.g., 81ABFL33
-        if re.match(r"^\d+[A-Z]+\d+$", ticker):
+
+        # For BSE, check for name-based keywords for better accuracy, especially for
+        # corporate bonds.
+        # This is now independent of the ticker pattern.
+        bond_keywords = ["%", "NCD", "BOND", "PERP",
+                         " SR ", " BD ", "DEBENTURE", "0 ", " 0%"]
+        month_keywords = ["JAN", "FEB", "MAR", "APR", "MAY",
+                          "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+        # Check for 2-digit or 4-digit years in the name
+        year_keywords = [str(y) for y in range(15, 100)] + [
+            str(y) for y in range(2015, date.today().year + 10)
+        ]
+        strong_bond_indicators = [
+            "%", "NCD", "BOND", "DEBENTURE"] + month_keywords + year_keywords
+        stock_exclusions = ["LTD", "LIMITED", "SECURITIES"]
+
+        # If it has bond keywords, it's likely a bond.
+        # We only exclude if it has stock keywords AND lacks strong bond indicators.
+        has_bond_keywords = any(keyword in name for keyword in (
+            bond_keywords + month_keywords + year_keywords))
+        is_likely_stock = any(ex in name for ex in stock_exclusions)
+        has_strong_bond_indicators = any(
+            ind in name for ind in strong_bond_indicators
+        )
+        if has_bond_keywords and not (
+                is_likely_stock and not has_strong_bond_indicators):
             return "BOND", BondType.CORPORATE
-        # Fallback for BSE corporate bonds based on name keywords
-        bond_keywords = ["%", "NCD", "BOND", "PERP", " SR", " BD "]
-        if any(keyword in name for keyword in bond_keywords):
-            return "BOND", BondType.CORPORATE
-        # Fallback for State Govt bonds based on name keywords
-        govt_keywords = ["STATE", " ELEC", "POWER CORP"]
-        # Use 'any' but exclude private companies that contain 'LTD'
+
+        # Fallback for State Govt bonds on BSE based on name keywords
+        govt_keywords = ["STATE", "ELEC BOARD", "POWER CORPORATION"]
         if any(keyword in name for keyword in govt_keywords) and not any(
             ex in name for ex in ["LTD", "LIMITED"]
         ):
             return "BOND", BondType.GOVERNMENT
     else:  # Default to NSE logic
+        # NSE specific series for bonds. These are high-confidence indicators.
         if series == "GB":
             return "BOND", BondType.SGB
         if series in ("GS", "SG"):
@@ -118,16 +138,16 @@ def _classify_asset(
 
         if series.startswith(BOND_PREFIXES) and series not in STOCK_SERIES_EXCEPTIONS:
             # If it's another known exclusion or a numeric exception, skip it.
-            if series in OTHER_EXCLUSIONS or (len(series) > 1 and series[1:] in NUMERIC_EXCEPTIONS):
-                return None, None
-            # Otherwise, it's a corporate bond.
+            if series in OTHER_EXCLUSIONS or (
+                len(series) > 1 and series[1:] in NUMERIC_EXCEPTIONS
+            ):
+                return None, None  # It's a specific exclusion, not a bond.
             return "BOND", BondType.CORPORATE
 
     # 3. Last fallback: Check for common stock series if no bond patterns matched.
     if series in {"EQ", "BE", "SM", "DR", "A", "B", "T", "M", "C", "ST"}:
         return "STOCK", None
-
-    return None, None # Default return for unclassified assets
+    return None, None  # Default return for unclassified assets
 
 
 def get_db_session():
@@ -148,9 +168,9 @@ def _validate_and_clean_asset_row(
     asset_type, bond_type = _classify_asset(ticker, name, series, exchange)
     if not asset_type:
         if series and debug and debug_rows_printed < 5:
-            typer.echo(
-                f"\n[DEBUG] Skipping {exchange} row due to unclassified Series '{series}'.",
-                err=True,
+            typer.echo(  # noqa: E501
+                f"\n[DEBUG] Skipping {exchange} row due to unclassified Series "
+                f"'{series}'.", err=True,
             )
             typer.echo(f"  - Ticker: {ticker}, Name: {name}", err=True)
             debug_rows_printed += 1
@@ -238,10 +258,10 @@ def _parse_and_seed_exchange_data(
             composite_key = (cleaned_data["name"], cleaned_data["asset_type"], "INR")
             if composite_key in existing_composite_keys:
                 if debug and debug_rows_printed < 5:
-                    typer.echo(
-                        (f"\n[DEBUG] Skipping {exchange} row due to duplicate composite key:"
-                         f" Name: '{cleaned_data['name']}', Type: '{cleaned_data['asset_type']}',"
-                         f" Currency: 'INR'."), err=True
+                    typer.echo((
+                        f"\n[DEBUG] Skipping {exchange} row due to duplicate "
+                        f"composite key: Name: '{cleaned_data['name']}', Type: "
+                        f"'{cleaned_data['asset_type']}', Currency: 'INR'."), err=True
                     )
                     debug_rows_printed += 1
                 skipped_count += 1
@@ -289,8 +309,8 @@ def _parse_and_seed_exchange_data(
 def _process_asset_file(
     file_content: io.TextIOWrapper,
     exchange: str,
-    db: Session,
-    existing_isins: set,
+    db: Session, # noqa: E501
+    existing_isins: set, # noqa: E501
     existing_tickers: set,
     existing_composite_keys: set[tuple[str, str, str]],
     debug: bool = False,
@@ -298,7 +318,8 @@ def _process_asset_file(
     """Reads a CSV file stream and triggers the seeding process."""
     reader = csv.DictReader(file_content)
     created, skipped, skipped_series = _parse_and_seed_exchange_data(
-        db, reader, exchange, existing_isins, existing_tickers, existing_composite_keys, debug=debug
+        db, reader, exchange, existing_isins, existing_tickers,  # noqa: E501
+        existing_composite_keys, debug=debug
     )
     typer.echo(
         f"\n{exchange} processing complete. Created: {created}, Skipped: {skipped}"
@@ -344,7 +365,6 @@ def seed_assets_command(
             r[0] for r in db.query(Asset.isin).filter(Asset.isin.isnot(None)).all()
         }
         existing_tickers = {r[0] for r in db.query(Asset.ticker_symbol).all()}
-        # NEW: Fetch existing composite keys (name, asset_type, currency)
         existing_composite_keys = {
             (a.name, a.asset_type, a.currency)
             for a in db.query(Asset.name, Asset.asset_type, Asset.currency).all()
@@ -369,8 +389,9 @@ def seed_assets_command(
                     )
                     continue
                 with open(file_path, mode="r", encoding="utf-8", errors="ignore") as f:
-                    created, skipped, skipped_series = _process_asset_file( # type: ignore
-                        f, exchange, db, existing_isins, existing_tickers, existing_composite_keys, debug=debug
+                    created, skipped, skipped_series = _process_asset_file(
+                        f, exchange, db, existing_isins, existing_tickers,  # type: ignore
+                        existing_composite_keys, debug=debug
                     )
                     total_created += created
                     total_skipped += skipped
@@ -394,9 +415,9 @@ def seed_assets_command(
                         text_stream = io.TextIOWrapper(
                             thefile, encoding="utf-8", errors="ignore"
                         )
-                        created, skipped, skipped_series = _process_asset_file( # type: ignore
-                            text_stream, exchange, db, existing_isins, existing_tickers,
-                            existing_composite_keys, debug=debug,
+                        created, skipped, skipped_series = _process_asset_file(
+                            text_stream, exchange, db, existing_isins, existing_tickers,  # type: ignore
+                            existing_composite_keys, debug=debug
                         )
                         total_created += created
                         total_skipped += skipped
@@ -416,6 +437,12 @@ def seed_assets_command(
 
     except Exception as e:
         typer.echo(f"An unexpected error occurred: {e}", err=True)
+        if "UndefinedTable" in str(e):
+            typer.secho(
+                "\nHint: The database tables do not seem to exist. "
+                "Try running 'init-db' first.",
+                fg=typer.colors.YELLOW, err=True
+            )
 
 
 @app.command("clear-assets")
@@ -457,13 +484,17 @@ def clear_assets_command(
 
         total_deleted = 0
         for model in models_to_delete:
-            num_deleted = db.query(model).delete()
-            if num_deleted > 0:
-                typer.echo(
-                    f"Deleted {num_deleted} rows from {model.__tablename__}."
-                )
-                total_deleted += num_deleted
-
+            try:
+                num_deleted = db.query(model).delete()
+                if num_deleted > 0:
+                    typer.echo(
+                        f"Deleted {num_deleted} rows from {model.__tablename__}."
+                    )
+                    total_deleted += num_deleted
+            except Exception as e:
+                # Gracefully handle cases where the table might not exist yet
+                typer.echo(f"Could not clear {model.__tablename__}: {e}", err=True)
+                db.rollback()
         db.commit()
 
         if total_deleted > 0:

@@ -9,7 +9,9 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.core.config import settings
 from app.crud.crud_ppf import process_ppf_holding
+from app.schemas.enums import BondType
 from app.services.financial_data_service import financial_data_service
 
 logger = logging.getLogger(__name__)
@@ -126,15 +128,21 @@ class CRUDHolding:
         """
         Calculates the consolidated holdings and a summary for a given portfolio.
         """
+        if settings.DEBUG:
+            print(
+                f"\n--- DEBUG: Starting holdings calculation for portfolio {portfolio_id} ---")  # noqa: E501
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
         all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
-            db=db, portfolio_id=portfolio_id
+            db, portfolio_id=portfolio_id
         )
         all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
+        if settings.DEBUG:
+            print(
+                f"--- DEBUG: Found {len(transactions)} market transactions, {len(all_fixed_deposits)} FDs, {len(all_recurring_deposits)} RDs.")  # noqa: E501
 
         holdings_list: List[schemas.Holding] = []
         summary_total_value = Decimal("0.0")
@@ -207,22 +215,13 @@ class CRUDHolding:
                     account_number=fd.account_number,
                 )
             )
-            summary_total_value += current_value
-            summary_total_invested += fd.principal_amount
-            summary_total_unrealized_pnl += unrealized_pnl
 
-        # --- Recurring Deposits ---
+        # --- Recurring Deposits (Active) ---
         today = date.today()
-        active_recurring_deposits = [
-            rd
-            for rd in all_recurring_deposits
-            if (rd.start_date + relativedelta(months=rd.tenure_months)) >= today
-        ]
-        matured_recurring_deposits = [
-            rd
-            for rd in all_recurring_deposits
-            if (rd.start_date + relativedelta(months=rd.tenure_months)) < today
-        ]
+        active_recurring_deposits = [rd for rd in all_recurring_deposits if (
+            rd.start_date + relativedelta(months=rd.tenure_months)) >= today]
+        matured_recurring_deposits = [rd for rd in all_recurring_deposits if (
+            rd.start_date + relativedelta(months=rd.tenure_months)) < today]
 
         for rd in matured_recurring_deposits:
             maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
@@ -282,18 +281,14 @@ class CRUDHolding:
                     days_pnl_percentage=0.0,
                 )
             )
-            summary_total_value += current_value
-            summary_total_invested += total_invested
-            summary_total_unrealized_pnl += unrealized_pnl
 
         # --- PPF Holdings ---
         all_portfolio_assets = crud.asset.get_multi_by_portfolio(
             db, portfolio_id=portfolio_id
         )
         ppf_assets = [
-            asset for asset in all_portfolio_assets if asset.asset_type == "PPF"
+            asset for asset in all_portfolio_assets if asset.asset_type.upper() == "PPF"
         ]
-
         for ppf_asset in ppf_assets:
             # Lock the asset row before processing to prevent race conditions
             # on the interest calculation logic, which has a write side-effect.
@@ -301,30 +296,30 @@ class CRUDHolding:
             db.query(models.Asset).filter_by(id=ppf_asset.id).with_for_update().first()
             ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id)
             holdings_list.append(ppf_holding)
-            summary_total_value += ppf_holding.current_value
-            summary_total_invested += ppf_holding.total_invested_amount
-            summary_total_unrealized_pnl += ppf_holding.unrealized_pnl
-            total_realized_pnl += ppf_holding.realized_pnl
-
-        if not transactions:
-            summary = schemas.PortfolioSummary(
-                total_value=summary_total_value,
-                total_invested_amount=summary_total_invested,
-                days_pnl=summary_days_pnl,
-                total_unrealized_pnl=summary_total_unrealized_pnl,
-                total_realized_pnl=total_realized_pnl,
-            )
-            return {"summary": summary, "holdings": holdings_list}
-
-        transactions.sort(key=lambda tx: tx.transaction_date)
 
         holdings_state = defaultdict(
-            lambda: {"quantity": Decimal("0.0"), "total_invested": Decimal("0.0")}
+            lambda: {
+                "quantity": Decimal("0.0"),
+                "total_invested": Decimal("0.0"),
+                "realized_pnl": Decimal("0.0"),
+            }
         )
-        asset_map = {tx.asset.ticker_symbol: tx.asset for tx in transactions}
+
+        # Fetch all assets related to the portfolio to build a reliable map.
+        # This is more robust than relying on the `transactions` object, which
+        # might not have the `asset` relationship fully loaded for new assets.
+        portfolio_assets = crud.asset.get_multi_by_portfolio(
+            db, portfolio_id=portfolio_id)
+        asset_map = {asset.ticker_symbol: asset for asset in portfolio_assets}
 
         for tx in transactions:
-            ticker = tx.asset.ticker_symbol
+            # The tx.asset relationship might be None for newly created assets
+            # in the same session. We need a more robust way to get the ticker.
+            asset = asset_map.get(tx.asset.ticker_symbol) if tx.asset else None
+            if not asset:
+                # Fallback to find the asset by ID from our reliable map
+                asset = next((a for a in portfolio_assets if a.id == tx.asset_id), None)
+            ticker = asset.ticker_symbol if asset else None
             if tx.transaction_type == "BUY":
                 holdings_state[ticker]["quantity"] += tx.quantity
                 holdings_state[ticker]["total_invested"] += (
@@ -337,9 +332,10 @@ class CRUDHolding:
                         / holdings_state[ticker]["quantity"]
                     )
                     realized_pnl_for_sale = (
-                        tx.price_per_unit - avg_buy_price
+                    (tx.price_per_unit - avg_buy_price)
                     ) * tx.quantity
                     total_realized_pnl += realized_pnl_for_sale
+                    holdings_state[ticker]["realized_pnl"] += realized_pnl_for_sale
                     proportion_sold = tx.quantity / holdings_state[ticker]["quantity"]
                     holdings_state[ticker]["total_invested"] *= 1 - proportion_sold
                     holdings_state[ticker]["quantity"] -= tx.quantity
@@ -347,6 +343,9 @@ class CRUDHolding:
         current_holdings_tickers = [
             ticker for ticker, data in holdings_state.items() if data["quantity"] > 0
         ]
+        if settings.DEBUG:
+            print(
+                f"--- DEBUG: Tickers with current market-traded holdings: {current_holdings_tickers}")  # noqa: E501
 
         assets_to_price = [
             {
@@ -355,7 +354,6 @@ class CRUDHolding:
                 "asset_type": asset_map[ticker].asset_type,
             }
             for ticker in current_holdings_tickers
-            if ticker in asset_map
         ]
 
         if assets_to_price:
@@ -363,45 +361,80 @@ class CRUDHolding:
         else:
             price_details = {}
 
+        # Handle Mutual Funds separately using the AMFI service
+        mf_holdings_tickers = [
+            ticker for ticker in current_holdings_tickers if ticker in asset_map and
+            asset_map[ticker].asset_type == 'MUTUAL_FUND']
+        if mf_holdings_tickers:
+            from app.services.amfi_provider import amfi_provider
+            mf_navs = amfi_provider.get_latest_navs_for_schemes(mf_holdings_tickers)
+            for ticker, nav in mf_navs.items():
+                price_details[ticker] = {"current_price": nav, "previous_close": nav}
+
+
+
         for ticker in current_holdings_tickers:
+            if settings.DEBUG:
+                print(f"--- DEBUG: Processing market-traded asset: {ticker}")
             asset = asset_map[ticker]
             data = holdings_state[ticker]
             price_info = price_details.get(
                 ticker, {"current_price": Decimal(0), "previous_close": Decimal(0)}
             )
-            current_price = Decimal(str(price_info["current_price"]))
-            previous_close = Decimal(str(price_info["previous_close"]))
 
             quantity = data["quantity"]
             total_invested = data["total_invested"]
+
+            days_pnl = Decimal("0.0")
+            # --- Bond Valuation Fallback Logic ---
+            if asset.asset_type == "BOND" and asset.bond:
+                bond_details = asset.bond
+                # 1. Try primary batch price
+                current_price = Decimal(str(price_info["current_price"]))
+
+                # 2. Fallback to yfinance if primary fails
+                if current_price == 0 and asset.ticker_symbol:
+                    yf_price = financial_data_service.get_price_from_yfinance(
+                        asset.ticker_symbol)
+                    if yf_price:
+                        current_price = yf_price
+
+                # 4. Fallback for T-Bills (accretion model)
+                if current_price == 0 and bond_details.bond_type == BondType.TBILL:
+                    first_buy = min((tx for tx in transactions if tx.asset_id == asset.id and tx.transaction_type == "BUY"),  # noqa: E501
+                                    key=lambda x: x.transaction_date, default=None)
+                    if first_buy and bond_details.face_value:
+                        purchase_date = first_buy.transaction_date.date()
+                        total_days = (bond_details.maturity_date - purchase_date).days
+                        days_elapsed = (date.today() - purchase_date).days
+                        if total_days > 0 and days_elapsed > 0:
+                            price_increase = (
+                                Decimal(str(bond_details.face_value)) -
+                                first_buy.price_per_unit
+                            ) * (Decimal(days_elapsed) / Decimal(total_days))
+                            current_price = first_buy.price_per_unit + price_increase
+
+                # 5. Final fallback to book value
+                if current_price == 0:
+                    current_price = total_invested / \
+                        quantity if quantity > 0 else Decimal(0)
+                    # If we fall back to book value, assume no change for Day's P&L
+                    price_info["previous_close"] = current_price
+
+            else: # For non-bond assets
+                current_price = Decimal(str(price_info["current_price"]))
+
+            previous_close = Decimal(str(price_info["previous_close"]))
+
             average_buy_price = (
                 total_invested / quantity if quantity > 0 else Decimal(0)
             )
             current_value = quantity * current_price
-            unrealized_pnl = current_value - total_invested
-            unrealized_pnl_percentage = (
-                float(unrealized_pnl / total_invested)
-                if total_invested > 0
-                else 0.0
-            )
             days_pnl = (current_price - previous_close) * quantity
             days_pnl_percentage = (
                 float((current_price - previous_close) / previous_close)
                 if previous_close > 0
                 else 0.0
-            )
-
-            group_map = {
-                "STOCK": "EQUITIES",
-                "MUTUAL_FUND": "EQUITIES",
-                "ETF": "EQUITIES",
-                "FIXED_DEPOSIT": "DEPOSITS",
-                "BOND": "BONDS",
-                "PPF": "GOVERNMENT_SCHEMES",
-                "Mutual Fund": "EQUITIES",
-            }
-            group = group_map.get(
-                asset.asset_type.upper().replace(" ", "_"), "MISCELLANEOUS"
             )
 
             holdings_list.append(
@@ -410,7 +443,7 @@ class CRUDHolding:
                     ticker_symbol=ticker,
                     asset_name=asset.name,
                     asset_type=asset.asset_type,
-                    group=group,
+                    group="EQUITIES",  # Placeholder, will be set properly later
                     quantity=quantity,
                     average_buy_price=average_buy_price,
                     total_invested_amount=total_invested,
@@ -418,14 +451,36 @@ class CRUDHolding:
                     current_value=current_value,
                     days_pnl=days_pnl,
                     days_pnl_percentage=days_pnl_percentage,
-                    unrealized_pnl=unrealized_pnl,
-                    unrealized_pnl_percentage=unrealized_pnl_percentage,
+                    unrealized_pnl=Decimal("0.0"),
+                    realized_pnl=data.get("realized_pnl", Decimal("0.0")),
+                    unrealized_pnl_percentage=0.0,
+                    bond=asset.bond,
                 )
             )
-            summary_total_value += current_value
-            summary_total_invested += total_invested
-            summary_total_unrealized_pnl += unrealized_pnl
-            summary_days_pnl += days_pnl
+
+        if settings.DEBUG:
+            print(
+                f"--- DEBUG: After processing all assets, holdings_list has {len(holdings_list)} items.")  # noqa: E501
+        # After all holdings are processed and validated by Pydantic models,
+        # recalculate the summary based on the final, corrected holding values.
+        for holding_item in holdings_list:
+            # Correctly assign group based on final asset type
+            group_map = {
+                "STOCK": "EQUITIES", "Mutual Fund": "EQUITIES", "ETF": "EQUITIES",
+                "FIXED_DEPOSIT": "DEPOSITS", "RECURRING_DEPOSIT": "DEPOSITS",
+                "BOND": "BONDS", "PPF": "GOVERNMENT_SCHEMES",
+            }
+            # Make the lookup case-insensitive to handle variations like "Mutual Fund"
+            # vs "MUTUAL_FUND"
+            group_map_upper = {k.upper(): v for k, v in group_map.items()}
+            holding_item.group = group_map_upper.get(
+                str(holding_item.asset_type).upper(), "MISCELLANEOUS")
+
+            # Add to summary totals
+            summary_total_value += holding_item.current_value
+            summary_total_invested += holding_item.total_invested_amount
+            summary_total_unrealized_pnl += holding_item.unrealized_pnl
+            summary_days_pnl += holding_item.days_pnl
 
         summary = schemas.PortfolioSummary(
             total_value=summary_total_value,
@@ -434,6 +489,8 @@ class CRUDHolding:
             total_unrealized_pnl=summary_total_unrealized_pnl,
             total_realized_pnl=total_realized_pnl,
         )
+        if settings.DEBUG:
+            print(f"--- DEBUG: Finished. Returning {len(holdings_list)} holdings. ---")
 
         return {"summary": summary, "holdings": holdings_list}
 

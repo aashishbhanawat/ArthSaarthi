@@ -1,7 +1,7 @@
 from .analytics import AssetAnalytics, FixedDepositAnalytics, PortfolioAnalytics
 from .asset import (
     Asset,
-    AssetCreate,
+    AssetCreate,  # noqa: F401
     AssetCreateIn,
     AssetSearchResult,
     AssetType,
@@ -9,6 +9,9 @@ from .asset import (
     PpfAccountCreate,
 )
 from .asset_alias import AssetAlias, AssetAliasCreate
+from .bond import (
+    BondWithTransactionCreate,
+)
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,
@@ -16,9 +19,6 @@ from .dashboard import (
     PortfolioHistoryPoint,
     PortfolioHistoryResponse,
     TopMover,
-)
-from .bond import (
-    BondWithTransactionCreate,
 )
 from .fixed_deposit import (
     FixedDeposit,
@@ -138,4 +138,5 @@ __all__ = [
 
 # Manually update forward references to resolve circular dependencies
 Asset.model_rebuild()
+
 Transaction.model_rebuild()

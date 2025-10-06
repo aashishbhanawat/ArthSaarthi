@@ -1892,3 +1892,31 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
     - The frontend UI for adding bond transactions is complete and stable.
     - All related test failures and regressions have been resolved, and the entire project is in a "green" state.
 | Verification    | `docker compose run --rm backend python run_cli.py db seed-assets --debug`                            |
+
+## 2025-10-06: Finalize Bond Tracking & Day's P&L Fix
+
+*   **Task Description:** A final stabilization pass for the Bond Tracking feature. This involved fixing a critical bug in the Day's P&L calculation and updating the test suite to reflect the intentional removal of an unreliable SGB valuation fallback.
+
+*   **Key Prompts & Interactions:**
+    1.  **Bug Identification:** The user reported that the Day's P&L for bonds was massively inflated when a market price was unavailable.
+    2.  **Root Cause Analysis:** The AI analyzed the `crud_holding.py` file and identified the root cause: the `previous_close` price was not being handled in the book value fallback case, causing it to default to zero and leading to an incorrect P&L calculation.
+    3.  **Test Failure Analysis:** After fixing the P&L bug, the backend test suite failed. The AI analyzed the `log.txt` and correctly identified that the failing test (`test_sgb_valuation_gold_price_fallback`) was now obsolete because the gold price fallback logic had been previously removed due to unreliability.
+    4.  **Test Refactoring:** The AI was prompted to update the obsolete test. It correctly renamed the test to `test_sgb_valuation_book_value_fallback` and updated its assertions to verify the new, correct behavior (falling back to book value).
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_holding.py`: **Updated** to correctly set `previous_close` during the book value fallback, fixing the Day's P&L calculation.
+    *   `backend/app/tests/crud/test_bond_crud.py`: **Updated** to align the SGB valuation test with the current application logic.
+    *   `docs/bug_reports.md`: **Updated** with new reports for the Day's P&L bug and the obsolete test.
+    *   `docs/features/FR4.3.5_bond_tracking_v2.md`: **Updated** to remove the gold price fallback from the documented strategy.
+    *   `docs/workflow_history.md`: **Updated** with this entry.
+
+*   **Verification:**
+    - Ran the full backend test suite using `./run_local_tests.sh backend`. All 147 tests passed.
+    - Manually verified the Day's P&L calculation in the UI.
+
+*   **Outcome:**
+    - The Bond Tracking feature is now fully stable and calculates all metrics correctly.
+    - All automated tests are passing, and all documentation has been updated to reflect the final implementation. The project is in a clean, "green" state.
+
+---
+

@@ -134,9 +134,8 @@ The goal of this release was to build a robust and user-friendly system for impo
     -   Fixed Deposits (FDs): **✅ Complete**
     -   Recurring Deposits (RDs): **✅ Complete**
     -   Public Provident Fund (PPF): **✅ Complete**
-    -   National Pension System (NPS): ⏳ On Hold
-    -   Bonds: 🚧 In Progress
-        - Integrate a dedicated bond pricing API and implement a robust fallback valuation strategy.
+    -   Bonds (Corporate, Govt, SGB, T-Bill): **✅ Complete**
+    -   National Pension System (NPS): 📝 Planned
     -   RSUs/ESPPs: 📝 Planned
 
 ## Future Releases

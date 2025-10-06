@@ -135,7 +135,7 @@ export const useCreateBond = () => {
 export const useUpdateBond = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ portfolioId, bondId, data }: { portfolioId: string; bondId: string; data: BondUpdate }) =>
+        mutationFn: ({ portfolioId, bondId, data }: { portfolioId: string; bondId: string; data: BondUpdate }) => // eslint-disable-line @typescript-eslint/no-unused-vars
             portfolioApi.updateBond(bondId, data),
         onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });
@@ -144,8 +144,11 @@ export const useUpdateBond = () => {
 export const useDeleteBond = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ portfolioId, bondId }: { portfolioId: string; bondId: string }) => portfolioApi.deleteBond(bondId),
-        onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
+        mutationFn: ({ portfolioId, bondId }: { portfolioId: string; bondId: string }) => portfolioApi.deleteBond(bondId), // eslint-disable-line @typescript-eslint/no-unused-vars
+        onSuccess: (_, variables) => {
+            invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
+            showToast('Bond deleted successfully', 'success');
+        },
     });
 };
 

@@ -14,10 +14,16 @@ const BondHoldingRow: React.FC<BondHoldingRowProps> = ({ holding, onRowClick }) 
                 <div className="font-semibold text-gray-900">{holding.asset_name}</div>
                 <div className="text-sm text-gray-500">{holding.isin}</div>
             </td>
-            <td className="p-2 text-right font-mono">{formatPercentage(holding.interest_rate || 0)}</td>
-            <td className="p-2 text-right font-mono">{holding.maturity_date}</td>
+            <td className="p-2 text-right font-mono">{`${Number(holding.interest_rate || 0).toFixed(2)}%`}</td>
+            <td className="p-2 text-right font-mono">{holding.maturity_date ? formatDate(holding.maturity_date) : 'N/A'}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.total_invested_amount)}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.current_value)}</td>
+            <td className={`p-2 text-right font-mono ${holding.unrealized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div>{formatCurrency(holding.unrealized_pnl)}</div>
+                <div className="text-xs">
+                    ({formatPercentage(holding.unrealized_pnl_percentage)})
+                </div>
+            </td>
         </tr>
     );
 };

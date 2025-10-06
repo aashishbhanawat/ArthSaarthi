@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useForm, useWatch, useFormState } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useCreatePpfAccount, useCreateBond } from '../../hooks/usePortfolios';
 import { useCreateRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
 import { lookupAsset } from '../../services/portfolioApi';
-import { BondCreate, BondType, PaymentFrequency } from '../../types/bond';
+import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
 import Select from 'react-select';
