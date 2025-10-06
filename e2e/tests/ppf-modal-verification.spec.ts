@@ -67,7 +67,7 @@ test.describe.serial('PPF Modal Verification', () => {
       await page.getByLabel('Contribution Date').fill('2022-01-10');
 
       // 6. Take a screenshot
-      await page.screenshot({ path: 'e2e/screenshots/ppf_modal_new_account_filled.png' });
+      //await page.screenshot({ path: 'e2e/screenshots/ppf_modal_new_account_filled.png' });
 
       // 7. Submit the form
       await page.getByRole('button', { name: 'Save Transaction' }).click();
@@ -119,7 +119,7 @@ test.describe.serial('PPF Modal Verification', () => {
         headers: userAuthHeaders,
         data: {
             portfolio_id: portfolioId,
-            institution_name: "E2E Test PPF Bank",
+            institution_name: "E2E Test PPF Bank - Existing",
             opening_date: "2022-01-01",
             amount: 5000,
             contribution_date: "2022-01-10"
@@ -148,6 +148,6 @@ test.describe.serial('PPF Modal Verification', () => {
     await expect(page.getByRole('heading', { name: 'Existing PPF Account' })).toBeVisible();
 
     // 7. Take a screenshot
-    await page.screenshot({ path: 'e2e/screenshots/ppf_modal_existing_account.png' });
+    //await page.screenshot({ path: 'e2e/screenshots/ppf_modal_existing_account.png' });
   });
 });

@@ -17,9 +17,9 @@ MOCK_NSE_CSV = """\
 """
 
 MOCK_BSE_CSV = """\
-"Token","CompanyName","Series","ScripID","ISINCode"
+"Token","ScripName","Series","ScripID","ISINCode"
 "4","BSE_COMPANY_D","A","BSED","INE004A01010"
-"5","BSE_COMPANY_E","B","BSEE","INE005A01010"
+"5","BSE_COMPANY_E","XX","BSEE","INE005A01010"
 "6","BSE_COMPANY_F","DR","BSEF","INE006A01010"
 """
 
@@ -54,10 +54,14 @@ def test_seed_assets_from_url(mocker, mock_db_session_empty):
     mock_response.content = create_mock_zip()
     mocker.patch("requests.get", return_value=mock_response)
 
-    mock_asset_create = mocker.patch("app.crud.asset.create", return_value=None)
+    # Mock crud.asset.create to return a mock object with an asset_type
+    mock_asset = mocker.Mock()
+    mock_asset.asset_type = "STOCK"  # or any other valid type
+    mock_asset_create = mocker.patch("app.crud.asset.create", return_value=mock_asset)
+    mocker.patch("app.crud.bond.create")  # Mock bond creation as well
 
     # Run the command
-    result = runner.invoke(main_app, ["db", "seed-assets"])
+    result = runner.invoke(main_app, ["db", "seed-assets", "--debug"])
 
     # Assertions
     assert result.exit_code == 0
@@ -65,8 +69,7 @@ def test_seed_assets_from_url(mocker, mock_db_session_empty):
     assert "NSE processing complete. Created: 2, Skipped: 0" in result.stdout
     assert "BSE processing complete. Created: 2, Skipped: 0" in result.stdout
     assert "Total assets created: 4" in result.stdout
-    assert "Series 'XX': 1 rows skipped" in result.stdout
-    assert "Series 'DR': 1 rows skipped" in result.stdout
+    assert "Series 'XX': 2 rows skipped" in result.stdout
     assert mock_asset_create.call_count == 4
 
     # Check one of the calls for correctness
@@ -81,11 +84,15 @@ def test_seed_assets_with_local_dir(mocker, tmp_path, mock_db_session_empty):
     (tmp_path / "NSEScripMaster.txt").write_text(MOCK_NSE_CSV)
     (tmp_path / "BSEScripMaster.txt").write_text(MOCK_BSE_CSV)
 
-    mock_asset_create = mocker.patch("app.crud.asset.create", return_value=None)
+    # Mock crud.asset.create to return a mock object with an asset_type
+    mock_asset = mocker.Mock()
+    mock_asset.asset_type = "STOCK"
+    mock_asset_create = mocker.patch("app.crud.asset.create", return_value=mock_asset)
+    mocker.patch("app.crud.bond.create")
 
     # Run the command
     result = runner.invoke(
-        main_app, ["db", "seed-assets", "--local-dir", str(tmp_path)]
+        main_app, ["db", "seed-assets", "--local-dir", str(tmp_path), "--debug"]
     )
 
     # Assertions

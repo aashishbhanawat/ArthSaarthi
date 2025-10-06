@@ -6689,3 +6689,76 @@ A full-stack refactoring was performed to standardize the process.
 - **Tests:** All affected backend and frontend unit tests were updated with new mock data and assertions to match the new standard.
 
 ---
+
+**Bug ID:** 2025-09-24-01 (Consolidated)
+**Title:** Asset seeder (`seed-assets`) was unstable and failed to import thousands of assets.
+**Module:** Core Backend, Data Seeding
+**Reported By:** User & Gemini Code Assist via Manual Test & Log Analysis
+**Date Reported:** 2025-09-24
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The `seed-assets` command was highly unstable and failed to correctly classify or import thousands of assets, particularly from the BSE master file. The debugging process revealed several distinct root causes:
+1.  **Misclassification of Bonds:** An initial logic change in `_classify_asset` prioritized checking for stock series (e.g., 'C', 'A'), causing thousands of corporate and government bonds to be misclassified as stocks and not correctly saved.
+2.  **Flawed NSE Bond Logic:** The logic for identifying NSE corporate bonds was too broad and contained flawed `pass`/`return None, None` statements that either misclassified stocks as bonds or skipped them entirely.
+3.  **BSE File Parsing Failure:** The header-cleaning logic in `_process_asset_file` was only being applied to the first file (NSE). This caused the seeder to fail to read the `ticker` and `isin` columns for the BSE file, leading to ~4,000 assets being skipped due to "missing essential data".
+4.  **Overly Strict Validation:** The validation logic required an asset to have a ticker, name, AND ISIN. This was too strict and caused valid assets (with a name and ISIN but no ticker) to be skipped.
+5.  **Unhandled `TypeError`:** A code path in `_classify_asset` for unclassified assets could return `None` instead of a tuple, causing a `TypeError` that was caught by a generic exception handler, masking the root cause of many skipped rows.
+**Steps to Reproduce:**
+1. Run `docker compose run --rm backend python run_cli.py db seed-assets --debug`.
+2. Observe the `log.txt` file for a large number of skipped assets and an empty `bonds` table.
+**Expected Behavior:**
+The seeder should correctly classify and import all valid stocks and bonds from both NSE and BSE master files.
+**Actual Behavior:**
+The seeder misclassified bonds, failed to parse BSE data correctly, and skipped thousands of valid assets.
+**Resolution:**
+A series of patches were applied to `backend/app/cli.py`:
+1.  The logic in `_classify_asset` was reordered to prioritize specific bond patterns before falling back to general stock series checks.
+2.  The NSE corporate bond logic was refactored to be more explicit and robust.
+3.  The header-stripping logic was moved to `_parse_and_seed_exchange_data` to ensure it runs for every file.
+4.  The validation logic in `_validate_and_clean_asset_row` was relaxed to require a name and at least one of (ticker or ISIN).
+5.  A default `return None, None` was added to `_classify_asset` to ensure it always returns a tuple.
+
+---
+
+**Bug ID:** 2025-10-06-01
+**Title:** Day's P&L for bonds is massively inflated when market price is unavailable.
+**Module:** Portfolio Management (Backend)
+**Reported By:** User via Manual E2E Test
+**Date Reported:** 2025-10-06
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+When a bond's market price cannot be fetched, the valuation logic correctly falls back to using the book value (average buy price) for the `current_value`. However, it fails to apply the same fallback to the `previous_close` price, which remains `0`. This causes the Day's P&L calculation (`(current_price - previous_close) * quantity`) to be calculated as `(current_price - 0) * quantity`, which is simply the total current value of the holding. This results in a massively inflated and incorrect Day's P&L.
+**Steps to Reproduce:**
+1. Add a bond transaction for an asset that has no live market price.
+2. View the portfolio holdings page.
+**Expected Behavior:**
+The Day's P&L for the bond should be `₹0.00`, as no daily price change information is available.
+**Actual Behavior:**
+The Day's P&L is incorrectly reported as the entire current value of the bond holding.
+**Resolution:**
+The logic in `crud_holding.py` was updated. When the final book value fallback is used for a bond's `current_price`, the `previous_close` price is now also set to this same value. This ensures the Day's P&L calculation correctly results in zero when no market data is available.
+
+---
+
+**Bug ID:** 2025-10-06-02
+**Title:** SGB valuation test fails after gold price fallback was removed.
+**Module:** Test Suite (Backend)
+**Reported By:** Gemini Code Assist via Test Log
+**Date Reported:** 2025-10-06
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The test `test_sgb_valuation_gold_price_fallback` was failing with an `AssertionError`. The root cause is that the test was designed to validate a fallback to the price of gold for Sovereign Gold Bond (SGB) valuation. This fallback logic was intentionally removed from the application because no reliable, INR-denominated API for the spot price of gold was available. The test is now obsolete and is asserting for behavior that no longer exists.
+**Steps to Reproduce:**
+1. Run the backend test suite: `./run_local_tests.sh backend`.
+2. Observe the failure in `test_bond_crud.py`.
+**Expected Behavior:**
+The test should validate the current, correct behavior, which is that an SGB with no market price falls back to its book value.
+**Actual Behavior:**
+The test fails because it asserts for a value based on a mocked gold price that is no longer used.
+**Resolution:**
+The test case in `test_bond_crud.py` was renamed to `test_sgb_valuation_book_value_fallback`. The mock for the non-existent `get_gold_price` method was removed, and the assertion was updated to confirm that the SGB's `current_value` correctly defaults to its `total_invested_amount` (book value).
+
+---

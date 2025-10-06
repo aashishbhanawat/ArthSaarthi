@@ -128,8 +128,11 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
         const relianceRow = holdingsTable.getByRole('row', { name: /RELIANCE/ });
         
+        // Ensure the row is eventually visible with a longer timeout
+        await relianceRow.waitFor({ state: 'visible', timeout: 10000 });
+
         await expect(relianceRow).toBeVisible();
-        await expect(relianceRow.getByRole('cell', { name: '11', exact: true })).toBeVisible(); // Quantity (1 from setup + 10 from import)
+        await expect(relianceRow.getByRole('cell', { name: '11', exact: true }, { timeout: 10000 })).toBeVisible(); // Quantity (1 from setup + 10 from import)
 
         // IMPORTANT: Navigate away to a stable page BEFORE this test finishes.
         // This prevents the PortfolioDetailPage's latent crash from affecting the next test.

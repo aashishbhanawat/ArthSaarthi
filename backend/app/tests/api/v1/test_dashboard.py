@@ -154,8 +154,11 @@ def test_get_dashboard_summary_with_failing_price_lookup(
     assert response.status_code == 200
     data = response.json()
 
-    # The failing asset should be valued at 0
-    assert Decimal(data["total_value"]) == Decimal("0.0")
+    # With the fallback logic, the asset's value should be its invested amount
+    # (10 units * 100 default price = 1000)
+    assert Decimal(data["total_value"]) == Decimal("1000.00")
+    # And the unrealized P&L should be 0
+    assert Decimal(data["total_unrealized_pnl"]) == Decimal("0.00")
 
 
 # --- Tests for /allocation endpoint ---

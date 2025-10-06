@@ -8,3 +8,4 @@ from app.models.asset_alias import AssetAlias # noqa
 from app.models.goal import Goal, GoalLink # noqa
 from app.models.historical_interest_rate import HistoricalInterestRate # noqa
 from app.models.fixed_deposit import FixedDeposit # noqa
+from .bond import Bond # noqa

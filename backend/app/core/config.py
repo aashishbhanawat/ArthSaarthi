@@ -1,4 +1,3 @@
-import os
 from typing import Literal, Optional
 
 from pydantic import validator
@@ -37,7 +36,7 @@ class Settings(BaseSettings):
 
     # CORS_ORIGINS: str = "http://localhost:3000"
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # For desktop encryption
     ENCRYPTION_KEY_PATH: str = "master.key"
@@ -78,5 +77,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
 
 
-settings = Settings(_env_file=None) if os.getenv("TESTING") else Settings()
-
+settings = Settings()
