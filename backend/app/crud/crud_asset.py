@@ -2,7 +2,7 @@ import uuid
 from typing import List, Optional
 
 from sqlalchemy import func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import crud, models, schemas
 from app.crud.base import CRUDBase
@@ -119,26 +119,27 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         return (
             db.query(self.model)
             .filter(self.model.ticker_symbol == ticker_symbol)
-            .first()
+               .first()
         )
 
-    def get_by_isin(self, db: Session, *, isin: str) -> Asset | None:
-        return db.query(self.model).filter(self.model.isin == isin).first()
-
-    def search_by_name_or_ticker(self, db: Session, *, query: str) -> List[Asset]:
+    def search_by_name_or_ticker(
+        self, db: Session, *, query: str, asset_type: Optional[str] = None
+    ) -> List[Asset]:
         # Use wildcards and ensure lowercase for case-insensitive search.
         search = f"%{query.lower()}%"
-        return (
-            db.query(self.model)
-            .filter(
-                or_(
-                    func.lower(self.model.name).like(search),
-                    func.lower(self.model.ticker_symbol).like(search),
-                )
+        db_query = db.query(self.model).filter(
+            or_(
+                func.lower(self.model.name).like(search),
+                func.lower(self.model.ticker_symbol).like(search),
             )
-            .limit(10)
-            .all()
         )
+        if asset_type:
+            db_query = db_query.filter(self.model.asset_type == asset_type)
+
+        # Eager load bond details if asset_type is BOND
+        if asset_type == "BOND":
+            db_query = db_query.options(joinedload(self.model.bond))
+        return db_query.limit(10).all()
 
 
 asset = CRUDAsset(Asset)

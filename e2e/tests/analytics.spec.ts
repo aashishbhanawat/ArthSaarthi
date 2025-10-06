@@ -155,13 +155,6 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
     await expect(createAssetButton).toBeVisible();
 
-    // Wait for the asset creation API call to complete before proceeding.
-    const createAssetResponsePromise = page.waitForResponse(resp => 
-        resp.url().includes('/api/v1/assets/') && resp.status() === 201
-    );
-    await createAssetButton.click();
-    await createAssetResponsePromise;
-
     // Now fill the rest of the form
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
     await page.getByLabel('Quantity').fill('10');
@@ -170,8 +163,16 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
 
     console.log('[E2E DEBUG] Submitting first XIRR transaction (BUY)...');
     
+    // The asset creation happens here, after clicking "Save Transaction"
+    const createAssetResponsePromise = page.waitForResponse(resp => 
+        resp.url().includes('/api/v1/assets/') && resp.status() === 201
+    );
     const holdingsResponsePromiseXirr1 = page.waitForResponse(resp => resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200, { timeout: 10000 });
+    
+    // Click the create asset button, then save the transaction
+    await createAssetButton.click();
     await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await createAssetResponsePromise;
     await holdingsResponsePromiseXirr1;
     console.log('[E2E DEBUG] Holdings refetched.');
 

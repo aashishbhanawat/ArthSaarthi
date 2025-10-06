@@ -5,6 +5,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
+from .bond import Bond as BondSchema
+
 
 # Properties to receive on asset creation via API
 # This is a special schema for the POST /assets/ endpoint
@@ -62,6 +64,7 @@ class AssetInDBBase(AssetCreate):
 class Asset(AssetInDBBase):
     current_price: float | None = None
     day_change: float | None = None
+    bond: "Optional[BondSchema]" = None
 
 
 # Properties to return from asset search

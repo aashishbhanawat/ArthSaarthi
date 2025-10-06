@@ -1,5 +1,6 @@
 import apiClient from './api';
 import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate, TransactionsResponse, FixedDepositCreate, FixedDeposit, FixedDepositUpdate } from '../types/portfolio';
+import { Bond, BondCreate, BondUpdate } from '../types/bond';
 import { RecurringDeposit, RecurringDepositCreate, RecurringDepositUpdate, RecurringDepositDetails, RecurringDepositAnalytics } from '../types/recurring_deposit';
 import { Asset, PpfAccountCreate } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
@@ -24,9 +25,12 @@ export const deletePortfolio = async (id: string): Promise<void> => {
     await apiClient.delete(`/api/v1/portfolios/${id}`);
 };
 
-export const lookupAsset = async (query: string): Promise<Asset[]> => {
+export const lookupAsset = async (
+    query: string,
+    assetType?: string
+): Promise<Asset[]> => {
     const response = await apiClient.get<Asset[]>('/api/v1/assets/lookup/', {
-        params: { query },
+        params: { query, asset_type: assetType },
     });
     return response.data;
 };
@@ -164,6 +168,33 @@ export const createFixedDeposit = async (
         { ...fdData, portfolio_id: portfolioId }
     );
     return response.data;
+};
+
+export const createBond = async (
+    portfolioId: string,
+    bondData: BondCreate,
+    transactionData: TransactionCreate
+): Promise<Bond> => {
+    const response = await apiClient.post<Bond>(
+        `/api/v1/portfolios/${portfolioId}/bonds/`,
+        { bond_data: bondData, transaction_data: transactionData }
+    );
+    return response.data;
+};
+
+export const updateBond = async (
+    bondId: string,
+    bondData: BondUpdate
+): Promise<Bond> => {
+    const response = await apiClient.put<Bond>(
+        `/api/v1/bonds/${bondId}`,
+        bondData
+    );
+    return response.data;
+};
+
+export const deleteBond = async (bondId: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/bonds/${bondId}`);
 };
 
 export const updateTransaction = async (

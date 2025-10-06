@@ -49,6 +49,8 @@ const SECTION_CONFIG: { [key: string]: { title: string; columns: { label: string
             { label: 'Maturity', key: 'maturity_date' },
             { label: 'Invested', key: 'total_invested_amount' },
             { label: 'Mkt. Value', key: 'current_value' },
+            { label: 'Unrealized P&L', key: 'unrealized_pnl' },
+            { label: 'Realized P&L', key: 'realized_pnl' },
         ],
     },
     GOVERNMENT_SCHEMES: {
@@ -72,6 +74,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
     const groupedAndSortedHoldings = useMemo(() => {
         if (!holdings) return {};
         const grouped = groupBy(holdings, 'group');
+        console.log("Grouped holdings by frontend:", grouped);
 
         for (const group in grouped) {
             const config = sortConfig[group];

@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.core import dependencies
 
+from . import bonds as bonds_router
+
 router = APIRouter()
 
 
@@ -199,3 +201,9 @@ def get_asset_analytics(
     return crud.analytics.get_asset_analytics(
         db=db, portfolio_id=portfolio_id, asset_id=asset_id
     )
+
+router.include_router(
+    bonds_router.router,
+    prefix="/{portfolio_id}/bonds",
+    tags=["bonds"],
+)

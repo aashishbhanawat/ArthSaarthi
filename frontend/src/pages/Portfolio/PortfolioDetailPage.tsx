@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction } from '../../hooks/usePortfolios';
+import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction, useDeleteBond } from '../../hooks/usePortfolios';
 import { useDeleteFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useDeleteRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
@@ -9,6 +9,7 @@ import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
 import HoldingsTable from '../../components/Portfolio/HoldingsTable';
 import PpfHoldingDetailModal from '../../components/Portfolio/PpfHoldingDetailModal';
 import { Holding } from '../../types/holding';
+import BondDetailModal from '../../components/Portfolio/BondDetailModal';
 import { Transaction } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
 import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
@@ -23,6 +24,7 @@ const PortfolioDetailPage: React.FC = () => {
     const { data: holdings, isLoading: isHoldingsLoading, error: holdingsError } = usePortfolioHoldings(portfolioId);
     const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
     const deleteTransactionMutation = useDeleteTransaction();
+    const deleteBondMutation = useDeleteBond();
     const deleteFixedDepositMutation = useDeleteFixedDeposit();
     const deleteRecurringDepositMutation = useDeleteRecurringDeposit();
 
@@ -31,6 +33,7 @@ const PortfolioDetailPage: React.FC = () => {
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
     const [fdToDelete, setFdToDelete] = useState<Holding | null>(null);
+    const [bondToDelete, setBondToDelete] = useState<Holding | null>(null);
     const [rdToDelete, setRdToDelete] = useState<Holding | null>(null);
 
     useEffect(() => {
@@ -103,6 +106,12 @@ const PortfolioDetailPage: React.FC = () => {
                 }
             });
         }
+        if (bondToDelete && portfolioId) {
+            deleteBondMutation.mutate({ portfolioId, bondId: bondToDelete.asset_id }, {
+                onSuccess: () => setBondToDelete(null),
+                onSettled: handleCloseDetailModal,
+            });
+        }
     };
 
     return (
@@ -145,7 +154,7 @@ const PortfolioDetailPage: React.FC = () => {
                 />
             )}
 
-            {selectedHolding && !isTransactionFormOpen && !transactionToDelete && !rdToDelete && (
+            {selectedHolding && !isTransactionFormOpen && !transactionToDelete && !rdToDelete && !bondToDelete && (
                 <>
                     {selectedHolding.asset_type === 'PPF' ? (
                         <PpfHoldingDetailModal
@@ -176,6 +185,14 @@ const PortfolioDetailPage: React.FC = () => {
                             }}
                             onDelete={() => setRdToDelete(selectedHolding)}
                         />
+                    ) : selectedHolding.asset_type === 'BOND' ? (
+                        <BondDetailModal
+                            holding={selectedHolding}
+                            portfolioId={portfolio.id}
+                            onClose={handleCloseDetailModal}
+                            onEditTransaction={handleOpenEditTransactionModal}
+                            onDeleteTransaction={handleOpenDeleteModal}
+                        />
                     ) : (
                         <HoldingDetailModal
                             holding={selectedHolding}
@@ -188,13 +205,14 @@ const PortfolioDetailPage: React.FC = () => {
                 </>
             )}
 
-            {(transactionToDelete || fdToDelete || rdToDelete) && (
+            {(transactionToDelete || fdToDelete || rdToDelete || bondToDelete) && (
                 <DeleteConfirmationModal
-                    isOpen={!!transactionToDelete || !!fdToDelete || !!rdToDelete}
+                    isOpen={!!transactionToDelete || !!fdToDelete || !!rdToDelete || !!bondToDelete}
                     onClose={() => {
                         setTransactionToDelete(null);
                         setFdToDelete(null);
                         setRdToDelete(null);
+                        setBondToDelete(null);
                     }}
                     onConfirm={handleConfirmDelete}
                     title={fdToDelete ? "Delete Fixed Deposit" : rdToDelete ? "Delete Recurring Deposit" : "Delete Transaction"}
@@ -203,9 +221,11 @@ const PortfolioDetailPage: React.FC = () => {
                             ? `Are you sure you want to delete the FD "${fdToDelete.asset_name}"? This action cannot be undone.`
                             : rdToDelete
                             ? `Are you sure you want to delete the RD "${rdToDelete.asset_name}"? This action cannot be undone.`
+                            : bondToDelete
+                            ? `Are you sure you want to delete the bond "${bondToDelete.asset_name}" and all its transactions? This action cannot be undone.`
                             : `Are you sure you want to delete this ${transactionToDelete?.transaction_type} transaction of ${Number(transactionToDelete?.quantity).toLocaleString()} units? This action cannot be undone.`
                     }
-                    isDeleting={deleteTransactionMutation.isPending || deleteFixedDepositMutation.isPending || deleteRecurringDepositMutation.isPending}
+                    isDeleting={deleteTransactionMutation.isPending || deleteFixedDepositMutation.isPending || deleteRecurringDepositMutation.isPending || deleteBondMutation.isPending}
                 />
             )}
         </div>

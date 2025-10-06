@@ -134,12 +134,14 @@ The goal of this release was to build a robust and user-friendly system for impo
     -   Fixed Deposits (FDs): **✅ Complete**
     -   Recurring Deposits (RDs): **✅ Complete**
     -   Public Provident Fund (PPF): **✅ Complete**
+    -   Bonds (Corporate, Govt, SGB, T-Bill): **✅ Complete**
     -   National Pension System (NPS): 📝 Planned
-    -   Bonds: 📝 Planned
     -   RSUs/ESPPs: 📝 Planned
 
 ## Future Releases
 
+-   **Architectural Refactoring:**
+    -   Refactor `FinancialDataService` to be pluggable and support multiple data providers (e.g., dedicated bond APIs).
 -   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
 -   **Administration Enhancements (FR2.3):** Add a log viewer for admins to review audit trails.
 -   **Advanced Transaction Management (FR4.5, FR4.6):**

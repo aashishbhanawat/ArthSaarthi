@@ -2,6 +2,7 @@ from .crud_analytics import analytics
 from .crud_asset import asset
 from .crud_asset_alias import asset_alias
 from .crud_audit_log import audit_log
+from .crud_bond import bond
 from .crud_dashboard import dashboard
 from .crud_fixed_deposit import fixed_deposit
 from .crud_goal import goal, goal_link
@@ -21,6 +22,7 @@ __all__ = [
     "asset",
     "asset_alias",
     "audit_log",
+    "bond",
     "dashboard",
     "fixed_deposit",
     "goal",
