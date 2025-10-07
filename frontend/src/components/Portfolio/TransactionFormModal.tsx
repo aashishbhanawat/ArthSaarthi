@@ -20,7 +20,8 @@ interface TransactionFormModalProps {
 // Define the shape of our form data
 type TransactionFormInputs = {
     asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit' | 'PPF Account' | 'Bond';
-    transaction_type: 'BUY' | 'SELL' | 'CONTRIBUTION';
+    transaction_type: 'BUY' | 'SELL' | 'CONTRIBUTION' | 'Corporate Action';
+    action_type?: 'DIVIDEND' | 'SPLIT' | 'BONUS';
     quantity: number;
     price_per_unit: number;
     transaction_date: string; // from date input
@@ -51,12 +52,19 @@ type TransactionFormInputs = {
     couponRate?: number;
     faceValue?: number;
     bondMaturityDate?: string;
+    // Corporate Action fields
+    dividendAmount?: number;
+    is_reinvested?: boolean;
+    splitRatioNew?: number;
+    splitRatioOld?: number;
+    bonusRatioNew?: number;
+    bonusRatioOld?: number;
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
     const isEditMode = !!transactionToEdit;
-  const { register, handleSubmit, formState: { errors }, reset, control, setValue } = useForm<TransactionFormInputs>({
-        defaultValues: { asset_type: 'Stock' }
+    const { register, handleSubmit, formState: { errors }, reset, control, setValue } = useForm<TransactionFormInputs>({
+        defaultValues: { asset_type: 'Stock', transaction_type: 'BUY' }
     });
 
     const queryClient = useQueryClient();

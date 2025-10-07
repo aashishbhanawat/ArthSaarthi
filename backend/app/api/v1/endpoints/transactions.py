@@ -8,11 +8,14 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.core import config, dependencies
+from app.crud import crud_corporate_action
 from app.crud.crud_ppf import trigger_ppf_recalculation
 from app.models.user import User
+from app.schemas.enums import TransactionType
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
 
 @router.get("/", response_model=schemas.TransactionsResponse)
 def read_transactions(
@@ -48,17 +51,13 @@ def read_transactions(
             limit=limit,
         )
     else:
-        # If no portfolio_id is provided, use the same filter function
-        # to fetch all transactions for the user.
-        transactions, total = crud.transaction.get_multi_by_user_with_filters( # type: ignore
+        transactions, total = crud.transaction.get_multi_by_user_with_filters(  # type: ignore
             db=db, user_id=current_user.id, portfolio_id=None, skip=skip, limit=limit
         )
     if config.settings.DEBUG:
         print("--- BACKEND DEBUG: Read Transactions Response ---")
-        # Log the first transaction to see its structure
         if transactions:
             try:
-                # Directly accessing attributes from the SQLAlchemy model
                 print(f"First transaction ID: {transactions[0].id}")
                 print(f"First transaction Portfolio ID: {transactions[0].portfolio_id}")
             except Exception as e:
@@ -78,8 +77,7 @@ def create_transaction(
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
-    Create new transaction for a portfolio.
-    If the asset does not exist, it will be created.
+    Create new transaction for a portfolio, including corporate actions.
     """
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
@@ -87,14 +85,11 @@ def create_transaction(
     if portfolio.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    # Determine the asset. The frontend can either provide an existing
-    # asset_id or a ticker_symbol for on-the-fly creation.
     asset_to_use = None
     if transaction_in.asset_id:
         asset_to_use = crud.asset.get(db, id=transaction_in.asset_id)
 
     if not asset_to_use and getattr(transaction_in, "ticker_symbol", None):
-        # This branch handles on-the-fly asset creation
         asset_to_use = crud.asset.get_or_create_by_ticker(
             db,
             ticker_symbol=transaction_in.ticker_symbol,
@@ -104,14 +99,13 @@ def create_transaction(
     if not asset_to_use:
         raise HTTPException(
             status_code=404,
-            detail=(f"Could not find or create asset with ticker "
-                    f"'{transaction_in.ticker_symbol}'"
-                   ),
+            detail=(
+                "Could not find or create asset with ticker "
+                f"'{transaction_in.ticker_symbol}'"
+            ),
         )
 
     asset_id_to_use = asset_to_use.id
-
-    # Create the final transaction payload with the asset_id
     transaction_create_schema = schemas.TransactionCreate(
         asset_id=asset_id_to_use,
         **transaction_in.model_dump(
@@ -119,21 +113,49 @@ def create_transaction(
         ),
     )
 
+    transaction = None
+    transaction_type = transaction_in.transaction_type
+
     try:
-        transaction = crud.transaction.create_with_portfolio(
-            db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
-        )
-        # --- Smart Recalculation for PPF ---
-        if asset_to_use.asset_type == "PPF":
-            logger.info(f"Triggering PPF recalculation for asset {asset_to_use.id} "
-                        f"due to new contribution."
+        if transaction_type == TransactionType.DIVIDEND:
+            transaction = crud_corporate_action.handle_dividend(
+                db=db,
+                portfolio_id=portfolio_id,
+                asset_id=asset_id_to_use,
+                transaction_in=transaction_create_schema,
             )
-            trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
-        # --- End Smart Recalculation ---
+        elif transaction_type == TransactionType.SPLIT:
+            transaction = crud_corporate_action.handle_stock_split(
+                db=db,
+                portfolio_id=portfolio_id,
+                asset_id=asset_id_to_use,
+                transaction_in=transaction_create_schema,
+            )
+        elif transaction_type == TransactionType.BONUS:
+            transaction = crud_corporate_action.handle_bonus_issue(
+                db=db,
+                portfolio_id=portfolio_id,
+                asset_id=asset_id_to_use,
+                transaction_in=transaction_create_schema,
+            )
+        else:
+            transaction = crud.transaction.create_with_portfolio(
+                db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
+            )
+            if asset_to_use.asset_type == "PPF":
+                logger.info(
+                    "Triggering PPF recalculation for asset %s "
+                    "due to new contribution.",
+                    asset_to_use.id,
+                )
+                trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
 
     except HTTPException as e:
+        db.rollback()
         raise e
     except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating transaction: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
     db.commit()
