@@ -12,7 +12,7 @@ const adminUser = {
     password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
 };
 
-test.describe.serial('Corporate Actions E2E Flow', () => {
+test.describe('Corporate Actions E2E Flow', () => {
     const stockTicker = 'MSFT';
     const stockName = 'Microsoft Corporation';
 
@@ -75,13 +75,13 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
         // 5. Verify the initial holding is present before running the test
         const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
-        const holdingRow = holdingsTable.getByRole('row', { name: new RegExp(stockName) });
+        const holdingRow = holdingsTable.getByRole('row', { name: new RegExp(stockTicker) });
         await expect(holdingRow).toBeVisible({ timeout: 15000 });
         await expect(holdingRow.getByRole('cell', { name: '10', exact: true })).toBeVisible();
-        await expect(holdingRow.getByRole('cell', { name: '$100.00' })).toBeVisible();
+        await expect(holdingRow.getByRole('cell', { name: '₹100.00' })).toBeVisible();
     });
 
-    test('should correctly apply a stock split', async ({ page }) => {
+    test('should correctly apply a 2-for-1 stock split', async ({ page }) => {
         await page.getByRole('button', { name: 'Add Transaction' }).click();
 
         const modal = page.locator('.modal-content');
@@ -103,24 +103,24 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         await expect(modal).not.toBeVisible();
 
         await expect(page.getByRole('gridcell', { name: '20' }).first()).toBeVisible({ timeout: 10000 });
-        await expect(page.getByRole('gridcell', { name: '$50.00' })).toBeVisible();
+        await expect(page.getByRole('gridcell', { name: '₹50.00' })).toBeVisible();
 
-        await page.getByRole('gridcell', { name: stockName }).click();
+        await page.getByRole('gridcell', { name: stockTicker }).click();
         const detailModal = page.locator('.modal-content');
         await expect(detailModal.getByRole('heading', { name: stockName })).toBeVisible();
 
         const transactionRow = detailModal.locator('.ag-row', { hasText: 'BUY' });
         await expect(transactionRow.locator('[col-id="quantity"]')).toHaveText('20.0000');
-        await expect(transactionRow.locator('[col-id="price_per_unit"]')).toHaveText('$50.00');
-        await expect(transactionRow.locator('[col-id="total_value"]')).toHaveText('$1,000.00');
+        await expect(transactionRow.locator('[col-id="price_per_unit"]')).toHaveText('₹50.00');
+        await expect(transactionRow.locator('[col-id="total_value"]')).toHaveText('₹1,000.00');
 
         const splitRow = detailModal.locator('.ag-row', { hasText: 'SPLIT' });
         await expect(splitRow).toBeVisible();
         await expect(splitRow.locator('[col-id="quantity"]')).toHaveText('2.0000');
-        await expect(splitRow.locator('[col-id="price_per_unit"]')).toHaveText('$1.00');
+        await expect(splitRow.locator('[col-id="price_per_unit"]')).toHaveText('₹1.00');
     });
 
-    test('should correctly apply a bonus issue', async ({ page }) => {
+    test('should correctly apply a 1-for-1 bonus issue', async ({ page }) => {
         await page.getByRole('button', { name: 'Add Transaction' }).click();
 
         const modal = page.locator('.modal-content');
@@ -140,19 +140,19 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         await expect(modal).not.toBeVisible();
 
         await expect(page.getByRole('gridcell', { name: '20' }).first()).toBeVisible({ timeout: 10000 });
-        await expect(page.getByRole('gridcell', { name: '$50.00' })).toBeVisible();
+        await expect(page.getByRole('gridcell', { name: '₹50.00' })).toBeVisible();
 
-        await page.getByRole('gridcell', { name: stockName }).click();
+        await page.getByRole('gridcell', { name: stockTicker }).click();
         const detailModal = page.locator('.modal-content');
         await expect(detailModal.getByRole('heading', { name: stockName })).toBeVisible();
 
         const bonusTransactionRow = detailModal.locator('.ag-row', { hasText: 'BUY' }).last();
         await expect(bonusTransactionRow.locator('[col-id="quantity"]')).toHaveText('10.0000');
-        await expect(bonusTransactionRow.locator('[col-id="price_per_unit"]')).toHaveText('$0.00');
-        await expect(bonusTransactionRow.locator('[col-id="total_value"]')).toHaveText('$0.00');
+        await expect(bonusTransactionRow.locator('[col-id="price_per_unit"]')).toHaveText('₹0.00');
+        await expect(bonusTransactionRow.locator('[col-id="total_value"]')).toHaveText('₹0.00');
     });
 
-    test('should correctly log a reinvested dividend', async ({ page }) => {
+    test('should correctly log a reinvested dividend and create a new BUY transaction', async ({ page }) => {
         await page.getByRole('button', { name: 'Add Transaction' }).click();
 
         const modal = page.locator('.modal-content');
@@ -171,19 +171,19 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         await expect(modal).not.toBeVisible();
 
         await expect(page.getByRole('gridcell', { name: '10.4' }).first()).toBeVisible({ timeout: 10000 });
-        await expect(page.getByRole('gridcell', { name: '$100.96' })).toBeVisible();
+        await expect(page.getByRole('gridcell', { name: '₹100.96' })).toBeVisible();
 
-        await page.getByRole('gridcell', { name: stockName }).click();
+        await page.getByRole('gridcell', { name: stockTicker }).click();
         const detailModal = page.locator('.modal-content');
         await expect(detailModal.getByRole('heading', { name: stockName })).toBeVisible();
 
         const reinvestmentRow = detailModal.locator('.ag-row', { hasText: 'BUY' }).last();
         await expect(reinvestmentRow.locator('[col-id="quantity"]')).toHaveText('0.4000');
-        await expect(reinvestmentRow.locator('[col-id="price_per_unit"]')).toHaveText('$125.00');
-        await expect(reinvestmentRow.locator('[col-id="total_value"]')).toHaveText('$50.00');
+        await expect(reinvestmentRow.locator('[col-id="price_per_unit"]')).toHaveText('₹125.00');
+        await expect(reinvestmentRow.locator('[col-id="total_value"]')).toHaveText('₹50.00');
 
         const dividendRow = detailModal.locator('.ag-row', { hasText: 'DIVIDEND' });
         await expect(dividendRow).toBeVisible();
-        await expect(dividendRow.locator('[col-id="total_value"]')).toHaveText('$50.00');
+        await expect(dividendRow.locator('[col-id="total_value"]')).toHaveText('₹50.00');
     });
 });

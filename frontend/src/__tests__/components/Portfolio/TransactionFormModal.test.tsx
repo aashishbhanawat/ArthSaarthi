@@ -326,7 +326,7 @@ describe('TransactionFormModal', () => {
   });
 
   describe('Corporate Actions', () => {
-    beforeEach(async () => {
+    it('renders the Dividend form and submits correctly', async () => {
         renderComponent();
         // Select a stock asset first, as corporate actions are stock-only
         const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
@@ -335,9 +335,7 @@ describe('TransactionFormModal', () => {
         // Select 'Corporate Action' transaction type
         const transactionTypeSelect = screen.getByLabelText('Transaction Type');
         fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
-    });
 
-    it('renders the Dividend form and submits correctly', async () => {
         // The action type should default to DIVIDEND
         expect(screen.getByLabelText('Action Type')).toHaveValue('DIVIDEND');
 
@@ -372,6 +370,15 @@ describe('TransactionFormModal', () => {
     });
 
     it('renders the Stock Split form and submits correctly', async () => {
+        renderComponent();
+        // Select a stock asset first, as corporate actions are stock-only
+        const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
+        fireEvent.change(assetInput, { target: { value: 'Apple' } });
+        fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+        // Select 'Corporate Action' transaction type
+        const transactionTypeSelect = screen.getByLabelText('Transaction Type');
+        fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
+
         const actionTypeSelect = screen.getByLabelText('Action Type');
         fireEvent.change(actionTypeSelect, { target: { value: 'SPLIT' } });
 
@@ -402,6 +409,15 @@ describe('TransactionFormModal', () => {
     });
 
     it('renders the Bonus Issue form and submits correctly', async () => {
+        renderComponent();
+        // Select a stock asset first, as corporate actions are stock-only
+        const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
+        fireEvent.change(assetInput, { target: { value: 'Apple' } });
+        fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+        // Select 'Corporate Action' transaction type
+        const transactionTypeSelect = screen.getByLabelText('Transaction Type');
+        fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
+
         const actionTypeSelect = screen.getByLabelText('Action Type');
         fireEvent.change(actionTypeSelect, { target: { value: 'BONUS' } });
 
