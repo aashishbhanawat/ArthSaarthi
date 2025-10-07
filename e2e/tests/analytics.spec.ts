@@ -67,7 +67,8 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // 2. Add transactions to create a history
     // BUY 10 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+    // For stocks, the "Transaction Type" dropdown now controls this.
+    await page.getByLabel('Transaction Type').selectOption('BUY');
     // Use a more specific locator to avoid ambiguity with "Asset Type"
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
     const listItemBuy = page.locator(`li:has-text("${assetName}")`);
@@ -93,7 +94,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
 
     // SELL 5 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('SELL');
+    await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
     const listItem = page.locator(`li:has-text("${assetName}")`);
     await expect(listItem).toBeVisible();
@@ -156,7 +157,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await expect(createAssetButton).toBeVisible();
 
     // Now fill the rest of the form
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+    await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('100');
     await page.getByLabel('Date').fill(getPastDateISO(365));
@@ -182,7 +183,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
 
     // SELL 5 shares @ 120, 6 months ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('SELL');
+    await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetTicker);
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
     const listItem = page.locator(`li:has-text("${assetTicker}")`);
