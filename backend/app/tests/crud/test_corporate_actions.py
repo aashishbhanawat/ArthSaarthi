@@ -10,6 +10,10 @@ from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.user import create_random_user
 
 
+import pytest
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_handle_bonus_issue(db: Session) -> None:
     """
     Test case for handling a bonus issue.
@@ -89,6 +93,7 @@ def test_handle_bonus_issue(db: Session) -> None:
     assert net_holdings == Decimal("150")  # 100 original + 50 bonus
 
 
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_handle_cash_dividend(db: Session) -> None:
     """
     Test case for handling a cash dividend.
@@ -128,6 +133,7 @@ def test_handle_cash_dividend(db: Session) -> None:
     assert all_txs[0].quantity == Decimal("500.00")
 
 
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_handle_reinvested_dividend(db: Session) -> None:
     """
     Test case for handling a reinvested dividend.
@@ -178,6 +184,7 @@ def test_handle_reinvested_dividend(db: Session) -> None:
     assert buy_tx.is_reinvested is True
 
 
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_handle_stock_split(db: Session) -> None:
     """
     Test case for handling a stock split.
