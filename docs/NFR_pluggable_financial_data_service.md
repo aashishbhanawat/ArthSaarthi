@@ -1,50 +1,77 @@
-# Feature Plan: Pluggable Financial Data Service
+# Non-Functional Requirement: Pluggable Financial Data Service
 
-**Feature ID:** NFR12 (Architecture)
+**Status: 📝 Planned**
+**Feature ID:** NFR1
 **Title:** Refactor FinancialDataService to be Pluggable
-**User Story:** As a developer, I want to refactor the `FinancialDataService` to support multiple data providers, so that the system can be easily extended to use different APIs for different asset classes (e.g., a dedicated bond API, a commodity API for SGBs).
-**Status:** 📝 Planned
 
 ---
 
 ## 1. Objective
 
-To replace the current monolithic `FinancialDataService` with a more flexible, pluggable architecture using the **Strategy Pattern**. This will decouple the application's core logic from any single data provider (like `yfinance`) and allow for a more robust, multi-layered data fetching strategy with clear fallback mechanisms.
+The current `FinancialDataService` is a monolithic class that directly contains the logic for fetching data from different sources (`yfinance`, `amfiindia.com`, etc.). This makes it difficult to add new data sources, test providers in isolation, or switch between providers for different asset classes.
 
-This is a prerequisite for properly implementing advanced bond pricing and other specialized asset valuations.
-
----
-
-## 2. High-Level Technical Design
-
-1.  **`FinancialDataProvider` Interface:**
-    *   An abstract base class will be created in `backend/app/services/providers/base.py`.
-    *   It will define a common interface with methods like `get_current_prices`, `get_historical_prices`, and `get_asset_details`.
-
-2.  **Concrete Provider Implementations:**
-    *   The existing `yfinance` logic will be refactored into a `YFinanceProvider` class that implements the `FinancialDataProvider` interface.
-    *   The existing `AmfiIndiaProvider` logic will be refactored to implement the same interface.
-    *   **Future:** New providers (e.g., `SebiBondApiProvider`, `GoldPriceProvider`) can be easily added by creating new classes that adhere to the interface.
-
-3.  **`FinancialDataService` Facade:**
-    *   The main `FinancialDataService` class will be refactored to act as a **facade**.
-    *   It will maintain a registry of available providers.
-    *   When a request for data is made (e.g., `get_current_prices`), the service will look at the `asset_type` of the requested assets.
-    *   It will then delegate the call to the appropriate registered provider based on a predefined strategy (e.g., "for `MUTUAL_FUND`, use `AmfiIndiaProvider`; for `STOCK`, use `YFinanceProvider`").
-
-4.  **Fallback Logic:**
-    *   The service will implement a fallback chain. For example, for a bond, it might first try a dedicated bond API. If that fails, it could fall back to trying `yfinance`. If that also fails, it will return a default value, preventing crashes.
+The objective of this refactoring is to re-architect the service using a **Strategy Pattern**. This will create a pluggable system where each data source is an independent "provider" class that adheres to a common interface.
 
 ---
 
-## 3. Implementation Plan
+## 2. High-Level Requirements
 
-1.  Create a new directory `backend/app/services/providers/`.
-2.  Define the `FinancialDataProvider` abstract base class in `base.py`.
-3.  Move and refactor the `yfinance` logic into a new `YFinanceProvider` class in `yfinance_provider.py`.
-4.  Move and refactor the `amfi` logic into a new `AmfiIndiaProvider` class in `amfi_provider.py`.
-5.  Refactor the main `FinancialDataService` in `financial_data_service.py` to act as a facade, managing and delegating to the different provider instances.
-6.  Update all parts of the application that use the old service to use the new one.
-7.  Update all relevant tests to mock the new provider structure.
+-   Define a common `FinancialDataProvider` abstract base class or interface.
+-   Refactor the existing `yfinance` logic into a `YFinanceProvider` class.
+-   Refactor the existing AMFI logic into an `AmfiIndiaProvider` class.
+-   The main `FinancialDataService` will act as a facade or a registry, delegating calls to the appropriate provider based on the asset type.
 
 ---
+
+## 3. Detailed Implementation Plan
+
+### 3.1. Define the Provider Interface
+
+Create a new file `backend/app/services/providers/base.py`.
+
+```python
+from abc import ABC, abstractmethod
+from datetime import date
+from decimal import Decimal
+from typing import Any, Dict, List, Optional
+
+class FinancialDataProvider(ABC):
+    @abstractmethod
+    def get_current_prices(self, assets: List[Dict[str, Any]]) -> Dict[str, Dict[str, Decimal]]:
+        """Fetches current and previous day's close price for a list of assets."""
+        pass
+
+    @abstractmethod
+    def get_historical_prices(self, assets: List[Dict[str, Any]], start_date: date, end_date: date) -> Dict[str, Dict[date, Decimal]]:
+        """Fetches historical prices for a list of assets over a date range."""
+        pass
+
+    @abstractmethod
+    def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
+        """Fetches details for a single asset."""
+        pass
+```
+
+### 3.2. Refactor Existing Logic into Providers
+
+1.  **Create `YFinanceProvider`:**
+    *   Create `backend/app/services/providers/yfinance_provider.py`.
+    *   Move all `yfinance`-related logic from `financial_data_service.py` into a new `YFinanceProvider` class that implements `FinancialDataProvider`.
+
+2.  **Create `AmfiIndiaProvider`:**
+    *   Create `backend/app/services/providers/amfi_provider.py`.
+    *   Move all AMFI-related logic into a new `AmfiIndiaProvider` class.
+
+### 3.3. Refactor `FinancialDataService`
+
+*   The main `FinancialDataService` class in `financial_data_service.py` will be simplified.
+*   It will instantiate the provider classes (`self.yfinance_provider = YFinanceProvider(...)`, etc.).
+*   Its public methods (`get_current_prices`, etc.) will now contain logic to inspect the asset type and delegate the call to the appropriate provider. For example, if an asset is a "Mutual Fund", it will call `self.amfi_provider.get_current_prices()`; otherwise, it will call `self.yfinance_provider.get_current_prices()`.
+
+---
+
+## 4. Benefits
+
+-   **Extensibility:** Adding a new data source (e.g., a dedicated bond API) becomes as simple as creating a new provider class.
+-   **Testability:** Each provider can be unit-tested in isolation.
+-   **Maintainability:** Code for each data source is self-contained and easier to manage.

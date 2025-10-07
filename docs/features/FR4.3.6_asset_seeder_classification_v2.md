@@ -44,8 +44,8 @@ The `_classify_asset` function should be refactored to execute rules in the foll
 
 ### 3.2. Implementation Details
 
-*   **File to Modify**: `backend/app/cli.py`
-*   **Function to Refactor**: `_classify_asset`
+*   **File to Modify**: `backend/app/cli.py`.
+*   **Function to Refactor**: `_classify_asset`. The function signature and return value must be updated. It should return a tuple of `(asset_type, bond_type)`, where `bond_type` is populated if the asset is a bond (e.g., `SGB`, `TBILL`, `CORPORATE`) and `None` otherwise.
 *   The implementation will require creating more detailed keyword lists for both inclusion and exclusion to make the heuristics in Pass 3 effective.
 
 ## 4. Task Prioritization
