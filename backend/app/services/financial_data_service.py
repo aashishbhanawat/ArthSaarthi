@@ -1,12 +1,13 @@
-from datetime import date, datetime, timedelta
+from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from app.cache.base import CacheClient
 from app.core.config import settings
-from .providers.amfi_provider import AmfiIndiaProvider # type: ignore
-from .providers.yfinance_provider import YFinanceProvider # type: ignore
+
+from .providers.amfi_provider import AmfiIndiaProvider  # type: ignore
 from .providers.nse_bhavcopy_provider import NseBhavcopyProvider
+from .providers.yfinance_provider import YFinanceProvider  # type: ignore
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
 CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
@@ -45,7 +46,8 @@ class FinancialDataService:
         if mf_assets:
             prices_data.update(self.amfi_provider.get_current_prices(mf_assets))
 
-        # 3. Use yfinance for any remaining assets (e.g., international) and as a fallback
+        # 3. Use yfinance for any remaining assets (e.g., international)
+        #    and as a fallback
         found_tickers = set(prices_data.keys()) # type: ignore
         remaining_assets = other_assets + [
             a for a in indian_market_assets if a["ticker_symbol"] not in found_tickers

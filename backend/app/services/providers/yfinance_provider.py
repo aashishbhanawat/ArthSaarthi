@@ -8,7 +8,7 @@ import yfinance as yf
 from pydantic import ValidationError
 
 from app.cache.base import CacheClient
-from app.core.config import settings
+
 from .base import FinancialDataProvider
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
@@ -97,9 +97,13 @@ class YFinanceProvider(FinancialDataProvider):
             fetched_tickers = set(prices_data.keys())
             for asset in tickers_to_fetch:
                 if asset["ticker_symbol"] not in fetched_tickers:
-                    cache_key = f"asset_details_not_found:{asset['ticker_symbol'].upper()}"  # noqa: E501
+                    cache_key = (
+                        f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
+                    )
                     self.cache_client.set_json(
-                        cache_key, {"not_found": True}, expire=CACHE_TTL_HISTORICAL_PRICE
+                        cache_key,
+                        {"not_found": True},
+                        expire=CACHE_TTL_HISTORICAL_PRICE,
                     )
             for ticker, data in prices_data.items():
                 if any(t["ticker_symbol"] == ticker for t in tickers_to_fetch):
@@ -137,7 +141,9 @@ class YFinanceProvider(FinancialDataProvider):
             for a in assets_to_fetch
         }
         yfinance_tickers_str = " ".join(yfinance_tickers_map.keys())
-        cache_key = f"history:{yfinance_tickers_str}:{start_date.isoformat()}:{end_date.isoformat()}"
+        cache_key = (
+            f"history:{yfinance_tickers_str}:{start_date.isoformat()}:{end_date.isoformat()}"
+        )
 
         if self.cache_client:
             cached_data = self.cache_client.get_json(cache_key)
@@ -161,8 +167,9 @@ class YFinanceProvider(FinancialDataProvider):
                 if close_prices is not None:
                     for yf_ticker, original_ticker in yfinance_tickers_map.items():
                         if yf_ticker in close_prices:
-                            for a_date, price in close_prices[yf_ticker].dropna().items():
-                                historical_data[original_ticker][a_date.date()] = Decimal(str(price))
+                            for a_date, price in close_prices[yf_ticker].dropna().items(): # noqa: E501
+                                historical_data[original_ticker][
+                                    a_date.date()] = Decimal(str(price))
         except (Exception, ValidationError) as e:
             print(f"WARNING: Error fetching historical data from yfinance: {e}")
             return {}
@@ -171,10 +178,19 @@ class YFinanceProvider(FinancialDataProvider):
             fetched_tickers = set(historical_data.keys())
             for asset in assets_to_fetch:
                 if asset["ticker_symbol"] not in fetched_tickers:
-                    cache_key = f"asset_details_not_found:{asset['ticker_symbol'].upper()}"  # noqa: E501
-                    self.cache_client.set_json(cache_key, {"not_found": True}, expire=CACHE_TTL_HISTORICAL_PRICE)
-            serializable_data = {t: {dt.isoformat(): str(price) for dt, price in dp.items()} for t, dp in historical_data.items()}
-            self.cache_client.set_json(cache_key, serializable_data, expire=CACHE_TTL_HISTORICAL_PRICE)
+                    cache_key = f"asset_details_not_found:{asset['ticker_symbol'].upper()}" # noqa: E501
+                    self.cache_client.set_json(
+                        cache_key,
+                        {"not_found": True},
+                        expire=CACHE_TTL_HISTORICAL_PRICE,
+                    )
+            serializable_data = {
+                t: {dt.isoformat(): str(price) for dt, price in dp.items()}
+                for t, dp in historical_data.items()
+            }
+            self.cache_client.set_json(
+                cache_key, serializable_data, expire=CACHE_TTL_HISTORICAL_PRICE
+            )
 
         return historical_data
 
@@ -185,7 +201,9 @@ class YFinanceProvider(FinancialDataProvider):
                 return None
 
         ticker_obj = None
-        for yf_ticker_str in [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]:
+        for yf_ticker_str in [
+            f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
+        ]:
             try:
                 temp_ticker = yf.Ticker(yf_ticker_str)
                 if not temp_ticker.history(period="1d").empty:
@@ -198,19 +216,26 @@ class YFinanceProvider(FinancialDataProvider):
             try:
                 info = ticker_obj.info
                 if info and info.get("shortName"):
-                    asset_type_map = {"EQUITY": "Stock", "MUTUALFUND": "Mutual Fund", "ETF": "ETF", "CRYPTOCURRENCY": "Crypto"}
-                    return {"name": info.get("shortName") or info.get("longName"), "asset_type": asset_type_map.get(info.get("quoteType"), "Stock"), "exchange": info.get("exchange"), "currency": info.get("currency", "INR")}
+                    asset_type_map = {
+                        "EQUITY": "Stock",
+                        "MUTUALFUND": "Mutual Fund",
+                        "ETF": "ETF",
+                        "CRYPTOCURRENCY": "Crypto",
+                    }
+                    return {"name": info.get("shortName") or info.get("longName"), "asset_type": asset_type_map.get(info.get("quoteType"), "Stock"), "exchange": info.get("exchange"), "currency": info.get("currency", "INR")} # noqa: E501
             except (IndexError, KeyError):
                 pass
 
         if self.cache_client:
             cache_key = f"asset_details_not_found:{ticker_symbol.upper()}"
-            self.cache_client.set_json(cache_key, {"not_found": True}, expire=CACHE_TTL_HISTORICAL_PRICE)
+            self.cache_client.set_json(
+                cache_key, {"not_found": True}, expire=CACHE_TTL_HISTORICAL_PRICE
+            )
         return None
 
     def get_price(self, ticker_symbol: str) -> Optional[Decimal]:
         ticker_obj = None
-        for yf_ticker_str in [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]:
+        for yf_ticker_str in [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]: # noqa: E501
             temp_ticker = yf.Ticker(yf_ticker_str)
             if not temp_ticker.history(period="1d").empty:
                 ticker_obj = temp_ticker

@@ -2,6 +2,7 @@ import io
 import zipfile
 from datetime import date, timedelta
 from decimal import Decimal
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,13 +10,10 @@ import pytest
 from app.cache.base import CacheClient
 from app.services.providers.nse_bhavcopy_provider import NseBhavcopyProvider
 
-# Sample data mimicking the new Bhavcopy CSV format
-SAMPLE_BHAVCOPY_CSV = """TradDt,BizDt,Sgmt,Src,FinInstrmTp,FinInstrmId,ISIN,TckrSymb,SctySrs,XpryDt,StrkPric,OptnTp,OpnPric,HghPric,LwPric,ClsPric,LastPric,PrvsClsgPric,TtlTradgVol,TtlTrfVal,TtlNbOfTxsExctd\r
-2025-10-22,2025-10-22,CM,NSE,STK,2885,INE002A01018,RELIANCE,EQ,,,,"2800","2850","2790","2845.50","2845.00","2800.00",1000,2845500,100\r
-2025-10-22,2025-10-22,CM,NSE,STK,11536,INE467B01029,TCS,EQ,,,,"3500","3520","3490","3510.00","3510.00","3500.00",500,1755000,50\r
-2025-10-22,2025-10-22,CM,NSE,STK,1594,INE009A01021,INFY,BE,,,,"1500","1510","1495","1505.00","1505.00","1500.00",200,301000,20\r
-2025-10-22,2025-10-22,CM,NSE,STK,1270,INE062A01020,SBIN,EQ,,,,"600","610","595","605.75","605.00","600.00",2000,1211500,150\r
-"""
+# Load sample data from file
+SAMPLE_BHAVCOPY_PATH = Path(__file__).parent.parent / "assets/sample_bhavcopy.csv"
+with open(SAMPLE_BHAVCOPY_PATH, "r") as f:
+    SAMPLE_BHAVCOPY_CSV = f.read()
 
 
 @pytest.fixture
@@ -126,9 +124,11 @@ def test_caching_mechanism(mock_cache_client):
         }
     }
     # The data that will be set in the cache is serialized (strings)
-    serialized_data = {"RELIANCE": {"current_price": "2845.50", "previous_close": "2800.00"}}
+    serialized_data = {
+        "RELIANCE": {"current_price": "2845.50", "previous_close": "2800.00"}
+    }
 
-    with patch.object(provider, "_fetch_and_parse_bhavcopy", return_value=fresh_data) as mock_fetch:
+    with patch.object(provider, "_fetch_and_parse_bhavcopy", return_value=fresh_data) as mock_fetch: # noqa: E501
         # 1. First call: cache is empty, should fetch and set cache
         provider._get_bhavcopy_data() # type: ignore
         mock_cache_client.get_json.assert_called_once()

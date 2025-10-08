@@ -9,13 +9,15 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from app.cache.base import CacheClient
+
 from .base import FinancialDataProvider
 
 # --- Constants ---
 CACHE_KEY_TEMPLATE = "bhavcopy_data:{date_iso}"
 CACHE_TTL = 43200  # 12 hours
 NSE_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 }
 
 
@@ -30,7 +32,8 @@ class NseBhavcopyProvider(FinancialDataProvider):
 
     def _get_bhavcopy_url(self, for_date: date) -> tuple[str, str]:
         """
-        Constructs the URL and expected filename for the Bhavcopy for a given date based on the new format.
+        Constructs the URL and expected filename for the Bhavcopy for a given
+        date based on the new format.
         URL: https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip
         Filename: BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv
         """
@@ -44,7 +47,9 @@ class NseBhavcopyProvider(FinancialDataProvider):
         csv_filename = f"{filename_prefix}.csv"
         return url, csv_filename
 
-    def _fetch_and_parse_bhavcopy(self, for_date: date) -> Dict[str, Dict[str, Decimal]]:
+    def _fetch_and_parse_bhavcopy(
+        self, for_date: date
+    ) -> Dict[str, Dict[str, Decimal]]:
         """
         Fetches, parses, and caches the NSE Bhavcopy for a specific date.
         It tries the given date, then iterates backwards up to 5 days to find the
@@ -64,25 +69,30 @@ class NseBhavcopyProvider(FinancialDataProvider):
                 bhavcopy_data: Dict[str, Dict[str, Decimal]] = {}
                 with zipfile.ZipFile(io.BytesIO(response.content)) as thezip:
                     with thezip.open(csv_filename) as thefile:
-                        # The CSV has headers that need to be normalized (e.g. "  TckrSymb  ")
+                        # The CSV has headers that need to be normalized
+                        # (e.g. "  TckrSymb  ")
                         # DictReader will handle this if we don't specify fieldnames
                         reader = csv.DictReader(io.TextIOWrapper(thefile, "utf-8")) # type: ignore
                         for row in reader:
                             series = row.get("SctySrs", "").strip().upper()
                             # We are interested in a wide range of tradable securities,
                             # not just equities. This includes ETFs, Bonds, etc.
-                            # We will exclude series that are typically non-tradable or special cases.
+                            # We will exclude series that are typically
+                            # non-tradable or special cases.
                             excluded_series = {"IV", "MF", "ME", "RR", "P1"}
 
                             if series and series not in excluded_series:
                                 symbol = row["TckrSymb"].strip().upper()
                                 bhavcopy_data[symbol] = {
-                                    "current_price": Decimal(row["ClsPric"].strip().replace(",", "")),
-                                    "previous_close": Decimal(row["PrvsClsgPric"].strip().replace(",", "")),
+                                    "current_price": Decimal(
+                                        row["ClsPric"].strip().replace(",", "")),
+                                    "previous_close": Decimal(
+                                        row["PrvsClsgPric"].strip().replace(",", "")),
                                 }
                 return bhavcopy_data
             except (httpx.RequestError, KeyError, zipfile.BadZipFile, csv.Error) as e:
-                print(f"INFO: Failed to fetch/parse Bhavcopy for {current_date} from {url}. Error: {e}. Trying previous day.")
+                print(f"INFO: Failed to fetch/parse Bhavcopy for {current_date} "
+                      f"from {url}. Error: {e}. Trying previous day.")
                 continue
 
         print(f"ERROR: Could not fetch Bhavcopy for the last 5 days from {for_date}.")

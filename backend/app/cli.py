@@ -9,7 +9,7 @@ import zipfile
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Type
-import sys
+
 import requests
 import typer
 from sqlalchemy.exc import IntegrityError
@@ -206,8 +206,8 @@ def _parse_and_seed_exchange_data(
 ) -> tuple[int, int, collections.Counter]:
     """Parses asset data from a CSV reader and seeds the database."""
     # Local import to prevent circular dependencies
-    from app.schemas.bond import BondCreate
     from app import crud
+    from app.schemas.bond import BondCreate
     created_count = 0
     skipped_count = 0
     debug_rows_printed = 0 # type: ignore
@@ -279,7 +279,8 @@ def _parse_and_seed_exchange_data(
                     crud.bond.create(db=db, obj_in=bond_in)
 
                 created_count += 1
-                existing_isins.add(cleaned_data["isin"]) # Add to sets to prevent duplicates from other files in the same run
+                # Add to sets to prevent duplicates from other files in the same run
+                existing_isins.add(cleaned_data["isin"])
                 existing_tickers.add(cleaned_data["ticker"])
                 existing_composite_keys.add(composite_key) # type: ignore
             except IntegrityError:
@@ -337,8 +338,7 @@ def seed_assets_command(
     ),
 ):
     # Local import to prevent circular dependencies
-    from app import crud, models, schemas
-    from app.schemas.bond import BondCreate
+    from app import models, schemas
 
     """
     Downloads and parses the ICICI Direct Security Master file.
@@ -513,7 +513,6 @@ def init_db_command(
     )
 ):
     # Local import to prevent circular dependencies
-    from app import models
 
     """Initializes the database by creating tables and/or seeding data."""
     db: Session = next(get_db_session())
@@ -541,9 +540,9 @@ def dump_table_command(
 ):
     # Local import to prevent circular dependencies
     from app import models
+    from app.models.audit_log import AuditLog
     from app.models.fixed_deposit import FixedDeposit
     from app.models.recurring_deposit import RecurringDeposit
-    from app.models.audit_log import AuditLog
     from app.models.watchlist import Watchlist, WatchlistItem
 
     """Dumps the contents of a specific database table to the console."""

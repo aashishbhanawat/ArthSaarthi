@@ -130,7 +130,8 @@ class CRUDHolding:
         """
         if settings.DEBUG:
             print(
-                f"\n--- DEBUG: Starting holdings calculation for portfolio {portfolio_id} ---")
+                f"\n--- DEBUG: Starting holdings calculation for portfolio "
+                f"{portfolio_id} ---")
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
@@ -142,7 +143,8 @@ class CRUDHolding:
         )
         if settings.DEBUG:
             print(
-                f"--- DEBUG: Found {len(transactions)} market transactions, {len(all_fixed_deposits)} FDs, {len(all_recurring_deposits)} RDs.")
+                f"--- DEBUG: Found {len(transactions)} market transactions, "
+                f"{len(all_fixed_deposits)} FDs, {len(all_recurring_deposits)} RDs.")
 
         holdings_list: List[schemas.Holding] = []
         summary_total_value = Decimal("0.0")
@@ -345,7 +347,8 @@ class CRUDHolding:
         ]
         if settings.DEBUG:
             print(
-                f"--- DEBUG: Tickers with current market-traded holdings: {current_holdings_tickers}")
+                f"--- DEBUG: Tickers with current market-traded holdings: "
+                f"{current_holdings_tickers}")
 
         assets_to_price = [
             {
@@ -449,7 +452,8 @@ class CRUDHolding:
 
         if settings.DEBUG:
             print(
-                f"--- DEBUG: After processing all assets, holdings_list has {len(holdings_list)} items.")
+                f"--- DEBUG: After processing all assets, holdings_list has "
+                f"{len(holdings_list)} items.")
         # After all holdings are processed and validated by Pydantic models,
         # recalculate the summary based on the final, corrected holding values.
         for holding_item in holdings_list:

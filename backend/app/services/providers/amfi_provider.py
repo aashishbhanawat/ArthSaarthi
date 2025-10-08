@@ -10,6 +10,7 @@ import httpx
 
 from app.cache.base import CacheClient
 from app.cache.factory import get_cache_client
+
 from .base import FinancialDataProvider
 
 CACHE_TTL_AMFI_DATA = 86400  # 24 hours
@@ -173,7 +174,8 @@ class AmfiIndiaProvider(FinancialDataProvider):
                                 )
                         except (ValueError, KeyError):
                             continue
-                except (httpx.RequestError, httpx.HTTPStatusError, KeyError, ValueError):
+                except (httpx.RequestError, httpx.HTTPStatusError, KeyError,
+                        ValueError):
                     continue
 
         if self.cache_client and historical_data:
