@@ -130,7 +130,8 @@ class CRUDHolding:
         """
         if settings.DEBUG:
             print(
-                f"\n--- DEBUG: Starting holdings calculation for portfolio {portfolio_id} ---")  # noqa: E501
+                f"\n--- DEBUG: Starting holdings calculation for portfolio "
+                f"{portfolio_id} ---")
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
@@ -142,7 +143,8 @@ class CRUDHolding:
         )
         if settings.DEBUG:
             print(
-                f"--- DEBUG: Found {len(transactions)} market transactions, {len(all_fixed_deposits)} FDs, {len(all_recurring_deposits)} RDs.")  # noqa: E501
+                f"--- DEBUG: Found {len(transactions)} market transactions, "
+                f"{len(all_fixed_deposits)} FDs, {len(all_recurring_deposits)} RDs.")
 
         holdings_list: List[schemas.Holding] = []
         summary_total_value = Decimal("0.0")
@@ -345,7 +347,8 @@ class CRUDHolding:
         ]
         if settings.DEBUG:
             print(
-                f"--- DEBUG: Tickers with current market-traded holdings: {current_holdings_tickers}")  # noqa: E501
+                f"--- DEBUG: Tickers with current market-traded holdings: "
+                f"{current_holdings_tickers}")
 
         assets_to_price = [
             {
@@ -360,18 +363,6 @@ class CRUDHolding:
             price_details = financial_data_service.get_current_prices(assets_to_price)
         else:
             price_details = {}
-
-        # Handle Mutual Funds separately using the AMFI service
-        mf_holdings_tickers = [
-            ticker for ticker in current_holdings_tickers if ticker in asset_map and
-            asset_map[ticker].asset_type == 'MUTUAL_FUND']
-        if mf_holdings_tickers:
-            from app.services.amfi_provider import amfi_provider
-            mf_navs = amfi_provider.get_latest_navs_for_schemes(mf_holdings_tickers)
-            for ticker, nav in mf_navs.items():
-                price_details[ticker] = {"current_price": nav, "previous_close": nav}
-
-
 
         for ticker in current_holdings_tickers:
             if settings.DEBUG:
@@ -429,13 +420,14 @@ class CRUDHolding:
             average_buy_price = (
                 total_invested / quantity if quantity > 0 else Decimal(0)
             )
-            current_value = quantity * current_price
             days_pnl = (current_price - previous_close) * quantity
             days_pnl_percentage = (
                 float((current_price - previous_close) / previous_close)
                 if previous_close > 0
                 else 0.0
             )
+
+            current_value = quantity * current_price
 
             holdings_list.append(
                 schemas.Holding(
@@ -460,7 +452,8 @@ class CRUDHolding:
 
         if settings.DEBUG:
             print(
-                f"--- DEBUG: After processing all assets, holdings_list has {len(holdings_list)} items.")  # noqa: E501
+                f"--- DEBUG: After processing all assets, holdings_list has "
+                f"{len(holdings_list)} items.")
         # After all holdings are processed and validated by Pydantic models,
         # recalculate the summary based on the final, corrected holding values.
         for holding_item in holdings_list:

@@ -163,3 +163,5 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **NFR7: Data Management:** The system must provide a mechanism for users to back up and restore their portfolio data. `📝 Planned`
 -   **NFR8: Portability:** The application must support SQLite as an alternative to PostgreSQL to facilitate simpler, single-file native deployments. `✅ Done`
 -   **NFR9: Pluggable Caching:** The application must support both Redis and a lightweight, file-based cache (`diskcache`) to remove the Redis dependency for non-Docker deployments. `✅ Done`
+-   **NFR12: Pluggable Financial Data Service:** The financial data service must be architected to support multiple, interchangeable data providers for different asset classes and regions. `✅ Done`
+-   **NFR13: API Usage Tracking & Rate Limiting:** The system must provide a mechanism to track and enforce rate limits for external financial data APIs to prevent abuse and manage costs. `📝 Planned`

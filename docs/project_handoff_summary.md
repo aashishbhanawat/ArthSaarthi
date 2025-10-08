@@ -1,6 +1,6 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2025-10-06
+**Last Updated:** 2025-10-08
 
 ## 1. Current Project Status
 
@@ -9,7 +9,7 @@
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **147/147 Passing**
+*   **Backend Unit/Integration Tests:** ✅ **152/152 Passing**
 *   **Frontend Unit/Integration Tests:** ✅ **159/159 Passing**
 *   **End-to-End (E2E) Tests:** ✅ **21/21 Passing**
 *   **Linters (Code Quality):** ✅ **Passing**
@@ -46,11 +46,14 @@
     -   Privacy Mode to obscure sensitive values.
     -   Context-sensitive help links.
 
-## 4. Next Steps & Priorities
+## 4. Architectural Improvements
+
+-   **Pluggable Financial Data Service (NFR12):** The `FinancialDataService` has been refactored into a provider-based architecture (Strategy Pattern), making it easy to add new data sources. It currently supports AMFI (Mutual Funds), NSE Bhavcopy (Indian Equities/Bonds), and yfinance (fallback/international).
+
+## 5. Next Steps & Priorities
 
 Based on the `product_backlog.md`, the next features to consider are:
 
-1.  **Architectural Refactoring:** Refactor the `FinancialDataService` to be more pluggable.
-2.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
-3.  **Advanced Analytics (FR6):** Implement remaining metrics like TWR, Beta, Alpha.
-4.  **Corporate Actions (FR4.6):** Add support for stock splits and bonuses.
+1.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
+2.  **Advanced Analytics (FR6):** Implement remaining metrics like TWR, Beta, Alpha.
+3.  **Corporate Actions (FR4.6):** Add support for stock splits and bonuses.
