@@ -110,21 +110,20 @@ def mock_db_session_with_data(mocker):
     mock_db_session_context = mocker.patch("app.cli.get_db_session")
     mock_db = mock_db_session_context.return_value.__next__.return_value
 
-    # Mock the delete calls
-    mock_query_object = mocker.Mock()
-
     def query_side_effect(model):
+        # Create a new mock for each query to handle chained calls
+        mock_query = mocker.Mock()
         # Set a default return value for delete()
-        mock_query_object.delete.return_value = 0
+        mock_query.delete.return_value = 0
         # Set specific return values for models we are testing against
         if model.__name__ == "Transaction":
-            mock_query_object.delete.return_value = 5  # 5 transactions deleted
+            mock_query.delete.return_value = 5  # 5 transactions deleted
         elif model.__name__ == "Portfolio":
-            mock_query_object.delete.return_value = 2  # 2 portfolios deleted
+            mock_query.delete.return_value = 2  # 2 portfolios deleted
         elif model.__name__ == "Asset":
-            mock_query_object.delete.return_value = 10  # 10 assets deleted
+            mock_query.delete.return_value = 10  # 10 assets deleted
         # For any other model, it will return 0, and no message will be printed.
-        return mock_query_object
+        return mock_query
 
     mock_db.query.side_effect = query_side_effect
 
@@ -140,7 +139,7 @@ def test_clear_assets_with_confirmation(mocker, mock_db_session_with_data):
     )
 
     assert result.exit_code == 0
-    assert "Are you sure you want to proceed?" in result.stdout
+    assert "Are you sure you want to proceed?" in result.stdout  # noqa: E501
     assert "Deleted 5 rows from transactions." in result.stdout
     assert "Deleted 2 rows from portfolios." in result.stdout
     assert "Deleted 10 rows from assets." in result.stdout
@@ -156,7 +155,7 @@ def test_clear_assets_with_force(mocker, mock_db_session_with_data):
     )
 
     assert result.exit_code == 0
-    assert "Are you sure you want to proceed?" not in result.stdout
+    assert "Are you sure you want to proceed?" not in result.stdout  # noqa: E501
     assert "Deleted 5 rows from transactions." in result.stdout
     assert "Deleted 2 rows from portfolios." in result.stdout
     assert "Deleted 10 rows from assets." in result.stdout

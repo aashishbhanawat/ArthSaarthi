@@ -1,7 +1,7 @@
 # Non-Functional Requirement: Pluggable Financial Data Service
 
-**Status: 📝 Planned**
-**Feature ID:** NFR1
+**Status: ✅ Done (Phases 1 & 2)**
+**Feature ID:** NFR12.1
 **Title:** Refactor FinancialDataService to be Pluggable
 
 ---
@@ -50,6 +50,11 @@ class FinancialDataProvider(ABC):
     def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
         """Fetches details for a single asset."""
         pass
+
+    @abstractmethod
+    def search(self, query: str) -> List[Dict[str, Any]]:
+        """Searches for assets supported by the provider."""
+        pass
 ```
 
 ### 3.2. Refactor Existing Logic into Providers
@@ -75,3 +80,44 @@ class FinancialDataProvider(ABC):
 -   **Extensibility:** Adding a new data source (e.g., a dedicated bond API) becomes as simple as creating a new provider class.
 -   **Testability:** Each provider can be unit-tested in isolation.
 -   **Maintainability:** Code for each data source is self-contained and easier to manage.
+
+---
+
+## 5. Testing Strategy
+
+Given the critical nature of this service, a rigorous testing strategy will be employed to prevent regressions, as outlined in the project's main `testing_strategy.md`.
+
+1.  **Characterization Tests (Golden Master):**
+    *   A new test suite, `test_holding_characterization.py`, will be created.
+    *   This suite will set up a portfolio with a mix of assets (Stocks, Mutual Funds).
+    *   It will mock the **current** `FinancialDataService` to return a fixed, predictable set of price data.
+    *   It will then call `crud.holding.get_portfolio_holdings_and_summary()` and assert the final calculated values (e.g., `total_value`, `days_pnl`, `unrealized_pnl`). These assertions will capture the "golden master" output of the current system.
+
+2.  **Refactoring with Parallel Validation:**
+    *   As the `FinancialDataService` is refactored to use the new provider-based architecture, we will run these same characterization tests against the new implementation.
+    *   The goal is to make the new implementation pass the *exact same tests* that were written to capture the behavior of the old implementation. Any deviation indicates a regression.
+
+3.  **Full-Stack Verification:**
+    *   After the refactoring is complete and all unit/integration tests pass, the **full E2E test suite must be executed** (`./run_local_tests.sh e2e`).
+    *   A **manual E2E smoke test** will also be performed, focusing on the Dashboard and Portfolio Holdings pages to visually confirm that all values are being calculated and displayed correctly.
+
+---
+
+
+This architecture enables a clear roadmap for enhancing data sourcing capabilities in the future.
+
+### Phase 1: Initial Refactor (Current Task)
+*   **`AmfiIndiaProvider`:** Refactor existing AMFI logic for Indian Mutual Funds.
+*   **`YFinanceProvider`:** Refactor existing `yfinance` logic for international equities and as a general fallback.
+
+### Phase 2: Indian Market Default Provider
+*   **`NseBhavcopyProvider`:** Create a new provider that scrapes the daily NSE Bhavcopy.
+    *   **Pros:** Authoritative, free, provides closing prices for all listed Indian equities and bonds.
+    *   **Cons:** Relies on web scraping, which can be brittle. Only provides closing prices.
+    *   **Role:** Will serve as the default, out-of-the-box provider for Indian market data.
+
+### Future Enhancements: Optional High-Quality Providers
+*   **`ZerodhaKiteProvider` / `IciciBreezeProvider`:** Create providers for popular broker APIs.
+    *   **Pros:** Highly reliable, provides real-time and historical data via stable APIs.
+    *   **Cons:** Requires the user to have an account with the broker and provide their own API keys.
+    *   **Role:** Will be an optional, high-quality data source that users can enable in their settings for superior data accuracy and reliability. The `FinancialDataService` will be configured to prioritize these providers if they are enabled by the user.

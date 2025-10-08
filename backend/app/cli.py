@@ -15,26 +15,7 @@ import typer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
-from app.db.session import SessionLocal
-from app.models.asset import Asset
-from app.models.asset_alias import AssetAlias
-from app.models.audit_log import AuditLog
-from app.models.bond import Bond
-from app.models.fixed_deposit import FixedDeposit
-from app.models.goal import Goal, GoalLink
-from app.models.historical_interest_rate import HistoricalInterestRate
-from app.models.import_session import ImportSession
-from app.models.parsed_transaction import ParsedTransaction
-from app.models.portfolio import Portfolio
-from app.models.recurring_deposit import RecurringDeposit
-from app.models.transaction import Transaction
-from app.models.user import User
-from app.models.watchlist import Watchlist, WatchlistItem
-from app.schemas.bond import BondCreate
-from app.schemas.enums import BondType
-
-app = typer.Typer(help="Database commands.")
+app = typer.Typer(help="ArthSaarthi CLI for database and utility operations.")
 
 SECURITY_MASTER_URL = (
     "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
@@ -65,8 +46,8 @@ EXCHANGE_CONFIGS = {
 
 
 def _classify_asset(
-    ticker: str, name: str, series: str, exchange: str, debug: bool = False
-) -> tuple[str | None, BondType | None]:
+    ticker: str, name: str, series: str, exchange: str, debug: bool = False,
+) -> tuple[str | None, Any]:  # Return Any for bond_type to avoid import
     """Maps asset attributes to its asset_type and bond_type."""
     series = series.upper()
     name = name.upper()
@@ -74,7 +55,7 @@ def _classify_asset(
 
     # 1. Highest Priority: Specific bond patterns that are unambiguous
     if "T-BILL" in name or re.match(r"^\d{2,3}(TB|T|D)\d{4,6}$", ticker):
-        return "BOND", BondType.TBILL
+        return "BOND", "TBILL"
 
     # 2. Exchange-specific bond logic
     if exchange == "BSE":
@@ -83,9 +64,9 @@ def _classify_asset(
         if re.match(r"^CG\d{4}[A-Z]\d{4}$", ticker) or re.match(
             r"^GS\d{2}[A-Z]{3}(\d{4}|\d{2})[A-Z]?$", ticker
         ):
-            return "BOND", BondType.GOVERNMENT
+            return "BOND", "GOVERNMENT"
         if re.match(r"^SGB[A-Z0-9]+", ticker) or series == "GB":
-            return "BOND", BondType.SGB
+            return "BOND", "SGB"
 
         # For BSE, check for name-based keywords for better accuracy, especially for
         # corporate bonds.
@@ -112,22 +93,22 @@ def _classify_asset(
         )
         if has_bond_keywords and not (
                 is_likely_stock and not has_strong_bond_indicators):
-            return "BOND", BondType.CORPORATE
+            return "BOND", "CORPORATE"
 
         # Fallback for State Govt bonds on BSE based on name keywords
         govt_keywords = ["STATE", "ELEC BOARD", "POWER CORPORATION"]
         if any(keyword in name for keyword in govt_keywords) and not any(
             ex in name for ex in ["LTD", "LIMITED"]
         ):
-            return "BOND", BondType.GOVERNMENT
+            return "BOND", "GOVERNMENT"
     else:  # Default to NSE logic
         # NSE specific series for bonds. These are high-confidence indicators.
         if series == "GB":
-            return "BOND", BondType.SGB
+            return "BOND", "SGB"
         if series in ("GS", "SG"):
-            return "BOND", BondType.GOVERNMENT
+            return "BOND", "GOVERNMENT"
         if series == "TB":
-            return "BOND", BondType.TBILL
+            return "BOND", "TBILL"
 
         # Corporate bonds on NSE often start with specific letters.
         # This rule is now structured to explicitly EXCLUDE known stock series.
@@ -141,8 +122,8 @@ def _classify_asset(
             if series in OTHER_EXCLUSIONS or (
                 len(series) > 1 and series[1:] in NUMERIC_EXCEPTIONS
             ):
-                return None, None  # It's a specific exclusion, not a bond.
-            return "BOND", BondType.CORPORATE
+                return None, None
+            return "BOND", "CORPORATE"
 
     # 3. Last fallback: Check for common stock series if no bond patterns matched.
     if series in {"EQ", "BE", "SM", "DR", "A", "B", "T", "M", "C", "ST"}:
@@ -151,6 +132,8 @@ def _classify_asset(
 
 
 def get_db_session():
+    # Local import to prevent circular dependencies at startup
+    from app.db.session import SessionLocal
     db = SessionLocal()
     try:
         yield db
@@ -218,12 +201,16 @@ def _parse_and_seed_exchange_data(
     existing_isins: set,
     existing_tickers: set,
     existing_composite_keys: set[tuple[str, str, str]],
+    schemas: Any,
     debug: bool = False,
 ) -> tuple[int, int, collections.Counter]:
     """Parses asset data from a CSV reader and seeds the database."""
+    # Local import to prevent circular dependencies
+    from app import crud
+    from app.schemas.bond import BondCreate
     created_count = 0
     skipped_count = 0
-    debug_rows_printed = 0
+    debug_rows_printed = 0 # type: ignore
     config = EXCHANGE_CONFIGS[exchange]
     skipped_series_counts = collections.Counter()
 
@@ -292,11 +279,10 @@ def _parse_and_seed_exchange_data(
                     crud.bond.create(db=db, obj_in=bond_in)
 
                 created_count += 1
-                existing_isins.add(cleaned_data["isin"])
                 # Add to sets to prevent duplicates from other files in the same run
                 existing_isins.add(cleaned_data["isin"])
                 existing_tickers.add(cleaned_data["ticker"])
-                existing_composite_keys.add(composite_key)
+                existing_composite_keys.add(composite_key) # type: ignore
             except IntegrityError:
                 db.rollback()
                 skipped_count += 1
@@ -310,16 +296,17 @@ def _process_asset_file(
     file_content: io.TextIOWrapper,
     exchange: str,
     db: Session, # noqa: E501
-    existing_isins: set, # noqa: E501
+    existing_isins: set, # type: ignore
     existing_tickers: set,
     existing_composite_keys: set[tuple[str, str, str]],
+    schemas: Any,
     debug: bool = False,
 ) -> tuple[int, int, collections.Counter]:
     """Reads a CSV file stream and triggers the seeding process."""
     reader = csv.DictReader(file_content)
     created, skipped, skipped_series = _parse_and_seed_exchange_data(
-        db, reader, exchange, existing_isins, existing_tickers,  # noqa: E501
-        existing_composite_keys, debug=debug
+        db, reader, exchange, existing_isins, existing_tickers, # type: ignore
+        existing_composite_keys, schemas, debug=debug
     )
     typer.echo(
         f"\n{exchange} processing complete. Created: {created}, Skipped: {skipped}"
@@ -328,7 +315,6 @@ def _process_asset_file(
 
 
 # --- CLI Command ---
-
 
 @app.command("seed-assets")
 def seed_assets_command(
@@ -351,6 +337,9 @@ def seed_assets_command(
         False, "--debug", help="Enable detailed debug logging for skipped rows."
     ),
 ):
+    # Local import to prevent circular dependencies
+    from app import models, schemas
+
     """
     Downloads and parses the ICICI Direct Security Master file.
 
@@ -358,6 +347,7 @@ def seed_assets_command(
     """
     typer.echo("Starting asset database seeding process...")
     db: Session = next(get_db_session())
+    Asset = models.Asset
 
     try:
         typer.echo("Fetching existing assets from database...")
@@ -390,8 +380,8 @@ def seed_assets_command(
                     continue
                 with open(file_path, mode="r", encoding="utf-8", errors="ignore") as f:
                     created, skipped, skipped_series = _process_asset_file(
-                        f, exchange, db, existing_isins, existing_tickers,  # type: ignore
-                        existing_composite_keys, debug=debug
+                        f, exchange, db, existing_isins, existing_tickers,
+                        existing_composite_keys, schemas, debug=debug
                     )
                     total_created += created
                     total_skipped += skipped
@@ -416,8 +406,8 @@ def seed_assets_command(
                             thefile, encoding="utf-8", errors="ignore"
                         )
                         created, skipped, skipped_series = _process_asset_file(
-                            text_stream, exchange, db, existing_isins, existing_tickers,  # type: ignore
-                            existing_composite_keys, debug=debug
+                            text_stream, exchange, db, existing_isins, existing_tickers,
+                            existing_composite_keys, schemas, debug=debug
                         )
                         total_created += created
                         total_skipped += skipped
@@ -454,6 +444,13 @@ def clear_assets_command(
         help="Force deletion without confirmation.",
     ),
 ):
+    # Local import to prevent circular dependencies
+    from app import models
+    from app.models.fixed_deposit import FixedDeposit
+    from app.models.recurring_deposit import RecurringDeposit
+    from app.models.watchlist import Watchlist, WatchlistItem
+
+
     """Deletes all portfolio data (transactions, portfolios, assets)."""
     if not force:
         typer.echo(
@@ -465,21 +462,20 @@ def clear_assets_command(
     db: Session = next(get_db_session())
     try:
         typer.echo("Deleting all user-generated financial data...")
-
         # Order is important to respect foreign key constraints
         models_to_delete: list[Type[models.Base]] = [ # type: ignore
-            ParsedTransaction,
-            ImportSession,
-            GoalLink,
+            models.ParsedTransaction,
+            models.ImportSession,
+            models.GoalLink,
             WatchlistItem,
-            Transaction,
+            models.Transaction,
             FixedDeposit,
             RecurringDeposit,
-            Goal,
+            models.Goal,
             Watchlist,
-            Portfolio,
-            Bond,
-            Asset,
+            models.Portfolio,
+            models.Bond,
+            models.Asset,
         ]
 
         total_deleted = 0
@@ -516,6 +512,8 @@ def init_db_command(
         True, help="Create tables from models. Should be false if using Alembic."
     )
 ):
+    # Local import to prevent circular dependencies
+
     """Initializes the database by creating tables and/or seeding data."""
     db: Session = next(get_db_session())
     from app.db.initial_data import seed_interest_rates
@@ -540,27 +538,34 @@ def init_db_command(
 def dump_table_command(
     table_name: str = typer.Argument(..., help="The name of the table to dump."),
 ):
+    # Local import to prevent circular dependencies
+    from app import models
+    from app.models.audit_log import AuditLog
+    from app.models.fixed_deposit import FixedDeposit
+    from app.models.recurring_deposit import RecurringDeposit
+    from app.models.watchlist import Watchlist, WatchlistItem
+
     """Dumps the contents of a specific database table to the console."""
     db: Session = next(get_db_session())
     try:
         # A simple way to map table names to models. This is not exhaustive.
         model_map = {
-            "assets": Asset,
-            "portfolios": Portfolio,
-            "transactions": Transaction,
-            "users": User,
-            "historical_interest_rates": HistoricalInterestRate,
-            "goals": Goal,
-            "goal_links": GoalLink,
+            "assets": models.Asset,
+            "portfolios": models.Portfolio,
+            "transactions": models.Transaction,
+            "users": models.User,
+            "historical_interest_rates": models.HistoricalInterestRate,
+            "goals": models.Goal,
+            "goal_links": models.GoalLink,
             "watchlists": Watchlist,
             "watchlist_items": WatchlistItem,
             "fixed_deposits": FixedDeposit,
             "recurring_deposits": RecurringDeposit,
-            "import_sessions": ImportSession,
-            "parsed_transactions": ParsedTransaction,
-            "asset_aliases": AssetAlias,
+            "import_sessions": models.ImportSession,
+            "parsed_transactions": models.ParsedTransaction,
+            "asset_aliases": models.AssetAlias, # type: ignore
             "audit_logs": AuditLog,
-            "bonds": Bond,
+            "bonds": models.Bond,
         }
         model = model_map.get(table_name)
         if not model:
