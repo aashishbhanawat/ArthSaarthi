@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator, Field
 
 if TYPE_CHECKING:
     from .asset import Asset  # noqa: F401
@@ -24,7 +24,9 @@ class TransactionBase(BaseModel):
     transaction_type: str
     quantity: Decimal
     price_per_unit: Decimal
-    transaction_date: datetime
+    transaction_date: datetime = Field(
+        ..., json_schema_extra={"example": "2023-01-15T12:30:00Z"}
+    )
     fees: Decimal = Decimal("0.0")
 
 

@@ -74,7 +74,7 @@ def test_get_all_nav_data_with_caching(mock_httpx_client, mock_cache_client):
 def test_get_details_success(mock_httpx_client):
     """Test getting details for a valid MF scheme code."""
     provider = AmfiIndiaProvider(cache_client=None)
-    details = provider.get_details("100033")
+    details = provider.get_asset_details("100033")
 
     assert details is not None
     assert details["name"] == "Axis Bluechip Fund"
@@ -86,7 +86,7 @@ def test_get_details_success(mock_httpx_client):
 def test_get_details_not_found(mock_httpx_client):
     """Test getting details for an invalid MF scheme code."""
     provider = AmfiIndiaProvider(cache_client=None)
-    details = provider.get_details("999999")
+    details = provider.get_asset_details("999999")
     assert details is None
 
 def test_search_funds(mock_httpx_client):
@@ -94,19 +94,19 @@ def test_search_funds(mock_httpx_client):
     provider = AmfiIndiaProvider(cache_client=None)
 
     # Search by name part
-    results_name = provider.search_funds("axis bluechip")
+    results_name = provider.search("axis bluechip")
     assert len(results_name) == 1
     assert results_name[0]["ticker_symbol"] == "100033"
     assert results_name[0]["name"] == "Axis Bluechip Fund"
 
     # Search by scheme code
-    results_code = provider.search_funds("12050")
+    results_code = provider.search("12050")
     assert len(results_code) == 2 # 120503 and 120504
 
     # Search by common name part
-    results_hdfc = provider.search_funds("hdfc")
+    results_hdfc = provider.search("hdfc")
     assert len(results_hdfc) == 2
 
     # No results
-    results_none = provider.search_funds("nonexistentfund")
+    results_none = provider.search("nonexistentfund")
     assert len(results_none) == 0

@@ -141,7 +141,8 @@ The goal of this release was to build a robust and user-friendly system for impo
 ## Future Releases
 
 -   **Architectural Refactoring:**
-    -   Refactor `FinancialDataService` to be pluggable and support multiple data providers (e.g., dedicated bond APIs).
+-   **Data Integration (NFR12 - Phase 3):** Implement optional, high-quality data providers for broker APIs (e.g., Zerodha, ICICI Breeze).
+-   **API Rate Limiting (NFR13):** Implement usage tracking and rate limiting for external data providers.
 -   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
 -   **Administration Enhancements (FR2.3):** Add a log viewer for admins to review audit trails.
 -   **Corporate Actions & Income (FR4.5, FR4.6):** Add support for tracking dividends, stock splits, and bonus issues.
