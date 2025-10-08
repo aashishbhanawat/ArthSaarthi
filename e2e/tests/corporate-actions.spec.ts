@@ -113,8 +113,11 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         const detailModal = page.locator('.modal-content');
         await expect(detailModal.getByRole('heading', { name: stockName })).toBeVisible();
 
+        // Wait for the data to load inside the modal by waiting for the loading text to disappear.
+        await expect(detailModal.getByText('Loading transactions...')).not.toBeVisible({ timeout: 10000 });
+
         const transactionRow = detailModal.locator('.ag-row', { hasText: 'BUY' });
-        // The UI formats this without trailing decimals, so we assert against the formatted value.
+        await expect(transactionRow).toBeVisible();
         await expect(transactionRow.locator('[col-id="quantity"]')).toHaveText('20');
         await expect(transactionRow.locator('[col-id="price_per_unit"]')).toHaveText('₹50.00');
         await expect(transactionRow.locator('[col-id="total_value"]')).toHaveText('₹1,000.00');
@@ -154,7 +157,11 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         const detailModal = page.locator('.modal-content');
         await expect(detailModal.getByRole('heading', { name: stockName })).toBeVisible();
 
+        // Wait for the data to load inside the modal
+        await expect(detailModal.getByText('Loading transactions...')).not.toBeVisible({ timeout: 10000 });
+
         const bonusTransactionRow = detailModal.locator('.ag-row', { hasText: 'BUY' }).last();
+        await expect(bonusTransactionRow).toBeVisible();
         await expect(bonusTransactionRow.locator('[col-id="quantity"]')).toHaveText('10');
         await expect(bonusTransactionRow.locator('[col-id="price_per_unit"]')).toHaveText('₹0.00');
         await expect(bonusTransactionRow.locator('[col-id="total_value"]')).toHaveText('₹0.00');
@@ -188,7 +195,11 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         const detailModal = page.locator('.modal-content');
         await expect(detailModal.getByRole('heading', { name: stockName })).toBeVisible();
 
+        // Wait for the data to load inside the modal
+        await expect(detailModal.getByText('Loading transactions...')).not.toBeVisible({ timeout: 10000 });
+
         const reinvestmentRow = detailModal.locator('.ag-row', { hasText: 'BUY' }).last();
+        await expect(reinvestmentRow).toBeVisible();
         await expect(reinvestmentRow.locator('[col-id="quantity"]')).toHaveText('0.4');
         await expect(reinvestmentRow.locator('[col-id="price_per_unit"]')).toHaveText('₹125.00');
         await expect(reinvestmentRow.locator('[col-id="total_value"]')).toHaveText('₹50.00');
