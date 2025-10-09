@@ -23,7 +23,6 @@ class TransactionBase(BaseModel):
 # Properties to receive on transaction creation
 class TransactionCreate(TransactionBase):
     asset_id: uuid.UUID
-    is_reinvested: bool = False
 
 
 # Flexible input schema for the create_transaction endpoint
@@ -31,7 +30,6 @@ class TransactionCreateIn(TransactionBase):
     asset_id: Optional[uuid.UUID] = None
     ticker_symbol: Optional[str] = None
     asset_type: Optional[str] = None
-    is_reinvested: bool = False
 
     @model_validator(mode="after")
     def check_asset_provided(self) -> "TransactionCreateIn":

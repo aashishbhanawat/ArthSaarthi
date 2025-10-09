@@ -9,7 +9,6 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.core.config import settings
 from app.crud.crud_ppf import process_ppf_holding
 from app.schemas.enums import BondType
 from app.services.financial_data_service import financial_data_service
@@ -125,12 +124,7 @@ class CRUDHolding:
     def get_portfolio_holdings_and_summary(
         self, db: Session, *, portfolio_id: uuid.UUID
     ) -> Dict[str, Any]:
-        """
-        Calculates the consolidated holdings and a summary for a given portfolio.
-        """
-        if settings.DEBUG:
-            print(
-                f"\n--- DEBUG: Starting holdings calculation for portfolio {portfolio_id} ---")  # noqa: E501
+        """Calculates the consolidated holdings and a summary for a given portfolio."""
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
@@ -140,9 +134,6 @@ class CRUDHolding:
         all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
-        if settings.DEBUG:
-            print(
-                f"--- DEBUG: Found {len(transactions)} market transactions, {len(all_fixed_deposits)} FDs, {len(all_recurring_deposits)} RDs.")  # noqa: E501
 
         holdings_list: List[schemas.Holding] = []
         summary_total_value = Decimal("0.0")
@@ -343,9 +334,6 @@ class CRUDHolding:
         current_holdings_tickers = [
             ticker for ticker, data in holdings_state.items() if data["quantity"] > 0
         ]
-        if settings.DEBUG:
-            print(
-                f"--- DEBUG: Tickers with current market-traded holdings: {current_holdings_tickers}")  # noqa: E501
 
         assets_to_price = [
             {
@@ -374,8 +362,6 @@ class CRUDHolding:
 
 
         for ticker in current_holdings_tickers:
-            if settings.DEBUG:
-                print(f"--- DEBUG: Processing market-traded asset: {ticker}")
             asset = asset_map[ticker]
             data = holdings_state[ticker]
             price_info = price_details.get(
@@ -458,9 +444,6 @@ class CRUDHolding:
                 )
             )
 
-        if settings.DEBUG:
-            print(
-                f"--- DEBUG: After processing all assets, holdings_list has {len(holdings_list)} items.")  # noqa: E501
         # After all holdings are processed and validated by Pydantic models,
         # recalculate the summary based on the final, corrected holding values.
         for holding_item in holdings_list:
@@ -489,8 +472,6 @@ class CRUDHolding:
             total_unrealized_pnl=summary_total_unrealized_pnl,
             total_realized_pnl=total_realized_pnl,
         )
-        if settings.DEBUG:
-            print(f"--- DEBUG: Finished. Returning {len(holdings_list)} holdings. ---")
 
         return {"summary": summary, "holdings": holdings_list}
 

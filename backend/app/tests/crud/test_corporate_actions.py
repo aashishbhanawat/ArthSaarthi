@@ -114,7 +114,6 @@ def test_handle_cash_dividend(db: Session) -> None:
         quantity=Decimal("500.00"),  # Total dividend amount
         price_per_unit=Decimal("1.0"),
         transaction_date=datetime(2023, 7, 1),
-        is_reinvested=False,
     )
     crud.crud_corporate_action.handle_dividend(
         db,
@@ -129,57 +128,6 @@ def test_handle_cash_dividend(db: Session) -> None:
     assert len(all_txs) == 1
     assert all_txs[0].transaction_type == TransactionType.DIVIDEND
     assert all_txs[0].quantity == Decimal("500.00")
-
-
-@pytest.mark.usefixtures("pre_unlocked_key_manager")
-def test_handle_reinvested_dividend(db: Session) -> None:
-    """
-    Test case for handling a reinvested dividend.
-    - GIVEN an existing user, portfolio, and asset.
-    - WHEN a reinvested dividend is logged.
-    - THEN a DIVIDEND transaction should be saved for auditing.
-    - AND a new BUY transaction for the reinvested shares should be created.
-    """
-    # GIVEN
-    user, _ = create_random_user(db)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="Reinvest Portfolio")
-    asset = create_test_asset(db, ticker_symbol="REINVEST")
-
-    # WHEN
-    dividend_in = schemas.TransactionCreate(
-        asset_id=asset.id,
-        transaction_type=TransactionType.DIVIDEND,
-        quantity=Decimal("1000.00"),  # Total dividend amount
-        price_per_unit=Decimal("200.00"),  # Reinvestment price per share
-        transaction_date=datetime(2023, 8, 1),
-        is_reinvested=True,
-    )
-    crud.crud_corporate_action.handle_dividend(
-        db,
-        portfolio_id=portfolio.id,
-        asset_id=asset.id,
-        transaction_in=dividend_in,
-    )
-    db.commit()
-
-    # THEN
-    all_txs = crud.transaction.get_multi_by_asset(db, asset_id=asset.id)
-    assert len(all_txs) == 2
-
-    dividend_tx = next(
-        (tx for tx in all_txs if tx.transaction_type == TransactionType.DIVIDEND), None
-    )
-    buy_tx = next(
-        (tx for tx in all_txs if tx.transaction_type == TransactionType.BUY), None
-    )
-
-    assert dividend_tx is not None
-    assert dividend_tx.quantity == Decimal("1000.00")
-
-    assert buy_tx is not None
-    assert buy_tx.quantity == Decimal("5.0")  # 1000 / 200
-    assert buy_tx.price_per_unit == Decimal("200.00")
-    assert buy_tx.is_reinvested is True
 
 
 @pytest.mark.usefixtures("pre_unlocked_key_manager")

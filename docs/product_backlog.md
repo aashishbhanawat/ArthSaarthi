@@ -144,9 +144,7 @@ The goal of this release was to build a robust and user-friendly system for impo
     -   Refactor `FinancialDataService` to be pluggable and support multiple data providers (e.g., dedicated bond APIs).
 -   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
 -   **Administration Enhancements (FR2.3):** Add a log viewer for admins to review audit trails.
--   **Corporate Actions & Income (FR4.5, FR4.6):** Add support for tracking dividends, stock splits, and bonus issues.
     -   **FR4.5.1:** Add support for tracking Mutual Fund dividends/payouts. (📝 Planned)
-    -   **Status: 🚧 In Progress**
 -   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to support mutual fund transaction imports.
 -   **Advanced Analytics (FR6):** Implement remaining metrics like TWR, MWR, Beta, Alpha, and benchmarking.
 -   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.

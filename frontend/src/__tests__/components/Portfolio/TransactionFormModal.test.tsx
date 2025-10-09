@@ -342,12 +342,10 @@ describe('TransactionFormModal', () => {
         // Check for dividend-specific fields
         expect(screen.getByLabelText('Payment Date')).toBeInTheDocument();
         expect(screen.getByLabelText('Total Amount')).toBeInTheDocument();
-        expect(screen.getByLabelText('Reinvest this dividend?')).toBeInTheDocument();
 
         // Fill form
         fireEvent.change(screen.getByLabelText('Payment Date'), { target: { value: '2024-07-15' } });
         fireEvent.change(screen.getByLabelText('Total Amount'), { target: { value: '1500' } });
-        fireEvent.click(screen.getByLabelText('Reinvest this dividend?'));
 
         // Submit
         fireEvent.click(screen.getByRole('button', { name: /save/i }));
@@ -361,7 +359,6 @@ describe('TransactionFormModal', () => {
                         quantity: 1500, // Repurposed for cash amount
                         price_per_unit: 1,
                         transaction_date: new Date('2024-07-15T00:00:00.000Z').toISOString(),
-                        is_reinvested: true,
                     },
                 }),
                 expect.any(Object)

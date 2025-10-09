@@ -20,8 +20,7 @@ def handle_dividend(
 ) -> models.Transaction:
     """
     Handles a dividend corporate action.
-    1. Saves the DIVIDEND transaction for auditing and income tracking.
-    2. If the dividend is reinvested, creates a corresponding BUY transaction.
+    Saves the DIVIDEND transaction for auditing and income tracking.
     """
     logger.info(f"Handling dividend for asset {asset_id} in portfolio {portfolio_id}")
 
@@ -30,40 +29,6 @@ def handle_dividend(
         db=db, obj_in=transaction_in, portfolio_id=portfolio_id
     )
     logger.info(f"Saved DIVIDEND audit transaction {dividend_audit_transaction.id}")
-
-    if transaction_in.is_reinvested:
-        logger.info("Dividend is marked for reinvestment.")
-        # For reinvested dividends, the total dividend amount is in 'quantity'
-        # and the reinvestment price is in 'price_per_unit'.
-        # We need to calculate the number of shares purchased.
-        reinvestment_price = transaction_in.price_per_unit
-        total_dividend_amount = transaction_in.quantity
-
-        if reinvestment_price <= 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Reinvestment price must be greater than zero.",
-            )
-
-        quantity_reinvested = total_dividend_amount / reinvestment_price
-        logger.info(
-            f"Calculated reinvestment quantity: {quantity_reinvested} shares at "
-            f"price {reinvestment_price}"
-        )
-
-        reinvest_buy_in = schemas.TransactionCreate(
-            asset_id=asset_id,
-            transaction_type=TransactionType.BUY,
-            quantity=quantity_reinvested,
-            price_per_unit=reinvestment_price,
-            transaction_date=transaction_in.transaction_date,
-            fees=Decimal("0.0"),
-            is_reinvested=True,  # Mark this BUY as part of a reinvestment
-        )
-        crud.transaction.create_with_portfolio(
-            db=db, obj_in=reinvest_buy_in, portfolio_id=portfolio_id
-        )
-        logger.info("Created corresponding BUY transaction for reinvested dividend.")
 
     return dividend_audit_transaction
 
