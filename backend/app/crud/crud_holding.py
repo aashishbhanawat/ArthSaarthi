@@ -349,18 +349,6 @@ class CRUDHolding:
         else:
             price_details = {}
 
-        # Handle Mutual Funds separately using the AMFI service
-        mf_holdings_tickers = [
-            ticker for ticker in current_holdings_tickers if ticker in asset_map and
-            asset_map[ticker].asset_type == 'MUTUAL_FUND']
-        if mf_holdings_tickers:
-            from app.services.amfi_provider import amfi_provider
-            mf_navs = amfi_provider.get_latest_navs_for_schemes(mf_holdings_tickers)
-            for ticker, nav in mf_navs.items():
-                price_details[ticker] = {"current_price": nav, "previous_close": nav}
-
-
-
         for ticker in current_holdings_tickers:
             asset = asset_map[ticker]
             data = holdings_state[ticker]
@@ -415,13 +403,14 @@ class CRUDHolding:
             average_buy_price = (
                 total_invested / quantity if quantity > 0 else Decimal(0)
             )
-            current_value = quantity * current_price
             days_pnl = (current_price - previous_close) * quantity
             days_pnl_percentage = (
                 float((current_price - previous_close) / previous_close)
                 if previous_close > 0
                 else 0.0
             )
+
+            current_value = quantity * current_price
 
             holdings_list.append(
                 schemas.Holding(

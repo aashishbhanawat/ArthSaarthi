@@ -1920,6 +1920,69 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
 
 ---
 
+## 2025-10-07: Refactor FinancialDataService
+
+*   **Task Description:** Refactor the monolithic `FinancialDataService` into a pluggable, provider-based architecture using the Strategy Pattern. This improves maintainability and makes it easier to add new data sources in the future.
+
+*   **Key Prompts & Interactions:**
+    1.  **Planning:** The user initiated the refactoring task. The AI reviewed the feature plan (`NFR_pluggable_financial_data_service.md`) and refined it with a detailed, incremental implementation strategy and a plan for handling provider-specific methods like search.
+    2.  **Characterization Testing:** The AI was prompted to create a "characterization test" (`test_holding_characterization.py`). This test captured the exact output of the existing system with a fixed set of inputs, creating a "golden master" to validate the refactoring against.
+    3.  **Incremental Refactoring:** The AI was prompted to move the AMFI and yfinance logic out of the main service and into their own dedicated provider classes (`AmfiIndiaProvider`, `YFinanceProvider`).
+    4.  **Systematic Debugging:** The refactoring process introduced a series of `ModuleNotFoundError` and circular dependency `ImportError`s. The AI analyzed the `pytest` logs at each step and provided targeted fixes, which involved correcting import paths (absolute vs. relative) and breaking module-level dependencies to resolve the import cycles.
+
+*   **File Changes:**
+    *   `backend/app/services/providers/`: **New** directory created.
+    *   `backend/app/services/providers/base.py`: **New** file defining the `FinancialDataProvider` abstract base class.
+    *   `backend/app/services/providers/amfi_provider.py`: **New** file containing the refactored AMFI logic.
+    *   `backend/app/services/providers/yfinance_provider.py`: **New** file containing the refactored yfinance logic.
+    *   `backend/app/services/financial_data_service.py`: **Updated** to act as a facade, delegating calls to the appropriate provider.
+    *   `backend/app/tests/crud/test_holding_characterization.py`: **New** test file to lock in the system's behavior before refactoring.
+    *   `docs/features/NFR_pluggable_financial_data_service.md`: **Updated** with a detailed testing strategy and marked as "Done".
+
+*   **Verification:**
+    - The characterization test passed against the newly refactored code, confirming that no regressions were introduced.
+
+*   **Outcome:**
+    - The `FinancialDataService` has been successfully refactored into a more maintainable and extensible architecture.
+
+---
+
+## 2025-10-08: Finalize & Document Pluggable Financial Data Service (NFR12)
+
+*   **Task Description:** A full-stack implementation and refactoring of the `FinancialDataService` to use a pluggable, provider-based architecture (Strategy Pattern). This task also included the implementation of a new `NseBhavcopyProvider` to serve as the default source for Indian market data.
+
+*   **Key Prompts & Interactions:**
+    1.  **Characterization Testing:** The AI was prompted to create a "characterization test" (`test_holding_characterization.py`). This test captured the exact output of the existing system with a fixed set of inputs, creating a "golden master" to validate the refactoring against and prevent regressions.
+    2.  **Incremental Refactoring:** The AI was prompted to move the existing AMFI and yfinance logic out of the main service and into their own dedicated provider classes (`AmfiIndiaProvider`, `YFinanceProvider`).
+    3.  **Systematic Debugging:** The refactoring process introduced a series of `ModuleNotFoundError` and circular dependency `ImportError`s. The AI analyzed the `pytest` logs at each step and provided targeted fixes, which involved correcting import paths and breaking module-level dependencies to resolve the import cycles.
+    4.  **New Provider Implementation:** The AI was prompted to create the `NseBhavcopyProvider`, including logic to download, unzip, parse, and cache the daily Bhavcopy from the NSE website. This involved debugging the new CSV format and updating the test suite to match.
+    5.  **Service Integration:** The main `FinancialDataService` was updated to orchestrate the new providers, prioritizing `NseBhavcopyProvider` for Indian assets, `AmfiIndiaProvider` for mutual funds, and `YFinanceProvider` as a fallback.
+
+*   **File Changes:**
+    *   `backend/app/services/providers/`: **New** directory created.
+    *   `backend/app/services/providers/base.py`: **New** file defining the `FinancialDataProvider` abstract base class.
+    *   `backend/app/services/providers/amfi_provider.py`: **New** file containing the refactored AMFI logic.
+    *   `backend/app/services/providers/yfinance_provider.py`: **New** file containing the refactored yfinance logic.
+    *   `backend/app/services/providers/nse_bhavcopy_provider.py`: **New** file to fetch and parse NSE Bhavcopy data.
+    *   `backend/app/services/financial_data_service.py`: **Updated** to act as a facade, delegating calls to the appropriate provider.
+    *   `backend/app/tests/crud/test_holding_characterization.py`: **New** test file to lock in the system's behavior before refactoring.
+    *   `backend/app/tests/services/test_nse_bhavcopy_provider.py`: **New** test file for the Bhavcopy provider.
+    *   `docs/features/NFR_pluggable_financial_data_service.md`: **Updated** with a detailed testing strategy and marked as "Done".
+    *   `docs/product_backlog.md`: **Updated** to reflect the completion of NFR10 and the creation of a future task for Phase 3.
+    *   `docs/project_handoff_summary.md`: **Updated** to include the new architectural improvement.
+    *   `docs/requirements.md`: **Updated** to formally log NFR10 as "Done".
+
+*   **Verification:**
+    - The characterization test passed against the newly refactored code, confirming that no regressions were introduced.
+    - The full backend test suite was run and passed, confirming the stability of the new architecture.
+
+*   **Outcome:**
+    - The `FinancialDataService` has been successfully refactored into a more maintainable and extensible architecture.
+    - The application now has a robust, free, and authoritative source for daily Indian market data.
+    - All documentation has been updated to reflect the completion of this major non-functional requirement.
+
+---
+
 ## 2025-10-09: Finalize Corporate Actions, Revert Unstable Analytics, & Documentation Sweep
 
 *   **Task Description:** A final series of actions to close out the Corporate Actions feature. After manual E2E testing revealed significant and complex bugs in the financial metrics calculations (P&L, XIRR) related to dividend income, a strategic decision was made to revert these specific analytics changes to ensure application stability. The core feature of logging corporate actions remains stable. A full documentation sweep was then performed to reflect this final state.
@@ -1945,4 +2008,3 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
     - The application is in a known-good, stable state. The core corporate action logging feature is functional, but the complex analytics calculations have been deferred. All project documentation is now accurate and consistent, ready for the next development cycle.
 
 ---
-
