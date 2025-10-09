@@ -5,23 +5,15 @@ from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from .enums import TransactionType
+
 if TYPE_CHECKING:
     from .asset import Asset  # noqa: F401
-
-# from .asset import Asset  <- This direct import causes the circular dependency
-
-
-class TransactionType(str):
-    BUY = "BUY"
-    SELL = "SELL"
-    CONTRIBUTION = "CONTRIBUTION"
-    INTEREST_CREDIT = "INTEREST_CREDIT"
-    COUPON = "COUPON"
 
 
 # Shared properties
 class TransactionBase(BaseModel):
-    transaction_type: str
+    transaction_type: TransactionType
     quantity: Decimal
     price_per_unit: Decimal
     transaction_date: datetime = Field(
@@ -47,9 +39,10 @@ class TransactionCreateIn(TransactionBase):
             raise ValueError("Either asset_id or ticker_symbol must be provided")
         return self
 
+
 # Properties to receive on transaction update
 class TransactionUpdate(TransactionBase):
-    transaction_type: Optional[str] = None # type: ignore
+    transaction_type: Optional[TransactionType] = None  # type: ignore
     quantity: Optional[Decimal] = None
     price_per_unit: Optional[Decimal] = None
     transaction_date: Optional[datetime] = None
@@ -61,7 +54,7 @@ class TransactionUpdate(TransactionBase):
 class Transaction(TransactionBase):
     id: uuid.UUID
     portfolio_id: uuid.UUID
-    asset: "Asset"  # type: ignore
+    asset: "Asset"
     model_config = ConfigDict(from_attributes=True)
 
 

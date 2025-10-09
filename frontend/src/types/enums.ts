@@ -1,0 +1,10 @@
+export enum TransactionType {
+  BUY = 'BUY',
+  SELL = 'SELL',
+  DIVIDEND = 'DIVIDEND',
+  SPLIT = 'SPLIT',
+  BONUS = 'BONUS',
+  CONTRIBUTION = 'CONTRIBUTION',
+  INTEREST_CREDIT = 'INTEREST_CREDIT',
+  COUPON = 'COUPON',
+}

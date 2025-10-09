@@ -75,7 +75,21 @@ export const useCreateTransaction = () => {
         mutationFn: ({ portfolioId, data }: { portfolioId: string; data: TransactionCreate }) =>
             portfolioApi.createTransaction(portfolioId, data),
         onSuccess: (_, variables) => {
-            invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
+            const { portfolioId, data } = variables;
+            // The standard invalidation helper is great for most things.
+            invalidatePortfolioAndDashboardQueries(queryClient, portfolioId);
+
+            // However, corporate actions, especially splits, can have wide-ranging effects on historical
+            // data that might not be caught by the standard dashboard/portfolio-level invalidations.
+            // A stock split changes the quantity and cost basis of all previous transactions for an asset.
+            // To be absolutely certain the UI reflects these deep changes, we will also specifically
+            // invalidate the queries for the affected asset.
+            const corporateActionTypes = ['SPLIT', 'BONUS', 'DIVIDEND'];
+            if (data.asset_id && corporateActionTypes.includes(data.transaction_type)) {
+                queryClient.invalidateQueries({ queryKey: ['assetTransactions', portfolioId, data.asset_id] });
+                queryClient.invalidateQueries({ queryKey: ['assetAnalytics', portfolioId, data.asset_id] });
+            }
+
             showToast('Transaction added successfully', 'success');
         },
         onError: (error: ApiError) => {

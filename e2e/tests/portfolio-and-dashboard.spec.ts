@@ -80,7 +80,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 2. Add a BUY transaction for a NEW asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+    await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
     const listItem = page.locator(`li:has-text("${newAssetName}")`);
     await expect(listItem).toBeVisible();
@@ -102,7 +102,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 3. Add a SELL transaction for the same asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
-    await page.getByLabel('Type', { exact: true }).selectOption('SELL');
+    await page.getByLabel('Transaction Type').selectOption('SELL');
     // Use pressSequentially to simulate user typing and avoid race conditions with debounced search
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
 
@@ -144,7 +144,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 2. Add a BUY transaction for 10 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+    await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
     const listItem = page.locator(`li:has-text("${assetName}")`);
     await expect(listItem).toBeVisible();
@@ -163,7 +163,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 3. Attempt to SELL 20 shares (which is more than owned)
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
-    await page.getByLabel('Type', { exact: true }).selectOption('SELL');
+    await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
     const listItemSell = page.locator(`li:has-text("${assetName}")`);
@@ -199,7 +199,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // Asset 1: 10 GOOGL @ $150
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+    await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially('GOOGL'); // Asset already exists from a previous test
     const listItem = page.locator(`li:has-text("GOOGL")`);
     await expect(listItem).toBeVisible();
