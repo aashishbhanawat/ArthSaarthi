@@ -1,6 +1,6 @@
 # Feature Plan: Corporate Actions & Income Tracking
 
-**Status:  In Progress**
+**Status:  ✅ Done**
 **Feature ID:** FR4.5, FR4.6
 **Title:** Implement Tracking for Dividends, Stock Splits, and Bonus Issues
 **User Story:** As a long-term investor, I want to log all corporate actions and income events related to my holdings, so that my portfolio's quantity, cost basis, and total returns are always accurate.
@@ -28,13 +28,10 @@ A new "Corporate Action" transaction type will be added to the transaction form.
 *   **Functional Requirements:**
     *   Users must be able to manually add a "Dividend" corporate action for a specific stock.
     *   The dividend form must capture: asset ticker, total dividend amount, and payment date.
-    *   The system must provide an option to mark a dividend as "reinvested".
-    *   If a dividend is marked as "reinvested", the system should automatically create a corresponding "BUY" transaction for the asset.
     *   Logged dividends should be reflected in a new "Income" report or dashboard section.
 
 *   **Acceptance Criteria:**
     *   **Scenario 1 (Cash Dividend):** Given I have stock holdings, when I add a cash dividend transaction, then the total dividend amount should be reflected in my income report and should not affect my holdings quantity.
-    *   **Scenario 2 (Reinvested Dividend):** Given I add a "reinvested" dividend, when I view my transactions, then a new `BUY` transaction should be created for the corresponding asset, increasing my total holdings.
 
 ### 3.2. Stock Split Tracking (FR4.6)
 
@@ -74,16 +71,12 @@ A new "Corporate Action" transaction type will be added to the transaction form.
 *   **`TransactionType` Enum:** Add `DIVIDEND`, `SPLIT`, and `BONUS` to the `TransactionType` enum in `schemas/transaction.py`.
 *   **`Transaction` Model:** No schema changes are strictly necessary for the `transactions` table itself. The different actions will be handled by business logic based on the `transaction_type`. The `quantity` and `price_per_unit` fields will be repurposed to store the action's parameters.
     *   **For `DIVIDEND`:** `quantity` stores the total cash amount. `price_per_unit` is 1. A new `is_reinvested` boolean field will be added to the `TransactionCreate` schema.
-    *   **For `SPLIT`:** `quantity` stores the "new" part of the ratio (e.g., **2** for a 2-for-1 split). `price_per_unit` stores the "old" part (e.g., **1**).
-    *   **For `BONUS`:** `quantity` stores the number of new shares received. `price_per_unit` stores the number of old shares held for that ratio (e.g., for a 1:2 bonus, `quantity`=1, `price_per_unit`=2).
+    *   **For `SPLIT`:** `quantity` stores the "new" part of the ratio (e.g., **2** for a 2-for-1 split). `price_per_unit` stores the "old" part (e.g., **1**). 
+    *   **For `BONUS`:** `quantity` stores the number of new shares received. `price_per_unit` stores the number of old shares held for that ratio (e.g., for a 1:2 bonus, `quantity`=1, `price_per_unit`=2). 
 
 ### 4.2. Business Logic (CRUD Layer)
 
 The core of the backend work will be in a new `crud_corporate_action.py` module.
-
-*   **Dividend Logic:**
-    *   If the dividend is not reinvested, it is simply logged. The analytics engine will need to be updated to include this as a positive cash flow.
-    *   If it is reinvested, the logic will create a `DIVIDEND` transaction and then immediately create a corresponding `BUY` transaction.
 
 *   **Stock Split Logic:**
     *   This is the most complex part. When a `SPLIT` transaction is processed, the logic must:
@@ -168,8 +161,6 @@ The core of the user interaction will happen within the existing `TransactionFor
         │                                                          │
         │  Payment Date:     [ 2024-12-01   ]                       │
         │  Total Amount:     [ 1500.00      ]                       │
-        │  [x] Reinvest this dividend?                             │
-        │                                                          │
         │                                     [ Cancel ] [ Save ]  │
         ```
 
@@ -185,14 +176,13 @@ The core of the user interaction will happen within the existing `TransactionFor
 *   **Backend Unit Tests:**
     *   Write specific tests for the stock split logic, ensuring it correctly modifies historical transactions.
     *   Test the bonus issue logic, ensuring a zero-cost `BUY` transaction is created.
-    *   Test both cash and reinvested dividend logic.
 *   **Frontend Component Tests:**
     *   Write tests for `TransactionFormModal` to verify that the correct form fields are rendered for each corporate action type.
 *   **E2E Tests:**
     *   Create a new E2E test suite (`corporate-actions.spec.ts`).
     *   **Test Case 1 (Split):** Create a holding, log a 2-for-1 split, and verify that the consolidated holdings view and the transaction drill-down view both show the correct, updated quantity and price.
     *   **Test Case 2 (Bonus):** Create a holding, log a 1:1 bonus, and verify that a new zero-cost transaction appears and the average cost basis is correctly halved.
-    *   **Test Case 3 (Dividend):** Log a cash dividend and verify it appears correctly in the (future) income report. Log a reinvested dividend and verify a new `BUY` transaction is created.
+    *   **Test Case 3 (Dividend):** Log a cash dividend and verify it appears correctly in the (future) income report.
 
 ---
 
@@ -203,7 +193,6 @@ This plan breaks the feature into smaller, manageable, and testable phases.
 ### Phase 1: Backend Foundation
 1.  **Update Enums:** Add `DIVIDEND`, `SPLIT`, `BONUS` to the `TransactionType` enum in `backend/app/schemas/enums.py`.
 2.  **Update Schemas:** Add an optional `is_reinvested: bool = False` field to the `TransactionCreate` schema in `backend/app/schemas/transaction.py`.
-3.  **Create CRUD Module:** Create a new file `backend/app/crud/crud_corporate_action.py`.
 4.  **Update API Endpoint:** Modify the `create_transaction` endpoint in `backend/app/api/v1/endpoints/transactions.py`. Add a conditional check: if the `transaction_type` is one of the new corporate actions, call a placeholder function in the new CRUD module. Otherwise, use the existing logic. The `TransactionCreateIn` schema will also need to be updated to accept the new corporate action fields.
 
 ### Phase 2: Implement Bonus Issue Logic
@@ -217,12 +206,6 @@ This plan breaks the feature into smaller, manageable, and testable phases.
 3.  **Testing:** Create a new test file `backend/app/tests/crud/test_corporate_actions.py` and add a unit test specifically for the bonus issue logic.
 
 ### Phase 3: Implement Dividend Logic
-1.  **Implement `handle_dividend`:** In `crud_corporate_action.py`, create a function `handle_dividend(...)`.
-2.  **Logic:**
-    *   If `transaction_in.is_reinvested` is `False`, simply save the `DIVIDEND` transaction.
-    *   If `True`, save the `DIVIDEND` transaction, then create and save a corresponding `BUY` transaction.
-3.  **Testing:** Add unit tests for both cash and reinvested dividends to `test_corporate_actions.py`.
-
 ### Phase 4: Implement Stock Split Logic (Most Complex)
 1.  **Implement `handle_stock_split`:** In `crud_corporate_action.py`, create a function `handle_stock_split(...)`.
 2.  **Logic:**

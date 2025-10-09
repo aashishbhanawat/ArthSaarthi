@@ -14,3 +14,13 @@ class PaymentFrequency(str, Enum):
     QUARTERLY = "QUARTERLY"
     MONTHLY = "MONTHLY"
 
+
+class TransactionType(str, Enum):
+    BUY = "BUY"
+    SELL = "SELL"
+    DIVIDEND = "DIVIDEND"
+    SPLIT = "SPLIT"
+    BONUS = "BONUS"
+    CONTRIBUTION = "CONTRIBUTION"
+    INTEREST_CREDIT = "INTEREST_CREDIT"
+    COUPON = "COUPON"

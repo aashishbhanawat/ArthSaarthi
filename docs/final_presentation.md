@@ -73,7 +73,7 @@ graph TD
 
 *   **Admin User Management:** Full CRUD capabilities for managing application users.
 
-*   **Dynamic Dashboard:** Real-time summary of total value, realized/unrealized P/L, top daily movers, and interactive charts for portfolio history and asset allocation.
+*   **Dynamic Dashboard:** Real-time summary of total value, top daily movers, and interactive charts for portfolio history and asset allocation.
 
 *   **Full Portfolio & Transaction Management:** Create multiple portfolios, add transactions, and perform on-the-fly asset creation for unlisted tickers with backend validation.
 

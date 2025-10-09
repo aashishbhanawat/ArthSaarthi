@@ -8,9 +8,9 @@
 *   **Implemented Functionalities:**
     *   **Authentication:** Initial admin setup, secure user login/logout, and JWT-based session management.
     *   **User Management:** A dedicated, admin-only dashboard for performing Create, Read, Update, and Delete (CRUD) operations on all users.
-    *   **Portfolio & Transaction Management:** Full CRUD for portfolios and transactions, with robust validation (e.g., preventing sells before buys).
+    *   **Portfolio & Transaction Management:** Full CRUD for portfolios and transactions, including support for corporate actions (Splits, Bonuses, Dividends).
     *   **Asset Management:** On-the-fly asset creation and lookup.
-    *   **Dashboard & Analytics:** Endpoints for a full dashboard summary (total value, P/L, top movers), historical performance, asset allocation, XIRR, and Sharpe Ratio.
+    *   **Dashboard & Analytics:** Foundational endpoints for dashboard summary, historical performance, and asset allocation. (Note: Advanced calculations for P&L and XIRR including dividend income have been deferred to a future release to ensure stability).
     *   **Automated Data Import (Backend):** A full backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
 
 

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, Numeric, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -16,6 +16,7 @@ class Transaction(Base):
     price_per_unit = Column(Numeric(18, 8), nullable=False)
     fees = Column(Numeric(18, 8), nullable=False, default=0)
     transaction_date = Column(DateTime, nullable=False)
+    is_reinvested = Column(Boolean, default=False, nullable=False)
 
     portfolio_id = Column(GUID, ForeignKey("portfolios.id"), nullable=False)
     asset_id = Column(GUID, ForeignKey("assets.id"), nullable=False)

@@ -9,7 +9,7 @@ if [ ! -f "backend/.env.prod" ]; then
     exit 1
 fi
 
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 echo -e "\n\033[0;32mApplication started successfully!\033[0m"
 echo "You can access it at http://localhost (or your configured domain/IP)."

@@ -127,6 +127,30 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             .all()
         )
 
+    def get_multi_by_portfolio_and_asset_before_date(
+        self,
+        db: Session,
+        *,
+        portfolio_id: uuid.UUID,
+        asset_id: uuid.UUID,
+        date: datetime,
+    ) -> List[Transaction]:
+        """
+        Retrieves all BUY and SELL transactions for a specific asset in a portfolio
+        that occurred before a given date.
+        """
+        return (
+            db.query(self.model)
+            .filter(
+                Transaction.portfolio_id == portfolio_id,
+                Transaction.asset_id == asset_id,
+                Transaction.transaction_date < date,
+                Transaction.transaction_type.in_(["BUY", "SELL"]),
+            )
+            .order_by(Transaction.transaction_date)
+            .all()
+        )
+
     def get_by_details(
         self,
         db: Session,

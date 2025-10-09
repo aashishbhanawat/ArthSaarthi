@@ -325,6 +325,126 @@ describe('TransactionFormModal', () => {
     });
   });
 
+  describe('Corporate Actions', () => {
+    it('renders the Dividend form and submits correctly', async () => {
+        renderComponent();
+        // Select a stock asset first, as corporate actions are stock-only
+        const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
+        fireEvent.change(assetInput, { target: { value: 'Apple' } });
+        fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+        // Select 'Corporate Action' transaction type
+        const transactionTypeSelect = screen.getByLabelText('Transaction Type');
+        fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
+
+        // The action type should default to DIVIDEND
+        expect(screen.getByLabelText('Action Type')).toHaveValue('DIVIDEND');
+
+        // Check for dividend-specific fields
+        expect(screen.getByLabelText('Payment Date')).toBeInTheDocument();
+        expect(screen.getByLabelText('Total Amount')).toBeInTheDocument();
+
+        // Fill form
+        fireEvent.change(screen.getByLabelText('Payment Date'), { target: { value: '2024-07-15' } });
+        fireEvent.change(screen.getByLabelText('Total Amount'), { target: { value: '1500' } });
+
+        // Submit
+        fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+        await waitFor(() => {
+            expect(mockCreateTransaction).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: {
+                        asset_id: 'asset-1',
+                        transaction_type: 'DIVIDEND',
+                        quantity: 1500, // Repurposed for cash amount
+                        price_per_unit: 1,
+                        transaction_date: new Date('2024-07-15T00:00:00.000Z').toISOString(),
+                    },
+                }),
+                expect.any(Object)
+            );
+        });
+    });
+
+    it('renders the Stock Split form and submits correctly', async () => {
+        renderComponent();
+        // Select a stock asset first, as corporate actions are stock-only
+        const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
+        fireEvent.change(assetInput, { target: { value: 'Apple' } });
+        fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+        // Select 'Corporate Action' transaction type
+        const transactionTypeSelect = screen.getByLabelText('Transaction Type');
+        fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
+
+        const actionTypeSelect = screen.getByLabelText('Action Type');
+        fireEvent.change(actionTypeSelect, { target: { value: 'SPLIT' } });
+
+        expect(await screen.findByText('Split Ratio')).toBeInTheDocument();
+
+        // Fill form
+        fireEvent.change(screen.getByLabelText('Effective Date'), { target: { value: '2024-08-01' } });
+        fireEvent.change(screen.getByRole('spinbutton', { name: 'New shares' }), { target: { value: '3' } });
+        fireEvent.change(screen.getByRole('spinbutton', { name: 'Old shares' }), { target: { value: '1' } });
+
+        // Submit
+        fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+        await waitFor(() => {
+            expect(mockCreateTransaction).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: {
+                        asset_id: 'asset-1',
+                        transaction_type: 'SPLIT',
+                        quantity: 3, // Repurposed for new ratio
+                        price_per_unit: 1, // Repurposed for old ratio
+                        transaction_date: new Date('2024-08-01T00:00:00.000Z').toISOString(),
+                    },
+                }),
+                expect.any(Object)
+            );
+        });
+    });
+
+    it('renders the Bonus Issue form and submits correctly', async () => {
+        renderComponent();
+        // Select a stock asset first, as corporate actions are stock-only
+        const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
+        fireEvent.change(assetInput, { target: { value: 'Apple' } });
+        fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+        // Select 'Corporate Action' transaction type
+        const transactionTypeSelect = screen.getByLabelText('Transaction Type');
+        fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
+
+        const actionTypeSelect = screen.getByLabelText('Action Type');
+        fireEvent.change(actionTypeSelect, { target: { value: 'BONUS' } });
+
+        expect(await screen.findByText('Bonus Ratio')).toBeInTheDocument();
+
+        // Fill form
+        fireEvent.change(screen.getByLabelText('Effective Date'), { target: { value: '2024-09-10' } });
+        fireEvent.change(screen.getByRole('spinbutton', { name: 'New bonus shares' }), { target: { value: '1' } });
+        fireEvent.change(screen.getByRole('spinbutton', { name: 'Old held shares' }), { target: { value: '5' } });
+
+        // Submit
+        fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+        await waitFor(() => {
+            expect(mockCreateTransaction).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: {
+                        asset_id: 'asset-1',
+                        transaction_type: 'BONUS',
+                        quantity: 1, // Repurposed for new shares
+                        price_per_unit: 5, // Repurposed for old shares
+                        transaction_date: new Date('2024-09-10T00:00:00.000Z').toISOString(),
+                    },
+                }),
+                expect.any(Object)
+            );
+        });
+    });
+  });
+
   describe('Edit Mode', () => {
     it('renders the "Edit Transaction" title and pre-populates form', () => {
       renderComponent(mockTransaction);

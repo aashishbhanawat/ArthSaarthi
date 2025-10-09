@@ -1980,4 +1980,31 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
     - The `FinancialDataService` has been successfully refactored into a more maintainable and extensible architecture.
     - The application now has a robust, free, and authoritative source for daily Indian market data.
     - All documentation has been updated to reflect the completion of this major non-functional requirement.
+
+---
+
+## 2025-10-09: Finalize Corporate Actions, Revert Unstable Analytics, & Documentation Sweep
+
+*   **Task Description:** A final series of actions to close out the Corporate Actions feature. After manual E2E testing revealed significant and complex bugs in the financial metrics calculations (P&L, XIRR) related to dividend income, a strategic decision was made to revert these specific analytics changes to ensure application stability. The core feature of logging corporate actions remains stable. A full documentation sweep was then performed to reflect this final state.
+
+*   **Key Prompts & Interactions:**
+    1.  **Problem Identification:** The user correctly identified that while automated tests were passing, manual E2E testing showed that the financial metrics were incorrect and misleading.
+    2.  **Strategic Decision:** The user and AI collaboratively decided that the most professional engineering approach was to revert the unstable analytics changes and tackle them as a separate, dedicated task with a more robust testing strategy.
+    3.  **Code Reversion:** The AI reverted the recent changes in `crud_holding.py` and `crud_analytics.py` to their previous stable state.
+    4.  **Documentation Sweep:** The AI was prompted to perform a full documentation update to mark the core Corporate Actions feature as "Done" while ensuring all other documents (`README.md`, `product_backlog.md`, etc.) accurately reflect that the advanced analytics part has been deferred.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_holding.py`: **Reverted** to remove dividend-related P&L and total value calculations.
+    *   `backend/app/crud/crud_analytics.py`: **Reverted** to remove dividend-related XIRR calculation logic.
+    *   `docs/features/FR4.6_corporate_actions.md`: **Updated** status to "Done" and cleaned up obsolete requirements.
+    *   `docs/product_backlog.md`: **Updated** to move the core Corporate Actions feature to completed and ensure advanced analytics are in the backlog.
+    *   `README.md`: **Updated** the main feature list to accurately reflect the implemented features.
+    *   `docs/workflow_history.md`: **Updated** with this entry.
+
+*   **Verification:**
+    - Ran the full test suite using `docker-compose run --rm test` and other test commands to confirm the reverted state is stable and all tests pass.
+
+*   **Outcome:**
+    - The application is in a known-good, stable state. The core corporate action logging feature is functional, but the complex analytics calculations have been deferred. All project documentation is now accurate and consistent, ready for the next development cycle.
+
 ---
