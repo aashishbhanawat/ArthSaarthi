@@ -382,6 +382,9 @@ class CRUDAnalytics:
             elif tx.transaction_type == "CONTRIBUTION":  # For PPF
                 dates.append(tx.transaction_date.date())
                 values.append(-tx.quantity)
+            elif tx.transaction_type == "DIVIDEND":
+                dates.append(tx.transaction_date.date())
+                values.append(tx.quantity * tx.price_per_unit)
 
         # Cashflows from Fixed Deposits
         for fd in all_fixed_deposits:
@@ -398,9 +401,13 @@ class CRUDAnalytics:
                 values.append(-rd.monthly_installment)
 
         # Add current portfolio value as the final cashflow
-        if holdings_data["summary"].total_value > 0:
+        # Per FR6.2, the final value for XIRR must be the market value of assets,
+        # not the total_value which includes cash from income (which is already
+        # accounted for as a separate cash flow).
+        current_market_value = sum(h.current_value for h in holdings_data["holdings"])
+        if current_market_value > 0:
             dates.append(date.today())
-            values.append(holdings_data["summary"].total_value)
+            values.append(current_market_value)
 
         sharpe_ratio_value = self._calculate_sharpe_ratio(db, portfolio_id)
         xirr_value = _calculate_xirr(dates, values)
