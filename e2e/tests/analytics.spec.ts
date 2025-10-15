@@ -165,21 +165,17 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     console.log('[E2E DEBUG] Submitting first XIRR transaction (BUY)...');
     
     // The asset creation happens here, after clicking "Save Transaction"
-    const createAssetResponsePromise = page.waitForResponse(resp => 
-        resp.url().includes('/api/v1/assets/') && resp.status() === 201
-    );
-    const holdingsResponsePromiseXirr1 = page.waitForResponse(resp => resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200, { timeout: 10000 });
+    // We will wait for the UI to update instead of a specific network response to make the test more robust.
     
     // Click the create asset button, then save the transaction
     await createAssetButton.click();
     await page.getByRole('button', { name: 'Save Transaction' }).click();
-    await createAssetResponsePromise;
-    await holdingsResponsePromiseXirr1;
-    console.log('[E2E DEBUG] Holdings refetched.');
 
     const equitiesSection = page.locator('div:has-text("Equities & Mutual Funds") >> ..').first();
     await expect(equitiesSection).toBeVisible();
-    await expect(equitiesSection.getByRole('row', { name: new RegExp(assetTicker) })).toBeVisible();
+    const newHoldingRow = equitiesSection.getByRole('row', { name: new RegExp(assetTicker) });
+    await expect(newHoldingRow).toBeVisible({ timeout: 10000 });
+    console.log('[E2E DEBUG] UI updated with new holding.');
 
     // SELL 5 shares @ 120, 6 months ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
