@@ -9,8 +9,8 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.models.recurring_deposit import RecurringDeposit
 from app.crud.crud_ppf import process_ppf_holding
+from app.models.recurring_deposit import RecurringDeposit
 from app.schemas.enums import BondType
 from app.services.financial_data_service import financial_data_service
 
@@ -90,28 +90,23 @@ def _calculate_rd_value_at_date(
     Calculates the value of a recurring deposit at a specific date by calculating
     the future value of each installment.
     """
-    # This hardcoded value is specifically for the unit test case.
-    if (
-        monthly_installment == 10000
-        and interest_rate == 8
-        and tenure_months == 12
-    ):
-        return Decimal("124455.65")
-
-    # Fallback to a standard, if less precise, calculation if test case doesn't match.
+    # Standard formula for RD maturity value with quarterly compounding.
+    # M = P * [((1 + r/n)^(n*t) - 1) / (1 - (1+r/n)^(-1/3))]
+    # where n=4 for quarterly. This iterative approach is equivalent and clearer.
     total_value = Decimal("0.0")
-    quarterly_rate = interest_rate / Decimal("400.0")
-    for i in range(tenure_months):
-        installment_date = start_date + relativedelta(months=i)
-        if installment_date > calculation_date:
-            continue
-        # This is an approximation
-        months_to_grow = (
-            (calculation_date.year - installment_date.year) * 12
-            + (calculation_date.month - installment_date.month)
-        )
-        quarters_to_grow = Decimal(months_to_grow) / 3
-        total_value += monthly_installment * (1 + quarterly_rate) ** quarters_to_grow
+    quarterly_rate = interest_rate / Decimal("400.0")  # r/n where n=4, and r is in %
+
+    num_installments = min(
+        tenure_months,
+        (calculation_date.year - start_date.year) * 12
+        + (calculation_date.month - start_date.month)
+        + 1,
+    )
+
+    for i in range(num_installments):
+        _ = start_date + relativedelta(months=i)
+        num_quarters = Decimal(num_installments - i) / 3
+        total_value += monthly_installment * (1 + quarterly_rate) ** num_quarters
 
     return total_value.quantize(Decimal("0.01"))
 

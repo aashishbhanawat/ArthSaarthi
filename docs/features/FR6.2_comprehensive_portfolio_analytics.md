@@ -1,6 +1,6 @@
 # Feature Plan: Comprehensive Portfolio Analytics
 
-**Status: Planned**
+**Status: ✅ Done**
 **Feature ID:** FR6.2
 **Title:** Implement Comprehensive & Accurate Portfolio Analytics
 **User Story:** As an investor, I want all income events (dividends, coupons, interest) to be accurately reflected in my portfolio's key performance indicators (Realized P&L, Total Value, XIRR), so I can have a true and complete understanding of my investment performance.
