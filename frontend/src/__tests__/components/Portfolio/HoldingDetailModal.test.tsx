@@ -105,7 +105,7 @@ describe('HoldingDetailModal', () => {
 
   it('renders holding details and transaction list correctly', () => {
     jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
-        createUseQueryResultMock({ realized_xirr: 0.1234, unrealized_xirr: 0.2345, sharpe_ratio: 1.5 })
+        createUseQueryResultMock({ xirr_current: 0.1234, xirr_historical: 0.2345 })
     );
 
     renderComponent();
@@ -118,8 +118,8 @@ describe('HoldingDetailModal', () => {
     expect(within(screen.getByTestId('summary-unrealized-pnl')).getByText('₹1,000.00')).toBeInTheDocument();
 
     // Check for analytics data
-    expect(screen.getByText('12.34%')).toBeInTheDocument();
-    expect(screen.getByText('23.45%')).toBeInTheDocument();
+    expect(within(screen.getByTestId('summary-xirr-current')).getByText('12.34%')).toBeInTheDocument();
+    expect(within(screen.getByTestId('summary-xirr-historical')).getByText('23.45%')).toBeInTheDocument();
 
     // Check for transaction row
     const table = screen.getByRole('table');
@@ -133,8 +133,8 @@ describe('HoldingDetailModal', () => {
 
     renderComponent();
 
-    expect(screen.getByText('Realized XIRR')).toBeInTheDocument();
-    expect(screen.getByText('Unrealized XIRR')).toBeInTheDocument();
+    expect(screen.getByText('XIRR (Current)')).toBeInTheDocument();
+    expect(screen.getByText('XIRR (Historical)')).toBeInTheDocument();
     const loadingElements = screen.getAllByText('...');
     expect(loadingElements).toHaveLength(2);
   });
@@ -146,8 +146,8 @@ describe('HoldingDetailModal', () => {
 
     renderComponent();
 
-    expect(screen.getByText('Realized XIRR')).toBeInTheDocument();
-    expect(screen.getByText('Unrealized XIRR')).toBeInTheDocument();
+    expect(screen.getByText('XIRR (Current)')).toBeInTheDocument();
+    expect(screen.getByText('XIRR (Historical)')).toBeInTheDocument();
     const errorElements = screen.getAllByText('N/A');
     expect(errorElements).toHaveLength(2);
   });

@@ -75,7 +75,7 @@ const BondDetailModal: React.FC<BondDetailModalProps> = ({
                     <div>
                         <p className="text-sm text-gray-500">Annualized (XIRR)</p>
                         <p className="font-semibold">
-                            {isLoadingAnalytics ? '...' : `${((analytics?.unrealized_xirr ?? 0) * 100).toFixed(2)}%`}
+                            {isLoadingAnalytics ? '...' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
                         </p>
                     </div>
                 </div>

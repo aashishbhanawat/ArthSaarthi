@@ -70,8 +70,8 @@ This document outlines the functional and non-functional requirements for the Ar
 
 ### FR6: Performance & Risk Analytics
 -   **FR6.1: Performance Metrics.** The system must calculate and display key performance metrics: `⚠️ Partially Implemented`
-    -   Absolute Gain/Loss (Realized and Unrealized). `✅ Done`
-    -   Annualised Return (XIRR) for any asset, asset class, or portfolio. `✅ Done`
+    -   Absolute Gain/Loss (Realized and Unrealized), correctly including income from dividends and coupons. `✅ Done`
+    -   Annualised Return (XIRR) for any asset, asset class, or portfolio, correctly including income from dividends and coupons. `✅ Done`
     -   Sharpe Ratio for any portfolio. `✅ Done`
     -   Time-weighted Return (TWR) and Money-weighted Return (MWR). `📝 Planned`
 -   **FR6.2: Advanced Risk Analytics.** The system must calculate and display advanced risk metrics including:

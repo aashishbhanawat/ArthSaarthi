@@ -4,6 +4,6 @@ export interface PortfolioAnalytics {
 }
 
 export interface AssetAnalytics {
-  realized_xirr: number;
-  unrealized_xirr: number;
+  xirr_current: number;
+  xirr_historical: number;
 }

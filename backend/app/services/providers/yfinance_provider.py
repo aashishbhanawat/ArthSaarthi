@@ -1,4 +1,5 @@
 """Provider for fetching data from Yahoo Finance."""
+import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -14,6 +15,8 @@ from .base import FinancialDataProvider
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
 CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
 
+logger = logging.getLogger(__name__)
+
 
 class YFinanceProvider(FinancialDataProvider):
     def __init__(self, cache_client: Optional[CacheClient]):
@@ -23,7 +26,7 @@ class YFinanceProvider(FinancialDataProvider):
         self, ticker_symbol: str, exchange: Optional[str]
     ) -> str:
         """Constructs the correct ticker for yfinance."""
-        if exchange == "NSE":
+        if str(exchange).upper() in ("NSE", "NSI"):
             return f"{ticker_symbol}.NS"
         if exchange == "BSE":
             return f"{ticker_symbol}.BO"
@@ -32,31 +35,48 @@ class YFinanceProvider(FinancialDataProvider):
     def get_current_prices(
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
+        logger.debug(
+            "YFinanceProvider: get_current_prices called for assets: "
+            f"{[a.get('ticker_symbol') for a in assets]}"
+        )
         prices_data: Dict[str, Dict[str, Decimal]] = {}
         tickers_to_fetch: List[Dict[str, Any]] = []
 
         if self.cache_client:
             for asset in assets:
-                ticker = asset["ticker_symbol"]
-                cache_key = f"price_details:{ticker}"
+                original_ticker = asset["ticker_symbol"]
+                ticker = self._get_yfinance_ticker(
+                    original_ticker, asset.get("exchange")
+                )
+                cache_key = (
+                    f"price_details:{ticker}"
+                )  # Use the yfinance-specific ticker for cache key
                 not_found_cache_key = f"asset_details_not_found:{ticker.upper()}"
 
                 cached_data = self.cache_client.get_json(cache_key)
                 if cached_data:
-                    prices_data[ticker] = {
+                    logger.debug(f"Cache HIT for {ticker}. Data: {cached_data}")
+                    prices_data[original_ticker] = {
                         "current_price": Decimal(cached_data["current_price"]),
                         "previous_close": Decimal(cached_data["previous_close"]),
                     }
                     continue
 
                 if self.cache_client.get_json(not_found_cache_key):
-                    prices_data[ticker] = {
-                        "current_price": Decimal("0.0"),
-                        "previous_close": Decimal("0.0"),
-                    }
-                    continue
+                    # Re-implement negative caching, but only to prevent spamming the
+                    # API during a short user session. If an asset was not found, we
+                    # try again after 15 minutes, not block it for 24 hours.
+                    logger.debug(
+                        f"Negative cache HIT for {ticker}. Skipping network fetch for"
+                        " now."
+                    )
+                    # Do not add to tickers_to_fetch, but don't add to
+                    # prices_data yet either.
+                    pass
+                else:
+                    tickers_to_fetch.append(asset)
+                    logger.debug(f"Cache MISS for {ticker}. Will fetch from network.")
 
-                tickers_to_fetch.append(asset)
         else:
             tickers_to_fetch = assets
 
@@ -69,6 +89,9 @@ class YFinanceProvider(FinancialDataProvider):
                 for a in tickers_to_fetch
             ]
         )
+        logger.debug(
+            f"Fetching from yfinance API with tickers: '{yfinance_tickers_str}'"
+        )
 
         try:
             yf_data = yf.Tickers(yfinance_tickers_str)
@@ -79,6 +102,9 @@ class YFinanceProvider(FinancialDataProvider):
 
                 if not hist.empty and len(hist) >= 2:
                     current_price = Decimal(str(hist["Close"].iloc[-1]))
+                    logger.debug(
+                        f"yfinance API SUCCESS for {yf_symbol}. Price: {current_price}"
+                    )
                     previous_close = Decimal(str(hist["Close"].iloc[-2]))
                     prices_data[original_ticker] = {
                         "current_price": current_price,
@@ -86,24 +112,37 @@ class YFinanceProvider(FinancialDataProvider):
                     }
                 elif not hist.empty and len(hist) == 1:
                     current_price = Decimal(str(hist["Close"].iloc[-1]))
+                    logger.debug(
+                        f"yfinance API SUCCESS for {yf_symbol} (1 day data). Price: "
+                        f"{current_price}"
+                    )
                     prices_data[original_ticker] = {
                         "current_price": current_price,
                         "previous_close": current_price,
                     }
+                else:
+                    logger.warning(
+                        f"yfinance API returned empty history for {yf_symbol}"
+                    )
         except (Exception, ValidationError) as e:
-            print(f"WARNING: Error fetching batch data from yfinance: {e}")
+            logger.error(f"WARNING: Error fetching batch data from yfinance: {e}")
 
         if self.cache_client:
             fetched_tickers = set(prices_data.keys())
-            for asset in tickers_to_fetch:
-                if asset["ticker_symbol"] not in fetched_tickers:
-                    cache_key = (
-                        f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
+            for asset_to_check in tickers_to_fetch:
+                original_ticker = asset_to_check["ticker_symbol"]
+                if original_ticker not in fetched_tickers:
+                    yf_ticker_for_cache = self._get_yfinance_ticker(
+                        original_ticker, asset_to_check.get("exchange")
                     )
+                    not_found_cache_key = (
+                        f"asset_details_not_found:{yf_ticker_for_cache.upper()}"
+                    )
+                    logger.debug(f"Setting 'not_found' cache for {yf_ticker_for_cache}")
                     self.cache_client.set_json(
-                        cache_key,
+                        not_found_cache_key,
                         {"not_found": True},
-                        expire=CACHE_TTL_HISTORICAL_PRICE,
+                        expire=CACHE_TTL_CURRENT_PRICE,  # Use a short TTL (15 mins)
                     )
             for ticker, data in prices_data.items():
                 if any(t["ticker_symbol"] == ticker for t in tickers_to_fetch):
@@ -111,12 +150,18 @@ class YFinanceProvider(FinancialDataProvider):
                         "current_price": str(data["current_price"]),
                         "previous_close": str(data["previous_close"]),
                     }
+                    yf_ticker_for_cache = self._get_yfinance_ticker(ticker, any(
+                        t["exchange"]
+                        for t in tickers_to_fetch
+                        if t["ticker_symbol"] == ticker
+                    ))
                     self.cache_client.set_json(
-                        f"price_details:{ticker}",
+                        f"price_details:{yf_ticker_for_cache}",
                         serializable_data,
                         expire=CACHE_TTL_CURRENT_PRICE,
                     )
 
+        logger.debug(f"YFinanceProvider: returning prices for: {prices_data.keys()}")
         return prices_data
 
     def get_historical_prices(

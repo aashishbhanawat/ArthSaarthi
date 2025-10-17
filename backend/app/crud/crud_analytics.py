@@ -10,6 +10,7 @@ from pyxirr import xirr
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.core.financial_definitions import TRANSACTION_BEHAVIORS, CashFlowType
 from app.crud.crud_dashboard import _get_portfolio_history
 from app.crud.crud_holding import (
     _calculate_fd_current_value,
@@ -17,6 +18,7 @@ from app.crud.crud_holding import (
 )
 from app.models.fixed_deposit import FixedDeposit
 from app.models.recurring_deposit import RecurringDeposit
+from app.models.transaction import Transaction
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -61,11 +63,14 @@ def _get_realized_and_unrealized_cash_flows(
     # Create copies to avoid mutation and to track remaining quantities.
     buys = [t.model_copy(deep=True) for t in sorted_txs if t.transaction_type == "BUY"]
     sells = [t for t in sorted_txs if t.transaction_type == "SELL"]
-    other_cash_flows = [
+    # Separate income from contributions, as they are handled differently.
+    income_flows = [
         t
         for t in sorted_txs
-        if t.transaction_type
-        in ("COUPON", "INTEREST_CREDIT", "DIVIDEND", "CONTRIBUTION")
+        if t.transaction_type in ("COUPON", "INTEREST_CREDIT", "DIVIDEND")
+    ]
+    contribution_flows = [
+        t for t in sorted_txs if t.transaction_type == "CONTRIBUTION"
     ]
 
     realized_cash_flows = []
@@ -116,14 +121,48 @@ def _get_realized_and_unrealized_cash_flows(
                 (buy_tx.transaction_date.date(), float(-buy_tx.quantity * buy_price))
             )
 
-    # Add other positive cash flows (coupons, dividends, etc.) to unrealized flows
-    for cf_tx in other_cash_flows:
-        # Contributions are outflows, others are inflows
-        if cf_tx.transaction_type == "CONTRIBUTION":
-            amount = float(-cf_tx.quantity)
-        else:
-            amount = float(cf_tx.quantity * cf_tx.price_per_unit)
-        unrealized_cash_flows.append((cf_tx.transaction_date.date(), amount))
+    # Prorate each income event based on the holding status AT THAT TIME.
+    for income_tx in income_flows:
+        # Find total shares bought up to the date of this income event.
+        bought_at_income_date = sum(
+            t.quantity
+            for t in sorted_txs
+            if t.transaction_type == "BUY"
+            and t.transaction_date.date() <= income_tx.transaction_date.date()
+        )
+
+        # Find total shares sold out of that specific lot.
+        sold_from_that_lot = sum(
+            s.quantity
+            for s in sells
+            if s.transaction_date.date() > income_tx.transaction_date.date()
+        )
+
+        if bought_at_income_date <= 0:
+            continue
+
+        amount = float(income_tx.quantity * income_tx.price_per_unit)
+
+        # Correct proration: based on shares sold out of the total held at the time.
+        proportion_realized = float(sold_from_that_lot / bought_at_income_date)
+        proportion_unrealized = 1.0 - proportion_realized
+
+        realized_income = amount * proportion_realized
+        unrealized_income = amount * proportion_unrealized
+
+        realized_cash_flows.append((income_tx.transaction_date.date(), realized_income))
+        unrealized_cash_flows.append(
+            (income_tx.transaction_date.date(), unrealized_income)
+        )
+
+    # Contributions (like for PPF) are outflows and are always part of the
+    # "unrealized" stream as they can't be "sold".
+    for contrib_tx in contribution_flows:
+        amount = float(-contrib_tx.quantity)
+        # Add to unrealized flows for "Current XIRR"
+        unrealized_cash_flows.append((contrib_tx.transaction_date.date(), amount))
+        # Also add to realized flows to ensure "Historical XIRR" is correct
+        realized_cash_flows.append((contrib_tx.transaction_date.date(), amount))
 
     return realized_cash_flows, unrealized_cash_flows
 
@@ -138,6 +177,69 @@ def _calculate_xirr_from_cashflows_tuple(
     return _calculate_xirr(list(dates), [Decimal(str(v)) for v in values])
 
 
+def _get_portfolio_cash_flows(
+    transactions: List[Transaction],
+    all_fixed_deposits: List[FixedDeposit],
+    all_recurring_deposits: List[RecurringDeposit],
+) -> List[Tuple[date, Decimal]]:
+    """
+    Generates a unified list of cash flow tuples (date, amount) for an entire portfolio.
+    """
+    cash_flows = []
+
+    # 1. Cashflows from standard transactions (Stocks, MFs, PPF, etc.)
+    for tx in transactions:
+        behavior = TRANSACTION_BEHAVIORS.get(tx.transaction_type)
+        if not behavior or behavior["cash_flow"] == CashFlowType.NONE:
+            continue
+
+        amount = Decimal("0.0")
+        if tx.transaction_type == "CONTRIBUTION":
+            # For PPF contributions, the 'quantity' is the amount.
+            amount = tx.quantity
+        else:
+            amount = tx.quantity * tx.price_per_unit
+
+        cash_flow_direction = Decimal(behavior["cash_flow"].value)
+        cash_flows.append((tx.transaction_date.date(), amount * cash_flow_direction))
+
+    # 2. Cashflows from Fixed Deposits
+    for fd in all_fixed_deposits:
+        # Initial investment is an outflow
+        cash_flows.append((fd.start_date, -fd.principal_amount))
+
+        # For non-cumulative FDs, interest payments are inflows
+        if fd.interest_payout != "Cumulative":
+            payout_frequency_map = {
+                "MONTHLY": 1, "QUARTERLY": 3, "HALF_YEARLY": 6,
+                "SEMI-ANNUALLY": 6, "ANNUALLY": 12
+            }
+            months_interval = payout_frequency_map.get(
+                fd.compounding_frequency.upper())
+            if months_interval:
+                payouts_per_year = Decimal("12.0") / Decimal(str(months_interval))
+                payout_rate = fd.interest_rate / Decimal("100.0") / payouts_per_year
+                interest_per_payout = fd.principal_amount * payout_rate
+
+                payout_date = fd.start_date + relativedelta(months=months_interval)
+                while payout_date <= date.today() and payout_date <= fd.maturity_date:
+                    cash_flows.append((payout_date, interest_per_payout))
+                    payout_date += relativedelta(months=months_interval)
+
+    # 3. Cashflows from Recurring Deposits
+    for rd in all_recurring_deposits:
+        # Each installment is an outflow
+        for i in range(rd.tenure_months):
+            installment_date = rd.start_date + relativedelta(months=i)
+            if installment_date > date.today():
+                break
+            cash_flows.append((installment_date, -rd.monthly_installment))
+
+    # Sort by date to ensure correct XIRR calculation
+    cash_flows.sort(key=lambda x: x[0])
+    return cash_flows
+
+
 class CRUDAnalytics:
     def get_asset_analytics(
         self, db: Session, *, portfolio_id: uuid.UUID, asset_id: uuid.UUID
@@ -146,7 +248,7 @@ class CRUDAnalytics:
         asset = crud.asset.get(db, id=asset_id)
         if not asset:
             logger.warning(f"Asset with ID {asset_id} not found.")
-            return schemas.AssetAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
+            return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
         logger.debug(
             f"Calculating analytics for asset {asset_id} ({asset.ticker_symbol})"
         )
@@ -160,101 +262,77 @@ class CRUDAnalytics:
         )
         if not holding:
             logger.debug(f"No active holding found for asset {asset_id}.")
-            return schemas.AssetAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
+            return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
 
         transactions = crud.transaction.get_multi_by_portfolio_and_asset(
             db, portfolio_id=portfolio_id, asset_id=asset_id
         )
 
-        dates = []
-        values = []
-        realized_xirr = 0.0
-
         if asset.asset_type == "PPF":
             # For PPF, cash flows are contributions (outflows)
+            dates = []
+            values = []
             contributions = [
                 tx for tx in transactions if tx.transaction_type == "CONTRIBUTION"
             ]
             if not contributions:
-                return schemas.AssetAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
+                return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
 
             for tx in contributions:
                 dates.append(tx.transaction_date.date())
                 values.append(-tx.quantity)  # Outflow
+
+            if holding.current_value > 0:
+                dates.append(date.today())
+                values.append(holding.current_value)
+
+            xirr_current_value = _calculate_xirr(dates, values)
+            # For PPF, current and historical are the same as you can't sell lots.
+            return schemas.AssetAnalytics(
+                xirr_current=xirr_current_value,
+                xirr_historical=xirr_current_value,
+            )
         else:
             transactions_schemas = [
                 schemas.Transaction.model_validate(tx) for tx in transactions
             ]
-            (
-                realized_cash_flows,
-                unrealized_cash_flows,
-            ) = _get_realized_and_unrealized_cash_flows(transactions_schemas)
-
-            logger.debug(
-                f"Realized cash flows for asset {asset_id}: {realized_cash_flows}"
+            realized_cfs, unrealized_cfs = _get_realized_and_unrealized_cash_flows(
+                transactions_schemas
             )
-            realized_xirr = _calculate_xirr_from_cashflows_tuple(realized_cash_flows)
 
-            # For unrealized XIRR, use the unrealized cash flows
-            if unrealized_cash_flows:
-                dates_tuple, values_float = zip(*unrealized_cash_flows)
-                dates = list(dates_tuple)
-                values = [Decimal(str(v)) for v in values_float]
+            # --- Calculate Current XIRR (for open positions) ---
+            xirr_current_cfs = list(unrealized_cfs)
+            if holding.current_value > 0:
+                xirr_current_cfs.append((date.today(), float(holding.current_value)))
+            xirr_current_value = _calculate_xirr_from_cashflows_tuple(xirr_current_cfs)
 
-        # The current value of the holding is the final inflow for the calculation
-        if holding.current_value > 0:
-            dates.append(date.today())
-            values.append(holding.current_value)
+            # --- Calculate Historical XIRR (for all positions) ---
+            xirr_historical_cfs = list(realized_cfs) + list(unrealized_cfs)
+            if holding.current_value > 0:
+                xirr_historical_cfs.append((date.today(), float(holding.current_value)))
+            xirr_historical_value = _calculate_xirr_from_cashflows_tuple( # noqa: E501
+                xirr_historical_cfs,
+            )
 
-        logger.debug(f"Asset ID: {asset_id}")
-        logger.debug(f"Transaction Types: "
-                     f"{[tx.transaction_type for tx in transactions]}")
-        logger.debug(f"Cashflow Dates: {dates}")
-        logger.debug(f"Cashflow Values: {values}")
-
-        logger.debug(f"Unrealized cashflow dates: {dates}")
-        logger.debug(f"Unrealized cashflow values: {values}")
-        unrealized_xirr = _calculate_xirr(dates, values)
-
-        return schemas.AssetAnalytics(
-            realized_xirr=realized_xirr,
-            unrealized_xirr=unrealized_xirr,
-        )
+            return schemas.AssetAnalytics(
+                xirr_current=xirr_current_value,
+                xirr_historical=xirr_historical_value,
+            )
 
     def get_fixed_deposit_analytics(
         self, db: Session, *, fd: FixedDeposit
     ) -> schemas.FixedDepositAnalytics:
         """Calculates XIRR for a single Fixed Deposit."""
-        logger.debug(f"Calculating analytics for FD {fd.id}")
-        dates = []
-        values = []
-
-        # Initial investment is an outflow
-        dates.append(fd.start_date)
-        values.append(-fd.principal_amount)
+        # Use the centralized cash flow generator.
+        # We pass empty lists for other asset types.
+        cash_flows = _get_portfolio_cash_flows(
+            transactions=[], all_fixed_deposits=[fd], all_recurring_deposits=[]
+        )
+        dates, values = zip(*cash_flows) if cash_flows else ([], [])
 
         today = date.today()
-
-        # Handle periodic interest payouts for non-cumulative FDs
-        if fd.interest_payout != "Cumulative":
-            payout_frequency_map = {
-                "MONTHLY": 1,
-                "QUARTERLY": 3,
-                "HALF_YEARLY": 6,
-                "SEMI-ANNUALLY": 6,
-                "ANNUALLY": 12,
-            }
-            months_interval = payout_frequency_map.get(fd.compounding_frequency.upper())
-            if months_interval:
-                payouts_per_year = Decimal("12.0") / Decimal(str(months_interval))
-                payout_rate = fd.interest_rate / Decimal("100.0") / payouts_per_year
-                interest_per_payout = fd.principal_amount * payout_rate
-
-                payout_date = fd.start_date + relativedelta(months=months_interval)
-                while payout_date <= today and payout_date <= fd.maturity_date:
-                    dates.append(payout_date)
-                    values.append(interest_per_payout)
-                    payout_date += relativedelta(months=months_interval)
+        dates = list(dates)
+        values = list(values)
 
         # Final value is an inflow
         if today >= fd.maturity_date:
@@ -273,7 +351,6 @@ class CRUDAnalytics:
             realized_xirr = _calculate_xirr(dates, values)
         else:
             # If active, the inflow is the current value
-            # If active, the inflow is the current value
             current_value = _calculate_fd_current_value(
                 principal=fd.principal_amount,
                 interest_rate=fd.interest_rate,
@@ -287,9 +364,6 @@ class CRUDAnalytics:
             unrealized_xirr = _calculate_xirr(dates, values)
             realized_xirr = 0.0
 
-        logger.debug(f"FD cashflow dates: {dates}")
-        logger.debug(f"FD cashflow values: {values}")
-        logger.debug(f"FD unrealized/realized XIRR: {unrealized_xirr}/{realized_xirr}")
         return schemas.FixedDepositAnalytics(
             realized_xirr=realized_xirr,
             unrealized_xirr=unrealized_xirr,
@@ -299,24 +373,19 @@ class CRUDAnalytics:
         self, db: Session, *, rd: RecurringDeposit
     ) -> schemas.RecurringDepositAnalytics:
         """Calculates XIRR for a single Recurring Deposit."""
-        logger.debug(f"Calculating analytics for RD {rd.id}")
         if not rd:
             return schemas.RecurringDepositAnalytics(unrealized_xirr=0.0)
 
-        dates = []
-        values = []
+        cash_flows = _get_portfolio_cash_flows(
+            transactions=[], all_fixed_deposits=[], all_recurring_deposits=[rd]
+        )
+        dates, values = zip(*cash_flows) if cash_flows else ([], [])
+
         today = date.today()
         maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
+        dates = list(dates)
+        values = list(values)
 
-        # Installments are outflows
-        for i in range(rd.tenure_months):
-            installment_date = rd.start_date + relativedelta(months=i)
-            if installment_date > today:
-                break
-            dates.append(installment_date)
-            values.append(-rd.monthly_installment)
-
-        # Final value is an inflow
         if today >= maturity_date:
             # If matured, the inflow is the maturity value
             final_value = _calculate_rd_value_at_date(
@@ -340,10 +409,7 @@ class CRUDAnalytics:
             dates.append(today)
             values.append(final_value)
 
-        logger.debug(f"RD cashflow dates: {dates}")
-        logger.debug(f"RD cashflow values: {values}")
         xirr_value = _calculate_xirr(dates, values)
-        logger.debug(f"Calculated RD XIRR: {xirr_value}")
         return schemas.RecurringDepositAnalytics(unrealized_xirr=xirr_value)
 
     def get_portfolio_analytics(
@@ -368,39 +434,20 @@ class CRUDAnalytics:
             db, portfolio_id=portfolio_id
         )
 
-        dates = []
-        values = []
-
-        # Cashflows from Stocks, MFs, PPF
-        for tx in transactions:
-            if tx.transaction_type == "BUY":
-                dates.append(tx.transaction_date.date())
-                values.append(-(tx.quantity * tx.price_per_unit))
-            elif tx.transaction_type == "SELL":
-                dates.append(tx.transaction_date.date())
-                values.append(tx.quantity * tx.price_per_unit)
-            elif tx.transaction_type == "CONTRIBUTION":  # For PPF
-                dates.append(tx.transaction_date.date())
-                values.append(-tx.quantity)
-
-        # Cashflows from Fixed Deposits
-        for fd in all_fixed_deposits:
-            dates.append(fd.start_date)
-            values.append(-fd.principal_amount)
-
-        # Cashflows from Recurring Deposits
-        for rd in all_recurring_deposits:
-            for i in range(rd.tenure_months):
-                installment_date = rd.start_date + relativedelta(months=i)
-                if installment_date > date.today():
-                    break
-                dates.append(installment_date)
-                values.append(-rd.monthly_installment)
+        # Generate a unified list of all cash flows
+        cash_flows = _get_portfolio_cash_flows(
+            transactions, all_fixed_deposits, all_recurring_deposits
+        )
+        dates, values = zip(*cash_flows) if cash_flows else ([], [])
 
         # Add current portfolio value as the final cashflow
-        if holdings_data["summary"].total_value > 0:
-            dates.append(date.today())
-            values.append(holdings_data["summary"].total_value)
+        # Per FR6.2, the final value for XIRR must be the market value of assets,
+        # not the total_value which includes cash from income (which is already
+        # accounted for as a separate cash flow).
+        current_market_value = sum(h.current_value for h in holdings_data["holdings"])
+        if current_market_value > 0:
+            dates = list(dates) + [date.today()]
+            values = list(values) + [current_market_value]
 
         sharpe_ratio_value = self._calculate_sharpe_ratio(db, portfolio_id)
         xirr_value = _calculate_xirr(dates, values)

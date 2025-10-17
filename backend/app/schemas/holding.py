@@ -42,10 +42,14 @@ class Holding(BaseModel):
             if not self.isin:
                 self.isin = self.bond.isin
 
-        # For assets like bonds where a live price might not be available,
-        # fall back to using the average buy price to avoid showing a 100% loss.
-        if ((self.current_price is None or self.current_price == 0) and
-                self.average_buy_price > 0):
+        # For certain asset types where a live price might not be available (e.g.,
+        # unlisted bonds, RDs), fall back to using the average buy price to avoid
+        # showing a 100% loss. This should NOT apply to stocks.
+        if (
+            self.asset_type in ["BOND", "RECURRING_DEPOSIT"]
+            and (self.current_price is None or self.current_price == 0)
+            and self.average_buy_price > 0
+        ):
             self.current_price = self.average_buy_price
             self.current_value = self.quantity * self.average_buy_price
             self.unrealized_pnl = Decimal("0.0")

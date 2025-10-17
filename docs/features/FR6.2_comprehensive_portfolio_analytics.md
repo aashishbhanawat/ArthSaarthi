@@ -1,6 +1,6 @@
 # Feature Plan: Comprehensive Portfolio Analytics
 
-**Status: Planned**
+**Status: ✅ Done**
 **Feature ID:** FR6.2
 **Title:** Implement Comprehensive & Accurate Portfolio Analytics
 **User Story:** As an investor, I want all income events (dividends, coupons, interest) to be accurately reflected in my portfolio's key performance indicators (Realized P&L, Total Value, XIRR), so I can have a true and complete understanding of my investment performance.
@@ -18,9 +18,10 @@ The previous implementation attempt was reverted due to instability. This plan o
 ## 2. High-Level Requirements
 
 1.  **Realized P&L:** The portfolio's total realized P&L must include all cash income from dividends, bond coupons, and matured deposits.
-2.  **Total Portfolio Value:** The portfolio's total value must reflect the sum of the current market value of all held assets PLUS any cash income received (e.g., dividends).
-3.  **Asset-Level Unrealized XIRR:** The "Unrealized XIRR" for a single asset must be a "Total Return" calculation, including intermediate cash flows like dividends and coupons.
-4.  **Portfolio-Level XIRR:** The main portfolio XIRR must correctly account for all cash inflows (sales, dividends, coupons, interest) and outflows (buys, contributions) across all asset types.
+2.  **Total Portfolio Value:** The portfolio's total value must reflect the sum of the current market value of all held assets PLUS any cash income received.
+3.  **Asset-Level XIRR (Current Holding):** A metric to show the performance of the shares an investor *currently holds*, including prorated income.
+4.  **Asset-Level Historical XIRR:** A metric to show the total lifetime performance of an investment in a specific asset, including both open and closed positions.
+5.  **Portfolio-Level XIRR:** The main portfolio XIRR must correctly account for all cash inflows and outflows across all asset types.
 
 ---
 
@@ -90,7 +91,7 @@ This feature must be test-driven. We will add new, failing tests first, then imp
         1.  Creates a holding with a `BUY` transaction.
         2.  Adds a `DIVIDEND` transaction.
         3.  Calls the `/assets/{id}/analytics` endpoint.
-        4.  Asserts that the `unrealized_xirr` is a specific, pre-calculated correct value that accounts for the dividend.
+        4.  Asserts that the `xirr` and `historical_xirr` are specific, pre-calculated correct values that account for the dividend and proration logic.
 
 *   **`test_bond_crud.py`:**
     *   The existing `test_bond_xirr_with_coupon_payment` already covers the asset-level XIRR for bonds. We will ensure it is passing after the refactor.
@@ -106,17 +107,37 @@ This feature must be test-driven. We will add new, failing tests first, then imp
 *   After all automated tests are passing, a full manual E2E test will be performed, specifically focusing on:
     1.  Adding a dividend to a stock and verifying the main dashboard summary updates correctly.
     2.  Verifying the "Realized P&L" and "Total Value" on the portfolio detail page are correct.
-    3.  Verifying the "Unrealized XIRR" in the holding drill-down modal is correct.
-    4.  Verifying the main portfolio "XIRR" in the portfolio detail page's analytics card is correct.
+    3.  Verifying the "XIRR (Current)" and "Historical XIRR" in the holding drill-down modal are correct.
+    4.  Verifying the main portfolio "XIRR" on the portfolio detail page's analytics card is correct.
 
 ---
 
-## 5. Implementation Plan
+## 5. Implementation Plan (Revised for Incremental Development)
 
-1.  **Write Tests First:** Implement all the new failing tests described in the Testing Plan.
-2.  **Refactor `crud_holding.py`:** Before implementing new logic, refactor the `get_portfolio_holdings_and_summary` function into smaller, modular helper functions for each asset class (Stocks, FDs, RDs, etc.) to improve maintainability and testability.
-3.  **Fix `crud_holding.py`:** Implement the logic changes for `total_realized_pnl` and `total_value`. Run the tests for `test_holdings.py` until they pass.
-4.  **Fix `crud_analytics.py` (Asset-Level):** Implement the logic changes for the asset-level `unrealized_xirr`. Run the tests for `test_analytics.py` and `test_bond_crud.py` until they pass.
-5.  **Fix `crud_analytics.py` (Portfolio-Level):** Implement the logic changes for the main portfolio XIRR. Run the final tests until the entire suite passes.
-6.  **Manual Verification:** Perform the full manual E2E test.
-7.  **Documentation:** Update all relevant documentation (`handoff_document.md`, `final_presentation.md`, etc.) to reflect the completion of this feature.
+To avoid the instability of the previous attempt, we will follow a strict, incremental, test-driven approach. We will tackle one piece of the calculation at a time, ensuring the entire test suite passes after every single change.
+
+1.  **Establish Baseline:** Run the full existing test suite (`backend`, `frontend`, `e2e`) to confirm a 100% "green" state before making any changes.
+
+2.  **Stage 1: `total_realized_pnl` Correction.**
+    *   **Task:** Add a single failing test (`test_summary_with_dividend`) that only checks if `total_realized_pnl` correctly includes dividend income.
+    *   **Implement:** Make the minimal change in `crud_holding.py` to make this test pass.
+    *   **Verify:** Run the full test suite to ensure no regressions.
+
+3.  **Stage 2: `total_value` Correction.**
+    *   **Task:** Update the same test (`test_summary_with_dividend`) to also assert the correct `total_value` (current market value + cash from dividends). This test will now fail again.
+    *   **Implement:** Make the minimal change in `crud_holding.py` to correct the `total_value` calculation.
+    *   **Verify:** Run the full test suite.
+
+4.  **Stage 3: Portfolio-level XIRR Correction.**
+    *   **Task:** Add a new failing test (`test_portfolio_xirr_with_dividend`) to `test_dashboard.py` that verifies the main portfolio XIRR calculation includes dividend cash flows.
+    *   **Implement:** Fix the cash flow aggregation logic in `crud_analytics.py`.
+    *   **Verify:** Run the full test suite.
+
+5.  **Stage 4: Asset-level XIRR Correction.**
+    *   **Task:** Add the final failing test (`test_asset_xirr_with_dividend`) to `test_analytics.py`.
+    *   **Implement:** Fix the asset-level XIRR logic in `crud_analytics.py`.
+    *   **Verify:** Run the full test suite.
+
+6.  **Stage 5: Cleanup & Finalization.**
+    *   **Task:** Remove any temporary debug logs and update all project documentation.
+    *   **Verify:** Final manual E2E test.

@@ -2008,3 +2008,28 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
     - The application is in a known-good, stable state. The core corporate action logging feature is functional, but the complex analytics calculations have been deferred. All project documentation is now accurate and consistent, ready for the next development cycle.
 
 ---
+
+## 2025-10-17: Finalize Comprehensive Portfolio Analytics (FR6.2)
+
+*   **Task Description:** A final, intensive effort to correctly implement the business logic for comprehensive portfolio analytics. This involved refactoring the XIRR and P&L calculations to accurately account for income events like dividends and coupons, and then stabilizing the test suite.
+
+*   **Key Prompts & Interactions:**
+    1.  **Refactoring & Test-Driven Development:** The process was driven by a test-first approach. New, failing tests were added to `test_dashboard.py` and `test_analytics.py` to assert the correct P&L and XIRR values when dividends are present.
+    2.  **Systematic Debugging via Log Analysis:** The initial refactoring of `crud_holding.py` and `crud_analytics.py` introduced several bugs. A highly iterative "Analyze -> Report -> Fix" workflow was used to resolve them. This included:
+        *   Fixing a `NameError` in the analytics module due to an incorrect enum reference.
+        *   Fixing a critical bug in the XIRR income proration logic where the dividend was being incorrectly allocated, leading to a wrong "Current XIRR". This was diagnosed with the help of detailed debug logs.
+        *   Fixing a final set of linting errors to ensure code quality.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_analytics.py`: **Updated** to correctly prorate dividend income for realized vs. unrealized cash flows.
+    *   `backend/app/crud/crud_holding.py`: **Updated** to correctly include dividend income in `total_realized_pnl` and `total_value`.
+    *   `backend/app/tests/api/v1/test_dashboard.py`: **Updated** with a new test for portfolio-level XIRR with dividends.
+    *   `backend/app/tests/api/v1/test_analytics.py`: **Updated** with a new test for asset-level XIRR with dividends.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (158), frontend tests (162), and E2E tests (24) passed.
+
+*   **Outcome:**
+    - The "Comprehensive Portfolio Analytics" feature is now fully implemented, tested, and stable. The application provides accurate, income-inclusive performance metrics.
+
+---

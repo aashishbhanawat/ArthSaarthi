@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 
 import pytest
@@ -168,3 +169,64 @@ def test_get_portfolio_holdings_wrong_owner(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/holdings", headers=headers2
     )
     assert response.status_code == 403
+
+
+def test_summary_with_dividend(
+    client: TestClient, db: Session, get_auth_headers, mocker
+) -> None:
+    """
+    Test portfolio summary calculation with a dividend transaction.
+    This test is expected to fail until FR6.2 is implemented.
+    """
+    # 1. Setup
+    user, password = create_random_user(db)
+    auth_headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Summary Test Portfolio"
+    )
+
+    # 2. Transactions
+    # Buy 10 shares at 100
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="RELIANCE",
+        transaction_type="BUY",
+        quantity=10,
+        price_per_unit=100,
+        transaction_date=date(2023, 1, 1),
+    )
+    # Receive a dividend of 100
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="RELIANCE",
+        transaction_type="DIVIDEND",
+        quantity=100,
+        price_per_unit=1,
+        transaction_date=date(2023, 7, 1),
+    )
+
+    # 3. Mock current price
+    # Current price is 110 per share. Current value of holding is 1100.
+    mock_prices = {
+        "RELIANCE": {"current_price": Decimal("110"), "previous_close": Decimal("108")}
+    }
+    mocker.patch.object(
+        financial_data_service, "get_current_prices", return_value=mock_prices
+    )
+
+    # 4. API Call
+    response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/summary",
+        headers=auth_headers,
+    )
+    data = response.json()
+
+    # 5. Assertions
+    assert response.status_code == 200
+    # Expected: Realized PNL should be the dividend amount (100).
+    assert Decimal(data["total_realized_pnl"]) == pytest.approx(Decimal("100.0"))
+    # Expected: Total value should be current holding value (1100) + cash from
+    # dividend (100) = 1200.
+    assert Decimal(data["total_value"]) == pytest.approx(Decimal("1200.0"))

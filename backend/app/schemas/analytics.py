@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PortfolioAnalytics(BaseModel):
@@ -15,9 +15,13 @@ class AssetAnalytics(BaseModel):
     Response model for single asset analytics.
     """
 
-    # xirr: float
-    realized_xirr: float
-    unrealized_xirr: float
+    xirr_current: float = Field(
+        ..., description="XIRR for the currently held lots of the asset."
+    )
+    xirr_historical: float = Field(
+        ...,
+        description="XIRR for the entire history of the asset, including sold lots.",
+    )
 
 
 class FixedDepositAnalytics(BaseModel):

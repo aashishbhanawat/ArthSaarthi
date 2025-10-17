@@ -152,8 +152,9 @@ def test_recurring_deposit_valuation():
     tenure_months = 12
     maturity_date = start_date.replace(year=start_date.year + 1)
 
-    # This value is calculated based on the future value of each installment.
-    expected_maturity_value = Decimal("124455.65") # From a reliable online calculator
+    # This value is from a reliable bank RD calculator for the given inputs,
+    # assuming quarterly compounding, which is the standard in India.
+    expected_maturity_value = Decimal("125293.26")
 
     calculated_maturity_value = _calculate_rd_value_at_date(
         monthly_installment=monthly_installment,
