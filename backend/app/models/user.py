@@ -6,6 +6,10 @@ from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 from app.db.custom_types import GUID, EncryptedString
 
+# The following imports are needed for SQLAlchemy to correctly resolve relationships
+# from string-based definitions, preventing circular import errors at runtime.
+from . import fixed_deposit, recurring_deposit  # noqa: F401
+
 
 class User(Base):
     __tablename__ = "users"

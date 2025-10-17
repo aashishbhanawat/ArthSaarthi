@@ -320,7 +320,9 @@ class CRUDHolding:
                 logger.debug(f"Processing DIVIDEND transaction for {ticker}")
                 # Dividends are pure realized profit
                 dividend_amount = tx.quantity * tx.price_per_unit
-                logger.debug(f"Dividend amount: {dividend_amount}, adding to total_realized_pnl")
+                logger.debug(
+                    f"Dividend amount: {dividend_amount}, adding to total_realized_pnl"
+                )
                 total_realized_pnl += dividend_amount
             elif tx.transaction_type == "SELL":
                 if holdings_state[ticker]["quantity"] > 0:
@@ -399,7 +401,9 @@ class CRUDHolding:
                     current_price = total_invested / \
                         quantity if quantity > 0 else Decimal(0)
                     # If we fall back to book value, assume no change for Day's P&L
-                    price_info["previous_close"] = current_price
+                    price_info["previous_close"] = current_price.quantize(
+                        Decimal("0.01")
+                    )
 
             else: # For non-bond assets
                 current_price = Decimal(str(price_info["current_price"]))
@@ -455,20 +459,34 @@ class CRUDHolding:
                 str(holding_item.asset_type).upper(), "MISCELLANEOUS")
 
             # Add to summary totals
-            logger.debug(f"Adding to summary: {holding_item.asset_name} | Current Value: {holding_item.current_value}")
+            logger.debug(
+                f"Adding to summary: {holding_item.asset_name} | "
+                f"Current Value: {holding_item.current_value}"
+            )
             summary_total_value += holding_item.current_value
             summary_total_invested += holding_item.total_invested_amount
             summary_total_unrealized_pnl += holding_item.unrealized_pnl
             summary_days_pnl += holding_item.days_pnl
 
         # Per FR6.2, total value must include cash from income events.
-        # Realized PNL from sales is already reflected (asset is gone), so we only add income.
+        # Realized PNL from sales is already reflected (asset is gone), so we only add
+        # income.
         # For now, this is just dividends. We will add coupons later.
-        income_cash = sum(tx.quantity * tx.price_per_unit for tx in transactions if tx.transaction_type in ["DIVIDEND", "COUPON"])
-        logger.debug(f"Initial summary_total_value from holdings: {summary_total_value}")
-        logger.debug(f"Total cash from income events (dividends/coupons): {income_cash}")
+        income_cash = sum(
+            tx.quantity * tx.price_per_unit
+            for tx in transactions
+            if tx.transaction_type in ["DIVIDEND", "COUPON"]
+        )
+        logger.debug(
+            f"Initial summary_total_value from holdings: {summary_total_value}"
+        )
+        logger.debug(
+            f"Total cash from income events (dividends/coupons): {income_cash}"
+        )
         summary_total_value += income_cash
-        logger.debug(f"Final summary_total_value (holdings + income cash): {summary_total_value}")
+        logger.debug(
+            f"Final summary_total_value (holdings + income cash): {summary_total_value}"
+        )
 
         summary = schemas.PortfolioSummary(
             total_value=summary_total_value,

@@ -1,5 +1,5 @@
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -181,17 +181,37 @@ def test_summary_with_dividend(
     # 1. Setup
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="Summary Test Portfolio")
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Summary Test Portfolio"
+    )
 
     # 2. Transactions
-    # Buy 10 shares @ 100
-    create_test_transaction(db, portfolio_id=portfolio.id, ticker="RELIANCE", transaction_type="BUY", quantity=10, price_per_unit=100, transaction_date=date(2023, 1, 1))
-    # Receive dividend of 100
-    create_test_transaction(db, portfolio_id=portfolio.id, ticker="RELIANCE", transaction_type="DIVIDEND", quantity=100, price_per_unit=1, transaction_date=date(2023, 7, 1))
+    # Buy 10 shares at 100
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="RELIANCE",
+        transaction_type="BUY",
+        quantity=10,
+        price_per_unit=100,
+        transaction_date=date(2023, 1, 1),
+    )
+    # Receive a dividend of 100
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="RELIANCE",
+        transaction_type="DIVIDEND",
+        quantity=100,
+        price_per_unit=1,
+        transaction_date=date(2023, 7, 1),
+    )
 
     # 3. Mock current price
     # Current price is 110 per share. Current value of holding is 1100.
-    mock_prices = {"RELIANCE": {"current_price": Decimal("110"), "previous_close": Decimal("108")}}
+    mock_prices = {
+        "RELIANCE": {"current_price": Decimal("110"), "previous_close": Decimal("108")}
+    }
     mocker.patch.object(
         financial_data_service, "get_current_prices", return_value=mock_prices
     )
@@ -207,5 +227,6 @@ def test_summary_with_dividend(
     assert response.status_code == 200
     # Expected: Realized PNL should be the dividend amount (100).
     assert Decimal(data["total_realized_pnl"]) == pytest.approx(Decimal("100.0"))
-    # Expected: Total value should be current holding value (1100) + cash from dividend (100) = 1200.
+    # Expected: Total value should be current holding value (1100) + cash from
+    # dividend (100) = 1200.
     assert Decimal(data["total_value"]) == pytest.approx(Decimal("1200.0"))

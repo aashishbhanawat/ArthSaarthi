@@ -30,3 +30,8 @@ class DiskCacheClient(CacheClient):
         except KeyError:
             # Key was not in the cache, which is fine for a delete operation
             pass
+
+    def clear(self) -> None:
+        """Clears the entire disk cache."""
+        self._cache.clear()
+        print("Disk cache cleared.")

@@ -156,19 +156,16 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
     await expect(createAssetButton).toBeVisible();
 
-    // Now fill the rest of the form
+    // Click the create asset button *before* filling the rest of the form.
+    // This ensures the asset is selected and the UI is stable.
+    await createAssetButton.click();
+
     await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('100');
     await page.getByLabel('Date').fill(getPastDateISO(365));
 
     console.log('[E2E DEBUG] Submitting first XIRR transaction (BUY)...');
-    
-    // The asset creation happens here, after clicking "Save Transaction"
-    // We will wait for the UI to update instead of a specific network response to make the test more robust.
-    
-    // Click the create asset button, then save the transaction
-    await createAssetButton.click();
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     const equitiesSection = page.locator('div:has-text("Equities & Mutual Funds") >> ..').first();
@@ -209,7 +206,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // Verify the Unrealized XIRR calculation.
     // The open lot is 5 shares bought at 100, 365 days ago. Current value is 5 * 130 = 650.
     // This is a 30% return over 1 year, so XIRR should be ~30.00%.
-    const unrealizedXirrContainer = modal.getByTestId('summary-unrealized-xirr');
+    const unrealizedXirrContainer = modal.getByTestId('summary-xirr-current');
     const xirrText = await unrealizedXirrContainer.locator('p').last().textContent();
     expect(xirrText).not.toBeNull();
     const xirrValue = parseFloat(xirrText!.replace('%', ''));

@@ -450,7 +450,6 @@ def clear_assets_command(
     from app.models.recurring_deposit import RecurringDeposit
     from app.models.watchlist import Watchlist, WatchlistItem
 
-
     """Deletes all portfolio data (transactions, portfolios, assets)."""
     if not force:
         typer.echo(
@@ -603,6 +602,28 @@ def dump_table_command(
 
     except Exception as e:
         typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
+
+
+@app.command("clear-cache")
+def clear_cache_command():
+    """Clears the application cache (Redis or DiskCache)."""
+    from app.cache.factory import get_cache_client
+
+    typer.echo("Clearing application cache...")
+    try:
+        cache_client = get_cache_client()
+        if hasattr(cache_client, "clear"):
+            cache_client.clear()
+            typer.secho("Cache cleared successfully.", fg=typer.colors.GREEN)
+        else:
+            typer.secho(
+                "The configured cache client does not support clearing.",
+                fg=typer.colors.RED, err=True
+            )
+    except Exception as e:
+        typer.secho(f"An error occurred while clearing cache: {e}",
+                    fg=typer.colors.RED,
+                    err=True)
 
 
 if __name__ == "__main__":

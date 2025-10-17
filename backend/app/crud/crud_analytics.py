@@ -146,7 +146,7 @@ class CRUDAnalytics:
         asset = crud.asset.get(db, id=asset_id)
         if not asset:
             logger.warning(f"Asset with ID {asset_id} not found.")
-            return schemas.AssetAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
+            return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
         logger.debug(
             f"Calculating analytics for asset {asset_id} ({asset.ticker_symbol})"
         )
@@ -160,66 +160,62 @@ class CRUDAnalytics:
         )
         if not holding:
             logger.debug(f"No active holding found for asset {asset_id}.")
-            return schemas.AssetAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
+            return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
 
         transactions = crud.transaction.get_multi_by_portfolio_and_asset(
             db, portfolio_id=portfolio_id, asset_id=asset_id
         )
 
-        dates = []
-        values = []
-        realized_xirr = 0.0
-
         if asset.asset_type == "PPF":
             # For PPF, cash flows are contributions (outflows)
+            dates = []
+            values = []
             contributions = [
                 tx for tx in transactions if tx.transaction_type == "CONTRIBUTION"
             ]
             if not contributions:
-                return schemas.AssetAnalytics(realized_xirr=0.0, unrealized_xirr=0.0)
+                return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
 
             for tx in contributions:
                 dates.append(tx.transaction_date.date())
                 values.append(-tx.quantity)  # Outflow
+
+            if holding.current_value > 0:
+                dates.append(date.today())
+                values.append(holding.current_value)
+
+            xirr_current_value = _calculate_xirr(dates, values)
+            # For PPF, current and historical are the same as you can't sell lots.
+            return schemas.AssetAnalytics(
+                xirr_current=xirr_current_value,
+                xirr_historical=xirr_current_value,
+            )
         else:
             transactions_schemas = [
                 schemas.Transaction.model_validate(tx) for tx in transactions
             ]
-            (
-                realized_cash_flows,
-                unrealized_cash_flows,
-            ) = _get_realized_and_unrealized_cash_flows(transactions_schemas)
-
-            logger.debug(
-                f"Realized cash flows for asset {asset_id}: {realized_cash_flows}"
+            realized_cfs, unrealized_cfs = _get_realized_and_unrealized_cash_flows(
+                transactions_schemas
             )
-            realized_xirr = _calculate_xirr_from_cashflows_tuple(realized_cash_flows)
 
-            # For unrealized XIRR, use the unrealized cash flows
-            if unrealized_cash_flows:
-                dates_tuple, values_float = zip(*unrealized_cash_flows)
-                dates = list(dates_tuple)
-                values = [Decimal(str(v)) for v in values_float]
+            # --- Calculate Current XIRR (for open positions) ---
+            xirr_current_cfs = list(unrealized_cfs)
+            if holding.current_value > 0:
+                xirr_current_cfs.append((date.today(), float(holding.current_value)))
+            xirr_current_value = _calculate_xirr_from_cashflows_tuple(xirr_current_cfs)
 
-        # The current value of the holding is the final inflow for the calculation
-        if holding.current_value > 0:
-            dates.append(date.today())
-            values.append(holding.current_value)
+            # --- Calculate Historical XIRR (for all positions) ---
+            xirr_historical_cfs = list(realized_cfs) + list(unrealized_cfs)
+            if holding.current_value > 0:
+                xirr_historical_cfs.append((date.today(), float(holding.current_value)))
+            xirr_historical_value = _calculate_xirr_from_cashflows_tuple(
+                xirr_historical_cfs
+            )
 
-        logger.debug(f"Asset ID: {asset_id}")
-        logger.debug(f"Transaction Types: "
-                     f"{[tx.transaction_type for tx in transactions]}")
-        logger.debug(f"Cashflow Dates: {dates}")
-        logger.debug(f"Cashflow Values: {values}")
-
-        logger.debug(f"Unrealized cashflow dates: {dates}")
-        logger.debug(f"Unrealized cashflow values: {values}")
-        unrealized_xirr = _calculate_xirr(dates, values)
-
-        return schemas.AssetAnalytics(
-            realized_xirr=realized_xirr,
-            unrealized_xirr=unrealized_xirr,
-        )
+            return schemas.AssetAnalytics(
+                xirr_current=xirr_current_value,
+                xirr_historical=xirr_historical_value,
+            )
 
     def get_fixed_deposit_analytics(
         self, db: Session, *, fd: FixedDeposit

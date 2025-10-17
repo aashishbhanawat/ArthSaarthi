@@ -154,11 +154,13 @@ def test_get_dashboard_summary_with_failing_price_lookup(
     assert response.status_code == 200
     data = response.json()
 
-    # With the fallback logic, the asset's value should be its invested amount
-    # (10 units * 100 default price = 1000)
-    assert Decimal(data["total_value"]) == Decimal("1000.00")
-    # And the unrealized P&L should be 0
-    assert Decimal(data["total_unrealized_pnl"]) == Decimal("0.00")
+    # For stocks, if price lookup fails, the value is 0. The fallback to book
+    # value only applies to non-market-traded assets like bonds.
+    assert Decimal(data["total_value"]).quantize(Decimal("0.01")) == Decimal("0.00")
+    # Unrealized P&L = current_value (0) - total_invested (1000) = -1000
+    assert Decimal(data["total_unrealized_pnl"]).quantize(Decimal("0.01")) == Decimal(
+        "-1000.00"
+    )
 
 
 # --- Tests for /allocation endpoint ---
@@ -273,7 +275,8 @@ def test_portfolio_xirr_with_dividend(
     client: TestClient, db: Session, get_auth_headers, mocker
 ) -> None:
     """
-    Test that the portfolio-level XIRR calculation correctly includes dividends as a positive cash flow.
+    Test that the portfolio-level XIRR calculation correctly includes dividends as a
+    positive cash flow.
     This test is expected to fail until FR6.2 is implemented.
 
     Cash Flow Calculation:
@@ -281,7 +284,8 @@ def test_portfolio_xirr_with_dividend(
     - 2023-07-01: +100  (Inflow from DIVIDEND)
     - 2024-01-01: +1100 (Terminal value of holding: 10 shares * 110 current price)
 
-    Using an online XIRR calculator with these values gives an expected result of ~21.7%.
+    Using an online XIRR calculator with these values gives an expected result of
+    ~21.7%.
     """
     # 1. Mock date.today() for a predictable calculation window
     fixed_today = date(2024, 1, 1)
@@ -293,21 +297,47 @@ def test_portfolio_xirr_with_dividend(
     portfolio = create_test_portfolio(db, user_id=user.id, name="XIRR Dividend Test")
 
     # 3. Transactions
-    create_test_transaction(db, portfolio_id=portfolio.id, ticker="RELIANCE", transaction_type="BUY", quantity=10, price_per_unit=100, transaction_date=date(2023, 1, 1))
-    create_test_transaction(db, portfolio_id=portfolio.id, ticker="RELIANCE", transaction_type="DIVIDEND", quantity=100, price_per_unit=1, transaction_date=date(2023, 7, 1))
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="RELIANCE",
+        transaction_type="BUY",
+        quantity=10,
+        price_per_unit=100,
+        transaction_date=date(2023, 1, 1),
+    )
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="RELIANCE",
+        transaction_type="DIVIDEND",
+        quantity=100,
+        price_per_unit=1,
+        transaction_date=date(2023, 7, 1),
+    )
 
     # 4. Mock financial data
-    mock_prices = {"RELIANCE": {"current_price": Decimal("110"), "previous_close": Decimal("108")}}
-    mocker.patch.object(financial_data_service, "get_current_prices", return_value=mock_prices)
-    mocker.patch.object(financial_data_service, "get_historical_prices", return_value={})
+    mock_prices = {
+        "RELIANCE": {"current_price": Decimal("110"), "previous_close": Decimal("108")}
+    }
+    mocker.patch.object(
+        financial_data_service, "get_current_prices", return_value=mock_prices
+    )
+    mocker.patch.object(
+        financial_data_service, "get_historical_prices", return_value={}
+    )
 
     # 5. API Call
-    response = client.get(f"{settings.API_V1_STR}/portfolios/{portfolio.id}/analytics", headers=auth_headers)
+    response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/analytics",
+        headers=auth_headers,
+    )
     data = response.json()
 
     # 6. Assertion
     assert response.status_code == 200
-    # The current logic ignores the dividend, calculating XIRR for a simple 10% gain over 1 year, which is 0.10.
+    # The current logic ignores the dividend, calculating XIRR for a simple 10% gain
+    # over 1 year, which is 0.10.
     # The correct XIRR, including the dividend, should be ~21.7%.
     # After implementation, the correct XIRR for this cash flow is ~21.0%.
     assert data["xirr"] == pytest.approx(0.210, abs=0.001)

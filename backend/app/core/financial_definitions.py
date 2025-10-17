@@ -1,13 +1,10 @@
-from datetime import date
-from decimal import Decimal
+import logging
+from enum import Enum
 from typing import Any, Dict
 
-from dateutil.relativedelta import relativedelta
 from app.schemas.enums import TransactionType
 
-import logging
 logger = logging.getLogger(__name__)
-from enum import Enum
 
 
 class CashFlowType(Enum):
@@ -66,6 +63,14 @@ TRANSACTION_BEHAVIORS: Dict[TransactionType, Dict[str, Any]] = {
         "quantity_impact": QuantityImpact.NONE,
     },
     # --- Non-Cash-Flow Events ---
-    TransactionType.SPLIT: {"cash_flow": CashFlowType.NONE, "pnl_impact": PnlImpactType.NONE, "quantity_impact": QuantityImpact.NONE},
-    TransactionType.BONUS: {"cash_flow": CashFlowType.NONE, "pnl_impact": PnlImpactType.NONE, "quantity_impact": QuantityImpact.ADD},
+    TransactionType.SPLIT: {
+        "cash_flow": CashFlowType.NONE,
+        "pnl_impact": PnlImpactType.NONE,
+        "quantity_impact": QuantityImpact.NONE,
+    },
+    TransactionType.BONUS: {
+        "cash_flow": CashFlowType.NONE,
+        "pnl_impact": PnlImpactType.NONE,
+        "quantity_impact": QuantityImpact.ADD,
+    },
 }
