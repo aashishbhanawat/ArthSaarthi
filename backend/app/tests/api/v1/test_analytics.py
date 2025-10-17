@@ -172,8 +172,8 @@ def test_get_asset_analytics_success(
     )
     assert response.status_code == 200
     content = response.json()
-    assert "realized_xirr" in content
-    assert "unrealized_xirr" in content
+    assert "xirr_current" in content
+    assert "xirr_historical" in content
 
 
 def test_get_asset_analytics_no_transactions(
@@ -195,8 +195,8 @@ def test_get_asset_analytics_no_transactions(
     )
     assert response.status_code == 200
     content = response.json()
-    assert content["realized_xirr"] == 0.0
-    assert content["unrealized_xirr"] == 0.0
+    assert content["xirr_current"] == 0.0
+    assert content["xirr_historical"] == 0.0
 
 
 def test_get_asset_analytics_forbidden(
@@ -275,10 +275,15 @@ def test_get_asset_analytics_calculation_realized_and_unrealized(
 
     assert response.status_code == 200
     data = response.json()
-    # The correct annualized return for a 20% gain over 183 days is ~0.4386
-    assert data["realized_xirr"] == pytest.approx(0.4386, abs=0.001)
-    # The correct annualized return for the remaining holding is ~30%
-    assert data["unrealized_xirr"] == pytest.approx(0.30, abs=0.01)
+    # XIRR (Current): Remaining 5 shares bought at 100, now worth 130 after 1 year.
+    # Cashflow: [-500, +650]. Expected return ~30%.
+    assert data["xirr_current"] == pytest.approx(0.30, abs=0.01)
+
+    # XIRR (Historical): Combines the sold lot and the current lot.
+    # Cashflow: [-1000 (initial buy), +600 (partial sell), +650 (final value)].
+    # The correct XIRR for this cash flow is ~34.6%. The previous expected
+    # value of 36.5% was incorrect.
+    assert data["xirr_historical"] == pytest.approx(0.346, abs=0.001)
 
 
 def test_get_ppf_asset_analytics(
@@ -337,6 +342,77 @@ def test_get_ppf_asset_analytics(
     # - 2025-01-01: +114,803.11 (Calculated current value)
     # The XIRR for this cashflow over 2 years is ~7.14%
     expected_xirr = 0.0714
-    assert "unrealized_xirr" in analytics_data
-    assert analytics_data["unrealized_xirr"] == pytest.approx(expected_xirr, abs=0.001)
-    assert analytics_data["realized_xirr"] == 0.0
+    assert analytics_data["xirr_current"] == pytest.approx(expected_xirr, abs=0.001)
+    assert analytics_data["xirr_historical"] == pytest.approx(expected_xirr, abs=0.001)
+
+
+def test_asset_xirr_with_dividend(
+    client: TestClient, db: Session, get_auth_headers, mocker
+) -> None:
+    """
+    Test that the asset-level XIRR calculation correctly includes dividends as a
+    positive cash flow.
+    This test is expected to fail until FR6.2 is implemented.
+
+    Cash Flow Calculation for Unrealized XIRR:
+    - 2023-01-01: -1000 (Outflow for BUY 10 shares @ 100)
+    - 2023-07-01: +100  (Inflow from DIVIDEND)
+    - 2024-01-01: +1100 (Terminal value of holding: 10 shares * 110 current price)
+
+    Using an online XIRR calculator with these values gives an expected result of
+    ~21.0%.
+    """
+    # 1. Mock date.today() for a predictable calculation window
+    fixed_today = date(2024, 1, 1)
+    mocker.patch("app.crud.crud_analytics.date").today.return_value = fixed_today
+
+    # 2. Setup
+    user, password = create_random_user(db)
+    auth_headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Asset XIRR Dividend Test"
+    )
+
+    # 3. Transactions
+    buy_tx = create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="RELIANCE",
+        transaction_type="BUY",
+        quantity=10,
+        price_per_unit=100,
+        transaction_date=date(2023, 1, 1),
+    )
+    asset_id = buy_tx.asset_id
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="RELIANCE",
+        transaction_type="DIVIDEND",
+        quantity=100,
+        price_per_unit=1,
+        transaction_date=date(2023, 7, 1),
+    )
+
+    # 4. Mock financial data
+    mock_prices = {
+        "RELIANCE": {"current_price": Decimal("110"), "previous_close": Decimal("108")}
+    }
+    mocker.patch.object(
+        financial_data_service, "get_current_prices", return_value=mock_prices
+    )
+
+    # 5. API Call
+    response = client.get(
+        (
+            f"{settings.API_V1_STR}/portfolios/{portfolio.id}/assets/{asset_id}/analytics"
+        ),
+        headers=auth_headers,
+    )
+    data = response.json()
+
+    # 6. Assertion
+    assert response.status_code == 200
+    # For this asset, current and historical are the same as no shares were sold.
+    assert data["xirr_current"] == pytest.approx(0.210, abs=0.001)
+    assert data["xirr_historical"] == pytest.approx(0.210, abs=0.001)

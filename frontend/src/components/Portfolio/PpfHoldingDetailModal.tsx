@@ -85,7 +85,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
           <div data-testid="summary-annualized-return">
             <p className="text-sm text-gray-500">Annualized Return</p>
             <p className="font-semibold">
-              {isLoadingAnalytics ? '...' : `${((analytics?.unrealized_xirr ?? 0) * 100).toFixed(2)}%`}
+              {isLoadingAnalytics ? '...' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
             </p>
           </div>
           <div data-testid="summary-current-rate">

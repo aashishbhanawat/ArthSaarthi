@@ -35,3 +35,10 @@ class RedisCacheClient(CacheClient):
         if not self._client:
             return
         self._client.delete(key)
+
+    def clear(self) -> None:
+        """Clears the entire cache (flushes the current Redis DB)."""
+        if not self._client:
+            return
+        self._client.flushdb()
+        print("Redis cache cleared.")

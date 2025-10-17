@@ -452,4 +452,4 @@ def test_bond_xirr_with_coupon_payment(
         print(f"Analytics being tested{analytics}")
         assert analytics is not None
         # XIRR for [-10000, 400, 10500] over 1 year is ~9.18%
-        assert analytics.unrealized_xirr == pytest.approx(0.0918, abs=1e-4)
+        assert analytics.xirr_current == pytest.approx(0.0918, abs=1e-4)
