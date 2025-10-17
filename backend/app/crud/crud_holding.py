@@ -9,6 +9,7 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.models.recurring_deposit import RecurringDeposit
 from app.crud.crud_ppf import process_ppf_holding
 from app.schemas.enums import BondType
 from app.services.financial_data_service import financial_data_service
@@ -115,6 +116,337 @@ def _calculate_rd_value_at_date(
     return total_value.quantize(Decimal("0.01"))
 
 
+def _process_fixed_deposits(
+    all_fixed_deposits: List[models.FixedDeposit],
+) -> tuple[list[schemas.Holding], Decimal]:
+    """Processes all fixed deposits, separating active and matured ones."""
+    holdings_list = []
+    total_realized_pnl = Decimal("0.0")
+    today = date.today()
+
+    active_fds = [fd for fd in all_fixed_deposits if fd.maturity_date >= today]
+    matured_fds = [fd for fd in all_fixed_deposits if fd.maturity_date < today]
+
+    for fd in matured_fds:
+        if fd.interest_payout != "Cumulative":
+            total_realized_pnl += _calculate_total_interest_paid(fd, fd.maturity_date)
+        else:
+            maturity_value = _calculate_fd_current_value(
+                fd.principal_amount,
+                fd.interest_rate,
+                fd.start_date,
+                fd.maturity_date,
+                fd.compounding_frequency,
+                fd.interest_payout,
+            )
+            total_realized_pnl += maturity_value - fd.principal_amount
+
+    for fd in active_fds:
+        interest_paid_to_date = _calculate_total_interest_paid(fd, today)
+        if interest_paid_to_date > 0:
+            total_realized_pnl += interest_paid_to_date
+
+        current_value = _calculate_fd_current_value(
+            fd.principal_amount,
+            fd.interest_rate,
+            fd.start_date,
+            today,
+            fd.compounding_frequency,
+            fd.interest_payout,
+        )
+        unrealized_pnl = current_value - fd.principal_amount
+        unrealized_pnl_percentage = (
+            float(unrealized_pnl / fd.principal_amount)
+            if fd.principal_amount > 0
+            else 0.0
+        )
+        holdings_list.append(
+            schemas.Holding(
+                asset_id=fd.id,
+                ticker_symbol=fd.account_number,
+                asset_name=fd.name,
+                asset_type="FIXED_DEPOSIT",
+                group="DEPOSITS",
+                quantity=Decimal(1),
+                average_buy_price=fd.principal_amount,
+                total_invested_amount=fd.principal_amount,
+                current_price=current_value,
+                current_value=current_value,
+                days_pnl=Decimal(0),
+                days_pnl_percentage=0.0,
+                unrealized_pnl=unrealized_pnl,
+                unrealized_pnl_percentage=unrealized_pnl_percentage,
+                realized_pnl=interest_paid_to_date,
+                interest_rate=fd.interest_rate,
+                maturity_date=fd.maturity_date,
+                account_number=fd.account_number,
+            )
+        )
+    return holdings_list, total_realized_pnl
+
+
+def _process_recurring_deposits(
+    all_recurring_deposits: List[RecurringDeposit],
+) -> tuple[list[schemas.Holding], Decimal]:
+    """Processes all recurring deposits, separating active and matured ones."""
+    holdings_list = []
+    total_realized_pnl = Decimal("0.0")
+    today = date.today()
+
+    active_rds = [
+        rd
+        for rd in all_recurring_deposits
+        if (rd.start_date + relativedelta(months=rd.tenure_months)) >= today
+    ]
+    matured_rds = [
+        rd
+        for rd in all_recurring_deposits
+        if (rd.start_date + relativedelta(months=rd.tenure_months)) < today
+    ]
+
+    for rd in matured_rds:
+        maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
+        maturity_value = _calculate_rd_value_at_date(
+            rd.monthly_installment,
+            rd.interest_rate,
+            rd.start_date,
+            rd.tenure_months,
+            maturity_date,
+        )
+        total_invested = rd.monthly_installment * rd.tenure_months
+        total_realized_pnl += maturity_value - total_invested
+
+    for rd in active_rds:
+        current_value = _calculate_rd_value_at_date(
+            rd.monthly_installment,
+            rd.interest_rate,
+            rd.start_date,
+            rd.tenure_months,
+            today,
+        )
+
+        installments_paid = 0
+        temp_date = rd.start_date
+        while temp_date <= today and installments_paid < rd.tenure_months:
+            installments_paid += 1
+            temp_date += relativedelta(months=1)
+
+        total_invested = rd.monthly_installment * installments_paid
+        if total_invested <= 0:
+            continue
+
+        unrealized_pnl = current_value - total_invested
+        unrealized_pnl_percentage = (
+            float(unrealized_pnl / total_invested) if total_invested > 0 else 0.0
+        )
+
+        holdings_list.append(
+            schemas.Holding(
+                asset_id=rd.id,
+                asset_name=rd.name,
+                asset_type="RECURRING_DEPOSIT",
+                group="DEPOSITS",
+                quantity=Decimal(1),
+                average_buy_price=total_invested,
+                total_invested_amount=total_invested,
+                current_price=current_value,
+                current_value=current_value,
+                unrealized_pnl=unrealized_pnl,
+                unrealized_pnl_percentage=unrealized_pnl_percentage,
+                interest_rate=rd.interest_rate,
+                maturity_date=rd.start_date + relativedelta(months=rd.tenure_months),
+                ticker_symbol=rd.account_number or rd.name,
+                account_number=rd.account_number,
+                days_pnl=Decimal(0),
+                days_pnl_percentage=0.0,
+            )
+        )
+    return holdings_list, total_realized_pnl
+
+
+def _calculate_summary(
+    holdings_list: List[schemas.Holding],
+    realized_pnl_from_other_sources: Decimal,
+    transactions: List[models.Transaction],
+) -> schemas.PortfolioSummary:
+    """Calculates the final portfolio summary from a list of holdings."""
+    summary_total_value = Decimal("0.0")
+    summary_total_invested = Decimal("0.0")
+    summary_days_pnl = Decimal("0.0")
+    summary_total_unrealized_pnl = Decimal("0.0")
+
+    for holding_item in holdings_list:
+        summary_total_value += holding_item.current_value
+        summary_total_invested += holding_item.total_invested_amount
+        summary_total_unrealized_pnl += holding_item.unrealized_pnl
+        summary_days_pnl += holding_item.days_pnl
+
+    income_cash = sum(
+        tx.quantity * tx.price_per_unit
+        for tx in transactions
+        if tx.transaction_type in ["DIVIDEND", "COUPON"]
+    )
+    summary_total_value += income_cash
+
+    return schemas.PortfolioSummary(
+        total_value=summary_total_value,
+        total_invested_amount=summary_total_invested,
+        days_pnl=summary_days_pnl,
+        total_unrealized_pnl=summary_total_unrealized_pnl,
+        total_realized_pnl=realized_pnl_from_other_sources,
+    )
+
+
+def _process_market_traded_assets(
+    db: Session,
+    portfolio_id: uuid.UUID,
+    transactions: List[models.Transaction],
+    initial_realized_pnl: Decimal,
+) -> tuple[List[schemas.Holding], Decimal]:
+    """Processes all market-traded assets like Stocks, MFs, ETFs, and Bonds."""
+    holdings_list = []
+    total_realized_pnl = initial_realized_pnl
+
+    holdings_state = defaultdict(
+        lambda: {
+            "quantity": Decimal("0.0"),
+            "total_invested": Decimal("0.0"),
+            "realized_pnl": Decimal("0.0"),
+        }
+    )
+
+    portfolio_assets = crud.asset.get_multi_by_portfolio(db, portfolio_id=portfolio_id)
+    asset_map = {asset.ticker_symbol: asset for asset in portfolio_assets}
+
+    for tx in transactions:
+        asset = asset_map.get(tx.asset.ticker_symbol) if tx.asset else None
+        if not asset:
+            asset = next((a for a in portfolio_assets if a.id == tx.asset_id), None)
+        ticker = asset.ticker_symbol if asset else None
+        if tx.transaction_type == "BUY":
+            holdings_state[ticker]["quantity"] += tx.quantity
+            holdings_state[ticker]["total_invested"] += tx.quantity * tx.price_per_unit
+        elif tx.transaction_type == "DIVIDEND":
+            dividend_amount = tx.quantity * tx.price_per_unit
+            total_realized_pnl += dividend_amount
+        elif tx.transaction_type == "SELL":
+            if holdings_state[ticker]["quantity"] > 0:
+                avg_buy_price = (
+                    holdings_state[ticker]["total_invested"]
+                    / holdings_state[ticker]["quantity"]
+                )
+                realized_pnl_for_sale = (
+                    tx.price_per_unit - avg_buy_price
+                ) * tx.quantity
+                total_realized_pnl += realized_pnl_for_sale
+                holdings_state[ticker]["realized_pnl"] += realized_pnl_for_sale
+                proportion_sold = tx.quantity / holdings_state[ticker]["quantity"]
+                holdings_state[ticker]["total_invested"] *= 1 - proportion_sold
+                holdings_state[ticker]["quantity"] -= tx.quantity
+
+    current_holdings_tickers = [
+        ticker for ticker, data in holdings_state.items() if data["quantity"] > 0
+    ]
+
+    assets_to_price = [
+        {
+            "ticker_symbol": ticker,
+            "exchange": asset_map[ticker].exchange,
+            "asset_type": asset_map[ticker].asset_type,
+        }
+        for ticker in current_holdings_tickers
+    ]
+
+    price_details = (
+        financial_data_service.get_current_prices(assets_to_price)
+        if assets_to_price
+        else {}
+    )
+
+    for ticker in current_holdings_tickers:
+        asset = asset_map[ticker]
+        data = holdings_state[ticker]
+        price_info = price_details.get(
+            ticker, {"current_price": Decimal(0), "previous_close": Decimal(0)}
+        )
+
+        quantity = data["quantity"]
+        total_invested = data["total_invested"]
+
+        days_pnl = Decimal("0.0")
+        if asset.asset_type == "BOND" and asset.bond:
+            bond_details = asset.bond
+            current_price = Decimal(str(price_info["current_price"]))
+
+            if current_price == 0 and asset.ticker_symbol:
+                yf_price = financial_data_service.get_price_from_yfinance(
+                    asset.ticker_symbol
+                )
+                if yf_price:
+                    current_price = yf_price
+
+            if current_price == 0 and bond_details.bond_type == BondType.TBILL:
+                first_buy = min(
+                    (
+                        tx
+                        for tx in transactions
+                        if tx.asset_id == asset.id and tx.transaction_type == "BUY"
+                    ),
+                    key=lambda x: x.transaction_date,
+                    default=None,
+                )
+                if first_buy and bond_details.face_value:
+                    purchase_date = first_buy.transaction_date.date()
+                    total_days = (bond_details.maturity_date - purchase_date).days
+                    days_elapsed = (date.today() - purchase_date).days
+                    if total_days > 0 and days_elapsed > 0:
+                        price_increase = (
+                            Decimal(str(bond_details.face_value))
+                            - first_buy.price_per_unit
+                        ) * (Decimal(days_elapsed) / Decimal(total_days))
+                        current_price = first_buy.price_per_unit + price_increase
+
+            if current_price == 0:
+                current_price = (
+                    total_invested / quantity if quantity > 0 else Decimal(0)
+                )
+                price_info["previous_close"] = current_price.quantize(Decimal("0.01"))
+        else:
+            current_price = Decimal(str(price_info["current_price"]))
+
+        previous_close = Decimal(str(price_info["previous_close"]))
+        average_buy_price = total_invested / quantity if quantity > 0 else Decimal(0)
+        days_pnl = (current_price - previous_close) * quantity
+        days_pnl_percentage = (
+            float((current_price - previous_close) / previous_close)
+            if previous_close > 0
+            else 0.0
+        )
+        current_value = quantity * current_price
+
+        holdings_list.append(
+            schemas.Holding(
+                asset_id=asset.id,
+                ticker_symbol=ticker,
+                asset_name=asset.name,
+                asset_type=asset.asset_type,
+                group="EQUITIES",  # Placeholder, will be set properly later
+                quantity=quantity,
+                average_buy_price=average_buy_price,
+                total_invested_amount=total_invested,
+                current_price=current_price,
+                current_value=current_value,
+                days_pnl=days_pnl,
+                days_pnl_percentage=days_pnl_percentage,
+                unrealized_pnl=Decimal("0.0"),
+                realized_pnl=data.get("realized_pnl", Decimal("0.0")),
+                unrealized_pnl_percentage=0.0,
+                bond=asset.bond,
+            )
+        )
+    return holdings_list, total_realized_pnl
+
+
 class CRUDHolding:
     """
     CRUD operations for portfolio holdings.
@@ -135,143 +467,13 @@ class CRUDHolding:
             db=db, portfolio_id=portfolio_id
         )
 
-        holdings_list: List[schemas.Holding] = []
-        summary_total_value = Decimal("0.0")
-        summary_total_invested = Decimal("0.0")
-        summary_days_pnl = Decimal("0.0")
-        summary_total_unrealized_pnl = Decimal("0.0")
-        total_realized_pnl = Decimal("0.0")
-
-        active_fixed_deposits = [
-            fd for fd in all_fixed_deposits if fd.maturity_date >= date.today()
-        ]
-        matured_fixed_deposits = [
-            fd for fd in all_fixed_deposits if fd.maturity_date < date.today()
-        ]
-
-        for fd in matured_fixed_deposits:
-            if fd.interest_payout != "Cumulative":
-                total_realized_pnl += _calculate_total_interest_paid(
-                    fd, fd.maturity_date
-                )
-            else:
-                maturity_value = _calculate_fd_current_value(
-                    fd.principal_amount,
-                    fd.interest_rate,
-                    fd.start_date,
-                    fd.maturity_date, # Use maturity date for final value
-                    fd.compounding_frequency,
-                    fd.interest_payout,
-                )
-                total_realized_pnl += maturity_value - fd.principal_amount
-
-        for fd in active_fixed_deposits:
-            total_interest_paid = _calculate_total_interest_paid(fd, date.today())
-            if total_interest_paid > 0:
-                total_realized_pnl += total_interest_paid
-
-            current_value = _calculate_fd_current_value(
-                fd.principal_amount,
-                fd.interest_rate,
-                fd.start_date,
-                date.today(),
-                fd.compounding_frequency,
-                fd.interest_payout,
-            )
-            unrealized_pnl = current_value - fd.principal_amount
-            unrealized_pnl_percentage = (
-                float(unrealized_pnl / fd.principal_amount)
-                if fd.principal_amount > 0
-                else 0.0
-            )
-            holdings_list.append(
-                schemas.Holding(
-                    asset_id=fd.id,
-                    ticker_symbol=fd.account_number,
-                    asset_name=fd.name,
-                    asset_type="FIXED_DEPOSIT",
-                    group="DEPOSITS",
-                    quantity=Decimal(1),
-                    average_buy_price=fd.principal_amount,
-                    total_invested_amount=fd.principal_amount,
-                    current_price=current_value,
-                    current_value=current_value,
-                    days_pnl=Decimal(0),
-                    days_pnl_percentage=0.0,
-                    unrealized_pnl=unrealized_pnl,
-                    unrealized_pnl_percentage=unrealized_pnl_percentage,
-                    realized_pnl=total_interest_paid,
-                    interest_rate=fd.interest_rate,
-                    maturity_date=fd.maturity_date,
-                    account_number=fd.account_number,
-                )
-            )
-
-        # --- Recurring Deposits (Active) ---
-        today = date.today()
-        active_recurring_deposits = [rd for rd in all_recurring_deposits if (
-            rd.start_date + relativedelta(months=rd.tenure_months)) >= today]
-        matured_recurring_deposits = [rd for rd in all_recurring_deposits if (
-            rd.start_date + relativedelta(months=rd.tenure_months)) < today]
-
-        for rd in matured_recurring_deposits:
-            maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
-            maturity_value = _calculate_rd_value_at_date(
-                rd.monthly_installment,
-                rd.interest_rate,
-                rd.start_date,
-                rd.tenure_months,
-                maturity_date,
-            )
-            total_invested = rd.monthly_installment * rd.tenure_months
-            total_realized_pnl += maturity_value - total_invested
-
-        for rd in active_recurring_deposits:
-            current_value = _calculate_rd_value_at_date(
-                rd.monthly_installment,
-                rd.interest_rate,
-                rd.start_date,
-                rd.tenure_months,
-                today,
-            )
-
-            installments_paid = 0
-            temp_date = rd.start_date
-            while temp_date <= today and installments_paid < rd.tenure_months:
-                installments_paid += 1
-                temp_date += relativedelta(months=1)
-
-            total_invested = rd.monthly_installment * installments_paid
-            if total_invested <= 0:
-                continue
-
-            unrealized_pnl = current_value - total_invested
-            unrealized_pnl_percentage = (
-                float(unrealized_pnl / total_invested) if total_invested > 0 else 0.0
-            )
-
-            holdings_list.append(
-                schemas.Holding(
-                    asset_id=rd.id,
-                    asset_name=rd.name,
-                    asset_type="RECURRING_DEPOSIT",
-                    group="DEPOSITS",
-                    quantity=Decimal(1),
-                    average_buy_price=total_invested,
-                    total_invested_amount=total_invested,
-                    current_price=current_value,
-                    current_value=current_value,
-                    unrealized_pnl=unrealized_pnl,
-                    unrealized_pnl_percentage=unrealized_pnl_percentage,
-                    interest_rate=rd.interest_rate,
-                    maturity_date=rd.start_date
-                    + relativedelta(months=rd.tenure_months),
-                    ticker_symbol=rd.account_number or rd.name,
-                    account_number=rd.account_number,
-                    days_pnl=Decimal(0),
-                    days_pnl_percentage=0.0,
-                )
-            )
+        # --- Process Non-Market-Traded Assets ---
+        fd_holdings, pnl_from_fds = _process_fixed_deposits(all_fixed_deposits)
+        rd_holdings, pnl_from_rds = _process_recurring_deposits(
+            all_recurring_deposits
+        )
+        holdings_list: List[schemas.Holding] = fd_holdings + rd_holdings
+        total_realized_pnl = pnl_from_fds + pnl_from_rds
 
         # --- PPF Holdings ---
         all_portfolio_assets = crud.asset.get_multi_by_portfolio(
@@ -288,213 +490,23 @@ class CRUDHolding:
             ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id)
             holdings_list.append(ppf_holding)
 
-        holdings_state = defaultdict(
-            lambda: {
-                "quantity": Decimal("0.0"),
-                "total_invested": Decimal("0.0"),
-                "realized_pnl": Decimal("0.0"),
-            }
+        market_traded_holdings, total_realized_pnl = _process_market_traded_assets(
+            db, portfolio_id, transactions, total_realized_pnl
         )
+        holdings_list.extend(market_traded_holdings)
 
-        # Fetch all assets related to the portfolio to build a reliable map.
-        # This is more robust than relying on the `transactions` object, which
-        # might not have the `asset` relationship fully loaded for new assets.
-        portfolio_assets = crud.asset.get_multi_by_portfolio(
-            db, portfolio_id=portfolio_id)
-        asset_map = {asset.ticker_symbol: asset for asset in portfolio_assets}
-
-        for tx in transactions:
-            # The tx.asset relationship might be None for newly created assets
-            # in the same session. We need a more robust way to get the ticker.
-            asset = asset_map.get(tx.asset.ticker_symbol) if tx.asset else None
-            if not asset:
-                # Fallback to find the asset by ID from our reliable map
-                asset = next((a for a in portfolio_assets if a.id == tx.asset_id), None)
-            ticker = asset.ticker_symbol if asset else None
-            if tx.transaction_type == "BUY":
-                holdings_state[ticker]["quantity"] += tx.quantity
-                holdings_state[ticker]["total_invested"] += (
-                    tx.quantity * tx.price_per_unit
-                )
-            elif tx.transaction_type == "DIVIDEND":
-                logger.debug(f"Processing DIVIDEND transaction for {ticker}")
-                # Dividends are pure realized profit
-                dividend_amount = tx.quantity * tx.price_per_unit
-                logger.debug(
-                    f"Dividend amount: {dividend_amount}, adding to total_realized_pnl"
-                )
-                total_realized_pnl += dividend_amount
-            elif tx.transaction_type == "SELL":
-                if holdings_state[ticker]["quantity"] > 0:
-                    avg_buy_price = (
-                        holdings_state[ticker]["total_invested"]
-                        / holdings_state[ticker]["quantity"]
-                    )
-                    realized_pnl_for_sale = (
-                    (tx.price_per_unit - avg_buy_price)
-                    ) * tx.quantity
-                    total_realized_pnl += realized_pnl_for_sale
-                    holdings_state[ticker]["realized_pnl"] += realized_pnl_for_sale
-                    proportion_sold = tx.quantity / holdings_state[ticker]["quantity"]
-                    holdings_state[ticker]["total_invested"] *= 1 - proportion_sold
-                    holdings_state[ticker]["quantity"] -= tx.quantity
-
-        current_holdings_tickers = [
-            ticker for ticker, data in holdings_state.items() if data["quantity"] > 0
-        ]
-
-        assets_to_price = [
-            {
-                "ticker_symbol": ticker,
-                "exchange": asset_map[ticker].exchange,
-                "asset_type": asset_map[ticker].asset_type,
-            }
-            for ticker in current_holdings_tickers
-        ]
-
-        if assets_to_price:
-            price_details = financial_data_service.get_current_prices(assets_to_price)
-        else:
-            price_details = {}
-
-        for ticker in current_holdings_tickers:
-            asset = asset_map[ticker]
-            data = holdings_state[ticker]
-            price_info = price_details.get(
-                ticker, {"current_price": Decimal(0), "previous_close": Decimal(0)}
-            )
-
-            quantity = data["quantity"]
-            total_invested = data["total_invested"]
-
-            days_pnl = Decimal("0.0")
-            # --- Bond Valuation Fallback Logic ---
-            if asset.asset_type == "BOND" and asset.bond:
-                bond_details = asset.bond
-                # 1. Try primary batch price
-                current_price = Decimal(str(price_info["current_price"]))
-
-                # 2. Fallback to yfinance if primary fails
-                if current_price == 0 and asset.ticker_symbol:
-                    yf_price = financial_data_service.get_price_from_yfinance(
-                        asset.ticker_symbol)
-                    if yf_price:
-                        current_price = yf_price
-
-                # 4. Fallback for T-Bills (accretion model)
-                if current_price == 0 and bond_details.bond_type == BondType.TBILL:
-                    first_buy = min((tx for tx in transactions if tx.asset_id == asset.id and tx.transaction_type == "BUY"),  # noqa: E501
-                                    key=lambda x: x.transaction_date, default=None)
-                    if first_buy and bond_details.face_value:
-                        purchase_date = first_buy.transaction_date.date()
-                        total_days = (bond_details.maturity_date - purchase_date).days
-                        days_elapsed = (date.today() - purchase_date).days
-                        if total_days > 0 and days_elapsed > 0:
-                            price_increase = (
-                                Decimal(str(bond_details.face_value)) -
-                                first_buy.price_per_unit
-                            ) * (Decimal(days_elapsed) / Decimal(total_days))
-                            current_price = first_buy.price_per_unit + price_increase
-
-                # 5. Final fallback to book value
-                if current_price == 0:
-                    current_price = total_invested / \
-                        quantity if quantity > 0 else Decimal(0)
-                    # If we fall back to book value, assume no change for Day's P&L
-                    price_info["previous_close"] = current_price.quantize(
-                        Decimal("0.01")
-                    )
-
-            else: # For non-bond assets
-                current_price = Decimal(str(price_info["current_price"]))
-
-            previous_close = Decimal(str(price_info["previous_close"]))
-
-            average_buy_price = (
-                total_invested / quantity if quantity > 0 else Decimal(0)
-            )
-            days_pnl = (current_price - previous_close) * quantity
-            days_pnl_percentage = (
-                float((current_price - previous_close) / previous_close)
-                if previous_close > 0
-                else 0.0
-            )
-
-            current_value = quantity * current_price
-
-            holdings_list.append(
-                schemas.Holding(
-                    asset_id=asset.id,
-                    ticker_symbol=ticker,
-                    asset_name=asset.name,
-                    asset_type=asset.asset_type,
-                    group="EQUITIES",  # Placeholder, will be set properly later
-                    quantity=quantity,
-                    average_buy_price=average_buy_price,
-                    total_invested_amount=total_invested,
-                    current_price=current_price,
-                    current_value=current_value,
-                    days_pnl=days_pnl,
-                    days_pnl_percentage=days_pnl_percentage,
-                    unrealized_pnl=Decimal("0.0"),
-                    realized_pnl=data.get("realized_pnl", Decimal("0.0")),
-                    unrealized_pnl_percentage=0.0,
-                    bond=asset.bond,
-                )
-            )
-
-        # After all holdings are processed and validated by Pydantic models,
-        # recalculate the summary based on the final, corrected holding values.
+        # --- Final Grouping and Summary Calculation ---
         for holding_item in holdings_list:
-            # Correctly assign group based on final asset type
             group_map = {
                 "STOCK": "EQUITIES", "Mutual Fund": "EQUITIES", "ETF": "EQUITIES",
                 "FIXED_DEPOSIT": "DEPOSITS", "RECURRING_DEPOSIT": "DEPOSITS",
                 "BOND": "BONDS", "PPF": "GOVERNMENT_SCHEMES",
             }
-            # Make the lookup case-insensitive to handle variations like "Mutual Fund"
-            # vs "MUTUAL_FUND"
             group_map_upper = {k.upper(): v for k, v in group_map.items()}
             holding_item.group = group_map_upper.get(
                 str(holding_item.asset_type).upper(), "MISCELLANEOUS")
 
-            # Add to summary totals
-            logger.debug(
-                f"Adding to summary: {holding_item.asset_name} | "
-                f"Current Value: {holding_item.current_value}"
-            )
-            summary_total_value += holding_item.current_value
-            summary_total_invested += holding_item.total_invested_amount
-            summary_total_unrealized_pnl += holding_item.unrealized_pnl
-            summary_days_pnl += holding_item.days_pnl
-
-        # Per FR6.2, total value must include cash from income events.
-        # Realized PNL from sales is already reflected (asset is gone), so we only add
-        # income.
-        # For now, this is just dividends. We will add coupons later.
-        income_cash = sum(
-            tx.quantity * tx.price_per_unit
-            for tx in transactions
-            if tx.transaction_type in ["DIVIDEND", "COUPON"]
-        )
-        logger.debug(
-            f"Initial summary_total_value from holdings: {summary_total_value}"
-        )
-        logger.debug(
-            f"Total cash from income events (dividends/coupons): {income_cash}"
-        )
-        summary_total_value += income_cash
-        logger.debug(
-            f"Final summary_total_value (holdings + income cash): {summary_total_value}"
-        )
-
-        summary = schemas.PortfolioSummary(
-            total_value=summary_total_value,
-            total_invested_amount=summary_total_invested,
-            days_pnl=summary_days_pnl,
-            total_unrealized_pnl=summary_total_unrealized_pnl,
-            total_realized_pnl=total_realized_pnl,
-        )
+        summary = _calculate_summary(holdings_list, total_realized_pnl, transactions)
 
         return {"summary": summary, "holdings": holdings_list}
 
