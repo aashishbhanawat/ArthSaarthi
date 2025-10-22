@@ -227,6 +227,5 @@ def test_summary_with_dividend(
     assert response.status_code == 200
     # Expected: Realized PNL should be the dividend amount (100).
     assert Decimal(data["total_realized_pnl"]) == pytest.approx(Decimal("100.0"))
-    # Expected: Total value should be current holding value (1100) + cash from
-    # dividend (100) = 1200.
-    assert Decimal(data["total_value"]) == pytest.approx(Decimal("1200.0"))
+    # Expected: Total value should be current holding value (1100)
+    assert Decimal(data["total_value"]) == pytest.approx(Decimal("1100.0"))

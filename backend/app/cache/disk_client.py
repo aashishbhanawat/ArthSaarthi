@@ -1,9 +1,12 @@
+import logging
 from typing import Optional
 
 import diskcache
 from platformdirs import user_cache_dir
 
 from app.cache.base import CacheClient
+
+logger = logging.getLogger(__name__)
 
 
 class DiskCacheClient(CacheClient):
@@ -13,7 +16,7 @@ class DiskCacheClient(CacheClient):
         # Use platformdirs to find the appropriate user-specific cache directory
         cache_dir = user_cache_dir("arthsaarthi", "arthsaarthi-app")
         self._cache = diskcache.Cache(cache_dir)
-        print(f"Initialized disk-based cache at: {cache_dir}")
+        logger.info("Initialized disk-based cache at: %s", cache_dir)
 
     def get(self, key: str) -> Optional[str]:
         # .get() returns None if the key doesn't exist, which matches our interface
@@ -34,4 +37,4 @@ class DiskCacheClient(CacheClient):
     def clear(self) -> None:
         """Clears the entire disk cache."""
         self._cache.clear()
-        print("Disk cache cleared.")
+        logger.info("Disk cache cleared.")

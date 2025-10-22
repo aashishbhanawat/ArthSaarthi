@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.cache.utils import invalidate_caches_for_portfolio
 from app.core import config, dependencies
 from app.crud import crud_corporate_action
 from app.crud.crud_ppf import trigger_ppf_recalculation
@@ -124,6 +125,7 @@ def create_transaction(
                 asset_id=asset_id_to_use,
                 transaction_in=transaction_create_schema,
             )
+            invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
         elif transaction_type == TransactionType.SPLIT:
             transaction = crud_corporate_action.handle_stock_split(
                 db=db,
@@ -131,6 +133,7 @@ def create_transaction(
                 asset_id=asset_id_to_use,
                 transaction_in=transaction_create_schema,
             )
+            invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
         elif transaction_type == TransactionType.BONUS:
             transaction = crud_corporate_action.handle_bonus_issue(
                 db=db,
@@ -138,10 +141,12 @@ def create_transaction(
                 asset_id=asset_id_to_use,
                 transaction_in=transaction_create_schema,
             )
+            invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
         else:
             transaction = crud.transaction.create_with_portfolio(
                 db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
             )
+            invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
             if asset_to_use.asset_type == "PPF":
                 logger.info(
                     "Triggering PPF recalculation for asset %s "
@@ -160,6 +165,7 @@ def create_transaction(
 
     db.commit()
     db.refresh(transaction)
+
     return transaction
 
 
@@ -204,6 +210,10 @@ def update_transaction(
     )
     db.commit()
     db.refresh(updated_transaction)
+
+    # Invalidate cache after successful update
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
+
     return updated_transaction
 
 
@@ -242,4 +252,8 @@ def delete_transaction(
 
     crud.transaction.remove(db=db, id=transaction_id)
     db.commit()
+
+    # Invalidate cache after successful deletion
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
+
     return {"msg": "Transaction deleted successfully"}

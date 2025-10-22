@@ -40,7 +40,12 @@ from .historical_interest_rate import (
     HistoricalInterestRateCreate,
     HistoricalInterestRateUpdate,
 )
-from .holding import Holding, HoldingsResponse, PortfolioSummary
+from .holding import (
+    Holding,
+    HoldingsResponse,
+    PortfolioHoldingsAndSummary,
+    PortfolioSummary,
+)
 from .import_session import (
     ImportSession,
     ImportSessionCommit,
@@ -92,6 +97,7 @@ __all__ = [
     "AssetUpdate",
     "AssetAnalytics",
     "FixedDepositAnalytics",
+    "PortfolioHoldingsAndSummary",
     "DashboardSummary",
     "Holding",
     "HoldingsResponse",

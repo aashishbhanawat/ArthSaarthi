@@ -340,3 +340,18 @@ This guide documents common setup and runtime issues and their solutions.
         ```python
         pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
         ```
+
+---
+
+### 18. Data is Not Updating (Stale Cache)
+
+*   **Symptom:** You create, update, or delete a transaction, but the portfolio summary, holdings view, or dashboard does not reflect the change. The old data is still being displayed.
+
+*   **Cause:** This is almost always due to a caching issue. The application uses a caching layer (Redis or DiskCache) to store the results of expensive calculations. If a data-mutating operation fails to correctly invalidate the cache, you will be served stale data.
+
+*   **Solution:**
+    1.  **User Action:** The simplest way to force an invalidation is to perform another action on the same portfolio (e.g., add a small, temporary transaction). This will trigger the invalidation logic again.
+    2.  **Developer Action (Bug Fix):** If the issue is reproducible, it indicates a bug. The endpoint that performed the data mutation (e.g., `POST /api/v1/bonds/`) is likely missing a call to `cache_utils.invalidate_caches_for_portfolio()`. This function must be called after any successful database write operation that affects a portfolio's state.
+    3.  **Developer Action (Manual Invalidation):** To debug, you can manually clear the cache.
+        *   If using Redis: `docker compose exec redis redis-cli FLUSHALL`
+        *   If using DiskCache (e.g., in `desktop` or `sqlite` mode), you will need to find and delete the `cache` directory created by the application.

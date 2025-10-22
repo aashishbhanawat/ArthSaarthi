@@ -142,6 +142,8 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 -   **Architectural Refactoring:**
 -   **Data Integration (NFR12 - Phase 3):** Implement optional, high-quality data providers for broker APIs (e.g., Zerodha, ICICI Breeze).
+-   **Analytics Caching (NFR9.2):** Implement a caching layer for expensive analytics endpoints to improve performance.
+    -   **Status: ✅ Complete**
 -   **API Rate Limiting (NFR13):** Implement usage tracking and rate limiting for external data providers.
 -   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
 -   **Administration Enhancements (FR2.3):** Add a log viewer for admins to review audit trails.

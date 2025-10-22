@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.cache.utils import invalidate_caches_for_portfolio
 from app.core import dependencies
 
 router = APIRouter()
@@ -32,6 +33,7 @@ def create_ppf_account(
     transaction = crud.asset.create_ppf_and_first_contribution(
         db=db, portfolio_id=ppf_in.portfolio_id, ppf_in=ppf_in
     )
+    invalidate_caches_for_portfolio(db, portfolio_id=ppf_in.portfolio_id)
     db.commit()
     db.refresh(transaction)
     return transaction

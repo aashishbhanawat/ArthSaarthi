@@ -301,3 +301,49 @@ To avoid applying privacy to all monetary values, a specific hook was created.
 1.  **`usePrivacySensitiveCurrency` Hook:** This new hook was created in `formatting.ts`.
 2.  **Logic:** It calls `usePrivacy()` to check `isPrivacyMode`. If `true`, it returns a function that always returns the placeholder `₹**,***.**`. If `false`, it returns the original `formatCurrency` function.
 3.  **Usage:** This hook is then called *only* in components that display high-level, sensitive data (e.g., `SummaryCard.tsx`), ensuring that less sensitive data (like individual asset prices in a table) remains visible.
+
+---
+
+## 7. Cross-Cutting Concern: Analytics Caching
+
+The Analytics Caching engine is a cross-cutting concern designed to improve application performance by storing the results of expensive calculations.
+
+### Step 1: The Cache Decorator (`cache/utils.py`)
+
+The core of the caching engine is the `@cache_analytics_data` decorator. It is applied to expensive, read-only CRUD functions.
+
+```python
+# backend/app/crud/crud_holding.py
+
+class CRUDHolding:
+    @cache_analytics_data(
+        prefix="analytics:portfolio_holdings_and_summary",
+        arg_names=["portfolio_id"],
+        response_model=schemas.PortfolioHoldingsAndSummary,
+    )
+    def get_portfolio_holdings_and_summary(self, db: Session, *, portfolio_id: uuid.UUID):
+        # ... expensive calculation logic ...
+```
+
+1.  **Key Generation:** The decorator generates a unique cache key by combining the `prefix` and the value of the function argument specified in `arg_names` (e.g., `analytics:portfolio_holdings_and_summary:some-uuid`).
+2.  **Cache Check:** It checks the Redis cache for this key. If a value is found, it is deserialized (using the optional `response_model` if provided) and returned immediately, skipping the function execution.
+3.  **Function Execution & Caching:** If the key is not found (a "cache miss"), the original function is executed. Its result is then serialized to JSON and stored in Redis with a 15-minute TTL before being returned.
+
+### Step 2: Cache Invalidation (`cache/utils.py`)
+
+To prevent stale data, the cache must be cleared whenever underlying data changes. This is handled by the `invalidate_caches_for_portfolio` function.
+
+```python
+# backend/app/api/v1/endpoints/bonds.py
+
+@router.post("/", response_model=Bond, status_code=status.HTTP_201_CREATED)
+def create_bond(...):
+    # ... logic to create bond and transaction ...
+
+    # Invalidate caches for the affected portfolio
+    cache_utils.invalidate_caches_for_portfolio(db=db, portfolio_id=portfolio_id)
+
+    return new_bond
+```
+
+This function is called from any API endpoint that creates, updates, or deletes data for a portfolio (e.g., creating a transaction, importing a file, adding a bond). It constructs and deletes all cache keys associated with that `portfolio_id` and its `user_id`, ensuring that the next request will trigger a fresh calculation.

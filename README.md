@@ -21,7 +21,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Secure Authentication & Administration:** JWT-based authentication, initial admin setup, a full admin dashboard for user management (CRUD), a backend **Audit Logging Engine** to record all sensitive events, and a dedicated **User Profile Page** to manage your account.
 *   **Dynamic Dashboard:** Get a bird's-eye view of your financial health with a dashboard showing total portfolio value, realized/unrealized P&L, top daily market movers, and interactive charts for portfolio history and asset allocation.
 *   **Advanced Portfolio Analytics:** On-demand calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset levels.
-*   **Full Portfolio & Transaction Management:**
+*   **Comprehensive Portfolio & Transaction Management:**
     *   Full CRUD functionality for portfolios.
     *   Full CRUD functionality for transactions, including a dedicated, filterable **Transaction History** page and support for logging corporate actions (**Dividends, Stock Splits, Bonus Issues**).
     *   Full CRUD and tracking for **Fixed Deposits (FDs)**, **Recurring Deposits (RDs)**, **Public Provident Fund (PPF)** accounts, and **Bonds** with detailed analytics.
@@ -36,6 +36,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
     *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database and a file-based cache.
+*   **Performance:** Expensive analytics and holdings calculations are cached to improve UI responsiveness and reduce server load.
 
 ### On the Horizon (Future Features)
 
