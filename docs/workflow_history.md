@@ -2033,3 +2033,31 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
     - The "Comprehensive Portfolio Analytics" feature is now fully implemented, tested, and stable. The application provides accurate, income-inclusive performance metrics.
 
 ---
+
+## 2025-10-22: Implement Caching for Analytics Endpoints (NFR9.2)
+
+*   **Task Description:** Implement a caching layer for the application's most expensive analytics endpoints to improve performance and reduce server load, as specified in the feature plan.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** The AI was prompted to apply the existing `@cache_analytics_data` decorator to the main CRUD functions responsible for calculating portfolio holdings (`crud_holding.py`) and portfolio-level analytics (`crud_analytics.py`).
+    2.  **Final Implementation & Review:** A final review of the feature plan revealed that the main dashboard summary (`/api/v1/dashboard/summary`) was also a target for caching. The AI was prompted to apply the decorator to the `get_summary` method in `crud_dashboard.py`.
+    3.  **Bug Fix & Refinement:** During the final implementation, the AI also identified and fixed a minor bug where the `get_history` decorator was using a conflicting cache key prefix. It was corrected to prevent key collisions.
+    4.  **Linting:** The final changes introduced a minor line-length linting error, which was identified and fixed in the final step before the commit.
+
+*   **File Changes:**
+    *   `backend/app/crud/crud_holding.py`: **Updated** to apply the `@cache_analytics_data` decorator to `get_portfolio_holdings_and_summary`.
+    *   `backend/app/crud/crud_analytics.py`: **Updated** to apply the decorator to `get_portfolio_analytics` and `get_asset_analytics`.
+    *   `backend/app/crud/crud_dashboard.py`: **Updated** to apply the decorator to `get_summary` and `get_history`, and to fix a cache key conflict.
+    *   `docs/features/NFR9.2_analytics_caching.md`: **Updated** status to "Done".
+    *   `docs/product_backlog.md`: **Updated** to mark NFR9.2 as complete.
+    *   `docs/code_flow_guide.md`: **Updated** with a new section explaining the caching architecture.
+    *   `docs/troubleshooting.md`: **Updated** with a new section on clearing the cache to resolve stale data issues.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (158), frontend tests (162), and E2E tests (24) passed.
+    - Manually verified that making a new transaction correctly invalidated the cache and updated the UI.
+
+*   **Outcome:**
+    - The analytics caching feature is fully implemented, tested, and documented. The application's performance for repeated data access is now significantly improved.
+
+---

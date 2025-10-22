@@ -1,8 +1,11 @@
+import logging
 from typing import Optional
 
 import redis
 
 from app.cache.base import CacheClient
+
+logger = logging.getLogger(__name__)
 
 
 class RedisCacheClient(CacheClient):
@@ -13,10 +16,10 @@ class RedisCacheClient(CacheClient):
         try:
             self._client = redis.from_url(redis_url, decode_responses=True)
             self._client.ping()
-            print("Successfully connected to Redis for caching.")
+            logger.info("Successfully connected to Redis for caching.")
         except redis.exceptions.ConnectionError as e:
-            print(
-                f"WARNING: Could not connect to Redis at {redis_url}. "
+            logger.warning(
+                "Could not connect to Redis at %s. "
                 f"Caching will be disabled. Error: {e}"
             )
             self._client = None
@@ -41,4 +44,4 @@ class RedisCacheClient(CacheClient):
         if not self._client:
             return
         self._client.flushdb()
-        print("Redis cache cleared.")
+        logger.info("Redis cache cleared.")

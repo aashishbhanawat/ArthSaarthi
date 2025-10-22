@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud, models
+from app.cache import utils as cache_utils
 from app.core import dependencies
 from app.schemas.bond import Bond, BondCreate, BondUpdate, BondWithTransactionCreate
 from app.schemas.msg import Msg
@@ -60,6 +61,10 @@ def create_bond(
     )
     db.commit()
     db.refresh(new_bond)
+
+    # Invalidate caches
+    cache_utils.invalidate_caches_for_portfolio(db=db, portfolio_id=portfolio_id)
+
     return new_bond
 
 

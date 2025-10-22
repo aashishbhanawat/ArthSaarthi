@@ -108,7 +108,7 @@ def test_holding_calculation_characterization(
 
     # --- Golden Master Assertions ---
     # These values capture the current system's behavior.
-    summary = result["summary"]
+    summary = result.summary
     assert summary.total_value == pytest.approx(Decimal("54250.00"))
     assert summary.total_invested_amount == pytest.approx(Decimal("47500.00"))
     assert summary.days_pnl == pytest.approx(Decimal("750.00"))

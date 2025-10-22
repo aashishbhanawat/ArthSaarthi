@@ -162,7 +162,7 @@ def test_tradable_bond_valuation_primary_api(
         result = crud.holding.get_portfolio_holdings_and_summary(
             db, portfolio_id=portfolio.id
         )
-        holdings = result["holdings"]
+        holdings = result.holdings
         assert len(holdings) == 1
         bond_holding = holdings[0]
         assert bond_holding.asset_type == AssetType.BOND
@@ -209,7 +209,7 @@ def test_sgb_valuation_book_value_fallback(
         result = crud.holding.get_portfolio_holdings_and_summary(
             db, portfolio_id=portfolio.id
         )
-        holdings = result["holdings"]
+        holdings = result.holdings
         assert len(holdings) == 1
         sgb_holding = holdings[0]
         assert sgb_holding.asset_type == AssetType.BOND
@@ -266,7 +266,7 @@ def test_tbill_valuation_accretion_model(
         result = crud.holding.get_portfolio_holdings_and_summary(
             db, portfolio_id=portfolio.id
         )
-        holdings = result["holdings"]
+        holdings = result.holdings
         total_days = (maturity_date - purchase_date).days
         days_elapsed = (valuation_date - purchase_date).days
         price_increase = (Decimal("100") - Decimal("97.50")) * (
@@ -326,7 +326,7 @@ def test_tradable_bond_valuation_yfinance_fallback(
         result = crud.holding.get_portfolio_holdings_and_summary(
             db, portfolio_id=portfolio.id
         )
-        holdings = result["holdings"]
+        holdings = result.holdings
         assert len(holdings) == 1
         bond_holding = holdings[0]
         assert bond_holding.current_value == Decimal("20") * Decimal("995.50")
@@ -375,7 +375,7 @@ def test_bond_valuation_book_value_final_fallback(
         result = crud.holding.get_portfolio_holdings_and_summary(
             db, portfolio_id=portfolio.id
         )
-        holdings = result["holdings"]
+        holdings = result.holdings
         assert len(holdings) == 1
         bond_holding = holdings[0]
         # Should equal invested amount (100 * 950)

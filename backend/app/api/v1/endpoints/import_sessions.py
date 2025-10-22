@@ -20,6 +20,7 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.cache.utils import invalidate_caches_for_portfolio
 from app.core import dependencies as deps
 from app.core.config import settings
 from app.schemas.msg import Msg
@@ -320,6 +321,9 @@ def commit_import_session(
         )
 
         db.commit()
+
+        # Invalidate cache after successful commit
+        invalidate_caches_for_portfolio(db, portfolio_id=import_session.portfolio_id)
 
         return {"msg": f"Successfully committed {transactions_created} transactions."}
 

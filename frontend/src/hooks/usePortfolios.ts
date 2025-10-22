@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
 import { BondCreate, BondUpdate } from '../types/bond';
-import { PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate, TransactionsResponse, FixedDepositCreate, PpfCreate } from '../types/portfolio';
+import { PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate, TransactionsResponse, FixedDepositCreate, PpfCreate, RecurringDepositCreate } from '../types/portfolio';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
 import { PortfolioAnalytics, AssetAnalytics } from '../types/analytics';
@@ -123,6 +123,22 @@ export const useCreateFixedDeposit = () => {
         onSuccess: (_, variables) => {
             invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
             showToast('Fixed Deposit created successfully', 'success');
+        },
+        onError: (error: ApiError) => {
+            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+        },
+    });
+};
+
+export const useCreateRecurringDeposit = () => {
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
+    return useMutation({
+        mutationFn: ({ portfolioId, data }: { portfolioId: string; data: RecurringDepositCreate }) =>
+            portfolioApi.createRecurringDeposit(portfolioId, data),
+        onSuccess: (_, variables) => {
+            invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
+            showToast('Recurring Deposit created successfully', 'success');
         },
         onError: (error: ApiError) => {
             showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');

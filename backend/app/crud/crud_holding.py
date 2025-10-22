@@ -1,14 +1,16 @@
 import logging
+import time
 import uuid
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import List
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.cache.utils import cache_analytics_data
 from app.crud.crud_ppf import process_ppf_holding
 from app.models.recurring_deposit import RecurringDeposit
 from app.schemas.enums import BondType
@@ -138,8 +140,6 @@ def _process_fixed_deposits(
 
     for fd in active_fds:
         interest_paid_to_date = _calculate_total_interest_paid(fd, today)
-        if interest_paid_to_date > 0:
-            total_realized_pnl += interest_paid_to_date
 
         current_value = _calculate_fd_current_value(
             fd.principal_amount,
@@ -269,26 +269,31 @@ def _calculate_summary(
     summary_total_invested = Decimal("0.0")
     summary_days_pnl = Decimal("0.0")
     summary_total_unrealized_pnl = Decimal("0.0")
-
+    summary_total_realized_pnl = realized_pnl_from_other_sources
+    logger.debug(
+        "[_calculate_summary] Initial realized PNL from sources: %s",
+        summary_total_realized_pnl,
+    )
     for holding_item in holdings_list:
         summary_total_value += holding_item.current_value
         summary_total_invested += holding_item.total_invested_amount
-        summary_total_unrealized_pnl += holding_item.unrealized_pnl
+        summary_total_unrealized_pnl += holding_item.unrealized_pnl or 0
+        # Realized PNL from active holdings (e.g., Payout FDs) is added here.
+        # PNL from sold assets is already in realized_pnl_from_other_sources.
+        if holding_item.asset_type not in ["STOCK", "ETF", "MUTUAL_FUND", "BOND"]:
+            summary_total_realized_pnl += holding_item.realized_pnl or 0
         summary_days_pnl += holding_item.days_pnl
-
-    income_cash = sum(
-        tx.quantity * tx.price_per_unit
-        for tx in transactions
-        if tx.transaction_type in ["DIVIDEND", "COUPON"]
+    logger.debug(
+        "[_calculate_summary] Final calculated total realized PNL: %s",
+        summary_total_realized_pnl,
     )
-    summary_total_value += income_cash
 
     return schemas.PortfolioSummary(
         total_value=summary_total_value,
         total_invested_amount=summary_total_invested,
         days_pnl=summary_days_pnl,
         total_unrealized_pnl=summary_total_unrealized_pnl,
-        total_realized_pnl=realized_pnl_from_other_sources,
+        total_realized_pnl=summary_total_realized_pnl,
     )
 
 
@@ -448,10 +453,19 @@ class CRUDHolding:
     This is a read-only CRUD module that calculates holdings based on transactions.
     """
 
+    @cache_analytics_data(
+        prefix="analytics:portfolio_holdings_and_summary",
+        arg_names=["portfolio_id"],
+        response_model=schemas.PortfolioHoldingsAndSummary,
+    )
     def get_portfolio_holdings_and_summary(
         self, db: Session, *, portfolio_id: uuid.UUID
-    ) -> Dict[str, Any]:
+    ) -> schemas.PortfolioHoldingsAndSummary:
         """Calculates the consolidated holdings and a summary for a given portfolio."""
+        start_time = time.time()
+        logger.info(
+            f"Starting holdings calculation for portfolio_id: {portfolio_id}"
+        )
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
@@ -462,35 +476,60 @@ class CRUDHolding:
             db=db, portfolio_id=portfolio_id
         )
 
-        # --- Process Non-Market-Traded Assets ---
-        fd_holdings, pnl_from_fds = _process_fixed_deposits(all_fixed_deposits)
-        rd_holdings, pnl_from_rds = _process_recurring_deposits(
+        # --- Process Market-Traded Assets First ---
+        market_traded_holdings, total_realized_pnl = _process_market_traded_assets(
+            db, portfolio_id, transactions, Decimal("0.0")
+        )
+        logger.info(
+            f"Processed {len(market_traded_holdings)} market-traded assets. "
+            f"Realized PNL from sales: {total_realized_pnl}"
+        )
+        holdings_list: List[schemas.Holding] = market_traded_holdings
+
+        # --- Process Non-Market-Traded Assets (FDs, RDs, PPF) ---
+        fd_holdings, pnl_from_matured_fds = _process_fixed_deposits(all_fixed_deposits)
+        rd_holdings, pnl_from_matured_rds = _process_recurring_deposits(
             all_recurring_deposits
         )
-        holdings_list: List[schemas.Holding] = fd_holdings + rd_holdings
-        total_realized_pnl = pnl_from_fds + pnl_from_rds
-
-        # --- PPF Holdings ---
+        logger.info(
+            "Processed FDs (%s), RDs (%s).", len(fd_holdings), len(rd_holdings)
+        )
+        logger.info(
+            "Realized PNL from matured FDs: %s, RDs: %s",
+            pnl_from_matured_fds,
+            pnl_from_matured_rds,
+        )
+        holdings_list.extend(fd_holdings)
+        holdings_list.extend(rd_holdings)
+        total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
         all_portfolio_assets = crud.asset.get_multi_by_portfolio(
             db, portfolio_id=portfolio_id
         )
         ppf_assets = [
             asset for asset in all_portfolio_assets if asset.asset_type.upper() == "PPF"
         ]
+        logger.info(f"Found {len(ppf_assets)} PPF assets to process.")
+        # --- PPF Holdings ---
         for ppf_asset in ppf_assets:
             # Lock the asset row before processing to prevent race conditions
             # on the interest calculation logic, which has a write side-effect.
             # This is only supported by PostgreSQL.
             db.query(models.Asset).filter_by(id=ppf_asset.id).with_for_update().first()
+            logger.info(f"Processing PPF asset {ppf_asset.id}...")
             ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id)
-            holdings_list.append(ppf_holding)
+            if ppf_holding:
+                holdings_list.append(ppf_holding)
+                if ppf_holding.realized_pnl:
+                    logger.debug(
+                        "  - PPF Holding Realized PNL: %s", ppf_holding.realized_pnl
+                    )
 
-        market_traded_holdings, total_realized_pnl = _process_market_traded_assets(
-            db, portfolio_id, transactions, total_realized_pnl
-        )
-        holdings_list.extend(market_traded_holdings)
+        logger.info("Finished processing all PPF assets.")
 
         # --- Final Grouping and Summary Calculation ---
+        logger.info(
+            f"Starting final summary. Total holdings in list: {len(holdings_list)}"
+        )
         for holding_item in holdings_list:
             group_map = {
                 "STOCK": "EQUITIES", "Mutual Fund": "EQUITIES", "ETF": "EQUITIES",
@@ -501,9 +540,35 @@ class CRUDHolding:
             holding_item.group = group_map_upper.get(
                 str(holding_item.asset_type).upper(), "MISCELLANEOUS")
 
-        summary = _calculate_summary(holdings_list, total_realized_pnl, transactions)
+        # --- Calculate Unrealized P&L for all holdings ---
+        # This must be done after all holdings are aggregated.
+        for holding in holdings_list:
+            if holding.asset_type not in ["FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF"]:
+                # For market-traded assets, it's current value minus cost basis
+                unrealized_pnl = holding.current_value - holding.total_invested_amount
+            else:
+                # For deposits/PPF, it's already calculated
+                unrealized_pnl = holding.unrealized_pnl
 
-        return {"summary": summary, "holdings": holdings_list}
+            holding.unrealized_pnl = unrealized_pnl
+            if holding.total_invested_amount > 0:
+                holding.unrealized_pnl_percentage = float(
+                    unrealized_pnl / holding.total_invested_amount
+                )
+
+        summary = _calculate_summary(holdings_list, total_realized_pnl, transactions)
+        logger.info(
+            f"Calculation complete. Total portfolio value: {summary.total_value}"
+        )
+        end_time = time.time()
+        logger.info(
+            f"Holdings calculation for portfolio {portfolio_id} "
+            f"took {end_time - start_time:.4f} seconds."
+        )
+
+        return schemas.PortfolioHoldingsAndSummary(
+            summary=summary, holdings=holdings_list
+        )
 
 
 holding = CRUDHolding()
