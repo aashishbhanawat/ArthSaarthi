@@ -27,7 +27,7 @@ def get_dashboard_summary(
     Retrieve a summary of the user's dashboard data, including total value,
     asset allocation, and value per portfolio.
     """
-    summary = crud.dashboard.get_summary(db=db, user=current_user)
+    summary = crud.dashboard.get_summary(db=db, user_id=current_user.id)
     return summary
 
 
@@ -58,5 +58,5 @@ def get_asset_allocation(
     """
     Retrieve asset allocation for the current user.
     """
-    allocation = crud.dashboard.get_allocation(db=db, user=current_user)
+    allocation = crud.dashboard.get_allocation(db=db, user_id=current_user.id)
     return {"allocation": allocation}

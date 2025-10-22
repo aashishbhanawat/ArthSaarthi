@@ -43,17 +43,14 @@ def _calculate_ppf_interest_for_fy(
     total_interest = Decimal("0.0")
     balance_at_start_of_month = opening_balance
 
-    for month_num in range(1, 13):
-        current_month_start = fy_start + relativedelta(months=month_num - 1)
+    for month_offset in range(12):
+        current_month_start = fy_start + relativedelta(months=month_offset)
         # For on-the-fly calculations, only calculate interest for months that
-        # have fully passed.
-        if current_month_start >= date.today().replace(day=1):
+        # have fully passed. A month has passed if the start of the next month
+        # is less than or equal to today's date.
+        if (current_month_start + relativedelta(months=1)) > date.today():
             break
 
-        logger.debug(
-            f"  -> Processing Month: {current_month_start.strftime('%Y-%m')}, "
-            f"Balance at start of month: {balance_at_start_of_month}"
-        )
         current_month_end = current_month_start + relativedelta(months=1)
 
         # Per PPF rules, interest is calculated on the minimum balance between
@@ -67,10 +64,6 @@ def _calculate_ppf_interest_for_fy(
                 < (current_month_start + timedelta(days=5))
             ) and t.transaction_type == TransactionType.CONTRIBUTION:
                 balance_for_interest_calc += t.quantity
-        logger.debug(
-            "     Balance for interest calc (after pre-5th contributions): "
-            f"{balance_for_interest_calc}"
-        )
 
         # Get interest rate for the month
         rate_obj = crud.historical_interest_rate.get_rate_for_date(
@@ -81,36 +74,17 @@ def _calculate_ppf_interest_for_fy(
                 Decimal(rate_obj.rate) / Decimal("100") / Decimal("12")
             )
             monthly_interest = balance_for_interest_calc * monthly_interest_rate
-            logger.debug(
-                f"     Rate: {rate_obj.rate}%, Monthly Interest: "
-                f"{monthly_interest.quantize(Decimal('0.01'))}"
-            )
             total_interest += monthly_interest
-        else:
-            logger.warning(
-                f"     No interest rate found for {current_month_start}. "
-                "Skipping interest for this month."
-            )
 
         # Update the balance for the start of the next month by adding all
         # contributions from the current month
         monthly_contributions_total = Decimal("0.0")
-        for t in transactions_in_fy:
-            if (
-                current_month_start <= t.transaction_date.date() < current_month_end
-                and t.transaction_type == TransactionType.CONTRIBUTION
-            ):
-                monthly_contributions_total += t.quantity
+        monthly_contributions_total = sum(
+            t.quantity for t in transactions_in_fy if
+            current_month_start <= t.transaction_date.date() < current_month_end and
+            t.transaction_type == TransactionType.CONTRIBUTION)
         balance_at_start_of_month += monthly_contributions_total
-        logger.debug(
-            f"     Contributions this month: {monthly_contributions_total}. "
-            f"Balance for next month: {balance_at_start_of_month}"
-        )
 
-    logger.debug(
-        "[_calculate_ppf_interest_for_fy] Total Calculated Interest for FY: "
-        f"{total_interest.quantize(Decimal('0.01'))}"
-    )
     return total_interest.quantize(Decimal("0.01"))
 
 def process_ppf_holding(
@@ -174,10 +148,6 @@ def process_ppf_holding(
     while current_fy_start <= today:
         fy_start, fy_end = get_financial_year(current_fy_start)
 
-        logger.debug(
-            f"Processing FY {fy_start.year}-{fy_end.year} for asset {ppf_asset.id}. "
-            f"Opening balance for FY: {balance}"
-        )
         transactions_in_fy = [
             t for t in contributions if fy_start <= t.transaction_date.date() <= fy_end
         ]
@@ -189,9 +159,6 @@ def process_ppf_holding(
                 # Calculate and create missing interest transaction
                 interest_for_fy = _calculate_ppf_interest_for_fy(
                     db, fy_start, fy_end, balance, transactions_in_fy
-                )
-                logger.debug(
-                    f"  Calculated missing interest for completed FY: {interest_for_fy}"
                 )
                 if interest_for_fy > 0:
                     crud.transaction.create_with_portfolio(
@@ -215,13 +182,8 @@ def process_ppf_holding(
                 + interest_for_fy
             )
         else:  # Current, ongoing financial year
-            logger.debug("  Processing current (on-the-fly) FY.")
             on_the_fly_interest = _calculate_ppf_interest_for_fy(
                 db, fy_start, fy_end, balance, transactions_in_fy
-            )
-            logger.debug(
-                "  Calculated on-the-fly interest for current FY: "
-                f"{on_the_fly_interest}"
             )
             balance += (
                 sum(
@@ -235,12 +197,6 @@ def process_ppf_holding(
         current_fy_start += relativedelta(years=1)
 
     total_interest_earned = total_credited_interest + on_the_fly_interest
-    logger.debug(
-        f"[process_ppf_holding] Final values for asset {ppf_asset.id}: "
-        f"Total Investment={total_investment}, Final Balance={balance}, "
-        f"Total Credited Interest={total_credited_interest}, "
-        f"On-the-fly Interest={on_the_fly_interest}"
-    )
     unrealized_pnl_percentage = (
         (total_interest_earned / total_investment) * 100
         if total_investment > 0

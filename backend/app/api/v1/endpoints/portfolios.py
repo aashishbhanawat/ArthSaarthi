@@ -113,7 +113,7 @@ def get_portfolio_summary(
     result = crud.holding.get_portfolio_holdings_and_summary(
         db=db, portfolio_id=portfolio_id
     )
-    return result["summary"]
+    return result.summary
 
 
 @router.get("/{portfolio_id}/holdings", response_model=schemas.HoldingsResponse)
@@ -135,7 +135,7 @@ def get_portfolio_holdings(
     result = crud.holding.get_portfolio_holdings_and_summary(
         db=db, portfolio_id=portfolio_id
     )
-    return {"holdings": result["holdings"]}
+    return {"holdings": result.holdings}
 
 
 @router.get("/{portfolio_id}/assets", response_model=List[schemas.Asset])

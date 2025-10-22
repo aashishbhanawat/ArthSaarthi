@@ -10,6 +10,7 @@ from pyxirr import xirr
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.cache.utils import cache_analytics_data
 from app.core.financial_definitions import TRANSACTION_BEHAVIORS, CashFlowType
 from app.crud.crud_dashboard import _get_portfolio_history
 from app.crud.crud_holding import (
@@ -190,7 +191,10 @@ def _get_portfolio_cash_flows(
     # 1. Cashflows from standard transactions (Stocks, MFs, PPF, etc.)
     for tx in transactions:
         behavior = TRANSACTION_BEHAVIORS.get(tx.transaction_type)
-        if not behavior or behavior["cash_flow"] == CashFlowType.NONE:
+        # For portfolio-level XIRR, we ignore internal accruals like PPF interest
+        # as they are captured in the final current_value of the holding.
+        if not behavior or behavior["cash_flow"] == CashFlowType.NONE or \
+           tx.transaction_type == "INTEREST_CREDIT":
             continue
 
         amount = Decimal("0.0")
@@ -241,6 +245,7 @@ def _get_portfolio_cash_flows(
 
 
 class CRUDAnalytics:
+    @cache_analytics_data(prefix="analytics:asset_analytics", arg_names=["asset_id"])
     def get_asset_analytics(
         self, db: Session, *, portfolio_id: uuid.UUID, asset_id: uuid.UUID
     ) -> schemas.AssetAnalytics:
@@ -258,7 +263,7 @@ class CRUDAnalytics:
             db, portfolio_id=portfolio_id
         )
         holding = next(
-            (h for h in all_holdings_data["holdings"] if h.asset_id == asset_id), None
+            (h for h in all_holdings_data.holdings if h.asset_id == asset_id), None
         )
         if not holding:
             logger.debug(f"No active holding found for asset {asset_id}.")
@@ -268,45 +273,24 @@ class CRUDAnalytics:
             db, portfolio_id=portfolio_id, asset_id=asset_id
         )
 
+        transactions_schemas = [
+            schemas.Transaction.model_validate(tx) for tx in transactions
+        ]
+        realized_cfs, unrealized_cfs = _get_realized_and_unrealized_cash_flows(
+            transactions_schemas
+        )
+
+        # --- Calculate Current XIRR (for open positions) ---
+        xirr_current_cfs = list(unrealized_cfs)
+        if holding.current_value > 0:
+            xirr_current_cfs.append((date.today(), float(holding.current_value)))
+        xirr_current_value = _calculate_xirr_from_cashflows_tuple(xirr_current_cfs)
+
+        # --- Calculate Historical XIRR (for all positions) ---
         if asset.asset_type == "PPF":
-            # For PPF, cash flows are contributions (outflows)
-            dates = []
-            values = []
-            contributions = [
-                tx for tx in transactions if tx.transaction_type == "CONTRIBUTION"
-            ]
-            if not contributions:
-                return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
-
-            for tx in contributions:
-                dates.append(tx.transaction_date.date())
-                values.append(-tx.quantity)  # Outflow
-
-            if holding.current_value > 0:
-                dates.append(date.today())
-                values.append(holding.current_value)
-
-            xirr_current_value = _calculate_xirr(dates, values)
-            # For PPF, current and historical are the same as you can't sell lots.
-            return schemas.AssetAnalytics(
-                xirr_current=xirr_current_value,
-                xirr_historical=xirr_current_value,
-            )
+            # For PPF, historical and current XIRR are the same.
+            xirr_historical_value = xirr_current_value
         else:
-            transactions_schemas = [
-                schemas.Transaction.model_validate(tx) for tx in transactions
-            ]
-            realized_cfs, unrealized_cfs = _get_realized_and_unrealized_cash_flows(
-                transactions_schemas
-            )
-
-            # --- Calculate Current XIRR (for open positions) ---
-            xirr_current_cfs = list(unrealized_cfs)
-            if holding.current_value > 0:
-                xirr_current_cfs.append((date.today(), float(holding.current_value)))
-            xirr_current_value = _calculate_xirr_from_cashflows_tuple(xirr_current_cfs)
-
-            # --- Calculate Historical XIRR (for all positions) ---
             xirr_historical_cfs = list(realized_cfs) + list(unrealized_cfs)
             if holding.current_value > 0:
                 xirr_historical_cfs.append((date.today(), float(holding.current_value)))
@@ -314,10 +298,9 @@ class CRUDAnalytics:
                 xirr_historical_cfs,
             )
 
-            return schemas.AssetAnalytics(
-                xirr_current=xirr_current_value,
-                xirr_historical=xirr_historical_value,
-            )
+        return schemas.AssetAnalytics(
+            xirr_current=xirr_current_value, xirr_historical=xirr_historical_value
+        )
 
     def get_fixed_deposit_analytics(
         self, db: Session, *, fd: FixedDeposit
@@ -412,6 +395,9 @@ class CRUDAnalytics:
         xirr_value = _calculate_xirr(dates, values)
         return schemas.RecurringDepositAnalytics(unrealized_xirr=xirr_value)
 
+    @cache_analytics_data(
+        prefix="analytics:portfolio_analytics", arg_names=["portfolio_id"]
+    )
     def get_portfolio_analytics(
         self, db: Session, *, portfolio_id: uuid.UUID
     ) -> schemas.PortfolioAnalytics:
@@ -444,7 +430,7 @@ class CRUDAnalytics:
         # Per FR6.2, the final value for XIRR must be the market value of assets,
         # not the total_value which includes cash from income (which is already
         # accounted for as a separate cash flow).
-        current_market_value = sum(h.current_value for h in holdings_data["holdings"])
+        current_market_value = sum(h.current_value for h in holdings_data.holdings)
         if current_market_value > 0:
             dates = list(dates) + [date.today()]
             values = list(values) + [current_market_value]
@@ -486,7 +472,7 @@ def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decima
     """Helper to get the total current value of a portfolio."""
     summary = crud.holding.get_portfolio_holdings_and_summary(
         db, portfolio_id=portfolio_id
-    )["summary"]
+    ).summary
     return summary.total_value
 
 
@@ -496,7 +482,7 @@ def _get_asset_current_value(
     """Helper to get the current value of a single asset in a portfolio."""
     holdings = crud.holding.get_portfolio_holdings_and_summary(
         db, portfolio_id=portfolio_id
-    )["holdings"]
+    ).holdings
     for h in holdings:
         if h.asset_id == asset_id:
             return h.current_value

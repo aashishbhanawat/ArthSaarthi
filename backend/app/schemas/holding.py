@@ -46,23 +46,11 @@ class Holding(BaseModel):
         # unlisted bonds, RDs), fall back to using the average buy price to avoid
         # showing a 100% loss. This should NOT apply to stocks.
         if (
-            self.asset_type in ["BOND", "RECURRING_DEPOSIT"]
-            and (self.current_price is None or self.current_price == 0)
-            and self.average_buy_price > 0
+            self.asset_type == "BOND"
+            and self.current_price == 0
         ):
             self.current_price = self.average_buy_price
             self.current_value = self.quantity * self.average_buy_price
-            self.unrealized_pnl = Decimal("0.0")
-            self.unrealized_pnl_percentage = 0.0
-        else:
-            # For market-traded assets with a valid current price, ensure P&L is
-            # calculated.
-            # Exclude assets like PPF which have their own specialized P&L calculation.
-            if self.asset_type not in ["PPF"]:
-                self.unrealized_pnl = self.current_value - self.total_invested_amount
-                if self.total_invested_amount > 0:
-                    self.unrealized_pnl_percentage = float(
-                        self.unrealized_pnl / self.total_invested_amount)
 
         return self
 
@@ -80,3 +68,9 @@ class PortfolioSummary(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PortfolioHoldingsAndSummary(BaseModel):
+    summary: PortfolioSummary
+    holdings: List[Holding]
+    model_config = {"from_attributes": True}

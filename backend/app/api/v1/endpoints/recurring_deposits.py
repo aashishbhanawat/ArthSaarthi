@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.cache.utils import invalidate_caches_for_portfolio
 from app.core import dependencies
 from app.crud.crud_holding import _calculate_rd_value_at_date
 
@@ -35,6 +36,7 @@ def create_recurring_deposit(
     rd = crud.recurring_deposit.create_with_portfolio(
         db=db, obj_in=rd_in, user_id=current_user.id
     )
+    invalidate_caches_for_portfolio(db=db, portfolio_id=portfolio.id)
     db.commit()
     db.refresh(rd)
     return rd
@@ -110,6 +112,7 @@ def update_recurring_deposit(
     if not current_user.is_admin and (rd.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     rd = crud.recurring_deposit.update(db=db, db_obj=rd, obj_in=rd_in)
+    invalidate_caches_for_portfolio(db, portfolio_id=rd.portfolio_id)
     db.commit()
     db.refresh(rd)
     return rd
@@ -130,6 +133,9 @@ def delete_recurring_deposit(
         raise HTTPException(status_code=404, detail="Recurring Deposit not found")
     if not current_user.is_admin and (rd.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    portfolio_id = rd.portfolio_id
     crud.recurring_deposit.remove(db=db, id=id)
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
     db.commit()
     return {"msg": "Recurring deposit deleted successfully."}

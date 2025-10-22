@@ -1,3 +1,6 @@
+import logging
+import time
+import uuid
 from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
@@ -5,8 +8,11 @@ from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 
+from app.cache.utils import cache_analytics_data
 from app.models.user import User
 from app.services.financial_data_service import financial_data_service
+
+logger = logging.getLogger(__name__)
 
 
 def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
@@ -14,6 +20,7 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
     Calculates the dashboard summary metrics for a given user by aggregating
     summaries from all their portfolios.
     """
+    start_time = time.time()
     from app import crud  # Local import to break circular dependency
 
     portfolios = crud.portfolio.get_multi_by_owner(db=db, user_id=user.id)
@@ -37,13 +44,13 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
         portfolio_data = crud.holding.get_portfolio_holdings_and_summary(
             db, portfolio_id=portfolio.id
         )
-        summary = portfolio_data["summary"]
+        summary = portfolio_data.summary
 
         agg_total_value += summary.total_value
         agg_total_unrealized_pnl += summary.total_unrealized_pnl
         agg_total_realized_pnl += summary.total_realized_pnl
 
-        agg_holdings.extend(portfolio_data["holdings"])
+        agg_holdings.extend(portfolio_data.holdings)
 
     # Calculate top movers from aggregated holdings
     top_movers = []
@@ -72,6 +79,12 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
         for ticker, value in asset_allocation_map.items()
     ]
 
+    end_time = time.time()
+    logger.info(
+        "Dashboard summary for user %s took %.4f seconds.",
+        user.id,
+        end_time - start_time,
+    )
     return {
         "total_value": agg_total_value,
         "total_unrealized_pnl": agg_total_unrealized_pnl,
@@ -207,16 +220,28 @@ def _get_portfolio_history(
 
 
 class CRUDDashboard:
-    def get_summary(self, db: Session, *, user: User) -> Dict[str, Any]:
+    @cache_analytics_data(prefix="analytics:dashboard_summary", arg_names=["user_id"])
+    def get_summary(self, db: Session, *, user_id: uuid.UUID) -> Dict[str, Any]:
+        user = db.get(User, user_id)
+        if not user:
+            # This case should ideally not be hit if called from a valid session
+            return {}
         return _calculate_dashboard_summary(db=db, user=user)
 
+    @cache_analytics_data(
+        prefix="analytics:dashboard_history", arg_names=["user", "range_str"]
+    )
     def get_history(
         self, db: Session, *, user: User, range_str: str
     ) -> List[Dict[str, Any]]:
         return _get_portfolio_history(db=db, user=user, range_str=range_str)
 
-    def get_allocation(self, db: Session, *, user: User) -> List[Dict[str, Any]]:
-        summary_data = _calculate_dashboard_summary(db=db, user=user)
+    def get_allocation(
+        self, db: Session, *, user_id: uuid.UUID
+    ) -> List[Dict[str, Any]]:
+        # Note: This will not be cached independently. It will be fast if get_summary
+        # has been called recently, as the underlying calculation will be cached.
+        summary_data = self.get_summary(db=db, user_id=user_id)
         return summary_data.get("asset_allocation", [])
 
 

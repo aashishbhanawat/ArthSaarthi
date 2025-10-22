@@ -607,23 +607,27 @@ def dump_table_command(
 @app.command("clear-cache")
 def clear_cache_command():
     """Clears the application cache (Redis or DiskCache)."""
-    from app.cache.factory import get_cache_client
+    # Local import to prevent circular dependencies
+    from app.cache.factory import get_cache_client, settings
 
     typer.echo("Clearing application cache...")
     try:
         cache_client = get_cache_client()
         if hasattr(cache_client, "clear"):
             cache_client.clear()
-            typer.secho("Cache cleared successfully.", fg=typer.colors.GREEN)
+            typer.secho(
+                f"Cache of type '{settings.CACHE_TYPE}' cleared successfully.",
+                fg=typer.colors.GREEN,
+            )
         else:
             typer.secho(
-                "The configured cache client does not support clearing.",
-                fg=typer.colors.RED, err=True
+                f"Error: The configured cache client ('{type(cache_client).__name__}') "
+                "does not support the 'clear' operation.",
+                fg=typer.colors.RED,
+                err=True,
             )
     except Exception as e:
-        typer.secho(f"An error occurred while clearing cache: {e}",
-                    fg=typer.colors.RED,
-                    err=True)
+        typer.secho(f"An error occurred: {e}", fg=typer.colors.RED, err=True)
 
 
 if __name__ == "__main__":
