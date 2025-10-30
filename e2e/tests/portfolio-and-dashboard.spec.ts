@@ -127,7 +127,6 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(googlRow.getByRole('cell', { name: '5', exact: true })).toBeVisible(); // Quantity updated from 10 to 5
 
     // Clean up the route handler so it doesn't interfere with other tests.
-    await page.unroute('**/api/v1/assets/');
   });
 
   test('should prevent a user from creating an invalid SELL transaction', async ({ page }) => {
@@ -264,5 +263,108 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     const mfRow = holdingsTable.getByRole('row', { name: new RegExp(mfFullName) });
     await expect(mfRow).toBeVisible();
     await expect(mfRow.getByRole('cell', { name: '50', exact: true })).toBeVisible(); // Quantity
+  });
+
+  test('should allow adding a mutual fund dividend and reflect it in realized P/L', async ({ page }) => {
+    const portfolioName = `MF Dividend Test Portfolio ${Date.now()}`;
+    const mfName = 'HDFC Index Fund';
+    const dividendAmount = '2500';
+
+    // 1. Create a portfolio to hold the transactions
+    await page.getByRole('link', { name: 'Portfolios' }).click();
+    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
+    await page.getByLabel('Portfolio Name').fill(portfolioName);
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+
+    // Wait for navigation to the new portfolio's detail page
+    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+
+    // 2. Add a BUY transaction for the mutual fund from the detail page
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await expect(page.getByRole('heading', { name: 'Add Transaction' })).toBeVisible();
+
+    await page.getByLabel('Asset Type').selectOption('Mutual Fund');
+    
+    // Search and select the mutual fund
+    const mfSelect = page.locator('input#mf-search-input');
+    await mfSelect.fill(mfName);
+    // Use a more specific locator to avoid ambiguity with aria-live regions
+    await page.getByRole('option', { name: new RegExp(mfName) }).click();
+
+    await page.getByLabel('Quantity').fill('100');
+    await page.getByLabel('Price per Unit').fill('500');
+    await page.getByLabel('Date').fill('2023-01-01');
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await expect(page.getByRole('dialog', { name: 'Add Transaction' })).not.toBeVisible();
+
+    // 3. Add a DIVIDEND transaction for the same fund from the detail page
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset Type').selectOption('Mutual Fund');
+    await mfSelect.fill(mfName);
+    await page.getByRole('option', { name: new RegExp(mfName) }).click();
+    // Use a more specific locator for the MF transaction type dropdown
+    await page.locator('#transaction_type_mf').selectOption('DIVIDEND');
+
+    // Add screenshot and HTML dump for debugging
+    await page.getByLabel('Total Dividend Amount').fill(dividendAmount);
+    await page.getByLabel('Payment Date').fill('2023-07-01');
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+
+    // Wait for the modal to close, confirming the transaction was submitted successfully.
+    await expect(page.getByRole('dialog', { name: 'Add Transaction' })).not.toBeVisible();
+
+    // 4. Verify the realized P/L in the portfolio summary
+    // The frontend formats numbers with commas, so we need to match that.
+    // Find the div that contains the text "Realized P&L", then find the value within it.
+    const realizedPnlCard = page.locator('div:has-text("Realized P&L")');
+    await expect(realizedPnlCard.getByText(/₹\s*2,500\.00/)).toBeVisible();
+  });
+
+  test('should allow adding a reinvested MF dividend and update holdings', async ({ page }) => {
+    const portfolioName = `MF Reinvest Test Portfolio ${Date.now()}`;
+    const mfName = 'HDFC Index Fund';
+    const dividendAmount = '1000';
+    const reinvestmentNav = '50';
+    const initialQuantity = 100;
+    const reinvestedQuantity = 20; // 1000 / 50
+    const finalQuantity = initialQuantity + reinvestedQuantity; // 120
+
+    // 1. Create a portfolio
+    await page.getByRole('link', { name: 'Portfolios' }).click();
+    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
+    await page.getByLabel('Portfolio Name').fill(portfolioName);
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+
+    // 2. Add initial BUY transaction
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset Type').selectOption('Mutual Fund');
+    const mfSelect = page.locator('input#mf-search-input');
+    await mfSelect.fill(mfName);
+    await page.getByRole('option', { name: new RegExp(mfName) }).click();
+    await page.getByLabel('Quantity').fill(String(initialQuantity));
+    await page.getByLabel('Price per Unit').fill('500');
+    await page.getByLabel('Date').fill('2023-01-01');
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await expect(page.getByRole('dialog', { name: 'Add Transaction' })).not.toBeVisible();
+
+    // 3. Add reinvested DIVIDEND transaction
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Asset Type').selectOption('Mutual Fund');
+    await mfSelect.fill(mfName);
+    await page.getByRole('option', { name: new RegExp(mfName) }).click();
+    await page.getByLabel('Type', { exact: true }).selectOption('DIVIDEND');
+    await page.getByLabel('Total Dividend Amount').fill(dividendAmount);
+    await page.getByLabel('Payment Date').fill('2023-07-01');
+    await page.getByLabel('Reinvested?').check();
+    await page.getByLabel('NAV on Reinvestment Date').fill(reinvestmentNav);
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await expect(page.getByRole('dialog', { name: 'Add Transaction' })).not.toBeVisible();
+
+    // 4. Verify Realized P&L and updated holding quantity
+    const realizedPnlCard = page.locator('div:has-text("Realized P&L")');
+    await expect(realizedPnlCard.getByText(/₹\s*1,000\.00/)).toBeVisible();
+    const holdingRow = page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: new RegExp(mfName) });
+    await expect(holdingRow.getByRole('cell', { name: String(finalQuantity), exact: true })).toBeVisible();
   });
 });

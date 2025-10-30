@@ -83,10 +83,10 @@ export const getTransactions = async (
 
 export const createTransaction = async (
     portfolioId: string,
-    transactionData: TransactionCreate
-): Promise<Transaction> => {
+    transactionData: TransactionCreate | TransactionCreate[]
+): Promise<Transaction[]> => {
     // The create endpoint is top-level. The portfolio_id is passed as a query parameter.
-    const response = await apiClient.post<Transaction>(
+    const response = await apiClient.post<Transaction[]>(
         `/api/v1/transactions/`,
         transactionData,
         { params: { portfolio_id: portfolioId } }

@@ -20,7 +20,7 @@ interface TransactionFormModalProps {
 // Define the shape of our form data
 type TransactionFormInputs = {
     asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit' | 'PPF Account' | 'Bond';
-    transaction_type: 'BUY' | 'SELL' | 'CONTRIBUTION' | 'Corporate Action';
+    transaction_type: 'BUY' | 'SELL' | 'DIVIDEND' | 'CONTRIBUTION' | 'Corporate Action';
     action_type: 'DIVIDEND' | 'SPLIT' | 'BONUS';
     quantity: number;
     price_per_unit: number;
@@ -54,6 +54,9 @@ type TransactionFormInputs = {
     bondMaturityDate?: string;
     // Corporate Action fields
     dividendAmount?: number;
+    mfDividendAmount?: number;
+    isReinvested?: boolean;
+    reinvestmentNav?: number;
     splitRatioNew?: number;
     splitRatioOld?: number;
     bonusRatioNew?: number;
@@ -87,6 +90,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const assetType = useWatch({ control, name: 'asset_type' });
     const transactionType = useWatch({ control, name: 'transaction_type' });
     const actionType = useWatch({ control, name: 'action_type' });
+    const isReinvested = useWatch({ control, name: 'isReinvested' });
 
     // --- Mutual Fund Search State & Hooks ---
     const [mfSearchInput, setMfSearchInput] = useState('');
@@ -256,6 +260,43 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
             createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
             return; // Exit after handling corporate action
+        }
+        
+        // --- Mutual Fund Dividend Logic ---
+        if (assetType === 'Mutual Fund' && transactionType === 'DIVIDEND') {
+            if (!selectedMf) {
+                setApiError("Please select a mutual fund.");
+                return;
+            }
+
+            const payloads: TransactionCreate[] = [];
+
+            // Always create the DIVIDEND transaction for P&L tracking
+            payloads.push({
+                ticker_symbol: selectedMf.ticker_symbol,
+                transaction_type: 'DIVIDEND',
+                quantity: data.mfDividendAmount!,
+                price_per_unit: 1,
+                transaction_date: new Date(data.transaction_date).toISOString(),
+            });
+
+            // If reinvested, also create a BUY transaction
+            if (data.isReinvested) {
+                if (!data.reinvestmentNav || data.reinvestmentNav <= 0) {
+                    setApiError("Please enter a valid, positive NAV for reinvestment.");
+                    return;
+                }
+                payloads.push({
+                    ticker_symbol: selectedMf.ticker_symbol,
+                    transaction_type: 'BUY',
+                    quantity: data.mfDividendAmount! / data.reinvestmentNav,
+                    price_per_unit: data.reinvestmentNav,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                });
+            }
+
+            createTransactionMutation.mutate({ portfolioId, data: payloads }, mutationOptions);
+            return;
         }
 
         if (assetType === 'PPF Account') {
@@ -655,40 +696,72 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         {/* Standard BUY/SELL Form */}
                         {((assetType === 'Stock' && transactionType !== 'Corporate Action') || assetType === 'Mutual Fund' || assetType === 'Bond') && (
                             <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
-                                {/* For MF, we need the buy/sell dropdown. For bonds, it's always buy. For stocks, it's handled above */}
+                                {/* For MF, we need the buy/sell/dividend dropdown. For bonds, it's always buy. For stocks, it's handled above */}
                                 {assetType === 'Mutual Fund' && !isEditMode && (
                                     <div className="form-group">
                                         <label htmlFor="transaction_type_mf" className="form-label">Type</label>
                                         <select id="transaction_type_mf" {...register('transaction_type')} className="form-input">
                                             <option value="BUY">Buy</option>
                                             <option value="SELL">Sell</option>
+                                            <option value="DIVIDEND">Dividend</option>
                                         </select>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="form-group">
-                                        <label htmlFor="quantity" className="form-label">Quantity</label>
-                                        <input id="quantity" type="number" step="any" {...register('quantity', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
-                                        {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
+                                {assetType === 'Mutual Fund' && transactionType === 'DIVIDEND' ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <label htmlFor="mfDividendAmount" className="form-label">Total Dividend Amount</label>
+                                                <input id="mfDividendAmount" type="number" step="any" {...register('mfDividendAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                                {errors.mfDividendAmount && <p className="text-red-500 text-xs italic">{errors.mfDividendAmount.message}</p>}
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="transaction_date_mf_dividend" className="form-label">Payment Date</label>
+                                                <input id="transaction_date_mf_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <input id="isReinvested" type="checkbox" {...register('isReinvested')} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                            <label htmlFor="isReinvested" className="text-sm text-gray-700">Reinvested?</label>
+                                        </div> {isReinvested && (
+                                            <div className="form-group">
+                                                <label htmlFor="reinvestmentNav" className="form-label">NAV on Reinvestment Date</label>
+                                                <input
+                                                    id="reinvestmentNav"
+                                                    type="number"
+                                                    step="any"
+                                                    {...register('reinvestmentNav', { required: "NAV is required for reinvestment", valueAsNumber: true, min: { value: 0.0001, message: "Must be positive" } })}
+                                                    className="form-input"
+                                                />
+                                                {errors.reinvestmentNav && <p className="text-red-500 text-xs italic">{errors.reinvestmentNav.message}</p>}
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="form-group">
-                                        <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
-                                        <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
-                                        {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="form-group">
+                                            <label htmlFor="quantity" className="form-label">Quantity</label>
+                                            <input id="quantity" type="number" step="any" {...register('quantity', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
+                                            {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
+                                            <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                            {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor="transaction_date_standard" className="form-label">Date</label>
+                                            <input id="transaction_date_standard" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor="fees" className="form-label">Fees (optional)</label>
+                                            <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                            {errors.fees && <p className="text-red-500 text-xs italic">{errors.fees.message}</p>}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="form-group">
-                                        <label htmlFor="transaction_date_standard" className="form-label">Date</label>
-                                        <input id="transaction_date_standard" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
-                                        {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
-                                    </div>
-                                    <div className="form-group">
-                                        <label htmlFor="fees" className="form-label">Fees (optional)</label>
-                                        <input id="fees" type="number" step="any" {...register('fees', { valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
-                                        {errors.fees && <p className="text-red-500 text-xs italic">{errors.fees.message}</p>}
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         )}
 

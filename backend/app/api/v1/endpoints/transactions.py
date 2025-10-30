@@ -1,7 +1,7 @@
 import logging
 import uuid
 from datetime import date
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -69,16 +69,18 @@ def read_transactions(
     return {"transactions": transactions, "total": total}
 
 
-@router.post("/", response_model=schemas.Transaction, status_code=201)
+@router.post("/", response_model=List[schemas.Transaction], status_code=201)
 def create_transaction(
     *,
     db: Session = Depends(dependencies.get_db),
-    transaction_in: schemas.TransactionCreateIn,
+    transactions_in: Union[
+        schemas.TransactionCreateIn, List[schemas.TransactionCreateIn]
+    ],
     portfolio_id: uuid.UUID = Query(...),
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
-    Create new transaction for a portfolio, including corporate actions.
+    Create one or more new transactions for a portfolio.
     """
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
@@ -86,74 +88,72 @@ def create_transaction(
     if portfolio.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    asset_to_use = None
-    if transaction_in.asset_id:
-        asset_to_use = crud.asset.get(db, id=transaction_in.asset_id)
+    if not isinstance(transactions_in, list):
+        transactions_in = [transactions_in]
 
-    if not asset_to_use and getattr(transaction_in, "ticker_symbol", None):
-        asset_to_use = crud.asset.get_or_create_by_ticker(
-            db,
-            ticker_symbol=transaction_in.ticker_symbol,
-            asset_type=transaction_in.asset_type,
-        )
-
-    if not asset_to_use:
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                "Could not find or create asset with ticker "
-                f"'{transaction_in.ticker_symbol}'"
-            ),
-        )
-
-    asset_id_to_use = asset_to_use.id
-    transaction_create_schema = schemas.TransactionCreate(
-        asset_id=asset_id_to_use,
-        **transaction_in.model_dump(
-            exclude={"ticker_symbol", "asset_type", "asset_id"}
-        ),
-    )
-
-    transaction = None
-    transaction_type = transaction_in.transaction_type
+    created_transactions = []
 
     try:
-        if transaction_type == TransactionType.DIVIDEND:
-            transaction = crud_corporate_action.handle_dividend(
-                db=db,
-                portfolio_id=portfolio_id,
-                asset_id=asset_id_to_use,
-                transaction_in=transaction_create_schema,
-            )
-            invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
-        elif transaction_type == TransactionType.SPLIT:
-            transaction = crud_corporate_action.handle_stock_split(
-                db=db,
-                portfolio_id=portfolio_id,
-                asset_id=asset_id_to_use,
-                transaction_in=transaction_create_schema,
-            )
-            invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
-        elif transaction_type == TransactionType.BONUS:
-            transaction = crud_corporate_action.handle_bonus_issue(
-                db=db,
-                portfolio_id=portfolio_id,
-                asset_id=asset_id_to_use,
-                transaction_in=transaction_create_schema,
-            )
-            invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
-        else:
-            transaction = crud.transaction.create_with_portfolio(
-                db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
-            )
-            invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
-            if asset_to_use.asset_type == "PPF":
-                logger.info(
-                    "Triggering PPF recalculation for asset %s "
-                    "due to new contribution.",
-                    asset_to_use.id,
+        for transaction_in in transactions_in:
+            asset_to_use = None
+            if transaction_in.asset_id:
+                asset_to_use = crud.asset.get(db, id=transaction_in.asset_id)
+
+            if not asset_to_use and getattr(transaction_in, "ticker_symbol", None):
+                asset_to_use = crud.asset.get_or_create_by_ticker(
+                    db,
+                    ticker_symbol=transaction_in.ticker_symbol,
+                    asset_type=transaction_in.asset_type,
                 )
-                trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
+
+            if not asset_to_use:
+                raise HTTPException(
+                    status_code=404,
+                    detail=(
+                        "Could not find or create asset with ticker "
+                        f"'{transaction_in.ticker_symbol}'"
+                    ),
+                )
+
+            asset_id_to_use = asset_to_use.id
+            transaction_create_schema = schemas.TransactionCreate(
+                asset_id=asset_id_to_use,
+                **transaction_in.model_dump(
+                    exclude={"ticker_symbol", "asset_type", "asset_id"}
+                ),
+            )
+
+            transaction_type = transaction_in.transaction_type
+
+            if transaction_type == TransactionType.DIVIDEND:
+                transaction = crud_corporate_action.handle_dividend(
+                    db=db,
+                    portfolio_id=portfolio_id,
+                    asset_id=asset_id_to_use,
+                    transaction_in=transaction_create_schema,
+                )
+            elif transaction_type == TransactionType.SPLIT:
+                transaction = crud_corporate_action.handle_stock_split(
+                    db=db,
+                    portfolio_id=portfolio_id,
+                    asset_id=asset_id_to_use,
+                    transaction_in=transaction_create_schema,
+                )
+            elif transaction_type == TransactionType.BONUS:
+                transaction = crud_corporate_action.handle_bonus_issue(
+                    db=db,
+                    portfolio_id=portfolio_id,
+                    asset_id=asset_id_to_use,
+                    transaction_in=transaction_create_schema,
+                )
+            else:
+                transaction = crud.transaction.create_with_portfolio(
+                    db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
+                )
+                if asset_to_use.asset_type == "PPF":
+                    trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
+
+            created_transactions.append(transaction)
 
     except HTTPException as e:
         db.rollback()
@@ -163,10 +163,11 @@ def create_transaction(
         logger.error(f"Error creating transaction: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
+    # Invalidate caches once after all transactions are processed
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
     db.commit()
-    db.refresh(transaction)
 
-    return transaction
+    return created_transactions
 
 
 @router.put("/{transaction_id}", response_model=schemas.Transaction)

@@ -106,6 +106,10 @@ def create_with_portfolio(self, db: Session, *, obj_in: TransactionCreate, portf
     db.commit()
     db.refresh(db_obj)
     return db_obj
+
+    # Note: Some endpoints, like transaction creation, have been updated to accept
+    # a list of objects to support atomic, multi-transaction submissions (e.g., for
+    # dividend reinvestment). The endpoint will loop through the list and process each item.
 ```
 
 ### Step 4: Response
