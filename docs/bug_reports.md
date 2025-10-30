@@ -6762,3 +6762,26 @@ The test fails because it asserts for a value based on a mocked gold price that 
 The test case in `test_bond_crud.py` was renamed to `test_sgb_valuation_book_value_fallback`. The mock for the non-existent `get_gold_price` method was removed, and the assertion was updated to confirm that the SGB's `current_value` correctly defaults to its `total_invested_amount` (book value).
 
 ---
+
+    - The analytics caching feature is fully implemented, tested, and documented. The application's performance for repeated data access is now significantly improved.
+
+---
+
+**Bug ID:** 2025-10-30-01 (Consolidated)
+**Title:** E2E test for MF Dividend Reinvestment was unstable and failed with multiple cascading issues.
+**Module:** Mutual Funds (Full Stack), E2E Testing
+**Reported By:** User & Gemini Code Assist
+**Date Reported:** 2025-10-30
+**Classification:** Test Suite / Implementation (Frontend/Backend)
+**Severity:** Critical
+**Description:**
+The E2E test `should allow adding a reinvested MF dividend and update holdings` was highly unstable and failed with a variety of errors. The debugging process revealed several distinct root causes across the full stack:
+1.  **Frontend Crash (`Rendered more hooks...`):** The initial implementation of the "Reinvested?" checkbox in `TransactionFormModal.tsx` called the `useWatch` hook conditionally inside the JSX. This violated the Rules of Hooks and crashed the component when the checkbox was clicked.
+2.  **Backend `422 Unprocessable Entity`:** After fixing the frontend, the test failed because the backend `POST /api/v1/transactions/` endpoint was only designed to accept a single transaction object, not the array of two transactions being sent for a reinvestment.
+3.  **Backend Test Failures (`TypeError`):** After refactoring the backend endpoint to always return a list, multiple existing unit tests (`test_bonds.py`, `test_portfolios_transactions.py`) began to fail. These tests were asserting against a single dictionary object and were not prepared for the new list-based response.
+**Resolution:**
+A series of patches were applied across the full stack:
+-   The `useWatch` hook in `TransactionFormModal.tsx` was moved to the top level of the component to fix the crash.
+-   The `create_transaction` endpoint in `transactions.py` was refactored to handle both a single object and a list of objects, processing each within a loop.
+-   All affected backend unit tests were updated to expect a list in the JSON response and to perform assertions on the first element of that list.
+

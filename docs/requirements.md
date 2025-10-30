@@ -44,10 +44,11 @@ This document outlines the functional and non-functional requirements for the Ar
     -   **Market-Traded:** Stocks, ETFs, Mutual Funds, Bonds. `✅ Done`
     -   **Employee Plans:** Restricted Stock Units (RSUs) and Employee Stock Purchase Plans (ESPPs), accommodating both Indian and US variants and their respective currencies (e.g., INR, USD). `📝 Planned`
     -   **Fixed Income & Savings:** Fixed Deposits (FDs), Recurring Deposits (RDs), Public Provident Fund (PPF), National Pension System (NPS). `📝 Planned`
--   **FR4.4: Transaction Management.**
+-   **FR4.4: Transaction Management.** `✅ Done`
     -   **FR4.4.1:** Users must be able to manually add, edit, and delete transactions. Assets are created implicitly when a transaction for a new ticker is added. `✅ Done`
     -   **FR4.4.2:** Transaction details must include: type (buy/sell), symbol/ticker, quantity, price, date, currency, and any associated fees. `✅ Done`
--   **FR4.5: Income Tracking.** The system must track dividends, interest payments, and other distributions, with an option to mark them as reinvested. `📝 Planned`
+-   **FR4.5: Income Tracking.** The system must track dividends, interest payments, and other distributions, with an option to mark them as reinvested. `⚠️ Partially Implemented`
+    -   **FR4.5.1:** Add support for tracking Mutual Fund dividends/payouts. `✅ Done`
 -   **FR4.6: Corporate Actions.** The system must automatically track and apply corporate actions like dividends, bonuses, splits, mergers, and demergers for stocks in portfolios. `📝 Planned`
 -   **FR4.7: Portfolio Detail Page View (Pilot Feedback).** The portfolio detail page must be redesigned to provide a consolidated, analytical view. `✅ Done`
     -   **FR4.7.1: Portfolio Summary Header.** The top of the page must display a summary card with key metrics for that portfolio: Total Value, Invested Amount, Day's P&L (Absolute & %), Unrealized P&L (Absolute & %), and Realized P&L. `✅ Done`

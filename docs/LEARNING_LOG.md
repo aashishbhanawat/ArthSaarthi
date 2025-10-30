@@ -346,3 +346,25 @@ While stabilizing the `seed-assets` command, a significant amount of time was sp
 
 *   The asset classification logic is now robust and correct.
 *   **Key Learning: Analyze Control Flow, Don't Just Patch Symptoms.** When a bug fix seems to oscillate between two incorrect states, it's a strong signal that the underlying control flow or logical structure is flawed. Instead of patching the immediate line, step back and analyze the entire function or block. A structural refactoring is often the correct and permanent solution, whereas continuing to patch the symptoms leads to wasted cycles and instability.
+
+    - The `FinancialDataService` has been successfully refactored into a more maintainable and extensible architecture.
+    - The application now has a robust, free, and authoritative source for daily Indian market data.
+    - All documentation has been updated to reflect the completion of this major non-functional requirement.
+
+---
+
+## 2025-10-30: Designing Flexible API Endpoints
+
+### 1. What Happened?
+
+While implementing the "Mutual Fund Dividend Reinvestment" feature, the frontend needed to submit two separate transactions (a `DIVIDEND` and a `BUY`) in a single, atomic operation. The existing `POST /api/v1/transactions/` endpoint was only designed to accept a single transaction object, which led to a `422 Unprocessable Entity` error.
+
+### 2. How Did the Process Help?
+
+*   **E2E Test as a Driver:** The E2E test for this feature immediately caught the API contract mismatch, preventing a buggy feature from being merged.
+*   **Targeted Refactoring:** Instead of creating a new, separate endpoint for batch transactions, the existing endpoint was refactored. Using Python's `Union[MySchema, List[MySchema]]` type hint, the endpoint was elegantly updated to handle both a single object and a list of objects. This maintained backward compatibility while adding the required new functionality.
+
+### 3. Outcome & New Learning
+
+*   **Key Learning: Design for Flexibility.** When designing API endpoints, especially for creation (`POST`), consider if there's a reasonable future use case for performing the action in a batch. Supporting both single-item and list-based submissions from the beginning can make the API more robust and prevent the need for breaking changes or new, duplicative endpoints later. FastAPI's support for `Union` in Pydantic models makes this pattern easy and clean to implement.
+
