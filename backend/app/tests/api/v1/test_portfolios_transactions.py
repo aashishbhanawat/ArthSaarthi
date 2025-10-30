@@ -42,8 +42,11 @@ def test_create_transaction_with_existing_asset(
         json=transaction_payload,
     )
     assert response.status_code == 201, response.json()
-    content = response.json()
-    assert Decimal(content["quantity"]) == Decimal("10.00")
+    content_list = response.json()
+    assert isinstance(content_list, list)
+    assert len(content_list) == 1
+    content = content_list[0]
+    assert Decimal(content["quantity"]) == Decimal("10.0")
     assert content["asset"]["id"] == str(asset.id)
     assert content["asset"]["ticker_symbol"] == "RELIANCE"
     assert content["portfolio_id"] == str(portfolio.id)
@@ -89,8 +92,11 @@ def test_create_transaction_with_new_mutual_fund_asset(
         json=transaction_payload,
     )
     assert response.status_code == 201, response.json()
-    data = response.json()
-    assert Decimal(data["quantity"]) == Decimal("100.50")
+    data_list = response.json()
+    assert isinstance(data_list, list)
+    assert len(data_list) == 1
+    data = data_list[0]
+    assert Decimal(data["quantity"]) == Decimal("100.5")
     assert data["asset"]["ticker_symbol"] == mf_scheme_code
     assert data["asset"]["name"] == "Test Mutual Fund - Growth"
     assert data["asset"]["exchange"] == "AMFI"

@@ -31,7 +31,12 @@
 - [ ] All E2E tests pass.
 - [ ] New features are covered by new tests.
 
+---
+
 ### Documentation Evaluation
+
+*At a minimum, `workflow_history.md` and `bug_reports.md` must be updated for any feature or fix.*
+
 - [ ] **`docs/workflow_history.md`**: A new, detailed entry has been added for this task. (Mandatory)
 - [ ] **`docs/bug_reports.md`**: All temporary bug reports have been consolidated into the main log. (Mandatory)
 - [ ] **`docs/features/`**: The relevant feature plan has been updated (e.g., status changed to "Done", technical design updated).
@@ -42,4 +47,5 @@
 - [ ] **`docs/code_flow_guide.md`**: Evaluated. Updated if the changes introduce a new architectural pattern or data flow.
 - [ ] **`docs/LEARNING_LOG.md`**: Evaluated. Updated if a significant new process improvement or technical lesson was learned.
 - [ ] **`docs/DISCLAIMER.md`**: Evaluated. Updated if a new third-party data source or library with disclosure requirements was added.
+- [ ] **`clean.sh`**: Evaluated. Updated if new temporary files or directories were introduced that need to be cleaned.
 - [ ] **Other Documentation**: All other guides (e.g., `installation_guide.md`, `developer_guide.md`) have been evaluated and updated if impacted by the changes.

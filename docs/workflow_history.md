@@ -2061,3 +2061,29 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
     - The analytics caching feature is fully implemented, tested, and documented. The application's performance for repeated data access is now significantly improved.
 
 ---
+
+## 2025-10-30: Implement Mutual Fund Dividend Reinvestment (FR4.5.1)
+
+*   **Task Description:** A full-stack implementation of the "Mutual Fund Dividend Reinvestment" feature. This allows users to log a dividend and automatically create a corresponding buy transaction if the dividend was reinvested.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to update the frontend `TransactionFormModal.tsx` to include a "Reinvested?" checkbox and logic to send two transactions (a `DIVIDEND` and a `BUY`) in an array.
+    2.  **Backend Refactoring:** The backend `POST /api/v1/transactions/` endpoint, which previously only accepted a single object, was refactored to handle both a single transaction object and an array of transaction objects. This was a critical change to support the frontend's atomic submission.
+    3.  **E2E Test Generation:** A new E2E test, `should allow adding a reinvested MF dividend and update holdings`, was created to validate the entire user flow.
+    4.  **Systematic Debugging via Log Analysis:** The initial implementation introduced several bugs that were caught by the new E2E test. A highly iterative "Analyze -> Report -> Fix" workflow was used to resolve them:
+        *   **Frontend Crash (`Rendered more hooks...`):** The AI diagnosed that a `useWatch` hook was being called conditionally inside the JSX, violating the Rules of Hooks. This was fixed by moving the hook to the top level of the component.
+        *   **Backend `422 Unprocessable Entity`:** The AI diagnosed that the backend endpoint was not designed to handle an array of transactions. The endpoint was refactored to loop through the input and process each transaction.
+        *   **Backend Test Failures (`TypeError`):** After the backend was refactored to always return a list, existing unit tests began to fail. The AI identified that the tests were asserting against a single dictionary instead of a list and provided the fix.
+
+*   **File Changes:**
+    *   `frontend/src/components/Portfolio/TransactionFormModal.tsx`: **Updated** to add the "Reinvested?" checkbox and logic to send an array of two transactions.
+    *   `e2e/tests/portfolio-and-dashboard.spec.ts`: **Updated** with a new E2E test for the reinvestment flow.
+    *   `backend/app/api/v1/endpoints/transactions.py`: **Updated** to accept both a single transaction and a list of transactions.
+    *   `backend/app/tests/api/v1/test_bonds.py`, `test_portfolios_transactions.py`: **Updated** to align with the new list-based API response.
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (158), frontend tests (162), and E2E tests (26) passed.
+
+*   **Outcome:**
+    - The "Mutual Fund Dividend Reinvestment" feature is complete, stable, and fully tested.
+    - The backend transaction API is now more robust and flexible.

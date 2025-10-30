@@ -27,6 +27,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
     *   Full CRUD and tracking for **Fixed Deposits (FDs)**, **Recurring Deposits (RDs)**, **Public Provident Fund (PPF)** accounts, and **Bonds** with detailed analytics.
 *   **Consolidated Holdings View:** A redesigned portfolio page that shows a consolidated holdings table with sorting, replacing a simple transaction list.
 *   **Sectioned Holdings Table:** A redesigned holdings table that groups assets by class into collapsible sections for a clearer overview.
+*   **Mutual Fund Dividend Tracking:** Manually log cash or reinvested dividends for mutual fund holdings.
 *   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.
 *   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
     *   Includes pre-built parsers for Zerodha, ICICI Direct, and a generic format.
@@ -40,7 +41,6 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ### On the Horizon (Future Features)
 
-*   **Advanced Asset Support:** Track other instruments like Employee Stock Plans (RSUs/ESPPs) and government schemes like the National Pension System (NPS).
 *   **Corporate Actions & Income Tracking:** Automatically handle dividends, stock splits, and bonuses, and track income from interest payments.
 *   **Deeper Analytics & Reporting:** Generate capital gains reports for tax filing, benchmark your portfolio against market indices, and analyze diversification by sector, geography, and more.
 *   **Goal-Oriented Planning:** Define financial goals (e.g., "Retirement", "House Down Payment"), link assets to them, and track your progress with projections.

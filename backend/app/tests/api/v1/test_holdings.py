@@ -229,3 +229,57 @@ def test_summary_with_dividend(
     assert Decimal(data["total_realized_pnl"]) == pytest.approx(Decimal("100.0"))
     # Expected: Total value should be current holding value (1100)
     assert Decimal(data["total_value"]) == pytest.approx(Decimal("1100.0"))
+
+
+def test_summary_with_mf_dividend(
+    client: TestClient, db: Session, get_auth_headers, mocker
+) -> None:
+    """
+    Test portfolio summary calculation with a Mutual Fund dividend transaction.
+    This test validates FR4.5.1.
+    """
+    # 1. Setup
+    user, password = create_random_user(db)
+    auth_headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="MF Dividend Test Portfolio"
+    )
+
+    # 2. Transactions
+    # Buy 100 units of a mutual fund
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="120503",  # HDFC Index Fund
+        asset_type="Mutual Fund",
+        transaction_type="BUY",
+        quantity=100,
+        price_per_unit=500,
+        transaction_date=date(2023, 1, 1),
+    )
+    # Receive a dividend of 2500
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="120503",
+        asset_type="Mutual Fund",
+        transaction_type="DIVIDEND",
+        quantity=2500, # Total dividend amount
+        price_per_unit=1,
+        transaction_date=date(2023, 7, 1),
+    )
+
+    # 3. Mock current price (not relevant for realized P&L)
+    mocker.patch.object(financial_data_service, "get_current_prices", return_value={})
+
+    # 4. API Call
+    response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/summary",
+        headers=auth_headers,
+    )
+    data = response.json()
+
+    # 5. Assertions
+    assert response.status_code == 200
+    # Expected: Realized PNL should be the dividend amount (2500).
+    assert Decimal(data["total_realized_pnl"]) == pytest.approx(Decimal("2500.0"))

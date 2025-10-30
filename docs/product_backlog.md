@@ -94,8 +94,9 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 -   **Watchlists (FR8.1):** Users can create, manage, and track custom lists of financial assets.
     -   **Status: ✅ Complete**
--   **Goal Planning & Tracking (FR13):** Implement core goal definition, asset linking, and basic progress tracking.
-- **Status: ⚠️ Partially Implemented**
+-   **Goal Planning & Tracking (FR13):** Implement core goal definition, asset linking, and basic progress tracking. **Status: ⚠️ Partially Implemented**
+-   **Mutual Fund Dividend Tracking (FR4.5.1):** Add support for logging cash and reinvested dividends for mutual funds.
+    -   **Status: ✅ Complete**
 
 ## Release 6: Security & Administration
 
@@ -146,8 +147,6 @@ The goal of this release was to build a robust and user-friendly system for impo
     -   **Status: ✅ Complete**
 -   **API Rate Limiting (NFR13):** Implement usage tracking and rate limiting for external data providers.
 -   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
--   **Administration Enhancements (FR2.3):** Add a log viewer for admins to review audit trails.
-    -   **FR4.5.1:** Add support for tracking Mutual Fund dividends/payouts. (📝 Planned)
 -   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to support mutual fund transaction imports.
 -   **Advanced Analytics (FR6):** Implement remaining metrics like TWR, MWR, Beta, Alpha, and benchmarking.
 -   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.

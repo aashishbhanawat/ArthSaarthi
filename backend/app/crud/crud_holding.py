@@ -269,6 +269,10 @@ def _calculate_summary(
     summary_total_invested = Decimal("0.0")
     summary_days_pnl = Decimal("0.0")
     summary_total_unrealized_pnl = Decimal("0.0")
+    logger.debug(
+        "[_calculate_summary] Initializing summary calculation. "
+        "Realized PNL from other sources: %s", realized_pnl_from_other_sources
+    )
     summary_total_realized_pnl = realized_pnl_from_other_sources
     logger.debug(
         "[_calculate_summary] Initial realized PNL from sources: %s",
@@ -327,6 +331,13 @@ def _process_market_traded_assets(
             holdings_state[ticker]["quantity"] += tx.quantity
             holdings_state[ticker]["total_invested"] += tx.quantity * tx.price_per_unit
         elif tx.transaction_type == "DIVIDEND":
+            logger.debug(
+                "[_process_market_traded_assets] Found DIVIDEND transaction for "
+                "ticker %s. Quantity: %s, Price: %s",
+                tx.asset.ticker_symbol,
+                tx.quantity,
+                tx.price_per_unit,
+            )
             dividend_amount = tx.quantity * tx.price_per_unit
             total_realized_pnl += dividend_amount
         elif tx.transaction_type == "SELL":
@@ -559,6 +570,9 @@ class CRUDHolding:
         summary = _calculate_summary(holdings_list, total_realized_pnl, transactions)
         logger.info(
             f"Calculation complete. Total portfolio value: {summary.total_value}"
+        )
+        logger.debug(
+            "[_get_portfolio_holdings_and_summary] Final summary object: %s", summary
         )
         end_time = time.time()
         logger.info(
