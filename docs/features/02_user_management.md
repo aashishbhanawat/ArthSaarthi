@@ -49,6 +49,12 @@ All endpoints will be located in `app/api/v1/endpoints/users.py` and will be pro
     *   **Description:** Deletes a user from the database.
     *   **Success Response (200 OK):** `{ "message": "User deleted successfully" }`
 
+*   **Set User Password (Admin):**
+    *   **URL:** `POST /api/v1/users/{user_id}/set-password`
+    *   **Description:** Allows an admin to set a new password for a user. **(Implemented)**
+    *   **Request Body:** `{"new_password": "..."}`
+    *   **Success Response (200 OK):** `{ "msg": "Password updated successfully" }`
+
 ### 1.4. Pydantic Schemas
 
 A new `UserUpdate` schema will be added to `app/schemas/user.py`. It will allow for partial updates by making all fields optional.
