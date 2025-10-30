@@ -126,6 +126,33 @@ The "Bond Details" section of the form will dynamically adapt based on the selec
     *   `Coupon Rate` field is disabled and set to `0.00%`, as T-Bills are zero-coupon instruments.
     *   The user enters the `Face Value` (e.g., 100) and the discounted `Price per Unit` they paid (e.g., 98.50).
 
+#### 2.1.4. Flow 3: Selling or Adding to an Existing Bond
+
+This flow is used when a user wants to log a `SELL` transaction or an additional `BUY` for a bond they already own.
+
+1.  User clicks "Add Transaction".
+2.  They select "Bond" as the asset type.
+3.  They search for and select an existing bond from their portfolio.
+4.  A new "Transaction Type" dropdown appears, allowing them to choose `BUY`, `SELL`, or `COUPON`.
+
+**Mockup: "Sell Bond" Form**
+```text
+┌──────────────────────────────────────────────────────────┐
+│ Add Transaction for "NHAI N2 8.3% 2027"                 [X]│
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  Asset Type:       [ Bond ▼ ] (Read-only)                │
+│  Asset:             [ NHAI N2 8.3% 2027 ▼ ] (Read-only)   │
+│  Transaction Type: [ SELL ▼ ]                            │
+│                    (Options: Buy, Sell, Coupon)          │
+│                                                          │
+│  Quantity             Price per Unit    Date             │
+│  [ 50           ]     [ 1025.00    ]    [ 2024-08-01 ]   │
+│                                                          │
+│                                     [ Cancel ] [ Save ]  │
+└──────────────────────────────────────────────────────────┘
+```
+
 
 ### 2.2. Holdings Table View
 
