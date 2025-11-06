@@ -65,6 +65,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         )
         db.add(db_obj)
         db.flush()
+        db.refresh(db_obj)
         return db_obj
 
     def get_multi_by_user_with_filters(

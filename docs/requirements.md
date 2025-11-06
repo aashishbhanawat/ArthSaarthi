@@ -15,11 +15,12 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR1.3: Admin Role Assignment.** The first user created must be automatically assigned the `admin` role. All subsequent users created by an admin will have the `user` role. `✅ Done`
 -   **FR1.4: Secure Login.** All users must be able to log in securely. `✅ Done`
 -   **FR1.5: Profile Management.** All users must have a dedicated profile/settings page to manage their account. `📝 Planned`
-    -   **FR1.5.1:** Users must be able to update their non-critical profile information (e.g., full name). `📝 Planned`
-    -   **FR1.5.2:** Users must be able to change their password. This action should require them to enter their current password for verification. `📝 Planned`
+    -   **FR1.5.1:** Users must be able to update their non-critical profile information (e.g., full name). `✅ Done`
+    -   **FR1.5.2:** Users must be able to change their password. This action should require them to enter their current password for verification. `✅ Done`
     -   **FR1.5.3:** Users must be able to change their login email. This action must trigger a verification process for the new email address before it becomes active. `📝 Planned`
--   **FR1.6: Forgotten Password Reset.** Any user must be able to reset their forgotten password. `📝 Planned`
+-   **FR1.6: Forgotten Password Reset.** Any user must be able to reset their forgotten password. `📝 Planned` (See FR1.6_forgot_password.md)
 -   **FR1.7: Secure Logout.** All users must be able to log out. `✅ Done`
+-   **FR1.8: Inactivity Timeout.** The system must automatically log out a user after 30 minutes of inactivity. User activity is defined as mouse movement, clicks, or keyboard input. `📝 Planned` (See FR1.8_inactivity_timeout.md)
 
 ### FR2: Administration
 
@@ -32,7 +33,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR3.1:** Upon login, users see a consolidated dashboard summarizing all their portfolios and investments. `✅ Done`
 -   **FR3.2:** The dashboard must display the total aggregated value of all investments. `✅ Done`
 -   **FR3.3:** It should show the overall profit/loss, as well as the percentage change for different timeframes (daily, weekly, overall). `✅ Done`
--   **FR3.4:** The dashboard must feature a "Privacy Mode" toggle that hides/unhides all monetary amounts across the application. `📝 Planned`
+-   **FR3.4:** The dashboard must feature a "Privacy Mode" toggle that hides/unhides all monetary amounts across the application. `✅ Done`
 -   **FR3.5:** The dashboard must provide a breakdown of investments by individual asset holdings and by asset class. `✅ Done`
 -   **FR3.6:** An interactive pie chart must visualize the asset allocation by asset class. `✅ Done`
 -   **FR3.7:** An interactive line chart must display the historical value of the user's total investments over time. `✅ Done`
@@ -43,13 +44,14 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR4.3: Asset Support.** The system must support tracking a wide variety of asset types: `⚠️ Partially Implemented`
     -   **Market-Traded:** Stocks, ETFs, Mutual Funds, Bonds. `✅ Done`
     -   **Employee Plans:** Restricted Stock Units (RSUs) and Employee Stock Purchase Plans (ESPPs), accommodating both Indian and US variants and their respective currencies (e.g., INR, USD). `📝 Planned`
-    -   **Fixed Income & Savings:** Fixed Deposits (FDs), Recurring Deposits (RDs), Public Provident Fund (PPF), National Pension System (NPS). `📝 Planned`
+    -   **Fixed Income & Savings:** Fixed Deposits (FDs), Recurring Deposits (RDs), Public Provident Fund (PPF). `✅ Done`
+    -   **Fixed Income & Savings (Future):** National Pension System (NPS). `📝 Planned`
 -   **FR4.4: Transaction Management.** `✅ Done`
     -   **FR4.4.1:** Users must be able to manually add, edit, and delete transactions. Assets are created implicitly when a transaction for a new ticker is added. `✅ Done`
     -   **FR4.4.2:** Transaction details must include: type (buy/sell), symbol/ticker, quantity, price, date, currency, and any associated fees. `✅ Done`
 -   **FR4.5: Income Tracking.** The system must track dividends, interest payments, and other distributions, with an option to mark them as reinvested. `⚠️ Partially Implemented`
     -   **FR4.5.1:** Add support for tracking Mutual Fund dividends/payouts. `✅ Done`
--   **FR4.6: Corporate Actions.** The system must automatically track and apply corporate actions like dividends, bonuses, splits, mergers, and demergers for stocks in portfolios. `📝 Planned`
+-   **FR4.6: Corporate Actions.** The system must allow users to manually log corporate actions like dividends, bonuses, and stock splits. `⚠️ Partially Implemented` (Automatic tracking is planned)
 -   **FR4.7: Portfolio Detail Page View (Pilot Feedback).** The portfolio detail page must be redesigned to provide a consolidated, analytical view. `✅ Done`
     -   **FR4.7.1: Portfolio Summary Header.** The top of the page must display a summary card with key metrics for that portfolio: Total Value, Invested Amount, Day's P&L (Absolute & %), Unrealized P&L (Absolute & %), and Realized P&L. `✅ Done`
     -   **FR4.7.2: Consolidated Holdings View.** The primary view must be a table of consolidated current holdings, replacing the raw transaction list. Each row must represent a single asset and display: Asset Name, Quantity, Average Buy Price, Invested Amount, LTP, Day's Change (%), Day's P&L, Current Value, and Unrealized P&L (Absolute & %). `✅ Done`
@@ -139,6 +141,7 @@ This document outlines the functional and non-functional requirements for the Ar
 ### FR14: Future Scope (Renumbered)
 -   **FR14.1: Two-Factor Authentication (2FA).** `📝 Planned`
 -   **FR14.2: Companion Mobile App.** `📝 Planned`
+-   **FR14.3: Sliding Window Session Expiry.** Implement a "sliding window" session where the user's session is extended with each API call, providing a more seamless experience for continuously active users. `📝 Planned`
 
 ### FR15: AI-Powered Expense Management
 -   **FR15.1: Document Upload.** Users must be able to upload various financial documents, including credit card statements, bank statements, and individual invoices in formats like PDF. `📝 Planned`

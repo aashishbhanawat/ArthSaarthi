@@ -21,14 +21,72 @@ def handle_dividend(
     """
     Handles a dividend corporate action.
     Saves the DIVIDEND transaction for auditing and income tracking.
+    If the dividend is marked as reinvested, it also creates a corresponding BUY
+    transaction.
     """
-    logger.info(f"Handling dividend for asset {asset_id} in portfolio {portfolio_id}")
+    logger.info(
+        f"Handling dividend for asset {asset_id} in portfolio {portfolio_id}. "
+        f"Is Reinvested: {getattr(transaction_in, 'is_reinvested', False)}"
+    )
+    logger.debug("Payload received by handle_dividend: %s",
+                 transaction_in.model_dump_json(indent=2))
 
     # Always save the dividend transaction itself for record-keeping.
+    # We create a new schema here to ensure only relevant fields are passed.
+    dividend_audit_schema = schemas.TransactionCreate(
+        asset_id=asset_id,
+        transaction_type=TransactionType.DIVIDEND,
+        quantity=transaction_in.quantity,
+        price_per_unit=transaction_in.price_per_unit,
+        transaction_date=transaction_in.transaction_date,
+        fees=getattr(transaction_in, "fees", 0),
+    )
     dividend_audit_transaction = crud.transaction.create_with_portfolio(
-        db=db, obj_in=transaction_in, portfolio_id=portfolio_id
+        db=db, obj_in=dividend_audit_schema, portfolio_id=portfolio_id
     )
     logger.info(f"Saved DIVIDEND audit transaction {dividend_audit_transaction.id}")
+
+    # If reinvested, create a corresponding BUY transaction
+    if getattr(transaction_in, "is_reinvested", False) is True:
+        logger.info(
+            "Dividend is marked as reinvested. Proceeding to create BUY transaction."
+        )
+        reinvestment_nav = getattr(transaction_in, "reinvestment_nav", None)
+        logger.debug(f"Reinvestment NAV: {reinvestment_nav}")
+        logger.debug(
+            "Dividend Amount (from transaction_in.quantity): %s",
+            transaction_in.quantity,
+        )
+
+        if not reinvestment_nav or reinvestment_nav <= 0:
+            logger.error(
+                "Reinvestment NAV is missing or invalid. "
+                "Aborting BUY transaction creation."
+            )
+            raise HTTPException(
+                status_code=400, detail="NAV is required for reinvestment."
+            )
+
+        reinvested_quantity = transaction_in.quantity / reinvestment_nav
+        logger.info(f"Calculated reinvested quantity: {reinvested_quantity}")
+
+        buy_transaction_schema = schemas.TransactionCreate(
+            asset_id=asset_id,
+            transaction_type=TransactionType.BUY,
+            quantity=reinvested_quantity,
+            price_per_unit=reinvestment_nav,
+            transaction_date=transaction_in.transaction_date,
+        )
+        crud.transaction.create_with_portfolio(
+            db=db, obj_in=buy_transaction_schema, portfolio_id=portfolio_id
+        )
+        logger.info(
+            "Saved corresponding BUY transaction for reinvested dividend."
+        )
+    else:
+        logger.info(
+            "Dividend is not marked as reinvested. Skipping BUY transaction creation."
+        )
 
     return dividend_audit_transaction
 

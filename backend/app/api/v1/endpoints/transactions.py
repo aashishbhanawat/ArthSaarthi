@@ -82,6 +82,7 @@ def create_transaction(
     """
     Create one or more new transactions for a portfolio.
     """
+    logger.debug("create trasaction request received")
     portfolio = crud.portfolio.get(db=db, id=portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -125,12 +126,29 @@ def create_transaction(
 
             transaction_type = transaction_in.transaction_type
 
-            if transaction_type == TransactionType.DIVIDEND:
+            # For reinvested dividends, we use a special handler.
+            # For simple cash dividends, we let it fall through to the standard
+            # creation logic.
+            is_reinvested_dividend = (
+                transaction_type == TransactionType.DIVIDEND
+                and getattr(transaction_in, "is_reinvested", False) is True
+            )
+            logger.debug(f"Is reinvested dividend? {is_reinvested_dividend}")
+            if is_reinvested_dividend:  # noqa: E501
+                logger.info(
+                    "Handling reinvested dividend via corporate action handler "
+                    "for asset %s.",
+                    asset_id_to_use,
+                )
+                logger.debug(
+                    "Full incoming payload for reinvestment: %s",
+                    transaction_in.model_dump_json(indent=2),
+                )
                 transaction = crud_corporate_action.handle_dividend(
                     db=db,
                     portfolio_id=portfolio_id,
                     asset_id=asset_id_to_use,
-                    transaction_in=transaction_create_schema,
+                    transaction_in=transaction_in,
                 )
             elif transaction_type == TransactionType.SPLIT:
                 transaction = crud_corporate_action.handle_stock_split(
@@ -147,6 +165,9 @@ def create_transaction(
                     transaction_in=transaction_create_schema,
                 )
             else:
+                logger.debug(
+                    "else part of create transaction logic for %s", transaction_type
+                )
                 transaction = crud.transaction.create_with_portfolio(
                     db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
                 )
@@ -163,9 +184,11 @@ def create_transaction(
         logger.error(f"Error creating transaction: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Invalidate caches once after all transactions are processed
-    invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
+    # Commit all changes at once to ensure transactional integrity
     db.commit()
+
+    # Invalidate caches after successful commit
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
 
     return created_transactions
 

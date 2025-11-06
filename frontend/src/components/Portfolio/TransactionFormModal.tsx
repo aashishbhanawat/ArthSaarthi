@@ -20,7 +20,7 @@ interface TransactionFormModalProps {
 // Define the shape of our form data
 type TransactionFormInputs = {
     asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit' | 'PPF Account' | 'Bond';
-    transaction_type: 'BUY' | 'SELL' | 'DIVIDEND' | 'CONTRIBUTION' | 'Corporate Action';
+    transaction_type: 'BUY' | 'SELL' | 'DIVIDEND' | 'CONTRIBUTION' | 'Corporate Action' | 'COUPON';
     action_type: 'DIVIDEND' | 'SPLIT' | 'BONUS';
     quantity: number;
     price_per_unit: number;
@@ -61,6 +61,8 @@ type TransactionFormInputs = {
     splitRatioOld?: number;
     bonusRatioNew?: number;
     bonusRatioOld?: number;
+    couponAmount?: number;
+    assetId?: string;
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
@@ -262,40 +264,59 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             return; // Exit after handling corporate action
         }
         
+        // --- Bond Coupon Logic ---
+        if (assetType === 'Bond' && transactionType === 'COUPON') {
+            if (!selectedAsset || !selectedAsset.id) {
+                setApiError("Please select a bond to apply the coupon to.");
+                return;
+            }
+            const payload: TransactionCreate = {
+                asset_id: selectedAsset.id,
+                transaction_type: 'COUPON',
+                quantity: data.couponAmount!, // Repurposed for total cash amount
+                price_per_unit: 1,
+                transaction_date: new Date(data.transaction_date).toISOString(),
+            };
+            createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            return;
+        }
+
         // --- Mutual Fund Dividend Logic ---
-        if (assetType === 'Mutual Fund' && transactionType === 'DIVIDEND') {
+        if (assetType === 'Mutual Fund' && data.transaction_type === 'DIVIDEND') {
             if (!selectedMf) {
                 setApiError("Please select a mutual fund.");
                 return;
             }
 
-            const payloads: TransactionCreate[] = [];
+            let payload: TransactionCreate | TransactionCreate[];
 
-            // Always create the DIVIDEND transaction for P&L tracking
-            payloads.push({
-                ticker_symbol: selectedMf.ticker_symbol,
-                transaction_type: 'DIVIDEND',
-                quantity: data.mfDividendAmount!,
-                price_per_unit: 1,
-                transaction_date: new Date(data.transaction_date).toISOString(),
-            });
-
-            // If reinvested, also create a BUY transaction
             if (data.isReinvested) {
-                if (!data.reinvestmentNav || data.reinvestmentNav <= 0) {
-                    setApiError("Please enter a valid, positive NAV for reinvestment.");
-                    return;
-                }
-                payloads.push({
+                // For reinvestment, create two transactions: one for the dividend income, one for the new units bought.
+                const dividendTx: TransactionCreate = {
                     ticker_symbol: selectedMf.ticker_symbol,
-                    transaction_type: 'BUY',
-                    quantity: data.mfDividendAmount! / data.reinvestmentNav,
-                    price_per_unit: data.reinvestmentNav,
+                    asset_type: 'Mutual Fund',
+                    transaction_type: 'DIVIDEND',
+                    quantity: data.mfDividendAmount!,
+                    price_per_unit: 1, // Price is 1 for dividend amount
                     transaction_date: new Date(data.transaction_date).toISOString(),
-                });
+                };
+
+                const reinvestedQuantity = data.mfDividendAmount! / data.reinvestmentNav!;
+                const buyTx: TransactionCreate = {
+                    ticker_symbol: selectedMf.ticker_symbol,
+                    asset_type: 'Mutual Fund',
+                    transaction_type: 'BUY',
+                    quantity: reinvestedQuantity,
+                    price_per_unit: data.reinvestmentNav!,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                };
+                payload = [dividendTx, buyTx];
+            } else {
+                // For simple cash dividend, create only one transaction.
+                payload = { ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund', transaction_type: 'DIVIDEND', quantity: data.mfDividendAmount!, price_per_unit: 1, transaction_date: new Date(data.transaction_date).toISOString() };
             }
 
-            createTransactionMutation.mutate({ portfolioId, data: payloads }, mutationOptions);
+            createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
             return;
         }
 
@@ -367,7 +388,18 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     first_payment_date: null,
                 };
                 const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: 'BUY', quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0 };
-                createBondMutation.mutate({ portfolioId, bondData, transactionData }, mutationOptions);
+                
+                // If the asset already exists and its bond details are complete (i.e., not a placeholder),
+                // we just add a new transaction. Otherwise, we use the bond creation endpoint which
+                // also handles updating (upserting) the bond details along with creating the first transaction.
+                const isBondDetailComplete = selectedAsset.bond && selectedAsset.bond.maturity_date && selectedAsset.bond.maturity_date !== '1970-01-01';
+                if (isBondDetailComplete) {
+                     const payload: TransactionCreate = { ...transactionData, asset_id: selectedAsset.id, ticker_symbol: selectedAsset.ticker_symbol };
+                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+                } else {
+                    // This is for creating a new bond asset and its first transaction
+                    createBondMutation.mutate({ portfolioId, bondData, transactionData }, mutationOptions);
+                }
             };
 
             if (selectedAsset.id) {
@@ -692,9 +724,19 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 </select>
                             </div>
                         )}
+                        {assetType === 'Bond' && !isEditMode && (
+                            <div className="form-group">
+                                <label htmlFor="transaction_type_bond" className="form-label">Type</label>
+                                <select id="transaction_type_bond" {...register('transaction_type')} className="form-input">
+                                    <option value="BUY">Buy</option>
+                                    <option value="SELL">Sell</option>
+                                    <option value="COUPON">Coupon</option>
+                                </select>
+                            </div>
+                        )}
 
                         {/* Standard BUY/SELL Form */}
-                        {((assetType === 'Stock' && transactionType !== 'Corporate Action') || assetType === 'Mutual Fund' || assetType === 'Bond') && (
+                        {((assetType === 'Stock' && transactionType !== 'Corporate Action') || (assetType === 'Mutual Fund' && transactionType !== 'DIVIDEND') || (assetType === 'Bond' && transactionType !== 'COUPON')) && (
                             <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
                                 {/* For MF, we need the buy/sell/dividend dropdown. For bonds, it's always buy. For stocks, it's handled above */}
                                 {assetType === 'Mutual Fund' && !isEditMode && (
@@ -707,38 +749,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </select>
                                     </div>
                                 )}
-                                {assetType === 'Mutual Fund' && transactionType === 'DIVIDEND' ? (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="form-group">
-                                                <label htmlFor="mfDividendAmount" className="form-label">Total Dividend Amount</label>
-                                                <input id="mfDividendAmount" type="number" step="any" {...register('mfDividendAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
-                                                {errors.mfDividendAmount && <p className="text-red-500 text-xs italic">{errors.mfDividendAmount.message}</p>}
-                                            </div>
-                                            <div className="form-group">
-                                                <label htmlFor="transaction_date_mf_dividend" className="form-label">Payment Date</label>
-                                                <input id="transaction_date_mf_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
-                                                {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <input id="isReinvested" type="checkbox" {...register('isReinvested')} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                            <label htmlFor="isReinvested" className="text-sm text-gray-700">Reinvested?</label>
-                                        </div> {isReinvested && (
-                                            <div className="form-group">
-                                                <label htmlFor="reinvestmentNav" className="form-label">NAV on Reinvestment Date</label>
-                                                <input
-                                                    id="reinvestmentNav"
-                                                    type="number"
-                                                    step="any"
-                                                    {...register('reinvestmentNav', { required: "NAV is required for reinvestment", valueAsNumber: true, min: { value: 0.0001, message: "Must be positive" } })}
-                                                    className="form-input"
-                                                />
-                                                {errors.reinvestmentNav && <p className="text-red-500 text-xs italic">{errors.reinvestmentNav.message}</p>}
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
+                                { (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="form-group">
                                             <label htmlFor="quantity" className="form-label">Quantity</label>
@@ -764,6 +775,55 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 )}
                             </div>
                         )}
+                        
+                        {/* Standalone forms for MF Dividend and Bond Coupon */}
+                        {assetType === 'Mutual Fund' && transactionType === 'DIVIDEND' && !isEditMode && (
+                             <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="form-group">
+                                        <label htmlFor="mfDividendAmount" className="form-label">Total Dividend Amount</label>
+                                        <input id="mfDividendAmount" type="number" step="any" {...register('mfDividendAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                        {errors.mfDividendAmount && <p className="text-red-500 text-xs italic">{errors.mfDividendAmount.message}</p>}
+                                    </div>
+                                    <div className="form-group">
+                                        <label htmlFor="transaction_date_mf_dividend" className="form-label">Payment Date</label>
+                                        <input id="transaction_date_mf_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                        {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <input id="isReinvested" type="checkbox" {...register('isReinvested')} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                    <label htmlFor="isReinvested" className="text-sm text-gray-700">Reinvested?</label>
+                                </div>
+                                {isReinvested && (
+                                    <div className="form-group">
+                                        <label htmlFor="reinvestmentNav" className="form-label">NAV on Reinvestment Date</label>
+                                        <input
+                                            id="reinvestmentNav"
+                                            type="number"
+                                            step="any"
+                                            {...register('reinvestmentNav', { required: "NAV is required for reinvestment", valueAsNumber: true, min: { value: 0.0001, message: "Must be positive" } })}
+                                            className="form-input"
+                                        />
+                                        {errors.reinvestmentNav && <p className="text-red-500 text-xs italic">{errors.reinvestmentNav.message}</p>}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {assetType === 'Bond' && transactionType === 'COUPON' && !isEditMode && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
+                                <div className="form-group">
+                                    <label htmlFor="couponAmount" className="form-label">Total Coupon Amount</label>
+                                    <input id="couponAmount" type="number" step="any" {...register('couponAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                    {errors.couponAmount && <p className="text-red-500 text-xs italic">{errors.couponAmount.message}</p>}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="transaction_date_coupon" className="form-label">Payment Date</label>
+                                    <input id="transaction_date_coupon" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                    {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Corporate Action Form */}
                         {assetType === 'Stock' && transactionType === 'Corporate Action' && !isEditMode && (
@@ -781,8 +841,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 {actionType === 'DIVIDEND' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="form-group">
-                                            <label htmlFor="transaction_date_dividend" className="form-label">Payment Date</label>
-                                            <input id="transaction_date_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            <label htmlFor="transaction_date_mf_dividend" className="form-label">Payment Date</label>
+                                            <input id="transaction_date_mf_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group">

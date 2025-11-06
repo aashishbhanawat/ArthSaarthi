@@ -68,7 +68,7 @@ def _get_realized_and_unrealized_cash_flows(
     income_flows = [
         t
         for t in sorted_txs
-        if t.transaction_type in ("COUPON", "INTEREST_CREDIT", "DIVIDEND")
+        if t.transaction_type in ("DIVIDEND", "COUPON", "INTEREST_CREDIT")
     ]
     contribution_flows = [
         t for t in sorted_txs if t.transaction_type == "CONTRIBUTION"
@@ -191,8 +191,10 @@ def _get_portfolio_cash_flows(
     # 1. Cashflows from standard transactions (Stocks, MFs, PPF, etc.)
     for tx in transactions:
         behavior = TRANSACTION_BEHAVIORS.get(tx.transaction_type)
-        # For portfolio-level XIRR, we ignore internal accruals like PPF interest
-        # as they are captured in the final current_value of the holding.
+        # For portfolio-level XIRR, we ignore internal accruals like PPF interest.
+        # These are not true external cash flows and are captured in the
+        # final current_value of the holding.
+        # We explicitly include COUPON and DIVIDEND as they are external cash inflows.
         if not behavior or behavior["cash_flow"] == CashFlowType.NONE or \
            tx.transaction_type == "INTEREST_CREDIT":
             continue
@@ -200,6 +202,9 @@ def _get_portfolio_cash_flows(
         amount = Decimal("0.0")
         if tx.transaction_type == "CONTRIBUTION":
             # For PPF contributions, the 'quantity' is the amount.
+            amount = tx.quantity
+        elif tx.transaction_type == "COUPON":
+            # For coupons, the 'quantity' is the total amount, and price is 1.
             amount = tx.quantity
         else:
             amount = tx.quantity * tx.price_per_unit

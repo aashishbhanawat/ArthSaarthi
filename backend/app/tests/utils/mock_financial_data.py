@@ -99,6 +99,15 @@ class MockFinancialDataService:
                 results[ticker] = self.MOCK_MF_PRICES[ticker]
         return results
 
+    def get_price_from_yfinance(self, ticker_symbol: str) -> Decimal | None:
+        """
+        Mock implementation for fetching a single price from yfinance.
+        This is used as a fallback for bond pricing.
+        """
+        if ticker_symbol in self.MOCK_PRICES:
+            return self.MOCK_PRICES[ticker_symbol]["current_price"]
+        return None
+
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
