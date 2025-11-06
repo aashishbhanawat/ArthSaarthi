@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Callable
 from uuid import uuid4
 
@@ -268,3 +269,83 @@ def test_create_coupon_transaction_for_bond(
     assert content["transaction_type"] == "COUPON"
     assert float(content["quantity"]) == 400
     assert content["asset"]["id"] == str(asset.id)
+
+
+def test_coupon_payment_updates_realized_pnl(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable,
+    normal_user_data: dict,
+    mocker,
+) -> None:
+    """
+    Tests that a COUPON transaction correctly updates the portfolio's
+    total_realized_pnl, without affecting unrealized PNL.
+    """
+    normal_user_token_headers = get_auth_headers(
+        email=normal_user_data["email"], password=normal_user_data["password"]
+    )
+    user = crud.user.get_by_email(db, email=normal_user_data["email"])
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Bond PNL Portfolio")
+    asset_in = schemas.AssetCreate(
+        name="Coupon Test Bond",
+        ticker_symbol=f"CTB-{random_lower_string()}",
+        asset_type=AssetType.BOND,
+        currency="INR",
+    )
+    asset = crud.asset.create(db, obj_in=asset_in)
+    create_random_bond(db, asset_id=asset.id)
+
+    # 1. Add a BUY transaction to establish the holding
+    buy_transaction_data = {
+        "asset_id": str(asset.id),
+        "transaction_type": "BUY",
+        "quantity": 10,
+        "price_per_unit": 1000,
+        "transaction_date": "2023-01-01",
+    }
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(**buy_transaction_data),
+        portfolio_id=portfolio.id,
+    )
+
+    # 2. Add a COUPON transaction
+    coupon_amount = Decimal("450.75")
+    coupon_transaction_data = {
+        "asset_id": str(asset.id),
+        "transaction_type": "COUPON",
+        "quantity": float(coupon_amount),
+        "price_per_unit": 1,
+        "transaction_date": "2023-07-01",
+    }
+    client.post(
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
+        headers=normal_user_token_headers,
+        json=coupon_transaction_data,
+    )
+
+    # 3. Mock the financial data service to prevent external API calls and ensure stable
+    # PNL calculation
+    mocker.patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value={
+            asset.ticker_symbol: {
+                "current_price": Decimal("1000.00"),
+                "previous_close": Decimal("1000.00"),
+            }
+        },
+    )
+
+    # 4. Fetch portfolio summary and assert realized PNL
+    response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/summary",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 200
+    summary = response.json()
+    # Ensure the realized PNL matches the coupon amount
+    assert Decimal(summary["total_realized_pnl"]) == coupon_amount
+    # Ensure other PNLs are not affected by coupon (no sell, no market price change)
+    assert Decimal(summary["total_unrealized_pnl"]) == Decimal("0.00")
+    assert Decimal(summary["days_pnl"]) == Decimal("0.00")

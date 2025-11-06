@@ -1,6 +1,6 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2025-10-30
+**Last Updated:** 2025-11-06
 
 ## 1. Current Project Status
 
@@ -30,7 +30,7 @@
     -   Fixed Deposits (FDs) - Cumulative & Payout.
     -   Recurring Deposits (RDs).
     -   Public Provident Fund (PPF).
-    -   Bonds (Corporate, Government, SGBs, T-Bills).
+    -   Bonds (Corporate, Government, SGBs, T-Bills) with manual coupon tracking.
 
 
 ### Key Features

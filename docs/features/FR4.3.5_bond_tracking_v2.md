@@ -1,6 +1,6 @@
 # Feature Plan (v2): Bond & T-Bill Tracking
 
-**Status: ✅ Done**
+**Status: ✅ Done (including Coupon Tracking)**
 **Feature ID:** FR4.3.5
 **Title:** Implement Flexible Tracking for Bonds (Corporate, Govt, SGBs, T-Bills)
 **User Story:** As an investor in fixed-income securities, I want to track my various types of bonds (Corporate, Government, SGBs, T-Bills), so that I can accurately monitor their market value, coupon payments, and overall contribution to my portfolio.
@@ -144,7 +144,7 @@ This flow is used when a user wants to log a `SELL` transaction or an additional
 │  Asset Type:       [ Bond ▼ ] (Read-only)                │
 │  Asset:             [ NHAI N2 8.3% 2027 ▼ ] (Read-only)   │
 │  Transaction Type: [ SELL ▼ ]                            │
-│                    (Options: Buy, Sell, Coupon)          │
+│                    (Options: Buy, Sell, Coupon)            │
 │                                                          │
 │  Quantity             Price per Unit    Date             │
 │  [ 50           ]     [ 1025.00    ]    [ 2024-08-01 ]   │
@@ -247,6 +247,7 @@ Coupon payments will be handled in two phases to provide immediate functionality
 
 *   **Phase 1 (Manual Entry):**
     *   A new `TransactionType` of `COUPON` will be added.
+    *   **Status: ✅ Done**
     *   Users will manually create a `COUPON` transaction to record interest payments received from their bonds.
     *   This ensures that all cash flows are accurately captured for XIRR and Realized P&L calculations. This approach is consistent with the initial plan for handling dividends (FR4.5).
 

@@ -283,8 +283,10 @@ def _calculate_summary(
         summary_total_invested += holding_item.total_invested_amount
         summary_total_unrealized_pnl += holding_item.unrealized_pnl or 0
         # Realized PNL from active holdings (e.g., Payout FDs) is added here.
-        # PNL from sold assets is already in realized_pnl_from_other_sources.
-        if holding_item.asset_type not in ["STOCK", "ETF", "MUTUAL_FUND", "BOND"]:
+        # PNL from sold/income events on market-traded assets is already in
+        # realized_pnl_from_other_sources. We only add PNL from non-market assets here.
+        asset_type_upper = str(holding_item.asset_type).upper()
+        if asset_type_upper in ["FIXED_DEPOSIT", "RECURRING_DEPOSIT"]:
             summary_total_realized_pnl += holding_item.realized_pnl or 0
         summary_days_pnl += holding_item.days_pnl
     logger.debug(
@@ -339,12 +341,39 @@ def _process_market_traded_assets(
                 tx.price_per_unit,
             )
             dividend_amount = tx.quantity * tx.price_per_unit
+            logger.debug(
+                "Adding %s to portfolio total_realized_pnl and asset realized_pnl.",
+                dividend_amount,
+            )
             total_realized_pnl += dividend_amount
+            holdings_state[ticker]["realized_pnl"] += dividend_amount
+        elif tx.transaction_type == "COUPON":
+            logger.debug(
+                "[_process_market_traded_assets] Found COUPON transaction for "
+                "ticker %s. Amount: %s. Price: %s",
+                tx.asset.ticker_symbol,
+                tx.quantity,
+                tx.price_per_unit,
+            )
+            coupon_amount = tx.quantity * tx.price_per_unit
+            logger.debug(
+                "Adding %s to portfolio total_realized_pnl and asset realized_pnl.",
+                coupon_amount,
+            )
+            total_realized_pnl += coupon_amount
+            holdings_state[ticker]["realized_pnl"] += coupon_amount
         elif tx.transaction_type == "SELL":
             if holdings_state[ticker]["quantity"] > 0:
                 avg_buy_price = (
                     holdings_state[ticker]["total_invested"]
                     / holdings_state[ticker]["quantity"]
+                )
+                logger.debug(
+                    "Processing SELL for %s. Avg Buy: %s, Sell Price: %s, Qty: %s",
+                    ticker,
+                    avg_buy_price,
+                    tx.price_per_unit,
+                    tx.quantity,
                 )
                 realized_pnl_for_sale = (
                     tx.price_per_unit - avg_buy_price

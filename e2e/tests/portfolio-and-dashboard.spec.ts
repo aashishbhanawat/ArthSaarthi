@@ -273,7 +273,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 1. Create a portfolio to hold the transactions
     await page.getByRole('link', { name: 'Portfolios' }).click();
     await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await page.getByLabel('Portfolio Name').fill(portfolioName);
+    await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
 
     // Wait for navigation to the new portfolio's detail page
@@ -332,7 +332,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 1. Create a portfolio
     await page.getByRole('link', { name: 'Portfolios' }).click();
     await page.getByRole('button', { name: 'Create New Portfolio' }).click();
-    await page.getByLabel('Portfolio Name').fill(portfolioName);
+    await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
