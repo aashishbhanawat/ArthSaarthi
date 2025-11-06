@@ -23,11 +23,11 @@ class BondBase(BaseModel):
     isin: str | None = Field(
         None, index=True, description="ISIN for market price lookups of tradable bonds."
     )
-    payment_frequency: PaymentFrequency | None = Field(
-        None, description="For auto-coupon generation."
+    payment_frequency: PaymentFrequency | None = Field(None,
+        description="For auto-coupon generation."
     )
-    first_payment_date: date | None = Field(
-        None, description="For auto-coupon generation."
+    first_payment_date: date | None = Field(None,
+        description="For auto-coupon generation."
     )
 
 
