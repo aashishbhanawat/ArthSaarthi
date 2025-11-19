@@ -2105,6 +2105,32 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
     *   `docs/workflow_history.md`: **Updated** with this entry.
 ---
 
+## 2025-11-19: Implement Inactivity Timeout (FR1.8)
+
+*   **Task Description:** A full-stack implementation of the "Inactivity Timeout" feature. This allows the application to automatically log out users after a configurable period of inactivity.
+
+*   **Key Prompts & Interactions:**
+    1.  **Initial Implementation:** A series of prompts were used to generate the frontend implementation. This included creating a `useIdleTimer` hook to monitor user activity, a `SessionTimeoutModal` component to warn the user, and integrating this logic into the `AuthContext`.
+    2.  **Test Generation:** The AI generated unit tests for the new hook and component.
+    3.  **E2E Test Generation & Debugging:** An E2E test was created to validate the full user flow. A significant amount of time was spent debugging this test, which was failing due to a hardcoded countdown in the modal. The AI diagnosed this by analyzing the `error-context.md` file from the test results and then implemented a solution to make the modal's countdown configurable for testing.
+
+*   **File Changes:**
+    *   `frontend/src/hooks/useIdleTimer.ts`: **New** hook to monitor user activity.
+    *   `frontend/src/components/modals/SessionTimeoutModal.tsx`: **New** modal component.
+    *   `frontend/src/context/AuthContext.tsx`: **Updated** to integrate the inactivity timeout feature.
+    *   `frontend/src/__tests__/hooks/useIdleTimer.test.ts`: **New** unit test.
+    *   `frontend/src/__tests__/components/modals/SessionTimeoutModal.test.tsx`: **New** unit test.
+    *   `e2e/tests/inactivity-timeout.spec.ts`: **New** E2E test.
+    *   `docs/features/FR1.8_inactivity_timeout.md`: **Updated** status to "Implemented".
+
+*   **Verification:**
+    - Ran the full test suite using `./run_local_tests.sh all`. All linters, backend tests (158), frontend tests (162), and E2E tests (28) passed.
+
+*   **Outcome:**
+    - The "Inactivity Timeout" feature is complete, stable, and fully tested.
+
+---
+
 ## 2025-11-06: Final Full-Stack Stabilization & Documentation
 
 *   **Task Description:** A final pass over the entire application to ensure all test suites (backend, frontend, E2E for both PostgreSQL and SQLite) are stable and passing. This confirms the project is in a "green" state. All project documentation was then updated to reflect this final, stable state.
