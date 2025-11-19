@@ -1,18 +1,17 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2025-11-06
+**Last Updated:** 2025-11-19
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** All major features planned for the current development cycle, including the implementation of the analytics caching layer, are complete and stable. All automated test suites (backend, frontend, and E2E) are passing. The application has been manually tested and is considered ready for the next phase of development or for a new release.
-*   **Summary:** All major features planned for the current development cycle, including the implementation of mutual fund dividend reinvestment, are complete and stable. All automated test suites (backend, frontend, and E2E) are passing. The application has been manually tested and is considered ready for the next phase of development or for a new release.
+*   **Summary:** All major features planned for the current development cycle, including the implementation of the inactivity timeout, are complete and stable. All automated test suites (backend, frontend, and E2E) are passing. The application has been manually tested and is considered ready for the next phase of development or for a new release.
 
 ## 2. Test Suite Status
 
 *   **Backend Unit/Integration Tests:** ✅ **158/158 Passing**
-*   **Frontend Unit/Integration Tests:** ✅ **162/162 Passing**
-*   **End-to-End (E2E) Tests:** ✅ **26/26 Passing**
+*   **Frontend Unit/Integration Tests:** ✅ **170/170 Passing**
+*   **End-to-End (E2E) Tests:** ✅ **28/28 Passing**
 *   **Linters (Code Quality):** ✅ **Passing**
 
 ## 3. Implemented Functionality
@@ -44,6 +43,7 @@
 -   **Security & User Management:**
     -   Audit Logging Engine for key events.
     -   User Profile Management (name/password change).
+    -   Inactivity Timeout to automatically log out users.
     -   Desktop-mode encryption support.
 -   **UX Enhancements:**
     -   Privacy Mode to obscure sensitive values.

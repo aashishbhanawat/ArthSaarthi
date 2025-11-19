@@ -1,7 +1,7 @@
 # Feature Plan: Inactivity Timeout (FR1.8)
 
 **Feature ID:** FR1.8
-**Status:** 📝 Planned
+**Status:** ✅ Implemented
 **Title:** Automatic Logout on User Inactivity
 **User Story:** As a security-conscious user, I want the application to automatically log me out after a period of inactivity, so that my financial data is protected if I leave my computer unattended.
 
@@ -9,7 +9,7 @@
 
 ## 1. Objective
 
-This document outlines the implementation plan for a client-side inactivity timeout feature. The application will monitor user activity (mouse movement, clicks, key presses) and automatically log the user out after 30 minutes of inactivity. To provide a good user experience, a warning modal will be displayed shortly before the final logout.
+This document outlines the implementation plan for a client-side inactivity timeout feature. The application will monitor user activity (mouse movement, clicks, key presses) and automatically log the user out after a configurable period of inactivity. To provide a good user experience, a warning modal will be displayed shortly before the final logout.
 
 ---
 
@@ -17,9 +17,9 @@ This document outlines the implementation plan for a client-side inactivity time
 
 1.  User is actively using the application.
 2.  User leaves the application idle.
-3.  After **28 minutes** of inactivity, a modal appears: "You've been idle for a while. You will be logged out in 2 minutes." The modal has a "Stay Logged In" button.
-4.  **Scenario A (User is present):** User clicks "Stay Logged In". The modal closes, and the 30-minute inactivity timer is reset.
-5.  **Scenario B (User is absent):** User does not interact with the modal. After 2 more minutes (30 minutes total inactivity), the application automatically calls the `logout()` function, clears the session, and redirects to the login page.
+3.  After a configured duration of inactivity (defaulting to 30 minutes), a modal appears: "You've been idle for a while. You will be logged out in 2 minutes." The modal has a "Stay Logged In" button.
+4.  **Scenario A (User is present):** User clicks "Stay Logged In". The modal closes, and the inactivity timer is reset.
+5.  **Scenario B (User is absent):** User does not interact with the modal. After 2 more minutes, the application automatically calls the `logout()` function, clears the session, and redirects to the login page.
 
 ---
 
@@ -31,74 +31,60 @@ The session timeout warning will be presented in a modal dialog that is consiste
 
 ```text
 ┌──────────────────────────────────────────────────┐
-│ Session Timeout Warning                       [X]│
+│ Session Timeout                                  │
 ├──────────────────────────────────────────────────┤
 │                                                  │
-│  You have been idle for a while. For your        │
-│  security, you will be logged out automatically. │
-│                                                  │
-│  Time remaining: 1:59                            │
+│  You will be logged out in 120 seconds due to    │
+│  inactivity.                                     │
 │                                                  │
 │                                                  │
-│                    [ Stay Logged In ]            │
+│      [ Stay Logged In ] [ Logout ]               │
 └──────────────────────────────────────────────────┘
 ```
 
 ### 3.2. Component Behavior
 *   **Modal:** The modal will use the standard `.modal-overlay` and `.modal-content` classes.
 *   **Countdown:** A timer will display the remaining time before automatic logout.
-*   **Action Button:** A single, primary action button (`.btn .btn-primary`) labeled "Stay Logged In" will be present. Clicking this button will reset the idle timer and close the modal.
+*   **Action Button:** A "Stay Logged In" button will be present. Clicking this button will reset the idle timer and close the modal. A "Logout" button is also provided for immediate logout.
 
 ---
 
 ## 4. Technical Implementation Plan (Frontend-Centric)
 
-This feature will be implemented entirely on the frontend, avoiding complex backend session management.
+This feature was implemented entirely on the frontend, avoiding complex backend session management.
 
-### 3.1. Dependency
+### 3.1. New Files Created
 
-*   Install the `react-idle-timer` library, a robust and well-tested solution for this use case.
-    ```shell
-    npm install react-idle-timer
-    ```
-
-### 3.2. New Files to Create
-
-*   **Provider:** `frontend/src/context/IdleTimerProvider.tsx`
+*   **Hook:** `frontend/src/hooks/useIdleTimer.ts`
 *   **Modal Component:** `frontend/src/components/modals/SessionTimeoutModal.tsx`
 
-### 3.3. Implementation Steps
+### 3.2. Implementation Steps
 
-1.  **`IdleTimerProvider.tsx`:**
-    *   Create a new context provider that will wrap the entire application.
-    *   Use the `useIdleTimer` hook from the library.
-    *   Configure the main `timeout` to 28 minutes and a `promptTimeout` of 2 minutes.
-    *   The hook's `onPrompt` event will trigger the display of the `SessionTimeoutModal`.
-    *   The hook's `onIdle` event (which fires after the `promptTimeout` expires) will call the `logout()` function from our existing `AuthContext`.
+1.  **`useIdleTimer.ts`:**
+    *   A custom hook was created to manage the inactivity timer.
+    *   It listens for user activity events such as mouse movements, key presses, and clicks to reset the timer.
+    *   When the timer expires, it triggers a callback to show the warning modal.
 
 2.  **`SessionTimeoutModal.tsx`:**
-    *   A simple modal component that displays the warning message and a countdown.
-    *   It will have a single "Stay Logged In" button.
+    *   A modal component that displays the warning message and a countdown.
+    *   It has a "Stay Logged In" button to reset the timer and a "Logout" button to log out immediately.
 
 3.  **Integration:**
-    *   Wrap the main `<App />` component in `main.tsx` with the new `<IdleTimerProvider>`.
-    *   The `IdleTimerProvider` will manage the visibility of the `SessionTimeoutModal`.
+    *   The `useIdleTimer` hook and `SessionTimeoutModal` were integrated into the `AuthProvider` in `frontend/src/context/AuthContext.tsx`.
 
-### 3.4. Configuration
+### 3.3. Configuration
 
-*   The timeout durations (e.g., 28 minutes, 2 minutes) should be configurable via environment variables (`VITE_IDLE_TIMEOUT_MS`, `VITE_IDLE_PROMPT_MS`) to allow for easy adjustment and, critically, for fast E2E testing.
+*   The inactivity timeout duration is configurable via the `VITE_INACTIVITY_TIMEOUT_MINUTES` environment variable.
+*   The inactivity timeout and modal countdown are also configurable for E2E tests via `sessionStorage` overrides (`e2e_inactivity_timeout` and `e2e_modal_countdown_seconds`).
 
 ---
 
 ## 5. Testing Plan
 
 *   **Unit Tests:**
-    *   Use Jest's fake timers (`jest.useFakeTimers()` and `jest.advanceTimersByTime()`) to test the `IdleTimerProvider`.
-    *   Verify that `onPrompt` is called at the correct time (e.g., 28 minutes).
-    *   Verify that `onIdle` is called at the correct time (e.g., 30 minutes).
+    *   `frontend/src/__tests__/hooks/useIdleTimer.test.ts`: Tests for the `useIdleTimer` hook using Jest's fake timers.
+    *   `frontend/src/__tests__/components/modals/SessionTimeoutModal.test.tsx`: Tests for the `SessionTimeoutModal` component.
 *   **E2E Test:**
-    *   Create a new test file `e2e/tests/inactivity-timeout.spec.ts`.
-    *   Set the environment variables to very short durations (e.g., `VITE_IDLE_TIMEOUT_MS=3000`, `VITE_IDLE_PROMPT_MS=2000`).
-    *   The test will log in, wait for 3 seconds, assert the warning modal is visible, wait another 2 seconds, and assert that the user has been redirected to the login page.
+    *   `e2e/tests/inactivity-timeout.spec.ts`: An E2E test that verifies the complete inactivity timeout flow, using `sessionStorage` overrides to test the feature with short timeouts.
 
 ---

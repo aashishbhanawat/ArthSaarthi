@@ -116,6 +116,9 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **User Profile Management (FR1.5):** Implement user profile settings page for name and password changes.
     -   **Status: ✅ Complete**
 
+-   **Inactivity Timeout (FR1.8):** Automatically log out users after a period of inactivity.
+    -   **Status: ✅ Complete**
+
 ## Release 8: User Experience Enhancements
 
 **Status: ✅ COMPLETE (as of 2025-09-03)**
