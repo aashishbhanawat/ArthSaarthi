@@ -1,6 +1,8 @@
 import { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import api from '../services/api';
 import { User } from '../types/user';
+import useIdleTimer from '../hooks/useIdleTimer';
+import SessionTimeoutModal from '../components/modals/SessionTimeoutModal';
 
 interface AuthContextType {
   token: string | null;
@@ -25,6 +27,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error] = useState<string | null>(null);
+  const [isIdle, setIsIdle] = useState(false);
+
+  const timeoutMinutes = parseInt(import.meta.env.VITE_INACTIVITY_TIMEOUT_MINUTES || '30', 10);
+  const timeout = timeoutMinutes * 60 * 1000;
+
+  const handleIdle = () => {
+    setIsIdle(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsIdle(false);
+  };
+
+  useIdleTimer(timeout, handleIdle);
 
   const logout = useCallback(() => {
     setToken(null);
@@ -88,6 +104,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{ token, user, setUser, isLoading, error, deploymentMode, login, logout, register }}>
       {children}
+      <SessionTimeoutModal
+        isOpen={isIdle}
+        onClose={handleCloseModal}
+        onLogout={logout}
+      />
     </AuthContext.Provider>
   );
 };
