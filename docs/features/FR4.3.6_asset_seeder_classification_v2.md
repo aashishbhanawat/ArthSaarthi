@@ -20,27 +20,50 @@ These issues indicate that the current single-pass, rule-based system has reache
 
 ## 3. Proposed Solution
 
-To achieve higher accuracy, a more sophisticated, multi-pass classification strategy is required. This approach will involve layering rules from most specific to most general, ensuring that high-confidence patterns are matched first.
+To achieve higher accuracy, we will move from a single-source heuristic model to a **multi-source, authoritative-first seeding strategy**. This involves creating a new, orchestrated seeding process that prioritizes official exchange and depository lists. The heuristic-based classification will be relegated to a final fallback for assets not found in any authoritative source. This section outlines the final, definitive order of operations.
 
-### 3.1. Multi-Pass Classification Logic
+### 3.1. New Multi-Source Seeding Workflow
 
-The `_classify_asset` function should be refactored to execute rules in the following order:
+The `seed-assets` command will be refactored to execute the following phases in a strict, sequential order:
 
-1.  **Pass 1: High-Confidence Stock Indicators**: First, check for definitive stock keywords that are rarely, if ever, found in bond names. This prevents stocks from being misclassified as bonds.
-    *   **Keywords**: `LIMITED RE`, `RIGHTS ENT`, `OFS` (Offer For Sale), `PP` (Partly Paid, when not part of a bond-like pattern), `WARRANTS`.
-    *   If a match is found, classify as **STOCK** and exit.
+1.  **Phase 1: Seed from Master Debt Lists (Highest Priority)**
+    *   **Purpose:** To build a foundational database of all known debt instruments. These are the most authoritative and comprehensive sources for bonds.
+    *   **Source 1: NSDL Debt Instruments List.** Process the entire NSDL master list. Any asset with an ISIN found here is definitively classified as a `BOND` and enriched with its metadata (coupon, maturity, etc.).
+    *   **Source 2: BSE Public Debt Issues.** Process the `Public Bond.xlsx` file. Any new asset found here is also definitively classified as a `BOND` and enriched.
 
-2.  **Pass 2: High-Confidence Bond Indicators (NSE & BSE)**: Check for patterns that are almost exclusively used for bonds.
-    *   **NSE Series**: `N1`-`N9`, `NB`-`NZ`, `IV`, `GV`, `TB`, `GB`.
-    *   **SGBs**: Tickers starting with `SGB`.
-    *   **BSE Patterns**: Names containing explicit terms like `NCD`, `DEBENTURE`, `PERP`, `STATE`, `ELEC BOARD`, `POWER CORPORATION`.
-    *   If a match is found, classify as **BOND** and exit.
+2.  **Phase 2: Seed from Daily Exchange Bhavcopy (Classification & Pricing)**
+    *   **Purpose:** To capture all actively traded securities and classify them with high confidence using exchange-provided series codes. This phase is critical for both equities and exchange-traded debt.
+    *   **Source 3: BSE Equity Bhavcopy (Standardized).** Process the new `BhavCopy_BSE_CM_...` file. Use the `SctySrs` column to definitively classify assets as `STOCK`, `ETF`, `GOVERNMENT_BOND`, or `BOND`.
+    *   **Source 4: NSE Equity Bhavcopy.** Process the daily NSE bhavcopy. Use the series code to classify assets as `STOCK` or `ETF`.
 
-3.  **Pass 3: Name-Based Heuristics for BSE Bonds**: For remaining BSE assets, apply a more nuanced check that combines patterns. This is where the majority of the improvement will occur.
+3.  **Phase 3: Seed from Specialized Daily Debt Lists**
+    *   **Purpose:** To capture any newly listed debt instruments that might not have appeared in the master lists or bhavcopy yet.
+    *   **Source 5: NSE Daily Debt Listing.** Process the `New_debt_listing.xlsx`. Use the `ISSUE_TYPE` column to definitively classify new assets as `BOND`, `GOVERNMENT_BOND`, or `TBILL`.
+    *   **Source 6: BSE Debt Bhavcopy (Legacy Zip).** Process the three CSVs inside the `DEBTBHAVCOPY...zip`. This is a good source for retail and wholesale debt, providing another layer of confirmation.
+
+4.  **Phase 4: Seed Market Indices**
+    *   **Purpose:** To populate the database with trackable market indices. This is a separate asset class and does not conflict with the others.
+    *   **Source 7: BSE Index Summary.** Process the `INDEXSummary_...csv` file. All items found here are classified as `INDEX`.
+
+5.  **Phase 5: Fallback to General-Purpose Master File (Lowest Priority)**
+    *   **Purpose:** To catch any remaining assets not found in any of the authoritative sources.
+    *   **Source 8: ICICI Direct Security Master.** Process the original, general-purpose master file.
+    *   **De-duplication:** If an asset from this file (by ISIN or ticker) already exists in our database from the previous phases, it is **skipped**. This prevents the less reliable source from misclassifying an asset we already have high confidence in.
+    *   **Heuristic Classification:** For any truly new assets found only in this file, we will apply a multi-pass heuristic classification logic.
+
+### 3.2. Heuristic Classification Logic (for Fallback Use Only)
+
+The `_classify_asset` function will be refactored to execute the following rules for assets processed in Phase 5.
+
+1.  **Pass 1: High-Confidence Stock Indicators**: Check for definitive stock keywords (`LIMITED RE`, `RIGHTS ENT`, `OFS`, `PP`, `WARRANTS`). If a match is found, classify as **STOCK** and exit.
+
+2.  **Pass 2: High-Confidence Bond Indicators**: Check for patterns that are almost exclusively used for bonds (NSE Series `N1-N9`, `NB-NZ`, etc.; SGB patterns; BSE patterns like `NCD`, `DEBENTURE`). If a match is found, classify as **BOND** and exit.
+
+3.  **Pass 3: Name-Based Heuristics for BSE Bonds**: For remaining BSE assets, apply a more nuanced check.
     *   **Rule A (Finance Bonds)**: If the name contains "FINANCE", "FINCORP", or "FIN" **AND** also contains a series indicator (`SR-`, `SR `), a coupon rate (`%`, or a number pattern), or a maturity date (month/year), classify as **BOND**. This will correctly classify the "KOSAMATTAM" and "MUTHOOTTU" series without incorrectly flagging finance company stocks.
     *   **Rule B (General Corporate Bonds)**: If the name contains a month name (`JAN`, `FEB`, etc.) or a year, **AND** it does **NOT** contain common stock-only terms like `INDUSTRIES`, `MANUFACTURING`, `TECHNOLOGIES`, `SYSTEMS`, `PROJECTS`, etc., classify as **BOND**. This is a refinement of the current logic, adding more exclusions to reduce false positives.
 
-4.  **Pass 4: Default Classification**: If none of the above rules match, the asset is classified as **STOCK** by default.
+4.  **Pass 4: Default Classification**: If none of the above heuristic rules match, the asset is classified as **STOCK** by default.
 
 ### 3.2. Implementation Details
 
