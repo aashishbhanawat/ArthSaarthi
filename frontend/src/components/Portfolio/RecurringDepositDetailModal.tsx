@@ -3,11 +3,12 @@ import { Holding } from '../../types/holding';
 import { formatDate, formatInterestRate, usePrivacySensitiveCurrency } from '../../utils/formatting';
 import { useRecurringDeposit, useRecurringDepositAnalytics } from '../../hooks/useRecurringDeposits';
 import { XMarkIcon } from '@heroicons/react/24/solid';
+import { RecurringDepositDetails } from '../../types/recurring_deposit';
 
 interface RecurringDepositDetailModalProps {
     holding: Holding;
     onClose: () => void;
-    onEdit: () => void;
+    onEdit: (details: RecurringDepositDetails) => void;
     onDelete: () => void;
 }
 
@@ -64,7 +65,7 @@ const RecurringDepositDetailModal: React.FC<RecurringDepositDetailModalProps> = 
                 </div>
 
                 <div className="flex justify-end space-x-2">
-                    <button className="btn btn-secondary" onClick={onEdit}>Edit RD Details</button>
+                    <button className="btn btn-secondary" onClick={() => details && onEdit(details)} disabled={!details}>Edit RD Details</button>
                     <button className="btn btn-danger" onClick={onDelete}>Delete RD</button>
                 </div>
             </div>

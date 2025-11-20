@@ -9,7 +9,7 @@ import { XMarkIcon } from '@heroicons/react/24/solid';
 interface FixedDepositDetailModalProps {
     holding: Holding;
     onClose: () => void;
-    onEdit: () => void;
+    onEdit: (details: FixedDepositDetails) => void;
     onDelete: () => void;
 }
 
@@ -91,7 +91,7 @@ const FixedDepositDetailModal: React.FC<FixedDepositDetailModalProps> = ({ holdi
                 </div>
 
                 <div className="flex justify-end space-x-2">
-                    <button className="btn btn-secondary" onClick={onEdit}>Edit FD Details</button>
+                    <button className="btn btn-secondary" onClick={() => details && onEdit(details)} disabled={!details}>Edit FD Details</button>
                     <button className="btn btn-danger" onClick={onDelete}>Delete FD</button>
                 </div>
             </div>

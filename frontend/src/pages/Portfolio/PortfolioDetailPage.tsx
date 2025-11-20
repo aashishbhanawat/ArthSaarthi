@@ -10,11 +10,12 @@ import HoldingsTable from '../../components/Portfolio/HoldingsTable';
 import PpfHoldingDetailModal from '../../components/Portfolio/PpfHoldingDetailModal';
 import { Holding } from '../../types/holding';
 import BondDetailModal from '../../components/Portfolio/BondDetailModal';
-import { Transaction } from '../../types/portfolio';
+import { Transaction, FixedDepositDetails } from '../../types/portfolio';
 import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
 import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
 import RecurringDepositDetailModal from '../../components/Portfolio/RecurringDepositDetailModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
+import { RecurringDepositDetails } from '../../types/recurring_deposit';
 
 const PortfolioDetailPage: React.FC = () => {
     const { id: portfolioId } = useParams<{ id: string }>();
@@ -31,6 +32,8 @@ const PortfolioDetailPage: React.FC = () => {
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
+    const [fdToEdit, setFdToEdit] = useState<FixedDepositDetails | null>(null);
+    const [rdToEdit, setRdToEdit] = useState<RecurringDepositDetails | null>(null);
     const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
     const [fdToDelete, setFdToDelete] = useState<Holding | null>(null);
     const [bondToDelete, setBondToDelete] = useState<Holding | null>(null);
@@ -73,6 +76,8 @@ const PortfolioDetailPage: React.FC = () => {
 
     const handleCloseTransactionModal = () => {
         setTransactionToEdit(undefined);
+        setFdToEdit(null);
+        setRdToEdit(null);
         setTransactionFormOpen(false);
     };
 
@@ -151,6 +156,8 @@ const PortfolioDetailPage: React.FC = () => {
                     isOpen={isTransactionFormOpen}
                     portfolioId={portfolio.id}
                     transactionToEdit={transactionToEdit}
+                    fixedDepositToEdit={fdToEdit || undefined}
+                    recurringDepositToEdit={rdToEdit || undefined}
                 />
             )}
 
@@ -169,7 +176,8 @@ const PortfolioDetailPage: React.FC = () => {
                         <FixedDepositDetailModal
                             holding={selectedHolding}
                             onClose={handleCloseDetailModal}
-                            onEdit={() => {
+                            onEdit={(details) => {
+                                setFdToEdit(details);
                                 handleCloseDetailModal();
                                 handleOpenCreateTransactionModal();
                             }}
@@ -179,7 +187,8 @@ const PortfolioDetailPage: React.FC = () => {
                         <RecurringDepositDetailModal
                             holding={selectedHolding}
                             onClose={handleCloseDetailModal}
-                            onEdit={() => {
+                            onEdit={(details) => {
+                                setRdToEdit(details);
                                 handleCloseDetailModal();
                                 handleOpenCreateTransactionModal();
                             }}
