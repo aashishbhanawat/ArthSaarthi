@@ -2149,3 +2149,35 @@ The AI assistant guided a systematic debugging process by analyzing the `log.txt
 
 *   **Outcome:**
     - The project is fully stable and documented, ready for merge.
+
+## 2025-11-20: Fix Edit Functionality for FD and RD
+
+*   **Task Description:** Fix a bug where clicking "Edit" on a Fixed Deposit or Recurring Deposit opened the generic transaction form instead of a pre-filled update form. This involved updating the frontend logic to pass the FD/RD details to the `TransactionFormModal` and enabling the update functionality for these asset types.
+
+*   **Key Prompts & Interactions:**
+    1.  **Problem Diagnosis:** The issue was identified as a missing data flow between the detail modals (`FixedDepositDetailModal`, `RecurringDepositDetailModal`) and the `TransactionFormModal`.
+    2.  **Plan Formulation:** A plan was created to update the modals to pass the details, update the parent page to manage the state, and update the transaction form to handle the editing of FD/RD assets.
+    3.  **Implementation:**
+        *   `FixedDepositDetailModal` and `RecurringDepositDetailModal` were updated to pass the asset details to the `onEdit` callback.
+        *   `PortfolioDetailPage` was updated to store the details in state and pass them to `TransactionFormModal`.
+        *   `TransactionFormModal` was updated to accept `fixedDepositToEdit` and `recurringDepositToEdit` props, pre-fill the form, and call the appropriate update mutations (`useUpdateFixedDeposit`, `useUpdateRecurringDeposit`).
+    4.  **Bug Fix:** A critical bug was discovered in `useFixedDeposits.ts` where `useUpdateFixedDeposit` and `useDeleteFixedDeposit` were passing arguments incorrectly to the API service function. This was fixed.
+    5.  **Testing:** A new E2E test `edit-fd-rd.spec.ts` was created to verify the fix. The test initially failed because the modal state wasn't being reset correctly, which was fixed in the test logic.
+
+*   **File Changes:**
+    *   `frontend/src/components/Portfolio/FixedDepositDetailModal.tsx`: **Updated** `onEdit` signature.
+    *   `frontend/src/components/Portfolio/RecurringDepositDetailModal.tsx`: **Updated** `onEdit` signature.
+    *   `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx`: **Updated** to manage edit state for FD/RD.
+    *   `frontend/src/components/Portfolio/TransactionFormModal.tsx`: **Updated** to support FD/RD editing.
+    *   `frontend/src/hooks/useFixedDeposits.ts`: **Fixed** argument mismatch in update/delete hooks.
+    *   `e2e/tests/edit-fd-rd.spec.ts`: **New** E2E test file.
+
+*   **Verification:**
+    - Ran the new E2E test `edit-fd-rd.spec.ts`, which passed.
+    - Ran the full backend test suite, which passed.
+    - Ran linters, which passed.
+
+*   **Outcome:**
+    - Users can now successfully edit Fixed Deposit and Recurring Deposit details.
+    - A regression in FD deletion logic was fixed.
+    - The codebase is stable and tested.

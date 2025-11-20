@@ -6785,3 +6785,45 @@ A series of patches were applied across the full stack:
 -   The `create_transaction` endpoint in `transactions.py` was refactored to handle both a single object and a list of objects, processing each within a loop.
 -   All affected backend unit tests were updated to expect a list in the JSON response and to perform assertions on the first element of that list.
 
+
+---
+
+**Bug ID:** 2025-11-20-01
+**Title:** Editing Fixed Deposit or Recurring Deposit opens generic transaction form.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** User via GitHub Issue #96
+**Date Reported:** 2025-11-20
+**Classification:** Implementation (Frontend)
+**Severity:** High
+**Description:**
+When a user clicks "Edit FD Details" (or RD) on the holding detail modal, the application opens the `TransactionFormModal` in "Add Transaction" mode (generic stock form) instead of "Edit Transaction" mode with the FD/RD details pre-filled. This is because the `onEdit` handler in `PortfolioDetailPage.tsx` was resetting the `transactionToEdit` state and not passing the FD/RD details to the form.
+**Steps to Reproduce:**
+1. Navigate to a portfolio.
+2. Click on an existing Fixed Deposit or Recurring Deposit.
+3. Click "Edit FD Details".
+**Expected Behavior:**
+The transaction form should open with "Edit Transaction" title, "Fixed Deposit" asset type selected, and all fields pre-filled with the existing data.
+**Actual Behavior:**
+The transaction form opens with "Add Transaction" title and "Stock" asset type selected.
+**Resolution:**
+Updated `PortfolioDetailPage.tsx` to store the FD/RD details in state (`fdToEdit`, `rdToEdit`) when "Edit" is clicked. Updated `TransactionFormModal.tsx` to accept these props and pre-fill the form. Updated `FixedDepositDetailModal.tsx` and `RecurringDepositDetailModal.tsx` to pass the details to the callback.
+
+---
+
+**Bug ID:** 2025-11-20-02
+**Title:** `useUpdateFixedDeposit` and `useDeleteFixedDeposit` hooks pass incorrect arguments to API service.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** Gemini Code Assist via Code Review / Debugging
+**Date Reported:** 2025-11-20
+**Classification:** Implementation (Frontend)
+**Severity:** Critical
+**Description:**
+The `useUpdateFixedDeposit` hook in `useFixedDeposits.ts` was calling `portfolioApi.updateFixedDeposit(portfolioId, fdId, data)`, but the API service function signature is `updateFixedDeposit(fdId, data)`. This caused the `fdId` argument to be received as `portfolioId` (a UUID string) by the service, and `data` to be received as `fdId`. Consequently, the API call failed validation or updated the wrong resource. A similar issue existed for `useDeleteFixedDeposit`.
+**Steps to Reproduce:**
+1. Attempt to edit or delete a Fixed Deposit.
+**Expected Behavior:**
+The FD should be updated or deleted.
+**Actual Behavior:**
+The operation fails with a validation error (e.g., "Input should be a valid dictionary") or a 404/500 error.
+**Resolution:**
+Updated the mutation functions in `useFixedDeposits.ts` to call the API service methods with the correct arguments, removing the unused `portfolioId`.
