@@ -1,7 +1,10 @@
+import json
 import uuid
+from datetime import datetime
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -9,6 +12,7 @@ from app.core.dependencies import get_current_active_user, get_current_admin_use
 from app.db.session import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import User, UserCreate, UserUpdate, UserUpdateMe
+from app.services import backup_service
 from app.services.audit_logger import log_event
 
 router = APIRouter()
@@ -35,6 +39,42 @@ def update_user_me(
     db.commit()
     db.refresh(updated_user)
     return updated_user
+
+
+@router.get("/me/backup")
+def backup_user_data(
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
+):
+    """
+    Generate and download a backup of the user's data.
+    """
+    data = backup_service.create_backup(db, current_user.id)
+    filename = f"arthsaarthi_backup_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+    return JSONResponse(
+        content=data,
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.post("/me/restore")
+async def restore_user_data(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
+):
+    """
+    Restore user data from a backup file.
+    WARNING: This will delete all existing data for the user!
+    """
+    content = await file.read()
+    try:
+        backup_data = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON file")
+
+    backup_service.restore_backup(db, current_user.id, backup_data)
+    return {"message": "Restore successful"}
 
 
 @router.get("/", response_model=List[User])
