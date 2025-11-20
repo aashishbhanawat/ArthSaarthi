@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useCreatePpfAccount, useCreateBond } from '../../hooks/usePortfolios';
-import { useCreateRecurringDeposit } from '../../hooks/useRecurringDeposits';
+import { useCreateRecurringDeposit, useUpdateRecurringDeposit } from '../../hooks/useRecurringDeposits';
+import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
 import { lookupAsset } from '../../services/portfolioApi';
 import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
-import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
+import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
+import { RecurringDepositDetails } from '../../types/recurring_deposit';
 import Select from 'react-select';
 
 interface TransactionFormModalProps {
@@ -15,6 +17,8 @@ interface TransactionFormModalProps {
     onClose: () => void;
     isOpen: boolean;
     transactionToEdit?: Transaction;
+    fixedDepositToEdit?: FixedDepositDetails;
+    recurringDepositToEdit?: RecurringDepositDetails;
 }
 
 // Define the shape of our form data
@@ -65,8 +69,8 @@ type TransactionFormInputs = {
     assetId?: string;
 };
 
-const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
-    const isEditMode = !!transactionToEdit;
+const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit }) => {
+    const isEditMode = !!transactionToEdit || !!fixedDepositToEdit || !!recurringDepositToEdit;
     const { register, handleSubmit, formState: { errors }, reset, control, setValue } = useForm<TransactionFormInputs>({
         defaultValues: { asset_type: 'Stock', transaction_type: 'BUY', action_type: 'DIVIDEND', splitRatioNew: 2, splitRatioOld: 1, bonusRatioNew: 1, bonusRatioOld: 1 }
     });
@@ -76,7 +80,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const updateTransactionMutation = useUpdateTransaction();
     const createAssetMutation = useCreateAsset();
     const createFixedDepositMutation = useCreateFixedDeposit();
+    const updateFixedDepositMutation = useUpdateFixedDeposit();
     const createRecurringDepositMutation = useCreateRecurringDeposit();
+    const updateRecurringDepositMutation = useUpdateRecurringDeposit();
     const createBondMutation = useCreateBond();
     const createPpfAccountMutation = useCreatePpfAccount();
     const [apiError, setApiError] = useState<string | null>(null);
@@ -111,22 +117,46 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
 
     useEffect(() => {
-        if (isEditMode && transactionToEdit) {
-            // Format date for input[type=date] which expects 'YYYY-MM-DD'
-            const formattedDate = new Date(transactionToEdit.transaction_date).toISOString().split('T')[0];
+        if (isEditMode) {
+            if (transactionToEdit) {
+                // Format date for input[type=date] which expects 'YYYY-MM-DD'
+                const formattedDate = new Date(transactionToEdit.transaction_date).toISOString().split('T')[0];
 
-            reset({
-                transaction_type: transactionToEdit.transaction_type,
-                asset_type: transactionToEdit.asset.asset_type === 'Mutual Fund' ? 'Mutual Fund' : 'Stock',
-                quantity: Number(transactionToEdit.quantity),
-                price_per_unit: Number(transactionToEdit.price_per_unit),
-                transaction_date: formattedDate,
-                fees: Number(transactionToEdit.fees),
-            });
-            setSelectedAsset(transactionToEdit.asset);
-            setInputValue(transactionToEdit.asset.name);
+                reset({
+                    transaction_type: transactionToEdit.transaction_type,
+                    asset_type: transactionToEdit.asset.asset_type === 'Mutual Fund' ? 'Mutual Fund' : 'Stock',
+                    quantity: Number(transactionToEdit.quantity),
+                    price_per_unit: Number(transactionToEdit.price_per_unit),
+                    transaction_date: formattedDate,
+                    fees: Number(transactionToEdit.fees),
+                });
+                setSelectedAsset(transactionToEdit.asset);
+                setInputValue(transactionToEdit.asset.name);
+            } else if (fixedDepositToEdit) {
+                reset({
+                    asset_type: 'Fixed Deposit',
+                    institutionName: fixedDepositToEdit.name,
+                    accountNumber: fixedDepositToEdit.account_number || '',
+                    principalAmount: Number(fixedDepositToEdit.principal_amount),
+                    interestRate: Number(fixedDepositToEdit.interest_rate),
+                    startDate: fixedDepositToEdit.start_date,
+                    maturityDate: fixedDepositToEdit.maturity_date,
+                    compounding_frequency: fixedDepositToEdit.compounding_frequency as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+                    interest_payout: fixedDepositToEdit.interest_payout as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+                });
+            } else if (recurringDepositToEdit) {
+                reset({
+                    asset_type: 'Recurring Deposit',
+                    rdName: recurringDepositToEdit.name,
+                    rdAccountNumber: recurringDepositToEdit.account_number || '',
+                    monthlyInstallment: Number(recurringDepositToEdit.monthly_installment),
+                    rdInterestRate: Number(recurringDepositToEdit.interest_rate),
+                    rdStartDate: recurringDepositToEdit.start_date,
+                    tenureMonths: Number(recurringDepositToEdit.tenure_months),
+                });
+            }
         }
-    }, [isEditMode, transactionToEdit, reset]);
+    }, [isEditMode, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit, reset]);
 
     // Debounce search term
     useEffect(() => {
@@ -346,31 +376,62 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 }, mutationOptions);
             }
         } else if (assetType === 'Fixed Deposit') {
-            createFixedDepositMutation.mutate({
-                portfolioId: portfolioId,
-                data: {
-                    name: data.institutionName!,
-                    account_number: data.accountNumber!,
-                    principal_amount: data.principalAmount!,
-                    interest_rate: data.interestRate!,
-                    start_date: data.startDate!,
-                    maturity_date: data.maturityDate!,
-                    compounding_frequency: data.compounding_frequency || 'Annually',
-                    interest_payout: data.interest_payout || 'Cumulative'
-                }
-            }, mutationOptions);
+            if (isEditMode && fixedDepositToEdit) {
+                 updateFixedDepositMutation.mutate({
+                    portfolioId,
+                    fdId: fixedDepositToEdit.id,
+                    data: {
+                        name: data.institutionName!,
+                        account_number: data.accountNumber!,
+                        principal_amount: data.principalAmount!,
+                        interest_rate: data.interestRate!,
+                        start_date: data.startDate!,
+                        maturity_date: data.maturityDate!,
+                        compounding_frequency: data.compounding_frequency,
+                        interest_payout: data.interest_payout
+                    }
+                }, mutationOptions);
+            } else {
+                createFixedDepositMutation.mutate({
+                    portfolioId: portfolioId,
+                    data: {
+                        name: data.institutionName!,
+                        account_number: data.accountNumber!,
+                        principal_amount: data.principalAmount!,
+                        interest_rate: data.interestRate!,
+                        start_date: data.startDate!,
+                        maturity_date: data.maturityDate!,
+                        compounding_frequency: data.compounding_frequency || 'Annually',
+                        interest_payout: data.interest_payout || 'Cumulative'
+                    }
+                }, mutationOptions);
+            }
         } else if (assetType === 'Recurring Deposit') {
-            createRecurringDepositMutation.mutate({
-                portfolioId: portfolioId,
-                data: {
-                    name: data.rdName!,
-                    account_number: data.rdAccountNumber!,
-                    monthly_installment: data.monthlyInstallment!,
-                    interest_rate: data.rdInterestRate!,
-                    start_date: data.rdStartDate!,
-                    tenure_months: data.tenureMonths!,
-                }
-            }, mutationOptions);
+            if (isEditMode && recurringDepositToEdit) {
+                 updateRecurringDepositMutation.mutate({
+                    rdId: recurringDepositToEdit.id,
+                    data: {
+                         name: data.rdName!,
+                        account_number: data.rdAccountNumber!,
+                        monthly_installment: data.monthlyInstallment!,
+                        interest_rate: data.rdInterestRate!,
+                        start_date: data.rdStartDate!,
+                        tenure_months: data.tenureMonths!,
+                    }
+                }, mutationOptions);
+            } else {
+                createRecurringDepositMutation.mutate({
+                    portfolioId: portfolioId,
+                    data: {
+                        name: data.rdName!,
+                        account_number: data.rdAccountNumber!,
+                        monthly_installment: data.monthlyInstallment!,
+                        interest_rate: data.rdInterestRate!,
+                        start_date: data.rdStartDate!,
+                        tenure_months: data.tenureMonths!,
+                    }
+                }, mutationOptions);
+            }
         } else if (assetType === 'Bond') {
             if (!selectedAsset) {
                 setApiError("Please select or create a bond asset.");
@@ -983,14 +1044,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 type="submit"
                                 className="btn btn-primary"
                                 disabled={
-                                    (isEditMode && updateTransactionMutation.isPending) ||
-                                    (!isEditMode && (createTransactionMutation.isPending || createPpfAccountMutation.isPending || createBondMutation.isPending)) ||
+                                    (isEditMode && (updateTransactionMutation.isPending || updateFixedDepositMutation.isPending || updateRecurringDepositMutation.isPending)) ||
+                                    (!isEditMode && (createTransactionMutation.isPending || createPpfAccountMutation.isPending || createBondMutation.isPending || createFixedDepositMutation.isPending || createRecurringDepositMutation.isPending)) ||
                                     (!isEditMode && assetType === 'Stock' && !selectedAsset) ||
                                     (!isEditMode && assetType === 'Mutual Fund' && !selectedMf)}
                             >
                                 {isEditMode 
-                                    ? (updateTransactionMutation.isPending ? 'Saving...' : 'Save Changes')
-                                    : (createTransactionMutation.isPending || createPpfAccountMutation.isPending || createBondMutation.isPending ? 'Saving...' : 'Save Transaction')
+                                    ? (updateTransactionMutation.isPending || updateFixedDepositMutation.isPending || updateRecurringDepositMutation.isPending ? 'Saving...' : 'Save Changes')
+                                    : (createTransactionMutation.isPending || createPpfAccountMutation.isPending || createBondMutation.isPending || createFixedDepositMutation.isPending || createRecurringDepositMutation.isPending ? 'Saving...' : 'Save Transaction')
                                 }
                             </button>
                         </div>
