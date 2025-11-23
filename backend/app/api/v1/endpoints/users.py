@@ -37,6 +37,8 @@ def update_user_me(
     return updated_user
 
 
+
+
 @router.get("/", response_model=List[User])
 def list_users(
     db: Session = Depends(get_db),

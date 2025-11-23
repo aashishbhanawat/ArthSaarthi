@@ -49,7 +49,7 @@ test.describe('User Profile Management', () => {
     // 2. Navigate to the profile page using the link in the user menu
     await page.locator('div.mt-auto').getByRole('link', { name: 'Profile' }).click();
     await expect(page).toHaveURL(/.*\/profile/);
-    await expect(page.getByRole('heading', { name: 'User Profile' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Profile & Settings' })).toBeVisible();
 
     // 3. Update the user's full name
     const newFullName = 'Updated Test User Name';

@@ -201,3 +201,10 @@ To ensure data integrity and correctly re-establish relationships, the restore p
 ## 4. Task Prioritization
 
 This is a high-priority feature for the next major release, as it directly impacts user trust and data safety.
+
+## 5. Status
+
+**Implemented:** 2025-11-20
+- Backend endpoints and service logic created.
+- Frontend UI integrated into Profile page.
+- Automated tests and manual verification completed.
