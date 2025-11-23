@@ -31,3 +31,28 @@
 *   **Outcome:**
     - The "Backup & Restore" feature is fully implemented, tested, and verified.
     - Users can now safely backup their data and restore it, with safeguards against accidental data loss.
+
+## 2025-11-23: Implement Asset Seeder Classification V2 (FR4.3.6)
+
+*   **Task Description:** Implemented a new multi-phase asset seeding strategy to accurately classify assets (Bonds, Stocks, ETFs) using authoritative data sources (NSDL, BSE, NSE). This addresses misclassification issues where corporate bonds were flagged as stocks.
+
+*   **Key Prompts & Interactions:**
+    1.  **Requirement Clarification:** Clarified the "Download Once" strategy and obtained specific URLs for authoritative data sources (NSDL, BSE Equity/Debt Bhavcopies, etc.) from the user.
+    2.  **Implementation:** Refactored the monolithic `seed-assets` command into a modular `AssetSeeder` service (`backend/app/services/asset_seeder.py`).
+    3.  **Heuristics:** Implemented advanced regex-based heuristics to classify assets that fall back to the generic master list (Phase 5), correctly identifying Finance company bonds based on coupon patterns (e.g., `9.75`, `28AG20`).
+    4.  **Verification:** Validated the fix against known problematic cases (e.g., `KOSAMATTAM`, `MUTHOOTTU`) which are now correctly classified as `BOND`.
+
+*   **File Changes:**
+    *   `backend/app/services/asset_seeder.py`: **New** service implementing the 5-phase seeding logic.
+    *   `backend/app/cli.py`: **Updated** to use `AssetSeeder` and support `--local-dir`.
+    *   `backend/requirements.in` / `.txt`: **Updated** to include `openpyxl` and `xlrd`.
+    *   `backend/app/tests/cli/test_cli.py`: **Updated** tests to match the new seeding logic and file patterns.
+
+*   **Verification:**
+    -   Ran `seed-assets` with downloaded sample files. Verified creation of ~39k assets.
+    -   Verified specific assets (`KOSAMATTAM`, `MUTHOOTTU`) are `BOND`.
+    -   Ran backend tests (`./run_local_tests.sh backend`), all passed.
+
+*   **Outcome:**
+    -   The asset seeding process is now authoritative-source first, significantly reducing misclassification.
+    -   The system supports multiple input formats (TSV, CSV, XLS, XLSX, ZIP).

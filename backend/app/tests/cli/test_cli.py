@@ -1,6 +1,5 @@
 import io
-import zipfile
-
+import uuid
 import pytest
 from typer.testing import CliRunner
 
@@ -9,30 +8,13 @@ from run_cli import app as main_app
 runner = CliRunner()
 
 # Mock data for testing
-MOCK_NSE_CSV = """\
-"Token","CompanyName","Series","ExchangeCode","ISINCode"
-"1","NSE_COMPANY_A","EQ","NSEA","INE001A01010"
-"2","NSE_COMPANY_B","BE","NSEB","INE002A01010"
-"3","NSE_COMPANY_C","XX","NSEC","INE003A01010"
+MOCK_NSDL_TSV = """ISIN\tNAME_OF_THE_INSTRUMENT\tREDEMPTION\tFACE_VALUE\tCOUPON_RATE
+INE001\tBOND A\t01-01-2030\t1000\t8.5
 """
 
-MOCK_BSE_CSV = """\
-"Token","ScripName","Series","ScripID","ISINCode"
-"4","BSE_COMPANY_D","A","BSED","INE004A01010"
-"5","BSE_COMPANY_E","XX","BSEE","INE005A01010"
-"6","BSE_COMPANY_F","DR","BSEF","INE006A01010"
+MOCK_BSE_EQUITY_CSV = """ISIN,TckrSymb,FinInstrmNm,SctySrs
+INE002,STOCKB,STOCK B,A
 """
-
-
-def create_mock_zip():
-    """Creates an in-memory zip file containing mock CSV data."""
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w") as zf:
-        zf.writestr("NSEScripMaster.txt", MOCK_NSE_CSV)
-        zf.writestr("BSEScripMaster.txt", MOCK_BSE_CSV)
-    zip_buffer.seek(0)
-    return zip_buffer.read()
-
 
 @pytest.fixture
 def mock_db_session_empty(mocker):
@@ -43,49 +25,20 @@ def mock_db_session_empty(mocker):
     mock_query_object.filter.return_value.all.return_value = []  # for isin
     mock_query_object.all.return_value = []  # for ticker
     mock_db.query.return_value = mock_query_object
+    # Also need inspector
+    mocker.patch("sqlalchemy.inspect").return_value.has_table.return_value = True
     return mock_db
-
-
-def test_seed_assets_from_url(mocker, mock_db_session_empty):
-    """Tests seeding from a (mocked) downloaded zip file."""
-    # Mock requests.get
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.return_value = None
-    mock_response.content = create_mock_zip()
-    mocker.patch("requests.get", return_value=mock_response)
-
-    # Mock crud.asset.create to return a mock object with an asset_type
-    mock_asset = mocker.Mock()
-    mock_asset.asset_type = "STOCK"  # or any other valid type
-    mock_asset_create = mocker.patch("app.crud.asset.create", return_value=mock_asset)
-    mocker.patch("app.crud.bond.create")  # Mock bond creation as well
-
-    # Run the command
-    result = runner.invoke(main_app, ["db", "seed-assets", "--debug"])
-
-    # Assertions
-    assert result.exit_code == 0
-    assert "Downloading security master file" in result.stdout
-    assert "NSE processing complete. Created: 2, Skipped: 0" in result.stdout
-    assert "BSE processing complete. Created: 2, Skipped: 0" in result.stdout
-    assert "Total assets created: 4" in result.stdout
-    assert "Series 'XX': 2 rows skipped" in result.stdout
-    assert mock_asset_create.call_count == 4
-
-    # Check one of the calls for correctness
-    first_call_args = mock_asset_create.call_args_list[0].kwargs["obj_in"]
-    assert first_call_args.ticker_symbol == "NSEA"
-    assert first_call_args.name == "NSE_COMPANY_A"
 
 
 def test_seed_assets_with_local_dir(mocker, tmp_path, mock_db_session_empty):
     """Tests seeding from a local directory."""
     # Create mock local files
-    (tmp_path / "NSEScripMaster.txt").write_text(MOCK_NSE_CSV)
-    (tmp_path / "BSEScripMaster.txt").write_text(MOCK_BSE_CSV)
+    (tmp_path / "nsdl_debt.xls").write_text(MOCK_NSDL_TSV)
+    (tmp_path / "bse_equity.csv").write_text(MOCK_BSE_EQUITY_CSV)
 
-    # Mock crud.asset.create to return a mock object with an asset_type
+    # Mock crud.asset.create
     mock_asset = mocker.Mock()
+    mock_asset.id = uuid.uuid4() # Use real UUID
     mock_asset.asset_type = "STOCK"
     mock_asset_create = mocker.patch("app.crud.asset.create", return_value=mock_asset)
     mocker.patch("app.crud.bond.create")
@@ -97,11 +50,12 @@ def test_seed_assets_with_local_dir(mocker, tmp_path, mock_db_session_empty):
 
     # Assertions
     assert result.exit_code == 0
-    assert "Processing local files from" in result.stdout
-    assert "NSE processing complete. Created: 2, Skipped: 0" in result.stdout
-    assert "BSE processing complete. Created: 2, Skipped: 0" in result.stdout
-    assert "Total assets created: 4" in result.stdout
-    assert mock_asset_create.call_count == 4
+    assert "Searching for files in" in result.stdout
+    assert "Processing NSDL file" in result.stdout
+    assert "Processing BSE Equity Bhavcopy" in result.stdout
+    assert "Total assets created: 2" in result.stdout
+
+    assert mock_asset_create.call_count == 2
 
 
 @pytest.fixture

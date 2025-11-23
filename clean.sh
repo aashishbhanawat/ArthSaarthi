@@ -38,6 +38,7 @@ rm -rf e2e/node_modules/
 
 # Find and remove log files and temp docs
 echo "Removing logs and temporary files..."
+rm -rf backend/temp_seed_data/
 find . -type f -name "npm-debug.log*" -exec rm -f {} +
 find . -type f -name "yarn-debug.log*" -exec rm -f {} +
 find . -type f -name "yarn-error.log*" -exec rm -f {} +
