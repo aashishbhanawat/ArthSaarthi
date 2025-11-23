@@ -3,7 +3,7 @@ import os
 import pathlib
 import tempfile
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Optional, Type
 
@@ -16,16 +16,6 @@ from app import models
 from app.services.asset_seeder import AssetSeeder
 
 app = typer.Typer(help="ArthSaarthi CLI for database and utility operations.")
-
-# Default URLs (As provided)
-NSDL_URL = "https://nsdl.co.in/downloadables/excel/cp-debt/Download_the_entire_list_of_Debt_Instruments_(including_Redeemed)_as_on_11.11.2025.xls"
-BSE_EQUITY_URL = "https://www.bseindia.com/download/BhavCopy/Equity/BhavCopy_BSE_CM_0_0_0_20251112_F_0000.CSV"
-BSE_DEBT_URL = "https://www.bseindia.com/download/Bhavcopy/Debt/DEBTBHAVCOPY12112025.zip"
-BSE_INDEX_URL = "https://www.bseindia.com/bsedata/Index_Bhavcopy/INDEXSummary_12112025.csv"
-BSE_PUBLIC_DEBT_URL = "https://www.bseindia.com/downloads1/bonds_data.zip"
-NSE_DAILY_DEBT_URL = "https://nsearchives.nseindia.com/content/debt/New_debt_listing.xlsx"
-# ICICI fallback if needed, or we rely on what we have.
-ICICI_MASTER_URL = "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
 
 
 def get_db_session():
@@ -41,8 +31,18 @@ def get_db_session():
 def _download_file(url: str, dest_path: str):
     """Downloads a file from a URL to a destination path."""
     typer.echo(f"Downloading {url}...")
+    # Headers to mimic a browser and avoid 403 Forbidden
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/91.0.4472.124 Safari/537.36"
+        )
+    }
     # verify=False for NSDL/Sandbox issues
-    response = requests.get(url, stream=True, verify=False)
+    response = requests.get(
+        url, stream=True, verify=False, headers=headers
+    )
     response.raise_for_status()
     with open(dest_path, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
@@ -59,6 +59,76 @@ def _find_file(directory: pathlib.Path, pattern: str) -> Optional[str]:
     # Let's sort by name (usually contains date) descending.
     files.sort(key=lambda p: p.name, reverse=True)
     return str(files[0])
+
+
+def get_latest_trading_date() -> date:
+    """Returns the latest trading date (today or previous weekday)."""
+    d = date.today()
+    # Simple check: if Sat (5) or Sun (6), go back to Fri
+    if d.weekday() == 5:  # Sat
+        d -= timedelta(days=1)
+    elif d.weekday() == 6:  # Sun
+        d -= timedelta(days=2)
+    return d
+
+
+def get_dynamic_urls() -> dict[str, str]:
+    d = get_latest_trading_date()
+    dd = d.strftime("%d")
+    mm = d.strftime("%m")
+    yyyy = d.strftime("%Y")
+    # mmm = d.strftime("%b").upper() # JAN, FEB
+    # NSE uses 'NOV', 'DEC'. strftime %b depends on locale but usually matches.
+    mmm = d.strftime("%b").upper()
+
+    # NSDL: as_on_DD.MM.YYYY.xls
+    nsdl = (
+        "https://nsdl.co.in/downloadables/excel/cp-debt/"
+        f"Download_the_entire_list_of_Debt_Instruments_(including_Redeemed)_as_on_"
+        f"{dd}.{mm}.{yyyy}.xls"
+    )
+
+    # BSE Equity: BhavCopy_BSE_CM_0_0_0_{YYYY}{MM}{DD}_F_0000.CSV
+    bse_eq = (
+        "https://www.bseindia.com/download/BhavCopy/Equity/"
+        f"BhavCopy_BSE_CM_0_0_0_{yyyy}{mm}{dd}_F_0000.CSV"
+    )
+
+    # BSE Debt: DEBTBHAVCOPY{DD}{MM}{YYYY}.zip
+    bse_debt = (
+        "https://www.bseindia.com/download/Bhavcopy/Debt/"
+        f"DEBTBHAVCOPY{dd}{mm}{yyyy}.zip"
+    )
+
+    # BSE Index: INDEXSummary_{DD}{MM}{YYYY}.csv
+    bse_index = (
+        "https://www.bseindia.com/bsedata/Index_Bhavcopy/"
+        f"INDEXSummary_{dd}{mm}{yyyy}.csv"
+    )
+
+    # NSE Equity: 2025/NOV/cm12NOV2025bhav.csv.zip
+    nse_eq = (
+        "https://nsearchives.nseindia.com/content/historical/EQUITIES/"
+        f"{yyyy}/{mmm}/cm{dd}{mmm}{yyyy}bhav.csv.zip"
+    )
+
+    # Static
+    bse_public = "https://www.bseindia.com/downloads1/bonds_data.zip"
+    nse_debt = "https://nsearchives.nseindia.com/content/debt/New_debt_listing.xlsx"
+    icici_fallback = (
+        "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
+    )
+
+    return {
+        "nsdl": nsdl,
+        "bse_public": bse_public,
+        "bse_equity": bse_eq,
+        "bse_debt": bse_debt,
+        "nse_debt": nse_debt,
+        "nse_equity": nse_eq,
+        "bse_index": bse_index,
+        "icici": icici_fallback,
+    }
 
 
 @app.command("seed-assets")
@@ -83,7 +153,7 @@ def seed_assets_command(
     Seeds the assets table using a multi-phase, authoritative-first strategy.
 
     Phase 1: Master Debt Lists (NSDL, BSE Public)
-    Phase 2: Exchange Bhavcopy (BSE Equity)
+    Phase 2: Exchange Bhavcopy (BSE Equity, NSE Equity)
     Phase 3: specialized Debt (NSE Daily, BSE Debt)
     Phase 4: Market Indices (BSE)
     Phase 5: Fallback (ICICI)
@@ -106,6 +176,7 @@ def seed_assets_command(
             "bse_equity": ["*BhavCopy_BSE_CM*.csv", "bse_equity.csv"],
             "bse_debt": ["*DEBTBHAVCOPY*.zip", "bse_debt.zip"],
             "nse_debt": ["*New_debt_listing*.xlsx", "nse_daily_debt.xlsx"],
+            "nse_equity": ["*bhav.csv.zip", "cm*bhav.csv.zip", "nse_equity.zip"],
             "bse_index": ["*INDEXSummary*.csv", "bse_index.csv"],
             "icici": ["*SecurityMaster*.zip", "icici_master.zip"]
         }
@@ -122,16 +193,7 @@ def seed_assets_command(
         temp_dir = tempfile.mkdtemp()
         typer.echo(f"Created temp directory for downloads: {temp_dir}")
         try:
-            # We map keys to URLs
-            url_map = {
-                "nsdl": NSDL_URL,
-                "bse_public": BSE_PUBLIC_DEBT_URL,
-                "bse_equity": BSE_EQUITY_URL,
-                "bse_debt": BSE_DEBT_URL,
-                "nse_debt": NSE_DAILY_DEBT_URL,
-                "bse_index": BSE_INDEX_URL,
-                # "icici": ICICI_MASTER_URL # Optional fallback
-            }
+            url_map = get_dynamic_urls()
 
             for key, url in url_map.items():
                 filename = url.split('/')[-1]
@@ -158,6 +220,8 @@ def seed_assets_command(
     # Phase 2
     if "bse_equity" in files:
         seeder.process_bse_equity_bhavcopy(files["bse_equity"])
+    if "nse_equity" in files:
+        seeder.process_nse_equity_bhavcopy(files["nse_equity"])
 
     # Phase 3
     if "nse_debt" in files:

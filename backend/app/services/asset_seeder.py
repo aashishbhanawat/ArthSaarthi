@@ -283,6 +283,57 @@ class AssetSeeder:
         }
         self._create_asset(data)
 
+    def process_nse_equity_bhavcopy(self, filepath: str):
+        """Phase 2 Source 4: NSE Equity Bhavcopy (CSV inside Zip)."""
+        print(f"Processing NSE Equity Bhavcopy: {filepath}")
+        try:
+            with zipfile.ZipFile(filepath) as z:
+                for filename in z.namelist():
+                    if filename.endswith(".csv"):
+                        with z.open(filename) as f:
+                            df = pd.read_csv(f)
+                            self._process_nse_equity_df(df)
+        except Exception as e:
+            print(f"Error processing NSE Equity Zip: {e}")
+
+    def _process_nse_equity_df(self, df: pd.DataFrame):
+        for _, row in df.iterrows():
+            isin = str(row.get('ISIN', '')).strip()
+            ticker = str(row.get('SYMBOL', '')).strip()
+            series = str(row.get('SERIES', '')).strip().upper()
+            # NSE Bhavcopy usually doesn't have full name, use Ticker as fallback
+            name = ticker
+
+            if not isin or not ticker:
+                continue
+
+            asset_type = "STOCK"
+            bond_type = None
+
+            # NSE Classification Logic
+            if series in ['EQ', 'BE', 'SM', 'ST']:
+                asset_type = "STOCK"
+            elif series == 'GB':
+                asset_type = "BOND"
+                bond_type = BondType.SGB
+            elif series in ['GS', 'SG', 'CG']:
+                asset_type = "BOND"
+                bond_type = BondType.GOVERNMENT
+            elif series.startswith(('N', 'Y', 'Z')):
+                # Corporate bonds often start with N, Y, Z on NSE
+                asset_type = "BOND"
+                bond_type = BondType.CORPORATE
+
+            data = {
+                "isin": isin,
+                "ticker_symbol": ticker,
+                "name": name,
+                "asset_type": asset_type,
+                "bond_type": bond_type,
+                "exchange": "NSE"
+            }
+            self._create_asset(data)
+
     # --- Phase 3: Specialized Debt ---
     def process_nse_daily_debt(self, filepath: str):
         """Phase 3 Source 5: NSE Daily Debt (XLSX)."""
