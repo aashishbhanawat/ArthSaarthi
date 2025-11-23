@@ -486,15 +486,26 @@ class AssetSeeder:
         # NSE: ExchangeCode, CompanyName, ISINCode, Series
         # BSE: ScripID, ScripName, ISINCode, Series
 
-        # We try to detect which columns are present
-        ticker = row.get('ExchangeCode') or row.get('ScripID')
+        nse_code = row.get('ExchangeCode')
+        bse_code = row.get('ScripID')
         name = row.get('CompanyName') or row.get('ScripName')
         isin = row.get('ISINCode')
         series = row.get('Series', '')
 
-        if not ticker or pd.isna(ticker):
+        ticker = None
+        exchange = "BSE" # Default
+
+        # Determine primary exchange and ticker
+        if nse_code and not pd.isna(nse_code):
+            ticker = str(nse_code).strip()
+            exchange = "NSE"
+        elif bse_code and not pd.isna(bse_code):
+            ticker = str(bse_code).strip()
+            exchange = "BSE"
+
+        if not ticker:
             return
-        ticker = str(ticker).strip()
+
         name = str(name).strip() if name else ""
         isin = str(isin).strip() if isin and not pd.isna(isin) else None
         series = str(series).strip().upper()
@@ -503,9 +514,6 @@ class AssetSeeder:
         asset_type, bond_type = self._classify_asset_heuristic(ticker, name, series)
 
         if not asset_type:
-            # Default to Stock if heuristics fail?
-            # The FR says "Pass 4: Default Classification...
-            # classified as STOCK by default".
             asset_type = "STOCK"
 
         data = {
@@ -514,8 +522,7 @@ class AssetSeeder:
             "name": name,
             "asset_type": asset_type,
             "bond_type": bond_type,
-            # Guess exchange
-            "exchange": "NSE" if 'ExchangeCode' in row else "BSE"
+            "exchange": exchange
         }
         self._create_asset(data)
 
@@ -529,23 +536,49 @@ class AssetSeeder:
         name = name.upper()
         ticker = ticker.upper()
 
-        # Pass 1: High-Confidence Stock Indicators
-        stock_keywords = ["LIMITED RE", "RIGHTS ENT", "OFS", "PP", "WARRANTS"]
-        if any(k in name for k in stock_keywords):
-            return "STOCK", None
-
-        # Pass 2: High-Confidence Bond Indicators
-        # NSE Series N1-N9, NB-NZ, etc.
-        if re.match(r"^[N][1-9A-Z]$", series): # Simplified check for N series
-             return "BOND", BondType.CORPORATE
-
-        if "NCD" in name or "DEBENTURE" in name:
-             return "BOND", BondType.CORPORATE
-
-        if "SGB" in ticker or series == "GB":
+        # 1. Government / Sovereign Bonds
+        # GSEC, SDL, GOI, TREASURY BILL
+        if any(k in name for k in ["GSEC", "GOI", "SDL", "STRIP", "T-BILL", "TBILL", "TREASURY BILL"]):
+            return "BOND", BondType.GOVERNMENT
+        if "SGB" in ticker or "SOVEREIGN GOLD" in name or series == "GB":
             return "BOND", BondType.SGB
 
-        # Pass 3: Name-Based Heuristics for BSE Bonds
+        # 2. Corporate Bond Keywords (Strong)
+        corp_keywords = [
+            "NCD", "DEBENTURE", "PERP", "ZEROCOUP", "SUB DEBT",
+            "TIER I", "TIER II", "UPPER TIER", "INFRA BOND"
+        ]
+        if any(k in name for k in corp_keywords):
+            return "BOND", BondType.CORPORATE
+
+        # 3. Bond Structural Indicators
+        # Face Value: FV1LAC, FV 100, FV10L
+        if re.search(r"\bFV\s*\d+\s*(L|LAC|CR|K|00)\b", name):
+            return "BOND", BondType.CORPORATE
+
+        # Maturity Date Pattern (e.g. 18JL25, 16FB15)
+        if re.search(r"\d{2}[A-Z]{2,3}\d{2}", name):
+            return "BOND", BondType.CORPORATE
+
+        # Series/Option: SR-1, OP I, OPT-II
+        # Avoid matching 'PROP' or 'TOP' by ensuring start of word or after space/hyphen
+        if re.search(r"\b(SR|SERIES|OP|OPT)\s*[-]?\s*[IVX\d]+\b", name):
+            return "BOND", BondType.CORPORATE
+
+        # Tax Free Bonds
+        if "TAX FREE" in name:
+             return "BOND", BondType.CORPORATE
+
+        # NSE Bond Series
+        if series.startswith(('N', 'Y', 'Z')):
+             return "BOND", BondType.CORPORATE
+
+        # 4. Stock Indicators (If not identified as Bond yet)
+        stock_keywords = ["LIMITED RE", "RIGHTS ENT", "OFS", "WARRANTS", " PP"]
+        if any(k in name for k in stock_keywords) or name.endswith(" PP"):
+            return "STOCK", None
+
+        # 5. Contextual Heuristics (Finance/Dates/Coupons)
         # Rule A: Finance Bonds
         finance_keywords = ["FINANCE", "FINCORP", "FIN"]
         bond_indicators = ["SR-", "SR ", "%"]
@@ -578,5 +611,5 @@ class AssetSeeder:
         if (has_month or has_year) and not is_stock_excl:
             return "BOND", BondType.CORPORATE
 
-        # Pass 4: Default (Handled by caller or return None)
+        # Pass 6: Default (Handled by caller or return None)
         return None, None
