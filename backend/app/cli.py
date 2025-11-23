@@ -1,20 +1,14 @@
-import collections
-import glob
-import io
 import json
 import os
 import pathlib
-import re
-import uuid
-import zipfile
 import tempfile
+import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Type, List, Optional
+from typing import Any, Optional, Type
 
 import requests
 import typer
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 # Local imports
@@ -33,6 +27,7 @@ NSE_DAILY_DEBT_URL = "https://nsearchives.nseindia.com/content/debt/New_debt_lis
 # ICICI fallback if needed, or we rely on what we have.
 ICICI_MASTER_URL = "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
 
+
 def get_db_session():
     # Local import to prevent circular dependencies at startup
     from app.db.session import SessionLocal
@@ -42,15 +37,18 @@ def get_db_session():
     finally:
         db.close()
 
+
 def _download_file(url: str, dest_path: str):
     """Downloads a file from a URL to a destination path."""
     typer.echo(f"Downloading {url}...")
-    response = requests.get(url, stream=True, verify=False) # verify=False for NSDL/Sandbox issues
+    # verify=False for NSDL/Sandbox issues
+    response = requests.get(url, stream=True, verify=False)
     response.raise_for_status()
     with open(dest_path, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
     typer.echo(f"Saved to {dest_path}")
+
 
 def _find_file(directory: pathlib.Path, pattern: str) -> Optional[str]:
     """Finds a file matching the pattern in the directory."""
@@ -62,12 +60,16 @@ def _find_file(directory: pathlib.Path, pattern: str) -> Optional[str]:
     files.sort(key=lambda p: p.name, reverse=True)
     return str(files[0])
 
+
 @app.command("seed-assets")
 def seed_assets_command(
     local_dir: pathlib.Path = typer.Option(
         None,
         "--local-dir",
-        help="Path to a local directory containing seed files. If not provided, attempts to download.",
+        help=(
+            "Path to a local directory containing seed files. "
+            "If not provided, attempts to download."
+        ),
         exists=True,
         file_okay=False,
         dir_okay=True,
@@ -98,7 +100,9 @@ def seed_assets_command(
         # Map phases to file patterns
         patterns = {
             "nsdl": ["*nsdl*.xls", "*NSDL*.xls", "*debt_instruments*.xls"],
-            "bse_public": ["*bonds_data.zip", "*Public Bond*.zip", "bse_public_debt.zip"],
+            "bse_public": [
+                "*bonds_data.zip", "*Public Bond*.zip", "bse_public_debt.zip"
+            ],
             "bse_equity": ["*BhavCopy_BSE_CM*.csv", "bse_equity.csv"],
             "bse_debt": ["*DEBTBHAVCOPY*.zip", "bse_debt.zip"],
             "nse_debt": ["*New_debt_listing*.xlsx", "nse_daily_debt.xlsx"],
@@ -136,7 +140,10 @@ def seed_assets_command(
                     _download_file(url, dest)
                     files[key] = dest
                 except Exception as e:
-                    typer.echo(f"Warning: Failed to download {key} from {url}: {e}", err=True)
+                    typer.echo(
+                        f"Warning: Failed to download {key} from {url}: {e}",
+                        err=True
+                    )
         except Exception as e:
             typer.echo(f"Error during download setup: {e}", err=True)
 
@@ -189,7 +196,6 @@ def clear_assets_command(
     ),
 ):
     # Local import to prevent circular dependencies
-    from app import models
     from app.models.fixed_deposit import FixedDeposit
     from app.models.recurring_deposit import RecurringDeposit
     from app.models.watchlist import Watchlist, WatchlistItem
@@ -282,7 +288,6 @@ def dump_table_command(
     table_name: str = typer.Argument(..., help="The name of the table to dump."),
 ):
     # Local import to prevent circular dependencies
-    from app import models
     from app.models.audit_log import AuditLog
     from app.models.fixed_deposit import FixedDeposit
     from app.models.recurring_deposit import RecurringDeposit

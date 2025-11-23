@@ -1,22 +1,22 @@
 import collections
-import io
+import logging
 import re
 import zipfile
-import logging
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Counter, Set, Tuple, Optional, List
+from typing import Any, Optional, Set, Tuple
 
 import pandas as pd
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.schemas.enums import BondType, PaymentFrequency
 from app.schemas.bond import BondCreate
+from app.schemas.enums import BondType
 
 # Setup logger
 logger = logging.getLogger(__name__)
+
 
 class AssetSeeder:
     def __init__(self, db: Session, debug: bool = False):
@@ -57,7 +57,10 @@ class AssetSeeder:
             self.existing_composite_keys.add((name, atype, currency))
 
         if self.debug:
-            print(f"[DEBUG] Loaded {len(self.existing_isins)} ISINs, {len(self.existing_tickers)} Tickers.")
+            print(
+                f"[DEBUG] Loaded {len(self.existing_isins)} ISINs, "
+                f"{len(self.existing_tickers)} Tickers."
+            )
 
     def _parse_date(self, value: Any) -> Optional[date]:
         """Parses a date from various formats."""
@@ -94,7 +97,8 @@ class AssetSeeder:
         if isin and isin in self.existing_isins:
             return False
         if ticker and ticker in self.existing_tickers:
-            # Fallback: if ticker exists but ISIN is different, we might have a collision.
+            # Fallback: if ticker exists but ISIN is different,
+            # we might have a collision.
             # But usually ticker uniqueness is strict.
             return False
 
@@ -148,7 +152,9 @@ class AssetSeeder:
         print(f"Processing NSDL file: {filepath}")
         try:
             # Try reading as CSV with tab separator (as discovered)
-            df = pd.read_csv(filepath, sep='\t', on_bad_lines='skip', encoding='latin1')
+            df = pd.read_csv(
+                filepath, sep='\t', on_bad_lines='skip', encoding='latin1'
+            )
         except Exception:
             try:
                  df = pd.read_excel(filepath)
@@ -161,8 +167,8 @@ class AssetSeeder:
             if not isin or pd.isna(isin):
                 continue
 
-            # Use ISIN as ticker if no other identifier, but usually ISIN is the key here.
-            # We map NSDL -> BOND definitively.
+            # Use ISIN as ticker if no other identifier, but usually ISIN
+            # is the key here. We map NSDL -> BOND definitively.
             name = str(row.get('NAME_OF_THE_INSTRUMENT', '')).strip()
             if not name:
                 name = f"Bond {isin}"
@@ -259,7 +265,8 @@ class AssetSeeder:
             bond_type = BondType.CORPORATE
         else:
              # Unknown series, maybe skip or log?
-             # For now, default to STOCK if looks like equity, but better to skip if unsure.
+             # For now, default to STOCK if looks like equity,
+             # but better to skip if unsure.
              if series in ['M', 'MT']: # SME
                  asset_type = "STOCK"
              else:
@@ -343,15 +350,25 @@ class AssetSeeder:
                 continue
             isin = str(isin).strip()
 
-            ticker = row.get('Security Code') or row.get('Security_cd') or row.get('Scrip Code')
+            ticker = (row.get('Security Code') or row.get('Security_cd') or
+                      row.get('Scrip Code'))
             ticker = str(ticker).strip() if ticker else isin
 
-            name = row.get('sc_name') or row.get('Issuer Name') or row.get('Security Description')
+            name = (row.get('sc_name') or row.get('Issuer Name') or
+                    row.get('Security Description'))
             name = str(name).strip() if name else f"Bond {isin}"
 
-            maturity_date = self._parse_date(row.get('Maturity Date') or row.get('MaturityDate'))
-            coupon_rate = self._parse_decimal(row.get('COUP0N (%)') or row.get('Coupon (%)') or row.get('Coupon Rate (%)'))
-            face_value = self._parse_decimal(row.get('Face Value') or row.get('FACE VALUE'))
+            maturity_date = self._parse_date(
+                row.get('Maturity Date') or row.get('MaturityDate')
+            )
+            coupon_rate = self._parse_decimal(
+                row.get('COUP0N (%)') or
+                row.get('Coupon (%)') or
+                row.get('Coupon Rate (%)')
+            )
+            face_value = self._parse_decimal(
+                row.get('Face Value') or row.get('FACE VALUE')
+            )
 
             data = {
                 "isin": isin,
@@ -397,7 +414,10 @@ class AssetSeeder:
         try:
             with zipfile.ZipFile(filepath) as z:
                 # Find the txt file
-                txt_files = [f for f in z.namelist() if f.endswith(".txt") or f.endswith(".csv")]
+                txt_files = [
+                    f for f in z.namelist()
+                    if f.endswith(".txt") or f.endswith(".csv")
+                ]
                 for filename in txt_files:
                     with z.open(filename) as f:
                         # Assuming CSV/Txt format. ICICI usually comma or pipe?
@@ -421,7 +441,8 @@ class AssetSeeder:
         isin = row.get('ISINCode')
         series = row.get('Series', '')
 
-        if not ticker or pd.isna(ticker): return
+        if not ticker or pd.isna(ticker):
+            return
         ticker = str(ticker).strip()
         name = str(name).strip() if name else ""
         isin = str(isin).strip() if isin and not pd.isna(isin) else None
@@ -432,7 +453,8 @@ class AssetSeeder:
 
         if not asset_type:
             # Default to Stock if heuristics fail?
-            # The FR says "Pass 4: Default Classification... classified as STOCK by default".
+            # The FR says "Pass 4: Default Classification...
+            # classified as STOCK by default".
             asset_type = "STOCK"
 
         data = {
@@ -441,11 +463,14 @@ class AssetSeeder:
             "name": name,
             "asset_type": asset_type,
             "bond_type": bond_type,
-            "exchange": "NSE" if 'ExchangeCode' in row else "BSE" # Guess exchange
+            # Guess exchange
+            "exchange": "NSE" if 'ExchangeCode' in row else "BSE"
         }
         self._create_asset(data)
 
-    def _classify_asset_heuristic(self, ticker: str, name: str, series: str) -> Tuple[Optional[str], Optional[BondType]]:
+    def _classify_asset_heuristic(
+        self, ticker: str, name: str, series: str
+    ) -> Tuple[Optional[str], Optional[BondType]]:
         """
         Refactored Heuristic Logic (FR 3.2).
         Returns (asset_type, bond_type).
@@ -473,9 +498,11 @@ class AssetSeeder:
         # Rule A: Finance Bonds
         finance_keywords = ["FINANCE", "FINCORP", "FIN"]
         bond_indicators = ["SR-", "SR ", "%"]
-        # Enhanced Rule A: Check for coupon pattern (e.g. 9.75) and date pattern (e.g. 28AG20)
+        # Enhanced Rule A: Check for coupon pattern (e.g. 9.75)
+        # and date pattern (e.g. 28AG20)
         has_coupon_pattern = bool(re.search(r"\b\d{1,2}\.\d{1,2}\b", name))
-        has_complex_date = bool(re.search(r"\d{2}[A-Z]{2,3}\d{2}", name)) # DDMMMYY
+        # DDMMMYY
+        has_complex_date = bool(re.search(r"\d{2}[A-Z]{2,3}\d{2}", name))
 
         is_finance = any(k in name for k in finance_keywords)
         has_bond_ind = any(k in name for k in bond_indicators)
@@ -484,11 +511,17 @@ class AssetSeeder:
             return "BOND", BondType.CORPORATE
 
         # Rule B: General Corporate Bonds
-        months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+        months = [
+            "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+            "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+        ]
         has_month = any(m in name for m in months)
         has_year = bool(re.search(r"20\d{2}", name)) # 20xx
 
-        stock_exclusions = ["INDUSTRIES", "MANUFACTURING", "TECHNOLOGIES", "SYSTEMS", "PROJECTS"]
+        stock_exclusions = [
+            "INDUSTRIES", "MANUFACTURING", "TECHNOLOGIES",
+            "SYSTEMS", "PROJECTS"
+        ]
         is_stock_excl = any(k in name for k in stock_exclusions)
 
         if (has_month or has_year) and not is_stock_excl:

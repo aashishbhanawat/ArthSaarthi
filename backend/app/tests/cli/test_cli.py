@@ -1,5 +1,5 @@
-import io
 import uuid
+
 import pytest
 from typer.testing import CliRunner
 
