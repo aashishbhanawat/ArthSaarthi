@@ -13,6 +13,7 @@ class PaymentFrequency(str, Enum):
     SEMI_ANNUALLY = "SEMI_ANNUALLY"
     QUARTERLY = "QUARTERLY"
     MONTHLY = "MONTHLY"
+    ON_MATURITY = "ON_MATURITY"
 
 
 class TransactionType(str, Enum):
