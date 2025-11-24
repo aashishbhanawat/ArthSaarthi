@@ -92,8 +92,6 @@ def get_dynamic_urls(d: date) -> dict[str, Union[str, list[str]]]:
     dd = d.strftime("%d")
     mm = d.strftime("%m")
     yyyy = d.strftime("%Y")
-    mmm = d.strftime("%b").upper()
-    mmm_title = d.strftime("%b").capitalize()
 
     # NSDL: as_on_DD.MM.YYYY.xls
     nsdl = (
@@ -120,14 +118,11 @@ def get_dynamic_urls(d: date) -> dict[str, Union[str, list[str]]]:
         f"INDEXSummary_{dd}{mm}{yyyy}.csv"
     )
 
-    # NSE Equity: Try variations (NOV vs Nov)
-    nse_eq_upper = (
-        "https://nsearchives.nseindia.com/content/historical/EQUITIES/"
-        f"{yyyy}/{mmm}/cm{dd}{mmm}{yyyy}bhav.csv.zip"
-    )
-    nse_eq_title = (
-        "https://nsearchives.nseindia.com/content/historical/EQUITIES/"
-        f"{yyyy}/{mmm}/cm{dd}{mmm_title}{yyyy}bhav.csv.zip"
+    # NSE Equity: New Uniform Format
+    # BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip
+    nse_eq = (
+        "https://nsearchives.nseindia.com/content/cm/"
+        f"BhavCopy_NSE_CM_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
     )
 
     # Static URLs (Do not change with date, but we include them)
@@ -143,7 +138,7 @@ def get_dynamic_urls(d: date) -> dict[str, Union[str, list[str]]]:
         "bse_equity": bse_eq,
         "bse_debt": bse_debt,
         "nse_debt": nse_debt,
-        "nse_equity": [nse_eq_upper, nse_eq_title],
+        "nse_equity": nse_eq,
         "bse_index": bse_index,
         "icici": icici_fallback,
     }
@@ -194,7 +189,7 @@ def seed_assets_command(
             "bse_equity": ["*BhavCopy_BSE_CM*.csv", "bse_equity.csv"],
             "bse_debt": ["*DEBTBHAVCOPY*.zip", "bse_debt.zip"],
             "nse_debt": ["*New_debt_listing*.xlsx", "nse_daily_debt.xlsx"],
-            "nse_equity": ["*bhav.csv.zip", "cm*bhav.csv.zip", "nse_equity.zip"],
+            "nse_equity": ["*BhavCopy_NSE_CM*.csv.zip", "*bhav.csv.zip"],
             "bse_index": ["*INDEXSummary*.csv", "bse_index.csv"],
             "icici": ["*SecurityMaster*.zip", "icici_master.zip"]
         }
@@ -238,7 +233,6 @@ def seed_assets_command(
 
                     success = False
                     for url in urls:
-                        # Determine filename from URL (last part)
                         filename = url.split('/')[-1]
                         dest = os.path.join(temp_dir, filename)
 
