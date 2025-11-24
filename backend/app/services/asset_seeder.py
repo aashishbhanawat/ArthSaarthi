@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.schemas.bond import BondCreate
-from app.schemas.enums import BondType
+from app.schemas.enums import BondType, PaymentFrequency
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -86,6 +86,23 @@ class AssetSeeder:
         except Exception:
             return None
 
+    def _parse_frequency(self, value: Any) -> Optional[PaymentFrequency]:
+        """Parses payment frequency string to Enum."""
+        if pd.isna(value) or not value:
+            return None
+        v = str(value).upper().strip()
+
+        if "HALF" in v or "SEMI" in v:
+            return PaymentFrequency.SEMI_ANNUALLY
+        if "YEAR" in v or "ANNUAL" in v:
+            return PaymentFrequency.ANNUALLY
+        if "QUARTER" in v:
+            return PaymentFrequency.QUARTERLY
+        if "MONTH" in v:
+            return PaymentFrequency.MONTHLY
+
+        return None
+
     def _create_asset(self, data: dict) -> bool:
         """Creates an asset and optionally a bond record."""
         # Duplicate checks
@@ -125,7 +142,7 @@ class AssetSeeder:
                     isin=isin,
                     face_value=data.get("face_value"),
                     coupon_rate=data.get("coupon_rate"),
-                    # interest_frequency logic can be added if data available
+                    payment_frequency=data.get("payment_frequency"),
                 )
                 crud.bond.create(db=self.db, obj_in=bond_in)
 
@@ -176,6 +193,9 @@ class AssetSeeder:
             maturity_date = self._parse_date(row.get('REDEMPTION'))
             face_value = self._parse_decimal(row.get('FACE_VALUE'))
             coupon_rate = self._parse_decimal(row.get('COUPON_RATE'))
+            payment_freq = self._parse_frequency(
+                row.get('FREQUENCY_OF_THE_INTEREST_PAYMENT')
+            )
 
             data = {
                 "isin": isin,
@@ -186,6 +206,7 @@ class AssetSeeder:
                 "maturity_date": maturity_date,
                 "face_value": face_value,
                 "coupon_rate": coupon_rate,
+                "payment_frequency": payment_freq,
                 "exchange": "N/A" # OTC / NSDL
             }
             self._create_asset(data)
