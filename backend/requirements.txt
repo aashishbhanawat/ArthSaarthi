@@ -225,3 +225,5 @@ yfinance==0.2.65
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
+openpyxl==3.1.5
+xlrd==2.0.2

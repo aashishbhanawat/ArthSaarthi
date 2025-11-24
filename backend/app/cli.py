@@ -1,134 +1,21 @@
-import collections
-import csv
-import io
 import json
+import os
 import pathlib
-import re
+import tempfile
 import uuid
-import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Type
+from typing import Any, Optional, Type, Union
 
 import requests
 import typer
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+# Local imports
+from app import models
+from app.services.asset_seeder import AssetSeeder
+
 app = typer.Typer(help="ArthSaarthi CLI for database and utility operations.")
-
-SECURITY_MASTER_URL = (
-    "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
-)
-NSE_MASTER_FILE = "NSEScripMaster.txt"
-BSE_MASTER_FILE = "BSEScripMaster.txt"
-
-EXCHANGE_CONFIGS = {
-    "NSE": {
-        "filename": NSE_MASTER_FILE,
-        "ticker_col": "ExchangeCode",
-        "name_col": "CompanyName",
-        "isin_col": "ISINCode",
-        "series_col": "Series",
-        "face_value_col": "FaceValue",
-    },
-    "BSE": {
-        "filename": BSE_MASTER_FILE,
-        "ticker_col": "ScripID",
-        "name_col": "ScripName",
-        "isin_col": "ISINCode",
-        "series_col": "Series",
-        "face_value_col": "FaceValue",
-    },
-}
-
-# --- Helper Functions ---
-
-
-def _classify_asset(
-    ticker: str, name: str, series: str, exchange: str, debug: bool = False,
-) -> tuple[str | None, Any]:  # Return Any for bond_type to avoid import
-    """Maps asset attributes to its asset_type and bond_type."""
-    series = series.upper()
-    name = name.upper()
-    ticker = ticker.upper()
-
-    # 1. Highest Priority: Specific bond patterns that are unambiguous
-    if "T-BILL" in name or re.match(r"^\d{2,3}(TB|T|D)\d{4,6}$", ticker):
-        return "BOND", "TBILL"
-
-    # 2. Exchange-specific bond logic
-    if exchange == "BSE":
-        # CG + 4-digit coupon + letter + 4-digit number (e.g., CG1110S9803)
-        # High-confidence BSE bond patterns
-        if re.match(r"^CG\d{4}[A-Z]\d{4}$", ticker) or re.match(
-            r"^GS\d{2}[A-Z]{3}(\d{4}|\d{2})[A-Z]?$", ticker
-        ):
-            return "BOND", "GOVERNMENT"
-        if re.match(r"^SGB[A-Z0-9]+", ticker) or series == "GB":
-            return "BOND", "SGB"
-
-        # For BSE, check for name-based keywords for better accuracy, especially for
-        # corporate bonds.
-        # This is now independent of the ticker pattern.
-        bond_keywords = ["%", "NCD", "BOND", "PERP",
-                         " SR ", " BD ", "DEBENTURE", "0 ", " 0%"]
-        month_keywords = ["JAN", "FEB", "MAR", "APR", "MAY",
-                          "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
-        # Check for 2-digit or 4-digit years in the name
-        year_keywords = [str(y) for y in range(15, 100)] + [
-            str(y) for y in range(2015, date.today().year + 10)
-        ]
-        strong_bond_indicators = [
-            "%", "NCD", "BOND", "DEBENTURE"] + month_keywords + year_keywords
-        stock_exclusions = ["LTD", "LIMITED", "SECURITIES"]
-
-        # If it has bond keywords, it's likely a bond.
-        # We only exclude if it has stock keywords AND lacks strong bond indicators.
-        has_bond_keywords = any(keyword in name for keyword in (
-            bond_keywords + month_keywords + year_keywords))
-        is_likely_stock = any(ex in name for ex in stock_exclusions)
-        has_strong_bond_indicators = any(
-            ind in name for ind in strong_bond_indicators
-        )
-        if has_bond_keywords and not (
-                is_likely_stock and not has_strong_bond_indicators):
-            return "BOND", "CORPORATE"
-
-        # Fallback for State Govt bonds on BSE based on name keywords
-        govt_keywords = ["STATE", "ELEC BOARD", "POWER CORPORATION"]
-        if any(keyword in name for keyword in govt_keywords) and not any(
-            ex in name for ex in ["LTD", "LIMITED"]
-        ):
-            return "BOND", "GOVERNMENT"
-    else:  # Default to NSE logic
-        # NSE specific series for bonds. These are high-confidence indicators.
-        if series == "GB":
-            return "BOND", "SGB"
-        if series in ("GS", "SG"):
-            return "BOND", "GOVERNMENT"
-        if series == "TB":
-            return "BOND", "TBILL"
-
-        # Corporate bonds on NSE often start with specific letters.
-        # This rule is now structured to explicitly EXCLUDE known stock series.
-        BOND_PREFIXES = ("N", "Y", "Z", "D", "S", "U", "M")
-        STOCK_SERIES_EXCEPTIONS = {"DR", "ST"}
-        OTHER_EXCLUSIONS = {"MF", "ME", "SP", "SL", "SI", "SO", "SQ"}
-        NUMERIC_EXCEPTIONS = {"24", "25", "47", "50", "57", "60", "65", "71"}
-
-        if series.startswith(BOND_PREFIXES) and series not in STOCK_SERIES_EXCEPTIONS:
-            # If it's another known exclusion or a numeric exception, skip it.
-            if series in OTHER_EXCLUSIONS or (
-                len(series) > 1 and series[1:] in NUMERIC_EXCEPTIONS
-            ):
-                return None, None
-            return "BOND", "CORPORATE"
-
-    # 3. Last fallback: Check for common stock series if no bond patterns matched.
-    if series in {"EQ", "BE", "SM", "DR", "A", "B", "T", "M", "C", "ST"}:
-        return "STOCK", None
-    return None, None  # Default return for unclassified assets
 
 
 def get_db_session():
@@ -141,192 +28,130 @@ def get_db_session():
         db.close()
 
 
-def _validate_and_clean_asset_row(
-    row: dict, exchange: str, config: dict, debug: bool, debug_rows_printed: int
-) -> tuple[dict | None, int]:
-    """Validates and cleans a row from the asset master file."""
-    series = row.get(config["series_col"], "").strip().upper()
-    ticker = row.get(config["ticker_col"], "")
-    name = row.get(config["name_col"], "")
-    asset_type, bond_type = _classify_asset(ticker, name, series, exchange)
-    if not asset_type:
-        if series and debug and debug_rows_printed < 5:
-            typer.echo(  # noqa: E501
-                f"\n[DEBUG] Skipping {exchange} row due to unclassified Series "
-                f"'{series}'.", err=True,
-            )
-            typer.echo(f"  - Ticker: {ticker}, Name: {name}", err=True)
-            debug_rows_printed += 1
-        return None, debug_rows_printed
-
-    isin = row.get(config["isin_col"])
-
-    # We need a name and at least one of (ticker or isin) to track an asset.
-    if not name or not (ticker or isin):
-        if debug and debug_rows_printed < 5:
-            typer.echo(
-                (
-                    f"\n[DEBUG] Skipping {exchange} row due to missing"
-                    f" essential data. Ticker: '{ticker}', Name: '{name}',"
-                    f" ISIN: '{isin}'."
-                ),
-                err=True,
-            )
-            debug_rows_printed += 1
-        return None, debug_rows_printed
-
-    face_value_str = row.get(config["face_value_col"], "0").strip()
-    try:
-        face_value = Decimal(face_value_str)
-        if face_value <= 0:
-            face_value = None
-    except Exception:
-        face_value = None
-
-    cleaned_data = {
-        "isin": isin.strip(),
-        "ticker": ticker.strip(),
-        "name": name.strip(),
-        "asset_type": asset_type,
-        "bond_type": bond_type,
-        "face_value": face_value,
+def _download_file(url: str, dest_path: str) -> bool:
+    """
+    Downloads a file from a URL to a destination path.
+    Returns True if successful, False otherwise.
+    """
+    typer.echo(f"Downloading {url}...")
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/91.0.4472.124 Safari/537.36"
+        )
     }
-    return cleaned_data, debug_rows_printed
+    try:
+        # verify=False for NSDL/Sandbox issues
+        response = requests.get(
+            url, stream=True, verify=False, headers=headers, timeout=30
+        )
+        response.raise_for_status()
+        with open(dest_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        typer.echo(f"Saved to {dest_path}")
+        return True
+    except Exception as e:
+        typer.echo(f"Download failed: {e}")
+        return False
 
 
-def _parse_and_seed_exchange_data(
-    db: Session,
-    reader: csv.DictReader,
-    exchange: str,
-    existing_isins: set,
-    existing_tickers: set,
-    existing_composite_keys: set[tuple[str, str, str]],
-    schemas: Any,
-    debug: bool = False,
-) -> tuple[int, int, collections.Counter]:
-    """Parses asset data from a CSV reader and seeds the database."""
-    # Local import to prevent circular dependencies
-    from app import crud
-    from app.schemas.bond import BondCreate
-    created_count = 0
-    skipped_count = 0
-    debug_rows_printed = 0 # type: ignore
-    config = EXCHANGE_CONFIGS[exchange]
-    skipped_series_counts = collections.Counter()
-
-    # The field names in the file might have quotes, let's strip them.
-    if reader.fieldnames:
-        reader.fieldnames = [field.strip().strip('"') for field in reader.fieldnames]
-
-    assets_to_process = list(reader)
-    with typer.progressbar(
-        assets_to_process, label=f"Processing {exchange} assets"
-    ) as progress:
-        for row in progress:
-            cleaned_data, debug_rows_printed = _validate_and_clean_asset_row(
-                row, exchange, config, debug, debug_rows_printed
-            )
-            if not cleaned_data:
-                series = row.get(config["series_col"], "").strip()
-                if series:
-                    skipped_series_counts[series] += 1
-                continue
-
-            # Check if asset with this ISIN or Ticker already exists
-            if (
-                cleaned_data["isin"] in existing_isins
-                or cleaned_data["ticker"] in existing_tickers
-            ):
-                skipped_count += 1
-                continue
-
-            # Check if asset with this (name, asset_type, currency) already exists
-            # This handles the 'uq_asset_name_type_currency' constraint.
-            composite_key = (cleaned_data["name"], cleaned_data["asset_type"], "INR")
-            if composite_key in existing_composite_keys:
-                if debug and debug_rows_printed < 5:
-                    typer.echo((
-                        f"\n[DEBUG] Skipping {exchange} row due to duplicate "
-                        f"composite key: Name: '{cleaned_data['name']}', Type: "
-                        f"'{cleaned_data['asset_type']}', Currency: 'INR'."), err=True
-                    )
-                    debug_rows_printed += 1
-                skipped_count += 1
-                continue
-
-            asset_data = {
-                "name": cleaned_data["name"],
-                "ticker_symbol": cleaned_data["ticker"],
-                "isin": cleaned_data["isin"],
-                "asset_type": cleaned_data["asset_type"],
-                "currency": "INR",
-                "exchange": exchange,
-            }
-            try:
-                asset_in = schemas.AssetCreate(**asset_data)
-                asset = crud.asset.create(db=db, obj_in=asset_in)
-
-                # If it's a bond, create the associated bond record
-                if asset.asset_type == "BOND" and cleaned_data["bond_type"]:
-                    bond_in = BondCreate(
-                        asset_id=asset.id,
-                        bond_type=cleaned_data["bond_type"],
-                        # Placeholder date, user must enrich this on first transaction
-                        maturity_date=date(1970, 1, 1),
-                        isin=asset.isin,
-                        face_value=cleaned_data.get("face_value"),
-                    )
-                    crud.bond.create(db=db, obj_in=bond_in)
-
-                created_count += 1
-                # Add to sets to prevent duplicates from other files in the same run
-                existing_isins.add(cleaned_data["isin"])
-                existing_tickers.add(cleaned_data["ticker"])
-                existing_composite_keys.add(composite_key) # type: ignore
-            except IntegrityError:
-                db.rollback()
-                skipped_count += 1
-            except Exception as ex:
-                typer.echo(f"\nCould not create asset {asset_data}: {ex}", err=True)
-                skipped_count += 1
-    return created_count, skipped_count, skipped_series_counts
+def _find_file(directory: pathlib.Path, pattern: str) -> Optional[str]:
+    """Finds a file matching the pattern in the directory."""
+    files = list(directory.glob(pattern))
+    if not files:
+        return None
+    # Return the most recent one if multiple? Or just the first.
+    # Let's sort by name (usually contains date) descending.
+    files.sort(key=lambda p: p.name, reverse=True)
+    return str(files[0])
 
 
-def _process_asset_file(
-    file_content: io.TextIOWrapper,
-    exchange: str,
-    db: Session, # noqa: E501
-    existing_isins: set, # type: ignore
-    existing_tickers: set,
-    existing_composite_keys: set[tuple[str, str, str]],
-    schemas: Any,
-    debug: bool = False,
-) -> tuple[int, int, collections.Counter]:
-    """Reads a CSV file stream and triggers the seeding process."""
-    reader = csv.DictReader(file_content)
-    created, skipped, skipped_series = _parse_and_seed_exchange_data(
-        db, reader, exchange, existing_isins, existing_tickers, # type: ignore
-        existing_composite_keys, schemas, debug=debug
+def get_latest_trading_date() -> date:
+    """Returns the latest potential trading date (today or previous weekday)."""
+    d = date.today()
+    # Simple check: if Sat (5) or Sun (6), go back to Fri
+    if d.weekday() == 5:  # Sat
+        d -= timedelta(days=1)
+    elif d.weekday() == 6:  # Sun
+        d -= timedelta(days=2)
+    return d
+
+
+def decrement_trading_day(d: date) -> date:
+    """Returns the previous trading day (skipping weekends)."""
+    d -= timedelta(days=1)
+    while d.weekday() > 4:  # Sat=5, Sun=6
+        d -= timedelta(days=1)
+    return d
+
+
+def get_dynamic_urls(d: date) -> dict[str, Union[str, list[str]]]:
+    """Generates URLs for a specific date."""
+    dd = d.strftime("%d")
+    mm = d.strftime("%m")
+    yyyy = d.strftime("%Y")
+
+    # NSDL: as_on_DD.MM.YYYY.xls
+    nsdl = (
+        "https://nsdl.co.in/downloadables/excel/cp-debt/"
+        f"Download_the_entire_list_of_Debt_Instruments_(including_Redeemed)_as_on_"
+        f"{dd}.{mm}.{yyyy}.xls"
     )
-    typer.echo(
-        f"\n{exchange} processing complete. Created: {created}, Skipped: {skipped}"
+
+    # BSE Equity: BhavCopy_BSE_CM_0_0_0_{YYYY}{MM}{DD}_F_0000.CSV
+    bse_eq = (
+        "https://www.bseindia.com/download/BhavCopy/Equity/"
+        f"BhavCopy_BSE_CM_0_0_0_{yyyy}{mm}{dd}_F_0000.CSV"
     )
-    return created, skipped, skipped_series
 
+    # BSE Debt: DEBTBHAVCOPY{DD}{MM}{YYYY}.zip
+    bse_debt = (
+        "https://www.bseindia.com/download/Bhavcopy/Debt/"
+        f"DEBTBHAVCOPY{dd}{mm}{yyyy}.zip"
+    )
 
-# --- CLI Command ---
+    # BSE Index: INDEXSummary_{DD}{MM}{YYYY}.csv
+    bse_index = (
+        "https://www.bseindia.com/bsedata/Index_Bhavcopy/"
+        f"INDEXSummary_{dd}{mm}{yyyy}.csv"
+    )
+
+    # NSE Equity: New Uniform Format
+    # BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip
+    nse_eq = (
+        "https://nsearchives.nseindia.com/content/cm/"
+        f"BhavCopy_NSE_CM_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
+    )
+
+    # Static URLs (Do not change with date, but we include them)
+    bse_public = "https://www.bseindia.com/downloads1/bonds_data.zip"
+    nse_debt = "https://nsearchives.nseindia.com/content/debt/New_debt_listing.xlsx"
+    icici_fallback = (
+        "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
+    )
+
+    return {
+        "nsdl": nsdl,
+        "bse_public": bse_public,
+        "bse_equity": bse_eq,
+        "bse_debt": bse_debt,
+        "nse_debt": nse_debt,
+        "nse_equity": nse_eq,
+        "bse_index": bse_index,
+        "icici": icici_fallback,
+    }
+
 
 @app.command("seed-assets")
 def seed_assets_command(
-    url: str = typer.Option(
-        SECURITY_MASTER_URL, "--url", help="URL of the security master zip file."
-    ),
     local_dir: pathlib.Path = typer.Option(
         None,
         "--local-dir",
         help=(
-            "Path to a local directory containing master files (e.g.,"
-            " NSEScripMaster.txt). Skips download."
+            "Path to a local directory containing seed files. "
+            "If not provided, attempts to download."
         ),
         exists=True,
         file_okay=False,
@@ -334,105 +159,138 @@ def seed_assets_command(
         readable=True,
     ),
     debug: bool = typer.Option(
-        False, "--debug", help="Enable detailed debug logging for skipped rows."
+        False, "--debug", help="Enable detailed debug logging."
     ),
 ):
-    # Local import to prevent circular dependencies
-    from app import models, schemas
-
     """
-    Downloads and parses the ICICI Direct Security Master file.
+    Seeds the assets table using a multi-phase, authoritative-first strategy.
 
-    Seeds the assets table in the database with NSE-first priority.
+    Phase 1: Master Debt Lists (NSDL, BSE Public)
+    Phase 2: Exchange Bhavcopy (BSE Equity, NSE Equity)
+    Phase 3: specialized Debt (NSE Daily, BSE Debt)
+    Phase 4: Market Indices (BSE)
+    Phase 5: Fallback (ICICI)
     """
-    typer.echo("Starting asset database seeding process...")
+    typer.echo("Starting asset database seeding process (V2)...")
     db: Session = next(get_db_session())
-    Asset = models.Asset
+    seeder = AssetSeeder(db, debug=debug)
 
-    try:
-        typer.echo("Fetching existing assets from database...")
-        existing_isins = {
-            r[0] for r in db.query(Asset.isin).filter(Asset.isin.isnot(None)).all()
+    # Prepare file paths
+    files = {}
+
+    if local_dir:
+        typer.echo(f"Searching for files in {local_dir}...")
+        # Map phases to file patterns
+        patterns = {
+            "nsdl": ["*nsdl*.xls", "*NSDL*.xls", "*debt_instruments*.xls"],
+            "bse_public": [
+                "*bonds_data.zip", "*Public Bond*.zip", "bse_public_debt.zip"
+            ],
+            "bse_equity": ["*BhavCopy_BSE_CM*.csv", "bse_equity.csv"],
+            "bse_debt": ["*DEBTBHAVCOPY*.zip", "bse_debt.zip"],
+            "nse_debt": ["*New_debt_listing*.xlsx", "nse_daily_debt.xlsx"],
+            "nse_equity": ["*BhavCopy_NSE_CM*.csv.zip", "*bhav.csv.zip"],
+            "bse_index": ["*INDEXSummary*.csv", "bse_index.csv"],
+            "icici": ["*SecurityMaster*.zip", "icici_master.zip"]
         }
-        existing_tickers = {r[0] for r in db.query(Asset.ticker_symbol).all()}
-        existing_composite_keys = {
-            (a.name, a.asset_type, a.currency)
-            for a in db.query(Asset.name, Asset.asset_type, Asset.currency).all()
-        }
-        typer.echo(
-            f"Found {len(existing_isins)} existing ISINs and"
-            f" {len(existing_tickers)} tickers and"
-            f" {len(existing_composite_keys)} composite keys."
-        )
 
-        total_created, total_skipped = 0, 0
-        total_skipped_series = collections.Counter()
+        for key, pat_list in patterns.items():
+            for pat in pat_list:
+                found = _find_file(local_dir, pat)
+                if found:
+                    files[key] = found
+                    break
+    else:
+        # Download mode
+        temp_dir = tempfile.mkdtemp()
+        typer.echo(f"Created temp directory for downloads: {temp_dir}")
 
-        # Process files from local directory or downloaded zip
-        if local_dir:
-            typer.echo(f"Processing local files from: {local_dir}")
-            for exchange, config in EXCHANGE_CONFIGS.items():
-                file_path = local_dir / config["filename"]
-                if not file_path.exists():
-                    typer.echo(
-                        f"Warning: File '{file_path}' not found. Skipping.", err=True
-                    )
-                    continue
-                with open(file_path, mode="r", encoding="utf-8", errors="ignore") as f:
-                    created, skipped, skipped_series = _process_asset_file(
-                        f, exchange, db, existing_isins, existing_tickers,
-                        existing_composite_keys, schemas, debug=debug
-                    )
-                    total_created += created
-                    total_skipped += skipped
-                    total_skipped_series.update(skipped_series)
-        else:
-            typer.echo(f"Downloading security master file from {url}...")
-            response = requests.get(url)
-            response.raise_for_status()
-            typer.echo("Download complete.")
-            typer.echo("Extracting and processing asset files from zip archive...")
-            with zipfile.ZipFile(io.BytesIO(response.content)) as thezip:
-                for exchange, config in EXCHANGE_CONFIGS.items():
-                    filename = config["filename"]
-                    if filename not in thezip.namelist():
-                        typer.echo(
-                            f"Warning: '{filename}' not found in archive.", err=True
-                        )
+        # Prepare candidate dates (Today, T-1, T-2)
+        candidate_dates = []
+        current_d = get_latest_trading_date()
+        candidate_dates.append(current_d)
+        for _ in range(2):
+            current_d = decrement_trading_day(current_d)
+            candidate_dates.append(current_d)
+
+        typer.echo(f"Will try dates: {[d.isoformat() for d in candidate_dates]}")
+
+        try:
+            required_sources = [
+                "nsdl", "bse_public", "bse_equity", "bse_debt",
+                "nse_debt", "nse_equity", "bse_index", "icici"
+            ]
+
+            for source in required_sources:
+                # Try each date for this source
+                for d in candidate_dates:
+                    urls = get_dynamic_urls(d).get(source)
+                    if not urls:
                         continue
-                    with thezip.open(filename) as thefile:
-                        # Decode to a text stream for the CSV reader
-                        text_stream = io.TextIOWrapper(
-                            thefile, encoding="utf-8", errors="ignore"
-                        )
-                        created, skipped, skipped_series = _process_asset_file(
-                            text_stream, exchange, db, existing_isins, existing_tickers,
-                            existing_composite_keys, schemas, debug=debug
-                        )
-                        total_created += created
-                        total_skipped += skipped
-                        total_skipped_series.update(skipped_series)
 
-        typer.echo("\n--- Seeding Summary ---")
-        typer.echo(f"Total assets created: {total_created}")
-        typer.echo(f"Total assets skipped (duplicates): {total_skipped}")
+                    if isinstance(urls, str):
+                        urls = [urls]
 
-        if total_skipped_series:
-            typer.echo("\n--- Skipped Series Summary ---")
-            for series, count in sorted(total_skipped_series.items()):
-                typer.echo(f"Series '{series}': {count} rows skipped due to filtering")
+                    success = False
+                    for url in urls:
+                        filename = url.split('/')[-1]
+                        dest = os.path.join(temp_dir, filename)
 
-        typer.echo("-----------------------")
-        db.commit()
+                        if _download_file(url, dest):
+                            files[source] = dest
+                            success = True
+                            break
 
-    except Exception as e:
-        typer.echo(f"An unexpected error occurred: {e}", err=True)
-        if "UndefinedTable" in str(e):
-            typer.secho(
-                "\nHint: The database tables do not seem to exist. "
-                "Try running 'init-db' first.",
-                fg=typer.colors.YELLOW, err=True
-            )
+                    if success:
+                        break # Move to next source if successful
+
+                if source not in files:
+                    typer.echo(
+                        f"Warning: Could not download {source} after trying all dates."
+                    )
+
+        except Exception as e:
+            typer.echo(f"Error during download setup: {e}", err=True)
+
+    # Execute Phases
+
+    # Phase 1
+    if "nsdl" in files:
+        seeder.process_nsdl_file(files["nsdl"])
+    if "bse_public" in files:
+        seeder.process_bse_public_debt(files["bse_public"])
+
+    # Phase 2
+    if "bse_equity" in files:
+        seeder.process_bse_equity_bhavcopy(files["bse_equity"])
+    if "nse_equity" in files:
+        seeder.process_nse_equity_bhavcopy(files["nse_equity"])
+
+    # Phase 3
+    if "nse_debt" in files:
+        seeder.process_nse_daily_debt(files["nse_debt"])
+    if "bse_debt" in files:
+        seeder.process_bse_debt_bhavcopy(files["bse_debt"])
+
+    # Phase 4
+    if "bse_index" in files:
+        seeder.process_bse_index(files["bse_index"])
+
+    # Phase 5
+    if "icici" in files:
+        seeder.process_icici_fallback(files["icici"])
+
+    typer.echo("\n--- Seeding Summary ---")
+    typer.echo(f"Total assets created: {seeder.created_count}")
+    typer.echo(f"Total assets skipped: {seeder.skipped_count}")
+
+    if seeder.skipped_series_counts:
+        typer.echo("\n--- Skipped Series Summary (BSE Equity) ---")
+        for series, count in sorted(seeder.skipped_series_counts.items()):
+            typer.echo(f"Series '{series}': {count} skipped")
+
+    typer.echo("-----------------------")
+    db.commit()
 
 
 @app.command("clear-assets")
@@ -445,7 +303,6 @@ def clear_assets_command(
     ),
 ):
     # Local import to prevent circular dependencies
-    from app import models
     from app.models.fixed_deposit import FixedDeposit
     from app.models.recurring_deposit import RecurringDeposit
     from app.models.watchlist import Watchlist, WatchlistItem
@@ -538,7 +395,6 @@ def dump_table_command(
     table_name: str = typer.Argument(..., help="The name of the table to dump."),
 ):
     # Local import to prevent circular dependencies
-    from app import models
     from app.models.audit_log import AuditLog
     from app.models.fixed_deposit import FixedDeposit
     from app.models.recurring_deposit import RecurringDeposit
