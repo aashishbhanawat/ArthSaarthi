@@ -538,7 +538,9 @@ class AssetSeeder:
 
         # 1. Government / Sovereign Bonds
         # GSEC, SDL, GOI, TREASURY BILL
-        if any(k in name for k in ["GSEC", "GOI", "SDL", "STRIP", "T-BILL", "TBILL", "TREASURY BILL"]):
+        if any(k in name for k in [
+            "GSEC", "GOI", "SDL", "STRIP", "T-BILL", "TBILL", "TREASURY BILL"
+        ]):
             return "BOND", BondType.GOVERNMENT
         if "SGB" in ticker or "SOVEREIGN GOLD" in name or series == "GB":
             return "BOND", BondType.SGB

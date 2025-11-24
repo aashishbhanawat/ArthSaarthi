@@ -5,7 +5,7 @@ import tempfile
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Union
 
 import requests
 import typer
@@ -72,7 +72,7 @@ def get_latest_trading_date() -> date:
     return d
 
 
-def get_dynamic_urls() -> dict[str, str]:
+def get_dynamic_urls() -> dict[str, Union[str, list[str]]]:
     d = get_latest_trading_date()
     dd = d.strftime("%d")
     mm = d.strftime("%m")
@@ -106,10 +106,18 @@ def get_dynamic_urls() -> dict[str, str]:
         f"INDEXSummary_{dd}{mm}{yyyy}.csv"
     )
 
-    # NSE Equity: 2025/NOV/cm12NOV2025bhav.csv.zip
-    nse_eq = (
+    # NSE Equity: Try variations (NOV vs Nov)
+    # Upper: 2025/NOV/cm12NOV2025bhav.csv.zip
+    nse_eq_upper = (
         "https://nsearchives.nseindia.com/content/historical/EQUITIES/"
         f"{yyyy}/{mmm}/cm{dd}{mmm}{yyyy}bhav.csv.zip"
+    )
+    # Title: 2025/NOV/cm12Nov2025bhav.csv.zip (Sometimes used)
+    # Or mmm (Title) in path? Usually path is Upper. Filename varies.
+    mmm_title = d.strftime("%b").capitalize()
+    nse_eq_title = (
+        "https://nsearchives.nseindia.com/content/historical/EQUITIES/"
+        f"{yyyy}/{mmm}/cm{dd}{mmm_title}{yyyy}bhav.csv.zip"
     )
 
     # Static
@@ -125,7 +133,7 @@ def get_dynamic_urls() -> dict[str, str]:
         "bse_equity": bse_eq,
         "bse_debt": bse_debt,
         "nse_debt": nse_debt,
-        "nse_equity": nse_eq,
+        "nse_equity": [nse_eq_upper, nse_eq_title],
         "bse_index": bse_index,
         "icici": icici_fallback,
     }
@@ -195,17 +203,32 @@ def seed_assets_command(
         try:
             url_map = get_dynamic_urls()
 
-            for key, url in url_map.items():
-                filename = url.split('/')[-1]
-                dest = os.path.join(temp_dir, filename)
-                try:
-                    _download_file(url, dest)
-                    files[key] = dest
-                except Exception as e:
+            for key, urls in url_map.items():
+                # Normalize to list
+                if isinstance(urls, str):
+                    urls = [urls]
+
+                success = False
+                for url in urls:
+                    filename = url.split('/')[-1]
+                    dest = os.path.join(temp_dir, filename)
+                    try:
+                        _download_file(url, dest)
+                        files[key] = dest
+                        success = True
+                        break # Stop trying variants for this key
+                    except Exception as e:
+                        # Log error for debugging but continue to next variant
+                        if len(urls) > 1:
+                             typer.echo(f"Debug: Variant failed {url}: {e}", err=True)
+                        continue
+
+                if not success:
                     typer.echo(
-                        f"Warning: Failed to download {key} from {url}: {e}",
+                        f"Warning: Failed to download {key}. Last error was logged.",
                         err=True
                     )
+
         except Exception as e:
             typer.echo(f"Error during download setup: {e}", err=True)
 
