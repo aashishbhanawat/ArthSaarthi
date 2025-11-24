@@ -6827,3 +6827,25 @@ The FD should be updated or deleted.
 The operation fails with a validation error (e.g., "Input should be a valid dictionary") or a 404/500 error.
 **Resolution:**
 Updated the mutation functions in `useFixedDeposits.ts` to call the API service methods with the correct arguments, removing the unused `portfolioId`.
+
+---
+
+**Bug ID:** 2025-11-23-01
+**Title:** Session Timeout Modal appears on login page due to unconditional idle timer.
+**Module:** Authentication (Frontend)
+**Reported By:** User via GitHub Issue #122
+**Date Reported:** 2025-11-23
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:**
+The `SessionTimeoutModal` is displayed even when the user is on the login page (logged out) if the page remains idle for the timeout duration. This happens because the `AuthContext` initializes the `useIdleTimer` hook unconditionally, starting the timer immediately upon application load. The modal logic does not check for authentication status.
+**Steps to Reproduce:**
+1. Navigate to the login page.
+2. Keep the page idle for the configured timeout period (e.g., 30 minutes).
+3. Observe that the "Session Timeout" modal appears.
+**Expected Behavior:**
+The Session Timeout Modal should never appear if the user is not logged in. The idle timer should be disabled when no user session is active.
+**Actual Behavior:**
+The modal appears, prompting a logout even though no user is logged in.
+**Resolution:**
+Updated `useIdleTimer.ts` to accept an `enabled` parameter. Updated `AuthContext.tsx` to pass `!!token` as the enabled flag to the hook, effectively disabling the timer when logged out. Also wrapped the `SessionTimeoutModal` render in a conditional check `!!token && ...`.
