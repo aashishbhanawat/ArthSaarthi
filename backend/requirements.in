@@ -24,3 +24,5 @@ numpy
 pyarrow
 pyinstaller
 requests
+openpyxl
+xlrd

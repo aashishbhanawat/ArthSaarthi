@@ -139,6 +139,7 @@ The goal of this release was to build a robust and user-friendly system for impo
     -   Recurring Deposits (RDs): **✅ Complete**
     -   Public Provident Fund (PPF): **✅ Complete**
     -   Bonds (Corporate, Govt, SGB, T-Bill): **✅ Complete**
+    -   Asset Seeder Classification V2 (FR4.3.6): **✅ Complete**
     -   National Pension System (NPS): 📝 Planned
     -   RSUs/ESPPs: 📝 Planned
 

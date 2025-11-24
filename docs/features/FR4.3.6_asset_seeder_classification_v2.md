@@ -1,5 +1,7 @@
 # FR4.3.6: Asset Seeder Classification V2
 
+**Status: ✅ Done**
+
 ## 1. Introduction
 
 This document outlines the need for a second version of the asset classification logic within the `seed-assets` command. While the current seeder has been significantly improved, analysis of the logs shows persistent misclassifications for certain BSE-listed assets. This FR proposes a more advanced, multi-pass approach to resolve these issues.

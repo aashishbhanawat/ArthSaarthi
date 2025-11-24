@@ -51,3 +51,4 @@ yarn-error.log*
 *.db
 dump.rdb
 /frontend/dist-electron/
+backend/temp_seed_data/
