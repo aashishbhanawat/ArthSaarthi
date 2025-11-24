@@ -28,10 +28,12 @@ def get_db_session():
         db.close()
 
 
-def _download_file(url: str, dest_path: str):
-    """Downloads a file from a URL to a destination path."""
+def _download_file(url: str, dest_path: str) -> bool:
+    """
+    Downloads a file from a URL to a destination path.
+    Returns True if successful, False otherwise.
+    """
     typer.echo(f"Downloading {url}...")
-    # Headers to mimic a browser and avoid 403 Forbidden
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -39,15 +41,20 @@ def _download_file(url: str, dest_path: str):
             "Chrome/91.0.4472.124 Safari/537.36"
         )
     }
-    # verify=False for NSDL/Sandbox issues
-    response = requests.get(
-        url, stream=True, verify=False, headers=headers
-    )
-    response.raise_for_status()
-    with open(dest_path, 'wb') as f:
-        for chunk in response.iter_content(chunk_size=8192):
-            f.write(chunk)
-    typer.echo(f"Saved to {dest_path}")
+    try:
+        # verify=False for NSDL/Sandbox issues
+        response = requests.get(
+            url, stream=True, verify=False, headers=headers, timeout=30
+        )
+        response.raise_for_status()
+        with open(dest_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        typer.echo(f"Saved to {dest_path}")
+        return True
+    except Exception as e:
+        typer.echo(f"Download failed: {e}")
+        return False
 
 
 def _find_file(directory: pathlib.Path, pattern: str) -> Optional[str]:
@@ -62,7 +69,7 @@ def _find_file(directory: pathlib.Path, pattern: str) -> Optional[str]:
 
 
 def get_latest_trading_date() -> date:
-    """Returns the latest trading date (today or previous weekday)."""
+    """Returns the latest potential trading date (today or previous weekday)."""
     d = date.today()
     # Simple check: if Sat (5) or Sun (6), go back to Fri
     if d.weekday() == 5:  # Sat
@@ -72,14 +79,21 @@ def get_latest_trading_date() -> date:
     return d
 
 
-def get_dynamic_urls() -> dict[str, Union[str, list[str]]]:
-    d = get_latest_trading_date()
+def decrement_trading_day(d: date) -> date:
+    """Returns the previous trading day (skipping weekends)."""
+    d -= timedelta(days=1)
+    while d.weekday() > 4:  # Sat=5, Sun=6
+        d -= timedelta(days=1)
+    return d
+
+
+def get_dynamic_urls(d: date) -> dict[str, Union[str, list[str]]]:
+    """Generates URLs for a specific date."""
     dd = d.strftime("%d")
     mm = d.strftime("%m")
     yyyy = d.strftime("%Y")
-    # mmm = d.strftime("%b").upper() # JAN, FEB
-    # NSE uses 'NOV', 'DEC'. strftime %b depends on locale but usually matches.
     mmm = d.strftime("%b").upper()
+    mmm_title = d.strftime("%b").capitalize()
 
     # NSDL: as_on_DD.MM.YYYY.xls
     nsdl = (
@@ -107,20 +121,16 @@ def get_dynamic_urls() -> dict[str, Union[str, list[str]]]:
     )
 
     # NSE Equity: Try variations (NOV vs Nov)
-    # Upper: 2025/NOV/cm12NOV2025bhav.csv.zip
     nse_eq_upper = (
         "https://nsearchives.nseindia.com/content/historical/EQUITIES/"
         f"{yyyy}/{mmm}/cm{dd}{mmm}{yyyy}bhav.csv.zip"
     )
-    # Title: 2025/NOV/cm12Nov2025bhav.csv.zip (Sometimes used)
-    # Or mmm (Title) in path? Usually path is Upper. Filename varies.
-    mmm_title = d.strftime("%b").capitalize()
     nse_eq_title = (
         "https://nsearchives.nseindia.com/content/historical/EQUITIES/"
         f"{yyyy}/{mmm}/cm{dd}{mmm_title}{yyyy}bhav.csv.zip"
     )
 
-    # Static
+    # Static URLs (Do not change with date, but we include them)
     bse_public = "https://www.bseindia.com/downloads1/bonds_data.zip"
     nse_debt = "https://nsearchives.nseindia.com/content/debt/New_debt_listing.xlsx"
     icici_fallback = (
@@ -197,36 +207,52 @@ def seed_assets_command(
                     break
     else:
         # Download mode
-        # Create a temp directory
         temp_dir = tempfile.mkdtemp()
         typer.echo(f"Created temp directory for downloads: {temp_dir}")
+
+        # Prepare candidate dates (Today, T-1, T-2)
+        candidate_dates = []
+        current_d = get_latest_trading_date()
+        candidate_dates.append(current_d)
+        for _ in range(2):
+            current_d = decrement_trading_day(current_d)
+            candidate_dates.append(current_d)
+
+        typer.echo(f"Will try dates: {[d.isoformat() for d in candidate_dates]}")
+
         try:
-            url_map = get_dynamic_urls()
+            required_sources = [
+                "nsdl", "bse_public", "bse_equity", "bse_debt",
+                "nse_debt", "nse_equity", "bse_index", "icici"
+            ]
 
-            for key, urls in url_map.items():
-                # Normalize to list
-                if isinstance(urls, str):
-                    urls = [urls]
-
-                success = False
-                for url in urls:
-                    filename = url.split('/')[-1]
-                    dest = os.path.join(temp_dir, filename)
-                    try:
-                        _download_file(url, dest)
-                        files[key] = dest
-                        success = True
-                        break # Stop trying variants for this key
-                    except Exception as e:
-                        # Log error for debugging but continue to next variant
-                        if len(urls) > 1:
-                             typer.echo(f"Debug: Variant failed {url}: {e}", err=True)
+            for source in required_sources:
+                # Try each date for this source
+                for d in candidate_dates:
+                    urls = get_dynamic_urls(d).get(source)
+                    if not urls:
                         continue
 
-                if not success:
+                    if isinstance(urls, str):
+                        urls = [urls]
+
+                    success = False
+                    for url in urls:
+                        # Determine filename from URL (last part)
+                        filename = url.split('/')[-1]
+                        dest = os.path.join(temp_dir, filename)
+
+                        if _download_file(url, dest):
+                            files[source] = dest
+                            success = True
+                            break
+
+                    if success:
+                        break # Move to next source if successful
+
+                if source not in files:
                     typer.echo(
-                        f"Warning: Failed to download {key}. Last error was logged.",
-                        err=True
+                        f"Warning: Could not download {source} after trying all dates."
                     )
 
         except Exception as e:
