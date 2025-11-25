@@ -9,11 +9,15 @@ from typing import Any, Optional, Type, Union
 
 import requests
 import typer
+import urllib3
 from sqlalchemy.orm import Session
 
 # Local imports
 from app import models
 from app.services.asset_seeder import AssetSeeder
+
+# Suppress only the InsecureRequestWarning from urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = typer.Typer(help="ArthSaarthi CLI for database and utility operations.")
 
