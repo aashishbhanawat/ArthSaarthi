@@ -1,7 +1,8 @@
 import uuid
+from typing import Optional
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Numeric, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Numeric, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
 from app.db.custom_types import GUID
@@ -17,6 +18,7 @@ class Transaction(Base):
     fees = Column(Numeric(18, 8), nullable=False, default=0)
     transaction_date = Column(DateTime, nullable=False)
     is_reinvested = Column(Boolean, default=False, nullable=False)
+    details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     portfolio_id = Column(GUID, ForeignKey("portfolios.id"), nullable=False)
     asset_id = Column(GUID, ForeignKey("assets.id"), nullable=False)

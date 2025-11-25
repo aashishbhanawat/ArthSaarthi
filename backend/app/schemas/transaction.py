@@ -20,6 +20,7 @@ class TransactionBase(BaseModel):
         ..., json_schema_extra={"example": "2023-01-15T12:30:00Z"}
     )
     fees: Decimal = Decimal("0.0")
+    details: Optional[dict] = None
 
 
 # Properties to receive on transaction creation
@@ -55,6 +56,7 @@ class Transaction(TransactionBase):
     id: uuid.UUID
     portfolio_id: uuid.UUID
     asset: "Asset"
+    details: Optional[dict] = None
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -10,33 +10,58 @@ from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.crud.base import CRUDBase
 from app.models.transaction import Transaction
+from app.schemas.enums import TransactionType
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 
 
 class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate]):
     def get_holdings_on_date(
-        self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID, on_date: datetime
+        self,
+        db: Session,
+        *,
+        user_id: uuid.UUID,
+        asset_id: uuid.UUID,
+        on_date: datetime,
+        include_uncommitted: bool = False,
     ) -> Decimal:
-        # Calculate total buys up to the date
-        total_buys = db.query(func.sum(Transaction.quantity)).filter(
+        # Base query for committed transactions
+        query = db.query(func.sum(Transaction.quantity)).filter(
             Transaction.user_id == user_id,
             Transaction.asset_id == asset_id,
-            Transaction.transaction_type == "BUY",
             Transaction.transaction_date <= on_date,
-        ).scalar() or Decimal("0")
+        )
+
+        # Calculate total buys up to the date
+        buy_types = [
+            TransactionType.BUY,
+            TransactionType.RSU_VEST,
+            TransactionType.ESPP_PURCHASE,
+        ]
+        total_buys = (
+            query.filter(Transaction.transaction_type.in_(buy_types)).scalar()
+            or Decimal("0")
+        )
 
         # Calculate total sells up to the date
-        total_sells = db.query(func.sum(Transaction.quantity)).filter(
-            Transaction.user_id == user_id,
-            Transaction.asset_id == asset_id,
-            Transaction.transaction_type == "SELL",
-            Transaction.transaction_date <= on_date,
-        ).scalar() or Decimal("0")
+        total_sells = (
+            query.filter(Transaction.transaction_type == TransactionType.SELL).scalar()
+            or Decimal("0")
+        )
 
-        return total_buys - total_sells
+        uncommitted_buys = Decimal("0")
+        if include_uncommitted:
+            uncommitted_buys = sum(
+                t.quantity
+                for t in db.new
+                if isinstance(t, Transaction)
+                and t.user_id == user_id
+                and t.asset_id == asset_id
+                and t.transaction_type in buy_types
+                and t.transaction_date <= on_date
+            )
 
-    # The create_with_portfolio method is now simplified.
-    # The complex logic for creating a new asset is removed.
+        return total_buys + uncommitted_buys - total_sells
+
     def create_with_portfolio(
         self, db: Session, *, obj_in: schemas.TransactionCreate, portfolio_id: uuid.UUID
     ) -> Transaction:
@@ -44,12 +69,35 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         if not portfolio:
             raise HTTPException(status_code=404, detail="Portfolio not found")
 
-        if obj_in.transaction_type.upper() == "SELL":
+        # RSU Vesting Logic
+        if obj_in.transaction_type == TransactionType.RSU_VEST:
+            if obj_in.price_per_unit != 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="RSU vests must have a price of 0.",
+                )
+            if not obj_in.details or "fmv_at_vest" not in obj_in.details:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="RSU vest details must include 'fmv_at_vest'.",
+                )
+
+        # ESPP Purchase Logic
+        if obj_in.transaction_type == TransactionType.ESPP_PURCHASE:
+            if not obj_in.details or "market_price" not in obj_in.details:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="ESPP purchase details must include 'market_price'.",
+                )
+
+        # Standard SELL transaction validation
+        if obj_in.transaction_type == TransactionType.SELL:
             current_holdings = self.get_holdings_on_date(
                 db,
                 user_id=portfolio.user_id,
                 asset_id=obj_in.asset_id,
                 on_date=obj_in.transaction_date,
+                include_uncommitted=True,
             )
             if obj_in.quantity > current_holdings:
                 raise HTTPException(
@@ -60,11 +108,38 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                     ),
                 )
 
+        # Create the primary transaction
         db_obj = self.model(
             **obj_in.model_dump(), user_id=portfolio.user_id, portfolio_id=portfolio_id
         )
         db.add(db_obj)
         db.flush()
+
+        # "Sell to Cover" Logic
+        if (
+            obj_in.transaction_type == TransactionType.RSU_VEST
+            and obj_in.details
+            and "sell_to_cover_shares" in obj_in.details
+        ):
+            sell_to_cover_shares = Decimal(obj_in.details["sell_to_cover_shares"])
+            if sell_to_cover_shares > 0:
+                sale_price = Decimal(
+                    obj_in.details.get(
+                        "sell_to_cover_price", obj_in.details["fmv_at_vest"]
+                    )
+                )
+                sell_transaction = schemas.TransactionCreate(
+                    asset_id=obj_in.asset_id,
+                    transaction_type=TransactionType.SELL,
+                    quantity=sell_to_cover_shares,
+                    price_per_unit=sale_price,
+                    transaction_date=obj_in.transaction_date,
+                    fees=Decimal("0.0"),
+                )
+                self.create_with_portfolio(
+                    db, obj_in=sell_transaction, portfolio_id=portfolio_id
+                )
+
         db.refresh(db_obj)
         return db_obj
 

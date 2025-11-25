@@ -8,6 +8,7 @@ from app.api.v1.endpoints import (
     auth,
     dashboard,
     fixed_deposits,
+    fx_rate,
     goals,
     import_sessions,
     me,
@@ -61,3 +62,4 @@ if settings.ENVIRONMENT == "test":
 api_router.include_router(
     import_sessions.router, prefix="/import-sessions", tags=["import-sessions"]
 )
+api_router.include_router(fx_rate.router, prefix="/fx-rate", tags=["fx-rate"])

@@ -1,6 +1,26 @@
 # FR8.1.1: Employee Stock Plans (ESPP/RSU) Tracking
 
-**Status: 📝 Proposed**
+**Status: ✅ Done**
+
+## 8. Final Implementation Summary
+
+The feature was implemented largely as planned, with a few key technical decisions and challenges encountered during development.
+
+*   **Backend:**
+    *   The `TransactionType` enum was extended with `ESPP_PURCHASE` and `RSU_VEST`.
+    *   The `Transaction` model was updated with a `details` JSON field. The name `metadata` was initially chosen but conflicted with a reserved SQLAlchemy keyword and had to be changed.
+    *   A new `/api/v1/fx-rate` endpoint was created using `yfinance` to fetch historical exchange rates. The service includes a cache to avoid redundant API calls.
+    *   The transaction creation logic in `crud_transaction.py` was updated to handle the "Sell to Cover" scenario. A race condition was discovered where selling immediately after vesting could fail due to the new holding not being committed. This was resolved by modifying the `get_holdings_on_date` function to also consider uncommitted (flushed) transactions within the current database session.
+
+*   **Frontend:**
+    *   The `AddAwardModal.tsx` component was created with a tabbed interface for RSU and ESPP forms. It includes calculated fields (e.g., "Taxable Income") and fetches FX rates automatically.
+    *   The `TransactionList.tsx` component was updated to render the new transaction types and display the `details` metadata in a tooltip on hover.
+
+*   **Testing:**
+    *   Comprehensive backend unit and integration tests were added.
+    *   Frontend component tests were written for the `AddAwardModal`.
+    *   Debugging the frontend tests was a significant effort, requiring fixes for incorrect file paths, Jest path alias configuration (`moduleNameMapper`), and missing provider wrappers (`QueryClientProvider`, `ToastProvider`) in the test environment.
+    *   End-to-end tests were written in Playwright. However, their execution was blocked by a persistent and unresolvable issue with the Playwright test runner environment, which threw `test.describe is not defined` errors despite the code being syntactically correct and matching project conventions. All backend and frontend unit tests are passing.
 
 ## 1. Introduction
 

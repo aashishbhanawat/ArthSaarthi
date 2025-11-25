@@ -1,6 +1,7 @@
-import React from 'react';
-import { PortfolioSummary as PortfolioSummaryType } from '../../types/holding';
-import { usePrivacySensitiveCurrency } from '../../utils/formatting';
+import React, { useState } from 'react';
+import { PortfolioSummary as PortfolioSummaryType } from '~/types/holding';
+import { usePrivacySensitiveCurrency } from '~/utils/formatting';
+import AddAwardModal from '~/components/modals/AddAwardModal';
 
 interface SummaryItemProps {
     label: string;
@@ -28,12 +29,15 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ label, value, isPnl = false }
 
 
 interface PortfolioSummaryProps {
+    portfolioId: string;
     summary: PortfolioSummaryType | undefined;
     isLoading: boolean;
     error: Error | null;
 }
 
-const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ summary, isLoading, error }) => {
+const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolioId, summary, isLoading, error }) => {
+    const [isAwardModalOpen, setIsAwardModalOpen] = useState(false);
+
     if (isLoading) {
         return (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
@@ -50,13 +54,25 @@ const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ summary, isLoading,
     if (error || !summary) return null;
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            <SummaryItem label="Total Value" value={summary.total_value} />
-            <SummaryItem label="Day's P&L" value={summary.days_pnl} isPnl />
-            <SummaryItem label="Unrealized P&L" value={summary.total_unrealized_pnl} isPnl />
-            <SummaryItem label="Realized P&L" value={summary.total_realized_pnl} isPnl />
-            <SummaryItem label="Total Invested" value={summary.total_invested_amount} />
-        </div>
+        <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                <SummaryItem label="Total Value" value={summary.total_value} />
+                <SummaryItem label="Day's P&L" value={summary.days_pnl} isPnl />
+                <SummaryItem label="Unrealized P&L" value={summary.total_unrealized_pnl} isPnl />
+                <SummaryItem label="Realized P&L" value={summary.total_realized_pnl} isPnl />
+                <SummaryItem label="Total Invested" value={summary.total_invested_amount} />
+            </div>
+            <div className="mb-6">
+                <button onClick={() => setIsAwardModalOpen(true)} className="btn btn-primary">
+                    Add ESPP/RSU Award
+                </button>
+            </div>
+            <AddAwardModal
+                portfolioId={portfolioId}
+                isOpen={isAwardModalOpen}
+                onClose={() => setIsAwardModalOpen(false)}
+            />
+        </>
     );
 };
 

@@ -137,7 +137,7 @@ const PortfolioDetailPage: React.FC = () => {
                 <p className="text-gray-600 mt-1">{portfolio.description}</p>
             </div>
 
-            <PortfolioSummary summary={summary} isLoading={isSummaryLoading} error={summaryError} />
+            <PortfolioSummary portfolioId={portfolio.id} summary={summary} isLoading={isSummaryLoading} error={summaryError} />
 
             <AnalyticsCard analytics={analytics} isLoading={isAnalyticsLoading} error={analyticsError} />
 
