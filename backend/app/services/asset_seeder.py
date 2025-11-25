@@ -422,7 +422,9 @@ class AssetSeeder:
                 for filename in z.namelist():
                     if filename.lower().endswith(".csv"):
                         with z.open(filename) as f:
-                            df = pd.read_csv(f)
+                            # Use python engine and sep=None to auto-detect
+                            # delimiter, as it can be comma or pipe.
+                            df = pd.read_csv(f, sep=None, engine='python')
                             self._process_bse_debt_csv(filename, df)
         except Exception as e:
             print(f"Error processing BSE Debt Zip: {e}")
