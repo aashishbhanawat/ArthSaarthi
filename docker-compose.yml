@@ -59,9 +59,9 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
       interval: 10s
-      timeout: 10s
+      timeout: 60s
       retries: 10
-      start_period: 180s
+      start_period: 300s
 
   frontend:
     build: ./frontend
