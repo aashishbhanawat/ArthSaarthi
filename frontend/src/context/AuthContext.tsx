@@ -41,14 +41,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const timeout = getTimeout();
 
   const handleIdle = () => {
-    setIsIdle(true);
+    if (token) {
+      setIsIdle(true);
+    }
   };
 
   const handleCloseModal = () => {
     setIsIdle(false);
   };
 
-  useIdleTimer(timeout, handleIdle);
+  useIdleTimer(timeout, handleIdle, !!token);
 
   const logout = useCallback(() => {
     setToken(null);
@@ -121,12 +123,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{ token, user, setUser, isLoading, error, deploymentMode, login, logout, register }}>
       {children}
-      <SessionTimeoutModal
-        isOpen={isIdle}
-        onClose={handleCloseModal}
-        onLogout={logout}
-        countdownSeconds={getModalCountdown()}
-      />
+      {!!token && (
+        <SessionTimeoutModal
+          isOpen={isIdle}
+          onClose={handleCloseModal}
+          onLogout={logout}
+          countdownSeconds={getModalCountdown()}
+        />
+      )}
     </AuthContext.Provider>
   );
 };
