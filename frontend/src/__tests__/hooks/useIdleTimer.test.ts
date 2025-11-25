@@ -53,4 +53,41 @@ describe('useIdleTimer', () => {
 
     expect(onIdle).toHaveBeenCalledTimes(1);
   });
+
+  it('should not call onIdle if disabled', () => {
+    const onIdle = jest.fn();
+    const timeout = 1000;
+
+    renderHook(() => useIdleTimer(timeout, onIdle, false));
+
+    act(() => {
+      jest.advanceTimersByTime(timeout + 100);
+    });
+
+    expect(onIdle).not.toHaveBeenCalled();
+  });
+
+  it('should stop timer when disabled dynamically', () => {
+    const onIdle = jest.fn();
+    const timeout = 1000;
+
+    const { rerender } = renderHook(({ enabled }) => useIdleTimer(timeout, onIdle, enabled), {
+      initialProps: { enabled: true },
+    });
+
+    // Advance halfway
+    act(() => {
+      jest.advanceTimersByTime(timeout / 2);
+    });
+
+    // Disable it
+    rerender({ enabled: false });
+
+    // Advance remaining time plus some buffer
+    act(() => {
+      jest.advanceTimersByTime(timeout);
+    });
+
+    expect(onIdle).not.toHaveBeenCalled();
+  });
 });

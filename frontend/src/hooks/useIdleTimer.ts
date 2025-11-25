@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const useIdleTimer = (timeout: number, onIdle: () => void) => {
+const useIdleTimer = (timeout: number, onIdle: () => void, enabled: boolean = true) => {
   const [isIdle, setIsIdle] = useState(false);
 
   const handleIdle = useCallback(() => {
@@ -13,6 +13,11 @@ const useIdleTimer = (timeout: number, onIdle: () => void) => {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setIsIdle(false);
+      return;
+    }
+
     let timer: NodeJS.Timeout;
 
     const handleUserActivity = () => {
@@ -33,7 +38,7 @@ const useIdleTimer = (timeout: number, onIdle: () => void) => {
       window.removeEventListener('keydown', handleUserActivity);
       window.removeEventListener('click', handleUserActivity);
     };
-  }, [timeout, handleIdle, resetTimer]);
+  }, [timeout, handleIdle, resetTimer, enabled]);
 
   return isIdle;
 };
