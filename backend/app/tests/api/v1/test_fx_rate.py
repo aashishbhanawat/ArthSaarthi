@@ -80,13 +80,17 @@ def test_get_fx_rate_yfinance_fails(mock_ticker, override_cache_dependency):
     cache_client_mock.set.assert_not_called()
 
 
-def test_get_fx_rate_invalid_currency(override_cache_dependency):
+@patch("yfinance.Ticker")
+def test_get_fx_rate_not_found(mock_ticker, override_cache_dependency):
+    # Arrange
+    cache_client_mock.get.return_value = None
+    mock_ticker.return_value.history.return_value = pd.DataFrame()
+
     # Act
-    response = client.get("/api/v1/fx-rate?source=EUR&to=INR&date=2025-11-25")
+    response = client.get("/api/v1/fx-rate?source=XXX&to=YYY&date=2025-11-25")
 
     # Assert
-    assert response.status_code == 400
-    assert response.json() == {"error": "Invalid currency"}
-    # No cache interaction should happen for invalid currencies
-    cache_client_mock.get.assert_not_called()
+    assert response.status_code == 404
+    assert response.json() == {"error": "Rate not found"}
+    cache_client_mock.get.assert_called_once()
     cache_client_mock.set.assert_not_called()
