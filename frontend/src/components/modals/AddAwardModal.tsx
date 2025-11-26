@@ -77,31 +77,25 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
     let payload: TransactionCreate | TransactionCreate[];
 
     if (data.award_type === 'RSU') {
-        const rsuVestTx: TransactionCreate = {
+        const details: Record<string, unknown> = {
+            fmv_at_vest: data.fmv_at_vest!,
+            exchange_rate_to_inr: data.fx_rate!,
+            grant_date: '', // This can be added as a new form field if needed
+        };
+
+        if (data.record_sell_to_cover && data.shares_sold! > 0) {
+            details.sell_to_cover_shares = data.shares_sold!;
+            details.sell_to_cover_price = data.sale_price!;
+        }
+
+        payload = {
             ...commonPayload,
             transaction_type: 'RSU_VEST',
             quantity: data.gross_qty_vested!,
             price_per_unit: 0,
             transaction_date: new Date(data.vest_date!).toISOString(),
-            details: {
-                fmv_at_vest: data.fmv_at_vest!,
-                exchange_rate_to_inr: data.fx_rate!,
-                grant_date: '',
-            },
+            details: details,
         };
-
-        if (data.record_sell_to_cover && data.shares_sold! > 0) {
-            const sellToCoverTx: TransactionCreate = {
-                ...commonPayload,
-                transaction_type: 'SELL',
-                quantity: data.shares_sold!,
-                price_per_unit: data.sale_price!,
-                transaction_date: new Date(data.vest_date!).toISOString(),
-            };
-            payload = [rsuVestTx, sellToCoverTx];
-        } else {
-            payload = rsuVestTx;
-        }
     } else {
         payload = {
             ...commonPayload,

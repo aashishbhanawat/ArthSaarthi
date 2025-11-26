@@ -1,14 +1,30 @@
 
 import React from 'react';
-import { Transaction } from '../../types/portfolio';
-import { formatCurrency, formatDate } from '../../utils/formatting';
-import { FaInfoCircle } from 'react-icons/fa';
+import { Transaction } from '~/types/portfolio';
+import { formatCurrency, formatDate } from '~/utils/formatting';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import Tooltip from '~/components/common/Tooltip';
 
 interface TransactionHistoryTableProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
 }
+
+const TransactionDetailTooltip: React.FC<{ details: Record<string, unknown> | null }> = ({ details }) => {
+    if (!details) return null;
+
+    return (
+        <div className="space-y-1">
+            {Object.entries(details).map(([key, value]) => (
+                <div key={key}>
+                    <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span>{' '}
+                    <span>{typeof value === 'number' ? formatCurrency(value, 'INR') : String(value)}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ transactions, onEdit, onDelete }) => {
   if (transactions.length === 0) {
@@ -52,17 +68,10 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
               <td className={`p-3 text-sm font-semibold ${getTransactionTypeColor(tx.transaction_type)}`}>
                 <div className="flex items-center">
                     {tx.transaction_type.replace('_', ' ')}
-                    {(tx.transaction_type === 'RSU_VEST' || tx.transaction_type === 'ESPP_PURCHASE') && tx.details && (
-                        <div className="relative group ml-2">
-                            <FaInfoCircle className="text-gray-400" />
-                            <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                                {Object.entries(tx.details).map(([key, value]) => (
-                                    <div key={key}>
-                                        <strong>{key.replace(/_/g, ' ')}:</strong> {value}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                    {tx.details && (
+                        <Tooltip content={<TransactionDetailTooltip details={tx.details} />}>
+                            <InformationCircleIcon className="h-5 w-5 text-gray-400 ml-2" />
+                        </Tooltip>
                     )}
                 </div>
               </td>

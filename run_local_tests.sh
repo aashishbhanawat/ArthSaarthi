@@ -116,7 +116,7 @@ install_deps() {
     print_info "--- Installing Project Dependencies ---"
 
     print_info "Installing backend dependencies..."
-    if ! pip install -r backend/requirements-dev.in > backend-install.log 2>&1; then
+    if ! pip install --break-system-packages -r backend/requirements-dev.in > backend-install.log 2>&1; then
         print_error "Failed to install backend dependencies. Check backend-install.log for details."
         exit 1
     fi
@@ -170,7 +170,7 @@ EOF
         # It replaces the pg_hba.conf file to allow passwordless local connections
         # and restarts the PostgreSQL service.
         # This is a temporary measure for the sandboxed environment.
-        sudo cp pg_hba.conf.new /etc/postgresql/16/main/pg_hba.conf
+        cp pg_hba.conf.new /etc/postgresql/16/main/pg_hba.conf
         sudo systemctl restart postgresql
         print_success "PostgreSQL configured and restarted."
 

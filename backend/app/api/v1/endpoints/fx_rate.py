@@ -30,16 +30,19 @@ async def get_fx_rate(
     if source != "USD":
         ticker_str = f"{source}{to}=X"
 
-    ticker = yf.Ticker(ticker_str)
-    start_date = date - timedelta(days=1)
-    end_date = date + timedelta(days=1)
+    try:
+        ticker = yf.Ticker(ticker_str)
+        start_date = date - timedelta(days=1)
+        end_date = date + timedelta(days=1)
+        hist = ticker.history(start=start_date, end=end_date)
+        if not hist.empty:
+            rate = hist["Close"].iloc[0]
+            if cache:
+                cache.set(cache_key, rate, timeout=60 * 60 * 24)  # Cache for 24 hours
+            return JSONResponse(content={"rate": rate})
+    except Exception:
+        # If yfinance fails for any reason (e.g., invalid ticker),
+        # we'll consider the rate not found.
+        pass
 
-    hist = ticker.history(start=start_date, end=end_date)
-
-    if not hist.empty:
-        rate = hist["Close"].iloc[0]
-        if cache:
-            cache.set(cache_key, rate, timeout=60 * 60 * 24)  # Cache for 24 hours
-        return JSONResponse(content={"rate": rate})
-    else:
-        return JSONResponse(content={"error": "Rate not found"}, status_code=404)
+    return JSONResponse(content={"error": "Rate not found"}, status_code=404)
