@@ -3,6 +3,8 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
