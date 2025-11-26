@@ -3,8 +3,6 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-
-pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -14,6 +12,8 @@ from app.schemas.transaction import TransactionCreate
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.user import create_random_user
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_create_rsu_vest_transaction(db: Session) -> None:
