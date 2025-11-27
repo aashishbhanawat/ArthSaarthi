@@ -57,13 +57,13 @@ test.describe.serial('Data Import with Asset Mapping', () => {
 
         // Create the target asset 'RELIANCE'
         await page.getByRole('button', { name: 'Add Transaction' }).click();
-        await page.getByRole('textbox', { name: 'Asset' }).pressSequentially('RELIANCE');
+        await page.getByLabel('Asset', { exact: true }).pressSequentially('RELIANCE');
 
         // Wait for the lookup to find the asset and create it on the fly
         await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup/'));
 
         // Now click the result
-        await page.locator('li:has-text("RELIANCE")').click();
+        await page.locator('div[role="option"]:has-text("RELIANCE")').click();
 
         // Fill out the rest of the form to make it valid
         await page.getByLabel('Quantity').fill('1');
