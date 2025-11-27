@@ -329,7 +329,7 @@ def _process_market_traded_assets(
         if not asset:
             asset = next((a for a in portfolio_assets if a.id == tx.asset_id), None)
         ticker = asset.ticker_symbol if asset else None
-        if tx.transaction_type == "BUY":
+        if tx.transaction_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
             holdings_state[ticker]["quantity"] += tx.quantity
             holdings_state[ticker]["total_invested"] += tx.quantity * tx.price_per_unit
         elif tx.transaction_type == "DIVIDEND":

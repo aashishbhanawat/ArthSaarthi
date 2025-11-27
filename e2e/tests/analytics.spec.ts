@@ -71,7 +71,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Transaction Type').selectOption('BUY');
     // Use a more specific locator to avoid ambiguity with "Asset Type"
     await page.getByLabel('Asset', { exact: true }).pressSequentially(assetName);
-    const listItemBuy = page.locator(`div[role="option"]:has-text("${assetName}")`);
+    const listItemBuy = page.locator(`div[role="option"]:has-text("${assetName}")`).first();
     await expect(listItemBuy).toBeVisible();
     await listItemBuy.click();
     await page.getByLabel('Quantity').fill('10');
@@ -96,7 +96,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByLabel('Asset', { exact: true }).pressSequentially(assetName);
-    const listItem = page.locator(`div[role="option"]:has-text("${assetName}")`);
+    const listItem = page.locator(`div[role="option"]:has-text("${assetName}")`).first();
     await expect(listItem).toBeVisible();
     await listItem.click();
     await page.getByLabel('Quantity').fill('5');
@@ -179,7 +179,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByLabel('Asset', { exact: true }).pressSequentially(assetTicker);
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
-    const listItem = page.locator(`div[role="option"]:has-text("${assetTicker}")`);
+    const listItem = page.locator(`div[role="option"]:has-text("${assetTicker}")`).first();
     await expect(listItem).toBeVisible();
     await listItem.click();
     await page.getByLabel('Quantity').fill('5');

@@ -63,7 +63,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup/'));
 
         // Now click the result
-        await page.locator('div[role="option"]:has-text("RELIANCE")').click();
+        await page.locator('div[role="option"]:has-text("RELIANCE")').first().click();
 
         // Fill out the rest of the form to make it valid
         await page.getByLabel('Quantity').fill('1');
