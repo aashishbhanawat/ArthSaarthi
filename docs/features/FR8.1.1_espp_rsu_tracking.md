@@ -20,7 +20,7 @@ The feature was implemented largely as planned, with a few key technical decisio
     *   Comprehensive backend unit and integration tests were added.
     *   Frontend component tests were written for the `AddAwardModal`.
     *   Debugging the frontend tests was a significant effort, requiring fixes for incorrect file paths, Jest path alias configuration (`moduleNameMapper`), and missing provider wrappers (`QueryClientProvider`, `ToastProvider`) in the test environment.
-    *   End-to-end tests were written in Playwright. However, their execution was blocked by a persistent and unresolvable issue with the Playwright test runner environment, which threw `test.describe is not defined` errors despite the code being syntactically correct and matching project conventions. All backend and frontend unit tests are passing.
+    *   End-to-end tests were written in Playwright. All tests, including the new ESPP and RSU flows, are passing.
 
 ## 1. Introduction
 
