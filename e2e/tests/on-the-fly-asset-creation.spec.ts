@@ -49,8 +49,8 @@ test.describe.serial('On-the-Fly Asset Creation', () => {
 
     test('should allow creating a new stock asset on the fly from the award modal', async () => {
         // Open the dropdown and click the "Add ESPP/RSU Award" button
-        await page.getByRole('button', { name: 'v' }).click();
-        await page.getByRole('button', { name: 'Add ESPP/RSU Award' }).click();
+        await page.getByRole('button', { name: 'Additional actions' }).click();
+        await page.getByRole('menuitem', { name: 'Add ESPP/RSU Award' }).click();
 
 
         const awardModal = page.locator('.modal-content');

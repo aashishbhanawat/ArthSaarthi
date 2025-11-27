@@ -81,8 +81,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('BUY');
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
-    const listItem = page.locator(`li:has-text("${newAssetName}")`);
+    await page.getByLabel('Asset', { exact: true }).pressSequentially(newAssetName);
+    const listItem = page.locator(`div[role="option"]:has-text("${newAssetName}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
     await page.getByLabel('Quantity').fill('10');
@@ -104,13 +104,13 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('SELL');
     // Use pressSequentially to simulate user typing and avoid race conditions with debounced search
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
+    await page.getByLabel('Asset', { exact: true }).pressSequentially(newAssetName);
 
     // Wait for the debounced search API call to complete before interacting with the results
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
 
     // Use a direct locator strategy that is more robust for this component.
-    const listItemSell = page.locator(`li:has-text("${newAssetName}")`);
+    const listItemSell = page.locator(`div[role="option"]:has-text("${newAssetName}")`);
     // Wait for the search result to appear and then press Enter to select it. This is more stable than clicking.
     await expect(listItemSell).toBeVisible(); // Ensure the item is there
     await listItemSell.click(); // Click the item directly to ensure selection
@@ -144,8 +144,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('BUY');
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
-    const listItem = page.locator(`li:has-text("${assetName}")`);
+    await page.getByLabel('Asset', { exact: true }).pressSequentially(assetName);
+    const listItem = page.locator(`div[role="option"]:has-text("${assetName}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
     await page.getByLabel('Quantity').fill('10');
@@ -163,9 +163,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('SELL');
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
+    await page.getByLabel('Asset', { exact: true }).pressSequentially(assetName);
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
-    const listItemSell = page.locator(`li:has-text("${assetName}")`);
+    const listItemSell = page.locator(`div[role="option"]:has-text("${assetName}")`);
     await expect(listItemSell).toBeVisible();
     await listItemSell.click();
     await page.getByLabel('Quantity').fill('20'); // Invalid quantity
@@ -199,8 +199,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('BUY');
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially('GOOGL'); // Asset already exists from a previous test
-    const listItem = page.locator(`li:has-text("GOOGL")`);
+    await page.getByLabel('Asset', { exact: true }).pressSequentially('GOOGL'); // Asset already exists from a previous test
+    const listItem = page.locator(`div[role="option"]:has-text("GOOGL")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
     await page.getByLabel('Quantity').fill('10');
