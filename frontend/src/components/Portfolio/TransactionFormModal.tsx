@@ -11,6 +11,7 @@ import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
 import { RecurringDepositDetails } from '../../types/recurring_deposit';
 import Select from 'react-select';
+import AsyncCreatableSelect from 'react-select/async-creatable';
 
 interface TransactionFormModalProps {
     portfolioId: string;
@@ -87,12 +88,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const createPpfAccountMutation = useCreatePpfAccount();
     const [apiError, setApiError] = useState<string | null>(null);
 
-    // Stock search state
-    const [inputValue, setInputValue] = useState('');
-    const [searchTerm, setSearchTerm] = useState(''); // Debounced value
-    const [searchResults, setSearchResults] = useState<Asset[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-    const [isSearching, setIsSearching] = useState(false);
 
     // Watch fields to conditionally render inputs
     const assetType = useWatch({ control, name: 'asset_type' });
@@ -131,7 +127,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     fees: Number(transactionToEdit.fees),
                 });
                 setSelectedAsset(transactionToEdit.asset);
-                setInputValue(transactionToEdit.asset.name);
             } else if (fixedDepositToEdit) {
                 reset({
                     asset_type: 'Fixed Deposit',
@@ -158,40 +153,29 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         }
     }, [isEditMode, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit, reset]);
 
-    // Debounce search term
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setSearchTerm(inputValue);
-        }, 300);
+    const promiseOptions = (inputValue: string) =>
+        new Promise<Asset[]>((resolve) => {
+            setTimeout(() => {
+                if (inputValue.length < 2) {
+                    resolve([]);
+                } else {
+                    const assetTypeFilter = assetType === 'Bond' ? 'BOND' : (assetType === 'Stock' ? 'STOCK' : undefined);
+                    lookupAsset(inputValue, assetTypeFilter).then(resolve).catch(() => resolve([]));
+                }
+            }, 1000);
+        });
 
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [inputValue]);
-
-    useEffect(() => {
-        if (searchTerm.length < 2 || selectedAsset) { // Use debounced term
-            setSearchResults([]);
-            return;
-        }
-
-        const assetTypeFilter = assetType === 'Bond' ? 'BOND' : (assetType === 'Stock' ? 'STOCK' : undefined);
-        setIsSearching(true);
-        lookupAsset(searchTerm, assetTypeFilter)
-            .then(data => setSearchResults(data))
-            .catch(() => setSearchResults([]))
-            .finally(() => setIsSearching(false));
-    }, [searchTerm, selectedAsset, assetType]);
-
-    const handleSelectAsset = (asset: Asset) => {
-        setSelectedAsset(asset);
-        setInputValue(asset.name);
-        setSearchResults([]);
-    };
-
-    const handleClearSelectedAsset = () => {
-        setSelectedAsset(null);
-        setInputValue('');
+    const handleCreateAsset = (inputValue: string) => {
+        const assetTypeFilter = assetType === 'Stock' ? 'STOCK' : 'BOND';
+        lookupAsset(inputValue, assetTypeFilter)
+            .then(assets => {
+                if (assets.length > 0) {
+                    setSelectedAsset(assets[0]);
+                } else {
+                    setApiError(`Could not find details for ticker "${inputValue}". Asset not created.`);
+                }
+            })
+            .catch(() => setApiError(`Error looking up asset "${inputValue}".`));
     };
 
     const handleSelectMf = (mf: MutualFundSearchResult | null) => {
@@ -209,12 +193,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         }
     }, [selectedAsset, assetType, setValue]);
 
-
-    const handleCreateAsset = () => {
-        if (inputValue) {
-            setSelectedAsset({ name: inputValue, ticker_symbol: inputValue.toUpperCase() } as Asset);
-        }
-    };
 
     const onSubmit = (data: TransactionFormInputs) => {
         // Defensively coalesce NaN to 0. This can happen if the fees input is left blank.
@@ -494,30 +472,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     fees: data.fees || 0,
                 };
 
-                const createTransactionForAsset = (assetId: string, ticker: string) => {
-                    const payload: TransactionCreate = { ...commonPayload, asset_id: assetId, ticker_symbol: ticker };
+                if ((assetType === 'Stock' || assetType === 'Bond') && selectedAsset && selectedAsset.id) {
+                    const payload: TransactionCreate = { ...commonPayload, asset_id: selectedAsset.id, ticker_symbol: selectedAsset.ticker_symbol };
                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
-                };
-
-                if (assetType === 'Stock' && selectedAsset) {
-                    if (selectedAsset.id) {
-                        // Asset already exists
-                        createTransactionForAsset(selectedAsset.id, selectedAsset.ticker_symbol);
-                    } else {
-                        // Asset needs to be created first
-                        createAssetMutation.mutate(
-                            {
-                                ticker_symbol: selectedAsset.ticker_symbol,
-                                name: selectedAsset.name,
-                                asset_type: 'STOCK',
-                                currency: 'INR',
-                            },
-                            {
-                                onSuccess: (newAsset) => createTransactionForAsset(newAsset.id, newAsset.ticker_symbol),
-                                onError: () => setApiError(`Failed to create asset "${selectedAsset.name}".`),
-                            }
-                        );
-                    }
                 } else if (assetType === 'Mutual Fund' && selectedMf) {
                     const payload = { ...commonPayload, ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' as const };
                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
@@ -552,53 +509,30 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
                             {(assetType === 'Stock' || assetType === 'Mutual Fund' || assetType === 'Bond') && (
                                 <div className="form-group">
-                                    {assetType === 'Stock' && (
-                                        <>
+                                    {(assetType === 'Stock' || assetType === 'Bond') && (
+                                        <div data-testid={`${assetType.toLowerCase()}-asset-search`}>
                                             <label htmlFor="asset-search" className="form-label">Asset</label>
-                                            <div className="relative" data-testid="stock-asset-search">
-                                                <input
-                                                    type="text"
-                                                    id="asset-search"
-                                                    className="form-input"
-                                                    value={inputValue}
-                                                    onChange={(e) => {
-                                                        setApiError(null);
-                                                        if (selectedAsset) handleClearSelectedAsset();
-                                                        setInputValue(e.target.value);
-                                                    }}
-                                                    placeholder="Search by ticker or name..."
-                                                    autoComplete="off"
-                                                    disabled={isEditMode}
-                                                />
-                                                {!isEditMode && (
-                                                    <>
-                                                        {selectedAsset && (
-                                                            <button type="button" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 text-xl font-bold">
-                                                                &times;
-                                                            </button>
-                                                        )}
-                                                        {isSearching && <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">Searching...</div>}
-                                                        {!isSearching && searchResults.length > 0 && !selectedAsset && (
-                                                            <ul className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
-                                                                {searchResults.map(asset => (
-                                                                    <li key={asset.id} onClick={() => handleSelectAsset(asset)} className="p-2 hover:bg-gray-100 cursor-pointer">
-                                                                        {asset.name} ({asset.ticker_symbol})
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        )}
-                                                        {!isSearching && searchResults.length === 0 && inputValue.length > 1 && !selectedAsset && (
-                                                            <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">
-                                                                <p className="text-sm text-gray-500 mb-2">No asset found. You can create it.</p>
-                                                                <button type="button" onClick={handleCreateAsset} className="btn btn-secondary btn-sm w-full" disabled={createAssetMutation.isPending}>
-                                                                    {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${inputValue.toUpperCase()}"`}
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                        </>
+                                            <AsyncCreatableSelect
+                                                inputId="asset-search"
+                                                value={selectedAsset}
+                                                onChange={(option) => setSelectedAsset(option as Asset)}
+                                                loadOptions={promiseOptions}
+                                                onCreateOption={handleCreateAsset}
+                                                isClearable
+                                                isDisabled={isEditMode}
+                                                placeholder="Search by ticker or name..."
+                                                getOptionLabel={(option) => `${option.name} (${option.ticker_symbol})`}
+                                                getOptionValue={(option) => option.id}
+                                                getNewOptionData={(inputValue) => ({
+                                                    id: `new-${inputValue}`, // Temporary ID
+                                                    name: inputValue,
+                                                    ticker_symbol: inputValue.toUpperCase(),
+                                                    asset_type: assetType === 'Stock' ? 'STOCK' : 'BOND',
+                                                    currency: 'INR'
+                                                })}
+                                                formatCreateLabel={(inputValue) => `Create new asset "${inputValue}"`}
+                                            />
+                                        </div>
                                     )}
                                     {assetType === 'Mutual Fund' && (
                                         <>
@@ -635,60 +569,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             />
                                         </>
                                     )}
-                                    {assetType === 'Bond' && (
-                                        <>
-                                            <label htmlFor="bond-asset-search" className="form-label">Bond Asset</label>
-                                            <div className="relative" data-testid="bond-asset-search">
-                                                <input
-                                                    type="text"
-                                                    id="bond-asset-search"
-                                                    className="form-input"
-                                                    value={inputValue}
-                                                    onChange={(e) => {
-                                                        setApiError(null);
-                                                        if (selectedAsset) handleClearSelectedAsset();
-                                                        setInputValue(e.target.value);
-                                                    }}
-                                                    placeholder="Search by ISIN or name..."
-                                                    autoComplete="off"
-                                                    disabled={isEditMode}
-                                                />
-                                                {!isEditMode && (
-                                                    <>
-                                                        {selectedAsset && (
-                                                            <button type="button" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 text-xl font-bold">
-                                                                
-                                                            </button>
-                                                        )}
-                                                        {isSearching && <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">Searching...</div>}
-                                                        {!isSearching && searchResults.length > 0 && !selectedAsset && (
-                                                            <ul className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg" data-testid="bond-search-results">
-                                                                {searchResults.map(asset => (
-                                                                    <li key={asset.id} onClick={() => handleSelectAsset(asset)} className="p-2 hover:bg-gray-100 cursor-pointer">
-                                                                        {asset.name} ({asset.ticker_symbol})
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        )}
-                                                        {!isSearching && searchResults.length > 0 && searchResults.filter(a => a.asset_type === 'BOND').length === 0 && !selectedAsset && assetType === 'Bond' && (
-                                                            <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg" data-testid="no-bond-results">
-                                                                <p className="text-sm text-gray-500">No bond assets found for "{inputValue}" .</p>
-                                                            </div>
-                                                        )}
-                                                        {!isSearching && searchResults.length === 0 && inputValue.length > 1 && !selectedAsset && (
-                                                            <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg" data-testid="create-new-asset-section">
-                                                                <p className="text-sm text-gray-500 mb-2">No {assetType === 'Stock' ? 'stock' : 'bond'} found. You can create it.</p>
-                                                                <button type="button" onClick={handleCreateAsset} className="btn btn-secondary btn-sm w-full" disabled={createAssetMutation.isPending}>
-                                                                    {createAssetMutation.isPending ? 'Creating...' : `Create ${assetType} "${inputValue.toUpperCase()}"`}
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                        </>
-                                    )}
-                                    
                                 </div>
                             )}
                         </div>

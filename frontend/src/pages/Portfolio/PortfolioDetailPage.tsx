@@ -4,6 +4,7 @@ import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioH
 import { useDeleteFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useDeleteRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
+import AddAwardModal from '~/components/modals/AddAwardModal';
 import AnalyticsCard from '../../components/Portfolio/AnalyticsCard';
 import PortfolioSummary from '../../components/Portfolio/PortfolioSummary';
 import HoldingsTable from '../../components/Portfolio/HoldingsTable';
@@ -30,6 +31,8 @@ const PortfolioDetailPage: React.FC = () => {
     const deleteRecurringDepositMutation = useDeleteRecurringDeposit();
 
     const [isTransactionFormOpen, setTransactionFormOpen] = useState(false);
+    const [isAwardModalOpen, setAwardModalOpen] = useState(false);
+    const [isDropdownOpen, setDropdownOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
     const [transactionToEdit, setTransactionToEdit] = useState<Transaction | undefined>(undefined);
     const [fdToEdit, setFdToEdit] = useState<FixedDepositDetails | null>(null);
@@ -131,13 +134,35 @@ const PortfolioDetailPage: React.FC = () => {
                         <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary">
                             View History
                         </Link>
-                        <button onClick={handleOpenCreateTransactionModal} className="btn btn-primary">Add Transaction</button>
+                        <div className="relative inline-block text-left">
+                            <div>
+                                <button onClick={handleOpenCreateTransactionModal} className="btn btn-primary rounded-r-none">Add Transaction</button>
+                                <button onClick={() => setDropdownOpen(!isDropdownOpen)} className="btn btn-primary rounded-l-none border-l border-white/20">
+                                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                            {isDropdownOpen && (
+                                <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                                        <button
+                                            onClick={() => { setAwardModalOpen(true); setDropdownOpen(false); }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            role="menuitem"
+                                        >
+                                            Add ESPP/RSU Award
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <p className="text-gray-600 mt-1">{portfolio.description}</p>
             </div>
 
-            <PortfolioSummary portfolioId={portfolio.id} summary={summary} isLoading={isSummaryLoading} error={summaryError} />
+            <PortfolioSummary summary={summary} isLoading={isSummaryLoading} error={summaryError} />
 
             <AnalyticsCard analytics={analytics} isLoading={isAnalyticsLoading} error={analyticsError} />
 
@@ -158,6 +183,14 @@ const PortfolioDetailPage: React.FC = () => {
                     transactionToEdit={transactionToEdit}
                     fixedDepositToEdit={fdToEdit || undefined}
                     recurringDepositToEdit={rdToEdit || undefined}
+                />
+            )}
+
+            {isAwardModalOpen && (
+                <AddAwardModal
+                    isOpen={isAwardModalOpen}
+                    onClose={() => setAwardModalOpen(false)}
+                    portfolioId={portfolio.id}
                 />
             )}
 

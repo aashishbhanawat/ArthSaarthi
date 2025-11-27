@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useCreateTransaction } from '~/hooks/usePortfolios';
-import { useAssetsByType } from '~/hooks/useAssets';
 import { getFxRate } from '~/services/fxRateApi';
 import { Asset } from '~/types/asset';
 import { TransactionCreate } from '~/types/portfolio';
-import Select from 'react-select';
+import AsyncCreatableSelect from 'react-select/async-creatable';
+import { lookupAsset } from '~/services/portfolioApi';
 
 interface AddAwardModalProps {
   portfolioId: string;
@@ -42,14 +42,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
   const awardType = useWatch({ control, name: 'award_type' });
   const recordSellToCover = useWatch({ control, name: 'record_sell_to_cover' });
   const vestDate = useWatch({ control, name: 'vest_date' });
-
-  const { data: stockAssets, isLoading: isLoadingStockAssets } = useAssetsByType(
-    portfolioId,
-    'STOCK',
-    {
-      enabled: isOpen,
-    }
-  );
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
   const { data: fxRate, isError: isFxRateError } = useQuery({
     queryKey: ['fxRate', vestDate],
@@ -67,10 +60,35 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
   const taxableIncome = (watchedFields.gross_qty_vested || 0) * (watchedFields.fmv_at_vest || 0) * (watchedFields.fx_rate || 0);
   const netSharesReceived = (watchedFields.gross_qty_vested || 0) - (watchedFields.shares_sold || 0);
 
+  const promiseOptions = (inputValue: string) =>
+    new Promise<Asset[]>((resolve) => {
+        if (inputValue.length < 2) {
+            return resolve([]);
+        }
+        lookupAsset(inputValue, 'STOCK').then(resolve).catch(() => resolve([]));
+    });
+
+  const handleCreateAsset = (inputValue: string) => {
+    lookupAsset(inputValue, 'STOCK')
+        .then(assets => {
+            if (assets.length > 0) {
+                setSelectedAsset(assets[0]);
+            } else {
+                setApiError(`Could not find details for ticker "${inputValue}". Asset not created.`);
+            }
+        })
+        .catch(() => setApiError(`Error looking up asset "${inputValue}".`));
+  };
+
   const onSubmit = () => {
     const data = watch();
+    if (!selectedAsset || !selectedAsset.id) {
+        setApiError("Please select or create an asset.");
+        return;
+    }
+
     const commonPayload = {
-        asset_id: data.asset_id,
+        asset_id: selectedAsset.id,
         fees: 0,
     };
 
@@ -147,15 +165,17 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
             <div className="form-group">
                 <label htmlFor="asset-select" className="form-label">Asset</label>
-                <Select
+                <AsyncCreatableSelect
                     inputId="asset-select"
-                    options={stockAssets}
-                    isLoading={isLoadingStockAssets}
+                    value={selectedAsset}
+                    onChange={(option) => setSelectedAsset(option as Asset)}
+                    loadOptions={promiseOptions}
+                    onCreateOption={handleCreateAsset}
+                    isClearable
+                    placeholder="Search or create a stock..."
                     getOptionLabel={(option: Asset) => `${option.name} (${option.ticker_symbol})`}
                     getOptionValue={(option: Asset) => option.id}
-                    onChange={(option) => setValue('asset_id', option?.id || '')}
-                    isClearable
-                    placeholder="Select a stock..."
+                    formatCreateLabel={(inputValue) => `Create new asset "${inputValue}"`}
                 />
             </div>
 
