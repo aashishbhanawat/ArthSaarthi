@@ -59,9 +59,9 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
         await transactionModal.getByLabel('Asset Type').selectOption('Stock');
         await transactionModal.getByLabel('Transaction Type').selectOption('BUY');
-        await transactionModal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
+        await transactionModal.getByRole('textbox', { name: 'Asset' }).pressSequentially(stockTicker);
 
-        const listItem = transactionModal.locator(`div[role="option"]:has-text("${stockName}")`);
+        const listItem = transactionModal.locator(`div[role="option"]:has-text("${stockName}")`).first();
         await expect(listItem).toBeVisible();
         await listItem.click();
 
@@ -87,7 +87,7 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
         await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
-        await modal.locator(`div[role="option"]:has-text("${stockName}")`).click();
+        await modal.locator(`div[role="option"]:has-text("${stockName}")`).first().click();
 
         await modal.getByLabel('Transaction Type').selectOption({ label: 'Corporate Action' });
         await modal.getByLabel('Action Type', { exact: true }).selectOption({ label: 'Stock Split' });
@@ -122,7 +122,7 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         const modal = page.locator('.modal-content');
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
         await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
-        await modal.locator(`div[role="option"]:has-text("${stockName}")`).click();
+        await modal.locator(`div[role="option"]:has-text("${stockName}")`).first().click();
 
         await modal.getByLabel('Transaction Type').selectOption({ label: 'Corporate Action' });
         await modal.getByLabel('Action Type', { exact: true }).selectOption({ label: 'Bonus Issue' });
@@ -168,7 +168,7 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         const modal = page.locator('.modal-content');
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
         await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
-        await modal.locator(`div[role="option"]:has-text("${stockName}")`).click();
+        await modal.locator(`div[role="option"]:has-text("${stockName}")`).first().click();
 
         await modal.getByLabel('Transaction Type').selectOption({ label: 'Corporate Action' });
         await modal.getByLabel('Action Type', { exact: true }).selectOption({ label: 'Dividend' });
