@@ -9,6 +9,7 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
     const stockTicker = 'MSFT';
     const stockName = 'Microsoft Corporation';
     let standardUser;
+    let portfolioName;
 
     test.beforeEach(async ({ page, request }) => {
         // 1. Create a unique user for this specific test run
@@ -38,7 +39,7 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
         // 3. Create a new portfolio for this test
-        const portfolioName = `ESPP RSU Portfolio ${Date.now()}`;
+        portfolioName = `ESPP RSU Portfolio ${Date.now()}`;
         await page.getByRole('link', { name: 'Portfolios' }).click();
         await page.getByRole('button', { name: 'Create New Portfolio' }).click();
         await page.getByLabel('Name').fill(portfolioName);
@@ -59,12 +60,8 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
         await modal.getByLabel('RSU Vest').check();
 
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
-        const resp = await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
-        console.log("Lookup status:", resp.status());
-        const body = await resp.json();
-        console.log("Lookup body:", JSON.stringify(body));
-
-        await page.locator(`div[role="option"]:has-text("${stockName}")`).click();
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await page.locator(`div[role="option"]:has-text("${stockName}")`).first().click();
 
         await modal.getByLabel('Vest Date').fill('2023-11-15');
         await modal.getByLabel('Gross Qty Vested').fill('10');
@@ -86,12 +83,6 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
         await modal.getByLabel('Sale Price (USD)').fill('150.25');
 
         await modal.getByRole('button', { name: 'Add Award' }).click();
-
-        const errorMessage = modal.locator('.alert-error');
-        if (await errorMessage.isVisible()) {
-            console.log('Error message:', await errorMessage.textContent());
-        }
-
         await expect(modal).not.toBeVisible();
 
         // 4. Verify Transactions
@@ -108,8 +99,15 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
         await expect(sellRow).toContainText('4'); // Quantity
 
         // 5. Verify Holdings
-        await page.getByRole('link', { name: 'Dashboard' }).click();
+        // Navigate back to the portfolio detail page from Transactions page
+        await page.getByRole('link', { name: 'Portfolios' }).click();
+        await page.getByText(portfolioName).click();
+        await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+
         const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
+
+        await expect(holdingsTable).toBeVisible();
+
         const holdingRow = holdingsTable.getByRole('row', { name: new RegExp(stockTicker) });
         await expect(holdingRow).toBeVisible();
         // Net quantity should be 10 - 4 = 6
@@ -130,7 +128,7 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
         // 3. Fill ESPP Details
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
         await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
-        await page.locator(`div[role="option"]:has-text("${stockName}")`).click();
+        await page.locator(`div[role="option"]:has-text("${stockName}")`).first().click();
 
         await modal.getByLabel('Purchase Date').fill('2023-12-01');
         await modal.getByLabel('Quantity').fill('25');
