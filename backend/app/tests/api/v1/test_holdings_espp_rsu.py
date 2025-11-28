@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -55,8 +56,14 @@ def test_get_portfolio_holdings_with_rsu_and_espp(
 
     # Mock prices
     mock_prices = {
-        "GOOGL": {"current_price": Decimal("110.0"), "previous_close": Decimal("100.0")},
-        "MSFT": {"current_price": Decimal("100.0"), "previous_close": Decimal("90.0")},
+        "GOOGL": {
+            "current_price": Decimal("110.0"),
+            "previous_close": Decimal("100.0"),
+        },
+        "MSFT": {
+            "current_price": Decimal("100.0"),
+            "previous_close": Decimal("90.0"),
+        },
     }
     mocker.patch.object(
         financial_data_service, "get_current_prices", return_value=mock_prices
