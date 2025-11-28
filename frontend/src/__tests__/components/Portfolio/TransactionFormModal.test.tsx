@@ -127,7 +127,8 @@ describe('TransactionFormModal', () => {
             expect(mockLookupAsset).toHaveBeenCalledWith('Apple', 'STOCK');
         });
         
-        fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+        const option = await screen.findByText('Apple Inc. (AAPL)', {}, { timeout: 3000 });
+        fireEvent.click(option);
         expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
     });
 
@@ -136,7 +137,8 @@ describe('TransactionFormModal', () => {
       // Select an asset first
       const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
       fireEvent.change(assetInput, { target: { value: 'Apple' } }); // This will trigger the search
-      fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+      const option = await screen.findByText('Apple Inc. (AAPL)', {}, { timeout: 3000 });
+      fireEvent.click(option);
 
       // Fill other fields
       fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '10' } });
@@ -479,7 +481,8 @@ describe('TransactionFormModal', () => {
     // Select an asset
     const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
     fireEvent.change(assetInput, { target: { value: 'Apple' } });
-    fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+    const option = await screen.findByText('Apple Inc. (AAPL)', {}, { timeout: 3000 });
+    fireEvent.click(option);
 
     // Fill other fields
     fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '10' } });
