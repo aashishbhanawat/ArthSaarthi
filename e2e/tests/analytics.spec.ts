@@ -153,7 +153,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Asset', { exact: true }).fill(assetTicker);
 
     // Verify the "Create Asset" button appears when the lookup finds no results.
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
+    const createAssetButton = page.locator(`div[role="option"]`, { hasText: `Create new asset "${assetTicker}"` }).first();
     await expect(createAssetButton).toBeVisible();
 
     // Click the create asset button *before* filling the rest of the form.

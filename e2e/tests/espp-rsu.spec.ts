@@ -67,13 +67,19 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
         await modal.getByLabel('Gross Qty Vested').fill('10');
         await modal.getByLabel('FMV at Vest (USD)').fill('150.25');
 
-        // Handle FX Rate
-        await page.waitForTimeout(1000);
+        // Handle FX Rate: Wait for auto-fetch or allow manual entry
         const fxRateInput = modal.getByLabel('FX Rate (USD-INR)');
-        const fxRateValue = await fxRateInput.inputValue();
-        if (!fxRateValue) {
-             await fxRateInput.fill('83.50');
-        }
+        await expect(async () => {
+            const val = await fxRateInput.inputValue();
+            const editable = await fxRateInput.isEditable();
+            if (val) return; // Fetched successfully
+            if (editable) {
+                await fxRateInput.fill('83.50');
+                return;
+            }
+            // If neither, we are still loading...
+            throw new Error("Waiting for FX Rate...");
+        }).toPass({ timeout: 10000 });
 
         // 3. Fill "Sell to Cover" details
         await modal.getByLabel("Record 'Sell to Cover' for taxes").check();
@@ -135,13 +141,18 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
         await modal.getByLabel('Purchase Price (USD)').fill('340.00');
         await modal.getByLabel('Market Price (USD)').fill('400.00');
 
-        // Handle FX Rate
-        await page.waitForTimeout(1000);
+        // Handle FX Rate: Wait for auto-fetch or allow manual entry
         const fxRateInput = modal.getByLabel('FX Rate (USD-INR)');
-        const fxRateValue = await fxRateInput.inputValue();
-        if (!fxRateValue) {
-             await fxRateInput.fill('83.60');
-        }
+        await expect(async () => {
+            const val = await fxRateInput.inputValue();
+            const editable = await fxRateInput.isEditable();
+            if (val) return; // Fetched successfully
+            if (editable) {
+                await fxRateInput.fill('83.60');
+                return;
+            }
+            throw new Error("Waiting for FX Rate...");
+        }).toPass({ timeout: 10000 });
 
         await modal.getByRole('button', { name: 'Add Award' }).click();
         await expect(modal).not.toBeVisible();
