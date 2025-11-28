@@ -141,6 +141,23 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 )
 
         db.refresh(db_obj)
+
+        # Invalidate cache manually to avoid circular import with app.cache.utils
+        from app.cache.factory import get_cache_client
+
+        cache = get_cache_client()
+        if cache:
+            # Invalidate dashboard summary for the user
+            dashboard_key = f"analytics:dashboard_summary:{portfolio.user_id}"
+            cache.delete(dashboard_key)
+
+            keys_to_delete = [
+                f"analytics:portfolio_holdings_and_summary:{portfolio_id}",
+                f"analytics:portfolio_analytics:{portfolio_id}",
+            ]
+            for key in keys_to_delete:
+                cache.delete(key)
+
         return db_obj
 
     def get_multi_by_user_with_filters(

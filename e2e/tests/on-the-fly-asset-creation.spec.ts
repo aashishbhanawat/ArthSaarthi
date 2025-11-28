@@ -34,7 +34,7 @@ test.describe.serial('On-the-Fly Asset Creation', () => {
         // Use the creatable select to add a new asset that doesn't exist
         const newTicker = 'NEWCO.L';
         await page.locator('#asset-search').pressSequentially(newTicker);
-        await page.getByText(`Create new asset "${newTicker}"`).click();
+        await page.locator(`div[role="option"]`, { hasText: `Create new asset "${newTicker}"` }).click();
 
         // Fill the rest of the form
         await transactionModal.locator('input[id="quantity"]').fill('100');
@@ -60,8 +60,8 @@ test.describe.serial('On-the-Fly Asset Creation', () => {
 
         // Use the creatable select to add a new asset that doesn't exist
         const newTicker = 'AWARD.L';
-        await page.locator('#asset-select').fill(newTicker);
-        await page.getByText(`Create new asset "${newTicker}"`).click();
+        await page.locator('#asset-select').pressSequentially(newTicker);
+        await page.locator(`div[role="option"]`, { hasText: `Create new asset "${newTicker}"` }).click();
 
         // Fill the rest of the form
         await awardModal.locator('input[id="vest_date"]').fill('2023-11-01');
