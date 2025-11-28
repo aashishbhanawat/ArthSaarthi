@@ -106,12 +106,7 @@ test.describe.serial('ESPP and RSU Tracking E2E Flow', () => {
 
         const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
 
-        try {
-            await expect(holdingsTable).toBeVisible({ timeout: 10000 });
-            console.log("Holdings Table Text:", await holdingsTable.innerText());
-        } catch (e) {
-            console.log("Holdings card not found after navigation.");
-        }
+        await expect(holdingsTable).toBeVisible();
 
         const holdingRow = holdingsTable.getByRole('row', { name: new RegExp(stockTicker) });
         await expect(holdingRow).toBeVisible();
