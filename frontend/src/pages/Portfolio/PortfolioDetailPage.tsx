@@ -137,7 +137,7 @@ const PortfolioDetailPage: React.FC = () => {
                         <div className="relative inline-block text-left">
                             <div>
                                 <button onClick={handleOpenCreateTransactionModal} className="btn btn-primary rounded-r-none">Add Transaction</button>
-                                <button onClick={() => setDropdownOpen(!isDropdownOpen)} className="btn btn-primary rounded-l-none border-l border-white/20">
+                                <button onClick={() => setDropdownOpen(!isDropdownOpen)} className="btn btn-primary rounded-l-none border-l border-white/20" aria-label="Additional actions">
                                     <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                         <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                                     </svg>

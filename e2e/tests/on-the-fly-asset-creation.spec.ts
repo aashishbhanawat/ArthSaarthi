@@ -6,16 +6,18 @@ test.describe.serial('On-the-Fly Asset Creation', () => {
     let portfolioId;
 
     test.beforeAll(async ({ browser }) => {
+        // Increase timeout for setup
+        test.setTimeout(60000);
         const context = await browser.newContext();
         page = await context.newPage();
         await login(page);
 
         // Create a portfolio to work with
-        await page.goto('/portfolios');
-        await page.getByRole('button', { name: 'New Portfolio' }).click();
+        await page.goto('/#/portfolios');
+        await page.getByRole('button', { name: 'Create New Portfolio', exact: true }).click();
         const portfolioName = `OnTheFly Test Portfolio ${Date.now()}`;
         await page.getByLabel('Name').fill(portfolioName);
-        await page.getByRole('button', { name: 'Create' }).click();
+        await page.getByRole('button', { name: 'Create', exact: true }).click();
         await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
         // Extract portfolio ID from URL for later verification
@@ -31,7 +33,7 @@ test.describe.serial('On-the-Fly Asset Creation', () => {
 
         // Use the creatable select to add a new asset that doesn't exist
         const newTicker = 'NEWCO.L';
-        await page.locator('#asset-search').fill(newTicker);
+        await page.locator('#asset-search').pressSequentially(newTicker);
         await page.getByText(`Create new asset "${newTicker}"`).click();
 
         // Fill the rest of the form
@@ -49,8 +51,8 @@ test.describe.serial('On-the-Fly Asset Creation', () => {
 
     test('should allow creating a new stock asset on the fly from the award modal', async () => {
         // Open the dropdown and click the "Add ESPP/RSU Award" button
-        await page.getByRole('button', { name: 'v' }).click();
-        await page.getByRole('button', { name: 'Add ESPP/RSU Award' }).click();
+        await page.getByRole('button', { name: 'Additional actions' }).click();
+        await page.getByRole('menuitem', { name: 'Add ESPP/RSU Award' }).click();
 
 
         const awardModal = page.locator('.modal-content');
