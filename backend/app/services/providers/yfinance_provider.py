@@ -210,11 +210,21 @@ class YFinanceProvider(FinancialDataProvider):
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
                 if close_prices is not None:
-                    for yf_ticker, original_ticker in yfinance_tickers_map.items():
-                        if yf_ticker in close_prices:
-                            for a_date, price in close_prices[yf_ticker].dropna().items(): # noqa: E501
-                                historical_data[original_ticker][
-                                    a_date.date()] = Decimal(str(price))
+                    # yf.download with single ticker returns Series, multiple returns DataFrame
+                    # We need to handle both
+                    if len(yfinance_tickers_map) == 1:
+                        yf_ticker = list(yfinance_tickers_map.keys())[0]
+                        original_ticker = list(yfinance_tickers_map.values())[0]
+                        # Series logic
+                        for a_date, price in close_prices.dropna().items():
+                            historical_data[original_ticker][
+                                a_date.date()] = Decimal(str(price))
+                    else:
+                        for yf_ticker, original_ticker in yfinance_tickers_map.items():
+                            if yf_ticker in close_prices:
+                                for a_date, price in close_prices[yf_ticker].dropna().items(): # noqa: E501
+                                    historical_data[original_ticker][
+                                        a_date.date()] = Decimal(str(price))
         except (Exception, ValidationError) as e:
             print(f"WARNING: Error fetching historical data from yfinance: {e}")
             return {}
@@ -294,3 +304,20 @@ class YFinanceProvider(FinancialDataProvider):
     def search(self, query: str) -> List[Dict[str, Any]]:
         """Yahoo Finance does not provide a direct search API. This is a no-op."""
         return []
+
+    def get_exchange_rate(self, from_currency: str, to_currency: str, date_obj: date) -> Optional[Decimal]:
+        ticker = f"{from_currency}{to_currency}=X"
+        # Use get_historical_prices for single day
+        result = self.get_historical_prices(
+            [{"ticker_symbol": ticker, "exchange": None}],
+            date_obj,
+            date_obj
+        )
+        if result and ticker in result and date_obj in result[ticker]:
+             return result[ticker][date_obj]
+
+        # If today, fallback to get_price which uses history('2d') or similar
+        if date_obj == date.today():
+             return self.get_price(ticker)
+
+        return None

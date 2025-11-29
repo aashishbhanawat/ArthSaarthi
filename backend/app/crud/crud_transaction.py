@@ -17,11 +17,12 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
     def get_holdings_on_date(
         self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID, on_date: datetime
     ) -> Decimal:
-        # Calculate total buys up to the date
+        # Calculate total buys (and other acquisitions) up to the date
+        acquisition_types = ["BUY", "ESPP_PURCHASE", "RSU_VEST", "BONUS"]
         total_buys = db.query(func.sum(Transaction.quantity)).filter(
             Transaction.user_id == user_id,
             Transaction.asset_id == asset_id,
-            Transaction.transaction_type == "BUY",
+            Transaction.transaction_type.in_(acquisition_types),
             Transaction.transaction_date <= on_date,
         ).scalar() or Decimal("0")
 
@@ -32,6 +33,11 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             Transaction.transaction_type == "SELL",
             Transaction.transaction_date <= on_date,
         ).scalar() or Decimal("0")
+
+        # Note: This simple calculation does not account for SPLITs correctly if they
+        # just record the ratio. However, typically splits might be recorded as
+        # closing old position and opening new, or adding difference.
+        # For RSU/ESPP support, we explicitly added them to acquisition_types.
 
         return total_buys - total_sells
 
@@ -51,8 +57,26 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 asset_id=obj_in.asset_id,
                 on_date=obj_in.transaction_date,
             )
+            # Use a small epsilon for float comparison if needed, but Decimal is exact
             if obj_in.quantity > current_holdings:
-                raise HTTPException(
+                # We should allow selling if it's a "Sell to Cover" causing this?
+                # No, Sell to Cover happens AFTER vest (or same time).
+                # If same time, get_holdings_on_date (<= on_date) should see the vest
+                # IF the vest is committed or processed first.
+                # Since we create RSU_VEST *before* SELL in the loop, and both have same date,
+                # get_holdings_on_date *might* see RSU_VEST if it's in the same session?
+                # No, get_holdings_on_date issues a SELECT.
+                # If we haven't committed the RSU_VEST, the SELECT won't see it (unless isolation level allows, usually READ COMMITTED doesn't see uncommitted from same txn unless using same session and flush).
+                # We do `db.add(db_obj)` -> `db.flush()` in `create_with_portfolio`.
+                # So if we call `create_with_portfolio` for RSU first, it is flushed.
+                # Then we call it for SELL.
+                # The `get_holdings_on_date` uses `db.query(...)`.
+                # Since it uses the same `db` session, it SHOULD see the flushed changes.
+                pass
+                # Check logic below
+
+            if obj_in.quantity > current_holdings:
+                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
                         "Insufficient holdings to sell. Current holdings:"

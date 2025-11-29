@@ -8,6 +8,19 @@ interface TransactionHistoryTableProps {
   onDelete: (transaction: Transaction) => void;
 }
 
+const getTypeColor = (type: string) => {
+    switch(type) {
+        case 'BUY': return 'text-green-600';
+        case 'SELL': return 'text-red-600';
+        case 'RSU_VEST': return 'text-purple-600';
+        case 'ESPP_PURCHASE': return 'text-blue-600';
+        case 'DIVIDEND': return 'text-green-500';
+        case 'SPLIT': return 'text-orange-500';
+        case 'BONUS': return 'text-green-500';
+        default: return 'text-gray-600';
+    }
+};
+
 const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ transactions, onEdit, onDelete }) => {
   if (transactions.length === 0) {
     return <div className="text-center p-8 text-gray-500 card">No transactions found for the selected filters.</div>;
@@ -34,7 +47,14 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
               <td className="p-3 text-sm">{formatDate(tx.transaction_date)}</td>
               <td className="p-3 text-sm font-mono">{tx.asset.ticker_symbol}</td>
               <td className="p-3 text-sm">{tx.asset.name}</td>
-              <td className={`p-3 text-sm font-semibold ${tx.transaction_type === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>{tx.transaction_type}</td>
+              <td className={`p-3 text-sm font-semibold ${getTypeColor(tx.transaction_type)}`}>
+                  {tx.transaction_type}
+                  {tx.details && (
+                      <span className="ml-1 text-gray-400 cursor-help" title={JSON.stringify(tx.details, null, 2)}>
+                          (i)
+                      </span>
+                  )}
+              </td>
               <td className="p-3 text-sm text-right">{Number(tx.quantity).toLocaleString()}</td>
               <td className="p-3 text-sm text-right">{formatCurrency(tx.price_per_unit)}</td>
               <td className="p-3 text-sm text-right">{formatCurrency(Number(tx.price_per_unit) * Number(tx.quantity))}</td>
