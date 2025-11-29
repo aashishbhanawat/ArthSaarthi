@@ -81,6 +81,24 @@ The existing transaction endpoints will be used, but the logic will be enhanced.
 ## 5. Frontend Development Plan (Phase 2)
  
 ### 5.1. UI/UX Mock-up and Flow
+
+#### On-the-Fly Asset Creation
+
+The existing asset search component, used for adding standard stock transactions, will be reused for the "Add Award" modal. This component allows users to search for assets by name or ticker. To support cases where a user's company stock is not yet in the database, this component will be enhanced with the following on-the-fly creation capabilities:
+
+1.  User types a ticker that does not exist (e.g., "ACME.L").
+2.  The dropdown will present an option: **"Add new asset 'ACME.L'..."**.
+3.  Upon selection, the backend will use `yfinance` to look up the ticker, create a new record in the `assets` table, and return the new asset's details.
+4.  The modal will then proceed with the newly created asset.
+
+```
+ +------------------------------------------------------+
+ |  Asset:          [ ACME.L                     | v ]   |
+ +------------------------------------------------------+
+ | > Search results...                                  |
+ | > Add new asset 'ACME.L'...      <-- User clicks this |
+ +------------------------------------------------------+
+```
  
 To ensure clarity, the user journey for adding an ESPP or RSU award will be as follows:
  
@@ -98,7 +116,7 @@ The user navigates to their portfolio and clicks the "Add" button, which now pre
  
 #### Step 2: The "Add Award" Modal (RSU Vest Example)
  
-Clicking "Add ESPP/RSU Award" opens a new modal. The user selects "RSU Vest", selects a US-listed stock, and fills in the details. The system automatically fetches the FX rate.
+Clicking "Add ESPP/RSU Award" from the dropdown opens a new modal. The user selects "RSU Vest" and chooses an asset. The system dynamically adapts the currency fields based on the selected asset's country (e.g., USD for US stocks, EUR for German stocks). The FX rate is then fetched for the correct currency pair.
  
 ```
  +------------------------------------------------------+
@@ -118,7 +136,7 @@ Clicking "Add ESPP/RSU Award" opens a new modal. The user selects "RSU Vest", se
  |                                                      |
  |  [x] Record 'Sell to Cover' for taxes                |
  |  Shares Sold:    [ 4.00000000                     ]   |
- |  Sale Price:     [ 150.25                       ] USD |
+ |  Sale Price:     [ 150.25 (defaults to FMV)     ] USD |
  |                                                      |
  |  -------------------- Summary --------------------   |
  |  Net Shares Received: [ 6.00000000 (read-only)     ]   |
@@ -130,6 +148,9 @@ Clicking "Add ESPP/RSU Award" opens a new modal. The user selects "RSU Vest", se
  ```
  
  **Backend Logic:** When the user submits this form, the system will create **two** separate transactions:
+ 
+ UI/UX Note: The Sale Price for the "Sell to Cover" transaction will automatically default to the value entered in FMV at Vest. The user can override this if their brokerage statement shows a slightly different sale price.
+ 
  1.  An `RSU_VEST` transaction for the **gross quantity** (10 shares) with a price of 0.
  2.  A `SELL` transaction for the **shares sold** (4 shares) at the specified sale price.  
 
