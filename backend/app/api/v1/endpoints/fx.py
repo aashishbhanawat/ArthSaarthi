@@ -21,7 +21,9 @@ def get_fx_rate(
     """
     Get exchange rate between two currencies for a specific date.
     """
-    rate = financial_data_service.get_exchange_rate(from_currency.upper(), to_currency.upper(), date_obj)
+    rate = financial_data_service.get_exchange_rate(
+        from_currency.upper(), to_currency.upper(), date_obj
+    )
     if rate is None:
         raise HTTPException(status_code=404, detail="Exchange rate not found")
 

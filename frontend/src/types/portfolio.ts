@@ -12,7 +12,7 @@ export interface Transaction {
   transaction_date: string; // ISO 8601 date string
   asset: Asset;
   is_reinvested: boolean;
-  details?: Record<string, any> | null;
+  details?: Record<string, unknown> | null;
 }
 
 export interface Portfolio {
@@ -34,7 +34,7 @@ export type TransactionCreate = {
   transaction_date: string;
   fees?: number;
   is_reinvested?: boolean;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 } & ({ asset_id: string; ticker_symbol?: never; asset_type?: never; } | { asset_id?: never; ticker_symbol: string; asset_type: string });
 
 
@@ -45,7 +45,7 @@ export interface TransactionUpdate {
   transaction_date?: string;
   fees?: number;
   asset_id?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface TransactionsResponse {

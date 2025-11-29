@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCreateTransaction, useCreateAsset } from '../../hooks/usePortfolios';
+import { useCreateTransaction } from '../../hooks/usePortfolios';
+import { useCreateAsset } from '../../hooks/useAssets';
 import { lookupAsset, getFxRate } from '../../services/portfolioApi';
 import { Asset } from '../../types/asset';
 import { TransactionCreate } from '../../types/portfolio';
@@ -33,7 +34,7 @@ type AddAwardFormInputs = {
 };
 
 const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isOpen }) => {
-    const { register, handleSubmit, formState: { errors }, control, setValue, reset, watch } = useForm<AddAwardFormInputs>({
+    const { register, handleSubmit, control, setValue } = useForm<AddAwardFormInputs>({
         defaultValues: {
             awardType: 'RSU_VEST',
             price: 0,

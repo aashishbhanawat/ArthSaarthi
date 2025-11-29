@@ -210,8 +210,8 @@ class YFinanceProvider(FinancialDataProvider):
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
                 if close_prices is not None:
-                    # yf.download with single ticker returns Series, multiple returns DataFrame
-                    # We need to handle both
+                    # yf.download with single ticker returns Series, multiple returns
+                    # DataFrame. We need to handle both.
                     if len(yfinance_tickers_map) == 1:
                         yf_ticker = list(yfinance_tickers_map.keys())[0]
                         original_ticker = list(yfinance_tickers_map.values())[0]
@@ -305,7 +305,9 @@ class YFinanceProvider(FinancialDataProvider):
         """Yahoo Finance does not provide a direct search API. This is a no-op."""
         return []
 
-    def get_exchange_rate(self, from_currency: str, to_currency: str, date_obj: date) -> Optional[Decimal]:
+    def get_exchange_rate(
+        self, from_currency: str, to_currency: str, date_obj: date
+    ) -> Optional[Decimal]:
         ticker = f"{from_currency}{to_currency}=X"
         # Use get_historical_prices for single day
         result = self.get_historical_prices(

@@ -133,12 +133,14 @@ def create_transaction(
                 if sell_to_cover and isinstance(sell_to_cover, dict):
                     # 1. Create RSU VEST Transaction (main one)
                     transaction = crud.transaction.create_with_portfolio(
-                        db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
+                        db=db,
+                        obj_in=transaction_create_schema,
+                        portfolio_id=portfolio_id,
                     )
                     created_transactions.append(transaction)
 
                     # 2. Create SELL Transaction
-                    # Extract fields, defaulting to main txn date if not specified (it shouldn't be for sell to cover usually)
+                    # Extract fields, defaulting to main txn date if not specified
                     sell_qty = sell_to_cover.get("quantity")
                     sell_price = sell_to_cover.get("price_per_unit")
 
@@ -150,8 +152,8 @@ def create_transaction(
                              quantity=sell_qty,
                              price_per_unit=sell_price,
                              transaction_date=transaction_create_schema.transaction_date,
-                             fees=0, # Assuming 0 fees for auto-sell unless specified, keeping simple
-                             details=sell_details
+                             fees=0,
+                             details=sell_details,
                          )
                          sell_transaction = crud.transaction.create_with_portfolio(
                             db=db, obj_in=sell_tx_schema, portfolio_id=portfolio_id

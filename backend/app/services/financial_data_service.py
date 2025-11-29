@@ -164,7 +164,9 @@ class FinancialDataService:
         Fetches the exchange rate between two currencies for a specific date.
         Delegates to yfinance provider.
         """
-        return self.yfinance_provider.get_exchange_rate(from_currency, to_currency, date_obj)
+        return self.yfinance_provider.get_exchange_rate(
+            from_currency, to_currency, date_obj
+        )
 
 
 def get_financial_data_service() -> FinancialDataService:

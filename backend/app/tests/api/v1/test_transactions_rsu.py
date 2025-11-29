@@ -51,7 +51,6 @@ def test_create_rsu_with_sell_to_cover(
     rsu_tx = next(tx for tx in txs if tx["transaction_type"] == "RSU_VEST")
     sell_tx = next(tx for tx in txs if tx["transaction_type"] == "SELL")
 
-    # Compare as floats or strings
     assert float(rsu_tx["quantity"]) == 10.0
     assert float(sell_tx["quantity"]) == 4.0
     assert float(sell_tx["price_per_unit"]) == 150.0
@@ -60,9 +59,17 @@ def test_get_fx_rate(
     client: TestClient,
     db: Session,
     get_auth_headers: Callable[[str, str], Dict[str, str]],
+    mocker,
 ) -> None:
     user, password = create_random_user(db)
     user_headers = get_auth_headers(user.email, password)
+
+    # Mock the service to return a fixed rate
+    # Patch where it is imported in the endpoint file
+    mocker.patch(
+        "app.api.v1.endpoints.fx.financial_data_service.get_exchange_rate",
+        return_value=Decimal("83.50")
+    )
 
     date_str = date.today().isoformat()
     response = client.get(
