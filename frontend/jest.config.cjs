@@ -6,6 +6,8 @@ module.exports = {
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",
     // Mock heroicons to prevent SVG rendering issues in Jest
     '^@heroicons/react/24/(outline|solid)$': '<rootDir>/src/__mocks__/heroicons.cjs',
+    // Handle absolute imports from 'src'
+    '^~/(.*)$': '<rootDir>/src/$1',
   },
   transform: {
     '^.+\\.tsx?$': [

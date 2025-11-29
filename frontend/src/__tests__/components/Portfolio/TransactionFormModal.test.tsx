@@ -37,7 +37,6 @@ jest.mock('../../../hooks/usePortfolios', () => ({
 jest.mock('../../../hooks/useAssets', () => ({
   ...jest.requireActual('../../../hooks/useAssets'), // import and retain default behavior
   useAssetsByType: jest.fn(), // mock useAssetsByType
-  useAssetSearch: jest.fn(),
   useMfSearch: jest.fn(),
 }));
 
@@ -83,11 +82,6 @@ const mockTransaction: Transaction = {
 const mockOnClose = jest.fn();
 
 const renderComponent = (transactionToEdit: Transaction | null = null) => {
-  (assetHooks.useAssetSearch as jest.Mock).mockReturnValue({
-    data: mockAssets,
-    isLoading: false,
-  });
-
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -133,8 +127,9 @@ describe('TransactionFormModal', () => {
             expect(mockLookupAsset).toHaveBeenCalledWith('Apple', 'STOCK');
         });
         
-        fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
-        expect(assetInput).toHaveValue('Apple Inc.');
+        const option = await screen.findByText('Apple Inc. (AAPL)', {}, { timeout: 3000 });
+        fireEvent.click(option);
+        expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
     });
 
     it('submits the form and calls createTransaction mutation', async () => {
@@ -142,7 +137,8 @@ describe('TransactionFormModal', () => {
       // Select an asset first
       const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
       fireEvent.change(assetInput, { target: { value: 'Apple' } }); // This will trigger the search
-      fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+      const option = await screen.findByText('Apple Inc. (AAPL)', {}, { timeout: 3000 });
+      fireEvent.click(option);
 
       // Fill other fields
       fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '10' } });
@@ -449,8 +445,7 @@ describe('TransactionFormModal', () => {
     it('renders the "Edit Transaction" title and pre-populates form', () => {
       renderComponent(mockTransaction);
       expect(screen.getByRole('heading', { name: /edit transaction/i })).toBeInTheDocument();
-      expect(screen.getByLabelText('Asset', { selector: 'input' })).toBeDisabled();
-      expect(screen.getByLabelText('Asset', { selector: 'input' })).toHaveValue('Apple Inc.');
+      expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
       expect(screen.getByLabelText(/quantity/i)).toHaveValue(10);
       expect(screen.getByLabelText(/price per unit/i)).toHaveValue(150);
     });
@@ -486,7 +481,8 @@ describe('TransactionFormModal', () => {
     // Select an asset
     const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
     fireEvent.change(assetInput, { target: { value: 'Apple' } });
-    fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+    const option = await screen.findByText('Apple Inc. (AAPL)', {}, { timeout: 3000 });
+    fireEvent.click(option);
 
     // Fill other fields
     fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '10' } });

@@ -22,6 +22,7 @@ frontend/.env
 __pycache__/
 .pytest_cache/
 venv/
+backend/.venv/
 .mypy_cache/
 .tox/
 *.pyc
@@ -35,6 +36,7 @@ dist/
 # Test artifacts
 **/test.db
 .coverage
+test-results/
 
 # Frontend
 frontend/dist/

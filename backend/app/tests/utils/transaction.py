@@ -20,6 +20,7 @@ def create_test_transaction(
     transaction_type: str = "buy",
     transaction_date: Optional[date] = None,
     fees: float = 0.0,
+    details: Optional[dict] = None,
 ) -> Transaction:
     """
     Test utility to create a transaction.
@@ -39,6 +40,7 @@ def create_test_transaction(
         transaction_date=final_datetime,
         transaction_type=transaction_type.upper(),
         fees=Decimal(str(fees)),
+        details=details,
     )
     return crud.transaction.create_with_portfolio(
         db=db, obj_in=transaction_in, portfolio_id=portfolio_id

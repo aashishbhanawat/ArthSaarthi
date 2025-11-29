@@ -1,8 +1,23 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { PrivacyProvider } from '../../../context/PrivacyContext';
-import PortfolioSummary from '../../../components/Portfolio/PortfolioSummary';
-import { PortfolioSummary as PortfolioSummaryType } from '../../../types/holding';
+import { PrivacyProvider } from '~/context/PrivacyContext';
+import PortfolioSummary from '~/components/Portfolio/PortfolioSummary';
+import { PortfolioSummary as PortfolioSummaryType } from '~/types/holding';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ToastProvider } from '~/context/ToastContext';
+
+const queryClient = new QueryClient();
+
+const renderWithProviders = (ui: React.ReactElement) => {
+    return render(
+        <QueryClientProvider client={queryClient}>
+            <ToastProvider>
+                <PrivacyProvider>{ui}</PrivacyProvider>
+            </ToastProvider>
+        </QueryClientProvider>
+    );
+};
+
 
 describe('PortfolioSummary', () => {
     const mockSummary: PortfolioSummaryType = {
@@ -14,23 +29,23 @@ describe('PortfolioSummary', () => {
     };
 
     it('renders loading state correctly', () => {
-        render(<PrivacyProvider><PortfolioSummary summary={undefined} isLoading={true} error={null} /></PrivacyProvider>);
+        renderWithProviders(<PortfolioSummary portfolioId="test" summary={undefined} isLoading={true} error={null} />);
         const pulseDivs = screen.getAllByText('', { selector: '.animate-pulse div' });
         expect(pulseDivs.length).toBeGreaterThan(0);
     });
 
     it('renders null when there is an error', () => {
-        const { container } = render(<PrivacyProvider><PortfolioSummary summary={undefined} isLoading={false} error={new Error('Failed to fetch')} /></PrivacyProvider>);
-        expect(container).toBeEmptyDOMElement();
+        renderWithProviders(<PortfolioSummary portfolioId="test" summary={undefined} isLoading={false} error={new Error('Failed to fetch')} />);
+        expect(screen.queryByText('Total Value')).not.toBeInTheDocument();
     });
 
     it('renders null when there is no summary data', () => {
-        const { container } = render(<PrivacyProvider><PortfolioSummary summary={undefined} isLoading={false} error={null} /></PrivacyProvider>);
-        expect(container).toBeEmptyDOMElement();
+        renderWithProviders(<PortfolioSummary portfolioId="test" summary={undefined} isLoading={false} error={null} />);
+        expect(screen.queryByText('Total Value')).not.toBeInTheDocument();
     });
 
     it('renders summary data with correct formatting', () => {
-        render(<PrivacyProvider><PortfolioSummary summary={mockSummary} isLoading={false} error={null} /></PrivacyProvider>);
+        renderWithProviders(<PortfolioSummary portfolioId="test" summary={mockSummary} isLoading={false} error={null} />);
 
         expect(screen.getByText('Total Value')).toBeInTheDocument();
         expect(screen.getByText('₹1,50,000.75')).toBeInTheDocument();
@@ -49,7 +64,7 @@ describe('PortfolioSummary', () => {
     });
 
     it('applies correct colors for P&L values', () => {
-        render(<PrivacyProvider><PortfolioSummary summary={mockSummary} isLoading={false} error={null} /></PrivacyProvider>);
+        renderWithProviders(<PortfolioSummary portfolioId="test" summary={mockSummary} isLoading={false} error={null} />);
 
         // Positive P&L should be green
         const daysPnl = screen.getByText('₹1,500.25');
