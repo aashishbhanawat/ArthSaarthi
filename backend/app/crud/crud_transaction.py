@@ -17,11 +17,12 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
     def get_holdings_on_date(
         self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID, on_date: datetime
     ) -> Decimal:
-        # Calculate total buys up to the date
+        # Calculate total buys (and other acquisitions) up to the date
+        acquisition_types = ["BUY", "ESPP_PURCHASE", "RSU_VEST"]
         total_buys = db.query(func.sum(Transaction.quantity)).filter(
             Transaction.user_id == user_id,
             Transaction.asset_id == asset_id,
-            Transaction.transaction_type == "BUY",
+            Transaction.transaction_type.in_(acquisition_types),
             Transaction.transaction_date <= on_date,
         ).scalar() or Decimal("0")
 
@@ -32,6 +33,11 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             Transaction.transaction_type == "SELL",
             Transaction.transaction_date <= on_date,
         ).scalar() or Decimal("0")
+
+        # Note: This simple calculation does not account for SPLITs correctly if they
+        # just record the ratio. However, typically splits might be recorded as
+        # closing old position and opening new, or adding difference.
+        # For RSU/ESPP support, we explicitly added them to acquisition_types.
 
         return total_buys - total_sells
 
@@ -51,8 +57,16 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 asset_id=obj_in.asset_id,
                 on_date=obj_in.transaction_date,
             )
+            # Use a small epsilon for float comparison if needed, but Decimal is exact
             if obj_in.quantity > current_holdings:
-                raise HTTPException(
+                # We should allow selling if it's a "Sell to Cover" causing this?
+                # No, Sell to Cover happens AFTER vest (or same time).
+                # If same time, get_holdings_on_date (<= on_date) should see the vest
+                # if the vest is flushed first.
+                pass
+
+            if obj_in.quantity > current_holdings:
+                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
                         "Insufficient holdings to sell. Current holdings:"

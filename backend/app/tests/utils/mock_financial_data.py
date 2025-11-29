@@ -148,3 +148,10 @@ class MockFinancialDataService:
             for fund in self.MOCK_MF_SEARCH_RESULTS
             if query in fund["name"].lower()
         ]
+
+    def get_exchange_rate(
+        self, from_currency: str, to_currency: str, date_obj: date
+    ) -> Optional[Decimal]:
+        if from_currency == "USD" and to_currency == "INR":
+            return Decimal("83.50")
+        return None

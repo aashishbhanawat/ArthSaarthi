@@ -157,6 +157,17 @@ class FinancialDataService:
         """Proxy to YFinance provider to get a single price."""
         return self.yfinance_provider.get_price(ticker_symbol)
 
+    def get_exchange_rate(
+        self, from_currency: str, to_currency: str, date_obj: date
+    ) -> Optional[Decimal]:
+        """
+        Fetches the exchange rate between two currencies for a specific date.
+        Delegates to yfinance provider.
+        """
+        return self.yfinance_provider.get_exchange_rate(
+            from_currency, to_currency, date_obj
+        )
+
 
 def get_financial_data_service() -> FinancialDataService:
     from app.cache.factory import get_cache_client

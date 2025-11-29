@@ -4,9 +4,8 @@ import {
   updateTransaction,
   deleteTransaction,
   TransactionFilters,
-  TransactionUpdate,
 } from '../services/transactionApi';
-import { TransactionsResponse } from '../types/transaction';
+import { TransactionsResponse, TransactionUpdate } from '../types/portfolio';
 
 export const useTransactions = (filters: TransactionFilters) => {
   console.log("useTransactions hook called with filters:", filters);

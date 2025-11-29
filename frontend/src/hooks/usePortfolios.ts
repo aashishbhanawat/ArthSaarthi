@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as portfolioApi from '../services/portfolioApi';
 import { BondCreate, BondUpdate } from '../types/bond';
-import { PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate, TransactionsResponse, FixedDepositCreate, PpfCreate, RecurringDepositCreate } from '../types/portfolio';
+import { PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate, TransactionsResponse, FixedDepositCreate, PpfCreate } from '../types/portfolio';
+import { RecurringDepositCreate } from '../types/recurring_deposit';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
 import { PortfolioAnalytics, AssetAnalytics } from '../types/analytics';
@@ -173,6 +174,7 @@ export const useUpdateBond = () => {
 
 export const useDeleteBond = () => {
     const queryClient = useQueryClient();
+    const { showToast } = useToast();
     return useMutation({
         mutationFn: ({ portfolioId, bondId }: { portfolioId: string; bondId: string }) => portfolioApi.deleteBond(bondId), // eslint-disable-line @typescript-eslint/no-unused-vars
         onSuccess: (_, variables) => {

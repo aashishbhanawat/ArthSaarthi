@@ -7,8 +7,8 @@ import TransactionHistoryTable from '../components/Transactions/TransactionHisto
 import PaginationControls from '../components/common/PaginationControls';
 import TransactionFormModal from '../components/Portfolio/TransactionFormModal';
 import { DeleteConfirmationModal } from '../components/common/DeleteConfirmationModal';
-import { Transaction } from '../types/transaction'; // Already correct
-import { useDeleteTransaction } from '../hooks/useTransactions'; // Corrected import
+import { Transaction } from '../types/portfolio';
+import { useDeleteTransaction } from '../hooks/useTransactions';
 
 const PAGE_SIZE = 15;
 
@@ -38,6 +38,13 @@ const TransactionsPage: React.FC = () => {
   }, [searchParams]);
   console.log("TransactionsPage filters:", filters); // Moved console.log outside useMemo
 
+  // cast data to any or specific response type because useTransactions might return something else?
+  // useTransactions returns TransactionsResponse which has transactions: Transaction[].
+  // But if types/transaction.ts Transaction is different from types/portfolio.ts Transaction, there is mismatch.
+  // I updated useTransactions in usePortfolios.ts (which is seemingly where it should be, but here it imports from ../hooks/useTransactions).
+  // Wait, useTransactions is imported from `../hooks/useTransactions`.
+  // I updated `usePortfolios.ts` but `TransactionsPage` imports from `useTransactions.ts`?
+  // Let's check `frontend/src/hooks/useTransactions.ts`.
   const { data, isLoading, isError, error } = useTransactions(filters);
 
   const handlePageChange = (newPage: number) => {

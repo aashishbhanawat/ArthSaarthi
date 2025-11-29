@@ -22,6 +22,16 @@ jest.mock('../../../components/Portfolio/TransactionFormModal', () => {
     );
 });
 
+jest.mock('../../../components/Portfolio/AddAwardModal', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react');
+  return ({ onClose }: { onClose: () => void }) =>
+    React.createElement('div', { 'data-testid': 'add-award-modal' },
+      React.createElement('h2', { role: 'heading' }, 'Add ESPP/RSU Award'),
+      React.createElement('button', { onClick: onClose }, 'Close')
+    );
+});
+
 // Mock child components to isolate the page component logic
 jest.mock('../../../components/Portfolio/PortfolioSummary', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -111,11 +121,26 @@ describe('PortfolioDetailPage', () => {
     expect(screen.getByTestId('holdings-table')).toBeInTheDocument();
   });
 
-  it('opens the add transaction modal when the button is clicked', async () => {
+  it('opens the add transaction modal when the "Standard Transaction" dropdown item is clicked', async () => {
     renderComponent();
     await userEvent.click(screen.getByRole('button', { name: /add transaction/i }));
+    // Wait for dropdown
+    const standardOption = await screen.findByText('Standard Transaction');
+    await userEvent.click(standardOption);
+
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /add transaction/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Add Transaction' })).toBeInTheDocument();
+    });
+  });
+
+  it('opens the add award modal when the "Add ESPP/RSU Award" dropdown item is clicked', async () => {
+    renderComponent();
+    await userEvent.click(screen.getByRole('button', { name: /add transaction/i }));
+    const awardOption = await screen.findByText('Add ESPP/RSU Award');
+    await userEvent.click(awardOption);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Add ESPP/RSU Award' })).toBeInTheDocument();
     });
   });
 

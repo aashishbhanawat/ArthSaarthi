@@ -1,5 +1,5 @@
 import apiClient from './api';
-import { Transaction, TransactionsResponse } from '../types/transaction';
+import { Transaction, TransactionsResponse, TransactionUpdate } from '../types/portfolio';
 
 export interface TransactionFilters {
   portfolio_id?: string;
@@ -9,14 +9,6 @@ export interface TransactionFilters {
   end_date?: string;
   skip?: number;
   limit?: number;
-}
-
-export interface TransactionUpdate {
-  transaction_type?: 'BUY' | 'SELL';
-  quantity?: number;
-  price_per_unit?: number;
-  transaction_date?: string; // YYYY-MM-DD
-  fees?: number;
 }
 
 export const getTransactions = async (filters: TransactionFilters): Promise<TransactionsResponse> => {

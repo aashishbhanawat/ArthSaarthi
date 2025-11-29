@@ -262,7 +262,7 @@ def test_create_coupon_transaction_for_bond(
         json=coupon_transaction_data,
     )
     assert response.status_code == 201
-    content_list = response.json()
+    content_list = response.json()["created_transactions"]
     assert isinstance(content_list, list)
     assert len(content_list) == 1
     content = content_list[0]

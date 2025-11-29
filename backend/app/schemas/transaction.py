@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -20,6 +20,7 @@ class TransactionBase(BaseModel):
         ..., json_schema_extra={"example": "2023-01-15T12:30:00Z"}
     )
     fees: Decimal = Decimal("0.0")
+    details: Optional[Dict[str, Any]] = None
 
 
 # Properties to receive on transaction creation
@@ -48,6 +49,7 @@ class TransactionUpdate(TransactionBase):
     transaction_date: Optional[datetime] = None
     fees: Optional[Decimal] = None
     asset_id: Optional[uuid.UUID] = None
+    details: Optional[Dict[str, Any]] = None
 
 
 # Properties to return to client
@@ -61,3 +63,7 @@ class Transaction(TransactionBase):
 class TransactionsResponse(BaseModel):
     transactions: List[Transaction]
     total: int
+
+
+class TransactionCreatedResponse(BaseModel):
+    created_transactions: List[Transaction]

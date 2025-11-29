@@ -1,6 +1,6 @@
 # FR8.1.1: Employee Stock Plans (ESPP/RSU) Tracking
 
-**Status: 📝 Proposed**
+**Status: ✅ Implemented**
 
 ## 1. Introduction
 
@@ -39,7 +39,7 @@ We will extend the existing `transactions` table to accommodate the new data poi
 
 2.  **Extend `Transaction` Model:**
     *   In `backend/app/models/transaction.py`, add a new column to the `Transaction` model:
-        *   `metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)`
+        *   `details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)` (Implemented as `details` to avoid conflict with SQLAlchemy `metadata`)
 
     *   This flexible `JSON` column will store the specific details for each award type.
     *   **`RSU_VEST` Metadata Schema:**
@@ -47,7 +47,8 @@ We will extend the existing `transactions` table to accommodate the new data poi
         {
           "grant_date": "YYYY-MM-DD",
           "fmv_at_vest": 150.25,
-          "exchange_rate_to_inr": 83.50
+          "fx_rate": 83.50,
+          "sell_to_cover": { ... }
         }
         ```
         *   The main `transaction.price_per_unit` will be set to `0.00` to reflect the user's cost.
@@ -59,7 +60,7 @@ We will extend the existing `transactions` table to accommodate the new data poi
           "offering_begin_date": "YYYY-MM-DD",
           "market_price": 160.50,
           "discount_percentage": 15.0,
-          "exchange_rate_to_inr": 83.50
+          "fx_rate": 83.50
         }
         ```
         *   The main `transaction.price_per_unit` will store the actual discounted price paid by the employee.
@@ -70,8 +71,9 @@ We will extend the existing `transactions` table to accommodate the new data poi
 The existing transaction endpoints will be used, but the logic will be enhanced.
 
 *   **`POST /api/v1/portfolios/{portfolio_id}/transactions`:**
-    *   The request body (`TransactionCreate` schema) will be updated to accept the optional `metadata` dictionary.
-    *   The backend logic will validate the `metadata` structure based on the provided `transaction_type`.
+    *   The request body (`TransactionCreate` schema) will be updated to accept the optional `details` dictionary.
+    *   The backend logic will validate the `details` structure based on the provided `transaction_type`.
+    *   **Response Change:** Now returns `{"created_transactions": [...]}` to support returning multiple transactions (e.g. RSU + Sell to Cover).
 
 *   **`GET /api/v1/fx-rate?from=USD&to=INR&date=YYYY-MM-DD` (New Endpoint):**
     *   A new utility endpoint will be created to provide historical and current exchange rates. This will be used by the frontend to assist the user during manual entry.
@@ -110,6 +112,7 @@ The user navigates to their portfolio and clicks the "Add" button, which now pre
  +-----------------------+
  | Add Transaction  | v  |
  +-----------------------+
+ | Standard Transaction  |
  | Add ESPP/RSU Award    |  <-- User clicks this
  +-----------------------+
 ```
