@@ -1,13 +1,42 @@
 import React from 'react';
-import { Transaction } from '../../types/portfolio';
-import { formatCurrency, formatDate } from '../../utils/formatting';
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { Transaction } from '~/types/portfolio';
+import { formatCurrency, formatDate } from '~/utils/formatting';
+import { PencilSquareIcon, TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import Tooltip from '~/components/common/Tooltip';
 
 interface TransactionListProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
 }
+
+const getTransactionTypeStyle = (type: string) => {
+    switch (type) {
+        case 'BUY':
+        case 'ESPP_PURCHASE':
+        case 'RSU_VEST':
+            return 'bg-green-100 text-green-800';
+        case 'SELL':
+            return 'bg-red-100 text-red-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
+};
+
+const TransactionDetailTooltip: React.FC<{ details: Record<string, unknown> | null }> = ({ details }) => {
+    if (!details) return null;
+
+    return (
+        <div className="space-y-1">
+            {Object.entries(details).map(([key, value]) => (
+                <div key={key}>
+                    <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span>{' '}
+                    <span>{typeof value === 'number' ? formatCurrency(value, 'INR') : String(value)}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit, onDelete }) => {
   if (!transactions || transactions.length === 0) {
@@ -39,18 +68,22 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
               <tr key={tx.id} className="border-t">
                 <td className="p-2">{formatDate(tx.transaction_date)}</td>
                 <td className="p-2">
-                  {/* For Mutual Funds, the name is sufficient and the ticker (scheme code) is not user-friendly. */}
                   {tx.asset.asset_type !== 'Mutual Fund' && <div className="font-bold">{tx.asset.ticker_symbol}</div>}
                   <div className={`text-sm ${tx.asset.asset_type !== 'Mutual Fund' ? 'text-gray-500' : 'font-semibold text-gray-900'}`}>
                     {tx.asset.name}
                   </div>
                 </td>
                 <td className="p-2">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    tx.transaction_type === 'BUY' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {tx.transaction_type}
-                  </span>
+                    <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getTransactionTypeStyle(tx.transaction_type)}`}>
+                            {tx.transaction_type.replace('_', ' ')}
+                        </span>
+                        {tx.details && (
+                            <Tooltip content={<TransactionDetailTooltip details={tx.details} />}>
+                                <InformationCircleIcon className="h-5 w-5 text-gray-400" />
+                            </Tooltip>
+                        )}
+                    </div>
                 </td>
                 <td className="p-2 text-right font-mono">{Number(tx.quantity).toLocaleString()}</td>
                 <td className="p-2 text-right font-mono">{formatCurrency(Number(tx.price_per_unit))}</td>

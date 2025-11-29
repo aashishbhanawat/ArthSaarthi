@@ -70,8 +70,8 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // For stocks, the "Transaction Type" dropdown now controls this.
     await page.getByLabel('Transaction Type').selectOption('BUY');
     // Use a more specific locator to avoid ambiguity with "Asset Type"
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
-    const listItemBuy = page.locator(`li:has-text("${assetName}")`);
+    await page.getByLabel('Asset', { exact: true }).pressSequentially(assetName);
+    const listItemBuy = page.locator(`div[role="option"]:has-text("${assetName}")`).first();
     await expect(listItemBuy).toBeVisible();
     await listItemBuy.click();
     await page.getByLabel('Quantity').fill('10');
@@ -95,8 +95,8 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // SELL 5 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Transaction Type').selectOption('SELL');
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
-    const listItem = page.locator(`li:has-text("${assetName}")`);
+    await page.getByLabel('Asset', { exact: true }).pressSequentially(assetName);
+    const listItem = page.locator(`div[role="option"]:has-text("${assetName}")`).first();
     await expect(listItem).toBeVisible();
     await listItem.click();
     await page.getByLabel('Quantity').fill('5');
@@ -150,7 +150,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // The asset exists in the master list but not in this portfolio yet.
     // The correct flow is to search for it and select it.
     // UPDATE: The lookup is failing, so we must test the "create" flow.
-    await page.getByRole('textbox', { name: 'Asset' }).fill(assetTicker);
+    await page.getByLabel('Asset', { exact: true }).fill(assetTicker);
 
     // Verify the "Create Asset" button appears when the lookup finds no results.
     const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
@@ -177,9 +177,9 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // SELL 5 shares @ 120, 6 months ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Transaction Type').selectOption('SELL');
-    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetTicker);
+    await page.getByLabel('Asset', { exact: true }).pressSequentially(assetTicker);
     await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
-    const listItem = page.locator(`li:has-text("${assetTicker}")`);
+    const listItem = page.locator(`div[role="option"]:has-text("${assetTicker}")`).first();
     await expect(listItem).toBeVisible();
     await listItem.click();
     await page.getByLabel('Quantity').fill('5');

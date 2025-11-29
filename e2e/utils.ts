@@ -1,4 +1,4 @@
-import { APIRequestContext, Page } from '@playwright/test';
+import { APIRequestContext, Page, expect } from '@playwright/test';
 
 export async function login(page: Page) {
   const adminUser = {
@@ -10,7 +10,7 @@ export async function login(page: Page) {
   await page.getByLabel('Email address').fill(adminUser.email);
   await page.getByLabel('Password').fill(adminUser.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL('/dashboard');
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 }
 
 export async function createUser(request: APIRequestContext, { email, password, fullName }) {

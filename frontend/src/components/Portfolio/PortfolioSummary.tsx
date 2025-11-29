@@ -1,6 +1,6 @@
 import React from 'react';
-import { PortfolioSummary as PortfolioSummaryType } from '../../types/holding';
-import { usePrivacySensitiveCurrency } from '../../utils/formatting';
+import { PortfolioSummary as PortfolioSummaryType } from '~/types/holding';
+import { usePrivacySensitiveCurrency } from '~/utils/formatting';
 
 interface SummaryItemProps {
     label: string;
@@ -50,13 +50,15 @@ const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ summary, isLoading,
     if (error || !summary) return null;
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            <SummaryItem label="Total Value" value={summary.total_value} />
-            <SummaryItem label="Day's P&L" value={summary.days_pnl} isPnl />
-            <SummaryItem label="Unrealized P&L" value={summary.total_unrealized_pnl} isPnl />
-            <SummaryItem label="Realized P&L" value={summary.total_realized_pnl} isPnl />
-            <SummaryItem label="Total Invested" value={summary.total_invested_amount} />
-        </div>
+        <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                <SummaryItem label="Total Value" value={summary.total_value} />
+                <SummaryItem label="Day's P&L" value={summary.days_pnl} isPnl />
+                <SummaryItem label="Unrealized P&L" value={summary.total_unrealized_pnl} isPnl />
+                <SummaryItem label="Realized P&L" value={summary.total_realized_pnl} isPnl />
+                <SummaryItem label="Total Invested" value={summary.total_invested_amount} />
+            </div>
+        </>
     );
 };
 
