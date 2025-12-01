@@ -79,6 +79,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 2. Add a BUY transaction for a NEW asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
@@ -101,6 +102,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 3. Add a SELL transaction for the same asset
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('SELL');
     // Use pressSequentially to simulate user typing and avoid race conditions with debounced search
@@ -142,6 +144,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 2. Add a BUY transaction for 10 shares
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
@@ -161,6 +164,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 3. Attempt to SELL 20 shares (which is more than owned)
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
@@ -197,6 +201,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 2. Add two different assets
     // Asset 1: 10 GOOGL @ $150
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially('GOOGL'); // Asset already exists from a previous test
@@ -239,6 +244,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 2. Add a BUY transaction for a Mutual Fund
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Mutual Fund');
     await page.getByLabel('Type', { exact: true }).selectOption('BUY');
 
@@ -281,6 +287,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 2. Add a BUY transaction for the mutual fund from the detail page
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await expect(page.getByRole('heading', { name: 'Add Transaction' })).toBeVisible();
 
     await page.getByLabel('Asset Type').selectOption('Mutual Fund');
@@ -299,6 +306,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 3. Add a DIVIDEND transaction for the same fund from the detail page
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Mutual Fund');
     await mfSelect.fill(mfName);
     await page.getByRole('option', { name: new RegExp(mfName) }).click();
@@ -338,6 +346,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 2. Add initial BUY transaction
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Mutual Fund');
     const mfSelect = page.locator('input#mf-search-input');
     await mfSelect.fill(mfName);
@@ -350,6 +359,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // 3. Add reinvested DIVIDEND transaction
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Mutual Fund');
     await mfSelect.fill(mfName);
     await page.getByRole('option', { name: new RegExp(mfName) }).click();

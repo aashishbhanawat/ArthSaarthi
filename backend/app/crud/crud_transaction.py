@@ -59,13 +59,6 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             )
             # Use a small epsilon for float comparison if needed, but Decimal is exact
             if obj_in.quantity > current_holdings:
-                # We should allow selling if it's a "Sell to Cover" causing this?
-                # No, Sell to Cover happens AFTER vest (or same time).
-                # If same time, get_holdings_on_date (<= on_date) should see the vest
-                # if the vest is flushed first.
-                pass
-
-            if obj_in.quantity > current_holdings:
                  raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(

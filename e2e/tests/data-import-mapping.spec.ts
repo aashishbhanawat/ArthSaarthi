@@ -57,6 +57,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
 
         // Create the target asset 'RELIANCE'
         await page.getByRole('button', { name: 'Add Transaction' }).click();
+        await page.getByText('Standard Transaction').click();
         await page.getByRole('textbox', { name: 'Asset' }).pressSequentially('RELIANCE');
 
         // Wait for the lookup to find the asset and create it on the fly

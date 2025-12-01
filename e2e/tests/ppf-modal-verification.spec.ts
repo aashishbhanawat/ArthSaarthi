@@ -49,6 +49,7 @@ test.describe.serial('PPF Modal Verification', () => {
 
       // 2. Open the "Add Transaction" modal
       await page.getByRole('button', { name: 'Add Transaction' }).click();
+      await page.getByText('Standard Transaction').click();
 
       const modal = page.locator('div[role="dialog"]');
       await expect(modal).toBeVisible();
@@ -138,6 +139,7 @@ test.describe.serial('PPF Modal Verification', () => {
 
     // 4. Open the "Add Transaction" modal
     await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByText('Standard Transaction').click();
     const modal = page.locator('div[role="dialog"]');
     await expect(modal).toBeVisible();
 
