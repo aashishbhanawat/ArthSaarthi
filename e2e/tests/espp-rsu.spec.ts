@@ -47,7 +47,7 @@ test.describe.serial('ESPP and RSU Flow', () => {
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
 
     // 2. Open Add Award Modal via Dropdown
-    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByRole('button', { name: 'Additional actions' }).click();
     // Wait for dropdown
     await expect(page.getByText('Add ESPP/RSU Award')).toBeVisible();
     await page.getByText('Add ESPP/RSU Award').click();
@@ -101,8 +101,6 @@ test.describe.serial('ESPP and RSU Flow', () => {
     await page.getByText(portfolioName).click();
 
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await expect(page.getByText('Standard Transaction')).toBeVisible();
-    await page.getByText('Standard Transaction').click();
     await expect(page.getByRole('heading', { name: 'Add Transaction' })).toBeVisible();
     // Close it
     await page.getByRole('button', { name: 'Cancel' }).click();

@@ -55,7 +55,6 @@ test.describe.serial('Edit FD and RD Flow', () => {
 
     // 2. Add a Fixed Deposit
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Fixed Deposit');
 
     await page.getByLabel('Institution Name').fill(fdName);
@@ -115,7 +114,6 @@ test.describe.serial('Edit FD and RD Flow', () => {
 
     // 4. Add Recurring Deposit
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Recurring Deposit');
 
     await page.getByLabel('Institution Name').fill(rdName);

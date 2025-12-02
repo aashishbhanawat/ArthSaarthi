@@ -121,12 +121,9 @@ describe('PortfolioDetailPage', () => {
     expect(screen.getByTestId('holdings-table')).toBeInTheDocument();
   });
 
-  it('opens the add transaction modal when the "Standard Transaction" dropdown item is clicked', async () => {
+  it('opens the add transaction modal when the "Add Transaction" button is clicked', async () => {
     renderComponent();
     await userEvent.click(screen.getByRole('button', { name: /add transaction/i }));
-    // Wait for dropdown
-    const standardOption = await screen.findByText('Standard Transaction');
-    await userEvent.click(standardOption);
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Add Transaction' })).toBeInTheDocument();
@@ -135,7 +132,8 @@ describe('PortfolioDetailPage', () => {
 
   it('opens the add award modal when the "Add ESPP/RSU Award" dropdown item is clicked', async () => {
     renderComponent();
-    await userEvent.click(screen.getByRole('button', { name: /add transaction/i }));
+    // Use the aria-label to target the toggle button specifically
+    await userEvent.click(screen.getByLabelText('Additional actions'));
     const awardOption = await screen.findByText('Add ESPP/RSU Award');
     await userEvent.click(awardOption);
 

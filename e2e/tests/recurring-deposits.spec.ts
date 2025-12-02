@@ -52,7 +52,6 @@ test.describe.serial('Recurring Deposit E2E Flow', () => {
 
     // 2. Add a Recurring Deposit
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    await page.getByText('Standard Transaction').click();
     await page.getByLabel('Asset Type').selectOption('Recurring Deposit');
 
     await page.getByLabel('Institution Name').fill(rdName);

@@ -138,25 +138,28 @@ const PortfolioDetailPage: React.FC = () => {
                         <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary">
                             View History
                         </Link>
-                        <div className="relative">
+                        <div className="relative inline-flex rounded-md shadow-sm">
                             <button
+                                type="button"
+                                onClick={handleOpenCreateTransactionModal}
+                                className="btn btn-primary rounded-r-none border-r border-blue-600 focus:z-10"
+                            >
+                                Add Transaction
+                            </button>
+                            <button
+                                type="button"
                                 onClick={() => setAddDropdownOpen(!isAddDropdownOpen)}
-                                className="btn btn-primary flex items-center"
+                                className="btn btn-primary rounded-l-none px-2 focus:z-10"
+                                aria-label="Additional actions"
                                 aria-expanded={isAddDropdownOpen}
                                 aria-haspopup="true"
                             >
-                                Add Transaction <span className="ml-2 text-xs">▼</span>
+                                <span className="text-xs">▼</span>
                             </button>
                             {isAddDropdownOpen && (
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setAddDropdownOpen(false)}></div>
-                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
-                                        <button
-                                            onClick={() => { handleOpenCreateTransactionModal(); setAddDropdownOpen(false); }}
-                                            className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
-                                        >
-                                            Standard Transaction
-                                        </button>
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200 top-full">
                                         <button
                                             onClick={() => { setAddAwardModalOpen(true); setAddDropdownOpen(false); }}
                                             className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"

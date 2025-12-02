@@ -54,7 +54,6 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible({ timeout: 15000 });
         // 4. Create an initial BUY transaction to have holdings to act upon
         await page.getByRole('button', { name: 'Add Transaction' }).click();
-        await page.getByText('Standard Transaction').click();
         const transactionModal = page.locator('.modal-content');
         await expect(transactionModal).toBeVisible();
 
@@ -82,7 +81,6 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
     test('should correctly apply a 2-for-1 stock split', async ({ page }) => {
         await page.getByRole('button', { name: 'Add Transaction' }).click();
-        await page.getByText('Standard Transaction').click();
 
         const modal = page.locator('.modal-content');
         await expect(modal).toBeVisible();
@@ -120,7 +118,6 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
     test('should correctly apply a 1-for-1 bonus issue', async ({ page }) => {
         await page.getByRole('button', { name: 'Add Transaction' }).click();
-        await page.getByText('Standard Transaction').click();
 
         const modal = page.locator('.modal-content');
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
@@ -167,7 +164,6 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
     test('should correctly log a cash dividend', async ({ page }) => {
         await page.getByRole('button', { name: 'Add Transaction' }).click();
-        await page.getByText('Standard Transaction').click();
 
         const modal = page.locator('.modal-content');
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
