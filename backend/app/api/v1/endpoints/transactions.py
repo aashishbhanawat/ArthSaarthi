@@ -126,45 +126,6 @@ def create_transaction(
 
             transaction_type = transaction_in.transaction_type
 
-            # Check for RSU "Sell to Cover"
-            if transaction_type == TransactionType.RSU_VEST and transaction_in.details:
-                sell_to_cover = transaction_in.details.get("sell_to_cover")
-                # Ensure sell_to_cover is a dict and has valid data
-                if sell_to_cover and isinstance(sell_to_cover, dict):
-                    # 1. Create RSU VEST Transaction (main one)
-                    transaction = crud.transaction.create_with_portfolio(
-                        db=db,
-                        obj_in=transaction_create_schema,
-                        portfolio_id=portfolio_id,
-                    )
-                    created_transactions.append(transaction)
-
-                    # 2. Create SELL Transaction
-                    # Extract fields, defaulting to main txn date if not specified
-                    sell_qty = sell_to_cover.get("quantity")
-                    sell_price = sell_to_cover.get("price_per_unit")
-
-                    if sell_qty is not None and sell_price is not None:
-                         sell_details = {"related_rsu_vest_id": str(transaction.id)}
-                         sell_tx_schema = schemas.TransactionCreate(
-                             asset_id=asset_id_to_use,
-                             transaction_type=TransactionType.SELL,
-                             quantity=sell_qty,
-                             price_per_unit=sell_price,
-                             transaction_date=transaction_create_schema.transaction_date,
-                             fees=0,
-                             details=sell_details,
-                         )
-                         sell_transaction = crud.transaction.create_with_portfolio(
-                            db=db, obj_in=sell_tx_schema, portfolio_id=portfolio_id
-                         )
-                         created_transactions.append(sell_transaction)
-
-                    # Skip default creation since we handled it
-                    if asset_to_use.asset_type == "PPF":
-                        trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
-                    continue
-
             # Standard logic
             is_reinvested_dividend = (
                 transaction_type == TransactionType.DIVIDEND
@@ -201,18 +162,23 @@ def create_transaction(
                     asset_id=asset_id_to_use,
                     transaction_in=transaction_create_schema,
                 )
+                created_transactions.append(transaction)
             else:
                 logger.debug(
                     "else part of create transaction logic for %s", transaction_type
                 )
-                transaction = crud.transaction.create_with_portfolio(
+                # create_with_portfolio can return multiple transactions (e.g., RSU +
+                # Sell to Cover)
+                newly_created = crud.transaction.create_with_portfolio(
                     db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
                 )
-                if asset_to_use.asset_type == "PPF":
+                if isinstance(newly_created, list):
+                    created_transactions.extend(newly_created)
+                else:
+                    created_transactions.append(newly_created)
+
+                if asset_to_use and asset_to_use.asset_type == "PPF":
                     trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
-
-            created_transactions.append(transaction)
-
     except HTTPException as e:
         db.rollback()
         raise e

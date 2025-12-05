@@ -45,26 +45,23 @@ We will extend the existing `transactions` table to accommodate the new data poi
     *   **`RSU_VEST` Metadata Schema:**
         ```json
         {
-          "grant_date": "YYYY-MM-DD",
-          "fmv_at_vest": 150.25,
+          "fmv": 150.25,
           "fx_rate": 83.50,
           "sell_to_cover": { ... }
         }
         ```
         *   The main `transaction.price_per_unit` will be set to `0.00` to reflect the user's cost.
-        *   The `fmv_at_vest` will be stored in the metadata and used by the analytics engine to calculate performance.
+        *   The `fmv` (Fair Market Value) will be stored in the metadata and used by the analytics engine to calculate performance.
 
     *   **`ESPP_PURCHASE` Metadata Schema:**
         ```json
         {
-          "offering_begin_date": "YYYY-MM-DD",
-          "market_price": 160.50,
-          "discount_percentage": 15.0,
+          "fmv": 160.50,
           "fx_rate": 83.50
         }
         ```
         *   The main `transaction.price_per_unit` will store the actual discounted price paid by the employee.
-        *   The metadata will provide context about the discount and the market price on the purchase date.
+        *   The `fmv` (Market Price) is stored in the metadata for informational purposes.
 
 ### 4.2. API Endpoint Modifications
 
@@ -86,12 +83,13 @@ The existing transaction endpoints will be used, but the logic will be enhanced.
 
 #### On-the-Fly Asset Creation
 
-The existing asset search component, used for adding standard stock transactions, will be reused for the "Add Award" modal. This component allows users to search for assets by name or ticker. To support cases where a user's company stock is not yet in the database, this component will be enhanced with the following on-the-fly creation capabilities:
+The asset search component provides a robust, user-driven flow for creating new assets that don't yet exist in the local database. This prevents the system from being cluttered with incorrect assets due to typos.
 
 1.  User types a ticker that does not exist (e.g., "ACME.L").
-2.  The dropdown will present an option: **"Add new asset 'ACME.L'..."**.
-3.  Upon selection, the backend will use `yfinance` to look up the ticker, create a new record in the `assets` table, and return the new asset's details.
-4.  The modal will then proceed with the newly created asset.
+2.  The backend's `/lookup` endpoint searches for potential matches from external providers (like Yahoo Finance) and returns them to the frontend.
+3.  If the user selects a search result, the frontend makes a second request to the backend to create a new, permanent asset record in the local database.
+4.  If no results are found, the UI presents an option to **"Create Asset 'ACME.L'..."**, allowing the user to confirm the creation.
+5.  The modal then proceeds with the newly created asset.
 
 ```
  +------------------------------------------------------+
@@ -107,6 +105,7 @@ To ensure clarity, the user journey for adding an ESPP or RSU award will be as f
 #### Step 1: Initiate "Add Award"
  
 The user navigates to their portfolio and clicks the "Add" button, which now presents a dropdown menu.
+The user navigates to their portfolio. The "Add Transaction" button is a **split button**. The primary action (clicking the main button area) immediately opens the standard transaction modal. The dropdown reveals the new "Add ESPP/RSU Award" option. This keeps the most common workflow fast and intuitive.
  
 ```
  +-----------------------+

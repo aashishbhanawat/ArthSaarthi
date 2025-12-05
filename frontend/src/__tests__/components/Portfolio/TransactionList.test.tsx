@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import TransactionList from '../../../components/Portfolio/TransactionList';
 import { Transaction } from '../../../types/portfolio';
 import { formatDate, formatCurrency } from '../../../utils/formatting';
+import { PrivacyProvider } from '../../../context/PrivacyContext';
 
 const mockTransactions: Transaction[] = [
   {
@@ -37,7 +38,11 @@ describe('TransactionList', () => {
   });
 
   it('renders a list of transactions with correct data and formatting', () => {
-    render(<TransactionList transactions={mockTransactions} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
+    render(
+      <PrivacyProvider>
+        <TransactionList transactions={mockTransactions} onEdit={mockOnEdit} onDelete={mockOnDelete} />
+      </PrivacyProvider>
+    );
 
     // Check for headers
     expect(screen.getByRole('columnheader', { name: /date/i })).toBeInTheDocument();
@@ -48,12 +53,16 @@ describe('TransactionList', () => {
     const firstTx = mockTransactions[0];
     expect(screen.getByText(formatDate(firstTx.transaction_date))).toBeInTheDocument();
     expect(screen.getByText(firstTx.asset.ticker_symbol)).toBeInTheDocument();
-    expect(screen.getByText(formatCurrency(Number(firstTx.price_per_unit)))).toBeInTheDocument();
+    expect(screen.getByText(formatCurrency(Number(firstTx.price_per_unit), firstTx.asset.currency))).toBeInTheDocument();
     expect(screen.getByText(firstTx.transaction_type)).toBeInTheDocument();
   });
 
   it('calls onEdit with the correct transaction when the edit button is clicked', () => {
-    render(<TransactionList transactions={mockTransactions} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
+    render(
+      <PrivacyProvider>
+        <TransactionList transactions={mockTransactions} onEdit={mockOnEdit} onDelete={mockOnDelete} />
+      </PrivacyProvider>
+    );
     
     const editButton = screen.getByRole('button', { name: /edit transaction for AAPL/i });
     fireEvent.click(editButton);
@@ -63,7 +72,11 @@ describe('TransactionList', () => {
   });
 
   it('calls onDelete with the correct transaction when the delete button is clicked', () => {
-    render(<TransactionList transactions={mockTransactions} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
+    render(
+      <PrivacyProvider>
+        <TransactionList transactions={mockTransactions} onEdit={mockOnEdit} onDelete={mockOnDelete} />
+      </PrivacyProvider>
+    );
     
     const deleteButton = screen.getByRole('button', { name: /delete transaction for GOOGL/i });
     fireEvent.click(deleteButton);
@@ -73,7 +86,11 @@ describe('TransactionList', () => {
   });
 
   it('renders a message when there are no transactions', () => {
-    render(<TransactionList transactions={[]} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
+    render(
+      <PrivacyProvider>
+        <TransactionList transactions={[]} onEdit={mockOnEdit} onDelete={mockOnDelete} />
+      </PrivacyProvider>
+    );
     expect(screen.getByText(/no transactions found/i)).toBeInTheDocument();
   });
 });

@@ -1,7 +1,8 @@
+import logging
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
@@ -10,7 +11,10 @@ from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.crud.base import CRUDBase
 from app.models.transaction import Transaction
+from app.schemas.enums import TransactionType
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate]):
@@ -44,18 +48,61 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
     # The create_with_portfolio method is now simplified.
     # The complex logic for creating a new asset is removed.
     def create_with_portfolio(
-        self, db: Session, *, obj_in: schemas.TransactionCreate, portfolio_id: uuid.UUID
-    ) -> Transaction:
+        self,
+        db: Session,
+        *,
+        obj_in: schemas.TransactionCreate,
+        portfolio_id: uuid.UUID,
+    ) -> Union[Transaction, List[Transaction]]:
+        logger.debug(
+            f"Entering create_with_portfolio for type: {obj_in.transaction_type}"
+        )
+
+        # --- Idempotency Check for the main transaction ---
+        # To prevent duplicate submissions from the frontend, check if a very
+        # similar transaction was created recently.
+        # This is particularly for the RSU/ESPP flow.
+        if obj_in.transaction_type in [
+            TransactionType.RSU_VEST,
+            TransactionType.ESPP_PURCHASE,
+        ]:
+            logger.debug(
+                f"idempotency check for {obj_in.transaction_type} transaction."
+            )
+            existing_tx = self.get_by_details(
+                db,
+                portfolio_id=portfolio_id,
+                asset_id=obj_in.asset_id,
+                transaction_date=obj_in.transaction_date,
+                transaction_type=obj_in.transaction_type,
+                quantity=obj_in.quantity,
+                price_per_unit=obj_in.price_per_unit,
+            )
+            if existing_tx:
+                logger.warning(
+                    f"An identical {obj_in.transaction_type} transaction already "
+                    f"exists (ID: {existing_tx.id}). Skipping creation of duplicate."
+                )
+                return existing_tx
+
         portfolio = crud.portfolio.get(db=db, id=portfolio_id)
         if not portfolio:
             raise HTTPException(status_code=404, detail="Portfolio not found")
 
-        if obj_in.transaction_type.upper() == "SELL":
+        # Check for sufficient holdings only for standalone SELL transactions.
+        # This check is skipped for 'Sell to Cover' which is created atomically
+        # with its parent RSU Vest.
+        is_sell_to_cover = obj_in.details and "related_rsu_vest_id" in obj_in.details
+        if obj_in.transaction_type.upper() == "SELL" and not is_sell_to_cover:
             current_holdings = self.get_holdings_on_date(
                 db,
                 user_id=portfolio.user_id,
                 asset_id=obj_in.asset_id,
                 on_date=obj_in.transaction_date,
+            )
+            logger.debug(
+                f"Checking holdings for SELL. Current: {current_holdings}, "
+                f"Attempting to sell: {obj_in.quantity}"
             )
             # Use a small epsilon for float comparison if needed, but Decimal is exact
             if obj_in.quantity > current_holdings:
@@ -73,6 +120,77 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
+
+        # --- Handle "Sell to Cover" for RSU Vest ---
+        # If the transaction is an RSU vest and has sell_to_cover details,
+        # create a corresponding SELL transaction.
+        logger.debug(
+            "Checking for sell_to_cover. Type: %s, Details: %s",
+            db_obj.transaction_type,
+            db_obj.details,
+        )
+        if (
+            db_obj.transaction_type == TransactionType.RSU_VEST
+            and db_obj.details
+            and "sell_to_cover" in db_obj.details
+        ):
+            logger.debug(
+                "RSU_VEST with sell_to_cover found. Creating SELL transaction."
+            )
+            sell_details = db_obj.details["sell_to_cover"]
+            sell_quantity = Decimal(str(sell_details.get("quantity", 0)))
+
+            if sell_quantity > 0:
+                # --- Idempotency Check ---
+                # Check if a SELL transaction for this RSU vest already exists.
+                existing_sell = db.query(Transaction).filter(
+                    Transaction.portfolio_id == portfolio_id,
+                    Transaction.transaction_type == TransactionType.SELL,
+                    Transaction.details.op("->>")("related_rsu_vest_id")
+                    == str(db_obj.id),
+                ).first()
+
+                if existing_sell:
+                    logger.warning(
+                        "A 'Sell to Cover' transaction for RSU Vest ID %s already "
+                        "exists. Skipping creation of duplicate.",
+                        db_obj.id,
+                    )
+                    return [db_obj, existing_sell]
+
+                logger.debug(
+                    "Sell quantity > 0 (%s). Proceeding with recursive call.",
+                    sell_quantity,
+                )
+                # Create the SELL transaction
+                sell_transaction_in = schemas.TransactionCreate(
+                    asset_id=db_obj.asset_id,
+                    transaction_type=TransactionType.SELL,
+                    quantity=sell_quantity,
+                    price_per_unit=Decimal(str(sell_details.get("price_per_unit", 0))),
+                    transaction_date=db_obj.transaction_date,
+                    details={
+                        "fx_rate": db_obj.details.get("fx_rate"),
+                        "related_rsu_vest_id": str(db_obj.id),
+                    },
+                )
+                # Recursively call create_with_portfolio for the SELL transaction
+                logger.debug(
+                    "calling create_with_portfolio for SELL transaction recusively."
+                )
+                logger.debug(f"sell_transaction_in: {sell_transaction_in}")
+                sell_tx = self.create_with_portfolio(
+                    db,
+                    obj_in=sell_transaction_in,
+                    portfolio_id=portfolio_id,
+                )
+                return [db_obj, sell_tx]
+                logger.debug("Done with recursive call.")
+            else:
+                logger.debug("Sell quantity is 0. Skipping SELL transaction creation.")
+        else:
+            logger.debug("Condition for sell_to_cover not met. No recursive call.")
+
         return db_obj
 
     def get_multi_by_user_with_filters(

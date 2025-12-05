@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
+import pandas as pd
 import yfinance as yf
 from pydantic import ValidationError
 
@@ -204,27 +205,49 @@ class YFinanceProvider(FinancialDataProvider):
             yf_data = yf.download(
                 yfinance_tickers_str,
                 start=start_date,
-                end=end_date + timedelta(days=1),
+                end=end_date + timedelta(days=1),  # end date is exclusive
                 progress=False,
             )
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
                 if close_prices is not None:
-                    # yf.download with single ticker returns Series, multiple returns
-                    # DataFrame. We need to handle both.
-                    if len(yfinance_tickers_map) == 1:
-                        yf_ticker = list(yfinance_tickers_map.keys())[0]
+                    # yf.download with a single ticker returns a Series for 'Close'.
+                    # With multiple tickers, it returns a DataFrame.
+                    if isinstance(close_prices, pd.Series):
                         original_ticker = list(yfinance_tickers_map.values())[0]
-                        # Series logic
                         for a_date, price in close_prices.dropna().items():
-                            historical_data[original_ticker][
-                                a_date.date()] = Decimal(str(price))
+                            try:
+                                historical_data[original_ticker][
+                                    a_date.date()] = Decimal(str(price))
+                            except Exception:
+                                logger.error(
+                                    "Failed to convert price for %s on %s. "
+                                    "Price: '%s', Type: %s",
+                                    original_ticker,
+                                    a_date.date(),
+                                    price,
+                                    type(price),
+                                )
+                    # Handle DataFrame for multiple tickers
                     else:
                         for yf_ticker, original_ticker in yfinance_tickers_map.items():
                             if yf_ticker in close_prices:
-                                for a_date, price in close_prices[yf_ticker].dropna().items(): # noqa: E501
-                                    historical_data[original_ticker][
-                                        a_date.date()] = Decimal(str(price))
+                                for a_date, price in close_prices[
+                                    yf_ticker
+                                ].dropna().items():
+                                    try:
+                                        historical_data[original_ticker][
+                                            a_date.date()] = Decimal(str(price))
+                                    except Exception:
+                                        logger.error(
+                                            "Failed to convert price for %s on %s. "
+                                            "Price: '%s', Type: %s",
+                                            original_ticker,
+                                            a_date.date(),
+                                            price,
+                                            type(price),
+                                        )
+
         except (Exception, ValidationError) as e:
             print(f"WARNING: Error fetching historical data from yfinance: {e}")
             return {}
@@ -233,7 +256,9 @@ class YFinanceProvider(FinancialDataProvider):
             fetched_tickers = set(historical_data.keys())
             for asset in assets_to_fetch:
                 if asset["ticker_symbol"] not in fetched_tickers:
-                    cache_key = f"asset_details_not_found:{asset['ticker_symbol'].upper()}" # noqa: E501
+                    cache_key = (
+                        f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
+                    )
                     self.cache_client.set_json(
                         cache_key,
                         {"not_found": True},
@@ -277,7 +302,14 @@ class YFinanceProvider(FinancialDataProvider):
                         "ETF": "ETF",
                         "CRYPTOCURRENCY": "Crypto",
                     }
-                    return {"name": info.get("shortName") or info.get("longName"), "asset_type": asset_type_map.get(info.get("quoteType"), "Stock"), "exchange": info.get("exchange"), "currency": info.get("currency", "INR")} # noqa: E501
+                    return {
+                        "name": info.get("shortName") or info.get("longName"),
+                        "asset_type": asset_type_map.get(
+                            info.get("quoteType"), "Stock"
+                        ),
+                        "exchange": info.get("exchange"),
+                        "currency": info.get("currency", "INR"),
+                    }
             except (IndexError, KeyError):
                 pass
 
@@ -290,7 +322,9 @@ class YFinanceProvider(FinancialDataProvider):
 
     def get_price(self, ticker_symbol: str) -> Optional[Decimal]:
         ticker_obj = None
-        for yf_ticker_str in [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]: # noqa: E501
+        for yf_ticker_str in [
+            f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
+        ]:
             temp_ticker = yf.Ticker(yf_ticker_str)
             if not temp_ticker.history(period="1d").empty:
                 ticker_obj = temp_ticker
@@ -308,18 +342,40 @@ class YFinanceProvider(FinancialDataProvider):
     def get_exchange_rate(
         self, from_currency: str, to_currency: str, date_obj: date
     ) -> Optional[Decimal]:
+        """
+        Fetches the exchange rate for a given date. If the rate for the exact
+        date is not available (e.g., holiday/weekend), it finds the most
+        recent previous day's rate within a 7-day window.
+        """
+        # 1. Input validation: Prevent invalid dates from reaching yfinance
+        if date_obj.year < 1900:
+            logger.error(
+                "Received invalid year in date for FX rate lookup: %s", date_obj
+            )
+            return None
+
         ticker = f"{from_currency}{to_currency}=X"
-        # Use get_historical_prices for single day
+        # Fetch a 7-day window to robustly handle weekends and holidays.
+        # yfinance `end` is exclusive, so we add one day.
+        start_date = date_obj - timedelta(days=7)
+        end_date = date_obj + timedelta(days=1)
+
         result = self.get_historical_prices(
-            [{"ticker_symbol": ticker, "exchange": None}],
-            date_obj,
-            date_obj
+            [{"ticker_symbol": ticker, "exchange": None}], # type: ignore
+            start_date,
+            end_date
         )
-        if result and ticker in result and date_obj in result[ticker]:
-             return result[ticker][date_obj]
-
-        # If today, fallback to get_price which uses history('2d') or similar
-        if date_obj == date.today():
-             return self.get_price(ticker)
-
+        if result and ticker in result and result[ticker]:
+            # Find the most recent available date up to and including the
+            # requested date
+            available_dates = sorted(
+                [d for d in result[ticker].keys() if d <= date_obj], reverse=True
+            )
+            if available_dates:
+                latest_available_date = available_dates[0]
+                logger.info(
+                    "Using FX rate from %s for requested date %s",
+                    latest_available_date, date_obj
+                )
+                return result[ticker][latest_available_date]
         return None

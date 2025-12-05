@@ -9,6 +9,8 @@ This document outlines enhancements to the existing dividend tracking functional
 1.  **Dividend Reinvestment Plan (DRIP) for Stocks:** Adding a clear workflow for handling stock dividends that are automatically reinvested.
 2.  **Currency Conversion for Foreign Dividends:** Adding support for correctly logging dividends received in a foreign currency (e.g., USD), including for reinvestment scenarios.
 
+This plan will adopt the standards established in `FR8.1.1` for handling foreign currency and transaction metadata.
+
 ## 2. Dividend Reinvestment Plan (DRIP) for Domestic Stocks
 
 ### Problem
@@ -44,19 +46,19 @@ The system currently assumes all dividends are paid in INR. It cannot accurately
 We will enhance the dividend form to handle foreign currencies, making the auto-fetched FX rate editable to match broker statements.
 
 *   **UI Change:** When adding a dividend for a foreign asset, the form will show an "INR Conversion" section.
-*   **Backend Logic:** The `exchange_rate_to_inr` will be stored in the `metadata` of the `DIVIDEND` transaction. The transaction's `price_per_unit` will be 1, and `quantity` will store the dividend amount in the foreign currency.
+*   **Backend Logic:** The `fx_rate` will be stored in the `details` field of the `DIVIDEND` transaction. The transaction's `price_per_unit` will be `1`, and `quantity` will store the dividend amount in the foreign currency.
 
 #### Mockup: Foreign Stock Dividend (Cash)
 
 ```text
-│  Action Type: [ Dividend ▼ ]                           │
+│  Action Type: [ Dividend ▼ ]                             │
 │                                                          │
 │  Asset: [ Google (GOOGL) ▼ ]                             │
-│  Payment Date:     [ 2025-12-01   ]                       │
+│  Payment Date:     [ 2025-12-01   ]                      │
 │  Total Amount:     [ 20.00        ] USD                  │
 │                                                          │
-│  ----------------- INR Conversion -----------------   │
-│  FX Rate (USD-INR): [ 83.50 (auto) ]  <-- User can edit
+│  ----------------- INR Conversion -----------------      │
+│  FX Rate (USD-INR): [ 83.50 (auto-fetched)         ]     │  <-- User can edit
 │  Value (INR):      [ ₹1,670.00    ] (read-only)          │
 │                                     [ Cancel ] [ Save ]  │
 ```
@@ -77,22 +79,22 @@ The UI will combine all necessary fields and allow the user to enter the informa
 #### Mockup: Foreign Stock Dividend with Reinvestment
 
 ```text
-│  Action Type: [ Dividend ▼ ]                           │
+│  Action Type: [ Dividend ▼ ]                             │
 │                                                          │
 │  Asset: [ Google (GOOGL) ▼ ]                             │
-│  Payment Date:     [ 2025-12-01   ]                       │
+│  Payment Date:     [ 2025-12-01   ]                      │
 │  Total Amount:     [ 20.00        ] USD                  │
 │                                                          │
-│  ----------------- INR Conversion -----------------   │
+│  ----------------- INR Conversion -----------------      │
 │  FX Rate (USD-INR): [ 83.50 (auto) ]  <-- User can edit
 │  Value (INR):      [ ₹1,670.00    ] (read-only)          │
 │                                                          │
 │  [x] Reinvest Dividend                                   │
-│  ---------------- Reinvestment Details --------------   │
+│  ---------------- Reinvestment Details --------------    │
 │  (Enter either Price or New Shares)                      │
 │                                                          │
-│  Reinvestment Price: [ 180.00       ] USD                  │
-│  New Shares Received: [ 0.11111111   ] (read-only)        │
+│  Reinvestment Price: [ 180.00       ] USD                │
+│  New Shares Received: [ 0.11111111   ] (read-only)       │
 │                                                          │
 │                                     [ Cancel ] [ Save ]  │
 ```

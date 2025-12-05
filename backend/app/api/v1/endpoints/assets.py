@@ -132,6 +132,7 @@ def lookup_ticker_symbol(
 
     # 3. If found externally, create it locally
     details["ticker_symbol"] = query.upper()
+    details["asset_type"] = details["asset_type"].upper()
     asset_in = schemas.AssetCreate(**details)
 
     new_asset = crud.asset.create(db=db, obj_in=asset_in)

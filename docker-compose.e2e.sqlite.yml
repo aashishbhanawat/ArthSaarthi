@@ -40,7 +40,7 @@ services:
   e2e-tests:
     build: ./e2e
     container_name: pms-e2e-tests
-    command: ["npx", "playwright", "test", "espp-rsu.spec.ts"]
+    command: ["npx", "playwright", "test"]
     volumes:
       - ./e2e:/app
       - /app/node_modules
