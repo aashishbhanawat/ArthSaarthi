@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.cache.utils import cache_analytics_data
+from app.core.config import settings
 from app.crud.crud_ppf import process_ppf_holding
 from app.models.recurring_deposit import RecurringDeposit
 from app.schemas.enums import BondType
@@ -161,6 +162,7 @@ def _process_fixed_deposits(
                 ticker_symbol=fd.account_number,
                 asset_name=fd.name,
                 asset_type="FIXED_DEPOSIT",
+                currency="INR",
                 group="DEPOSITS",
                 quantity=Decimal(1),
                 average_buy_price=fd.principal_amount,
@@ -239,6 +241,7 @@ def _process_recurring_deposits(
             schemas.Holding(
                 asset_id=rd.id,
                 asset_name=rd.name,
+                currency="INR",
                 asset_type="RECURRING_DEPOSIT",
                 group="DEPOSITS",
                 quantity=Decimal(1),
@@ -313,6 +316,20 @@ def _process_market_traded_assets(
     holdings_list = []
     total_realized_pnl = initial_realized_pnl
 
+    # This query is the key fix. It was missing. We need to find all unique
+    # assets that have had any kind of transaction to be considered for holdings.
+    unique_asset_ids_query = (
+        db.query(models.Transaction.asset_id)
+        .filter(models.Transaction.portfolio_id == portfolio_id)
+        .filter(
+            models.Transaction.transaction_type.in_(
+                ["BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE"]
+            )
+        )
+        .distinct()
+    )
+    unique_asset_ids = [row[0] for row in unique_asset_ids_query.all()]
+
     holdings_state = defaultdict(
         lambda: {
             "quantity": Decimal("0.0"),
@@ -321,49 +338,47 @@ def _process_market_traded_assets(
         }
     )
 
-    portfolio_assets = crud.asset.get_multi_by_portfolio(db, portfolio_id=portfolio_id)
-    asset_map = {asset.ticker_symbol: asset for asset in portfolio_assets}
+    portfolio_assets = (
+        db.query(models.Asset).filter(models.Asset.id.in_(unique_asset_ids)).all()
+    )
+    asset_map = {asset.id: asset for asset in portfolio_assets}
+
+    # Sort transactions by date to ensure chronological processing
+    transactions.sort(key=lambda tx: tx.transaction_date)
 
     for tx in transactions:
-        asset = asset_map.get(tx.asset.ticker_symbol) if tx.asset else None
-        if not asset:
-            asset = next((a for a in portfolio_assets if a.id == tx.asset_id), None)
+        asset = asset_map.get(tx.asset_id)
         ticker = asset.ticker_symbol if asset else None
-        if tx.transaction_type == "BUY":
+        if not ticker:
+            continue # Should not happen if data is consistent
+
+        acquisition_types = ["BUY", "ESPP_PURCHASE", "RSU_VEST"]
+        if tx.transaction_type in acquisition_types:
+            fx_rate = (
+                Decimal(str(tx.details.get("fx_rate", 1))) if tx.details else Decimal(1)
+            )
             holdings_state[ticker]["quantity"] += tx.quantity
-            holdings_state[ticker]["total_invested"] += tx.quantity * tx.price_per_unit
+
+            if tx.transaction_type == "RSU_VEST" and tx.details:
+                cost_basis_price = Decimal(str(tx.details.get("fmv", 0)))
+            else: # For BUY and ESPP, cost basis is the actual price paid.
+                cost_basis_price = tx.price_per_unit
+            cost_in_inr = tx.quantity * cost_basis_price * fx_rate
+            holdings_state[ticker]["total_invested"] += cost_in_inr
         elif tx.transaction_type == "DIVIDEND":
-            logger.debug(
-                "[_process_market_traded_assets] Found DIVIDEND transaction for "
-                "ticker %s. Quantity: %s, Price: %s",
-                tx.asset.ticker_symbol,
-                tx.quantity,
-                tx.price_per_unit,
-            )
             dividend_amount = tx.quantity * tx.price_per_unit
-            logger.debug(
-                "Adding %s to portfolio total_realized_pnl and asset realized_pnl.",
-                dividend_amount,
-            )
             total_realized_pnl += dividend_amount
             holdings_state[ticker]["realized_pnl"] += dividend_amount
         elif tx.transaction_type == "COUPON":
-            logger.debug(
-                "[_process_market_traded_assets] Found COUPON transaction for "
-                "ticker %s. Amount: %s. Price: %s",
-                tx.asset.ticker_symbol,
-                tx.quantity,
-                tx.price_per_unit,
-            )
             coupon_amount = tx.quantity * tx.price_per_unit
-            logger.debug(
-                "Adding %s to portfolio total_realized_pnl and asset realized_pnl.",
-                coupon_amount,
-            )
             total_realized_pnl += coupon_amount
             holdings_state[ticker]["realized_pnl"] += coupon_amount
         elif tx.transaction_type == "SELL":
             if holdings_state[ticker]["quantity"] > 0:
+                logger.debug(
+                    f"Processing SELL tx {tx.id} for {ticker}. "
+                    f"Details: {tx.details}"
+                )
                 avg_buy_price = (
                     holdings_state[ticker]["total_invested"]
                     / holdings_state[ticker]["quantity"]
@@ -375,13 +390,21 @@ def _process_market_traded_assets(
                     tx.price_per_unit,
                     tx.quantity,
                 )
+                # For foreign stocks, the sale price must be converted to INR
+                fx_rate = (
+                    Decimal(str(tx.details.get("fx_rate", 1)))
+                    if tx.details
+                    else Decimal(1)
+                )
                 realized_pnl_for_sale = (
-                    tx.price_per_unit - avg_buy_price
+                    (tx.price_per_unit * fx_rate) - avg_buy_price
                 ) * tx.quantity
                 total_realized_pnl += realized_pnl_for_sale
                 holdings_state[ticker]["realized_pnl"] += realized_pnl_for_sale
-                proportion_sold = tx.quantity / holdings_state[ticker]["quantity"]
-                holdings_state[ticker]["total_invested"] *= 1 - proportion_sold
+
+                # Reduce the total invested amount by the cost basis of the shares sold
+                cost_of_shares_sold = avg_buy_price * tx.quantity
+                holdings_state[ticker]["total_invested"] -= cost_of_shares_sold
                 holdings_state[ticker]["quantity"] -= tx.quantity
 
     current_holdings_tickers = [
@@ -391,8 +414,15 @@ def _process_market_traded_assets(
     assets_to_price = [
         {
             "ticker_symbol": ticker,
-            "exchange": asset_map[ticker].exchange,
-            "asset_type": asset_map[ticker].asset_type,
+            "exchange": next((
+                a.exchange for a in asset_map.values()
+                if a.ticker_symbol == ticker
+            ), None),
+            "asset_type": next((
+                a.asset_type
+                for a in asset_map.values()
+                if a.ticker_symbol == ticker
+            ), None),
         }
         for ticker in current_holdings_tickers
     ]
@@ -404,7 +434,7 @@ def _process_market_traded_assets(
     )
 
     for ticker in current_holdings_tickers:
-        asset = asset_map[ticker]
+        asset = next((a for a in asset_map.values() if a.ticker_symbol == ticker), None)
         data = holdings_state[ticker]
         price_info = price_details.get(
             ticker, {"current_price": Decimal(0), "previous_close": Decimal(0)}
@@ -464,12 +494,27 @@ def _process_market_traded_assets(
         )
         current_value = quantity * current_price
 
+        # --- FX Conversion for Current Value ---
+        # If the asset is not in INR, its current value must be converted.
+        if asset.currency != "INR":
+            # Find the latest transaction for this asset to get a recent fx_rate
+            latest_tx = max((
+                tx for tx in transactions
+                if tx.asset_id == asset.id and tx.details and "fx_rate" in tx.details
+            ), key=lambda t: t.transaction_date, default=None)
+
+            if latest_tx and latest_tx.details:
+                fx_rate = Decimal(str(latest_tx.details.get("fx_rate", 1)))
+                current_value *= fx_rate
+                # days_pnl is already calculated in INR equivalent
+
         holdings_list.append(
             schemas.Holding(
                 asset_id=asset.id,
                 ticker_symbol=ticker,
                 asset_name=asset.name,
                 asset_type=asset.asset_type,
+                currency=asset.currency, # This is the currency of the asset's price
                 group="EQUITIES",  # Placeholder, will be set properly later
                 quantity=quantity,
                 average_buy_price=average_buy_price,
@@ -484,6 +529,13 @@ def _process_market_traded_assets(
                 bond=asset.bond,
             )
         )
+
+    if settings.DEBUG:
+        logger.debug("--- Market Traded Holdings ---")
+        for h in holdings_list:
+            logger.debug(h.model_dump_json(indent=2))
+        logger.debug("------------------------------")
+
     return holdings_list, total_realized_pnl
 
 

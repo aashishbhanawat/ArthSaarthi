@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCurrency } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatPercentage } from '../../utils/formatting';
 import { TopMover } from '../../types/dashboard';
 
 
@@ -8,6 +8,7 @@ interface TopMoversTableProps {
 }
 
 const TopMoversTable: React.FC<TopMoversTableProps> = ({ assets }) => {
+  const formatCurrency = usePrivacySensitiveCurrency();
   const getPnlColor = (value: number) => {
     if (value > 0) return 'text-green-600';
     if (value < 0) return 'text-red-600';
@@ -34,10 +35,10 @@ const TopMoversTable: React.FC<TopMoversTableProps> = ({ assets }) => {
                     <div className="font-bold">{asset.ticker_symbol}</div>
                     <div className="text-sm text-gray-500">{asset.name}</div>
                   </td>
-                  <td className="p-2 text-right font-mono">{formatCurrency(asset.current_price)}</td>
-                  <td className={`p-2 text-right font-mono ${getPnlColor(asset.daily_change)}`}>
-                    <div>{formatCurrency(asset.daily_change)}</div>
-                    <div className="text-sm">({asset.daily_change_percentage.toFixed(2)}%)</div>
+                  <td className="p-2 text-right font-mono">{formatCurrency(asset.current_price, asset.currency)}</td>
+                  <td className={`p-2 text-right font-mono ${getPnlColor(asset.daily_change)}`} data-testid={`top-mover-change-${asset.ticker_symbol}`}>
+                    <div>{formatCurrency(asset.daily_change, 'INR')}</div>
+                    <div className="text-sm">({formatPercentage(asset.daily_change_percentage)})</div>
                   </td>
                 </tr>
               ))

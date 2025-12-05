@@ -1,9 +1,9 @@
 # ArthSaarthi - Personal Portfolio Management System
 
 [![CI/CD Status](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml/badge.svg)](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml)
-[![Backend Tests](https://img.shields.io/badge/Backend_Tests-131/131-brightgreen)](#)
-[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-159/159-brightgreen)](#)
-[![E2E Tests](https://img.shields.io/badge/E2E_Tests-21/21-brightgreen)](#)
+[![Backend Tests](https://img.shields.io/badge/Backend_Tests-162/162-brightgreen)](#)
+[![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-174/174-brightgreen)](#)
+[![E2E Tests](https://img.shields.io/badge/E2E_Tests-30/30-brightgreen)](#)
 
 ---
 
@@ -25,6 +25,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
     *   Full CRUD functionality for portfolios.
     *   Full CRUD functionality for transactions, including a dedicated, filterable **Transaction History** page and support for logging corporate actions (**Dividends, Stock Splits, Bonus Issues**).
     *   Full CRUD and tracking for **Fixed Deposits (FDs)**, **Recurring Deposits (RDs)**, **Public Provident Fund (PPF)** accounts, and **Bonds** with detailed analytics.
+    *   **ESPP/RSU Tracking:** A dedicated workflow to add and edit ESPP/RSU awards, including support for 'Sell to Cover' tax withholding transactions.
 *   **Consolidated Holdings View:** A redesigned portfolio page that shows a consolidated holdings table with sorting, replacing a simple transaction list.
 *   **Sectioned Holdings Table:** A redesigned holdings table that groups assets by class into collapsible sections for a clearer overview.
 *   **Mutual Fund Dividend Tracking:** Manually log cash or reinvested dividends for mutual fund holdings.

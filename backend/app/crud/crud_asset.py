@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional
 
-from sqlalchemy import func, or_
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app import crud, models, schemas
@@ -125,12 +125,13 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
     def search_by_name_or_ticker(
         self, db: Session, *, query: str, asset_type: Optional[str] = None
     ) -> List[Asset]:
-        # Use wildcards and ensure lowercase for case-insensitive search.
-        search = f"%{query.lower()}%"
+        # Use ILIKE for case-insensitive search on PostgreSQL, and it works
+        # correctly on SQLite as well, providing a consistent behavior.
+        search_term = f"%{query}%"
         db_query = db.query(self.model).filter(
             or_(
-                func.lower(self.model.name).like(search),
-                func.lower(self.model.ticker_symbol).like(search),
+                self.model.name.ilike(search_term),
+                self.model.ticker_symbol.ilike(search_term),
             )
         )
         if asset_type:

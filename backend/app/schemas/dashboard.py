@@ -31,6 +31,7 @@ class AssetAllocationResponse(BaseModel):
 
 class TopMover(BaseModel):
     ticker_symbol: str
+    currency: str
     name: str
     current_price: Decimal
     daily_change: Decimal

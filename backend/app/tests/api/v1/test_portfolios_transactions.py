@@ -42,7 +42,7 @@ def test_create_transaction_with_existing_asset(
         json=transaction_payload,
     )
     assert response.status_code == 201, response.json()
-    content_list = response.json()
+    content_list = response.json()["created_transactions"]
     assert isinstance(content_list, list)
     assert len(content_list) == 1
     content = content_list[0]
@@ -92,7 +92,7 @@ def test_create_transaction_with_new_mutual_fund_asset(
         json=transaction_payload,
     )
     assert response.status_code == 201, response.json()
-    data_list = response.json()
+    data_list = response.json()["created_transactions"]
     assert isinstance(data_list, list)
     assert len(data_list) == 1
     data = data_list[0]
