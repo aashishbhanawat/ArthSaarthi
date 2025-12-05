@@ -487,7 +487,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 updateTransactionMutation.mutate({ portfolioId, transactionId: transactionToEdit.id, data: payload }, mutationOptions);
             } else {
                 const commonPayload = {
-                    transaction_type: data.transaction_type,
+                    transaction_type: data.transaction_type as unknown as TransactionType,
                     quantity: data.quantity,
                     price_per_unit: data.price_per_unit,
                     transaction_date: new Date(data.transaction_date).toISOString(),

@@ -8,6 +8,7 @@ from app.api.v1.endpoints import (
     auth,
     dashboard,
     fixed_deposits,
+    fx,
     goals,
     import_sessions,
     me,
@@ -52,6 +53,8 @@ api_router.include_router(
     prefix="/admin/interest-rates",
     tags=["admin-interest-rates"],
 )
+api_router.include_router(fx.router, prefix="/fx-rate", tags=["fx-rate"])
+
 # Conditionally include the testing router only in the test environment
 logger.warning(f"Current ENVIRONMENT in api.py: '{settings.ENVIRONMENT}'")
 logger.warning(f"CORS confiured: {settings.CORS_ORIGINS}")

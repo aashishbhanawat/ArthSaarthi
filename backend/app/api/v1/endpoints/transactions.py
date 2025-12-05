@@ -69,7 +69,7 @@ def read_transactions(
     return {"transactions": transactions, "total": total}
 
 
-@router.post("/", response_model=List[schemas.Transaction], status_code=201)
+@router.post("/", response_model=schemas.TransactionCreatedResponse, status_code=201)
 def create_transaction(
     *,
     db: Session = Depends(dependencies.get_db),
@@ -126,9 +126,7 @@ def create_transaction(
 
             transaction_type = transaction_in.transaction_type
 
-            # For reinvested dividends, we use a special handler.
-            # For simple cash dividends, we let it fall through to the standard
-            # creation logic.
+            # Standard logic
             is_reinvested_dividend = (
                 transaction_type == TransactionType.DIVIDEND
                 and getattr(transaction_in, "is_reinvested", False) is True
@@ -164,18 +162,23 @@ def create_transaction(
                     asset_id=asset_id_to_use,
                     transaction_in=transaction_create_schema,
                 )
+                created_transactions.append(transaction)
             else:
                 logger.debug(
                     "else part of create transaction logic for %s", transaction_type
                 )
-                transaction = crud.transaction.create_with_portfolio(
+                # create_with_portfolio can return multiple transactions (e.g., RSU +
+                # Sell to Cover)
+                newly_created = crud.transaction.create_with_portfolio(
                     db=db, obj_in=transaction_create_schema, portfolio_id=portfolio_id
                 )
-                if asset_to_use.asset_type == "PPF":
+                if isinstance(newly_created, list):
+                    created_transactions.extend(newly_created)
+                else:
+                    created_transactions.append(newly_created)
+
+                if asset_to_use and asset_to_use.asset_type == "PPF":
                     trigger_ppf_recalculation(db, asset_id=asset_to_use.id)
-
-            created_transactions.append(transaction)
-
     except HTTPException as e:
         db.rollback()
         raise e
@@ -190,7 +193,7 @@ def create_transaction(
     # Invalidate caches after successful commit
     invalidate_caches_for_portfolio(db, portfolio_id=portfolio_id)
 
-    return created_transactions
+    return {"created_transactions": created_transactions}
 
 
 @router.put("/{transaction_id}", response_model=schemas.Transaction)

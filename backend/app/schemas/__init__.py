@@ -67,6 +67,7 @@ from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
     TransactionCreate,
+    TransactionCreatedResponse,
     TransactionCreateIn,
     TransactionsResponse,
     TransactionType,
@@ -120,6 +121,7 @@ __all__ = [
     "TokenPayload",
     "Transaction",
     "TransactionCreate",
+    "TransactionCreatedResponse",
     "TransactionCreateIn",
     "TransactionUpdate",
     "TransactionsResponse",

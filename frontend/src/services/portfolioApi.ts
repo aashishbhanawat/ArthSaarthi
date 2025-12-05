@@ -1,8 +1,8 @@
 import apiClient from './api';
-import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate, TransactionsResponse, FixedDepositCreate, FixedDeposit, FixedDepositUpdate } from '../types/portfolio';
+import { Portfolio, Transaction, TransactionCreate, TransactionUpdate, PortfolioCreate, TransactionsResponse, FixedDepositCreate, FixedDeposit, FixedDepositUpdate, TransactionCreatedResponse, PpfCreate } from '../types/portfolio';
 import { Bond, BondCreate, BondUpdate } from '../types/bond';
 import { RecurringDeposit, RecurringDepositCreate, RecurringDepositUpdate, RecurringDepositDetails, RecurringDepositAnalytics } from '../types/recurring_deposit';
-import { Asset, PpfAccountCreate } from '../types/asset';
+import { Asset } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { PortfolioAnalytics, AssetAnalytics } from '../types/analytics';
 
@@ -37,7 +37,7 @@ export const lookupAsset = async (
 
 export const createPpfAccount = async (
     portfolioId: string,
-    ppfData: PpfAccountCreate
+    ppfData: PpfCreate
 ): Promise<Transaction> => {
     const response = await apiClient.post<Transaction>(`/api/v1/ppf-accounts/`, {
         ...ppfData,
@@ -50,7 +50,7 @@ export const createPpfAccount = async (
 export type AssetCreationPayload = {
     ticker_symbol: string;
     name: string;
-    asset_type: 'STOCK' | 'MUTUAL_FUND' | 'CRYPTO' | 'OTHER';
+    asset_type: 'STOCK' | 'MUTUAL_FUND' | 'CRYPTO' | 'OTHER' | 'BOND';
     currency?: string;
     exchange?: string;
 };
@@ -86,12 +86,12 @@ export const createTransaction = async (
     transactionData: TransactionCreate | TransactionCreate[]
 ): Promise<Transaction[]> => {
     // The create endpoint is top-level. The portfolio_id is passed as a query parameter.
-    const response = await apiClient.post<Transaction[]>(
+    const response = await apiClient.post<TransactionCreatedResponse>(
         `/api/v1/transactions/`,
         transactionData,
         { params: { portfolio_id: portfolioId } }
     );
-    return response.data;
+    return response.data.created_transactions;
 };
 
 export const createRecurringDeposit = async (
@@ -257,4 +257,11 @@ export const getAssetsByType = async (portfolioId: string, assetType: string): P
     // Workaround: The backend is currently not filtering by asset_type, so we filter on the client.
     // This prevents assets of the wrong type (e.g., STOCK) from being returned when querying for PPF.
     return response.data.filter(asset => asset.asset_type === assetType);
+};
+
+export const getFxRate = async (from: string, to: string, date: string): Promise<number> => {
+    const response = await apiClient.get<{ rate: number }>(`/api/v1/fx-rate/`, {
+        params: { from, to, date },
+    });
+    return response.data.rate;
 };
