@@ -2,15 +2,14 @@
 
 #### 1. Project Goal & Current Status
 
-*   **Goal:** To build a full-stack, containerized application, **ArthSaarthi**, with a robust, multi-layered testing strategy, deployable as both a web service and a desktop app.
-*   **Current Status:** The application is stable and feature-complete for the current release cycle. All linters are clean, and all test suites (backend, frontend, E2E on both PostgreSQL and SQLite) are passing.
+*   **Goal:** To build a full-stack, containerized application, **ArthSaarthi**, with a robust, multi-layered testing strategy.
+*   **Current Status:** The application is stable and feature-complete for the MVP and Release 2 backend requirements. All test suites (backend, frontend, E2E) are passing. The backend for the "Automated Data Import" feature is complete.
 *   **Testing:** The project has a multi-layered testing strategy. A full suite of automated backend tests (`pytest`), frontend tests (`jest`), and **end-to-end tests (`Playwright`)** is stable and passing. This ensures reliability from individual components to complete user flows.
 *   **Implemented Functionalities:**
     *   **Authentication:** Initial admin setup, secure user login/logout, and JWT-based session management.
     *   **User Management:** A dedicated, admin-only dashboard for performing Create, Read, Update, and Delete (CRUD) operations on all users.
     *   **Portfolio & Transaction Management:** Full CRUD for portfolios and transactions, including support for corporate actions (Splits, Bonuses, Dividends).
     *   **Asset Management:** On-the-fly asset creation and lookup.
-    *   **ESPP/RSU Tracking:** A dedicated workflow to add and edit ESPP/RSU awards, including support for 'Sell to Cover' tax withholding transactions and correct cost-basis calculation.
     *   **Dashboard & Analytics:** Foundational endpoints for dashboard summary, historical performance, and asset allocation. (Note: Advanced calculations for P&L and XIRR including dividend income have been deferred to a future release to ensure stability).
     *   **Automated Data Import (Backend):** A full backend workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
 

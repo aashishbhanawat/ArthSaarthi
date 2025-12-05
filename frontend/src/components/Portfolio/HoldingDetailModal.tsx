@@ -46,9 +46,9 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPri
             <td className={`p-2 font-semibold ${transaction.transaction_type === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
                 {transaction.transaction_type}
             </td>
-            <td className="p-2 text-right font-mono">{Number(transaction.quantity).toLocaleString('en-IN', { maximumFractionDigits: 4 })}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(transaction.price_per_unit, 'INR')}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(Number(transaction.quantity) * Number(transaction.price_per_unit), 'INR')}</td>
+            <td className="p-2 text-right font-mono">{Number(transaction.quantity).toLocaleString()}</td>
+            <td className="p-2 text-right font-mono">{formatCurrency(transaction.price_per_unit)}</td>
+            <td className="p-2 text-right font-mono">{formatCurrency(Number(transaction.quantity) * Number(transaction.price_per_unit))}</td>
             <td className="p-2 text-right font-mono">
                 {cagr !== null ? `${cagr.toFixed(2)}%` : 'N/A'}
             </td>
@@ -116,7 +116,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                     </div>
                     <div data-testid="summary-avg-buy-price">
                         <p className="text-sm text-gray-500">Avg. Buy Price</p>
-                        <p className="font-semibold">{formatSensitiveCurrency(holding.average_buy_price, 'INR')}</p>
+                        <p className="font-semibold">{formatSensitiveCurrency(holding.average_buy_price)}</p>
                     </div>
                     <div data-testid="summary-current-value">
                         <p className="text-sm text-gray-500">Current Value</p>

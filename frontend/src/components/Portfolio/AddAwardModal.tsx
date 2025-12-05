@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCreateTransaction, useUpdateTransaction } from '../../hooks/usePortfolios';
+import { useCreateTransaction } from '../../hooks/usePortfolios';
 import { useCreateAsset } from '../../hooks/useAssets';
 import { lookupAsset, getFxRate } from '../../services/portfolioApi';
 import { Asset } from '../../types/asset';
-import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
+import { TransactionCreate } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
 
 interface AddAwardModalProps {
     portfolioId: string;
     onClose: () => void;
     isOpen: boolean;
-    transactionToEdit?: Transaction;
 }
 
 type AwardType = 'RSU_VEST' | 'ESPP_PURCHASE';
@@ -31,23 +30,20 @@ type AddAwardFormInputs = {
     sellPrice?: number;
 
     // Computed/Fetched
-    fxRate: number;
+    fxRate?: number;
 };
 
-const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
-    const isEditMode = !!transactionToEdit;
-    const { register, handleSubmit, control, setValue, getValues } = useForm<AddAwardFormInputs>({
+const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isOpen }) => {
+    const { register, handleSubmit, control, setValue } = useForm<AddAwardFormInputs>({
         defaultValues: {
             awardType: 'RSU_VEST',
             price: 0,
-            sellToCover: false,
-            fxRate: 1,
+            sellToCover: false
         }
     });
 
     const queryClient = useQueryClient();
     const createTransactionMutation = useCreateTransaction();
-    const updateTransactionMutation = useUpdateTransaction();
     const createAssetMutation = useCreateAsset();
 
     // Asset Search State
@@ -62,35 +58,13 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
     const date = useWatch({ control, name: 'date' });
     const fmv = useWatch({ control, name: 'fmv' });
     const quantity = useWatch({ control, name: 'quantity' });
+    const price = useWatch({ control, name: 'price' });
     const sellQuantity = useWatch({ control, name: 'sellQuantity' });
     const sellPrice = useWatch({ control, name: 'sellPrice' });
 
-    // FX Rate
+    // FX Rate State
+    const [fxRate, setFxRate] = useState<number | null>(null);
     const [isLoadingFx, setIsLoadingFx] = useState(false);
-
-    useEffect(() => {
-        if (isEditMode && transactionToEdit) {
-            const details = transactionToEdit.details || {};
-            const sellToCoverDetails = details.sell_to_cover || {};
-
-            setValue('awardType', transactionToEdit.transaction_type as AwardType);
-            setValue('date', transactionToEdit.transaction_date.split('T')[0]);
-            setValue('quantity', Number(transactionToEdit.quantity));
-            setValue('price', Number(transactionToEdit.price_per_unit));
-            setValue('fmv', details.fmv || 0);
-            setValue('fxRate', details.fx_rate || 1);
-
-            const hasSellToCover = !!sellToCoverDetails.quantity;
-            setValue('sellToCover', hasSellToCover);
-            if (hasSellToCover) {
-                setValue('sellQuantity', sellToCoverDetails.quantity);
-                setValue('sellPrice', sellToCoverDetails.price_per_unit);
-            }
-
-            setSelectedAsset(transactionToEdit.asset);
-            setValue('assetName', transactionToEdit.asset.name);
-        }
-    }, [isEditMode, transactionToEdit, setValue]);
 
     // Search Logic
     useEffect(() => {
@@ -109,33 +83,10 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
     }, [searchTerm, selectedAsset]);
 
     const handleSelectAsset = (asset: Asset) => {
-        // If the asset doesn't have an ID, it's a search result from an external
-        // provider and needs to be created in our database first.
-        if (!asset.id) {
-            createAssetMutation.mutate(
-                {
-                    ticker_symbol: asset.ticker_symbol,
-                    name: asset.name,
-                    asset_type: 'STOCK',
-                    currency: asset.currency || 'USD', // Default to USD if not provided
-                },
-                {
-                    onSuccess: (newlyCreatedAsset) => {
-                        setSelectedAsset(newlyCreatedAsset);
-                        setValue('assetName', newlyCreatedAsset.name);
-                        setSearchTerm('');
-                        setSearchResults([]);
-                    },
-                    onError: () => setApiError(`Failed to save asset "${asset.name}" locally.`)
-                }
-            );
-        } else {
-            // This is an asset that already exists in our DB (from a local search)
-            setSelectedAsset(asset);
-            setValue('assetName', asset.name);
-            setSearchTerm('');
-            setSearchResults([]);
-        }
+        setSelectedAsset(asset);
+        setValue('assetName', asset.name);
+        setSearchTerm('');
+        setSearchResults([]);
     };
 
     const handleClearAsset = () => {
@@ -165,22 +116,16 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // FX Rate Logic
     useEffect(() => {
-        const handler = setTimeout(() => {
-            // Check if the date is a valid YYYY-MM-DD format
-            if (selectedAsset && date && /^\d{4}-\d{2}-\d{2}$/.test(date) && selectedAsset.currency && selectedAsset.currency !== 'INR') {
-                setIsLoadingFx(true);
-                setValue('fxRate', 1); // Reset while fetching
-                getFxRate(selectedAsset.currency, 'INR', date)
-                    .then(rate => setValue('fxRate', rate))
-                    .catch(() => setValue('fxRate', 1)) // On error, default to 1 and allow manual entry
-                    .finally(() => setIsLoadingFx(false));
-            } else {
-                setValue('fxRate', 1);
-            }
-        }, 500); // Debounce for 500ms
-
-        return () => clearTimeout(handler);
-    }, [selectedAsset, date, setValue]);
+        if (selectedAsset && date && selectedAsset.currency && selectedAsset.currency !== 'INR') {
+            setIsLoadingFx(true);
+            getFxRate(selectedAsset.currency, 'INR', date)
+                .then(rate => setFxRate(rate))
+                .catch(() => setFxRate(null)) // Ignore error or set to 0
+                .finally(() => setIsLoadingFx(false));
+        } else {
+            setFxRate(null);
+        }
+    }, [selectedAsset, date]);
 
     // Defaults
     useEffect(() => {
@@ -202,15 +147,15 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
             return;
         }
 
-        const payload: TransactionCreate | TransactionUpdate = {
+        const payload: TransactionCreate = {
             asset_id: selectedAsset.id,
             transaction_type: data.awardType === 'RSU_VEST' ? TransactionType.RSU_VEST : TransactionType.ESPP_PURCHASE,
             quantity: data.quantity,
-            price_per_unit: data.price || 0,
+            price_per_unit: data.price,
             transaction_date: new Date(data.date).toISOString(),
             details: {
                 fmv: data.fmv,
-                fx_rate: data.fxRate,
+                fx_rate: fxRate,
                 ...(data.awardType === 'RSU_VEST' && data.sellToCover ? {
                     sell_to_cover: {
                         quantity: data.sellQuantity,
@@ -220,37 +165,29 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
             }
         };
 
-        const mutationOptions = {
-             onSuccess: () => {
-                 queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
-                 queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', portfolioId] });
-                 queryClient.invalidateQueries({ queryKey: ['transactions'] });
-                 onClose();
-             },
-             onError: (error: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                 setApiError(error.message || `Failed to ${isEditMode ? 'update' : 'create'} transaction.`);
-             }
-         };
-
-        if (isEditMode) {
-            updateTransactionMutation.mutate({ portfolioId, transactionId: transactionToEdit!.id, data: payload as TransactionUpdate }, mutationOptions);
-        } else {
-            createTransactionMutation.mutate({ portfolioId, data: payload as TransactionCreate }, mutationOptions);
-        }
+        createTransactionMutation.mutate({ portfolioId, data: payload }, {
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+                onClose();
+            },
+            onError: (error) => {
+                setApiError(error.message || "Failed to create transaction.");
+            }
+        });
     };
 
     if (!isOpen) return null;
 
     // Calculations for display
-    const totalCost = (quantity || 0) * (getValues('price') || 0) * (getValues('fxRate') || 1);
-    const taxableIncome = (quantity || 0) * (fmv || 0) * (getValues('fxRate') || 1);
+    const totalCost = (quantity || 0) * (price || 0) * (fxRate || 1);
+    const taxableIncome = (quantity || 0) * (fmv || 0) * (fxRate || 1);
     const netShares = (quantity || 0) - (sellToCover ? (sellQuantity || 0) : 0);
 
     return (
         <div className="modal-overlay z-30" onClick={onClose}>
             <div role="dialog" className="modal-content w-11/12 md:w-3/4 lg:max-w-2xl p-6 overflow-visible" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">{isEditMode ? 'Edit' : 'Add'} ESPP/RSU Award</h2>
+                    <h2 className="text-2xl font-bold">Add ESPP/RSU Award</h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
                 </div>
 
@@ -262,7 +199,6 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                 type="radio"
                                 value="RSU_VEST"
                                 {...register('awardType')}
-                                disabled={isEditMode}
                                 className="form-radio text-blue-600"
                             />
                             <span>RSU Vest</span>
@@ -272,7 +208,6 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                 type="radio"
                                 value="ESPP_PURCHASE"
                                 {...register('awardType')}
-                                disabled={isEditMode}
                                 className="form-radio text-blue-600"
                             />
                             <span>ESPP Purchase</span>
@@ -290,10 +225,10 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                 placeholder="Search ticker (e.g. GOOGL)..."
                                 value={selectedAsset ? `${selectedAsset.name} (${selectedAsset.ticker_symbol})` : searchTerm}
                                 onChange={(e) => {
-                                    if (selectedAsset && !isEditMode) handleClearAsset();
+                                    if (selectedAsset) handleClearAsset();
                                     setSearchTerm(e.target.value);
                                 }}
-                                disabled={!!selectedAsset || isEditMode}
+                                disabled={!!selectedAsset}
                             />
                             {selectedAsset && (
                                 <button
@@ -366,18 +301,13 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                     {/* FX Rate Info */}
                     {selectedAsset && selectedAsset.currency !== 'INR' && (
                         <div className="p-3 bg-gray-50 rounded border border-gray-200">
-                            <div className="form-group">
-                                <label htmlFor="fxRate" className="form-label">FX Rate ({selectedAsset.currency}-INR)</label>
-                                <input
-                                    id="fxRate"
-                                    type="number"
-                                    step="any"
-                                    {...register('fxRate', { required: true, valueAsNumber: true })}
-                                    className="form-input"
-                                    disabled={isLoadingFx}
-                                />
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm font-semibold">FX Rate ({selectedAsset.currency}-INR):</span>
+                                <span className="text-sm">
+                                    {isLoadingFx ? 'Fetching...' : (fxRate ? `₹${fxRate}` : 'N/A')}
+                                </span>
                             </div>
-                            {getValues('fxRate') > 1 && (
+                            {fxRate && (
                                 <div className="text-xs text-gray-600">
                                     {awardType === 'RSU_VEST'
                                         ? `Taxable Income: ₹${taxableIncome.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
@@ -423,8 +353,8 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
                     <div className="flex justify-end space-x-4 mt-6">
                         <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
-                        <button type="submit" className="btn btn-primary" disabled={createTransactionMutation.isPending || updateTransactionMutation.isPending}>
-                            {createTransactionMutation.isPending || updateTransactionMutation.isPending ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Award')}
+                        <button type="submit" className="btn btn-primary" disabled={createTransactionMutation.isPending}>
+                            {createTransactionMutation.isPending ? 'Saving...' : 'Add Award'}
                         </button>
                     </div>
                 </form>

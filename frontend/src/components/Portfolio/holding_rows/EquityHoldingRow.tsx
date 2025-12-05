@@ -1,21 +1,20 @@
 import React from 'react';
 import { Holding } from '../../../types/holding';
-import { usePrivacySensitiveCurrency, formatPercentage } from '../../../utils/formatting';
+import { formatCurrency, formatPercentage } from '../../../utils/formatting';
 
 interface EquityHoldingRowProps {
     holding: Holding;
     onRowClick: (holding: Holding) => void;
 }
 
-const PnlCell: React.FC<{ value: number; currency?: string; isPercentage?: boolean }> = ({ value, currency = 'INR', isPercentage = false }) => {
-    const formatCurrency = usePrivacySensitiveCurrency();
+const PnlCell: React.FC<{ value: number; isPercentage?: boolean }> = ({ value, isPercentage = false }) => {
     const getPnlColor = (pnl: number) => {
         if (pnl > 0) return 'text-green-600';
         if (pnl < 0) return 'text-red-600';
         return 'text-gray-900';
     };
 
-    const formattedValue = isPercentage ? formatPercentage(value) : formatCurrency(value, currency);
+    const formattedValue = isPercentage ? formatPercentage(value) : formatCurrency(value);
 
     return (
         <td className={`p-2 text-right font-mono ${getPnlColor(value)}`}>
@@ -25,7 +24,6 @@ const PnlCell: React.FC<{ value: number; currency?: string; isPercentage?: boole
 };
 
 const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick }) => {
-    const formatCurrency = usePrivacySensitiveCurrency();
     return (
         <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer" onClick={() => onRowClick(holding)}>
             <td className="p-2">
@@ -35,11 +33,11 @@ const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick
                 </div>
             </td>
             <td className="p-2 text-right font-mono">{Number(holding.quantity).toLocaleString()}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(holding.average_buy_price, 'INR')}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(holding.current_price, holding.currency)}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(holding.current_value, 'INR')}</td>
-            <PnlCell value={holding.days_pnl} currency="INR" />
-            <PnlCell value={holding.unrealized_pnl} currency="INR" />
+            <td className="p-2 text-right font-mono">{formatCurrency(holding.average_buy_price)}</td>
+            <td className="p-2 text-right font-mono">{formatCurrency(holding.current_price)}</td>
+            <td className="p-2 text-right font-mono">{formatCurrency(holding.current_value)}</td>
+            <PnlCell value={holding.days_pnl} />
+            <PnlCell value={holding.unrealized_pnl} />
             <PnlCell value={holding.unrealized_pnl_percentage} isPercentage />
         </tr>
     );

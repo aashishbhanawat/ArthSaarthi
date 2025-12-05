@@ -30,11 +30,11 @@ test.describe('Inactivity Timeout', () => {
     // Reload the page to apply the new timeout
     await page.reload();
 
-    await expect(page.locator('text=Session Timeout')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('text=Session Timeout')).toBeVisible({ timeout: 4000 });
     await expect(page.locator('text=You will be logged out in 3 seconds due to inactivity.')).toBeVisible();
 
     // Wait for the countdown to finish and the user to be logged out
-    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible({ timeout: 4000 });
   });
 
   test('should allow user to extend session', async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe('Inactivity Timeout', () => {
     // Reload the page to apply the new timeout
     await page.reload();
 
-    await expect(page.locator('text=Session Timeout')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('text=Session Timeout')).toBeVisible({ timeout: 4000 });
     await page.click('text=Stay Logged In');
 
     await expect(page.locator('text=Session Timeout')).not.toBeVisible();

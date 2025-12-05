@@ -1,6 +1,6 @@
 import React from 'react';
 import { Transaction } from '../../types/portfolio';
-import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
+import { formatCurrency, formatDate } from '../../utils/formatting';
 
 interface TransactionHistoryTableProps {
   transactions: Transaction[];
@@ -22,8 +22,6 @@ const getTypeColor = (type: string) => {
 };
 
 const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ transactions, onEdit, onDelete }) => {
-  const formatCurrency = usePrivacySensitiveCurrency();
-
   if (transactions.length === 0) {
     return <div className="text-center p-8 text-gray-500 card">No transactions found for the selected filters.</div>;
   }
@@ -45,26 +43,23 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
         </thead>
         <tbody>
           {transactions.map((tx) => (
-              <tr key={tx.id} className="border-b hover:bg-gray-50">
-                <td className="p-3 text-sm">{formatDate(tx.transaction_date)}</td>
-                <td className="p-3 text-sm font-mono">{tx.asset.ticker_symbol}</td>
-                <td className="p-3 text-sm">{tx.asset.name}</td>
-                <td className={`p-3 text-sm font-semibold ${getTypeColor(tx.transaction_type)}`}>
-                    {tx.transaction_type}
-                    {tx.details && (
-                        <span className="ml-1 text-gray-400 cursor-help" title={JSON.stringify(tx.details, null, 2)}>
-                            (i)
-                        </span>
-                    )}
-                </td>
-                <td className="p-3 text-sm text-right">{Number(tx.quantity).toLocaleString('en-IN', { maximumFractionDigits: tx.asset.asset_type === 'FIXED_DEPOSIT' ? 0 : 4 })}</td>
-                <td className="p-3 text-sm text-right">{formatCurrency(tx.price_per_unit, tx.asset.currency)}</td>
-                <td className="p-3 text-sm text-right">{formatCurrency(
-                    Number(tx.price_per_unit) * Number(tx.quantity) * (tx.details?.fx_rate || 1),
-                    'INR'
-                )}</td>
-                <td className="p-3 text-center"><div className="flex justify-center space-x-2"><button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm">Edit</button><button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm">Delete</button></div></td>
-              </tr>
+            <tr key={tx.id} className="border-b hover:bg-gray-50">
+              <td className="p-3 text-sm">{formatDate(tx.transaction_date)}</td>
+              <td className="p-3 text-sm font-mono">{tx.asset.ticker_symbol}</td>
+              <td className="p-3 text-sm">{tx.asset.name}</td>
+              <td className={`p-3 text-sm font-semibold ${getTypeColor(tx.transaction_type)}`}>
+                  {tx.transaction_type}
+                  {tx.details && (
+                      <span className="ml-1 text-gray-400 cursor-help" title={JSON.stringify(tx.details, null, 2)}>
+                          (i)
+                      </span>
+                  )}
+              </td>
+              <td className="p-3 text-sm text-right">{Number(tx.quantity).toLocaleString()}</td>
+              <td className="p-3 text-sm text-right">{formatCurrency(tx.price_per_unit)}</td>
+              <td className="p-3 text-sm text-right">{formatCurrency(Number(tx.price_per_unit) * Number(tx.quantity))}</td>
+              <td className="p-3 text-center"><div className="flex justify-center space-x-2"><button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm">Edit</button><button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm">Delete</button></div></td>
+            </tr>
           ))}
         </tbody>
       </table>

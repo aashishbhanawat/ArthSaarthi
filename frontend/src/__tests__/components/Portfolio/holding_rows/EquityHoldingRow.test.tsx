@@ -2,7 +2,6 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import EquityHoldingRow from '../../../../components/Portfolio/holding_rows/EquityHoldingRow';
 import { Holding } from '../../../types/holding';
-import { PrivacyProvider } from '../../../../context/PrivacyContext';
 
 const mockHolding: Holding = {
     asset_id: '1',
@@ -27,14 +26,12 @@ const mockHolding: Holding = {
 
 describe('EquityHoldingRow', () => {
     it('renders the equity holding data correctly', () => {
-        render(            
-            <PrivacyProvider>
-                <table>
-                    <tbody>
-                        <EquityHoldingRow holding={mockHolding} onRowClick={jest.fn()} />
-                    </tbody>
-                </table>
-            </PrivacyProvider>
+        render(
+            <table>
+                <tbody>
+                    <EquityHoldingRow holding={mockHolding} />
+                </tbody>
+            </table>
         );
 
         expect(screen.getByText('INFY')).toBeInTheDocument();

@@ -57,21 +57,10 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
     for h in agg_holdings:
         # Only include assets with a non-zero day's P&L and a valid quantity
         if h.days_pnl is not None and h.days_pnl != 0 and h.quantity > 0:
-            # This is already in INR after the holding.py fix
             daily_change_per_unit = h.days_pnl / h.quantity
-
-            # The holding schema now contains the asset's currency.
-            # We need to pass this to the frontend so it can display the correct
-            # currency symbol for the `current_price`.
-            asset_currency = "INR" # Default
-            asset = crud.asset.get(db, id=h.asset_id)
-            if asset:
-                asset_currency = asset.currency
-
             top_movers.append(
                 {
                     "ticker_symbol": h.ticker_symbol,
-                    "currency": asset_currency,
                     "name": h.asset_name,
                     "current_price": h.current_price,
                     "daily_change": daily_change_per_unit,

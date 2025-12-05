@@ -56,58 +56,42 @@
 *   **Outcome:**
     -   The asset seeding process is now authoritative-source first, significantly reducing misclassification.
     -   The system supports multiple input formats (TSV, CSV, XLS, XLSX, ZIP).
+## 2025-12-01: Implement ESPP & RSU Tracking (FR8.1.1)
 
-## 2025-12-05: ESPP/RSU Implementation & Stability Fixes
+*   **Task Description:** Implemented full support for tracking Employee Stock Purchase Plans (ESPP) and Restricted Stock Units (RSU). This involved database schema updates to store award details (FMV, Tax Info), a new backend API for automatic "Sell to Cover" transaction creation, and a frontend "Add Award" modal with split-button integration.
 
-**Task:** Implement ESPP/RSU tracking (FR8.1.1) and resolve all outstanding bugs and linter warnings to achieve a stable, fully-passing test suite.
+*   **Key Prompts & Interactions:**
+    1.  **Requirement Clarification:** Confirmed the need for a dedicated `details` JSON column in the `Transaction` table to store arbitrary metadata (e.g., `fmv`, `fx_rate`) without creating new columns for every edge case. Clarified the "Sell to Cover" logic where a single frontend action triggers two backend transactions (`RSU_VEST` and `SELL`).
+    2.  **Backend Implementation:**
+        *   Added `details` column via Alembic migration (`83bb9e0f1bca`).
+        *   Updated `TransactionType` enum with `ESPP_PURCHASE` and `RSU_VEST`.
+        *   Modified `crud_transaction.py` to correctly calculate holdings for these new types.
+        *   Implemented `GET /api/v1/fx-rate/` using `yfinance` to fetch historical exchange rates for converting USD awards to INR.
+    3.  **Frontend Implementation:**
+        *   Created `AddAwardModal` with asset search, date handling, and FX rate fetching.
+        *   Refactored the "Add Transaction" button on `PortfolioDetailPage` into a **Split Button** to maintain quick access to the standard flow while exposing the new ESPP/RSU option.
+        *   Updated `TransactionHistoryTable` to display the new details (FMV, Sell to Cover) in a tooltip.
+    4.  **Systematic Debugging & E2E:**
+        *   **E2E Regressions:** Addressed test failures in `portfolio-and-dashboard.spec.ts` caused by the UI change (split button). Updated all tests to interact with the new button structure.
+        *   **Test Isolation:** Created `e2e/tests/espp-rsu.spec.ts` to specifically validate the RSU flow, including "Sell to Cover" math.
+        *   **Backend Cleanup:** Removed redundant checks in `crud_transaction.py` and ensured clean migration paths.
 
-**AI Assistant:** Gemini Code Assist
-**Role:** Full-Stack Developer
+*   **File Changes:**
+    *   `backend/app/models/transaction.py`: **Updated** with `details` JSON column.
+    *   `backend/alembic/versions/83bb9e0f1bca_add_details_column.py`: **New** migration.
+    *   `backend/app/schemas/transaction.py`: **Updated** schema validation.
+    *   `backend/app/api/v1/endpoints/portfolios.py`: **Updated** to handle split transactions.
+    *   `frontend/src/components/Portfolio/AddAwardModal.tsx`: **New** component.
+    *   `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx`: **Updated** with split button.
+    *   `e2e/tests/espp-rsu.spec.ts`: **New** E2E test.
+    *   `e2e/tests/portfolio-and-dashboard.spec.ts`: **Updated** for UI changes.
 
-### Summary of AI's Output & Key Decisions
+*   **Verification:**
+    -   **Backend Tests:** Verified transaction creation, holding calculation, and FX rate fetching.
+    -   **Frontend Tests:** Validated modal rendering and button interactions.
+    -   **E2E Tests:** Ran full suite (`espp-rsu`, `portfolio-and-dashboard`, `analytics`, etc.) via Docker to ensure no regressions.
 
-The AI assistant successfully implemented the ESPP/RSU tracking feature and addressed a series of critical bugs and code quality issues across the stack.
-
-1.  **ESPP/RSU Feature:**
-    *   A new `AddAwardModal.tsx` was created to provide a dedicated UI for logging RSU Vests and ESPP Purchases.
-    *   The modal includes logic to fetch FX rates on the fly and supports 'Sell to Cover' transactions, which are created atomically on the backend.
-    *   The backend `crud_holding.py` was updated to correctly calculate the cost basis for these new acquisition types (using FMV for RSUs) and handle foreign currency conversions.
-
-2.  **Bug Fixes:**
-    *   **Currency Formatting:** Fixed a critical bug in `TransactionHistoryTable.tsx` and `EquityHoldingRow.tsx` where the total value of foreign assets was displayed with the wrong currency symbol (e.g., `$50` instead of `₹4150`). The fix ensures all portfolio values are consistently converted to and displayed in INR.
-    *   **Backend Validation:** Resolved a `ValidationError` in `crud_holding.py` by correctly adding the `currency` field during the creation of `Holding` objects for Fixed and Recurring Deposits.
-    *   **Dashboard FX Conversion:** Fixed a bug in the "Top Movers" card where the daily price change for foreign assets was shown with an INR symbol but used the asset's native currency value (e.g., showing `₹2.00` instead of the correct `₹167.00`). The logic in `crud_dashboard.py` was updated to convert all monetary values to INR before sending them to the frontend.
-    *   **Backend Validation:** Resolved a `ValidationError` in `crud_holding.py` by correctly adding the `currency` field during the creation of `Holding` objects for non-market-traded assets.
-    *   **Test Suite Failures:** Corrected multiple failing tests, including a logic error in `test_dashboard.py`'s top mover calculation and several frontend tests that were missing the `PrivacyProvider` context.
-
-3.  **Code Quality & Linting:**
-    *   Systematically resolved all `E501 (Line too long)` errors in the backend Python code reported by `ruff`.
-    *   Fixed all `eslint` warnings in the frontend, including an unused variable and critical violations of the "Rules of Hooks" in `TransactionList.tsx` and `TransactionHistoryTable.tsx`.
-
-### File Changes
-
-*   **Modified:** `backend/app/crud/crud_holding.py` - Added currency to non-market assets, updated cost-basis logic for RSU/ESPP.
-*   **Modified:** `backend/app/crud/crud_transaction.py` - Added idempotency checks and logic for 'Sell to Cover'.
-*   **Modified:** `backend/app/crud/crud_dashboard.py` - Corrected top-mover daily change calculation.
-*   **Modified:** `backend/app/services/providers/yfinance_provider.py` - Refactored for clarity and fixed line-length issues.
-*   **Modified:** `backend/app/api/v1/endpoints/transactions.py` - Fixed line-length issues.
-*   **Modified:** `frontend/src/components/Transactions/TransactionHistoryTable.tsx` - Fixed currency display bug and Rules of Hooks violation.
-*   **Modified:** `frontend/src/components/Portfolio/TransactionList.tsx` - Fixed Rules of Hooks violation.
-*   **Modified:** `frontend/src/components/Portfolio/AddAwardModal.tsx` - Implemented ESPP/RSU modal, added edit functionality, and removed unused state variable.
-*   **Modified:** `frontend/src/components/Portfolio/holding_rows/EquityHoldingRow.tsx` - Fixed currency display bug.
-*   **Modified:** `e2e/tests/corporate-actions.spec.ts` - Reverted temporary test fix after the underlying bug was resolved.
-*   **Modified:** `frontend/src/__tests__/components/Portfolio/TransactionList.test.tsx` - Added `PrivacyProvider` wrapper.
-*   **Modified:** `frontend/src/__tests__/components/Portfolio/holding_rows/EquityHoldingRow.test.tsx` - Added `PrivacyProvider` wrapper.
-*   **Modified:** `README.md` - Updated feature list.
-*   **Modified:** `task_prompt/handoff_document.md` - Updated project status.
-
-### Verification Steps
-
-1.  **Linters:** Ran `ruff check . --fix` and `eslint .` to confirm all code quality issues were resolved.
-2.  **Unit Tests:** Executed backend (`pytest`) and frontend (`jest`) tests to ensure all component-level logic passed.
-3.  **E2E Tests:** Ran the full Playwright E2E test suite against both PostgreSQL and SQLite backends (`docker-compose -f docker-compose.e2e.yml up` and `docker-compose -f docker-compose.e2e.sqlite.yml up`).
-4.  **Manual Verification:** Manually tested the "Add ESPP/RSU Award" flow, including editing and 'Sell to Cover', to confirm correct behavior. Verified that currency symbols on the portfolio and transaction pages were consistently INR.
-
-### Outcome
-
-**Success.** All linters and automated tests are passing across all environments. The ESPP/RSU feature is implemented, and critical bugs have been resolved. The project is in a stable and well-documented state.
+*   **Outcome:**
+    -   Users can now track ESPP and RSU awards with proper tax record-keeping.
+    -   The UI remains uncluttered thanks to the split-button design.
+    -   Full regression testing ensures stability.

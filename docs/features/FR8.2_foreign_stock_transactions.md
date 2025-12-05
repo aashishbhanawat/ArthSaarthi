@@ -52,52 +52,23 @@ When a user selects a foreign asset (e.g., Google, which is in USD), the form wi
 
 ### 3.3. Frontend Logic
 
-*   **Files to Modify:** `frontend/src/components/Portfolio/TransactionFormModal.tsx` and any component displaying currency.
+*   **File to Modify:** `frontend/src/components/Portfolio/TransactionFormModal.tsx`.
 *   **Conditional UI:** The modal will be enhanced to check the `currency` attribute of the selected asset.
     *   If `asset.currency` is not 'INR', the "INR Conversion" section will be rendered.
     *   If `asset.currency` is 'INR', the section will remain hidden, providing a clean UI for domestic stock transactions.
 *   **API Call:** When the transaction date is selected for a foreign asset, the frontend will automatically call the `GET /api/v1/fx-rate` endpoint to fetch the historical exchange rate.
-*   **Currency Display Standard:** All monetary values for foreign assets must be displayed using the `usePrivacySensitiveCurrency` hook, passing both the value and the asset's native currency (e.g., `formatCurrency(180.00, 'USD')`). This ensures consistent and accurate currency symbol rendering throughout the application.
 
 ### 3.4. Backend Analytics (`crud_holding.py`)
 
 The holdings calculation logic must be updated to correctly use the stored exchange rate.
-**Status: ✅ Done**
 
 *   **File to Modify:** `backend/app/crud/crud_holding.py`.
 *   **Logic Update:** In the `_process_market_traded_assets` function, when processing `BUY` and `SELL` transactions:
-    *   The code must check if `transaction.details` contains an `fx_rate` key.
+    *   The code must check if `transaction.metadata` contains an `exchange_rate_to_inr` key.
     *   If it does, the `total_invested` amount (for `BUY`) and the `realized_pnl_for_sale` (for `SELL`) must be calculated using the price multiplied by this exchange rate.
     *   If it does not, the logic proceeds as normal, assuming the transaction was in INR.
- 
-## 5. ESPP/RSU Analytics and UI Enhancements
- 
-This section details the necessary fixes and improvements to fully integrate ESPP/RSU transactions into the application's analytics and UI.
- 
-### 5.1. Portfolio History Chart Integration
- 
-*   **Problem:** The "Portfolio History" chart on the dashboard does not correctly factor in the value of assets acquired in a foreign currency (e.g., via `RSU_VEST`, `ESPP_PURCHASE`, or a standard `BUY`), leading to an inaccurate historical graph.
-*   **Solution (Backend):** The logic for generating portfolio history (`crud_dashboard._get_portfolio_history`) must be updated. When calculating the portfolio value on a given day, it must correctly account for the value of all assets acquired on or before that day, applying the correct FX rate.
-    *   For `RSU_VEST`, the value added to the portfolio is `quantity * fmv * fx_rate`.
-    *   For `ESPP_PURCHASE` and standard `BUY` transactions, the value added is `quantity * price_per_unit * fx_rate`.
- 
-### 5.2. User-Friendly Transaction Details Modal
- 
-*   **Problem:** In the transaction history, hovering over the info icon for any transaction with extra details (like ESPP/RSU awards or any foreign currency transaction) shows raw, unformatted JSON, which is not user-friendly.
-*   **Solution (Frontend):**
-    *   Create a new reusable modal component, `TransactionDetailsModal.tsx`. This modal will receive a transaction object and display its `details` in a clean, readable format (e.g., "Fair Market Value: $150.25", "FX Rate: 83.50").
-    *   In `TransactionHistoryTable.tsx`, the info icon for **any** transaction with a `details` field will now trigger this new modal instead of relying on a simple title attribute.
- 
-### 5.3. Holding Drill-Down Modal Enhancements
- 
-*   **Problem:** The holding drill-down modal has two issues for assets acquired via ESPP/RSU: it does not show these transaction types in its history, and the XIRR calculation is incorrect.
-*   **Solution (Backend):**
-    *   **Transaction Visibility:** The query that fetches transactions for the drill-down modal must be updated to include `RSU_VEST` and `ESPP_PURCHASE` types.
-    *   **XIRR Calculation:** The XIRR logic in `crud_analytics.py` must be corrected.
-        *   For `RSU_VEST` transactions, it must treat them as a cash outflow equal to `(FMV * Quantity * FX Rate)` on the vest date, as specified in `FR8.4`.
-        *   For all other transaction types (`BUY`, `SELL`, `ESPP_PURCHASE`), the cash flow calculation must correctly use the `fx_rate` from the transaction's `details` when converting the value to INR.
- 
-## 6. Testing Plan
+
+## 4. Testing Plan
 
 ### 4.1. Backend Unit & Integration Tests
 
@@ -129,17 +100,3 @@ This section details the necessary fixes and improvements to fully integrate ESP
     3.  Use the standard "Add Transaction" modal to `SELL` a portion of the acquired Google stock.
     4.  Verify the "INR Conversion" section appears and works correctly during the sale.
     5.  Submit the sale and verify that the portfolio summary (Realized P&L) and holdings (Quantity, Invested Amount) are updated correctly.
-
-### 4.4. E2E Tests for ESPP/RSU Enhancements
-
-*   **Test Portfolio History Chart:**
-    1.  Add an RSU Vest transaction.
-    2.  Verify that the "Portfolio History" chart on the dashboard shows an immediate increase in value corresponding to the FMV of the vested shares.
-*   **Test Transaction Details Modal:**
-    1.  Go to the Transaction History page.
-    2.  Click the info icon on an RSU transaction.
-    3.  Assert that a modal appears and displays the FMV and FX Rate in a user-friendly format.
-*   **Test Holding Drill-Down:**
-    1.  Click on a holding acquired via RSU.
-    2.  Assert that the `RSU_VEST` transaction appears in the modal's transaction list.
-    3.  Assert that the calculated XIRR is a non-zero, meaningful value.
