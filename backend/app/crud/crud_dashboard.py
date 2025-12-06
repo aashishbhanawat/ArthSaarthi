@@ -201,7 +201,11 @@ def _get_portfolio_history(
     ]
     for t in initial_transactions:
         ticker = t.asset.ticker_symbol
-        if t.transaction_type.lower() == "buy" or t.transaction_type == "RSU_VEST" or t.transaction_type == "ESPP_PURCHASE":
+        if (
+            t.transaction_type.lower() == "buy"
+            or t.transaction_type == "RSU_VEST"
+            or t.transaction_type == "ESPP_PURCHASE"
+        ):
             daily_holdings[ticker] += t.quantity
         elif t.transaction_type.lower() == "sell":
             daily_holdings[ticker] -= t.quantity
@@ -242,7 +246,11 @@ def _get_portfolio_history(
         ):
             t = transactions[transaction_idx]
             ticker = t.asset.ticker_symbol
-            if t.transaction_type.lower() == "buy" or t.transaction_type == "RSU_VEST" or t.transaction_type == "ESPP_PURCHASE":
+            if (
+                t.transaction_type.lower() == "buy"
+                or t.transaction_type == "RSU_VEST"
+                or t.transaction_type == "ESPP_PURCHASE"
+            ):
                 daily_holdings[ticker] += t.quantity
             elif t.transaction_type.lower() == "sell":
                 daily_holdings[ticker] -= t.quantity
@@ -251,8 +259,13 @@ def _get_portfolio_history(
         # Update FX rates for today if available
         for curr in foreign_currencies:
             fx_ticker = f"{curr}INR=X"
-            if fx_ticker in fx_rates_history and current_day in fx_rates_history[fx_ticker]:
-                last_known_fx_rates[fx_ticker] = fx_rates_history[fx_ticker][current_day]
+            if (
+                fx_ticker in fx_rates_history
+                and current_day in fx_rates_history[fx_ticker]
+            ):
+                last_known_fx_rates[fx_ticker] = fx_rates_history[fx_ticker][
+                    current_day
+                ]
 
         day_total_value = Decimal("0.0")
         for ticker, quantity in daily_holdings.items():

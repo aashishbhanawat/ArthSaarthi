@@ -62,7 +62,10 @@ def _get_realized_and_unrealized_cash_flows(
     sorted_txs = sorted(transactions, key=lambda t: t.transaction_date.date())
 
     # Create copies to avoid mutation and to track remaining quantities.
-    buys = [t.model_copy(deep=True) for t in sorted_txs if t.transaction_type == "BUY" or t.transaction_type == "ESPP_PURCHASE" or t.transaction_type == "RSU_VEST"]
+    buys = [
+        t.model_copy(deep=True) for t in sorted_txs
+        if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST")
+    ]
     sells = [t for t in sorted_txs if t.transaction_type == "SELL"]
     # Separate income from contributions, as they are handled differently.
     income_flows = [
@@ -86,7 +89,11 @@ def _get_realized_and_unrealized_cash_flows(
             if buy_tx.quantity > 0:
                 match_quantity = min(sell_quantity_to_match, buy_tx.quantity)
 
-                if buy_tx.transaction_type == "RSU_VEST" and buy_tx.details and "fmv" in buy_tx.details:
+                if (
+                    buy_tx.transaction_type == "RSU_VEST"
+                    and buy_tx.details
+                    and "fmv" in buy_tx.details
+                ):
                     buy_price = Decimal(str(buy_tx.details["fmv"]))
                 else:
                     buy_price = (
@@ -102,8 +109,16 @@ def _get_realized_and_unrealized_cash_flows(
                 )
 
                 # --- FX Rate Adjustment ---
-                buy_fx_rate = Decimal(str(buy_tx.details.get("fx_rate", 1))) if buy_tx.details else Decimal(1)
-                sell_fx_rate = Decimal(str(sell_tx.details.get("fx_rate", 1))) if sell_tx.details else Decimal(1)
+                buy_fx_rate = (
+                    Decimal(str(buy_tx.details.get("fx_rate", 1)))
+                    if buy_tx.details
+                    else Decimal(1)
+                )
+                sell_fx_rate = (
+                    Decimal(str(sell_tx.details.get("fx_rate", 1)))
+                    if sell_tx.details
+                    else Decimal(1)
+                )
 
                 buy_cost_for_match = match_quantity * buy_price * buy_fx_rate
                 sell_proceeds_for_match = match_quantity * sell_price * sell_fx_rate
@@ -121,7 +136,11 @@ def _get_realized_and_unrealized_cash_flows(
     unrealized_cash_flows = []
     for buy_tx in buys:
         if buy_tx.quantity > 0:
-            if buy_tx.transaction_type == "RSU_VEST" and buy_tx.details and "fmv" in buy_tx.details:
+            if (
+                buy_tx.transaction_type == "RSU_VEST"
+                and buy_tx.details
+                and "fmv" in buy_tx.details
+            ):
                 buy_price = Decimal(str(buy_tx.details["fmv"]))
             else:
                 buy_price = (
@@ -131,10 +150,17 @@ def _get_realized_and_unrealized_cash_flows(
                 )
 
             # --- FX Rate Adjustment ---
-            buy_fx_rate = Decimal(str(buy_tx.details.get("fx_rate", 1))) if buy_tx.details else Decimal(1)
+            buy_fx_rate = (
+                Decimal(str(buy_tx.details.get("fx_rate", 1)))
+                if buy_tx.details
+                else Decimal(1)
+            )
 
             unrealized_cash_flows.append(
-                (buy_tx.transaction_date.date(), float(-buy_tx.quantity * buy_price * buy_fx_rate))
+                (
+                    buy_tx.transaction_date.date(),
+                    float(-buy_tx.quantity * buy_price * buy_fx_rate)
+                )
             )
 
     # Prorate each income event based on the holding status AT THAT TIME.
@@ -158,7 +184,11 @@ def _get_realized_and_unrealized_cash_flows(
         if bought_at_income_date <= 0:
             continue
 
-        fx_rate = Decimal(str(income_tx.details.get("fx_rate", 1))) if income_tx.details else Decimal(1)
+        fx_rate = (
+            Decimal(str(income_tx.details.get("fx_rate", 1)))
+            if income_tx.details
+            else Decimal(1)
+        )
 
         # COUPON amount is in quantity, DIVIDEND amount is quantity * price
         if income_tx.transaction_type == "COUPON":
@@ -217,12 +247,19 @@ def _get_portfolio_cash_flows(
         # These are not true external cash flows and are captured in the
         # final current_value of the holding.
         # We explicitly include COUPON and DIVIDEND as they are external cash inflows.
-        if not behavior or behavior["cash_flow"] == CashFlowType.NONE or \
-           tx.transaction_type == "INTEREST_CREDIT":
+        if (
+            not behavior
+            or behavior["cash_flow"] == CashFlowType.NONE
+            or tx.transaction_type == "INTEREST_CREDIT"
+        ):
             continue
 
         amount = Decimal("0.0")
-        fx_rate = Decimal(str(tx.details.get("fx_rate", 1))) if tx.details else Decimal(1)
+        fx_rate = (
+            Decimal(str(tx.details.get("fx_rate", 1)))
+            if tx.details
+            else Decimal(1)
+        )
 
         if tx.transaction_type == "CONTRIBUTION":
             # For PPF contributions, the 'quantity' is the amount.
