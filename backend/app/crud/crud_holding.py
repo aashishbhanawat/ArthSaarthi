@@ -520,7 +520,8 @@ def _process_market_traded_assets(
         current_value = quantity * current_price
 
         # --- FX Conversion for Current Value ---
-        # If the asset is not in INR, its current value must be converted using the REAL-TIME rate.
+        # If the asset is not in INR, its current value must be converted
+        # using the REAL-TIME rate.
         if asset.currency != "INR":
             # 1. Convert current value using real-time FX rate
             live_fx_rate = fx_rates.get(asset.currency, Decimal(1))
@@ -528,7 +529,8 @@ def _process_market_traded_assets(
 
             # 2. Convert days_pnl using real-time FX rate
             # days_pnl is (current_price - prev_close) * qty * fx_rate
-            # Note: We approximate by applying today's FX rate to the change in asset currency.
+            # Note: We approximate by applying today's FX rate to the
+            # change in asset currency.
             days_pnl_inr = days_pnl * live_fx_rate
 
             current_value = current_value_inr
