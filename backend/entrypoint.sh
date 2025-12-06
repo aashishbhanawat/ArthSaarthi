@@ -15,8 +15,12 @@ else
 fi
 
 # Seed the asset master data from the external source.
-echo "--- Seeding Asset Master Data ---"
-python -m app.cli seed-assets
+if [ "$ENVIRONMENT" != "test" ]; then
+  echo "--- Seeding Asset Master Data ---"
+  python -m app.cli seed-assets
+else
+  echo "--- Skipping Asset Seeding in Test Environment ---"
+fi
 
 # Start the application using exec to replace the shell process with the uvicorn process
 echo "Starting Uvicorn server..."

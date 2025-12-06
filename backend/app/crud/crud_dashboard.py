@@ -146,6 +146,8 @@ def _get_portfolio_history(
     market_traded_assets = [asset for asset in all_user_assets
                             if asset.asset_type in yfinance_supported_types]
 
+    asset_map = {a.ticker_symbol: a for a in market_traded_assets}
+
     asset_details_list = [
         {
             "ticker_symbol": asset.ticker_symbol,
@@ -158,6 +160,23 @@ def _get_portfolio_history(
     historical_prices = financial_data_service.get_historical_prices(
         assets=asset_details_list, start_date=start_date, end_date=end_date
     )
+
+    # --- FX Rate Handling ---
+    foreign_currencies = {
+        asset.currency for asset in market_traded_assets
+        if asset.currency and asset.currency.upper() != "INR"
+    }
+
+    fx_rates_history = {}
+    if foreign_currencies:
+        logger.debug(f"Fetching FX history for currencies: {foreign_currencies}")
+        fx_tickers_list = [
+            {"ticker_symbol": f"{curr}INR=X", "exchange": None}
+            for curr in foreign_currencies
+        ]
+        fx_rates_history = financial_data_service.get_historical_prices(
+            assets=fx_tickers_list, start_date=start_date, end_date=end_date
+        )
 
     transactions = (
         db.query(crud.transaction.model)
@@ -174,6 +193,7 @@ def _get_portfolio_history(
     transaction_idx = 0
     daily_holdings = defaultdict(Decimal)
     last_known_prices = {}
+    last_known_fx_rates = {}
 
     # Calculate initial holdings up to the start_date
     initial_transactions = [
@@ -181,13 +201,15 @@ def _get_portfolio_history(
     ]
     for t in initial_transactions:
         ticker = t.asset.ticker_symbol
-        if t.transaction_type.lower() == "buy":
+        if t.transaction_type.lower() == "buy" or t.transaction_type == "RSU_VEST" or t.transaction_type == "ESPP_PURCHASE":
             daily_holdings[ticker] += t.quantity
-        else:
+        elif t.transaction_type.lower() == "sell":
             daily_holdings[ticker] -= t.quantity
 
     # Pre-fill last known prices for the day before the window starts
     day_before_start = start_date - timedelta(days=1)
+
+    # 1. Pre-fill Asset Prices
     for ticker in daily_holdings:
         if ticker in historical_prices:
             # Find the most recent price on or before the day before the window
@@ -198,6 +220,19 @@ def _get_portfolio_history(
                 last_known_prices[ticker] = historical_prices[ticker][
                     max(relevant_dates)
                 ]
+
+    # 2. Pre-fill FX Rates
+    for curr in foreign_currencies:
+        fx_ticker = f"{curr}INR=X"
+        if fx_ticker in fx_rates_history:
+            relevant_dates = [
+                d for d in fx_rates_history[fx_ticker] if d <= day_before_start
+            ]
+            if relevant_dates:
+                last_known_fx_rates[fx_ticker] = fx_rates_history[fx_ticker][
+                    max(relevant_dates)
+                ]
+
     transaction_idx = len(initial_transactions)
 
     while current_day <= end_date:
@@ -207,11 +242,17 @@ def _get_portfolio_history(
         ):
             t = transactions[transaction_idx]
             ticker = t.asset.ticker_symbol
-            if t.transaction_type.lower() == "buy":
+            if t.transaction_type.lower() == "buy" or t.transaction_type == "RSU_VEST" or t.transaction_type == "ESPP_PURCHASE":
                 daily_holdings[ticker] += t.quantity
-            else:
+            elif t.transaction_type.lower() == "sell":
                 daily_holdings[ticker] -= t.quantity
             transaction_idx += 1
+
+        # Update FX rates for today if available
+        for curr in foreign_currencies:
+            fx_ticker = f"{curr}INR=X"
+            if fx_ticker in fx_rates_history and current_day in fx_rates_history[fx_ticker]:
+                last_known_fx_rates[fx_ticker] = fx_rates_history[fx_ticker][current_day]
 
         day_total_value = Decimal("0.0")
         for ticker, quantity in daily_holdings.items():
@@ -223,7 +264,17 @@ def _get_portfolio_history(
                     last_known_prices[ticker] = historical_prices[ticker][current_day]
 
                 if ticker in last_known_prices:
-                    day_total_value += quantity * last_known_prices[ticker]
+                    price = last_known_prices[ticker]
+
+                    # Convert to INR if foreign asset
+                    asset = asset_map.get(ticker)
+                    if asset and asset.currency and asset.currency.upper() != "INR":
+                        fx_ticker = f"{asset.currency}INR=X"
+                        fx_rate = last_known_fx_rates.get(fx_ticker, Decimal(1))
+                        price = price * fx_rate
+
+                    day_total_value += quantity * price
+
         history_points.append({"date": current_day, "value": day_total_value})
         current_day += timedelta(days=1)
 

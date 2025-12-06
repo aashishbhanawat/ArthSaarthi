@@ -433,6 +433,31 @@ def _process_market_traded_assets(
         else {}
     )
 
+    # --- Pre-fetch FX rates for foreign assets ---
+    currencies_needed = {
+        asset.currency
+        for asset in asset_map.values()
+        if asset.currency and asset.currency != "INR"
+    }
+    fx_rates = {}
+    if currencies_needed:
+        fx_assets_to_fetch = [
+            {
+                "ticker_symbol": f"{currency}INR=X",
+                "asset_type": "Currency",
+                "exchange": None
+            }
+            for currency in currencies_needed
+        ]
+        fx_prices = financial_data_service.get_current_prices(fx_assets_to_fetch)
+        for currency in currencies_needed:
+            ticker = f"{currency}INR=X"
+            if ticker in fx_prices:
+                fx_rates[currency] = fx_prices[ticker]["current_price"]
+            else:
+                logger.warning(f"Could not fetch FX rate for {currency}")
+                fx_rates[currency] = Decimal(1)
+
     for ticker in current_holdings_tickers:
         asset = next((a for a in asset_map.values() if a.ticker_symbol == ticker), None)
         data = holdings_state[ticker]
@@ -495,18 +520,19 @@ def _process_market_traded_assets(
         current_value = quantity * current_price
 
         # --- FX Conversion for Current Value ---
-        # If the asset is not in INR, its current value must be converted.
+        # If the asset is not in INR, its current value must be converted using the REAL-TIME rate.
         if asset.currency != "INR":
-            # Find the latest transaction for this asset to get a recent fx_rate
-            latest_tx = max((
-                tx for tx in transactions
-                if tx.asset_id == asset.id and tx.details and "fx_rate" in tx.details
-            ), key=lambda t: t.transaction_date, default=None)
+            # 1. Convert current value using real-time FX rate
+            live_fx_rate = fx_rates.get(asset.currency, Decimal(1))
+            current_value_inr = current_value * live_fx_rate
 
-            if latest_tx and latest_tx.details:
-                fx_rate = Decimal(str(latest_tx.details.get("fx_rate", 1)))
-                current_value *= fx_rate
-                # days_pnl is already calculated in INR equivalent
+            # 2. Convert days_pnl using real-time FX rate
+            # days_pnl is (current_price - prev_close) * qty * fx_rate
+            # Note: We approximate by applying today's FX rate to the change in asset currency.
+            days_pnl_inr = days_pnl * live_fx_rate
+
+            current_value = current_value_inr
+            days_pnl = days_pnl_inr
 
         holdings_list.append(
             schemas.Holding(
