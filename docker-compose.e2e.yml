@@ -1,37 +1,26 @@
 services:
-  db:
-    env_file:
-      - ./backend/.env.test
-    volumes:
-      - postgres_data_test:/var/lib/postgresql/data/
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   backend:
     env_file:
       - ./backend/.env.test
-    command: /app/e2e_entrypoint.sh
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/status"]
-      interval: 5s
-      timeout: 60s
-      retries: 12
-      start_period: 300s
+    environment:
+      - ENVIRONMENT=test
+      - PYTHONPATH=/app
 
-  e2e-tests:
-    build: ./e2e
-    container_name: pms-e2e-tests
-    command: ["npx", "playwright", "test"]
-    volumes:
-      - ./e2e:/app
-      - /app/node_modules
-    networks:
-      - pms_network
+  test-e2e:
+    build:
+      context: ./e2e
+      dockerfile: Dockerfile
     depends_on:
       - frontend
       - backend
+    environment:
+      - E2E_BASE_URL=http://frontend:3000
+      - API_URL=http://backend:8000
+    volumes:
+      - ./e2e/tests:/app/tests
+      - ./e2e/playwright.config.ts:/app/playwright.config.ts
+      - ./e2e/global.setup.ts:/app/global.setup.ts
+    networks:
+      - pms_network
+    ipc: host
+    command: npx playwright test
