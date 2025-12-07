@@ -88,6 +88,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('150.00');
     await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
+    await expect(page.getByRole('button', { name: 'Save Transaction' })).toBeEnabled();
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // Verify the new holding appears in the HoldingsTable
@@ -118,6 +119,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Quantity').fill('5');
     await page.getByLabel('Price per Unit').fill('160.00');
     await page.getByLabel('Date').fill(new Date().toISOString().split('T')[0]);
+    await expect(page.getByRole('button', { name: 'Save Transaction' })).toBeEnabled();
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // Verify the holding quantity is updated
@@ -151,6 +153,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('175.00');
     await page.getByLabel('Date').fill('2023-01-15'); // Use a fixed past date
+    await expect(page.getByRole('button', { name: 'Save Transaction' })).toBeEnabled();
     await page.getByRole('button', { name: 'Save Transaction' }).click();
     // Verify the new holding appears in the HoldingsTable
     const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
@@ -171,6 +174,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Quantity').fill('20'); // Invalid quantity
     await page.getByLabel('Price per Unit').fill('180.00');
     await page.getByLabel('Date').fill('2023-01-20'); // A date after the buy
+    await expect(page.getByRole('button', { name: 'Save Transaction' })).toBeEnabled();
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // 4. Verify the backend error is displayed in the modal
@@ -206,6 +210,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('150');
     await page.getByLabel('Date').fill('2023-02-01');
+    await expect(page.getByRole('button', { name: 'Save Transaction' })).toBeEnabled();
     await page.getByRole('button', { name: 'Save Transaction' }).click();
     // Verify the new holding appears in the HoldingsTable
     const holdingsTable = page.locator('.card', { hasText: 'Holdings' });

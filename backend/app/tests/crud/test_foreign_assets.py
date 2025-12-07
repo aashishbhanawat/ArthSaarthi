@@ -18,6 +18,10 @@ MOCK_FX_RATE = Decimal("85.0")
 MOCK_USD_PRICE = Decimal("100.0")
 
 
+# Use the fixture to unlock the key manager for all tests in this file
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
+
+
 @pytest.fixture
 def mock_financial_data_service():
     with patch("app.crud.crud_dashboard.financial_data_service") as mock_service:

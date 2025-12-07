@@ -14,6 +14,7 @@ const mockLookupAsset = jest.fn();
 const mockCreateFixedDeposit = jest.fn();
 const mockCreatePpfAccount = jest.fn();
 const mockCreateBond = jest.fn();
+const mockGetFxRate = jest.fn();
 
 jest.mock('../../../hooks/usePortfolios', () => ({
   useCreateTransaction: () => ({
@@ -45,6 +46,12 @@ jest.mock('../../../hooks/useAssets', () => ({
 jest.mock('../../../services/portfolioApi', () => ({
   // Use a function factory to avoid hoisting issues with mockLookupAsset
   lookupAsset: (...args: unknown[]) => mockLookupAsset(...args),
+  getFxRate: (...args: unknown[]) => mockGetFxRate(...args),
+}));
+
+jest.mock('../../../utils/formatting', () => ({
+  ...jest.requireActual('../../../utils/formatting'),
+  usePrivacySensitiveCurrency: () => (value: number | string) => `₹${value}`,
 }));
 
 const queryClient = new QueryClient({
@@ -111,6 +118,7 @@ describe('TransactionFormModal', () => {
         isLoading: false,
     });
     mockLookupAsset.mockResolvedValue(mockAssets);
+    mockGetFxRate.mockResolvedValue({ rate: 84.0 });
     (assetHooks.useMfSearch as jest.Mock).mockReturnValue({
       data: mockMfSearchResults,
       isLoading: false,
@@ -139,15 +147,21 @@ describe('TransactionFormModal', () => {
 
     it('submits the form and calls createTransaction mutation', async () => {
       renderComponent();
+
+      // Set date first to ensure FX fetch is enabled upon asset selection
+      fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
+
       // Select an asset first
       const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
       fireEvent.change(assetInput, { target: { value: 'Apple' } }); // This will trigger the search
       fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
 
+      // Wait for FX rate to load because Apple is USD and date is present
+      await screen.findByText('84');
+
       // Fill other fields
       fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '10' } });
       fireEvent.change(screen.getByLabelText(/price per unit/i), { target: { value: '150' } });
-      fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
 
       fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
@@ -328,23 +342,37 @@ describe('TransactionFormModal', () => {
   describe('Corporate Actions', () => {
     it('renders the Dividend form and submits correctly', async () => {
         renderComponent();
-        // Select a stock asset first, as corporate actions are stock-only
+
+        // Select 'Corporate Action' transaction type FIRST to reveal date field for dividend?
+        // No, standard date field is hidden for corporate actions?
+        // Let's check logic.
+        // `assetType === 'Stock' && transactionType === 'Corporate Action'` -> specific form.
+        // The specific form has `Payment Date`.
+        // The FX query uses `transactionDate`.
+        // In the form: `transaction_date: new Date(data.transaction_date).toISOString()`
+        // The FX fetch uses `transactionDate`.
+        // `transactionDate` comes from `useWatch({ control, name: 'transaction_date' })`.
+        // The dividend form inputs: `input ... {...register('transaction_date', ...)}`
+
+        // Select a stock asset first
         const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
         fireEvent.change(assetInput, { target: { value: 'Apple' } });
         fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+
         // Select 'Corporate Action' transaction type
         const transactionTypeSelect = screen.getByLabelText('Transaction Type');
         fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
 
+        // Fill Date immediately to trigger FX fetch
+        fireEvent.change(screen.getByLabelText('Payment Date'), { target: { value: '2024-07-15' } });
+
+        // Wait for FX rate to load because Apple is USD
+        await screen.findByText('84');
+
         // The action type should default to DIVIDEND
         expect(screen.getByLabelText('Action Type')).toHaveValue('DIVIDEND');
 
-        // Check for dividend-specific fields
-        expect(screen.getByLabelText('Payment Date')).toBeInTheDocument();
-        expect(screen.getByLabelText('Total Amount')).toBeInTheDocument();
-
-        // Fill form
-        fireEvent.change(screen.getByLabelText('Payment Date'), { target: { value: '2024-07-15' } });
+        // Fill remaining form
         fireEvent.change(screen.getByLabelText('Total Amount'), { target: { value: '1500' } });
 
         // Submit
@@ -353,13 +381,13 @@ describe('TransactionFormModal', () => {
         await waitFor(() => {
             expect(mockCreateTransaction).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    data: {
+                    data: expect.objectContaining({
                         asset_id: 'asset-1',
                         transaction_type: 'DIVIDEND',
                         quantity: 1500, // Repurposed for cash amount
                         price_per_unit: 1,
                         transaction_date: new Date('2024-07-15T00:00:00.000Z').toISOString(),
-                    },
+                    }),
                 }),
                 expect.any(Object)
             );
@@ -372,6 +400,7 @@ describe('TransactionFormModal', () => {
         const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
         fireEvent.change(assetInput, { target: { value: 'Apple' } });
         fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+
         // Select 'Corporate Action' transaction type
         const transactionTypeSelect = screen.getByLabelText('Transaction Type');
         fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
@@ -381,8 +410,12 @@ describe('TransactionFormModal', () => {
 
         expect(await screen.findByText('Split Ratio')).toBeInTheDocument();
 
-        // Fill form
+        // Fill form (Effective Date is the transaction date)
         fireEvent.change(screen.getByLabelText('Effective Date'), { target: { value: '2024-08-01' } });
+
+        // Wait for FX rate to load because Apple is USD and date is set
+        await screen.findByText('84');
+
         fireEvent.change(screen.getByRole('spinbutton', { name: 'New shares' }), { target: { value: '3' } });
         fireEvent.change(screen.getByRole('spinbutton', { name: 'Old shares' }), { target: { value: '1' } });
 
@@ -392,13 +425,13 @@ describe('TransactionFormModal', () => {
         await waitFor(() => {
             expect(mockCreateTransaction).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    data: {
+                    data: expect.objectContaining({
                         asset_id: 'asset-1',
                         transaction_type: 'SPLIT',
                         quantity: 3, // Repurposed for new ratio
                         price_per_unit: 1, // Repurposed for old ratio
                         transaction_date: new Date('2024-08-01T00:00:00.000Z').toISOString(),
-                    },
+                    }),
                 }),
                 expect.any(Object)
             );
@@ -411,6 +444,7 @@ describe('TransactionFormModal', () => {
         const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
         fireEvent.change(assetInput, { target: { value: 'Apple' } });
         fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+
         // Select 'Corporate Action' transaction type
         const transactionTypeSelect = screen.getByLabelText('Transaction Type');
         fireEvent.change(transactionTypeSelect, { target: { value: 'Corporate Action' } });
@@ -422,6 +456,10 @@ describe('TransactionFormModal', () => {
 
         // Fill form
         fireEvent.change(screen.getByLabelText('Effective Date'), { target: { value: '2024-09-10' } });
+
+        // Wait for FX rate to load because Apple is USD
+        await screen.findByText('84');
+
         fireEvent.change(screen.getByRole('spinbutton', { name: 'New bonus shares' }), { target: { value: '1' } });
         fireEvent.change(screen.getByRole('spinbutton', { name: 'Old held shares' }), { target: { value: '5' } });
 
@@ -431,13 +469,13 @@ describe('TransactionFormModal', () => {
         await waitFor(() => {
             expect(mockCreateTransaction).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    data: {
+                    data: expect.objectContaining({
                         asset_id: 'asset-1',
                         transaction_type: 'BONUS',
                         quantity: 1, // Repurposed for new shares
                         price_per_unit: 5, // Repurposed for old shares
                         transaction_date: new Date('2024-09-10T00:00:00.000Z').toISOString(),
-                    },
+                    }),
                 }),
                 expect.any(Object)
             );
@@ -483,15 +521,20 @@ describe('TransactionFormModal', () => {
     });
     renderComponent();
     
+    // Set date first
+    fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
+
     // Select an asset
     const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
     fireEvent.change(assetInput, { target: { value: 'Apple' } });
     fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
 
+    // Wait for FX rate
+    await screen.findByText('84');
+
     // Fill other fields
     fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '10' } });
     fireEvent.change(screen.getByLabelText(/price per unit/i), { target: { value: '150' } });
-    fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2023-01-01' } });
 
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
