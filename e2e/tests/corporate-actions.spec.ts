@@ -68,6 +68,8 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         await transactionModal.getByLabel('Quantity').fill('10');
         await transactionModal.getByLabel('Price per Unit').fill('100');
         await transactionModal.getByLabel('Date').fill('2023-01-15');
+        // Wait for potential FX rate fetching (if asset is foreign) to enable the button
+        await expect(transactionModal.getByRole('button', { name: 'Save Transaction' })).toBeEnabled();
         await transactionModal.getByRole('button', { name: 'Save Transaction' }).click();
         await expect(transactionModal).not.toBeVisible();
 
