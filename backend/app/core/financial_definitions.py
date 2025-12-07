@@ -40,6 +40,17 @@ TRANSACTION_BEHAVIORS: Dict[TransactionType, Dict[str, Any]] = {
         "pnl_impact": PnlImpactType.NONE,
         "quantity_impact": QuantityImpact.ADD,
     },
+    # ESPP/RSU acquisitions are treated as outflows (cost basis or taxed amount)
+    TransactionType.ESPP_PURCHASE: {
+        "cash_flow": CashFlowType.OUTFLOW,
+        "pnl_impact": PnlImpactType.NONE,
+        "quantity_impact": QuantityImpact.ADD,
+    },
+    TransactionType.RSU_VEST: {
+        "cash_flow": CashFlowType.OUTFLOW,
+        "pnl_impact": PnlImpactType.NONE,
+        "quantity_impact": QuantityImpact.ADD,
+    },
 
     # --- Inflows ---
     TransactionType.SELL: {

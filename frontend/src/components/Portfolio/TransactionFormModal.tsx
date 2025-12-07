@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useCreatePpfAccount, useCreateBond } from '../../hooks/usePortfolios';
 import { useCreateRecurringDeposit, useUpdateRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
-import { lookupAsset } from '../../services/portfolioApi';
+import { lookupAsset, getFxRate } from '../../services/portfolioApi';
 import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
 import { RecurringDepositDetails } from '../../types/recurring_deposit';
 import Select from 'react-select';
+import { usePrivacySensitiveCurrency } from '../../utils/formatting';
 
 interface TransactionFormModalProps {
     portfolioId: string;
@@ -75,6 +76,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         defaultValues: { asset_type: 'Stock', transaction_type: 'BUY', action_type: 'DIVIDEND', splitRatioNew: 2, splitRatioOld: 1, bonusRatioNew: 1, bonusRatioOld: 1 }
     });
 
+    const formatCurrency = usePrivacySensitiveCurrency();
     const queryClient = useQueryClient();
     const createTransactionMutation = useCreateTransaction();
     const updateTransactionMutation = useUpdateTransaction();
@@ -99,6 +101,20 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const transactionType = useWatch({ control, name: 'transaction_type' });
     const actionType = useWatch({ control, name: 'action_type' });
     const isReinvested = useWatch({ control, name: 'isReinvested' });
+    const transactionDate = useWatch({ control, name: 'transaction_date' });
+    const quantity = useWatch({ control, name: 'quantity' });
+    const pricePerUnit = useWatch({ control, name: 'price_per_unit' });
+
+    // --- FX Rate Handling ---
+    const isForeignAsset = selectedAsset?.currency && selectedAsset.currency !== 'INR';
+    const { data: fxRateData, isLoading: isLoadingFxRate } = useQuery({
+        queryKey: ['fxRate', selectedAsset?.currency, 'INR', transactionDate],
+        queryFn: () => getFxRate(selectedAsset!.currency!, 'INR', transactionDate),
+        enabled: !!isForeignAsset && !!transactionDate && new Date(transactionDate).getFullYear() > 1900,
+        staleTime: 1000 * 60 * 60 * 24, // 24 hours
+    });
+
+    const fxRate = fxRateData?.rate;
 
     // --- Mutual Fund Search State & Hooks ---
     const [mfSearchInput, setMfSearchInput] = useState('');
@@ -222,6 +238,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             data.fees = 0;
         }
 
+        const details = isForeignAsset && fxRate ? { fx_rate: fxRate } : undefined;
+
         const mutationOptions = {
             onSuccess: () => {
                 // Always invalidate portfolio queries on success to refetch holdings, summary, etc.
@@ -265,6 +283,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         quantity: data.dividendAmount!, // Repurposed for total cash amount
                         price_per_unit: 1, // Repurposed, set to 1
                         transaction_date: new Date(data.transaction_date).toISOString(),
+                        details,
                     };
                     break;
                 case 'SPLIT':
@@ -274,6 +293,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         quantity: data.splitRatioNew!, // Repurposed for new part of ratio
                         price_per_unit: data.splitRatioOld!, // Repurposed for old part of ratio
                         transaction_date: new Date(data.transaction_date).toISOString(),
+                        details,
                     };
                     break;
                 case 'BONUS':
@@ -283,6 +303,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         quantity: data.bonusRatioNew!, // Repurposed for new shares received
                         price_per_unit: data.bonusRatioOld!, // Repurposed for old shares held
                         transaction_date: new Date(data.transaction_date).toISOString(),
+                        details,
                     };
                     break;
                 default:
@@ -306,6 +327,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 quantity: data.couponAmount!, // Repurposed for total cash amount
                 price_per_unit: 1,
                 transaction_date: new Date(data.transaction_date).toISOString(),
+                details,
             };
             createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
             return;
@@ -329,6 +351,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     quantity: data.mfDividendAmount!,
                     price_per_unit: 1, // Price is 1 for dividend amount
                     transaction_date: new Date(data.transaction_date).toISOString(),
+                    details,
                 };
 
                 const reinvestedQuantity = data.mfDividendAmount! / data.reinvestmentNav!;
@@ -339,11 +362,12 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     quantity: reinvestedQuantity,
                     price_per_unit: data.reinvestmentNav!,
                     transaction_date: new Date(data.transaction_date).toISOString(),
+                    details,
                 };
                 payload = [dividendTx, buyTx];
             } else {
                 // For simple cash dividend, create only one transaction.
-                payload = { ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund', transaction_type: 'DIVIDEND', quantity: data.mfDividendAmount!, price_per_unit: 1, transaction_date: new Date(data.transaction_date).toISOString() };
+                payload = { ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund', transaction_type: 'DIVIDEND', quantity: data.mfDividendAmount!, price_per_unit: 1, transaction_date: new Date(data.transaction_date).toISOString(), details };
             }
 
             createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
@@ -360,6 +384,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     price_per_unit: 1,
                     transaction_date: new Date(data.contributionDate!).toISOString(),
                     asset_type: 'PPF', // For smart recalculation trigger
+                    details,
                 };
                 createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
             } else {
@@ -448,7 +473,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     payment_frequency: null,
                     first_payment_date: null,
                 };
-                const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: 'BUY', quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0 };
+                const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: 'BUY', quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0, details };
                 
                 // If the asset already exists and its bond details are complete (i.e., not a placeholder),
                 // we just add a new transaction. Otherwise, we use the bond creation endpoint which
@@ -483,6 +508,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     price_per_unit: data.price_per_unit,
                     transaction_date: new Date(data.transaction_date).toISOString(),
                     fees: data.fees || 0,
+                    details: isForeignAsset && fxRate ? { ...(transactionToEdit.details || {}), fx_rate: fxRate } : transactionToEdit.details,
                 };
                 updateTransactionMutation.mutate({ portfolioId, transactionId: transactionToEdit.id, data: payload }, mutationOptions);
             } else {
@@ -492,6 +518,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     price_per_unit: data.price_per_unit,
                     transaction_date: new Date(data.transaction_date).toISOString(),
                     fees: data.fees || 0,
+                    details,
                 };
 
                 const createTransactionForAsset = (assetId: string, ticker: string) => {
@@ -693,6 +720,29 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                             )}
                         </div>
 
+                        {/* Foreign Asset Conversion Section */}
+                        {isForeignAsset && (
+                             <div className="p-4 border rounded-md bg-blue-50 mb-4">
+                                <h3 className="font-semibold text-lg text-blue-800">INR Conversion</h3>
+                                <div className="grid grid-cols-2 gap-4 mt-2">
+                                    <div className="form-group">
+                                        <label className="form-label text-blue-700">FX Rate ({selectedAsset.currency}-INR)</label>
+                                        <div className="form-input bg-blue-100 text-blue-800">
+                                            {isLoadingFxRate ? 'Fetching...' : (fxRate || 'N/A')}
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label text-blue-700">Total (INR)</label>
+                                        <div className="form-input bg-blue-100 text-blue-800 font-bold">
+                                            {fxRate && quantity && pricePerUnit
+                                                ? formatCurrency(quantity * pricePerUnit * fxRate, 'INR')
+                                                : '0.00'}
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+                        )}
+
                         {(assetType === 'PPF Account') && (
                             isLoadingPpfAssets ? <p>Loading PPF details...</p> : (
                                 existingPpfAsset ? (
@@ -818,7 +868,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
                                         </div>
                                         <div className="form-group">
-                                            <label htmlFor="price_per_unit" className="form-label">Price per Unit</label>
+                                            <label htmlFor="price_per_unit" className="form-label">Price per Unit {isForeignAsset ? `(${selectedAsset.currency})` : ''}</label>
                                             <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                             {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
                                         </div>
@@ -1047,7 +1097,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     (isEditMode && (updateTransactionMutation.isPending || updateFixedDepositMutation.isPending || updateRecurringDepositMutation.isPending)) ||
                                     (!isEditMode && (createTransactionMutation.isPending || createPpfAccountMutation.isPending || createBondMutation.isPending || createFixedDepositMutation.isPending || createRecurringDepositMutation.isPending)) ||
                                     (!isEditMode && assetType === 'Stock' && !selectedAsset) ||
-                                    (!isEditMode && assetType === 'Mutual Fund' && !selectedMf)}
+                                    (!isEditMode && assetType === 'Mutual Fund' && !selectedMf) ||
+                                    (isForeignAsset && (isLoadingFxRate || !fxRate))}
                             >
                                 {isEditMode 
                                     ? (updateTransactionMutation.isPending || updateFixedDepositMutation.isPending || updateRecurringDepositMutation.isPending ? 'Saving...' : 'Save Changes')

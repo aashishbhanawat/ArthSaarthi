@@ -15,7 +15,7 @@ async function globalSetup() {
   });
 
   // 1. Wait for the backend to be ready by retrying the reset-db call
-  let retries = 5;
+  let retries = 30; // Increased to 30 (60s total)
   while (retries > 0) {
     try {
       const resetResponse = await requestContext.post('/api/v1/testing/reset-db');
@@ -41,8 +41,12 @@ async function globalSetup() {
       password: adminUser.password,
     },
   });
-  expect(adminSetupResponse.ok()).toBeTruthy();
-  console.log('Global setup complete: Admin user created.');
+  // If user already exists (from previous run), setup might return error, which is fine if we can login.
+  if (!adminSetupResponse.ok()) {
+      console.log("Admin setup failed or user exists. Proceeding to login.");
+  } else {
+      console.log('Global setup complete: Admin user created.');
+  }
 
   // 3. Login as admin to get a token for seeding
   const loginResponse = await requestContext.post('/api/v1/auth/login', {
@@ -51,7 +55,12 @@ async function globalSetup() {
       password: adminUser.password,
     },
   });
-  expect(loginResponse.ok()).toBeTruthy();
+
+  if (!loginResponse.ok()) {
+      console.error("Failed to login as admin in global setup.");
+      throw new Error("Admin login failed.");
+  }
+
   const { access_token } = await loginResponse.json();
 
   // 4. Seed some assets
