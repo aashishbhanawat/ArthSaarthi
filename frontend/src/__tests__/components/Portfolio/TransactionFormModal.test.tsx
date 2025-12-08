@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { PrivacyProvider } from '../../../context/PrivacyContext';
 import TransactionFormModal from '../../../components/Portfolio/TransactionFormModal';
 import * as assetHooks from '../../../hooks/useAssets';
 import { Transaction } from '../../../types/portfolio';
@@ -49,11 +50,6 @@ jest.mock('../../../services/portfolioApi', () => ({
   getFxRate: (...args: unknown[]) => mockGetFxRate(...args),
 }));
 
-jest.mock('../../../utils/formatting', () => ({
-  ...jest.requireActual('../../../utils/formatting'),
-  usePrivacySensitiveCurrency: () => (value: number | string) => `₹${value}`,
-}));
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -97,14 +93,16 @@ const renderComponent = (transactionToEdit: Transaction | null = null) => {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <TransactionFormModal
-          isOpen={true}
-          onClose={mockOnClose}
-          portfolioId="portfolio-1"
-          transactionToEdit={transactionToEdit}
-        />
-      </MemoryRouter>
+      <PrivacyProvider>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <TransactionFormModal
+            isOpen={true}
+            onClose={mockOnClose}
+            portfolioId="portfolio-1"
+            transactionToEdit={transactionToEdit}
+          />
+        </MemoryRouter>
+      </PrivacyProvider>
     </QueryClientProvider>
   );
 };

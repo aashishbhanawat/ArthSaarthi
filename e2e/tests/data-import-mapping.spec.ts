@@ -34,6 +34,15 @@ test.describe.serial('Data Import with Asset Mapping', () => {
     });
 
     test.beforeEach(async ({ page }) => {
+    // Mock FX Rate API to prevent timeouts and external dependencies
+    await page.route('**/api/v1/fx-rate/*', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ rate: 83.5 }),
+        });
+    });
+
         // Login as the standard user before each test.
         await page.goto('/');
         await page.getByLabel('Email address').fill(testUser.email);

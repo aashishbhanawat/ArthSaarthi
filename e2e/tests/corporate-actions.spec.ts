@@ -14,6 +14,15 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
     // Before each test, create a unique user, log in, and set up a portfolio with an initial holding.
     // This ensures each test runs in complete isolation.
     test.beforeEach(async ({ page, request }) => {
+        // Mock FX Rate API to prevent timeouts and external dependencies
+        await page.route('**/api/v1/fx-rate/*', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ rate: 83.5 }),
+            });
+        });
+
         // 1. Create a unique user for this specific test run
         standardUser = {
             name: 'Corp Actions E2E User',

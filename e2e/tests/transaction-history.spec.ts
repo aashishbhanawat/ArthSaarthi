@@ -100,6 +100,15 @@ test.describe.serial('Transaction History Page', () => {
   });
 
   test.beforeEach(async ({ page }) => {
+    // Mock FX Rate API to prevent timeouts and external dependencies
+    await page.route('**/api/v1/fx-rate/*', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ rate: 83.5 }),
+        });
+    });
+
     await page.goto('/');
     await page.getByLabel('Email address').fill(testUser.email);
     await page.getByLabel('Password').fill(testUser.password);
