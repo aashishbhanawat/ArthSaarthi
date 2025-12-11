@@ -157,7 +157,6 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('button', { name: 'Save Transaction' }).click();
     // Verify the new holding appears in the HoldingsTable
     const holdingsTable = page.locator('.card', { hasText: 'Holdings' });
-    await expect(holdingsTable).toBeVisible();
     const aaplRow = holdingsTable.getByRole('row', { name: /AAPL/ });
     await expect(aaplRow).toBeVisible();
     await expect(aaplRow.getByRole('cell', { name: '10', exact: true })).toBeVisible(); // Quantity
@@ -245,7 +244,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     // 2. Add a BUY transaction for a Mutual Fund
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Asset Type').selectOption('Mutual Fund');
-    await page.getByLabel('Type', { exact: true }).selectOption('BUY');
+    // Use a specific ID locator to avoid ambiguity with other "Type" dropdowns
+    // (e.g., for Bonds) that might also have the label "Type".
+    await page.locator('#transaction_type_mf').selectOption('BUY');
 
     // Search for the MF
     // Use a more specific locator to distinguish from the "Asset Type" dropdown.
@@ -312,7 +313,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
 
     // Add screenshot and HTML dump for debugging
     await page.getByLabel('Total Dividend Amount').fill(dividendAmount);
-    await page.getByLabel('Payment Date').fill('2023-07-01');
+    await page.getByLabel('Date').fill('2023-07-01');
     await page.getByRole('button', { name: 'Save Transaction' }).click();
 
     // Wait for the modal to close, confirming the transaction was submitted successfully.
@@ -358,9 +359,9 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Asset Type').selectOption('Mutual Fund');
     await mfSelect.fill(mfName);
     await page.getByRole('option', { name: new RegExp(mfName) }).click();
-    await page.getByLabel('Type', { exact: true }).selectOption('DIVIDEND');
+    await page.locator('#transaction_type_mf').selectOption('DIVIDEND');
     await page.getByLabel('Total Dividend Amount').fill(dividendAmount);
-    await page.getByLabel('Payment Date').fill('2023-07-01');
+    await page.getByLabel('Date').fill('2023-07-01');
     await page.getByLabel('Reinvested?').check();
     await page.getByLabel('NAV on Reinvestment Date').fill(reinvestmentNav);
     await page.getByRole('button', { name: 'Save Transaction' }).click();

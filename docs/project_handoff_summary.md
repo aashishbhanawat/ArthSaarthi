@@ -1,18 +1,24 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2025-11-19
+**Last Updated:** 2025-12-11
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** All major features planned for the current development cycle, including the implementation of the inactivity timeout, are complete and stable. All automated test suites (backend, frontend, and E2E) are passing. The application has been manually tested and is considered ready for the next phase of development or for a new release.
+*   **Summary:** All major features planned for the current development cycle, including Foreign Stock & Currency Support, are complete and stable. All automated test suites (backend, frontend, and E2E) are passing following a final stabilization phase. The application has been manually tested and is considered ready for the next phase of development or for a new release.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **158/158 Passing**
-*   **Frontend Unit/Integration Tests:** ✅ **170/170 Passing**
-*   **End-to-End (E2E) Tests:** ✅ **28/28 Passing**
+*   **Backend Unit/Integration Tests:** ✅ **165/165 Passing**
+*   **Frontend Unit/Integration Tests:** ✅ **174/174 Passing**
+*   **End-to-End (E2E) Tests:** ✅ **30/30 Passing**
 *   **Linters (Code Quality):** ✅ **Passing**
+
+### Recent Stabilization Efforts
+
+*   **Frontend Unit Tests:** Resolved all failures in the Jest test suite, primarily by aligning mock data in `TransactionFormModal.test.tsx` with the component's updated logic for handling FX rates.
+*   **E2E Test Coverage:** Enabled the previously skipped E2E test for asset-level XIRR (`analytics.spec.ts`) by implementing a robust mocking strategy for the holdings API response. The full suite of 30 tests now passes.
+*   **Code Quality:** Eliminated the final remaining `eslint` warnings in the frontend codebase and removed duplicated code from the backend.
 
 ## 3. Implemented Functionality
 
@@ -40,6 +46,7 @@
 -   **Watchlists:** Create and manage custom watchlists.
 -   **Goal Planning:** Define financial goals and link assets to track progress.
 -   **Mutual Fund Dividends:** Track both cash and reinvested dividends for mutual funds.
+-   **Foreign Stock & Currency Support:** Track assets in foreign currencies (e.g., USD). Portfolio values, analytics, and performance metrics are automatically converted and consolidated into your base currency (INR) using real-time and historical FX rates.
 -   **Security & User Management:**
     -   Audit Logging Engine for key events.
     -   User Profile Management (name/password change).
