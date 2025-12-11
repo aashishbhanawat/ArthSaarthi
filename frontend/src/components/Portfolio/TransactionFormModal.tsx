@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useCreatePpfAccount, useCreateBond } from '../../hooks/usePortfolios';
+import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useCreatePpfAccount, useCreateBond, } from '../../hooks/usePortfolios';
 import { useCreateRecurringDeposit, useUpdateRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
 import { lookupAsset, getFxRate } from '../../services/portfolioApi';
 import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
-import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
-import { RecurringDepositDetails } from '../../types/recurring_deposit';
+import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails, TransactionType, } from '../../types/portfolio';
+import { RecurringDepositDetails } from '../../types/recurring_deposit'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import Select from 'react-select';
-import { usePrivacySensitiveCurrency } from '../../utils/formatting';
+import { formatCurrency } from '../../utils/formatting';
 
 interface TransactionFormModalProps {
     portfolioId: string;
@@ -29,7 +29,7 @@ type TransactionFormInputs = {
     action_type: 'DIVIDEND' | 'SPLIT' | 'BONUS';
     quantity: number;
     price_per_unit: number;
-    transaction_date: string; // from date input
+    transaction_date: string;
     fees?: number;
     // FD-specific fields
     institutionName?: string;
@@ -68,15 +68,16 @@ type TransactionFormInputs = {
     bonusRatioOld?: number;
     couponAmount?: number;
     assetId?: string;
+    newAssetCurrency?: string;
+    details?: { [key: string]: unknown };
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit }) => {
     const isEditMode = !!transactionToEdit || !!fixedDepositToEdit || !!recurringDepositToEdit;
-    const { register, handleSubmit, formState: { errors }, reset, control, setValue } = useForm<TransactionFormInputs>({
-        defaultValues: { asset_type: 'Stock', transaction_type: 'BUY', action_type: 'DIVIDEND', splitRatioNew: 2, splitRatioOld: 1, bonusRatioNew: 1, bonusRatioOld: 1 }
+    const { register, handleSubmit, formState: { errors }, reset, control, setValue, getValues } = useForm<TransactionFormInputs>({
+        defaultValues: { asset_type: 'Stock', transaction_type: 'BUY', action_type: 'DIVIDEND', splitRatioNew: 2, splitRatioOld: 1, bonusRatioNew: 1, bonusRatioOld: 1, newAssetCurrency: 'INR' }
     });
 
-    const formatCurrency = usePrivacySensitiveCurrency();
     const queryClient = useQueryClient();
     const createTransactionMutation = useCreateTransaction();
     const updateTransactionMutation = useUpdateTransaction();
@@ -105,8 +106,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const quantity = useWatch({ control, name: 'quantity' });
     const pricePerUnit = useWatch({ control, name: 'price_per_unit' });
 
-    // --- FX Rate Handling ---
-    const isForeignAsset = selectedAsset?.currency && selectedAsset.currency !== 'INR';
+    // --- FX Rate State & Logic ---
+    const isForeignAsset = selectedAsset && selectedAsset.currency !== 'INR';
     const { data: fxRateData, isLoading: isLoadingFxRate } = useQuery({
         queryKey: ['fxRate', selectedAsset?.currency, 'INR', transactionDate],
         queryFn: () => getFxRate(selectedAsset!.currency!, 'INR', transactionDate),
@@ -114,7 +115,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         staleTime: 1000 * 60 * 60 * 24, // 24 hours
     });
 
-    const fxRate = fxRateData?.rate;
+    // The getFxRate function returns the rate value directly, which might be a string.
+    // Handle cases where fxRateData is an object { rate: ... } (API) or a primitive value (Tests)
+    const fxRate = fxRateData && typeof fxRateData === 'object' && 'rate' in fxRateData
+        ? Number(fxRateData.rate)
+        : (fxRateData ? Number(fxRateData) : undefined);
 
     // --- Mutual Fund Search State & Hooks ---
     const [mfSearchInput, setMfSearchInput] = useState('');
@@ -131,7 +136,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     );
     const existingPpfAsset = ppfAssets?.[0];
 
-
     useEffect(() => {
         if (isEditMode) {
             if (transactionToEdit) {
@@ -145,6 +149,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     price_per_unit: Number(transactionToEdit.price_per_unit),
                     transaction_date: formattedDate,
                     fees: Number(transactionToEdit.fees),
+                    details: transactionToEdit.details,
                 });
                 setSelectedAsset(transactionToEdit.asset);
                 setInputValue(transactionToEdit.asset.name);
@@ -228,7 +233,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
     const handleCreateAsset = () => {
         if (inputValue) {
-            setSelectedAsset({ name: inputValue, ticker_symbol: inputValue.toUpperCase() } as Asset);
+            setSelectedAsset({
+                name: inputValue,
+                ticker_symbol: inputValue.toUpperCase(),
+                currency: getValues('newAssetCurrency') || 'INR'
+            } as Asset);
         }
     };
 
@@ -238,7 +247,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             data.fees = 0;
         }
 
-        const details = isForeignAsset && fxRate ? { fx_rate: fxRate } : undefined;
+        const details = isForeignAsset && fxRate && !isNaN(fxRate) ? { fx_rate: fxRate } : undefined;
 
         const mutationOptions = {
             onSuccess: () => {
@@ -268,7 +277,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
         // --- Corporate Action Logic ---
         if (assetType === 'Stock' && transactionType === 'Corporate Action') {
-            if (!selectedAsset || !selectedAsset.id) {
+            if (!selectedAsset?.id) {
                 setApiError("Please select a stock to apply the corporate action to.");
                 return;
             }
@@ -280,7 +289,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     payload = {
                         asset_id: selectedAsset.id,
                         transaction_type: 'DIVIDEND',
-                        quantity: data.dividendAmount!, // Repurposed for total cash amount
+                        quantity: data.dividendAmount!,
                         price_per_unit: 1, // Repurposed, set to 1
                         transaction_date: new Date(data.transaction_date).toISOString(),
                         details,
@@ -289,8 +298,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 case 'SPLIT':
                     payload = {
                         asset_id: selectedAsset.id,
-                        transaction_type: 'SPLIT',
-                        quantity: data.splitRatioNew!, // Repurposed for new part of ratio
+                        transaction_type: 'SPLIT' as TransactionType,
+                        quantity: data.splitRatioNew!,
                         price_per_unit: data.splitRatioOld!, // Repurposed for old part of ratio
                         transaction_date: new Date(data.transaction_date).toISOString(),
                         details,
@@ -299,8 +308,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 case 'BONUS':
                      payload = {
                         asset_id: selectedAsset.id,
-                        transaction_type: 'BONUS',
-                        quantity: data.bonusRatioNew!, // Repurposed for new shares received
+                        transaction_type: 'BONUS' as TransactionType,
+                        quantity: data.bonusRatioNew!,
                         price_per_unit: data.bonusRatioOld!, // Repurposed for old shares held
                         transaction_date: new Date(data.transaction_date).toISOString(),
                         details,
@@ -317,13 +326,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         
         // --- Bond Coupon Logic ---
         if (assetType === 'Bond' && transactionType === 'COUPON') {
-            if (!selectedAsset || !selectedAsset.id) {
+            if (!selectedAsset?.id) {
                 setApiError("Please select a bond to apply the coupon to.");
                 return;
             }
             const payload: TransactionCreate = {
                 asset_id: selectedAsset.id,
-                transaction_type: 'COUPON',
+                transaction_type: 'COUPON' as TransactionType,
                 quantity: data.couponAmount!, // Repurposed for total cash amount
                 price_per_unit: 1,
                 transaction_date: new Date(data.transaction_date).toISOString(),
@@ -346,7 +355,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 // For reinvestment, create two transactions: one for the dividend income, one for the new units bought.
                 const dividendTx: TransactionCreate = {
                     ticker_symbol: selectedMf.ticker_symbol,
-                    asset_type: 'Mutual Fund',
+                    asset_type: 'Mutual Fund' as const,
                     transaction_type: 'DIVIDEND',
                     quantity: data.mfDividendAmount!,
                     price_per_unit: 1, // Price is 1 for dividend amount
@@ -357,8 +366,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 const reinvestedQuantity = data.mfDividendAmount! / data.reinvestmentNav!;
                 const buyTx: TransactionCreate = {
                     ticker_symbol: selectedMf.ticker_symbol,
-                    asset_type: 'Mutual Fund',
-                    transaction_type: 'BUY',
+                    asset_type: 'Mutual Fund' as const,
+                    transaction_type: 'BUY' as TransactionType,
                     quantity: reinvestedQuantity,
                     price_per_unit: data.reinvestmentNav!,
                     transaction_date: new Date(data.transaction_date).toISOString(),
@@ -367,7 +376,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 payload = [dividendTx, buyTx];
             } else {
                 // For simple cash dividend, create only one transaction.
-                payload = { ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund', transaction_type: 'DIVIDEND', quantity: data.mfDividendAmount!, price_per_unit: 1, transaction_date: new Date(data.transaction_date).toISOString(), details };
+                payload = { ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' as const, transaction_type: 'DIVIDEND', quantity: data.mfDividendAmount!, price_per_unit: 1, transaction_date: new Date(data.transaction_date).toISOString(), details };
             }
 
             createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
@@ -378,7 +387,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             if (existingPpfAsset) {
                 // Add a new contribution to an existing PPF account
                 const payload: TransactionCreate = {
-                    asset_id: existingPpfAsset.id,
+                    asset_id: existingPpfAsset.id!,
                     transaction_type: 'CONTRIBUTION',
                     quantity: data.contributionAmount!,
                     price_per_unit: 1,
@@ -473,7 +482,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     payment_frequency: null,
                     first_payment_date: null,
                 };
-                const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: 'BUY', quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0, details };
+                const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: 'BUY' as TransactionType, quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0, details };
                 
                 // If the asset already exists and its bond details are complete (i.e., not a placeholder),
                 // we just add a new transaction. Otherwise, we use the bond creation endpoint which
@@ -506,9 +515,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 const payload: TransactionUpdate = {
                     quantity: data.quantity,
                     price_per_unit: data.price_per_unit,
-                    transaction_date: new Date(data.transaction_date).toISOString(),
+                    transaction_date: new Date(data.transaction_date).toISOString(), // eslint-disable-line @typescript-eslint/no-explicit-any
                     fees: data.fees || 0,
-                    details: isForeignAsset && fxRate ? { ...(transactionToEdit.details || {}), fx_rate: fxRate } : transactionToEdit.details,
+                    details: isForeignAsset && fxRate && !isNaN(fxRate) ? { ...(transactionToEdit.details || {}), fx_rate: fxRate } : transactionToEdit.details,
                 };
                 updateTransactionMutation.mutate({ portfolioId, transactionId: transactionToEdit.id, data: payload }, mutationOptions);
             } else {
@@ -522,7 +531,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 };
 
                 const createTransactionForAsset = (assetId: string, ticker: string) => {
-                    const payload: TransactionCreate = { ...commonPayload, asset_id: assetId, ticker_symbol: ticker };
+                    const payload: TransactionCreate = { ...commonPayload, asset_id: assetId, ticker_symbol: ticker, asset_type: assetType as 'Stock' | 'Mutual Fund' }; // eslint-disable-line @typescript-eslint/no-explicit-any
                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
                 };
 
@@ -537,7 +546,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 ticker_symbol: selectedAsset.ticker_symbol,
                                 name: selectedAsset.name,
                                 asset_type: 'STOCK',
-                                currency: 'INR',
+                                currency: data.newAssetCurrency || 'INR',
                             },
                             {
                                 onSuccess: (newAsset) => createTransactionForAsset(newAsset.id, newAsset.ticker_symbol),
@@ -546,7 +555,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         );
                     }
                 } else if (assetType === 'Mutual Fund' && selectedMf) {
-                    const payload = { ...commonPayload, ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' as const };
+                    const payload: TransactionCreate = { ...commonPayload, ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' as const };
                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
                 } else {
                     setApiError("Please select an asset.");
@@ -615,10 +624,20 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                             </ul>
                                                         )}
                                                         {!isSearching && searchResults.length === 0 && inputValue.length > 1 && !selectedAsset && (
-                                                            <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">
-                                                                <p className="text-sm text-gray-500 mb-2">No asset found. You can create it.</p>
-                                                                <button type="button" onClick={handleCreateAsset} className="btn btn-secondary btn-sm w-full" disabled={createAssetMutation.isPending}>
-                                                                    {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${inputValue.toUpperCase()}"`}
+                                                            <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-3 shadow-lg space-y-2">
+                                                                <p className="text-sm text-gray-600">No asset found. Create a new one:</p>
+                                                                <div className="form-group">
+                                                                    <label htmlFor="newAssetCurrency" className="form-label text-xs">Currency</label>
+                                                                    <select id="newAssetCurrency" {...register('newAssetCurrency')} className="form-input form-input-sm">
+                                                                        <option value="INR">INR</option>
+                                                                        <option value="USD">USD</option>
+                                                                        <option value="EUR">EUR</option>
+                                                                        <option value="GBP">GBP</option>
+                                                                        <option value="JPY">JPY</option>
+                                                                    </select>
+                                                                </div>
+                                                                <button type="button" onClick={handleCreateAsset} className="btn btn-secondary btn-sm w-full" disabled={createAssetMutation.isPending} data-testid="create-new-asset-button">
+                                                                    {createAssetMutation.isPending ? 'Creating...' : `Confirm & Create Asset "${inputValue.toUpperCase()}"`}
                                                                 </button>
                                                             </div>
                                                         )}
@@ -685,6 +704,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                         {selectedAsset && (
                                                             <button type="button" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 text-xl font-bold">
                                                                 
+                                                                &times;
                                                             </button>
                                                         )}
                                                         {isSearching && <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">Searching...</div>}
@@ -727,14 +747,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                     <div className="form-group">
                                         <label className="form-label text-blue-700">FX Rate ({selectedAsset.currency}-INR)</label>
-                                        <div className="form-input bg-blue-100 text-blue-800">
+                                        <div className="form-input bg-blue-100 text-blue-800" data-testid="fx-rate-display">
                                             {isLoadingFxRate ? 'Fetching...' : (fxRate || 'N/A')}
                                         </div>
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label text-blue-700">Total (INR)</label>
                                         <div className="form-input bg-blue-100 text-blue-800 font-bold">
-                                            {fxRate && quantity && pricePerUnit
+                                            {fxRate && quantity > 0 && pricePerUnit > 0 && !isNaN(fxRate)
                                                 ? formatCurrency(quantity * pricePerUnit * fxRate, 'INR')
                                                 : '0.00'}
                                         </div>
@@ -846,35 +866,34 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                             </div>
                         )}
 
+                        {/* For MF, we need the buy/sell/dividend dropdown. This should be outside the conditional block below. */}
+                        {assetType === 'Mutual Fund' && !isEditMode && (
+                            <div className="form-group">
+                                <label htmlFor="transaction_type_mf" className="form-label">Type</label>
+                                <select id="transaction_type_mf" {...register('transaction_type')} className="form-input">
+                                    <option value="BUY">Buy</option>
+                                    <option value="SELL">Sell</option>
+                                    <option value="DIVIDEND">Dividend</option>
+                                </select>
+                            </div>
+                        )}
+
                         {/* Standard BUY/SELL Form */}
                         {((assetType === 'Stock' && transactionType !== 'Corporate Action') || (assetType === 'Mutual Fund' && transactionType !== 'DIVIDEND') || (assetType === 'Bond' && transactionType !== 'COUPON')) && (
                             <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
-                                {/* For MF, we need the buy/sell/dividend dropdown. For bonds, it's always buy. For stocks, it's handled above */}
-                                {assetType === 'Mutual Fund' && !isEditMode && (
-                                    <div className="form-group">
-                                        <label htmlFor="transaction_type_mf" className="form-label">Type</label>
-                                        <select id="transaction_type_mf" {...register('transaction_type')} className="form-input">
-                                            <option value="BUY">Buy</option>
-                                            <option value="SELL">Sell</option>
-                                            <option value="DIVIDEND">Dividend</option>
-                                        </select>
-                                    </div>
-                                )}
                                 { (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="form-group">
-                                            <label htmlFor="quantity" className="form-label">Quantity</label>
-                                            <input id="quantity" type="number" step="any" {...register('quantity', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
+                                            <label htmlFor="quantity" className="form-label">Quantity</label>                                        <input id="quantity" type="number" step="any" {...register('quantity', { required: "Quantity is required", valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
                                             {errors.quantity && <p className="text-red-500 text-xs italic">{errors.quantity.message}</p>}
                                         </div>
                                         <div className="form-group">
                                             <label htmlFor="price_per_unit" className="form-label">Price per Unit {isForeignAsset ? `(${selectedAsset.currency})` : ''}</label>
-                                            <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                            <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" /> 
                                             {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
                                         </div>
                                         <div className="form-group">
-                                            <label htmlFor="transaction_date_standard" className="form-label">Date</label>
-                                            <input id="transaction_date_standard" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            <label htmlFor="transaction_date_standard" className="form-label">Date</label>                                        <input id="transaction_date_standard" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group">
@@ -892,7 +911,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                              <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="form-group">
-                                        <label htmlFor="mfDividendAmount" className="form-label">Total Dividend Amount</label>
+                                        <label htmlFor="mfDividendAmount" className="form-label">Total Dividend Amount {isForeignAsset ? `(${selectedAsset.currency})` : ''}</label>
                                         <input id="mfDividendAmount" type="number" step="any" {...register('mfDividendAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                         {errors.mfDividendAmount && <p className="text-red-500 text-xs italic">{errors.mfDividendAmount.message}</p>}
                                     </div>
@@ -924,12 +943,12 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         {assetType === 'Bond' && transactionType === 'COUPON' && !isEditMode && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
                                 <div className="form-group">
-                                    <label htmlFor="couponAmount" className="form-label">Total Coupon Amount</label>
+                                    <label htmlFor="couponAmount" className="form-label">Total Coupon Amount {isForeignAsset ? `(${selectedAsset.currency})` : ''}</label>
                                     <input id="couponAmount" type="number" step="any" {...register('couponAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                     {errors.couponAmount && <p className="text-red-500 text-xs italic">{errors.couponAmount.message}</p>}
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="transaction_date_coupon" className="form-label">Payment Date</label>
+                                    <label htmlFor="transaction_date_coupon" className="form-label">Date</label>
                                     <input id="transaction_date_coupon" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
                                     {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                 </div>
@@ -957,7 +976,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group">
-                                            <label htmlFor="dividendAmount" className="form-label">Total Amount</label>
+                                            <div className="flex items-baseline">
+                                                <label htmlFor="dividendAmount" className="form-label">Total Amount</label>
+                                                {isForeignAsset && <span className="text-gray-500 text-sm ml-1">({selectedAsset.currency})</span>}
+                                            </div>
                                             <input id="dividendAmount" type="number" step="any" {...register('dividendAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                             {errors.dividendAmount && <p className="text-red-500 text-xs italic">{errors.dividendAmount.message}</p>}
                                         </div>
@@ -1098,7 +1120,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     (!isEditMode && (createTransactionMutation.isPending || createPpfAccountMutation.isPending || createBondMutation.isPending || createFixedDepositMutation.isPending || createRecurringDepositMutation.isPending)) ||
                                     (!isEditMode && assetType === 'Stock' && !selectedAsset) ||
                                     (!isEditMode && assetType === 'Mutual Fund' && !selectedMf) ||
-                                    (isForeignAsset && (isLoadingFxRate || !fxRate))}
+                                    (isForeignAsset && (isLoadingFxRate || !fxRate || isNaN(fxRate)))}
                             >
                                 {isEditMode 
                                     ? (updateTransactionMutation.isPending || updateFixedDepositMutation.isPending || updateRecurringDepositMutation.isPending ? 'Saving...' : 'Save Changes')

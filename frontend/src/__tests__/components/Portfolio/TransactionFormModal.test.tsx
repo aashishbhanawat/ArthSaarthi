@@ -118,7 +118,7 @@ describe('TransactionFormModal', () => {
         isLoading: false,
     });
     mockLookupAsset.mockResolvedValue(mockAssets);
-    mockGetFxRate.mockResolvedValue({ rate: 84.0 });
+    mockGetFxRate.mockResolvedValue(84.0);
     (assetHooks.useMfSearch as jest.Mock).mockReturnValue({
       data: mockMfSearchResults,
       isLoading: false,

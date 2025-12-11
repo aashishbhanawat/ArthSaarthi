@@ -83,7 +83,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const holdingsResponsePromise = page.waitForResponse(resp => 
         resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
     );
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
     await holdingsResponsePromise;
     console.log('[E2E DEBUG] Holdings refetched. Verifying UI update...');
 
@@ -107,7 +107,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const holdingsResponsePromise2 = page.waitForResponse(resp => 
         resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
     );
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
     await holdingsResponsePromise2;
     console.log('[E2E DEBUG] Holdings refetched. Verifying UI update...');
 
@@ -143,6 +143,25 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     const url = page.url();
     const portfolioId = url.split('/').pop()!;
 
+    // Mock the holdings response to provide a price for XIRRTEST so XIRR is deterministic
+    await page.route(`**/api/v1/portfolios/${portfolioId}/holdings`, async route => {
+      const response = await route.fetch();
+      const json = await response.json();
+      if (json.holdings) {
+        json.holdings = json.holdings.map((h: any) => {
+          if (h.ticker_symbol === assetTicker) {
+            return {
+              ...h,
+              current_price: 130.0,
+              current_value: Number(h.quantity) * 130.0,
+            };
+          }
+          return h;
+        });
+      }
+      await route.fulfill({ response, json });
+    });
+
     // 2. Add transactions with specific dates for XIRR calculation
     // BUY 10 shares @ 100, 1 year ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
@@ -151,13 +170,13 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // The correct flow is to search for it and select it.
     // UPDATE: The lookup is failing, so we must test the "create" flow.
     await page.getByRole('textbox', { name: 'Asset' }).fill(assetTicker);
-
-    // Verify the "Create Asset" button appears when the lookup finds no results.
-    const createAssetButton = page.getByRole('button', { name: `Create Asset "${assetTicker}"` });
-    await expect(createAssetButton).toBeVisible();
-
-    // Click the create asset button *before* filling the rest of the form.
-    // This ensures the asset is selected and the UI is stable.
+    
+    // Select the currency for the new asset
+    const currencyDropdown = page.locator('select#newAssetCurrency');
+    await expect(currencyDropdown).toBeVisible();
+    await currencyDropdown.selectOption('INR');
+    
+    const createAssetButton = page.getByTestId('create-new-asset-button');
     await createAssetButton.click();
 
     await page.getByLabel('Transaction Type').selectOption('BUY');
@@ -172,7 +191,6 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await expect(equitiesSection).toBeVisible();
     const newHoldingRow = equitiesSection.getByRole('row', { name: new RegExp(assetTicker) });
     await expect(newHoldingRow).toBeVisible({ timeout: 10000 });
-    console.log('[E2E DEBUG] UI updated with new holding.');
 
     // SELL 5 shares @ 120, 6 months ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();

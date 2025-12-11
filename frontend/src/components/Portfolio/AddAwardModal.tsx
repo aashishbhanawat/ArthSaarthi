@@ -171,11 +171,9 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                 setIsLoadingFx(true);
                 setValue('fxRate', 1); // Reset while fetching
                 getFxRate(selectedAsset.currency, 'INR', date)
-                    .then(rate => setValue('fxRate', rate))
+                    .then(rate => setValue('fxRate', Number(rate))) // The getFxRate function returns the rate directly
                     .catch(() => setValue('fxRate', 1)) // On error, default to 1 and allow manual entry
                     .finally(() => setIsLoadingFx(false));
-            } else {
-                setValue('fxRate', 1);
             }
         }, 500); // Debounce for 500ms
 
