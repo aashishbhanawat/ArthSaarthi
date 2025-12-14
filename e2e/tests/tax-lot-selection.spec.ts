@@ -79,7 +79,7 @@ test.describe.serial('Tax Lot Selection E2E Flow', () => {
 
         // Let's NOT rely on lookup for a fake ticker unless we mock it.
         // Use a Mock Route for lookup!
-        await page.route('**/api/v1/assets/lookup?query=*', route => {
+        await page.route('**/api/v1/assets/lookup*', route => {
             route.fulfill({
                 status: 200,
                 contentType: 'application/json',

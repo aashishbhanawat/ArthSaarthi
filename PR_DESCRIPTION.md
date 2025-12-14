@@ -18,7 +18,7 @@ Implements "Specific Lot Identification" for sales, allowing users to optimize t
 *   **Backend Reviews:** All lint checks passed (`ruff`).
 *   **Backend Tests:** All 166 tests passed (including new integration tests).
 *   **Frontend Tests:** All 174 tests passed.
-*   **E2E Tests:** All 31 tests passed.
+*   **E2E Tests:** All 31 tests passed (Route mocking fixed for tax-lot-selection).
 
 ### Breaking Changes
 *   None. Unlinked transactions fall back to Average Cost (P&L) and FIFO (Availability), preserving behavior for existing data.
