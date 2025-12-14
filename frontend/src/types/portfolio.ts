@@ -27,6 +27,11 @@ export interface PortfolioCreate {
   description?: string | null;
 }
 
+export interface TransactionLinkCreate {
+  buy_transaction_id: string;
+  quantity: number;
+}
+
 export type TransactionCreate = {
   transaction_type: TransactionType;
   quantity: number;
@@ -35,6 +40,7 @@ export type TransactionCreate = {
   fees?: number;
   is_reinvested?: boolean;
   details?: Record<string, unknown>;
+  links?: TransactionLinkCreate[];
 } & ({ asset_id: string; ticker_symbol?: never; asset_type?: never; } | { asset_id?: never; ticker_symbol: string; asset_type: string });
 
 
@@ -46,6 +52,7 @@ export interface TransactionUpdate {
   fees?: number;
   asset_id?: string;
   details?: Record<string, unknown>;
+  links?: TransactionLinkCreate[];
 }
 
 export interface TransactionsResponse {
@@ -54,42 +61,42 @@ export interface TransactionsResponse {
 }
 
 export interface TransactionCreatedResponse {
-    created_transactions: Transaction[];
+  created_transactions: Transaction[];
 }
 
 export interface FixedDepositCreate {
-    name: string;
-    principal_amount: number;
-    interest_rate: number;
-    start_date: string;
-    maturity_date: string;
-    compounding_frequency: 'Annually' | 'Half-Yearly' | 'Quarterly';
-    interest_payout: 'Cumulative' | 'Payout';
+  name: string;
+  principal_amount: number;
+  interest_rate: number;
+  start_date: string;
+  maturity_date: string;
+  compounding_frequency: 'Annually' | 'Half-Yearly' | 'Quarterly';
+  interest_payout: 'Cumulative' | 'Payout';
 }
 
 export interface FixedDepositUpdate {
-    name?: string;
-    principal_amount?: number;
-    interest_rate?: number;
-    start_date?: string;
-    maturity_date?: string;
-    compounding_frequency?: 'Annually' | 'Half-Yearly' | 'Quarterly';
-    interest_payout?: 'Cumulative' | 'Payout';
+  name?: string;
+  principal_amount?: number;
+  interest_rate?: number;
+  start_date?: string;
+  maturity_date?: string;
+  compounding_frequency?: 'Annually' | 'Half-Yearly' | 'Quarterly';
+  interest_payout?: 'Cumulative' | 'Payout';
 }
 
 export interface FixedDeposit extends FixedDepositCreate {
-    id: string;
-    portfolio_id: string;
-    user_id: string;
+  id: string;
+  portfolio_id: string;
+  user_id: string;
 }
 
 export interface FixedDepositDetails extends FixedDeposit {
-    maturity_value: number;
+  maturity_value: number;
 }
 
 export interface FixedDepositAnalytics {
-    unrealized_xirr: number;
-    realized_xirr: number;
+  unrealized_xirr: number;
+  realized_xirr: number;
 }
 
 export interface PpfCreate {

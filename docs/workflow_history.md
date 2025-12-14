@@ -206,3 +206,36 @@ This phase focused on achieving a "green" build across all testing layers.
 ### Outcome
 
 **Success.** The project has achieved a completely clean state with 100% passing tests (Backend: 165, Frontend: 174, E2E: 30) and no linter errors. The application is ready for backup and deployment.
+
+## 2025-12-14: Implement Tax Lot Accounting (FR8.3)
+
+**Task:** Implement "Specific Lot Identification" for sales, allowing users to optimize tax liability (e.g., specific lot selling vs average cost).
+
+**AI Assistant:** Antigravity
+**Role:** Senior Software Engineer
+
+### Summary
+
+Implemented the complete backend and frontend infrastructure for Specific Lot Accounting, moving away from a pure Average Cost Basis model while maintaining backward compatibility.
+
+1.  **Backend Implementation:**
+    *   **Data Model:** Introduced `TransactionLink` table to link SELL transactions to specific BUY lots.
+    *   **Logic:** Implemented `get_available_lots` with FIFO fallback for unlinked transactions. Updated `crud_holding.py` to calculate Realized P&L using specific linked costs.
+    *   **Regression Fixes:** Refactored Corporate Action handling (Splits/Bonuses) to use event-sourcing instead of history mutation, resolving a double-counting bug.
+
+2.  **Frontend Implementation:**
+    *   **UI:** Updated `TransactionFormModal.tsx` to include a "Specify Lots" section for SELL transactions of Stocks/MFs.
+    *   **UX:** Added helper buttons for "FIFO", "LIFO", and "Highest Cost" to auto-fill lot selections.
+
+3.  **Verification:**
+    *   **New Tests:** Created `e2e/tests/tax-lot-selection.spec.ts` (UI Flow) and `app/tests/api/v1/test_tax_lot_pnl.py` (Backend P&L Logic).
+    *   **Regression:** Full suite passed (Backend: 166 tests, Frontend: 174 tests, E2E: 31 tests).
+
+### File Changes
+
+*   **New:** `backend/app/models/transaction_link.py`, `backend/app/tests/api/v1/test_tax_lot_pnl.py`, `e2e/tests/tax-lot-selection.spec.ts`
+*   **Modified:** `backend/app/crud/crud_holding.py`, `backend/app/crud/crud_transaction.py`, `backend/app/crud/crud_corporate_action.py`, `frontend/src/components/Portfolio/TransactionFormModal.tsx`
+
+### Outcome
+
+**Success.** The system now supports sophisticated tax planning with specific lot identification. Logic is verified by robust integration and E2E tests, and historical data integrity is preserved.

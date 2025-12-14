@@ -23,9 +23,15 @@ class TransactionBase(BaseModel):
     details: Optional[Dict[str, Any]] = None
 
 
+class TransactionLinkCreate(BaseModel):
+    buy_transaction_id: uuid.UUID
+    quantity: Decimal
+
+
 # Properties to receive on transaction creation
 class TransactionCreate(TransactionBase):
     asset_id: uuid.UUID
+    links: Optional[List[TransactionLinkCreate]] = None
 
 
 # Flexible input schema for the create_transaction endpoint
@@ -33,6 +39,7 @@ class TransactionCreateIn(TransactionBase):
     asset_id: Optional[uuid.UUID] = None
     ticker_symbol: Optional[str] = None
     asset_type: Optional[str] = None
+    links: Optional[List[TransactionLinkCreate]] = None
 
     @model_validator(mode="after")
     def check_asset_provided(self) -> "TransactionCreateIn":
@@ -50,6 +57,7 @@ class TransactionUpdate(TransactionBase):
     fees: Optional[Decimal] = None
     asset_id: Optional[uuid.UUID] = None
     details: Optional[Dict[str, Any]] = None
+    links: Optional[List[TransactionLinkCreate]] = None
 
 
 # Properties to return to client

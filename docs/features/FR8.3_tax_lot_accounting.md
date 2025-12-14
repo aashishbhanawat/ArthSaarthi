@@ -1,6 +1,6 @@
 # FR8.3: Specific Lot Identification for Sales (Tax Lot Accounting)
 
-**Status: 📝 Proposed**
+**Status: ✅ Implemented**
 
 ## 1. Introduction
 

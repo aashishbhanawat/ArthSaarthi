@@ -52,3 +52,9 @@ yarn-error.log*
 dump.rdb
 /frontend/dist-electron/
 backend/temp_seed_data/
+
+# Crash dumps
+core
+
+# CI/CD logs
+log.txt

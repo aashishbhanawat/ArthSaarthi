@@ -6849,3 +6849,44 @@ The Session Timeout Modal should never appear if the user is not logged in. The 
 The modal appears, prompting a logout even though no user is logged in.
 **Resolution:**
 Updated `useIdleTimer.ts` to accept an `enabled` parameter. Updated `AuthContext.tsx` to pass `!!token` as the enabled flag to the hook, effectively disabling the timer when logged out. Also wrapped the `SessionTimeoutModal` render in a conditional check `!!token && ...`.
+---
+
+**Bug ID:** 2025-12-14-01
+**Title:** Corporate Actions (Splits/Bonus) double-counted in holdings.
+**Module:** Backend Logic (Corporate Actions)
+**Reported By:** QA Regression Test
+**Date Reported:** 2025-12-14
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+Split and Bonus transactions were effectively double-counted. The legacy logic mutated historical transactions (multiplying quantity), while the new event-sourcing logic applied the split factor dynamically.
+**Resolution:**
+Refactored `crud_corporate_action.py` to stop mutating historical transactions. Updated `crud_holding.py` to process `SPLIT` events dynamically.
+
+---
+
+**Bug ID:** 2025-12-14-02
+**Title:** `test_tax_lot_accounting_flow` fails due to missing encryption key.
+**Module:** Backend Tests
+**Reported By:** CI/CD Log
+**Date Reported:** 2025-12-14
+**Classification:** Test Suite
+**Severity:** High
+**Description:**
+The integration test failed with `RuntimeError: Cannot encrypt data` because the `pre_unlocked_key_manager` fixture was not applied.
+**Resolution:**
+Added the missing fixture to the test function.
+
+---
+
+**Bug ID:** 2025-12-14-03
+**Title:** `TransactionLinkCreate` schema not exported.
+**Module:** Backend Schemas
+**Reported By:** Backend Integration Test
+**Date Reported:** 2025-12-14
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The `TransactionLinkCreate` Pydantic model was defined in `transaction.py` but not exported in `app/schemas/__init__.py`, causing `AttributeError` in tests.
+**Resolution:**
+Exported the schema in `__init__.py`.
