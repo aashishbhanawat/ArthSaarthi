@@ -5,10 +5,10 @@ import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useC
 import { useCreateRecurringDeposit, useUpdateRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
-import { lookupAsset, getFxRate } from '../../services/portfolioApi';
+import { lookupAsset, getFxRate, getAvailableLots, AvailableLot } from '../../services/portfolioApi';
 import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
-import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails, TransactionType, } from '../../types/portfolio';
+import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails, TransactionType } from '../../types/portfolio';
 import { RecurringDepositDetails } from '../../types/recurring_deposit'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import Select from 'react-select';
 import { formatCurrency } from '../../utils/formatting';
@@ -136,6 +136,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     );
     const existingPpfAsset = ppfAssets?.[0];
 
+    // --- Tax Lot Accounting State ---
+    const [availableLots, setAvailableLots] = useState<AvailableLot[]>([]);
+    const [lotSelections, setLotSelections] = useState<{ [lotId: string]: number }>({});
+    const [isLoadingLots, setIsLoadingLots] = useState(false);
+
     useEffect(() => {
         if (isEditMode) {
             if (transactionToEdit) {
@@ -219,7 +224,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         setSelectedMf(mf);
     };
 
-  useEffect(() => {
+    useEffect(() => {
         if (selectedAsset && assetType === 'Bond') {
             // Populate the bond-specific fields when a bond asset is selected
             setValue('bondType', selectedAsset.bond?.bond_type || '', { shouldValidate: true });
@@ -229,6 +234,85 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             setValue('bondMaturityDate', selectedAsset.bond?.maturity_date ? new Date(selectedAsset.bond.maturity_date).toISOString().split('T')[0] : '', { shouldValidate: true });
         }
     }, [selectedAsset, assetType, setValue]);
+
+    // Fetch available lots for SELL transactions
+    useEffect(() => {
+        if (selectedAsset && selectedAsset.id && transactionType === 'SELL' && (assetType === 'Stock' || assetType === 'Mutual Fund')) {
+            setIsLoadingLots(true);
+            getAvailableLots(selectedAsset.id)
+                .then(lots => {
+                    setAvailableLots(lots);
+                    setLotSelections({});
+                })
+                .catch(err => console.error("Failed to fetch lots", err))
+                .finally(() => setIsLoadingLots(false));
+        } else {
+            setAvailableLots([]);
+            setLotSelections({});
+        }
+    }, [selectedAsset, transactionType, assetType]);
+
+    // Helper to calculate total selected quantity
+    const totalSelectedQty = Object.values(lotSelections).reduce((sum, qty) => sum + qty, 0);
+
+    const handleLotChange = (lotId: string, qty: number) => {
+        if (qty < 0) return;
+        setLotSelections(prev => ({
+            ...prev,
+            [lotId]: qty
+        }));
+    };
+
+    const applyFIFO = () => {
+        let remaining = quantity;
+        const newSelections: { [id: string]: number } = {};
+        // Sort by date ascending
+        const sortedLots = [...availableLots].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        for (const lot of sortedLots) {
+            if (remaining <= 0) break;
+            const take = Math.min(remaining, lot.available_quantity);
+            if (take > 0) {
+                newSelections[lot.id] = take;
+                remaining -= take;
+            }
+        }
+        setLotSelections(newSelections);
+    };
+
+    const applyLIFO = () => {
+        let remaining = quantity;
+        const newSelections: { [id: string]: number } = {};
+        // Sort by date descending
+        const sortedLots = [...availableLots].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        for (const lot of sortedLots) {
+            if (remaining <= 0) break;
+            const take = Math.min(remaining, lot.available_quantity);
+            if (take > 0) {
+                newSelections[lot.id] = take;
+                remaining -= take;
+            }
+        }
+        setLotSelections(newSelections);
+    };
+
+    const applyHighestCost = () => {
+        let remaining = quantity;
+        const newSelections: { [id: string]: number } = {};
+        // Sort by price descending
+        const sortedLots = [...availableLots].sort((a, b) => b.price_per_unit - a.price_per_unit);
+
+        for (const lot of sortedLots) {
+            if (remaining <= 0) break;
+            const take = Math.min(remaining, lot.available_quantity);
+            if (take > 0) {
+                newSelections[lot.id] = take;
+                remaining -= take;
+            }
+        }
+        setLotSelections(newSelections);
+    };
 
 
     const handleCreateAsset = () => {
@@ -306,7 +390,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     };
                     break;
                 case 'BONUS':
-                     payload = {
+                    payload = {
                         asset_id: selectedAsset.id,
                         transaction_type: 'BONUS' as TransactionType,
                         quantity: data.bonusRatioNew!,
@@ -323,7 +407,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
             return; // Exit after handling corporate action
         }
-        
+
         // --- Bond Coupon Logic ---
         if (assetType === 'Bond' && transactionType === 'COUPON') {
             if (!selectedAsset?.id) {
@@ -411,7 +495,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             }
         } else if (assetType === 'Fixed Deposit') {
             if (isEditMode && fixedDepositToEdit) {
-                 updateFixedDepositMutation.mutate({
+                updateFixedDepositMutation.mutate({
                     portfolioId,
                     fdId: fixedDepositToEdit.id,
                     data: {
@@ -442,10 +526,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             }
         } else if (assetType === 'Recurring Deposit') {
             if (isEditMode && recurringDepositToEdit) {
-                 updateRecurringDepositMutation.mutate({
+                updateRecurringDepositMutation.mutate({
                     rdId: recurringDepositToEdit.id,
                     data: {
-                         name: data.rdName!,
+                        name: data.rdName!,
                         account_number: data.rdAccountNumber!,
                         monthly_installment: data.monthlyInstallment!,
                         interest_rate: data.rdInterestRate!,
@@ -483,14 +567,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     first_payment_date: null,
                 };
                 const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: 'BUY' as TransactionType, quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0, details };
-                
+
                 // If the asset already exists and its bond details are complete (i.e., not a placeholder),
                 // we just add a new transaction. Otherwise, we use the bond creation endpoint which
                 // also handles updating (upserting) the bond details along with creating the first transaction.
                 const isBondDetailComplete = selectedAsset.bond && selectedAsset.bond.maturity_date && selectedAsset.bond.maturity_date !== '1970-01-01';
                 if (isBondDetailComplete) {
-                     const payload: TransactionCreate = { ...transactionData, asset_id: selectedAsset.id, ticker_symbol: selectedAsset.ticker_symbol };
-                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+                    const payload: TransactionCreate = { ...transactionData, asset_id: selectedAsset.id, ticker_symbol: selectedAsset.ticker_symbol };
+                    createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
                 } else {
                     // This is for creating a new bond asset and its first transaction
                     createBondMutation.mutate({ portfolioId, bondData, transactionData }, mutationOptions);
@@ -528,6 +612,12 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     transaction_date: new Date(data.transaction_date).toISOString(),
                     fees: data.fees || 0,
                     details,
+                    links: totalSelectedQty > 0 ? Object.entries(lotSelections)
+                        .filter(([, qty]) => qty > 0)
+                        .map(([buyTxId, qty]) => ({
+                            buy_transaction_id: buyTxId,
+                            quantity: qty
+                        })) : undefined
                 };
 
                 const createTransactionForAsset = (assetId: string, ticker: string) => {
@@ -703,7 +793,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                     <>
                                                         {selectedAsset && (
                                                             <button type="button" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 text-xl font-bold">
-                                                                
+
                                                                 &times;
                                                             </button>
                                                         )}
@@ -735,14 +825,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             </div>
                                         </>
                                     )}
-                                    
+
                                 </div>
                             )}
                         </div>
 
                         {/* Foreign Asset Conversion Section */}
                         {isForeignAsset && (
-                             <div className="p-4 border rounded-md bg-blue-50 mb-4">
+                            <div className="p-4 border rounded-md bg-blue-50 mb-4">
                                 <h3 className="font-semibold text-lg text-blue-800">INR Conversion</h3>
                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                     <div className="form-group">
@@ -760,7 +850,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </div>
                                     </div>
                                 </div>
-                             </div>
+                            </div>
                         )}
 
                         {(assetType === 'PPF Account') && (
@@ -881,7 +971,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         {/* Standard BUY/SELL Form */}
                         {((assetType === 'Stock' && transactionType !== 'Corporate Action') || (assetType === 'Mutual Fund' && transactionType !== 'DIVIDEND') || (assetType === 'Bond' && transactionType !== 'COUPON')) && (
                             <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
-                                { (
+                                {(
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="form-group">
                                             <label htmlFor="quantity" className="form-label">Quantity</label>                                        <input id="quantity" type="number" step="any" {...register('quantity', { required: "Quantity is required", valueAsNumber: true, min: { value: 0.000001, message: "Must be positive" } })} className="form-input" />
@@ -889,7 +979,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </div>
                                         <div className="form-group">
                                             <label htmlFor="price_per_unit" className="form-label">Price per Unit {isForeignAsset ? `(${selectedAsset.currency})` : ''}</label>
-                                            <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" /> 
+                                            <input id="price_per_unit" type="number" step="any" {...register('price_per_unit', { required: transactionType !== 'Corporate Action', valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                             {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
                                         </div>
                                         <div className="form-group">
@@ -903,12 +993,74 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Tax Lot Selection Section */}
+                                {transactionType === 'SELL' && (assetType === 'Stock' || assetType === 'Mutual Fund') && (
+                                    <div className="mt-6 border-t pt-4">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h4 className="font-semibold text-gray-700">Select Tax Lots (Optional)</h4>
+                                            <div className="space-x-2">
+                                                <button type="button" onClick={applyFIFO} className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">FIFO</button>
+                                                <button type="button" onClick={applyLIFO} className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">LIFO</button>
+                                                <button type="button" onClick={applyHighestCost} className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">Highest Cost</button>
+                                            </div>
+                                        </div>
+
+                                        {isLoadingLots ? (
+                                            <p className="text-sm text-gray-500">Loading available lots...</p>
+                                        ) : availableLots.length === 0 ? (
+                                            <p className="text-sm text-gray-500">No available lots found.</p>
+                                        ) : (
+                                            <div className="overflow-x-auto max-h-60 border rounded-md">
+                                                <table className="min-w-full divide-y divide-gray-200">
+                                                    <thead className="bg-gray-50">
+                                                        <tr>
+                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avail</th>
+                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Sell Qty</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-gray-200">
+                                                        {availableLots.map((lot) => (
+                                                            <tr key={lot.id}>
+                                                                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
+                                                                    {new Date(lot.date).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap text-xs text-right text-gray-900">
+                                                                    {Number(lot.available_quantity).toFixed(4)}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap text-xs text-right text-gray-900">
+                                                                    {formatCurrency(Number(lot.price_per_unit), 'INR')}
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap text-right">
+                                                                    <input
+                                                                        type="number"
+                                                                        step="any"
+                                                                        min="0"
+                                                                        max={Number(lot.available_quantity)}
+                                                                        value={lotSelections[lot.id] || ''}
+                                                                        onChange={(e) => handleLotChange(lot.id, parseFloat(e.target.value) || 0)}
+                                                                        className="w-20 text-right text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 p-1 border"
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                        <div className="mt-2 text-right text-sm text-gray-600">
+                                            Selected: <span className="font-medium">{totalSelectedQty.toFixed(4)}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
-                        
+
                         {/* Standalone forms for MF Dividend and Bond Coupon */}
                         {assetType === 'Mutual Fund' && transactionType === 'DIVIDEND' && !isEditMode && (
-                             <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
+                            <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50/50">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="form-group">
                                         <label htmlFor="mfDividendAmount" className="form-label">Total Dividend Amount {isForeignAsset ? `(${selectedAsset.currency})` : ''}</label>
@@ -988,7 +1140,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
                                 {/* Stock Split Fields */}
                                 {actionType === 'SPLIT' && (
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                         <div className="form-group col-span-2">
                                             <label htmlFor="transaction_date_split" className="form-label">Effective Date</label>
                                             <input id="transaction_date_split" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
@@ -1109,7 +1261,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <p>{apiError}</p>
                             </div>
                         )}
-                        
+
                         <div className="flex justify-end space-x-4 pt-4">
                             <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
                             <button
@@ -1122,7 +1274,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     (!isEditMode && assetType === 'Mutual Fund' && !selectedMf) ||
                                     (isForeignAsset && (isLoadingFxRate || !fxRate || isNaN(fxRate)))}
                             >
-                                {isEditMode 
+                                {isEditMode
                                     ? (updateTransactionMutation.isPending || updateFixedDepositMutation.isPending || updateRecurringDepositMutation.isPending ? 'Saving...' : 'Save Changes')
                                     : (createTransactionMutation.isPending || createPpfAccountMutation.isPending || createBondMutation.isPending || createFixedDepositMutation.isPending || createRecurringDepositMutation.isPending ? 'Saving...' : 'Save Transaction')
                                 }

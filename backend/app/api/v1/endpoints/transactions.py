@@ -69,6 +69,23 @@ def read_transactions(
     return {"transactions": transactions, "total": total}
 
 
+@router.get("/available-lots/{asset_id}", response_model=List[dict])
+def get_available_lots(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    asset_id: uuid.UUID,
+    current_user: User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get available lots for a specific asset to support specific identification logic.
+    """
+    # Verify asset belongs to user's portfolio implicitly by checking user_id
+    # Actually availability depends on user + asset.
+    return crud.transaction.get_available_lots(
+        db=db, user_id=current_user.id, asset_id=asset_id
+    )
+
+
 @router.post("/", response_model=schemas.TransactionCreatedResponse, status_code=201)
 def create_transaction(
     *,
@@ -155,6 +172,7 @@ def create_transaction(
                     asset_id=asset_id_to_use,
                     transaction_in=transaction_create_schema,
                 )
+                created_transactions.append(transaction)
             elif transaction_type == TransactionType.BONUS:
                 transaction = crud_corporate_action.handle_bonus_issue(
                     db=db,

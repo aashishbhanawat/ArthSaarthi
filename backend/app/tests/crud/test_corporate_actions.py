@@ -204,19 +204,13 @@ def test_handle_stock_split(db: Session) -> None:
     db.refresh(tx_before_2)
     db.refresh(tx_after)
 
-    # 1. Verify transaction before the split is adjusted
-    assert tx_before_1.quantity == Decimal("20")  # 10 * 2
-    assert tx_before_1.price_per_unit == Decimal("50")  # 100 / 2
-    assert tx_before_1.quantity * tx_before_1.price_per_unit == Decimal(
-        "1000"
-    )  # Value conserved
+    # 1. Verify transaction before the split is NOT mutated (Event Sourcing)
+    assert tx_before_1.quantity == Decimal("10")
+    assert tx_before_1.price_per_unit == Decimal("100")
 
-    # 2. Verify another transaction before the split is adjusted
-    assert tx_before_2.quantity == Decimal("10")  # 5 * 2
-    assert tx_before_2.price_per_unit == Decimal("55")  # 110 / 2
-    assert tx_before_2.quantity * tx_before_2.price_per_unit == Decimal(
-        "550"
-    )  # Value conserved
+    # 2. Verify another transaction before the split is NOT mutated
+    assert tx_before_2.quantity == Decimal("5")
+    assert tx_before_2.price_per_unit == Decimal("110")
 
     # 3. Verify transaction after the split is NOT adjusted
     assert tx_after.quantity == Decimal("20")
@@ -232,3 +226,22 @@ def test_handle_stock_split(db: Session) -> None:
         .first()
     )
     assert split_audit_tx is not None
+
+    # 5. Verify the Holdings Calculation applies the split dynamically
+    # Net before split: 10 (Buy) - 5 (Sell) = 5
+    # Split 2:1 -> 10
+    # Buy After: 20
+    # Total Expected: 30
+
+    from app.cache.utils import invalidate_caches_for_portfolio
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
+
+    holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+        db=db, portfolio_id=portfolio.id
+    )
+    # Find the holding for this asset
+    asset_holding = next(
+        (h for h in holdings_data.holdings if h.asset_id == asset.id), None
+    )
+    assert asset_holding is not None
+    assert asset_holding.quantity == Decimal("30")

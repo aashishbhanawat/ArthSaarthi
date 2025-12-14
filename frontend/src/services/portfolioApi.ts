@@ -243,8 +243,8 @@ export const getAssetTransactions = async (
 };
 
 export const getAssetAnalytics = async (portfolioId: string, assetId: string): Promise<AssetAnalytics> => {
-  const response = await apiClient.get<AssetAnalytics>(`/api/v1/portfolios/${portfolioId}/assets/${assetId}/analytics`);
-  return response.data;
+    const response = await apiClient.get<AssetAnalytics>(`/api/v1/portfolios/${portfolioId}/assets/${assetId}/analytics`);
+    return response.data;
 };
 
 export const getPortfolioAssets = async (portfolioId: string): Promise<Asset[]> => {
@@ -264,4 +264,18 @@ export const getFxRate = async (from: string, to: string, date: string): Promise
         params: { from, to, date },
     });
     return response.data.rate;
+};
+
+export interface AvailableLot {
+    id: string;
+    date: string;
+    available_quantity: number;
+    price_per_unit: number;
+    type: string;
+    details: Record<string, unknown>;
+}
+
+export const getAvailableLots = async (assetId: string): Promise<AvailableLot[]> => {
+    const response = await apiClient.get<AvailableLot[]>(`/api/v1/transactions/available-lots/${assetId}`);
+    return response.data;
 };
