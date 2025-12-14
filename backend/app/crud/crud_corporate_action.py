@@ -114,37 +114,12 @@ def handle_stock_split(
     if split_ratio_old <= 0 or split_ratio_new <= 0:
         raise HTTPException(status_code=400, detail="Invalid split ratio.")
 
-    split_factor = split_ratio_new / split_ratio_old
-    logger.info(f"Split factor calculated: {split_factor}")
+    # Create the SPLIT transaction for auditing/event-sourcing
+    # We DO NOT mutate historical transactions anymore.
+    # The holdings calculation logic (crud_holding.py) parses this SPLIT transaction
+    # and effectively "replays" the split to adjust quantity/cost basis at runtime.
+    # This preserves the historical truth of the original BUY transactions.
 
-    # Fetch all historical transactions for this asset in the portfolio
-    transactions_to_adjust = (
-        crud.transaction.get_multi_by_portfolio_and_asset_before_date(
-            db,
-            portfolio_id=portfolio_id,
-            asset_id=asset_id,
-            date=transaction_in.transaction_date,
-        )
-    )
-
-    logger.info(
-        f"Found {len(transactions_to_adjust)} transactions to adjust for split."
-    )
-
-    for tx in transactions_to_adjust:
-        original_quantity = tx.quantity
-        original_price = tx.price_per_unit
-
-        tx.quantity = original_quantity * split_factor
-        tx.price_per_unit = original_price / split_factor
-        db.add(tx)
-        logger.info(
-            f"Adjusted transaction {tx.id}: "
-            f"qty {original_quantity} -> {tx.quantity}, "
-            f"price {original_price} -> {tx.price_per_unit}"
-        )
-
-    # Save the SPLIT transaction itself for auditing
     split_audit_transaction = crud.transaction.create_with_portfolio(
         db=db, obj_in=transaction_in, portfolio_id=portfolio_id
     )

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.crud.base import CRUDBase
 from app.models.transaction import Transaction
+from app.models.transaction_link import TransactionLink
 from app.schemas.enums import TransactionType
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 
@@ -115,11 +116,24 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 )
 
         db_obj = self.model(
-            **obj_in.model_dump(), user_id=portfolio.user_id, portfolio_id=portfolio_id
+            **obj_in.model_dump(exclude={"links"}),
+            user_id=portfolio.user_id,
+            portfolio_id=portfolio_id,
         )
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
+
+        if obj_in.links:
+            for link_data in obj_in.links:
+                link = TransactionLink(
+                    sell_transaction_id=db_obj.id,
+                    buy_transaction_id=link_data.buy_transaction_id,
+                    quantity=link_data.quantity,
+                )
+                db.add(link)
+            db.flush()
+            db.refresh(db_obj)
 
         # --- Handle "Sell to Cover" for RSU Vest ---
         # If the transaction is an RSU vest and has sell_to_cover details,
@@ -300,6 +314,87 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             )
             .first()
         )
+
+
+    def get_available_lots(
+        self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID
+    ) -> List[dict]:
+        """
+        Calculates available lots for an asset using FIFO matching for unlinked sells
+        and specific identification for linked sells.
+        """
+        # Fetch all relevant transactions sorted by date
+        transactions = (
+            db.query(Transaction)
+            .filter(
+                Transaction.user_id == user_id,
+                Transaction.asset_id == asset_id,
+                Transaction.transaction_type.in_(
+                    ["BUY", "ESPP_PURCHASE", "RSU_VEST", "SELL"]
+                ),
+            )
+            .order_by(Transaction.transaction_date)
+            .all()
+        )
+
+        lots = []  # List of buys: {tx, available_quantity}
+
+        for tx in transactions:
+            if tx.transaction_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
+                lots.append(
+                    {
+                        "transaction": tx,
+                        "available_quantity": tx.quantity,
+                        "date": tx.transaction_date,
+                    }
+                )
+            elif tx.transaction_type == "SELL":
+                sell_qty = tx.quantity
+
+                # 1. Process Specific Links
+                # We need to query links manually since we might not have eager
+                # loaded them and we need to be careful with session state.
+                links = (
+                    db.query(TransactionLink)
+                    .filter(TransactionLink.sell_transaction_id == tx.id)
+                    .all()
+                )
+                linked_buy_ids = {}
+                for link in links:
+                    linked_buy_ids[link.buy_transaction_id] = link.quantity
+                    sell_qty -= link.quantity
+
+                    # Deduct from the specific lot
+                    for lot in lots:
+                        if lot["transaction"].id == link.buy_transaction_id:
+                            lot["available_quantity"] -= link.quantity
+                            break
+
+                # 2. Process Remaining Quantity (Unlinked) via FIFO
+                if sell_qty > 0:
+                    for lot in lots:
+                        if lot["available_quantity"] > 0:
+                            take = min(lot["available_quantity"], sell_qty)
+                            lot["available_quantity"] -= take
+                            sell_qty -= take
+                            if sell_qty <= 0:
+                                break
+
+        # Filter out fully consumed lots
+        available_lots = [
+            {
+                "id": lot["transaction"].id,
+                "date": lot["date"],
+                "available_quantity": lot["available_quantity"],
+                "price_per_unit": lot["transaction"].price_per_unit,
+                "type": lot["transaction"].transaction_type,
+                "details": lot["transaction"].details
+            }
+            for lot in lots
+            if lot["available_quantity"] > 0
+        ]
+
+        return available_lots
 
 
 transaction = CRUDTransaction(Transaction)

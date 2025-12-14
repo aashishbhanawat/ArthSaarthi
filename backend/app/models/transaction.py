@@ -26,3 +26,16 @@ class Transaction(Base):
     portfolio = relationship("Portfolio", back_populates="transactions")
     asset = relationship("Asset", back_populates="transactions")
     user = relationship("User", back_populates="transactions")
+
+    sell_links = relationship(
+        "TransactionLink",
+        foreign_keys="TransactionLink.sell_transaction_id",
+        back_populates="sell_transaction",
+        cascade="all, delete-orphan",
+    )
+    buy_links = relationship(
+        "TransactionLink",
+        foreign_keys="TransactionLink.buy_transaction_id",
+        back_populates="buy_transaction",
+        cascade="all, delete-orphan",
+    )

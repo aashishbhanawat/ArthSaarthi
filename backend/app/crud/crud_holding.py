@@ -14,7 +14,8 @@ from app.cache.utils import cache_analytics_data
 from app.core.config import settings
 from app.crud.crud_ppf import process_ppf_holding
 from app.models.recurring_deposit import RecurringDeposit
-from app.schemas.enums import BondType
+from app.models.transaction_link import TransactionLink
+from app.schemas.enums import BondType, TransactionType
 from app.services.financial_data_service import financial_data_service
 
 logger = logging.getLogger(__name__)
@@ -323,7 +324,7 @@ def _process_market_traded_assets(
         .filter(models.Transaction.portfolio_id == portfolio_id)
         .filter(
             models.Transaction.transaction_type.in_(
-                ["BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE"]
+                ["BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT", "BONUS"]
             )
         )
         .distinct()
@@ -345,6 +346,19 @@ def _process_market_traded_assets(
 
     # Sort transactions by date to ensure chronological processing
     transactions.sort(key=lambda tx: tx.transaction_date)
+
+    # --- Pre-fetch Transaction Links ---
+    transaction_ids = [tx.id for tx in transactions]
+    links = db.query(TransactionLink).filter(
+        TransactionLink.sell_transaction_id.in_(transaction_ids)
+    ).all()
+
+    sell_links_map = defaultdict(list)
+    for link in links:
+        sell_links_map[link.sell_transaction_id].append(link)
+
+    # Map transaction ID to object for quick lookup of Buy price
+    tx_map = {tx.id: tx for tx in transactions}
 
     for tx in transactions:
         asset = asset_map.get(tx.asset_id)
@@ -373,37 +387,83 @@ def _process_market_traded_assets(
             coupon_amount = tx.quantity * tx.price_per_unit
             total_realized_pnl += coupon_amount
             holdings_state[ticker]["realized_pnl"] += coupon_amount
+        elif tx.transaction_type == TransactionType.SPLIT:
+            if holdings_state[ticker]["quantity"] > 0 and tx.price_per_unit > 0:
+                ratio = tx.quantity / tx.price_per_unit
+                holdings_state[ticker]["quantity"] *= ratio
+
         elif tx.transaction_type == "SELL":
             if holdings_state[ticker]["quantity"] > 0:
                 logger.debug(
                     f"Processing SELL tx {tx.id} for {ticker}. "
                     f"Details: {tx.details}"
                 )
-                avg_buy_price = (
-                    holdings_state[ticker]["total_invested"]
-                    / holdings_state[ticker]["quantity"]
-                )
-                logger.debug(
-                    "Processing SELL for %s. Avg Buy: %s, Sell Price: %s, Qty: %s",
-                    ticker,
-                    avg_buy_price,
-                    tx.price_per_unit,
-                    tx.quantity,
-                )
-                # For foreign stocks, the sale price must be converted to INR
+
+                realized_pnl_for_sale = Decimal(0)
+                cost_of_shares_sold = Decimal(0)
+                sold_qty = tx.quantity
+
+                # Check for specific lot links
+                links = sell_links_map.get(tx.id, [])
+
                 fx_rate = (
                     Decimal(str(tx.details.get("fx_rate", 1)))
                     if tx.details
                     else Decimal(1)
                 )
-                realized_pnl_for_sale = (
-                    (tx.price_per_unit * fx_rate) - avg_buy_price
-                ) * tx.quantity
+
+                if links:
+                    for link in links:
+                        buy_tx = tx_map.get(link.buy_transaction_id)
+                        # Fallback for buy_tx finding (safe-guard)
+                        if not buy_tx:
+                             buy_tx = db.query(models.Transaction).get(
+                                 link.buy_transaction_id
+                             )
+
+                        if buy_tx:
+                            buy_price = buy_tx.price_per_unit
+
+                            # Calculate P&L for this linked portion
+                            pnl = (
+                                (tx.price_per_unit * fx_rate) - buy_price
+                            ) * link.quantity
+                            realized_pnl_for_sale += pnl
+
+                            cost_of_shares_sold += buy_price * link.quantity
+                            sold_qty -= link.quantity
+
+                            logger.debug(
+                                "Linked Sell: Sold %s @ %s, Bought @ %s. PnL: %s",
+                                link.quantity,
+                                tx.price_per_unit,
+                                buy_price,
+                                pnl
+                            )
+
+                if sold_qty > 0:
+                     avg_buy_price = (
+                        holdings_state[ticker]["total_invested"]
+                        / holdings_state[ticker]["quantity"]
+                    )
+                     # For foreign stocks, the sale price must be converted to INR
+                     pnl = (
+                        (tx.price_per_unit * fx_rate) - avg_buy_price
+                     ) * sold_qty
+                     realized_pnl_for_sale += pnl
+                     cost_of_shares_sold += avg_buy_price * sold_qty
+
+                     logger.debug(
+                        "Unlinked Sell: Sold %s @ %s, Avg Cost @ %s. PnL: %s",
+                        sold_qty,
+                        tx.price_per_unit,
+                        avg_buy_price,
+                        pnl
+                    )
                 total_realized_pnl += realized_pnl_for_sale
                 holdings_state[ticker]["realized_pnl"] += realized_pnl_for_sale
 
                 # Reduce the total invested amount by the cost basis of the shares sold
-                cost_of_shares_sold = avg_buy_price * tx.quantity
                 holdings_state[ticker]["total_invested"] -= cost_of_shares_sold
                 holdings_state[ticker]["quantity"] -= tx.quantity
 
