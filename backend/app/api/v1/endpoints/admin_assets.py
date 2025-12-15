@@ -4,10 +4,11 @@ FR2.3: Manual Asset Seeding
 """
 import logging
 import os
+import shutil
 import tempfile
 import time
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Union
 
 import requests
 import urllib3
@@ -34,6 +35,7 @@ RATE_LIMIT_SECONDS = 300  # 5 minutes
 
 class AssetSyncResult(BaseModel):
     """Response model for asset sync operation."""
+
     status: str
     data: dict
 
@@ -54,9 +56,10 @@ def _check_rate_limit() -> None:
         elapsed = time.time() - last_run_time
         if elapsed < RATE_LIMIT_SECONDS:
             retry_after = int(RATE_LIMIT_SECONDS - elapsed)
+            msg = f"Asset sync was run recently. Wait {retry_after} seconds."
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Asset sync was run recently. Please wait {retry_after} seconds.",
+                detail=msg,
                 headers={"Retry-After": str(retry_after)},
             )
 
@@ -86,7 +89,7 @@ def _download_file(url: str, dest_path: str) -> bool:
             url, stream=True, verify=False, headers=headers, timeout=30
         )
         response.raise_for_status()
-        with open(dest_path, 'wb') as f:
+        with open(dest_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
         logger.info(f"Downloaded successfully: {dest_path}")
@@ -123,8 +126,8 @@ def _get_dynamic_urls(d: date) -> Dict[str, Union[str, list]]:
     return {
         "nsdl": (
             "https://nsdl.co.in/downloadables/excel/cp-debt/"
-            f"Download_the_entire_list_of_Debt_Instruments_(including_Redeemed)_as_on_"
-            f"{dd}.{mm}.{yyyy}.xls"
+            "Download_the_entire_list_of_Debt_Instruments_"
+            f"(including_Redeemed)_as_on_{dd}.{mm}.{yyyy}.xls"
         ),
         "bse_public": "https://www.bseindia.com/downloads1/bonds_data.zip",
         "bse_equity": (
@@ -135,7 +138,9 @@ def _get_dynamic_urls(d: date) -> Dict[str, Union[str, list]]:
             "https://www.bseindia.com/download/Bhavcopy/Debt/"
             f"DEBTBHAVCOPY{dd}{mm}{yyyy}.zip"
         ),
-        "nse_debt": "https://nsearchives.nseindia.com/content/debt/New_debt_listing.xlsx",
+        "nse_debt": (
+            "https://nsearchives.nseindia.com/content/debt/New_debt_listing.xlsx"
+        ),
         "nse_equity": (
             "https://nsearchives.nseindia.com/content/cm/"
             f"BhavCopy_NSE_CM_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
@@ -153,7 +158,7 @@ def _get_dynamic_urls(d: date) -> Dict[str, Union[str, list]]:
 def _download_all_sources(temp_dir: str) -> Dict[str, str]:
     """Download all required data sources. Returns dict of source -> filepath."""
     files: Dict[str, str] = {}
-    
+
     # Prepare candidate dates (Today, T-1, T-2)
     candidate_dates = []
     current_d = _get_latest_trading_date()
@@ -179,7 +184,7 @@ def _download_all_sources(temp_dir: str) -> Dict[str, str]:
             if isinstance(url, list):
                 url = url[0]
 
-            filename = url.split('/')[-1]
+            filename = url.split("/")[-1]
             dest = os.path.join(temp_dir, filename)
 
             if _download_file(url, dest):
@@ -226,7 +231,7 @@ def _process_all_sources(seeder: AssetSeeder, files: Dict[str, str]) -> None:
     response_model=AssetSyncResult,
     status_code=status.HTTP_200_OK,
     summary="Trigger Asset Master Sync",
-    description="Downloads and parses the latest asset data from exchanges. Admin only.",
+    description="Downloads and parses asset data from exchanges. Admin only.",
 )
 def sync_assets(
     db: Session = Depends(get_db),
@@ -234,67 +239,66 @@ def sync_assets(
 ) -> Any:
     """
     Trigger a manual sync of the asset master database.
-    
+
     Downloads and processes asset data from NSDL, BSE, NSE, and other sources.
     Returns a summary of newly added and updated assets.
-    
+
     Rate limited to once every 5 minutes.
     """
     # Check rate limit
     _check_rate_limit()
-    
+
     # Set rate limit timestamp before starting
     _set_rate_limit()
-    
+
     logger.info(f"Asset sync triggered by admin user: {current_user.email}")
-    
+
     try:
         # Initialize the asset seeder
         seeder = AssetSeeder(db=db, debug=False)
-        
+
         # Get initial counts
         initial_created = seeder.created_count
         initial_skipped = seeder.skipped_count
-        
+
         # Create temp directory for downloads
         temp_dir = tempfile.mkdtemp()
         logger.info(f"Created temp directory: {temp_dir}")
-        
+
         try:
             # Download all data sources
             files = _download_all_sources(temp_dir)
             logger.info(f"Downloaded {len(files)} of 8 sources")
-            
+
             # Process all files
             _process_all_sources(seeder, files)
-            
+
             # Commit changes
             db.commit()
-            
+
         finally:
             # Cleanup temp files
-            import shutil
             try:
                 shutil.rmtree(temp_dir)
                 logger.info(f"Cleaned up temp directory: {temp_dir}")
             except Exception as e:
                 logger.warning(f"Failed to cleanup temp dir: {e}")
-        
+
         # Calculate results
         newly_added = seeder.created_count - initial_created
         updated = seeder.skipped_count - initial_skipped
-        
+
         result = {
             "total_processed": newly_added + updated,
             "newly_added": newly_added,
             "updated": updated,
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
-        
+
         logger.info(f"Asset sync completed: {result}")
-        
+
         return AssetSyncResult(status="success", data=result)
-        
+
     except Exception as e:
         logger.error(f"Asset sync failed: {str(e)}")
         raise HTTPException(
