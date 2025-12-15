@@ -96,6 +96,11 @@ const TransactionFilterBar: React.FC = () => {
             <option value="ALL">All</option>
             <option value="BUY">Buy</option>
             <option value="SELL">Sell</option>
+            <option value="DIVIDEND">Dividend</option>
+            <option value="SPLIT">Split</option>
+            <option value="BONUS">Bonus</option>
+            <option value="RSU_VEST">RSU Vest</option>
+            <option value="ESPP_PURCHASE">ESPP Purchase</option>
           </select>
         </div>
 
