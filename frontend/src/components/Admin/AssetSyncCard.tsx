@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { isAxiosError } from 'axios';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { syncAssets, AssetSyncResponse } from '../../services/adminApi';
-import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import { useToast } from '../../context/ToastContext';
 
 /**
  * AssetSyncCard - Admin component for triggering manual asset master sync.
@@ -9,6 +10,7 @@ import axios from 'axios';
  */
 const AssetSyncCard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
+    const { showToast } = useToast();
 
     const handleSync = async () => {
         setIsLoading(true);
@@ -18,30 +20,29 @@ const AssetSyncCard: React.FC = () => {
 
             if (response.status === 'success') {
                 const { newly_added, updated, total_processed } = response.data;
-                toast.success(
+                showToast(
                     `Asset sync complete: ${newly_added} new, ${updated} updated (${total_processed} total)`,
-                    { duration: 5000 }
+                    'success'
                 );
             }
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
+        } catch (error: unknown) {
+            if (isAxiosError(error)) {
                 if (error.response?.status === 429) {
                     const retryAfter = error.response.headers['retry-after'];
-                    toast.error(
+                    showToast(
                         `Rate limit exceeded. Please wait ${retryAfter || '5 minutes'} before trying again.`,
-                        { duration: 5000 }
+                        'error'
                     );
                 } else if (error.response?.status === 403) {
-                    toast.error('You do not have permission to perform this action.');
+                    showToast('You do not have permission to perform this action.', 'error');
                 } else if (error.code === 'ECONNABORTED') {
-                    toast.error('Request timed out. The sync may still be in progress.');
+                    showToast('Request timed out. The sync may still be in progress.', 'error');
                 } else {
-                    toast.error(
-                        error.response?.data?.detail || 'Failed to sync assets. Please try again.'
-                    );
+                    const message = error.response?.data?.detail || 'Failed to sync assets. Please try again.';
+                    showToast(message, 'error');
                 }
             } else {
-                toast.error('An unexpected error occurred.');
+                showToast('An unexpected error occurred.', 'error');
             }
         } finally {
             setIsLoading(false);
@@ -49,68 +50,23 @@ const AssetSyncCard: React.FC = () => {
     };
 
     return (
-        <div className="card">
-            <div className="card-header">
-                <h3 className="card-title">System Maintenance</h3>
-            </div>
-            <div className="card-body">
-                <div className="mb-4">
-                    <h4 className="text-lg font-medium mb-2">Asset Master Sync</h4>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                        Download and update the latest stock, mutual fund, and bond data from
-                        exchanges (NSDL, BSE, NSE). This process may take a few minutes.
-                    </p>
-                    <button
-                        onClick={handleSync}
-                        disabled={isLoading}
-                        className="btn btn-primary flex items-center gap-2"
-                    >
-                        {isLoading ? (
-                            <>
-                                <svg
-                                    className="animate-spin h-5 w-5"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                    />
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    />
-                                </svg>
-                                Syncing Assets...
-                            </>
-                        ) : (
-                            <>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={1.5}
-                                    stroke="currentColor"
-                                    className="w-5 h-5"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-                                    />
-                                </svg>
-                                Sync Assets
-                            </>
-                        )}
-                    </button>
-                </div>
-                <p className="text-xs text-gray-500">
+        <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">System Maintenance</h2>
+            <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-2">Asset Master Sync</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                    Download and update the latest stock, mutual fund, and bond data from
+                    exchanges (NSDL, BSE, NSE). This process may take a few minutes.
+                </p>
+                <button
+                    onClick={handleSync}
+                    disabled={isLoading}
+                    className="btn btn-primary flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                    {isLoading ? 'Syncing Assets...' : 'Sync Assets'}
+                </button>
+                <p className="text-xs text-gray-500 mt-3">
                     Note: Rate limited to once every 5 minutes.
                 </p>
             </div>
