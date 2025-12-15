@@ -76,7 +76,9 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
 
         const sortedTxs = [...transactions].sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
 
-        const buys = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'BUY')));
+        // Include RSU_VEST and ESPP_PURCHASE as acquisition types alongside BUY
+        const acquisitionTypes = ['BUY', 'RSU_VEST', 'ESPP_PURCHASE'];
+        const buys = JSON.parse(JSON.stringify(sortedTxs.filter(tx => acquisitionTypes.includes(tx.transaction_type))));
         const sells = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'SELL')));
 
         for (const sell of sells) {
