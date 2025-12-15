@@ -27,14 +27,14 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         };
 
         const adminLoginResponse = await request.post('/api/v1/auth/login', {
-          form: { username: adminUser.email, password: adminUser.password },
+            form: { username: adminUser.email, password: adminUser.password },
         });
         expect(adminLoginResponse.ok()).toBeTruthy();
         const { access_token } = await adminLoginResponse.json();
         const adminAuthHeaders = { Authorization: `Bearer ${access_token}` };
         const standardUserCreateResponse = await request.post('/api/v1/users/', {
-          headers: adminAuthHeaders,
-          data: { ...standardUser, is_admin: false },
+            headers: adminAuthHeaders,
+            data: { ...standardUser, is_admin: false },
         });
         expect(standardUserCreateResponse.ok()).toBeTruthy();
 
@@ -206,5 +206,50 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         // The total value should be the dividend amount (50) multiplied by the mocked FX rate (85.0).
         // 50 * 85 = 4250
         await expect(dividendRow).toContainText('₹4,250.00');
+    });
+
+    test('should correctly log a stock DRIP (reinvested dividend)', async ({ page }) => {
+        // This test verifies that when "Reinvest Dividend" is checked, two transactions are created:
+        // 1. A DIVIDEND transaction for the cash income
+        // 2. A BUY transaction for the new shares
+        await page.getByRole('button', { name: 'Add Transaction' }).click();
+
+        const modal = page.locator('.modal-content');
+        await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await modal.locator(`li:has-text("${stockName}")`).click();
+
+        await modal.getByLabel('Transaction Type').selectOption({ label: 'Corporate Action' });
+        await modal.getByLabel('Action Type', { exact: true }).selectOption({ label: 'Dividend' });
+
+        await modal.getByLabel('Date').fill('2023-05-01');
+        await modal.getByLabel('Total Amount').fill('100');
+
+        // Check the reinvestment checkbox
+        await modal.getByLabel('Reinvest Dividend?').check();
+
+        // Fill in the reinvestment price - this calculates new shares as 100/50 = 2 shares
+        await modal.getByLabel('Reinvestment Price').fill('50');
+
+        await modal.getByRole('button', { name: 'Save Transaction' }).click();
+        await expect(modal).not.toBeVisible();
+
+        // 1. Verify the holding quantity has INCREASED by 2 shares (was 10, now 12)
+        const holdingRow = page.locator('.card', { hasText: 'Holdings' }).getByRole('row', { name: new RegExp(stockTicker) });
+        await expect(holdingRow.locator('td').nth(1)).toHaveText('12', { timeout: 10000 });
+
+        // 2. Navigate to the global transaction history and verify both transactions were logged.
+        await page.getByRole('link', { name: 'Transactions' }).click();
+        await expect(page.getByRole('heading', { name: 'Transaction History' })).toBeVisible();
+
+        // Find the DIVIDEND transaction row
+        const dividendRow = page.locator('tr', { hasText: /0?1 May 2023/ }).filter({ hasText: stockTicker }).filter({ hasText: 'DIVIDEND' });
+        await expect(dividendRow).toBeVisible();
+
+        // Find the BUY transaction row (should be on the same date)
+        const buyRow = page.locator('tr', { hasText: /0?1 May 2023/ }).filter({ hasText: stockTicker }).filter({ hasText: 'BUY' });
+        await expect(buyRow).toBeVisible();
+        // The BUY transaction should show quantity of 2 shares
+        await expect(buyRow).toContainText('2');
     });
 });

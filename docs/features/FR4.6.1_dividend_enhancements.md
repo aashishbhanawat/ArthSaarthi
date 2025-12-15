@@ -1,6 +1,12 @@
 # FR4.6.1: Dividend Enhancements (Stock DRIP & Currency)
 
-**Status: 📝 Proposed**
+**Status: 🚧 In Progress**
+
+> **Implementation Notes (December 2024):**
+> - Frontend implementation complete for domestic Stock DRIP
+> - Editable FX rate for foreign dividends implemented
+> - E2E tests added for Stock DRIP flow
+> - See PR: `feat/FR4.6.1-dividend-enhancements`
 
 ## 1. Introduction
 
