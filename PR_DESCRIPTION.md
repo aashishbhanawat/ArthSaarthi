@@ -24,5 +24,5 @@ Implements "Specific Lot Identification" for sales, allowing users to optimize t
 *   None. Unlinked transactions fall back to Average Cost (P&L) and FIFO (Availability), preserving behavior for existing data.
 
 ### Related Issues
-*   Implements FR8.3
+*   Implements FR4.4.3
 *   Fixes Bug 2025-12-14-01 (Corporate Action Double Counting)

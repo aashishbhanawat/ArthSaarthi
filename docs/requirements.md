@@ -14,7 +14,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR1.2: Initial Admin Setup.** If no users exist, the user must be directed to an "Initial Setup" page to create the first user account (username, email, password). `✅ Done`
 -   **FR1.3: Admin Role Assignment.** The first user created must be automatically assigned the `admin` role. All subsequent users created by an admin will have the `user` role. `✅ Done`
 -   **FR1.4: Secure Login.** All users must be able to log in securely. `✅ Done`
--   **FR1.5: Profile Management.** All users must have a dedicated profile/settings page to manage their account. `📝 Planned`
+-   **FR1.5: Profile Management.** All users must have a dedicated profile/settings page to manage their account. `✅ Done`
     -   **FR1.5.1:** Users must be able to update their non-critical profile information (e.g., full name). `✅ Done`
     -   **FR1.5.2:** Users must be able to change their password. This action should require them to enter their current password for verification. `✅ Done`
     -   **FR1.5.3:** Users must be able to change their login email. This action must trigger a verification process for the new email address before it becomes active. `📝 Planned`
@@ -169,7 +169,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **NFR4: Scalability:** Architecture must handle user growth. `⚠️ Partially Implemented`
 -   **NFR5: Reliability & Data Integrity:** Accurate calculations, high uptime, regular backups. `⚠️ Partially Implemented`
 -   **NFR6: Deployment:** The application must be deployable in a Docker environment, specifically on a Raspberry Pi, and accessible via a Cloudflare tunnel. `✅ Done`
--   **NFR7: Data Management:** The system must provide a mechanism for users to back up and restore their portfolio data. `📝 Planned`
+-   **NFR7: Data Management:** The system must provide a mechanism for users to back up and restore their portfolio data. `✅ Done`
 -   **NFR8: Portability:** The application must support SQLite as an alternative to PostgreSQL to facilitate simpler, single-file native deployments. `✅ Done`
 -   **NFR9: Pluggable Caching:** The application must support both Redis and a lightweight, file-based cache (`diskcache`) to remove the Redis dependency for non-Docker deployments. `✅ Done`
 -   **NFR12: Pluggable Financial Data Service:** The financial data service must be architected to support multiple, interchangeable data providers for different asset classes and regions. `✅ Done`
