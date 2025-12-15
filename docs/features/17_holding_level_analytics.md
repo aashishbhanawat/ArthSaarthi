@@ -1,4 +1,4 @@
-**Feature ID:** FR8
+**Feature ID:** FR4.7.3
 **Title:** Display Asset-Level Analytics in Holdings Drill-Down
 **User Story:** As a user, I want to see the realized and unrealized XIRR for each of my individual holdings so that I can better understand the performance of specific assets within my portfolio.
 

@@ -1,4 +1,4 @@
-# FR8.2: Foreign Stock Transaction Enhancements
+# FR4.3: Foreign Stock Transaction Enhancements
 
 **Status: 📝 Proposed**
 
@@ -46,7 +46,7 @@ When a user selects a foreign asset (e.g., Google, which is in USD), the form wi
 
 ### 3.2. Backend Logic
 
-*   This feature will leverage the `metadata` JSON column on the `transactions` table, which was introduced in `FR8.1.1`.
+*   This feature will leverage the `metadata` JSON column on the `transactions` table, which was introduced in `FR4.3`.
 *   For any `BUY` or `SELL` transaction involving a foreign currency, the `exchange_rate_to_inr` will be stored in the `metadata` field.
 *   This ensures that all P&L and cost basis calculations can be performed accurately in the portfolio's base currency (INR).
 
@@ -94,7 +94,7 @@ This section details the necessary fixes and improvements to fully integrate ESP
 *   **Solution (Backend):**
     *   **Transaction Visibility:** The query that fetches transactions for the drill-down modal must be updated to include `RSU_VEST` and `ESPP_PURCHASE` types.
     *   **XIRR Calculation:** The XIRR logic in `crud_analytics.py` must be corrected.
-        *   For `RSU_VEST` transactions, it must treat them as a cash outflow equal to `(FMV * Quantity * FX Rate)` on the vest date, as specified in `FR8.4`.
+        *   For `RSU_VEST` transactions, it must treat them as a cash outflow equal to `(FMV * Quantity * FX Rate)` on the vest date, as specified in `FR6.1.1`.
         *   For all other transaction types (`BUY`, `SELL`, `ESPP_PURCHASE`), the cash flow calculation must correctly use the `fx_rate` from the transaction's `details` when converting the value to INR.
  
 ## 6. Testing Plan

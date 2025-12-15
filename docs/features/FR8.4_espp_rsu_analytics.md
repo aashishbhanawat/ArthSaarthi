@@ -1,10 +1,10 @@
-# FR8.4: Advanced Analytics for ESPP & RSU Holdings
+# FR6.1.1: Advanced Analytics for ESPP & RSU Holdings
 
 **Status: ✅ Done**
 
 ## 1. Introduction
 
-This document outlines the plan to enhance the backend analytics engine to correctly calculate valuation and performance metrics (Unrealized P&L, XIRR) for holdings acquired via ESPP and RSU plans. This builds upon the data captured in **FR8.1.1** and **FR8.2**.
+This document outlines the plan to enhance the backend analytics engine to correctly calculate valuation and performance metrics (Unrealized P&L, XIRR) for holdings acquired via ESPP and RSU plans. This builds upon the data captured in **FR4.3**.
 
 **User Story:** "As an investor with ESPP and RSU holdings, I want the application to accurately calculate my investment performance, so I can understand the true return on these assets beyond just the income I received."
 

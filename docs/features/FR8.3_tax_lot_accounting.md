@@ -1,4 +1,4 @@
-# FR8.3: Specific Lot Identification for Sales (Tax Lot Accounting)
+# FR4.4.3: Specific Lot Identification for Sales (Tax Lot Accounting)
 
 **Status: ✅ Implemented**
 
