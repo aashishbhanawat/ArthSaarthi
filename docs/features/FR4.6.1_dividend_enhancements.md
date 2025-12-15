@@ -1,6 +1,6 @@
 # FR4.6.1: Dividend Enhancements (Stock DRIP & Currency)
 
-**Status: 🚧 In Progress**
+**Status:  ✅ Done**
 
 > **Implementation Notes (December 2024):**
 > - Frontend implementation complete for domestic Stock DRIP

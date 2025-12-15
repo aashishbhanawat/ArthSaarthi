@@ -130,7 +130,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 ## Release 9: Advanced Asset Support
 
-**Status: 🚧 In Progress**
+**Status: ✅ COMPLETE (as of 2025-12-05)**
 
 **Features:**
 
@@ -140,18 +140,46 @@ The goal of this release was to build a robust and user-friendly system for impo
     -   Public Provident Fund (PPF): **✅ Complete**
     -   Bonds (Corporate, Govt, SGB, T-Bill): **✅ Complete**
     -   Asset Seeder Classification V2 (FR4.3.6): **✅ Complete**
-    -   National Pension System (NPS): 📝 Planned
-    -   RSUs/ESPPs: 📝 Planned
+    -   ESPP/RSU Tracking (FR4.3): **✅ Complete**
+
+## Release 10: Global Markets & Currency
+
+**Status: ✅ COMPLETE (as of 2025-12-11)**
+
+**Features:**
+
+-   **Foreign Stock & Currency Support (FR4.3):** Track assets in foreign currencies (e.g., USD) with automatic INR consolidation using historical FX rates.
+    -   **Status: ✅ Complete**
+-   **Foreign Income Tracking (FR4.6.1):** Correctly handle dividends and coupons for foreign assets using historical FX rates.
+    -   **Status: ✅ Complete**
+
+## Release 11: Tax Optimization & Accounting
+
+**Status: ✅ COMPLETE (as of 2025-12-15)**
+
+**Features:**
+
+-   **Tax Lot Accounting (FR4.4.3):** Implement "Specific Lot Identification" for sales to optimize tax liability, with FIFO fallback.
+    -   **Status: ✅ Complete**
+-   **Stock Dividend Reinvestment (DRIP) (FR4.6.1):** Support for automatic reinvestment of stock dividends.
+    -   **Status: ✅ Complete**
+
+## Release 12: Next Steps & Maintenance
+
+**Status: 🚧 In Progress**
+
+**Features:**
+
+-   **Manual Asset Seeding (FR9):** Allow admins to trigger asset master updates from the UI without restarting the server.
+-   **Capital Gains Report (FR10):** Generate Short-Term (STCG) and Long-Term (LTCG) capital gains reports.
+-   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS).
+-   **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
 
 ## Future Releases
 
 -   **Architectural Refactoring:**
 -   **Data Integration (NFR12 - Phase 3):** Implement optional, high-quality data providers for broker APIs (e.g., Zerodha, ICICI Breeze).
--   **Analytics Caching (NFR9.2):** Implement a caching layer for expensive analytics endpoints to improve performance.
-    -   **Status: ✅ Complete**
 -   **API Rate Limiting (NFR13):** Implement usage tracking and rate limiting for external data providers.
--   **Forgotten Password (FR1.6):** Implement a forgotten password reset flow.
--   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to support mutual fund transaction imports.
 -   **Advanced Analytics (FR6):** Implement remaining metrics like TWR, MWR, Beta, Alpha, and benchmarking.
 -   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
 -   **Goal Planning & Tracking (FR13 - Enhancements):** Implement contribution planning and future value projections.
@@ -164,5 +192,4 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Companion Mobile App (FR14.2)**
 -   **AI-Powered Expense Management (FR15):** Upload and analyze credit card/bank statements to track expenses.
 -   **Income & Tax Data Management (FR16):** Log salary and other income sources to generate a structured summary for tax purposes.
--   **Data Management (NFR7):** Implement a user-facing backup and restore mechanism.
--   **SQLite Support (NFR8):** Add support for using SQLite as a database backend to simplify self-hosting for native installations.
+ -  **National Pension System (NPS):** Track NPS Tier 1 and Tier 2 holdings.

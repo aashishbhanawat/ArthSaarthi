@@ -1,6 +1,6 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2025-12-11
+**Last Updated:** 2025-12-15
 
 ## 1. Current Project Status
 
@@ -46,6 +46,8 @@
 -   **Watchlists:** Create and manage custom watchlists.
 -   **Goal Planning:** Define financial goals and link assets to track progress.
 -   **Mutual Fund Dividends:** Track both cash and reinvested dividends for mutual funds.
+-   **Stock Dividend Reinvestment (DRIP):** Support for automatic reinvestment of stock dividends.
+-   **Foreign Income Tracking:** Correctly handle dividends and coupons for foreign assets using historical FX rates.
 -   **Foreign Stock & Currency Support:** Track assets in foreign currencies (e.g., USD). Portfolio values, analytics, and performance metrics are automatically converted and consolidated into your base currency (INR) using real-time and historical FX rates.
 -   **Security & User Management:**
     -   Audit Logging Engine for key events.
@@ -66,6 +68,7 @@
 
 Based on the `product_backlog.md`, the next features to consider are:
 
-1.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
-2.  **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS).
-3.  **Advanced Analytics (FR6):** Implement remaining metrics like TWR, Beta, and Alpha.
+1.  **Manual Asset Seeding (FR2.3):** Allow admins to trigger asset master updates from the UI without restarting the server (FR defined).
+2.  **Capital Gains Report:** Generate Short-Term (STCG) and Long-Term (LTCG) capital gains reports, leveraging the new Tax Lot Accounting logic.
+3.  **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to simplify Mutual Fund onboarding.
+4.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.

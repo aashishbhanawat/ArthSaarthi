@@ -20,13 +20,14 @@ This document outlines the functional and non-functional requirements for the Ar
     -   **FR1.5.3:** Users must be able to change their login email. This action must trigger a verification process for the new email address before it becomes active. `📝 Planned`
 -   **FR1.6: Forgotten Password Reset.** Any user must be able to reset their forgotten password. `📝 Planned` (See FR1.6_forgot_password.md)
 -   **FR1.7: Secure Logout.** All users must be able to log out. `✅ Done`
--   **FR1.8: Inactivity Timeout.** The system must automatically log out a user after 30 minutes of inactivity. User activity is defined as mouse movement, clicks, or keyboard input. `📝 Planned` (See FR1.8_inactivity_timeout.md)
+-   **FR1.8: Inactivity Timeout.** The system must automatically log out a user after 30 minutes of inactivity. User activity is defined as mouse movement, clicks, or keyboard input. `✅ Done` (See FR1.8_inactivity_timeout.md)
 
 ### FR2: Administration
 
 -   **FR2.1: User Management Dashboard.** An `admin` must have access to a dashboard to view, create, and delete `user` accounts. `✅ Done`
 -   **FR2.2: Audit Logging Engine.** The system must log security-sensitive events (e.g., login success/failure, user creation/deletion, data import/export). Logs must include Geo/IP tagging. `📝 Planned`
--   **FR2.3: Log Viewing.** An `admin` must be able to view these audit logs. `📝 Planned`
+-   **FR2.3: Manual Asset Seeding.** Allow admins to trigger asset master updates from the UI without restarting the server. `📝 Planned`
+-   **FR2.4: Log Viewing.** An `admin` must be able to view these audit logs. `📝 Planned`
 
 ### FR3: Portfolio Dashboard
 
@@ -43,15 +44,17 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR4.2: Asset Association.** When adding a market-traded asset (Stock, ETF, Mutual Fund), the user must associate it with one of their created portfolios. Other asset types (like FDs, PPF) can be tracked at the top level, outside of specific portfolios. `✅ Done`
 -   **FR4.3: Asset Support.** The system must support tracking a wide variety of asset types: `⚠️ Partially Implemented`
     -   **Market-Traded:** Stocks, ETFs, Mutual Funds, Bonds. `✅ Done`
-    -   **Employee Plans:** Restricted Stock Units (RSUs) and Employee Stock Purchase Plans (ESPPs), accommodating both Indian and US variants and their respective currencies (e.g., INR, USD). `📝 Planned`
+    -   **Employee Plans:** Restricted Stock Units (RSUs) and Employee Stock Purchase Plans (ESPPs), accommodating both Indian and US variants and their respective currencies (e.g., INR, USD). `✅ Done`
     -   **Fixed Income & Savings:** Fixed Deposits (FDs), Recurring Deposits (RDs), Public Provident Fund (PPF). `✅ Done`
     -   **Fixed Income & Savings (Future):** National Pension System (NPS). `📝 Planned`
 -   **FR4.4: Transaction Management.** `✅ Done`
     -   **FR4.4.1:** Users must be able to manually add, edit, and delete transactions. Assets are created implicitly when a transaction for a new ticker is added. `✅ Done`
     -   **FR4.4.2:** Transaction details must include: type (buy/sell), symbol/ticker, quantity, price, date, currency, and any associated fees. `✅ Done`
--   **FR4.5: Income Tracking.** The system must track dividends, interest payments, and other distributions, with an option to mark them as reinvested. `⚠️ Partially Implemented`
+    -   **FR4.4.3: Specific Lot Identification (Tax Lot Accounting).** Users must be able to select specific acquisition lots when selling assets to optimize tax liability (vs. default FIFO). `✅ Done`
+-   **FR4.5: Income Tracking.** The system must track dividends, interest payments, and other distributions, with an option to mark them as reinvested. `✅ Done`
     -   **FR4.5.1:** Add support for tracking Mutual Fund dividends/payouts. `✅ Done`
--   **FR4.6: Corporate Actions.** The system must allow users to manually log corporate actions like dividends, bonuses, and stock splits. `⚠️ Partially Implemented` (Automatic tracking is planned)
+    -   **FR4.5.2:** Support for Dividend Reinvestment Plans (DRIP) for Stocks and Foreign Dividends with currency conversion. `✅ Done`
+-   **FR4.6: Corporate Actions.** The system must allow users to manually log corporate actions like dividends, bonuses, and stock splits. `✅ Done`
 -   **FR4.7: Portfolio Detail Page View (Pilot Feedback).** The portfolio detail page must be redesigned to provide a consolidated, analytical view. `✅ Done`
     -   **FR4.7.1: Portfolio Summary Header.** The top of the page must display a summary card with key metrics for that portfolio: Total Value, Invested Amount, Day's P&L (Absolute & %), Unrealized P&L (Absolute & %), and Realized P&L. `✅ Done`
     -   **FR4.7.2: Consolidated Holdings View.** The primary view must be a table of consolidated current holdings, replacing the raw transaction list. Each row must represent a single asset and display: Asset Name, Quantity, Average Buy Price, Invested Amount, LTP, Day's Change (%), Day's P&L, Current Value, and Unrealized P&L (Absolute & %). `✅ Done`
@@ -70,11 +73,13 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR5.2: Price Updates.**
     -   **FR5.2.1:** Provide live price updates for Stocks and ETFs (e.g., with a 15-minute delay). `✅ Done`
     -   **FR5.2.2:** Provide daily NAV updates for Mutual Funds and daily price updates for Listed Bonds. `✅ Done`
+-   **FR5.3: Foreign Currency Support.** Automatically fetch historical and real-time FX rates to convert foreign asset values (e.g., USD) to the portfolio's base currency (INR). `✅ Done`
 
 ### FR6: Performance & Risk Analytics
 -   **FR6.1: Performance Metrics.** The system must calculate and display key performance metrics: `⚠️ Partially Implemented`
     -   Absolute Gain/Loss (Realized and Unrealized), correctly including income from dividends and coupons. `✅ Done`
     -   Annualised Return (XIRR) for any asset, asset class, or portfolio, correctly including income from dividends and coupons. `✅ Done`
+    -   **FR6.1.1: Foreign Asset Analytics.** Correctly calculate XIRR and P&L for foreign assets (including RSU/ESPP) by factoring in currency fluctuations and FMV at vesting. `✅ Done`
     -   Sharpe Ratio for any portfolio. `✅ Done`
     -   Time-weighted Return (TWR) and Money-weighted Return (MWR). `📝 Planned`
 -   **FR6.2: Advanced Risk Analytics.** The system must calculate and display advanced risk metrics including:
@@ -99,7 +104,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR7.2: File Format Support.** The import engine must handle various file formats, including PDF, Excel, HTML, CSV, TXT, and DBF. `⚠️ Partially Implemented` (CSV only)
 
 ### FR8: Market Insights & Research
--   **FR8.1: Watchlists.** Users must be able to create and manage lists of assets to monitor without owning them, displaying key metrics for each. `📝 Planned`
+-   **FR8.1: Watchlists.** Users must be able to create and manage lists of assets to monitor without owning them, displaying key metrics for each. `✅ Done`
 -   **FR8.2: Market News Feed.** The system will provide an aggregated feed of financial news relevant to the user's portfolio and watchlist. `📝 Planned`
 -   **FR8.3: Asset Detail Pages.** A detailed view for individual assets must be available, showing historical price charts, key financial metrics (Market Cap, Volume, P/E), company descriptions, and related news. `📝 Planned`
 

@@ -30,6 +30,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Consolidated Holdings View:** A redesigned portfolio page that shows a consolidated holdings table with sorting, replacing a simple transaction list.
 *   **Sectioned Holdings Table:** A redesigned holdings table that groups assets by class into collapsible sections for a clearer overview.
 *   **Mutual Fund Dividend Tracking:** Manually log cash or reinvested dividends for mutual fund holdings.
+*   **Stock Dividend Reinvestment (DRIP):** Support for automatic reinvestment of stock dividends.
 *   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.
 *   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV files.
     *   Includes pre-built parsers for Zerodha, ICICI Direct, and a generic format.
