@@ -11,13 +11,13 @@
 
 *   **Backend Unit/Integration Tests:** ✅ **165/165 Passing**
 *   **Frontend Unit/Integration Tests:** ✅ **174/174 Passing**
-*   **End-to-End (E2E) Tests:** ✅ **30/30 Passing**
+*   **End-to-End (E2E) Tests:** ✅ **31/31 Passing**
 *   **Linters (Code Quality):** ✅ **Passing**
 
 ### Recent Stabilization Efforts
 
 *   **Frontend Unit Tests:** Resolved all failures in the Jest test suite, primarily by aligning mock data in `TransactionFormModal.test.tsx` with the component's updated logic for handling FX rates.
-*   **E2E Test Coverage:** Enabled the previously skipped E2E test for asset-level XIRR (`analytics.spec.ts`) by implementing a robust mocking strategy for the holdings API response. The full suite of 30 tests now passes.
+*   **E2E Test Coverage:** Enabled the previously skipped E2E test for asset-level XIRR (`analytics.spec.ts`) by implementing a robust mocking strategy for the holdings API response. The full suite of 31 tests now passes.
 *   **Code Quality:** Eliminated the final remaining `eslint` warnings in the frontend codebase and removed duplicated code from the backend.
 
 ## 3. Implemented Functionality
