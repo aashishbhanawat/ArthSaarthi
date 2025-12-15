@@ -1,4 +1,4 @@
-# FR4.3: Foreign Stock Transaction Enhancements
+# FR5.3.1: Foreign Stock Transaction Enhancements
 
 **Status: 📝 Proposed**
 

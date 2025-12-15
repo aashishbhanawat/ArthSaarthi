@@ -15,7 +15,7 @@ This document outlines enhancements to the existing dividend tracking functional
 1.  **Dividend Reinvestment Plan (DRIP) for Stocks:** Adding a clear workflow for handling stock dividends that are automatically reinvested.
 2.  **Currency Conversion for Foreign Dividends:** Adding support for correctly logging dividends received in a foreign currency (e.g., USD), including for reinvestment scenarios.
 
-This plan will adopt the standards established in `FR8.1.1` for handling foreign currency and transaction metadata.
+This plan will adopt the standards established in `FR4.3.7` for handling foreign currency and transaction metadata.
 
 ## 2. Dividend Reinvestment Plan (DRIP) for Domestic Stocks
 
