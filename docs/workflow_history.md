@@ -59,7 +59,7 @@
 
 ## 2025-12-05: ESPP/RSU Implementation & Stability Fixes
 
-**Task:** Implement ESPP/RSU tracking (FR8.1.1) and resolve all outstanding bugs and linter warnings to achieve a stable, fully-passing test suite.
+**Task:** Implement ESPP/RSU tracking (FR4.3.7, formerly FR8.1.1) and resolve all outstanding bugs and linter warnings to achieve a stable, fully-passing test suite.
 
 **AI Assistant:** Gemini Code Assist
 **Role:** Full-Stack Developer
@@ -112,9 +112,9 @@ The AI assistant successfully implemented the ESPP/RSU tracking feature and addr
 
 **Success.** All linters and automated tests are passing across all environments. The ESPP/RSU feature is implemented, and critical bugs have been resolved. The project is in a stable and well-documented state.
 
-## 2025-12-06: Implement Foreign Stock Transactions (FR8.2)
+## 2025-12-06: Implement Foreign Stock Transactions (FR5.3.1)
 
-**Task:** Implement support for foreign stock transactions (FR8.2), ensuring portfolio values and analytics (XIRR) are correctly converted to INR using daily FX rates.
+**Task:** Implement support for foreign stock transactions (FR5.3.1, formerly FR8.2), ensuring portfolio values and analytics (XIRR) are correctly converted to INR using daily FX rates.
 
 **AI Assistant:** Jules
 **Role:** Senior Software Engineer
@@ -207,7 +207,7 @@ This phase focused on achieving a "green" build across all testing layers.
 
 **Success.** The project has achieved a completely clean state with 100% passing tests (Backend: 165, Frontend: 174, E2E: 31) and no linter errors. The application is ready for backup and deployment.
 
-## 2025-12-14: Implement Tax Lot Accounting (FR8.3)
+## 2025-12-14: Implement Tax Lot Accounting (FR4.4.3)
 
 **Task:** Implement "Specific Lot Identification" for sales, allowing users to optimize tax liability (e.g., specific lot selling vs average cost).
 

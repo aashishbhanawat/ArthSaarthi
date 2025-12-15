@@ -1,4 +1,4 @@
-# FR4.3: Employee Stock Plans (ESPP/RSU) Tracking
+# FR4.3.7: Employee Stock Plans (ESPP/RSU) Tracking
 
 **Status: ✅ Implemented**
 
