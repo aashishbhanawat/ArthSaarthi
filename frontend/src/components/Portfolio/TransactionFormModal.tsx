@@ -70,6 +70,9 @@ type TransactionFormInputs = {
     assetId?: string;
     newAssetCurrency?: string;
     details?: { [key: string]: unknown };
+    // Stock DRIP fields
+    isStockDividendReinvested?: boolean;
+    stockReinvestmentPrice?: number;
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit }) => {
@@ -105,6 +108,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const transactionDate = useWatch({ control, name: 'transaction_date' });
     const quantity = useWatch({ control, name: 'quantity' });
     const pricePerUnit = useWatch({ control, name: 'price_per_unit' });
+    // Stock DRIP watchers
+    const isStockDividendReinvested = useWatch({ control, name: 'isStockDividendReinvested' });
+    const stockReinvestmentPrice = useWatch({ control, name: 'stockReinvestmentPrice' });
+    const dividendAmount = useWatch({ control, name: 'dividendAmount' });
 
     // --- FX Rate State & Logic ---
     const isForeignAsset = selectedAsset && selectedAsset.currency !== 'INR';
@@ -117,9 +124,27 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
     // The getFxRate function returns the rate value directly, which might be a string.
     // Handle cases where fxRateData is an object { rate: ... } (API) or a primitive value (Tests)
-    const fxRate = fxRateData && typeof fxRateData === 'object' && 'rate' in fxRateData
+    const fetchedFxRate = fxRateData && typeof fxRateData === 'object' && 'rate' in fxRateData
         ? Number(fxRateData.rate)
         : (fxRateData ? Number(fxRateData) : undefined);
+
+    // Editable FX rate: pre-populated from API, user can override
+    const [editableFxRate, setEditableFxRate] = useState<number | undefined>(undefined);
+
+    // Sync editable FX rate when fetched rate changes (but don't override user edits)
+    useEffect(() => {
+        if (fetchedFxRate && !editableFxRate) {
+            setEditableFxRate(fetchedFxRate);
+        }
+    }, [fetchedFxRate, editableFxRate]);
+
+    // Reset editable FX rate when asset or date changes
+    useEffect(() => {
+        setEditableFxRate(undefined);
+    }, [selectedAsset, transactionDate]);
+
+    // Use editable rate if set, otherwise fall back to fetched rate
+    const fxRate = editableFxRate ?? fetchedFxRate;
 
     // --- Mutual Fund Search State & Hooks ---
     const [mfSearchInput, setMfSearchInput] = useState('');
@@ -366,18 +391,41 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 return;
             }
 
-            let payload: TransactionCreate;
+            let payload: TransactionCreate | TransactionCreate[];
 
             switch (data.action_type) {
                 case 'DIVIDEND':
-                    payload = {
-                        asset_id: selectedAsset.id,
-                        transaction_type: 'DIVIDEND',
-                        quantity: data.dividendAmount!,
-                        price_per_unit: 1, // Repurposed, set to 1
-                        transaction_date: new Date(data.transaction_date).toISOString(),
-                        details,
-                    };
+                    if (data.isStockDividendReinvested && data.stockReinvestmentPrice && data.stockReinvestmentPrice > 0) {
+                        // Stock DRIP: Create two transactions - DIVIDEND + BUY
+                        const reinvestedQuantity = data.dividendAmount! / data.stockReinvestmentPrice;
+                        const dividendTx: TransactionCreate = {
+                            asset_id: selectedAsset.id,
+                            transaction_type: 'DIVIDEND' as TransactionType,
+                            quantity: data.dividendAmount!,
+                            price_per_unit: 1,
+                            transaction_date: new Date(data.transaction_date).toISOString(),
+                            details,
+                        };
+                        const buyTx: TransactionCreate = {
+                            asset_id: selectedAsset.id,
+                            transaction_type: 'BUY' as TransactionType,
+                            quantity: reinvestedQuantity,
+                            price_per_unit: data.stockReinvestmentPrice,
+                            transaction_date: new Date(data.transaction_date).toISOString(),
+                            details,
+                        };
+                        payload = [dividendTx, buyTx];
+                    } else {
+                        // Regular cash dividend
+                        payload = {
+                            asset_id: selectedAsset.id,
+                            transaction_type: 'DIVIDEND' as TransactionType,
+                            quantity: data.dividendAmount!,
+                            price_per_unit: 1,
+                            transaction_date: new Date(data.transaction_date).toISOString(),
+                            details,
+                        };
+                    }
                     break;
                 case 'SPLIT':
                     payload = {
@@ -836,10 +884,22 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 <h3 className="font-semibold text-lg text-blue-800">INR Conversion</h3>
                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                     <div className="form-group">
-                                        <label className="form-label text-blue-700">FX Rate ({selectedAsset.currency}-INR)</label>
-                                        <div className="form-input bg-blue-100 text-blue-800" data-testid="fx-rate-display">
-                                            {isLoadingFxRate ? 'Fetching...' : (fxRate || 'N/A')}
-                                        </div>
+                                        <label htmlFor="editableFxRate" className="form-label text-blue-700">FX Rate ({selectedAsset.currency}-INR)</label>
+                                        {isLoadingFxRate ? (
+                                            <div className="form-input bg-blue-100 text-blue-800">Fetching...</div>
+                                        ) : (
+                                            <input
+                                                id="editableFxRate"
+                                                type="number"
+                                                step="any"
+                                                value={editableFxRate ?? ''}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditableFxRate(e.target.value ? Number(e.target.value) : undefined)}
+                                                className="form-input"
+                                                data-testid="fx-rate-input"
+                                                placeholder="Enter FX rate"
+                                            />
+                                        )}
+                                        <p className="text-xs text-blue-600 mt-1">Auto-fetched rate: {fetchedFxRate ?? 'N/A'}</p>
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label text-blue-700">Total (INR)</label>
@@ -1121,20 +1181,55 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
                                 {/* Dividend Fields */}
                                 {actionType === 'DIVIDEND' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="form-group">
-                                            <label htmlFor="transaction_date_mf_dividend" className="form-label">Payment Date</label>
-                                            <input id="transaction_date_mf_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
-                                            {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
-                                        </div>
-                                        <div className="form-group">
-                                            <div className="flex items-baseline">
-                                                <label htmlFor="dividendAmount" className="form-label">Total Amount</label>
-                                                {isForeignAsset && <span className="text-gray-500 text-sm ml-1">({selectedAsset.currency})</span>}
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <label htmlFor="transaction_date_stock_dividend" className="form-label">Payment Date</label>
+                                                <input id="transaction_date_stock_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
-                                            <input id="dividendAmount" type="number" step="any" {...register('dividendAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
-                                            {errors.dividendAmount && <p className="text-red-500 text-xs italic">{errors.dividendAmount.message}</p>}
+                                            <div className="form-group">
+                                                <div className="flex items-baseline">
+                                                    <label htmlFor="dividendAmount" className="form-label">Total Amount</label>
+                                                    {isForeignAsset && <span className="text-gray-500 text-sm ml-1">({selectedAsset.currency})</span>}
+                                                </div>
+                                                <input id="dividendAmount" type="number" step="any" {...register('dividendAmount', { required: "Amount is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
+                                                {errors.dividendAmount && <p className="text-red-500 text-xs italic">{errors.dividendAmount.message}</p>}
+                                            </div>
                                         </div>
+                                        {/* Stock DRIP Section */}
+                                        <div className="flex items-center space-x-2">
+                                            <input id="isStockDividendReinvested" type="checkbox" {...register('isStockDividendReinvested')} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                            <label htmlFor="isStockDividendReinvested" className="text-sm text-gray-700">Reinvest Dividend?</label>
+                                        </div>
+                                        {isStockDividendReinvested && (
+                                            <div className="p-4 border border-green-200 rounded-md bg-green-50 space-y-3">
+                                                <h4 className="font-semibold text-green-800">Reinvestment Details</h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="form-group">
+                                                        <label htmlFor="stockReinvestmentPrice" className="form-label">
+                                                            Reinvestment Price {isForeignAsset && <span className="text-gray-500 text-sm">({selectedAsset.currency})</span>}
+                                                        </label>
+                                                        <input
+                                                            id="stockReinvestmentPrice"
+                                                            type="number"
+                                                            step="any"
+                                                            {...register('stockReinvestmentPrice', { required: "Reinvestment price is required", valueAsNumber: true, min: { value: 0.0001, message: "Must be positive" } })}
+                                                            className="form-input"
+                                                        />
+                                                        {errors.stockReinvestmentPrice && <p className="text-red-500 text-xs italic">{errors.stockReinvestmentPrice.message}</p>}
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label">New Shares to be Added</label>
+                                                        <div className="form-input bg-gray-100 text-gray-700">
+                                                            {(dividendAmount && stockReinvestmentPrice && stockReinvestmentPrice > 0)
+                                                                ? (dividendAmount / stockReinvestmentPrice).toFixed(6)
+                                                                : '0.000000'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
