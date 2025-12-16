@@ -1,3 +1,32 @@
+## 2025-12-16: Implement Manual Asset Seeding (FR2.3)
+
+*   **Task Description:** Implemented admin-only manual asset sync endpoint allowing administrators to trigger asset master data updates from the UI without restarting the server.
+
+*   **Key Prompts & Interactions:**
+    1.  **Backend Implementation:** Created `admin_assets.py` with `POST /api/v1/admin/assets/sync` endpoint. Includes 5-minute rate limiting via CacheService (Redis/DiskCache), full download logic for 8 data sources (NSDL, BSE, NSE, ICICI), and returns sync summary with counts.
+    2.  **Frontend Implementation:** Created `AssetSyncCard.tsx` component with loading states and toast notifications, `SystemMaintenancePage.tsx`, and added navigation link to admin sidebar.
+    3.  **Bug Fixes:** Fixed `react-hot-toast` import issue by using existing `useToast` hook from ToastContext. Fixed ruff lint errors (unused imports, line lengths, trailing whitespace).
+
+*   **File Changes:**
+    *   `backend/app/api/v1/endpoints/admin_assets.py`: **New** admin endpoint for asset sync.
+    *   `backend/app/api/v1/api.py`: **Updated** to register admin_assets router.
+    *   `frontend/src/components/Admin/AssetSyncCard.tsx`: **New** sync button component.
+    *   `frontend/src/pages/Admin/SystemMaintenancePage.tsx`: **New** admin maintenance page.
+    *   `frontend/src/components/NavBar.tsx`: **Updated** to add System Maintenance link.
+    *   `frontend/src/services/adminApi.ts`: **Updated** with syncAssets API function.
+    *   `frontend/src/App.tsx`: **Updated** with /admin/maintenance route.
+
+*   **Verification:**
+    - Backend tests: 167 passed
+    - Frontend tests: 175 passed
+    - E2E tests: 32 passed
+    - Ruff lint: 0 errors
+
+*   **Outcome:**
+    - Admins can now trigger asset master updates via UI at `/admin/maintenance`.
+    - 5-minute rate limit prevents hitting external API limits.
+    - Sync returns summary: newly added, updated, and total processed counts.
+
 ## 2025-11-20: Implement User Data Backup & Restore (NFR7)
 
 *   **Task Description:** Implement the full-stack "Backup & Restore" feature (NFR7), allowing users to export their entire financial data to a JSON file and restore it. This included creating a new backend service for data serialization/deserialization, a new UI in the Profile page, and a robust verification strategy.
