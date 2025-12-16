@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    admin_assets,
     admin_interest_rates,
     assets,
     auth,
@@ -52,6 +53,11 @@ api_router.include_router(
     admin_interest_rates.router,
     prefix="/admin/interest-rates",
     tags=["admin-interest-rates"],
+)
+api_router.include_router(
+    admin_assets.router,
+    prefix="/admin/assets",
+    tags=["admin-assets"],
 )
 api_router.include_router(fx.router, prefix="/fx-rate", tags=["fx-rate"])
 

@@ -1,6 +1,6 @@
 # Feature Plan: Manual Asset Seeding Trigger
 
-**Status:** 🚧 Proposed
+**Status:** ✅ Done
 **Feature ID:** FR2.3
 **Title:** Manual Trigger for Asset Master Seeding via UI
 
@@ -26,14 +26,28 @@ As an **Administrator**, I want to **click a button in the Admin Settings** to *
 
 ### 4.1. Backend
 
-*   **New Endpoint:** `POST /api/v1/admin/seed-assets`
+*   **New Endpoint:** `POST /api/v1/admin/assets/sync`
 *   **Permissions:** Restricted to Superusers (`deps.get_current_active_superuser`).
+*   **Rate Limiting:** Max 1 request per 5 minutes. Use `CacheService` to store the timestamp.
 *   **Logic:**
-    1.  Check if a seeding job is currently in progress (using a Redis lock or application state).
-    2.  If free, trigger the `AssetSeeder.seed_assets()` method using FastAPI's `BackgroundTasks`.
-    3.  Return `202 Accepted` immediately with a message "Asset seeding started."
-    4.  If locked/busy, return `409 Conflict` with "Seeding already in progress."
+    1.  Check `CacheService` for rate limiting key. If exists, return `429`.
+    2.  Trigger the `AssetSeeder.seed_assets()` method synchronously.
+    3.  Return `200 OK` with the summary of processed items.
+    4.  Set rate limit key in cache with 5-minute expiry.
 *   **Service Reuse:** Leverage the existing `backend/app/services/asset_seeder.py` which already handles the logic for downloading and parsing files from NSDL/BSE.
+
+**Response Payload:**
+```json
+{
+  "status": "success",
+  "data": {
+    "total_processed": 500,
+    "newly_added": 12,
+    "updated": 488,
+    "timestamp": "2025-12-15T10:00:00Z"
+  }
+}
+```
 
 ### 4.2. Frontend
 
@@ -43,14 +57,14 @@ As an **Administrator**, I want to **click a button in the Admin Settings** to *
     *   Description: "Downloads latest equity and bond lists from exchanges. This process runs in the background."
 *   **Interaction:**
     *   On click, call the new API endpoint.
-    *   Handle `202`: Show success toast "Update started. Check logs for progress."
-    *   Handle `409`: Show warning toast "Update already in progress."
+    *   Handle `200`: Show success toast with counts: "Sync Complete: 12 Added, 488 Updated."
+    *   Handle `429`: Show warning toast "Please wait before syncing again."
     *   Handle `403`: Show error "Unauthorized."
 
 ## 5. Acceptance Criteria
 
-*   **Scenario 1 (Success):** Admin clicks "Update Assets". API returns 202. UI shows success toast. Server logs indicate that `AssetSeeder` has started downloading files.
-*   **Scenario 2 (Concurrency):** Admin clicks "Update Assets" twice in rapid succession. The second request returns 409 (or is gracefully ignored), and the UI informs the user that a job is already running.
+*   **Scenario 1 (Success):** Admin clicks "Update Assets". API returns 200. UI shows success toast with counts.
+*   **Scenario 2 (Rate Limit):** Admin clicks "Update Assets" twice in rapid succession. The second request returns 429, and the UI informs the user to wait.
 *   **Scenario 3 (Security):** A non-admin user attempts to call the endpoint via curl/Postman and receives a 403 Forbidden response.
 *   **Scenario 4 (Availability):** After the background task completes, a newly listed stock (not present before) is searchable in the "Add Transaction" modal.
 

@@ -6,6 +6,7 @@ import NavBar from './components/NavBar';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import UserManagementPage from './pages/Admin/UserManagementPage';
+import SystemMaintenancePage from './pages/Admin/SystemMaintenancePage';
 import PortfolioPage from './pages/Portfolio/PortfolioPage';
 import PortfolioDetailPage from './pages/Portfolio/PortfolioDetailPage';
 import DataImportPage from './pages/Import/DataImportPage';
@@ -50,6 +51,7 @@ function AppRoutes() {
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
             <Route path="/admin/interest-rates" element={<InterestRateManagementPage />} />
+            <Route path="/admin/maintenance" element={<SystemMaintenancePage />} />
           </Route>
         </Route>
       </Route>

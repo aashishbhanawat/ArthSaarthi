@@ -26,7 +26,7 @@ This document outlines the functional and non-functional requirements for the Ar
 
 -   **FR2.1: User Management Dashboard.** An `admin` must have access to a dashboard to view, create, and delete `user` accounts. `✅ Done`
 -   **FR2.2: Audit Logging Engine.** The system must log security-sensitive events (e.g., login success/failure, user creation/deletion, data import/export). Logs must include Geo/IP tagging. `📝 Planned`
--   **FR2.3: Manual Asset Seeding.** Allow admins to trigger asset master updates from the UI without restarting the server. `📝 Planned`
+-   **FR2.3: Manual Asset Seeding.** Allow admins to trigger asset master updates from the UI without restarting the server. `✅ Done`
 -   **FR2.4: Log Viewing.** An `admin` must be able to view these audit logs. `📝 Planned`
 
 ### FR3: Portfolio Dashboard
