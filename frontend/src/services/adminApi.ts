@@ -48,3 +48,23 @@ export const deleteInterestRate = async (rateId: string): Promise<{ msg: string 
   const response = await apiClient.delete(`/api/v1/admin/interest-rates/${rateId}`);
   return response.data;
 };
+
+// --- Asset Sync (Admin) ---
+export interface AssetSyncResult {
+  total_processed: number;
+  newly_added: number;
+  updated: number;
+  timestamp: string;
+}
+
+export interface AssetSyncResponse {
+  status: string;
+  data: AssetSyncResult;
+}
+
+export const syncAssets = async (): Promise<AssetSyncResponse> => {
+  const response = await apiClient.post('/api/v1/admin/assets/sync', {}, {
+    timeout: 60000, // 60 second timeout for long-running sync
+  });
+  return response.data;
+};

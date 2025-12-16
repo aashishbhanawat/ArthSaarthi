@@ -1,17 +1,19 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { HomeIcon,
-  BriefcaseIcon,
-  ArrowUpTrayIcon,
-  ListBulletIcon,
-  UsersIcon,
-  ArrowLeftOnRectangleIcon,
-  EyeIcon,
-  TrophyIcon,
-  UserCircleIcon,
-  ScaleIcon,
- } from '@heroicons/react/24/outline';
+import {
+    HomeIcon,
+    BriefcaseIcon,
+    ArrowUpTrayIcon,
+    ListBulletIcon,
+    UsersIcon,
+    ArrowLeftOnRectangleIcon,
+    EyeIcon,
+    TrophyIcon,
+    UserCircleIcon,
+    ScaleIcon,
+    WrenchScrewdriverIcon,
+} from '@heroicons/react/24/outline';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
 
@@ -80,6 +82,10 @@ const NavBar: React.FC = () => {
                         <NavLink to="/admin/interest-rates" className={({ isActive }) => linkClass(isActive)}>
                             <ScaleIcon className="h-5 w-5" />
                             <span>Interest Rates</span>
+                        </NavLink>
+                        <NavLink to="/admin/maintenance" className={({ isActive }) => linkClass(isActive)}>
+                            <WrenchScrewdriverIcon className="h-5 w-5" />
+                            <span>System Maintenance</span>
                         </NavLink>
                     </>
                 )}
