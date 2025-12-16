@@ -174,7 +174,44 @@ The Goals feature allows you to set financial targets and link your investments 
 4.  The system will automatically calculate your progress towards the goal based on the current value of all linked items.
 ---
 
-## 7. User Management (Admin Only) {#user-management}
+## 7. Tracking RSU & ESPP Awards {#espp-rsu}
+
+Track Restricted Stock Units (RSUs) and Employee Stock Purchase Plan (ESPP) awards with proper tax lot accounting.
+
+### Adding an RSU Award
+
+1.  From a portfolio detail page, click the "Additional actions" dropdown menu.
+2.  Select **"Add ESPP/RSU Award"**.
+3.  Search for and select the company stock.
+4.  Fill in the vest date, quantity, and Fair Market Value (FMV) at vesting.
+5.  Optionally record **Sell to Cover** shares sold to cover taxes.
+
+### Adding an ESPP Purchase
+
+1.  Follow the same steps as RSU, but enter the purchase price (usually discounted).
+2.  The system will track your cost basis correctly for tax purposes.
+
+---
+
+## 8. Backup & Restore {#backup-restore}
+
+Protect your financial data with the backup and restore feature.
+
+### Creating a Backup
+
+1.  Navigate to your **Profile** page.
+2.  In the "Backup & Restore" section, click **"Download Backup"**.
+3.  Save the JSON file to a secure location.
+
+### Restoring from Backup
+
+1.  Click **"Restore from Backup"** and select your backup file.
+2.  **Warning:** Restoring will replace all your current data. Type "DELETE" to confirm.
+3.  Your data will be restored from the backup file.
+
+---
+
+## 9. User Management (Admin Only) {#user-management}
 
 If you are logged in as an administrator, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
 
@@ -184,6 +221,21 @@ If you are logged in as an administrator, you will see a **"User Management"** l
 
 ---
 
-## 8. Getting Help & Reporting Bugs {#getting-help}
+## 10. System Maintenance (Admin Only) {#system-maintenance}
+
+Administrators can trigger asset master database updates without restarting the server.
+
+### Syncing Asset Data
+
+1.  Navigate to **System Maintenance** from the admin menu.
+2.  Click the **"Sync Assets"** button.
+3.  The system will download and process updated data from NSDL, BSE, NSE, and other sources.
+4.  **Rate Limit:** This can only be done once every 5 minutes.
+
+---
+
+## 11. Getting Help & Reporting Bugs {#getting-help}
 
 If you encounter a bug or have a feature request, please **open an issue on the project's GitHub repository**. Your feedback is essential for improving the application!
+
+➡️ **For a visual guide with screenshots, see the [HTML User Guide](./user_guide/index.html).**
