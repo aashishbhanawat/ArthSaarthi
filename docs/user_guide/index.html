@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArthSaarthi - User Guide</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <h1>ArthSaarthi</h1>
+      <p class="version">User Guide v1.0</p>
+      <nav>
+        <ul>
+          <li><a href="#getting-started">Getting Started</a></li>
+          <li><a href="#dashboard">Dashboard</a></li>
+          <li><a href="#portfolios">Portfolios</a></li>
+          <li><a href="#transactions">Transactions</a></li>
+          <li><a href="#asset-types">Asset Types</a></li>
+          <li><a href="#employee-plans">RSU & ESPP</a></li>
+          <li><a href="#import">Data Import</a></li>
+          <li><a href="#goals">Goals</a></li>
+          <li><a href="#watchlists">Watchlists</a></li>
+          <li><a href="#profile">Profile & Backup</a></li>
+          <li><a href="#admin">Admin Features</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- Getting Started -->
+      <section id="getting-started" class="section">
+        <h2>1. Getting Started</h2>
+        <p>Welcome to ArthSaarthi! This guide will help you navigate through all the features of your personal investment tracker.</p>
+        
+        <h3>Logging In</h3>
+        <p>Access the application through your browser. Enter your email and password to sign in.</p>
+        <div class="screenshot">
+          <img src="assets/01_login.png" alt="Login Page">
+          <div class="screenshot-caption">Login page - Enter your credentials to access your portfolios</div>
+        </div>
+        
+        <div class="callout callout-info">
+          <strong>First Time Setup:</strong> If this is a fresh installation, the first user to register becomes the administrator.
+        </div>
+      </section>
+
+      <!-- Dashboard -->
+      <section id="dashboard" class="section">
+        <h2>2. Dashboard</h2>
+        <p>The dashboard provides a consolidated view of all your investments with key performance metrics.</p>
+        
+        <div class="screenshot">
+          <img src="assets/02_dashboard.png" alt="Dashboard">
+          <div class="screenshot-caption">Main dashboard showing portfolio value, P&L, allocation charts</div>
+        </div>
+
+        <h3>Privacy Mode</h3>
+        <p>Toggle privacy mode to hide sensitive financial information when sharing your screen.</p>
+        <div class="screenshot">
+          <img src="assets/03_dashboard_privacy.png" alt="Privacy Mode">
+          <div class="screenshot-caption">Dashboard with privacy mode enabled - values are masked</div>
+        </div>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>Total Value</h4>
+            <p>Current market value of all your investments</p>
+          </div>
+          <div class="feature-card">
+            <h4>Unrealized P&L</h4>
+            <p>Paper profit/loss on current holdings</p>
+          </div>
+          <div class="feature-card">
+            <h4>Realized P&L</h4>
+            <p>Locked-in gains from completed trades</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Portfolios -->
+      <section id="portfolios" class="section">
+        <h2>3. Managing Portfolios</h2>
+        <p>Organize your investments into multiple portfolios for different goals (Retirement, Education, etc.).</p>
+        
+        <div class="screenshot">
+          <img src="assets/04_portfolios.png" alt="Portfolios List">
+          <div class="screenshot-caption">Portfolios overview page</div>
+        </div>
+
+        <h3>Creating a Portfolio</h3>
+        <p>Click "Create New Portfolio" and enter a name for your portfolio.</p>
+        <div class="screenshot">
+          <img src="assets/05a_create_portfolio_modal.png" alt="Create Portfolio">
+          <div class="screenshot-caption">Create portfolio modal</div>
+        </div>
+
+        <h3>Portfolio Detail View</h3>
+        <p>View consolidated holdings, performance metrics, and manage transactions.</p>
+        <div class="screenshot">
+          <img src="assets/05d_portfolio_with_holding.png" alt="Portfolio Detail">
+          <div class="screenshot-caption">Portfolio detail page with holdings table</div>
+        </div>
+
+        <h3>Holding Drill-down</h3>
+        <p>Click on any holding to see detailed transaction history and analytics for that asset.</p>
+        <div class="screenshot">
+          <img src="assets/20_holding_drilldown.png" alt="Holding Drilldown">
+          <div class="screenshot-caption">Asset drill-down showing individual buy lots and XIRR</div>
+        </div>
+      </section>
+
+      <!-- Transactions -->
+      <section id="transactions" class="section">
+        <h2>4. Transactions</h2>
+        <p>Track all your buy/sell transactions with complete history and filtering.</p>
+        
+        <div class="screenshot">
+          <img src="assets/12_transactions_history.png" alt="Transaction History">
+          <div class="screenshot-caption">Transaction history page with filters</div>
+        </div>
+
+        <h3>Adding a Stock Transaction</h3>
+        <p>Click "Add Transaction", select the asset type, search for the ticker, and enter the details.</p>
+        <div class="screenshot">
+          <img src="assets/05c_add_stock_modal.png" alt="Add Stock">
+          <div class="screenshot-caption">Add stock transaction modal</div>
+        </div>
+      </section>
+
+      <!-- Asset Types -->
+      <section id="asset-types" class="section">
+        <h2>5. Supported Asset Types</h2>
+        <p>ArthSaarthi supports a wide variety of investment types.</p>
+
+        <h3>Mutual Funds</h3>
+        <p>Track mutual fund investments with NAV-based pricing.</p>
+        <div class="screenshot">
+          <img src="assets/06_add_mutual_fund_modal.png" alt="Add Mutual Fund">
+          <div class="screenshot-caption">Add mutual fund transaction</div>
+        </div>
+
+        <h3>Bonds</h3>
+        <p>Track bond investments with coupon and maturity details.</p>
+        <div class="screenshot">
+          <img src="assets/07_add_bond_modal.png" alt="Add Bond">
+          <div class="screenshot-caption">Add bond transaction</div>
+        </div>
+
+        <h3>Fixed Deposits (FD)</h3>
+        <p>Track FDs with interest rate and maturity calculations.</p>
+        <div class="screenshot">
+          <img src="assets/08_add_fd_modal.png" alt="Add FD">
+          <div class="screenshot-caption">Add Fixed Deposit</div>
+        </div>
+
+        <h3>Recurring Deposits (RD)</h3>
+        <p>Track RDs with monthly installment tracking.</p>
+        <div class="screenshot">
+          <img src="assets/09_add_rd_modal.png" alt="Add RD">
+          <div class="screenshot-caption">Add Recurring Deposit</div>
+        </div>
+
+        <h3>PPF Account</h3>
+        <p>Track your Public Provident Fund with contribution history.</p>
+        <div class="screenshot">
+          <img src="assets/10_add_ppf_modal.png" alt="Add PPF">
+          <div class="screenshot-caption">Add PPF Account and contributions</div>
+        </div>
+      </section>
+
+      <!-- Employee Plans -->
+      <section id="employee-plans" class="section">
+        <h2>6. RSU & ESPP Tracking</h2>
+        <p>Track Restricted Stock Units and Employee Stock Purchase Plan awards with proper tax lot accounting.</p>
+        
+        <div class="screenshot">
+          <img src="assets/11_add_rsu_espp_modal.png" alt="RSU ESPP Modal">
+          <div class="screenshot-caption">Add RSU/ESPP Award modal with Sell-to-Cover option</div>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Sell to Cover:</strong> Record the automatic sale of shares used to cover taxes at vesting time.
+        </div>
+
+        <h3>Key Features</h3>
+        <ul>
+          <li>Track vest date and FMV at vesting</li>
+          <li>Record "Sell to Cover" transactions for taxes</li>
+          <li>Support for both US and Indian stock awards</li>
+          <li>Automatic cost basis tracking</li>
+        </ul>
+      </section>
+
+      <!-- Data Import -->
+      <section id="import" class="section">
+        <h2>7. Data Import</h2>
+        <p>Bulk import transactions from broker statements (CSV format).</p>
+        
+        <div class="screenshot">
+          <img src="assets/13_import_page.png" alt="Import Page">
+          <div class="screenshot-caption">Data import page - upload CSV files from brokers</div>
+        </div>
+
+        <h3>Supported Formats</h3>
+        <ul>
+          <li>Generic CSV</li>
+          <li>Zerodha contract notes</li>
+          <li>ICICI Direct statements</li>
+        </ul>
+
+        <div class="callout callout-info">
+          <strong>Ticker Mapping:</strong> The system will prompt you to map any unrecognized symbols to known assets.
+        </div>
+      </section>
+
+      <!-- Goals -->
+      <section id="goals" class="section">
+        <h2>8. Goal Planning</h2>
+        <p>Set financial goals and link investments to track progress.</p>
+        
+        <div class="screenshot">
+          <img src="assets/14_goals_page.png" alt="Goals">
+          <div class="screenshot-caption">Goals page - create and track financial targets</div>
+        </div>
+
+        <h3>Creating Goals</h3>
+        <ol>
+          <li>Click "Create Goal"</li>
+          <li>Set target amount and date</li>
+          <li>Link portfolios or specific assets</li>
+          <li>Track progress automatically</li>
+        </ol>
+      </section>
+
+      <!-- Watchlists -->
+      <section id="watchlists" class="section">
+        <h2>9. Watchlists</h2>
+        <p>Monitor assets you're interested in without adding them to your portfolio.</p>
+        
+        <div class="screenshot">
+          <img src="assets/15_watchlists_page.png" alt="Watchlists">
+          <div class="screenshot-caption">Watchlists page - track assets of interest</div>
+        </div>
+      </section>
+
+      <!-- Profile -->
+      <section id="profile" class="section">
+        <h2>10. Profile & Backup</h2>
+        <p>Manage your account settings and backup your data.</p>
+        
+        <div class="screenshot">
+          <img src="assets/16_profile_page.png" alt="Profile">
+          <div class="screenshot-caption">Profile page with backup and restore options</div>
+        </div>
+
+        <h3>Backup & Restore</h3>
+        <p>Export your entire financial data to a JSON file for safekeeping. You can restore from this backup at any time.</p>
+
+        <div class="callout callout-warning">
+          <strong>Important:</strong> Restoring from a backup will replace all your current data. This action cannot be undone.
+        </div>
+      </section>
+
+      <!-- Admin Features -->
+      <section id="admin" class="section">
+        <h2>11. Admin Features</h2>
+        <p>Administrator-only features for managing the application.</p>
+
+        <h3>User Management</h3>
+        <p>Create, edit, and delete user accounts.</p>
+        <div class="screenshot">
+          <img src="assets/17_admin_users.png" alt="User Management">
+          <div class="screenshot-caption">Admin user management page</div>
+        </div>
+
+        <h3>Interest Rates</h3>
+        <p>Manage PPF and other government scheme interest rates.</p>
+        <div class="screenshot">
+          <img src="assets/18_admin_interest_rates.png" alt="Interest Rates">
+          <div class="screenshot-caption">Admin interest rates management</div>
+        </div>
+
+        <h3>System Maintenance</h3>
+        <p>Trigger asset master data updates without restarting the server.</p>
+        <div class="screenshot">
+          <img src="assets/19_admin_maintenance.png" alt="System Maintenance">
+          <div class="screenshot-caption">System maintenance - sync asset master data</div>
+        </div>
+
+        <div class="callout callout-info">
+          <strong>Rate Limited:</strong> Asset sync can only be triggered once every 5 minutes to prevent overloading external data sources.
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer style="text-align: center; padding: 40px; color: var(--text-light);">
+        <p>ArthSaarthi User Guide &copy; 2024</p>
+        <p>For more information, visit the <a href="https://github.com/aashishbhanawat/ArthSaarthi">GitHub Repository</a></p>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
