@@ -10,7 +10,8 @@ import { test, expect, Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const SCREENSHOT_DIR = path.join(__dirname, '..', 'screenshots');
+// Screenshots saved to /app/screenshots in Docker (mounted from ./e2e/screenshots)
+const SCREENSHOT_DIR = '/app/screenshots';
 
 const adminUser = {
     email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
