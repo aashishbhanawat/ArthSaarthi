@@ -105,7 +105,8 @@ jobs:
         run: |
           echo "🔍 Checking Python dependencies for vulnerabilities..."
           cd backend
-          safety check -r requirements.txt --output text || true
+          pip install -r requirements.txt
+          safety scan --output text || true
 
       - name: Run npm audit (Frontend dependency scan)
         run: |
