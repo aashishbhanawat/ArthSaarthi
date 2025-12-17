@@ -5,10 +5,16 @@
  * for the HTML user guide documentation.
  * 
  * Screenshots are saved to: e2e/screenshots/
+ * 
+ * USAGE: These tests are SKIPPED by default. To run them:
+ *   GENERATE_SCREENSHOTS=true npx playwright test user-guide-screenshots
  */
 import { test, expect, Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// Skip these tests unless GENERATE_SCREENSHOTS=true
+const shouldRun = process.env.GENERATE_SCREENSHOTS === 'true';
 
 // Screenshots saved to /app/screenshots in Docker (mounted from ./e2e/screenshots)
 const SCREENSHOT_DIR = '/app/screenshots';
@@ -39,7 +45,11 @@ async function screenshot(page: Page, name: string) {
     console.log(`📸 Captured: ${name}.png`);
 }
 
+// Skip all tests in this file unless GENERATE_SCREENSHOTS=true
 test.describe.serial('User Guide Screenshots', () => {
+    // Skip entire suite if GENERATE_SCREENSHOTS is not set
+    test.skip(!shouldRun, 'Skipped: Set GENERATE_SCREENSHOTS=true to run');
+
     let adminToken: string;
 
     test.beforeAll(async ({ request }) => {
