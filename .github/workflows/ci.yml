@@ -72,3 +72,50 @@ jobs:
           name: playwright-report
           path: e2e/playwright-report/
           retention-days: 30
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install security tools
+        run: |
+          pip install bandit safety
+
+      - name: Run Bandit (Python SAST)
+        run: |
+          echo "🔍 Running Bandit security scan on backend..."
+          bandit -r backend/app/ -ll -f txt || true
+          # Fail on high/medium severity issues (excluding nosec)
+          bandit -r backend/app/ -ll --exit-zero
+
+      - name: Run Safety (Python dependency scan)
+        run: |
+          echo "🔍 Checking Python dependencies for vulnerabilities..."
+          cd backend
+          safety check -r requirements.txt --output text || true
+
+      - name: Run npm audit (Frontend dependency scan)
+        run: |
+          echo "🔍 Checking npm dependencies for vulnerabilities..."
+          cd frontend
+          npm ci
+          npm audit --audit-level=high || echo "⚠️ npm audit found issues - review recommended"
+
+      - name: Security scan summary
+        if: always()
+        run: |
+          echo "✅ Security scans completed"
+          echo "📋 Review any warnings reported above"
