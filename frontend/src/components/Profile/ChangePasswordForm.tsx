@@ -53,6 +53,7 @@ const ChangePasswordForm = () => {
             <input
               type="password"
               id="old_password"
+              autoComplete="current-password"
               {...register('old_password', { required: 'Current password is required' })}
               className={`form-input font-bold ${errors.old_password ? 'border-red-500' : ''}`}
             />
@@ -66,6 +67,7 @@ const ChangePasswordForm = () => {
             <input
               type="password"
               id="new_password"
+              autoComplete="new-password"
               {...register('new_password', passwordValidation)}
               className={`form-input font-bold ${errors.new_password ? 'border-red-500' : ''}`}
             />
@@ -79,6 +81,7 @@ const ChangePasswordForm = () => {
             <input
               type="password"
               id="confirmPassword"
+              autoComplete="new-password"
               {...register('confirmPassword', {
                 required: 'Please confirm your new password',
                 validate: (value) => value === newPassword || 'Passwords do not match',

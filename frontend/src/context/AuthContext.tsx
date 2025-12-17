@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (email: string) => {
     // This function can be expanded if needed
-    console.log("Register function called for", email);
+    void email; // Acknowledge parameter usage
   };
 
   const getModalCountdown = () => {

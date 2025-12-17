@@ -23,11 +23,15 @@ apiClient.interceptors.request.use(
       try {
         const apiConfig = await window.electronAPI.getApiConfig();
         const baseUrl = `http://${apiConfig.host}:${apiConfig.port}`;
-        console.log(`Electron environment detected. Setting API base URL to: ${baseUrl}`);
+        if (isDev) {
+          console.log(`Electron environment detected. Setting API base URL to: ${baseUrl}`);
+        }
         apiClient.defaults.baseURL = baseUrl;
         config.baseURL = baseUrl;
       } catch (error) {
-        console.error("Failed to get API config from Electron main process:", error);
+        if (isDev) {
+          console.error("Failed to get API config from Electron main process:", error);
+        }
       }
     }
 

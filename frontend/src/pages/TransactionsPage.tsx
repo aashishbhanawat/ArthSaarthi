@@ -13,7 +13,6 @@ import { useDeleteTransaction } from '../hooks/useTransactions';
 const PAGE_SIZE = 15;
 
 const TransactionsPage: React.FC = () => {
-  console.log("TransactionsPage mounted");
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
@@ -36,7 +35,6 @@ const TransactionsPage: React.FC = () => {
       limit: PAGE_SIZE,
     };
   }, [searchParams]);
-  console.log("TransactionsPage filters:", filters); // Moved console.log outside useMemo
 
   // cast data to any or specific response type because useTransactions might return something else?
   // useTransactions returns TransactionsResponse which has transactions: Transaction[].
@@ -55,7 +53,6 @@ const TransactionsPage: React.FC = () => {
   };
 
   const handleEdit = (transaction: Transaction) => {
-    console.log('[DEBUG] handleEdit called with transaction:', transaction);
     setTransactionToEdit(transaction);
   };
 
@@ -70,7 +67,8 @@ const TransactionsPage: React.FC = () => {
         {
           onSuccess: () => {
             setTransactionToDelete(null);
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });          },
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+          },
         }
       );
     }
@@ -83,8 +81,6 @@ const TransactionsPage: React.FC = () => {
   };
 
 
-  console.log('[DEBUG] TransactionsPage rendering. transactionToEdit:', transactionToEdit);
-  console.log("TransactionsPage data:", data, "isLoading:", isLoading, "isError:", isError, "error:", error);
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Transaction History</h1>

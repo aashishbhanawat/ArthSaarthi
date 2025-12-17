@@ -8,7 +8,6 @@ import {
 import { TransactionsResponse, TransactionUpdate } from '../types/portfolio';
 
 export const useTransactions = (filters: TransactionFilters) => {
-  console.log("useTransactions hook called with filters:", filters);
   return useQuery<TransactionsResponse, Error>({
     queryKey: ['transactions', filters],
     queryFn: () => getTransactions(filters),
