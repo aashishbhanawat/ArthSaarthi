@@ -21,7 +21,7 @@ const invalidatePortfolioAndDashboardQueries = (queryClient: QueryClient, portfo
 export const useDeleteFixedDeposit = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ portfolioId, fdId }: { portfolioId: string; fdId: string }) => // eslint-disable-line @typescript-eslint/no-unused-vars
+        mutationFn: ({ portfolioId: _portfolioId, fdId }: { portfolioId: string; fdId: string }) =>
             portfolioApi.deleteFixedDeposit(fdId),
         onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });
@@ -30,7 +30,7 @@ export const useDeleteFixedDeposit = () => {
 export const useUpdateFixedDeposit = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ portfolioId, fdId, data }: { portfolioId: string; fdId: string; data: FixedDepositUpdate }) => // eslint-disable-line @typescript-eslint/no-unused-vars
+        mutationFn: ({ portfolioId: _portfolioId, fdId, data }: { portfolioId: string; fdId: string; data: FixedDepositUpdate }) =>
             portfolioApi.updateFixedDeposit(fdId, data),
         onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });

@@ -70,21 +70,21 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     useEffect(() => {
         if (isEditMode && transactionToEdit) {
-            const details = transactionToEdit.details || {};
-            const sellToCoverDetails = details.sell_to_cover || {};
+            const details = (transactionToEdit.details || {}) as Record<string, unknown>;
+            const sellToCoverDetails = (details.sell_to_cover || {}) as Record<string, unknown>;
 
             setValue('awardType', transactionToEdit.transaction_type as AwardType);
             setValue('date', transactionToEdit.transaction_date.split('T')[0]);
             setValue('quantity', Number(transactionToEdit.quantity));
             setValue('price', Number(transactionToEdit.price_per_unit));
-            setValue('fmv', details.fmv || 0);
-            setValue('fxRate', details.fx_rate || 1);
+            setValue('fmv', (details.fmv as number) || 0);
+            setValue('fxRate', (details.fx_rate as number) || 1);
 
-            const hasSellToCover = !!sellToCoverDetails.quantity;
+            const hasSellToCover = !!(sellToCoverDetails.quantity);
             setValue('sellToCover', hasSellToCover);
             if (hasSellToCover) {
-                setValue('sellQuantity', sellToCoverDetails.quantity);
-                setValue('sellPrice', sellToCoverDetails.price_per_unit);
+                setValue('sellQuantity', sellToCoverDetails.quantity as number);
+                setValue('sellPrice', sellToCoverDetails.price_per_unit as number);
             }
 
             setSelectedAsset(transactionToEdit.asset);
@@ -219,16 +219,16 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
         };
 
         const mutationOptions = {
-             onSuccess: () => {
-                 queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
-                 queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', portfolioId] });
-                 queryClient.invalidateQueries({ queryKey: ['transactions'] });
-                 onClose();
-             },
-             onError: (error: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                 setApiError(error.message || `Failed to ${isEditMode ? 'update' : 'create'} transaction.`);
-             }
-         };
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+                queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', portfolioId] });
+                queryClient.invalidateQueries({ queryKey: ['transactions'] });
+                onClose();
+            },
+            onError: (error: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                setApiError(error.message || `Failed to ${isEditMode ? 'update' : 'create'} transaction.`);
+            }
+        };
 
         if (isEditMode) {
             updateTransactionMutation.mutate({ portfolioId, transactionId: transactionToEdit!.id, data: payload as TransactionUpdate }, mutationOptions);

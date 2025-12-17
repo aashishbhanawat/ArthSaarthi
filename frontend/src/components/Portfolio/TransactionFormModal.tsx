@@ -8,7 +8,8 @@ import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAss
 import { lookupAsset, getFxRate, getAvailableLots, AvailableLot } from '../../services/portfolioApi';
 import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
-import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails, TransactionType } from '../../types/portfolio';
+import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
+import { TransactionType } from '../../types/enums';
 import { RecurringDepositDetails } from '../../types/recurring_deposit'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import Select from 'react-select';
 import { formatCurrency } from '../../utils/formatting';

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGoals, useCreateGoal } from '../hooks/useGoals';
 import GoalList from '../components/Goals/GoalList';
 import GoalFormModal from '../components/modals/GoalFormModal';
-import { GoalCreate } from '../types/goal';
+import { GoalCreate, GoalUpdate } from '../types/goal';
 
 const GoalsPage: React.FC = () => {
   const { data: goals, isLoading, isError, error } = useGoals();
@@ -10,11 +10,11 @@ const GoalsPage: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleSubmit = (goalData: GoalCreate) => {
-    createGoal.mutate(goalData, {
-        onSuccess: () => {
-            setIsModalOpen(false);
-        }
+  const handleSubmit = (goalData: GoalCreate | GoalUpdate) => {
+    createGoal.mutate(goalData as GoalCreate, {
+      onSuccess: () => {
+        setIsModalOpen(false);
+      }
     });
   };
 
