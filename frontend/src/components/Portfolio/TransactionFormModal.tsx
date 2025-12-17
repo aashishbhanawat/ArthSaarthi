@@ -40,8 +40,8 @@ type TransactionFormInputs = {
     interestRate?: number;
     startDate?: string;
     maturityDate?: string;
-    compounding_frequency?: 'Annually' | 'Semi-Annually' | 'Quarterly' | 'Monthly'; // FD
-    interest_payout?: 'Cumulative' | 'Monthly' | 'Quarterly' | 'Semi-Annually' | 'Annually'; // FD
+    compounding_frequency?: 'Annually' | 'Half-Yearly' | 'Quarterly'; // FD - matches API type
+    interest_payout?: 'Cumulative' | 'Payout'; // FD - matches API type
     // RD-specific fields
     rdName?: string;
     rdAccountNumber?: string;
@@ -612,7 +612,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 // also handles updating (upserting) the bond details along with creating the first transaction.
                 const isBondDetailComplete = selectedAsset.bond && selectedAsset.bond.maturity_date && selectedAsset.bond.maturity_date !== '1970-01-01';
                 if (isBondDetailComplete) {
-                    const payload: TransactionCreate = { ...transactionData, asset_id: selectedAsset.id, ticker_symbol: selectedAsset.ticker_symbol };
+                    const payload: TransactionCreate = { ...transactionData, asset_id: selectedAsset.id };
                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
                 } else {
                     // This is for creating a new bond asset and its first transaction
@@ -659,15 +659,15 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         })) : undefined
                 };
 
-                const createTransactionForAsset = (assetId: string, ticker: string) => {
-                    const payload: TransactionCreate = { ...commonPayload, asset_id: assetId, ticker_symbol: ticker, asset_type: assetType as 'Stock' | 'Mutual Fund' }; // eslint-disable-line @typescript-eslint/no-explicit-any
+                const createTransactionForAsset = (assetId: string) => {
+                    const payload: TransactionCreate = { ...commonPayload, asset_id: assetId };
                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
                 };
 
                 if (assetType === 'Stock' && selectedAsset) {
                     if (selectedAsset.id) {
                         // Asset already exists
-                        createTransactionForAsset(selectedAsset.id, selectedAsset.ticker_symbol);
+                        createTransactionForAsset(selectedAsset.id);
                     } else {
                         // Asset needs to be created first
                         createAssetMutation.mutate(
@@ -678,7 +678,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 currency: data.newAssetCurrency || 'INR',
                             },
                             {
-                                onSuccess: (newAsset) => createTransactionForAsset(newAsset.id, newAsset.ticker_symbol),
+                                onSuccess: (newAsset) => createTransactionForAsset(newAsset.id),
                                 onError: () => setApiError(`Failed to create asset "${selectedAsset.name}".`),
                             }
                         );
