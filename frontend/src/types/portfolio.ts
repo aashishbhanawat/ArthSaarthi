@@ -92,6 +92,7 @@ export interface FixedDeposit extends FixedDepositCreate {
 
 export interface FixedDepositDetails extends FixedDeposit {
   maturity_value: number;
+  account_number?: string | null;
 }
 
 export interface FixedDepositAnalytics {

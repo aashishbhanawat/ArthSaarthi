@@ -11,6 +11,7 @@ import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
 import { RecurringDepositDetails } from '../../types/recurring_deposit'; // eslint-disable-line @typescript-eslint/no-unused-vars
+import { ApiError, getErrorMessage } from '../../types/api';
 import Select from 'react-select';
 import { formatCurrency } from '../../utils/formatting';
 
@@ -366,22 +367,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 // More specific invalidations are handled by the hook itself.
                 onClose();
             },
-            onError: (error: Error & { response?: { data?: { detail?: string | { msg: string }[] } } }) => {
+            onError: (error: ApiError) => {
                 const defaultMessage = isEditMode
                     ? 'An unexpected error occurred while updating the transaction'
                     : 'An unexpected error occurred while adding the transaction';
-
-                let errorMessage = defaultMessage;
-                const detail = error.response?.data?.detail;
-
-                if (typeof detail === 'string') {
-                    errorMessage = detail;
-                } else if (Array.isArray(detail) && detail[0]?.msg) {
-                    errorMessage = detail.map(d => d.msg).join(', ');
-                } else if (error.message) {
-                    errorMessage = error.message;
-                }
-                setApiError(errorMessage);
+                setApiError(getErrorMessage(error) || defaultMessage);
             }
         };
 
