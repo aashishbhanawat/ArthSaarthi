@@ -32,6 +32,8 @@ theme:
 nav:
   - 'Project Overview': index.md
   - 'Installation': installation_guide.md
+  - 'User Guide': user_guide.md
+  - 'User Guide (Visual)': user_guide/index.html
   - 'Handoff Summary': project_handoff_summary.md
   - 'Development History': workflow_history.md
   - 'Troubleshooting': troubleshooting.md
