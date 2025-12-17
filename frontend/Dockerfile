@@ -1,4 +1,5 @@
-FROM node:18-alpine
+# Node.js 20+ required for Vite 7.x (uses crypto.hash API)
+FROM node:20-alpine
 
 WORKDIR /app
 
