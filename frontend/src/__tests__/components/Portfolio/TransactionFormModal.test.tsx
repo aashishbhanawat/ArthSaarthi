@@ -287,11 +287,11 @@ describe('TransactionFormModal', () => {
             portfolioId: 'portfolio-1',
             data: {
               asset_id: 'ppf-asset-1',
-              asset_type: 'PPF',
               transaction_type: 'CONTRIBUTION',
               quantity: 10000,
               price_per_unit: 1,
               transaction_date: new Date('2024-05-10T00:00:00.000Z').toISOString(),
+              details: undefined,
             },
           }),
           expect.any(Object)
@@ -426,23 +426,29 @@ describe('TransactionFormModal', () => {
       fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
       await waitFor(() => {
-        // Should be called with an array of two transactions (DIVIDEND + BUY)
+        // Should be called twice - once for DIVIDEND, once for BUY (DRIP)
+        expect(mockCreateTransaction).toHaveBeenCalledTimes(2);
         expect(mockCreateTransaction).toHaveBeenCalledWith(
           expect.objectContaining({
-            data: expect.arrayContaining([
-              expect.objectContaining({
-                asset_id: 'asset-1',
-                transaction_type: 'DIVIDEND',
-                quantity: 100,
-                price_per_unit: 1,
-              }),
-              expect.objectContaining({
-                asset_id: 'asset-1',
-                transaction_type: 'BUY',
-                quantity: 2, // 100 / 50 = 2 shares
-                price_per_unit: 50,
-              }),
-            ]),
+            portfolioId: 'portfolio-1',
+            data: expect.objectContaining({
+              asset_id: 'asset-1',
+              transaction_type: 'DIVIDEND',
+              quantity: 100,
+              price_per_unit: 1,
+            }),
+          }),
+          expect.any(Object)
+        );
+        expect(mockCreateTransaction).toHaveBeenCalledWith(
+          expect.objectContaining({
+            portfolioId: 'portfolio-1',
+            data: expect.objectContaining({
+              asset_id: 'asset-1',
+              transaction_type: 'BUY',
+              quantity: 2, // 100 / 50 = 2 shares
+              price_per_unit: 50,
+            }),
           }),
           expect.any(Object)
         );
