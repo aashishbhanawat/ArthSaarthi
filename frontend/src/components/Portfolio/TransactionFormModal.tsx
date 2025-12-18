@@ -127,7 +127,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     // The getFxRate function returns the rate value directly, which might be a string.
     // Handle cases where fxRateData is an object { rate: ... } (API) or a primitive value (Tests)
     const fetchedFxRate = fxRateData && typeof fxRateData === 'object' && 'rate' in fxRateData
-        ? Number(fxRateData.rate)
+        ? Number((fxRateData as { rate: number | string }).rate)
         : (fxRateData ? Number(fxRateData) : undefined);
 
     // Editable FX rate: pre-populated from API, user can override
@@ -175,13 +175,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 const formattedDate = new Date(transactionToEdit.transaction_date).toISOString().split('T')[0];
 
                 reset({
-                    transaction_type: transactionToEdit.transaction_type,
+                    transaction_type: transactionToEdit.transaction_type as TransactionFormInputs['transaction_type'],
                     asset_type: transactionToEdit.asset.asset_type === 'Mutual Fund' ? 'Mutual Fund' : 'Stock',
                     quantity: Number(transactionToEdit.quantity),
                     price_per_unit: Number(transactionToEdit.price_per_unit),
                     transaction_date: formattedDate,
                     fees: Number(transactionToEdit.fees),
-                    details: transactionToEdit.details,
+                    details: transactionToEdit.details ?? undefined,
                 });
                 setSelectedAsset(transactionToEdit.asset);
                 setInputValue(transactionToEdit.asset.name);
@@ -254,10 +254,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     useEffect(() => {
         if (selectedAsset && assetType === 'Bond') {
             // Populate the bond-specific fields when a bond asset is selected
-            setValue('bondType', selectedAsset.bond?.bond_type || '', { shouldValidate: true });
+            setValue('bondType', selectedAsset.bond?.bond_type || undefined, { shouldValidate: true });
             setValue('isin', selectedAsset.isin || '', { shouldValidate: true });
-            setValue('couponRate', selectedAsset.bond?.coupon_rate || '', { shouldValidate: true });
-            setValue('faceValue', selectedAsset.bond?.face_value || '', { shouldValidate: true });
+            setValue('couponRate', selectedAsset.bond?.coupon_rate || undefined, { shouldValidate: true });
+            setValue('faceValue', selectedAsset.bond?.face_value || undefined, { shouldValidate: true });
             setValue('bondMaturityDate', selectedAsset.bond?.maturity_date ? new Date(selectedAsset.bond.maturity_date).toISOString().split('T')[0] : '', { shouldValidate: true });
         }
     }, [selectedAsset, assetType, setValue]);
@@ -443,7 +443,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     return;
             }
 
-            createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            // Handle both single transaction and array of transactions (DRIP case)
+            if (Array.isArray(payload)) {
+                // For DRIP: create multiple transactions sequentially
+                payload.forEach(tx => createTransactionMutation.mutate({ portfolioId, data: tx }, mutationOptions));
+            } else {
+                createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            }
             return; // Exit after handling corporate action
         }
 
@@ -479,7 +485,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 const dividendTx: TransactionCreate = {
                     ticker_symbol: selectedMf.ticker_symbol,
                     asset_type: 'Mutual Fund' as const,
-                    transaction_type: 'DIVIDEND',
+                    transaction_type: 'DIVIDEND' as TransactionType,
                     quantity: data.mfDividendAmount!,
                     price_per_unit: 1, // Price is 1 for dividend amount
                     transaction_date: new Date(data.transaction_date).toISOString(),
@@ -499,10 +505,15 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 payload = [dividendTx, buyTx];
             } else {
                 // For simple cash dividend, create only one transaction.
-                payload = { ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' as const, transaction_type: 'DIVIDEND', quantity: data.mfDividendAmount!, price_per_unit: 1, transaction_date: new Date(data.transaction_date).toISOString(), details };
+                payload = { ticker_symbol: selectedMf.ticker_symbol, asset_type: 'Mutual Fund' as const, transaction_type: 'DIVIDEND' as TransactionType, quantity: data.mfDividendAmount!, price_per_unit: 1, transaction_date: new Date(data.transaction_date).toISOString(), details };
             }
 
-            createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            // Handle both single transaction and array of transactions (DRIP case)
+            if (Array.isArray(payload)) {
+                payload.forEach(tx => createTransactionMutation.mutate({ portfolioId, data: tx }, mutationOptions));
+            } else {
+                createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+            }
             return;
         }
 
@@ -511,11 +522,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 // Add a new contribution to an existing PPF account
                 const payload: TransactionCreate = {
                     asset_id: existingPpfAsset.id!,
-                    transaction_type: 'CONTRIBUTION',
+                    transaction_type: 'CONTRIBUTION' as TransactionType,
                     quantity: data.contributionAmount!,
                     price_per_unit: 1,
                     transaction_date: new Date(data.contributionDate!).toISOString(),
-                    asset_type: 'PPF', // For smart recalculation trigger
                     details,
                 };
                 createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
@@ -601,7 +611,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     coupon_rate: data.couponRate!,
                     face_value: data.faceValue!,
                     maturity_date: data.bondMaturityDate!,
-                    isin: data.isin,
+                    isin: data.isin ?? null,
                     payment_frequency: null,
                     first_payment_date: null,
                 };
@@ -640,7 +650,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     price_per_unit: data.price_per_unit,
                     transaction_date: new Date(data.transaction_date).toISOString(), // eslint-disable-line @typescript-eslint/no-explicit-any
                     fees: data.fees || 0,
-                    details: isForeignAsset && fxRate && !isNaN(fxRate) ? { ...(transactionToEdit.details || {}), fx_rate: fxRate } : transactionToEdit.details,
+                    details: isForeignAsset && fxRate && !isNaN(fxRate) ? { ...(transactionToEdit.details || {}), fx_rate: fxRate } : (transactionToEdit.details ?? undefined),
                 };
                 updateTransactionMutation.mutate({ portfolioId, transactionId: transactionToEdit.id, data: payload }, mutationOptions);
             } else {
@@ -853,7 +863,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                         )}
                                                         {!isSearching && searchResults.length === 0 && inputValue.length > 1 && !selectedAsset && (
                                                             <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg" data-testid="create-new-asset-section">
-                                                                <p className="text-sm text-gray-500 mb-2">No {assetType === 'Stock' ? 'stock' : 'bond'} found. You can create it.</p>
+                                                                <p className="text-sm text-gray-500 mb-2">No {String(assetType).toLowerCase()} found. You can create it.</p>
                                                                 <button type="button" onClick={handleCreateAsset} className="btn btn-secondary btn-sm w-full" disabled={createAssetMutation.isPending}>
                                                                     {createAssetMutation.isPending ? 'Creating...' : `Create ${assetType} "${inputValue.toUpperCase()}"`}
                                                                 </button>
@@ -1353,12 +1363,12 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                             <button
                                 type="submit"
                                 className="btn btn-primary"
-                                disabled={
+                                disabled={Boolean(
                                     (isEditMode && (updateTransactionMutation.isPending || updateFixedDepositMutation.isPending || updateRecurringDepositMutation.isPending)) ||
                                     (!isEditMode && (createTransactionMutation.isPending || createPpfAccountMutation.isPending || createBondMutation.isPending || createFixedDepositMutation.isPending || createRecurringDepositMutation.isPending)) ||
                                     (!isEditMode && assetType === 'Stock' && !selectedAsset) ||
                                     (!isEditMode && assetType === 'Mutual Fund' && !selectedMf) ||
-                                    (isForeignAsset && (isLoadingFxRate || !fxRate || isNaN(fxRate)))}
+                                    (isForeignAsset && (isLoadingFxRate || !fxRate || isNaN(fxRate))))}
                             >
                                 {isEditMode
                                     ? (updateTransactionMutation.isPending || updateFixedDepositMutation.isPending || updateRecurringDepositMutation.isPending ? 'Saving...' : 'Save Changes')

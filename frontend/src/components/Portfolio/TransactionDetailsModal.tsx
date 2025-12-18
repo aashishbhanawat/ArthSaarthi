@@ -60,7 +60,7 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ isOpe
                             <div className="grid grid-cols-2 gap-2 text-sm">
                                 <div>
                                     <span className="block text-blue-600">FX Rate</span>
-                                    <span className="font-mono text-blue-900">{details.fx_rate || 'N/A'}</span>
+                                    <span className="font-mono text-blue-900">{(details.fx_rate as number | string) || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="block text-blue-600">Value in INR</span>
@@ -82,7 +82,7 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ isOpe
                             <div className="grid grid-cols-2 gap-2 text-sm">
                                 <div>
                                     <span className="block text-purple-600">FMV at Vest</span>
-                                    <span className="font-mono text-purple-900">{details.fmv ? formatCurrency(details.fmv, transaction.asset.currency) : 'N/A'}</span>
+                                    <span className="font-mono text-purple-900">{details.fmv ? formatCurrency(details.fmv as number, transaction.asset.currency) : 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
