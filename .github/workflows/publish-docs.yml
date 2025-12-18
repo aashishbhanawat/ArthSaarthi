@@ -43,6 +43,9 @@ jobs:
         run: |
           # Copy the main project README to be the index of the docs site
           cp README.md docs/index.md
+          # Copy root-level docs to docs folder for MkDocs
+          cp CONTRIBUTING.md docs/contributing.md
+          cp developer_guide.md docs/developer_guide.md
 
       - name: Build documentation site
         run: mkdocs build
