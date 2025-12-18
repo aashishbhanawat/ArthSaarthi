@@ -425,34 +425,36 @@ describe('TransactionFormModal', () => {
       // Submit
       fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
+      // Should be called twice - once for DIVIDEND, once for BUY (DRIP)
       await waitFor(() => {
-        // Should be called twice - once for DIVIDEND, once for BUY (DRIP)
         expect(mockCreateTransaction).toHaveBeenCalledTimes(2);
-        expect(mockCreateTransaction).toHaveBeenCalledWith(
-          expect.objectContaining({
-            portfolioId: 'portfolio-1',
-            data: expect.objectContaining({
-              asset_id: 'asset-1',
-              transaction_type: 'DIVIDEND',
-              quantity: 100,
-              price_per_unit: 1,
-            }),
-          }),
-          expect.any(Object)
-        );
-        expect(mockCreateTransaction).toHaveBeenCalledWith(
-          expect.objectContaining({
-            portfolioId: 'portfolio-1',
-            data: expect.objectContaining({
-              asset_id: 'asset-1',
-              transaction_type: 'BUY',
-              quantity: 2, // 100 / 50 = 2 shares
-              price_per_unit: 50,
-            }),
-          }),
-          expect.any(Object)
-        );
       });
+
+      expect(mockCreateTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          portfolioId: 'portfolio-1',
+          data: expect.objectContaining({
+            asset_id: 'asset-1',
+            transaction_type: 'DIVIDEND',
+            quantity: 100,
+            price_per_unit: 1,
+          }),
+        }),
+        expect.any(Object)
+      );
+
+      expect(mockCreateTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          portfolioId: 'portfolio-1',
+          data: expect.objectContaining({
+            asset_id: 'asset-1',
+            transaction_type: 'BUY',
+            quantity: 2, // 100 / 50 = 2 shares
+            price_per_unit: 50,
+          }),
+        }),
+        expect.any(Object)
+      );
     });
 
     it('renders the Stock Split form and submits correctly', async () => {
