@@ -5,6 +5,7 @@ const portfinder = require('portfinder');
 
 let backendProcess;
 let mainWindow;
+let storedBackendPort;  // Store port for window recreation on macOS
 
 // Set app name for correct menu labels (e.g., "Quit ArthSaarthi" not "Quit arthsaarthi-frontend")
 app.setName('ArthSaarthi');
@@ -176,6 +177,7 @@ async function startBackend() {
 app.whenReady().then(async () => {
   try {
     const backendPort = await startBackend();
+    storedBackendPort = backendPort;  // Store for later use
     console.log(`Backend started on port ${backendPort}`);
     await createMainWindow(backendPort);
   } catch (error) {
@@ -184,8 +186,9 @@ app.whenReady().then(async () => {
   }
 
   app.on('activate', async () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      await createMainWindow();
+    // On macOS, recreate window when dock icon is clicked and all windows are closed
+    if (BrowserWindow.getAllWindows().length === 0 && storedBackendPort) {
+      await createMainWindow(storedBackendPort);
     }
   });
 });
