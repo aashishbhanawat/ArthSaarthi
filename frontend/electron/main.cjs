@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const portfinder = require('portfinder');
@@ -36,7 +36,62 @@ async function createMainWindow(backendPort) {
     mainWindow.loadFile(indexPath);
   }
 
-  mainWindow.setMenu(null);
+  // Create application menu with Developer Tools option
+  const menuTemplate = [
+    {
+      label: 'File',
+      submenu: [
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { type: 'separator' },
+        { role: 'toggleDevTools', label: 'Developer Tools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About ArthSaarthi',
+          click: () => {
+            const { dialog } = require('electron');
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'About ArthSaarthi',
+              message: 'ArthSaarthi - Personal Portfolio Management',
+              detail: 'Version 0.2.0\n\nA comprehensive wealth tracking and portfolio management application.'
+            });
+          }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -63,18 +118,18 @@ async function startBackend() {
             DEPLOYMENT_MODE: 'desktop',
             DATABASE_TYPE: 'sqlite',
             CACHE_TYPE: 'disk',
-               },
+          },
         });
 
         let resolved = false;
         const handleData = (data) => {
-            const message = data.toString();
-            console.log(`Backend output: ${message}`);
-            if (!resolved && message.includes('Uvicorn running on')) {
-                console.log('Backend is ready. Resolving startBackend promise.');
-                resolved = true;
-                resolve(port);
-            }
+          const message = data.toString();
+          console.log(`Backend output: ${message}`);
+          if (!resolved && message.includes('Uvicorn running on')) {
+            console.log('Backend is ready. Resolving startBackend promise.');
+            resolved = true;
+            resolve(port);
+          }
         };
 
         backendProcess.stdout.on('data', handleData);
@@ -85,8 +140,8 @@ async function startBackend() {
         });
 
         backendProcess.on('error', (err) => {
-            console.error('Failed to start backend process.', err);
-            reject(err);
+          console.error('Failed to start backend process.', err);
+          reject(err);
         });
       })
       .catch(err => {

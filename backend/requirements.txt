@@ -159,7 +159,7 @@ pytz==2025.2
     # via
     #   pandas
     #   yfinance
-pyxirr==0.10.7
+pyxirr==0.10.8
     # via -r requirements.in
 pyyaml==6.0.2
     # via uvicorn
