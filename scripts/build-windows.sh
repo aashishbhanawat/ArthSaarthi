@@ -7,10 +7,10 @@ set -x
 
 echo "--- Starting Windows Build ---"
 
-# Create a clean virtual environment
+# Create a clean virtual environment using Python from PATH (set by setup-python action)
 echo "Creating a clean virtual environment..."
 rm -rf ~/venc
-py -3 -m venv ~/venc
+python -m venv ~/venc
 
 # Clean up previous builds
 echo "Cleaning up previous builds..."

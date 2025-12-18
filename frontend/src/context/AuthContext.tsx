@@ -59,7 +59,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('deployment_mode');
     delete api.defaults.headers.common['Authorization'];
-    window.location.href = '/login';
+    // Use hash-based redirect for HashRouter compatibility (works in Electron)
+    window.location.hash = '#/login';
   }, []);
 
   useEffect(() => {

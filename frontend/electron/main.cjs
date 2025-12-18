@@ -21,6 +21,8 @@ async function createMainWindow(backendPort) {
   });
 
   // Expose the backend port to the renderer process via IPC
+  // Remove existing handler if any (prevents error on window recreation)
+  ipcMain.removeHandler('get-api-config');
   ipcMain.handle('get-api-config', () => ({
     host: '127.0.0.1',
     port: backendPort,
@@ -36,7 +38,7 @@ async function createMainWindow(backendPort) {
     mainWindow.loadFile(indexPath);
   }
 
-  // Create application menu with Developer Tools option
+  // Create application menu
   const menuTemplate = [
     {
       label: 'File',
@@ -62,8 +64,6 @@ async function createMainWindow(backendPort) {
         { role: 'reload' },
         { role: 'forceReload' },
         { type: 'separator' },
-        { role: 'toggleDevTools', label: 'Developer Tools' },
-        { type: 'separator' },
         { role: 'resetZoom' },
         { role: 'zoomIn' },
         { role: 'zoomOut' },
@@ -75,6 +75,14 @@ async function createMainWindow(backendPort) {
       label: 'Help',
       submenu: [
         {
+          label: 'User Guide',
+          click: () => {
+            const { shell } = require('electron');
+            shell.openExternal('https://aashishbhanawat.github.io/ArthSaarthi/');
+          }
+        },
+        { type: 'separator' },
+        {
           label: 'About ArthSaarthi',
           click: () => {
             const { dialog } = require('electron');
@@ -82,7 +90,7 @@ async function createMainWindow(backendPort) {
               type: 'info',
               title: 'About ArthSaarthi',
               message: 'ArthSaarthi - Personal Portfolio Management',
-              detail: 'Version 0.2.0\n\nA comprehensive wealth tracking and portfolio management application.'
+              detail: 'Version 1.0.0\n\nA comprehensive wealth tracking and portfolio management application.'
             });
           }
         }
