@@ -47,9 +47,10 @@ jobs:
           # Fix relative paths in README that break when moved to docs/
           # ./docs/file.md -> file.md (now it's relative to docs/)
           sed -i 's|(\./docs/|(|g' docs/index.md
-          # ./developer_guide.md -> developer_guide.md (still works)
           # ./CONTRIBUTING.md -> contributing.md (lowercase in docs/)
           sed -i 's|(\./CONTRIBUTING.md)|(contributing.md)|g' docs/index.md
+          # ./developer_guide.md -> developer_guide.md (remove ./ prefix)
+          sed -i 's|(\./developer_guide.md)|(developer_guide.md)|g' docs/index.md
           
           # Copy root-level docs to docs folder for MkDocs
           cp CONTRIBUTING.md docs/contributing.md
