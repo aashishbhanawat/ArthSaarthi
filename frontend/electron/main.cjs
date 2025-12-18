@@ -139,6 +139,7 @@ async function startBackend() {
             DEPLOYMENT_MODE: 'desktop',
             DATABASE_TYPE: 'sqlite',
             CACHE_TYPE: 'disk',
+            DEBUG: 'false',  // Disable debug logging in production desktop mode
           },
         });
 
