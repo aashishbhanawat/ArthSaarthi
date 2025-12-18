@@ -6,6 +6,9 @@ const portfinder = require('portfinder');
 let backendProcess;
 let mainWindow;
 
+// Set app name for correct menu labels (e.g., "Quit ArthSaarthi" not "Quit arthsaarthi-frontend")
+app.setName('ArthSaarthi');
+
 async function createMainWindow(backendPort) {
   const isDev = (await import('electron-is-dev')).default;
 
@@ -76,9 +79,19 @@ async function createMainWindow(backendPort) {
       submenu: [
         {
           label: 'User Guide',
-          click: () => {
+          click: async () => {
+            const isDev = (await import('electron-is-dev')).default;
+            // Open bundled user guide in default browser
             const { shell } = require('electron');
-            shell.openExternal('https://aashishbhanawat.github.io/ArthSaarthi/');
+            if (isDev) {
+              // In development, open from docs folder
+              const guidePath = path.join(__dirname, '../../docs/user_guide/index.html');
+              shell.openPath(guidePath);
+            } else {
+              // In production, open from bundled resources
+              const guidePath = path.join(process.resourcesPath, 'user_guide', 'index.html');
+              shell.openPath(guidePath);
+            }
           }
         },
         { type: 'separator' },

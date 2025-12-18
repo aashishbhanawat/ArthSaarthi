@@ -35,6 +35,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "../docs/user_guide",
+        "to": "user_guide",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "icon": "public/ArthSaarthi.png",
