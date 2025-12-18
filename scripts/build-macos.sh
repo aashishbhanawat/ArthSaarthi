@@ -27,7 +27,7 @@ echo "Step 2: Building frontend..."
 # 3. Install Backend Dependencies
 echo "Step 3: Installing backend dependencies..."
 source ~/venc/bin/activate
-(cd backend && "$VIRTUAL_ENV/bin/pip" install pyinstaller==6.10.0)
+(cd backend && "$VIRTUAL_ENV/bin/pip" install pyinstaller==6.17.0)
 (cd backend && "$VIRTUAL_ENV/bin/pip" install -r requirements.txt)
 
 # 4. Bundle Backend
