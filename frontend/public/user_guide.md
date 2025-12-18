@@ -8,7 +8,7 @@ Welcome to ArthSaarthi! This guide will walk you through setting up and using th
 
 This application is designed to be self-hosted, giving you full control over your data.
 
-➡️ **For detailed installation instructions, please refer to the [Installation Guide](https://github.com/aashishbhanawat/pms/blob/main/installation_guide.md) on the project's GitHub repository.**
+➡️ **For detailed installation instructions, please refer to the [Installation Guide](https://aashishbhanawat.github.io/ArthSaarthi/installation_guide/) on the project's documentation site.**
 
 ### First-Time Admin Account Creation
 
