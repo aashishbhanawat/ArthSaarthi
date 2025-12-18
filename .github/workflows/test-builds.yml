@@ -1,0 +1,116 @@
+name: Test Desktop Builds
+
+# Manual trigger - can be run from any branch via GitHub Actions UI
+on:
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platforms to build'
+        type: choice
+        options:
+          - all
+          - windows
+          - macos
+        default: 'all'
+
+jobs:
+  build-windows:
+    name: Test Build - Windows
+    if: ${{ inputs.platforms == 'all' || inputs.platforms == 'windows' }}
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Run Windows build script
+        run: ./scripts/build-windows.sh
+        shell: bash
+
+      - name: Find Windows Installer
+        id: find_exe
+        run: |
+          $asset = Get-ChildItem -Path frontend/dist-electron -Filter '*.exe' -Recurse -File | Select-Object -First 1
+          if ($asset) {
+            echo "path=$($asset.FullName)" >> $env:GITHUB_OUTPUT
+            echo "Found: $($asset.FullName)"
+          } else {
+            echo "No .exe found"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: frontend/dist-electron/*.exe
+          retention-days: 7
+
+  build-macos:
+    name: Test Build - macOS
+    if: ${{ inputs.platforms == 'all' || inputs.platforms == 'macos' }}
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Run macOS build script
+        run: |
+          chmod +x ./scripts/build-macos.sh
+          ./scripts/build-macos.sh
+
+      - name: Find macOS Installer
+        id: find_dmg
+        run: |
+          DMG=$(find frontend/dist-electron -name '*.dmg' -type f | head -n 1)
+          if [ -n "$DMG" ]; then
+            echo "path=$DMG" >> $GITHUB_OUTPUT
+            echo "Found: $DMG"
+          else
+            echo "No .dmg found"
+            exit 1
+          fi
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: frontend/dist-electron/*.dmg
+          retention-days: 7
+
+  summary:
+    name: Build Summary
+    needs: [build-windows, build-macos]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check build results
+        run: |
+          echo "## Test Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows | ${{ needs.build-windows.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS | ${{ needs.build-macos.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Artifacts are available for download for 7 days." >> $GITHUB_STEP_SUMMARY
