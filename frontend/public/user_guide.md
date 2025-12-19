@@ -18,6 +18,8 @@ The most important part of the installation is the initial setup. The first time
 
 You **must** complete this form to create the first **administrator** account. This is the only time you will see this screen. After this account is created, all new users must be added by an administrator.
 
+**Desktop Mode Note:** User Management is not available in Desktop Mode (single-user). Interest Rates and Asset Sync features are available in all modes.
+
 ---
 
 ## 2. The Dashboard {#dashboard}

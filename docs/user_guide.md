@@ -18,6 +18,21 @@ The most important part of the installation is the initial setup. The first time
 
 You **must** complete this form to create the first **administrator** account. This is the only time you will see this screen. After this account is created, all new users must be added by an administrator.
 
+### Desktop Mode vs Server Mode
+
+ArthSaarthi can run in two modes:
+
+| Feature | Desktop Mode | Server Mode |
+|---------|--------------|-------------|
+| **Users** | Single user | Multiple users |
+| **Database** | SQLite (encrypted) | PostgreSQL |
+| **User Management** | ❌ Not available | ✅ Full access |
+| **Interest Rates** | ✅ Available | ✅ Available |
+| **Asset Sync** | ✅ Available | ✅ Available |
+| **Data Storage** | Local files | Server database |
+
+> **Desktop Mode** is designed for personal use on your own computer. Since there's only one user, the User Management feature is disabled - you don't need to manage users when you're the only one!
+
 ---
 
 ## 2. The Dashboard {#dashboard}
@@ -213,9 +228,11 @@ Protect your financial data with the backup and restore feature.
 
 ---
 
-## 9. User Management (Admin Only) {#user-management}
+## 9. User Management (Admin Only - Server Mode) {#user-management}
 
-If you are logged in as an administrator, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
+> **Note:** User Management is only available in **Server Mode** (multi-user). In Desktop Mode, the application is single-user, so user management is not needed.
+
+If you are logged in as an administrator in Server Mode, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
 
 *   **Create User:** Click the "Create New User" button to add a new user. You can choose whether to make them an administrator.
 *   **Edit User:** Click the "Edit" button on any user to change their details or admin status.
