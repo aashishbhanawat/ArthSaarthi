@@ -16,12 +16,30 @@ This is the **easiest and recommended** way to use ArthSaarthi for personal port
 1.  **Download the Installer:** Go to the [**Project Releases Page**](https://github.com/aashishbhanawat/ArthSaarthi/releases) on GitHub.
 2.  **Find the latest release** and download the correct file for your operating system:
     *   **Windows:** `ArthSaarthi-Setup-x.x.x.exe`
-    *   **macOS:** `ArthSaarthi-x.x.x.dmg`
+    *   **macOS (Apple Silicon - M1/M2/M3):** `ArthSaarthi-x.x.x-arm64.dmg`
+    *   **macOS (Intel):** `ArthSaarthi-x.x.x.dmg`
     *   **Linux:** `ArthSaarthi-x.x.x.AppImage` or `.deb`
 3.  **Run the Installer:**
     *   **Windows:** Double-click the `.exe` file and follow the installation prompts.
-    *   **macOS:** Double-click the `.dmg` file, then drag the ArthSaarthi icon into your "Applications" folder.
-    *   **Linux:** Make the `.AppImage` file executable (`chmod +x ArthSaarthi-*.AppImage`) and then double-click to run it.
+    *   **macOS:** See special instructions below.
+    *   **Linux (AppImage):** Make the file executable (`chmod +x ArthSaarthi-*.AppImage`) and double-click to run.
+    *   **Linux (deb):** Install with `sudo dpkg -i ArthSaarthi-*.deb`
+
+### macOS Installation (Important)
+
+Since ArthSaarthi is not signed with an Apple Developer certificate, macOS Gatekeeper may show a "damaged" error when trying to open it directly from the DMG. Follow these steps:
+
+1.  **Mount the DMG:** Double-click the downloaded `.dmg` file.
+2.  **Copy to Applications:** Drag the ArthSaarthi icon into your "Applications" folder.
+3.  **Remove Gatekeeper quarantine:** Open Terminal and run:
+    ```bash
+    xattr -cr /Applications/ArthSaarthi.app
+    ```
+4.  **Launch the app:** Open ArthSaarthi from your Applications folder.
+
+**Choosing the right macOS version:**
+*   If you have an **Apple Silicon Mac** (M1, M2, M3, or later), download the `arm64` version.
+*   If you have an **Intel Mac**, download the version without `arm64` in the name.
 
 Once installed, you can launch ArthSaarthi like any other desktop application.
 
@@ -60,7 +78,7 @@ This method uses pre-built Docker images from Docker Hub for a consistent and re
     *   Generate a secure secret key: `openssl rand -hex 32`
     *   Set `CORS_ORIGINS` to the domain name or IP address you will use to access the application. Example: `CORS_ORIGINS=http://localhost,http://192.168.1.50`
 5.  **Start the Application:** This command pulls the official images from Docker Hub and starts all services.
-    *   By default, this will pull the `latest` version. To pull a specific version (e.g., `v0.2.0`), you can set the `APP_VERSION` environment variable before running the command: `export APP_VERSION="v0.2.0"`
+    *   By default, this will pull the `latest` version. To pull a specific version (e.g., `v1.0.0`), you can set the `APP_VERSION` environment variable before running the command: `export APP_VERSION="v1.0.0"`
     ```bash
     docker-compose up -d
     ```
