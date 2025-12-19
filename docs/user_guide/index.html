@@ -27,6 +27,7 @@
           <li><a href="#watchlists">Watchlists</a></li>
           <li><a href="#profile">Profile & Backup</a></li>
           <li><a href="#admin">Admin Features</a></li>
+          <li><a href="#getting-help">Getting Help</a></li>
         </ul>
       </nav>
     </aside>
@@ -71,13 +72,23 @@
           <div class="screenshot-caption">Main dashboard showing portfolio value, P&L, allocation charts</div>
         </div>
 
-        <h3>Privacy Mode</h3>
-        <p>Toggle privacy mode to hide sensitive financial information when sharing your screen.</p>
-        <div class="screenshot">
-          <img src="assets/03_dashboard_privacy.png" alt="Privacy Mode">
-          <div class="screenshot-caption">Dashboard with privacy mode enabled - values are masked</div>
-        </div>
+        <h3 id="privacy-mode">Privacy Mode</h3>
+        <p>If you wish to show your dashboard to others without revealing sensitive financial totals, you can use
+          Privacy Mode.</p>
+        <ul>
+          <li><strong>Location:</strong> Look for the "eye" icon in the header of the Dashboard page.</li>
+          <li><strong>Toggle:</strong> Clicking this icon will toggle Privacy Mode on or off.
+            <ul>
+              <li>When <strong>on</strong> (slashed eye icon), all sensitive monetary values (like Total Value and P&L)
+                will be replaced with a placeholder like ₹**,***.**.</li>
+              <li>When <strong>off</strong> (regular eye icon), all values will be visible.</li>
+            </ul>
+          </li>
+          <li><strong>Persistence:</strong> Your choice is saved in your browser, so the application will remember your
+            preference the next time you visit.</li>
+        </ul>
 
+        <h3 id="dashboard-summary-cards">Summary Cards</h3>
         <div class="feature-grid">
           <div class="feature-card">
             <h4>Total Value</h4>
@@ -92,6 +103,24 @@
             <p>Locked-in gains from completed trades</p>
           </div>
         </div>
+
+        <h3 id="dashboard-portfolio-history">Portfolio History</h3>
+        <p>The Portfolio History chart shows how your total portfolio value has changed over time. You can view
+          different time periods (1 month, 3 months, 1 year, all time) to track your investment growth.</p>
+        <ul>
+          <li><strong>Line Chart:</strong> Visual representation of portfolio value changes</li>
+          <li><strong>Time Range:</strong> Select different periods to analyze performance</li>
+          <li><strong>Trend Analysis:</strong> Identify patterns in your investment growth</li>
+        </ul>
+
+        <h3 id="dashboard-asset-allocation">Asset Allocation</h3>
+        <p>The Asset Allocation chart displays how your investments are distributed across different asset classes
+          (stocks, mutual funds, bonds, fixed deposits, etc.).</p>
+        <ul>
+          <li><strong>Pie Chart:</strong> Visual breakdown of asset distribution</li>
+          <li><strong>Diversification:</strong> See how well-balanced your portfolio is</li>
+          <li><strong>Rebalancing:</strong> Identify over or under-weighted asset classes</li>
+        </ul>
 
         <h3 id="dashboard-top-movers">Top Movers</h3>
         <p>The Top Movers section displays your holdings that have gained or lost the most value today. This helps you
@@ -111,7 +140,7 @@
 
       <!-- Portfolios -->
       <section id="portfolios" class="section">
-        <h2>3. Managing Portfolios</h2>
+        <h2 id="managing-portfolios">3. Managing Portfolios</h2>
         <p>Organize your investments into multiple portfolios for different goals (Retirement, Education, etc.).</p>
 
         <div class="screenshot">
@@ -119,12 +148,17 @@
           <div class="screenshot-caption">Portfolios overview page</div>
         </div>
 
-        <h3>Creating a Portfolio</h3>
+        <h3 id="creating-portfolio">Creating a Portfolio</h3>
         <p>Click "Create New Portfolio" and enter a name for your portfolio.</p>
         <div class="screenshot">
           <img src="assets/05a_create_portfolio_modal.png" alt="Create Portfolio">
           <div class="screenshot-caption">Create portfolio modal</div>
         </div>
+
+        <h3 id="deleting-portfolio">Deleting a Portfolio</h3>
+        <p>To delete a portfolio, click the "Delete" button on the portfolio card. You'll be asked to confirm the
+          deletion. <strong>Warning:</strong> All holdings and transactions within the portfolio will be permanently
+          deleted.</p>
 
         <h3>Portfolio Detail View</h3>
         <p>View consolidated holdings, performance metrics, and manage transactions.</p>
@@ -143,20 +177,60 @@
 
       <!-- Transactions -->
       <section id="transactions" class="section">
-        <h2>4. Transactions</h2>
-        <p>Track all your buy/sell transactions with complete history and filtering.</p>
+        <h2 id="managing-transactions">4. Transactions</h2>
+        <p>The Transactions page shows a complete history of all your buy/sell transactions across all portfolios with
+          filtering options.</p>
 
         <div class="screenshot">
           <img src="assets/12_transactions_history.png" alt="Transaction History">
           <div class="screenshot-caption">Transaction history page with filters</div>
         </div>
 
-        <h3>Adding a Stock Transaction</h3>
-        <p>Click "Add Transaction", select the asset type, search for the ticker, and enter the details.</p>
+        <h3 id="adding-transaction">Adding a Transaction</h3>
+        <p>Transactions are added from the Portfolio detail page, not from the Transactions tab.</p>
         <div class="screenshot">
           <img src="assets/05c_add_stock_modal.png" alt="Add Stock">
           <div class="screenshot-caption">Add stock transaction modal</div>
         </div>
+        <ol>
+          <li>Navigate to the detail page of the portfolio where you want to add an asset.</li>
+          <li>Click the <strong>"Add Transaction"</strong> button.</li>
+          <li>The "Add Transaction" modal will appear with <strong>"Stock"</strong> selected as the default asset type.
+          </li>
+          <li><strong>Select Asset Type:</strong> Choose from the dropdown: Stock, Mutual Fund, Bond, Fixed Deposit,
+            Recurring Deposit, or PPF Account. <em>The modal will re-render based on your selection with different
+              fields for each asset type.</em></li>
+          <li>For Stocks and Mutual Funds, fill in:
+            <ul>
+              <li><strong>Asset:</strong> Start typing the ticker symbol (e.g., 'AAPL', 'BTC-USD').
+                <ul>
+                  <li>If the asset exists, it will appear in a dropdown list. Click to select it.</li>
+                  <li>If the asset is not found, a "Create new asset '[TICKER]'" button will appear. Click this to
+                    validate the ticker with an external service and add it to your system.</li>
+                </ul>
+              </li>
+              <li><strong>Type:</strong> Choose BUY, SELL, or DRIP (Dividend Reinvestment Plan).</li>
+              <li><strong>Quantity:</strong> The number of shares or units.</li>
+              <li><strong>Price per Unit:</strong> The price you paid or received for each unit.</li>
+              <li><strong>Transaction Date:</strong> The date the transaction occurred.</li>
+              <li><strong>Fees:</strong> Any associated fees (optional).</li>
+            </ul>
+          </li>
+          <li>Click <strong>"Save Transaction"</strong>.</li>
+        </ol>
+
+        <h3>Tax Lot Selection (Sell Transactions)</h3>
+        <p>When selling shares, you can choose which specific tax lots to sell from. The system supports different tax
+          lot selection methods:</p>
+        <ul>
+          <li><strong>FIFO (First In, First Out):</strong> Sells the oldest shares first.</li>
+          <li><strong>LIFO (Last In, First Out):</strong> Sells the newest shares first.</li>
+          <li><strong>Specific Lot:</strong> Manually select which lots to sell from.</li>
+        </ul>
+
+        <h3>Corporate Actions</h3>
+        <p>Corporate actions such as stock splits, mergers, and spin-offs can be recorded via the "Additional actions"
+          menu on the portfolio detail page. These help maintain accurate cost basis and share counts.</p>
       </section>
 
       <!-- Asset Types -->
@@ -173,36 +247,81 @@
 
         <h3>Bonds</h3>
         <p>Track bond investments with coupon and maturity details.</p>
+        <div class="callout callout-warning">
+          <strong>Verify Bond Details:</strong> When adding a bond, the system attempts to fetch Coupon Rate, Face
+          Value, and Maturity Date from external sources. However, this data may be unavailable or incorrect. Please
+          <strong>verify these fields</strong> and update them if necessary before saving.
+        </div>
         <div class="screenshot">
           <img src="assets/07_add_bond_modal.png" alt="Add Bond">
           <div class="screenshot-caption">Add bond transaction</div>
         </div>
 
-        <h3>Fixed Deposits (FD)</h3>
-        <p>Track FDs with interest rate and maturity calculations.</p>
+        <h3 id="tracking-fixed-deposits">Tracking Fixed Deposits (FDs)</h3>
+        <ul>
+          <li><strong>Adding an FD:</strong> From the "Add Transaction" modal, select "Fixed Deposit" from the "Asset
+            Type" dropdown. Fill in the FD-specific details, such as Institution Name, Principal Amount, Interest Rate,
+            and Maturity Date, then save.</li>
+          <li><strong>Viewing an FD:</strong> FDs are displayed in the "Deposits" section of the holdings table.
+            Clicking on an FD row opens a detailed drill-down view with its current value, projected maturity value, and
+            XIRR analytics. You can also edit or delete the FD from this view.</li>
+        </ul>
         <div class="screenshot">
           <img src="assets/08_add_fd_modal.png" alt="Add FD">
           <div class="screenshot-caption">Add Fixed Deposit</div>
         </div>
 
-        <h3>Recurring Deposits (RD)</h3>
-        <p>Track RDs with monthly installment tracking.</p>
+        <h3 id="tracking-recurring-deposits">Tracking Recurring Deposits (RDs)</h3>
+        <ul>
+          <li><strong>Adding an RD:</strong> From the "Add Transaction" modal, select "Recurring Deposit" from the
+            "Asset Type" dropdown. Fill in the RD-specific details, such as Institution Name, Monthly Installment,
+            Interest Rate, and Tenure.</li>
+          <li><strong>Viewing an RD:</strong> RDs are displayed in the "Deposits" section of the holdings table.
+            Clicking on an RD row opens a detailed drill-down view with its current value, projected maturity value, and
+            XIRR analytics.</li>
+        </ul>
         <div class="screenshot">
           <img src="assets/09_add_rd_modal.png" alt="Add RD">
           <div class="screenshot-caption">Add Recurring Deposit</div>
         </div>
 
-        <h3>PPF Account</h3>
-        <p>Track your Public Provident Fund with contribution history.</p>
+        <h3 id="tracking-ppf">Tracking Public Provident Fund (PPF)</h3>
+        <p>The application has a specialized workflow for PPF accounts, as users typically only have one.</p>
         <div class="screenshot">
           <img src="assets/10_add_ppf_modal.png" alt="Add PPF">
           <div class="screenshot-caption">Add PPF Account and contributions</div>
         </div>
+
+        <h4>Adding Your First PPF Account</h4>
+        <ul>
+          <li>From the "Add Transaction" modal, select "PPF Account" from the "Asset Type" dropdown.</li>
+          <li>Because no PPF account exists, the form will show fields to create the account (Institution Name, Account
+            Number, Opening Date) and fields for your first contribution (Amount, Date).</li>
+          <li>Fill out all fields and click "Save". This will create both the PPF asset and its first transaction in one
+            step.</li>
+        </ul>
+
+        <h4>Adding Subsequent Contributions</h4>
+        <ul>
+          <li>The next time you select "PPF Account" from the "Asset Type" dropdown, the application will detect that
+            you already have a PPF account.</li>
+          <li>The form will now show your existing account details as read-only and will only ask for the Contribution
+            Amount and Contribution Date for your new transaction.</li>
+        </ul>
+
+        <h4>Viewing PPF Details</h4>
+        <ul>
+          <li>Your PPF account is displayed in the "Government Schemes" section of the holdings table.</li>
+          <li>Clicking on the PPF row opens a special passbook-style drill-down view.</li>
+          <li>This view shows a summary of your total contributions, interest earned, and the current balance. It also
+            provides a chronological history of all your contributions and the system-generated interest credits for
+            each financial year.</li>
+        </ul>
       </section>
 
       <!-- Employee Plans -->
       <section id="employee-plans" class="section">
-        <h2>6. RSU & ESPP Tracking</h2>
+        <h2 id="espp-rsu">6. RSU & ESPP Tracking</h2>
         <p>Track Restricted Stock Units and Employee Stock Purchase Plan awards with proper tax lot accounting.</p>
 
         <div class="screenshot">
@@ -234,13 +353,51 @@
 
       <!-- Data Import -->
       <section id="import" class="section">
-        <h2>7. Data Import</h2>
-        <p>Bulk import transactions from broker statements (CSV format).</p>
+        <h2 id="importing-transactions">7. Importing Transactions from a CSV File</h2>
+        <p>Instead of adding transactions one by one, you can use the data import feature to upload a CSV file.</p>
 
         <div class="screenshot">
           <img src="assets/13_import_page.png" alt="Import Page">
           <div class="screenshot-caption">Data import page - upload CSV files from brokers</div>
         </div>
+
+        <h3>Import Workflow</h3>
+        <ol>
+          <li>Navigate to the <strong>"Import"</strong> page from the main menu.</li>
+          <li>Select the <strong>portfolio</strong> you want to import the transactions into.</li>
+          <li>Select the <strong>Statement Type</strong> (e.g., "Generic CSV", "Zerodha", "ICICI Direct") that matches
+            your file format. This ensures the file is parsed correctly.</li>
+          <li>Choose the CSV file from your computer.</li>
+          <li>Click <strong>"Upload and Preview"</strong>.</li>
+          <li>The system will show you a preview of the transactions it has parsed, categorized into sections:
+            <ul>
+              <li><strong>New Transactions:</strong> Valid transactions that can be imported.</li>
+              <li><strong>Transactions Requiring Mapping:</strong> Transactions with a ticker symbol that is not
+                recognized by the system (e.g., INFY-BE instead of INFY.NS).</li>
+              <li><strong>Duplicate Transactions:</strong> Transactions that appear to already exist in your portfolio.
+              </li>
+              <li><strong>Invalid Transactions:</strong> Transactions with errors that prevent them from being imported.
+              </li>
+            </ul>
+          </li>
+        </ol>
+
+        <h3>Mapping Unrecognized Tickers</h3>
+        <p>For transactions in the "Requiring Mapping" section, you must map the unrecognized ticker from your file to
+          an existing asset in the system.</p>
+        <ol>
+          <li>Click the <strong>"Map Ticker"</strong> button next to the transaction.</li>
+          <li>In the modal that appears, search for the correct asset that the alias belongs to (e.g., search for
+            "Infosys" or "INFY.NS").</li>
+          <li>Select the correct asset from the search results and click <strong>"Create Alias"</strong>.</li>
+          <li>Once the alias is created, the transaction will automatically move to the "New Transactions" section.</li>
+        </ol>
+
+        <h3>Committing Transactions</h3>
+        <ol>
+          <li>Use the checkboxes to select which "New" and "Duplicate" transactions you wish to import.</li>
+          <li>Click <strong>"Commit Transactions"</strong> to save the selected transactions to your portfolio.</li>
+        </ol>
 
         <h3>Supported Formats</h3>
         <ul>
@@ -248,15 +405,11 @@
           <li>Zerodha contract notes</li>
           <li>ICICI Direct statements</li>
         </ul>
-
-        <div class="callout callout-info">
-          <strong>Ticker Mapping:</strong> The system will prompt you to map any unrecognized symbols to known assets.
-        </div>
       </section>
 
       <!-- Goals -->
       <section id="goals" class="section">
-        <h2>8. Goal Planning</h2>
+        <h2 id="managing-goals">8. Goal Planning</h2>
         <p>Set financial goals and link investments to track progress.</p>
 
         <div class="screenshot">
@@ -294,7 +447,7 @@
           <div class="screenshot-caption">Profile page with backup and restore options</div>
         </div>
 
-        <h3>Backup & Restore</h3>
+        <h3 id="backup-restore">Backup & Restore</h3>
         <p>Export your entire financial data to a JSON file for safekeeping. You can restore from this backup at any
           time.</p>
 
@@ -314,7 +467,7 @@
           and System Maintenance are available in all modes.
         </div>
 
-        <h3>User Management</h3>
+        <h3 id="user-management">User Management</h3>
         <p>Create, edit, and delete user accounts.</p>
         <div class="screenshot">
           <img src="assets/17_admin_users.png" alt="User Management">
@@ -328,7 +481,7 @@
           <div class="screenshot-caption">Admin interest rates management</div>
         </div>
 
-        <h3>System Maintenance</h3>
+        <h3 id="system-maintenance">System Maintenance</h3>
         <p>Trigger asset master data updates without restarting the server.</p>
         <div class="screenshot">
           <img src="assets/19_admin_maintenance.png" alt="System Maintenance">
@@ -339,6 +492,18 @@
           <strong>Rate Limited:</strong> Asset sync can only be triggered once every 5 minutes to prevent overloading
           external data sources.
         </div>
+      </section>
+
+      <!-- Getting Help -->
+      <section id="getting-help" class="section">
+        <h2>12. Getting Help & Reporting Bugs</h2>
+        <p>If you encounter a bug or have a feature request, please open an issue on the project's GitHub repository.
+          Your feedback is essential for improving the application!</p>
+        <ul>
+          <li><strong>Bug Reports:</strong> Describe the issue, steps to reproduce, and your system information</li>
+          <li><strong>Feature Requests:</strong> Explain the feature you'd like and how it would help</li>
+          <li><strong>Documentation:</strong> Check the online documentation for the latest guides</li>
+        </ul>
       </section>
 
       <!-- Footer -->
