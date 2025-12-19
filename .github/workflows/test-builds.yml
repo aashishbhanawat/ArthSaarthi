@@ -153,7 +153,7 @@ jobs:
   build-macos-intel:
     name: Test Build - macOS (Intel)
     if: ${{ inputs.platforms == 'all' || inputs.platforms == 'macos-intel' }}
-    runs-on: macos-13  # macos-13 is x64 (Intel)
+    runs-on: macos-15-intel  # Intel Mac runner (macos-13 is deprecated)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
