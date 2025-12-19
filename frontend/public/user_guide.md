@@ -10,6 +10,8 @@ This application is designed to be self-hosted, giving you full control over you
 
 ➡️ **For detailed installation instructions, please refer to the [Installation Guide](https://aashishbhanawat.github.io/ArthSaarthi/installation_guide/) on the project's documentation site.**
 
+**macOS Users:** If you see a "damaged" error, copy the app to Applications first, then run `xattr -cr /Applications/ArthSaarthi.app` in Terminal before launching.
+
 ### First-Time Admin Account Creation
 
 The most important part of the installation is the initial setup. The first time you access the application, you will be greeted with a setup screen.
