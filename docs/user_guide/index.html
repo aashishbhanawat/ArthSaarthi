@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ArthSaarthi - User Guide</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="container">
     <!-- Sidebar Navigation -->
@@ -31,21 +33,31 @@
 
     <!-- Main Content -->
     <main class="main-content">
-      
+
       <!-- Getting Started -->
       <section id="getting-started" class="section">
         <h2>1. Getting Started</h2>
-        <p>Welcome to ArthSaarthi! This guide will help you navigate through all the features of your personal investment tracker.</p>
-        
+        <p>Welcome to ArthSaarthi! This guide will help you navigate through all the features of your personal
+          investment tracker.</p>
+
         <h3>Logging In</h3>
         <p>Access the application through your browser. Enter your email and password to sign in.</p>
         <div class="screenshot">
           <img src="assets/01_login.png" alt="Login Page">
           <div class="screenshot-caption">Login page - Enter your credentials to access your portfolios</div>
         </div>
-        
+
         <div class="callout callout-info">
-          <strong>First Time Setup:</strong> If this is a fresh installation, the first user to register becomes the administrator.
+          <strong>First Time Setup:</strong> If this is a fresh installation, the first user to register becomes the
+          administrator.
+        </div>
+
+        <h3>Desktop Mode vs Server Mode</h3>
+        <div class="callout callout-info">
+          <strong>Desktop Mode</strong> is for personal use – single user, local data, encrypted SQLite database. User
+          Management is not available since you're the only user!<br><br>
+          <strong>Server Mode</strong> is for self-hosting – multiple users, PostgreSQL database, full admin features
+          including User Management.
         </div>
       </section>
 
@@ -53,7 +65,7 @@
       <section id="dashboard" class="section">
         <h2>2. Dashboard</h2>
         <p>The dashboard provides a consolidated view of all your investments with key performance metrics.</p>
-        
+
         <div class="screenshot">
           <img src="assets/02_dashboard.png" alt="Dashboard">
           <div class="screenshot-caption">Main dashboard showing portfolio value, P&L, allocation charts</div>
@@ -80,13 +92,28 @@
             <p>Locked-in gains from completed trades</p>
           </div>
         </div>
+
+        <h3 id="dashboard-top-movers">Top Movers</h3>
+        <p>The Top Movers section displays your holdings that have gained or lost the most value today. This helps you
+          quickly identify which assets are driving your portfolio's daily performance.</p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>Top Gainers</h4>
+            <p>Assets with the highest positive change today</p>
+          </div>
+          <div class="feature-card">
+            <h4>Top Losers</h4>
+            <p>Assets with the largest decline today</p>
+          </div>
+        </div>
       </section>
 
       <!-- Portfolios -->
       <section id="portfolios" class="section">
         <h2>3. Managing Portfolios</h2>
         <p>Organize your investments into multiple portfolios for different goals (Retirement, Education, etc.).</p>
-        
+
         <div class="screenshot">
           <img src="assets/04_portfolios.png" alt="Portfolios List">
           <div class="screenshot-caption">Portfolios overview page</div>
@@ -118,7 +145,7 @@
       <section id="transactions" class="section">
         <h2>4. Transactions</h2>
         <p>Track all your buy/sell transactions with complete history and filtering.</p>
-        
+
         <div class="screenshot">
           <img src="assets/12_transactions_history.png" alt="Transaction History">
           <div class="screenshot-caption">Transaction history page with filters</div>
@@ -177,7 +204,7 @@
       <section id="employee-plans" class="section">
         <h2>6. RSU & ESPP Tracking</h2>
         <p>Track Restricted Stock Units and Employee Stock Purchase Plan awards with proper tax lot accounting.</p>
-        
+
         <div class="screenshot">
           <img src="assets/11_add_rsu_espp_modal.png" alt="RSU ESPP Modal">
           <div class="screenshot-caption">Add RSU/ESPP Award modal with Sell-to-Cover option</div>
@@ -200,7 +227,7 @@
       <section id="import" class="section">
         <h2>7. Data Import</h2>
         <p>Bulk import transactions from broker statements (CSV format).</p>
-        
+
         <div class="screenshot">
           <img src="assets/13_import_page.png" alt="Import Page">
           <div class="screenshot-caption">Data import page - upload CSV files from brokers</div>
@@ -222,7 +249,7 @@
       <section id="goals" class="section">
         <h2>8. Goal Planning</h2>
         <p>Set financial goals and link investments to track progress.</p>
-        
+
         <div class="screenshot">
           <img src="assets/14_goals_page.png" alt="Goals">
           <div class="screenshot-caption">Goals page - create and track financial targets</div>
@@ -241,7 +268,7 @@
       <section id="watchlists" class="section">
         <h2>9. Watchlists</h2>
         <p>Monitor assets you're interested in without adding them to your portfolio.</p>
-        
+
         <div class="screenshot">
           <img src="assets/15_watchlists_page.png" alt="Watchlists">
           <div class="screenshot-caption">Watchlists page - track assets of interest</div>
@@ -252,17 +279,19 @@
       <section id="profile" class="section">
         <h2>10. Profile & Backup</h2>
         <p>Manage your account settings and backup your data.</p>
-        
+
         <div class="screenshot">
           <img src="assets/16_profile_page.png" alt="Profile">
           <div class="screenshot-caption">Profile page with backup and restore options</div>
         </div>
 
         <h3>Backup & Restore</h3>
-        <p>Export your entire financial data to a JSON file for safekeeping. You can restore from this backup at any time.</p>
+        <p>Export your entire financial data to a JSON file for safekeeping. You can restore from this backup at any
+          time.</p>
 
         <div class="callout callout-warning">
-          <strong>Important:</strong> Restoring from a backup will replace all your current data. This action cannot be undone.
+          <strong>Important:</strong> Restoring from a backup will replace all your current data. This action cannot be
+          undone.
         </div>
       </section>
 
@@ -270,6 +299,11 @@
       <section id="admin" class="section">
         <h2>11. Admin Features</h2>
         <p>Administrator-only features for managing the application.</p>
+
+        <div class="callout callout-info">
+          <strong>Desktop Mode:</strong> User Management is not available in Desktop Mode (single-user). Interest Rates
+          and System Maintenance are available in all modes.
+        </div>
 
         <h3>User Management</h3>
         <p>Create, edit, and delete user accounts.</p>
@@ -293,16 +327,19 @@
         </div>
 
         <div class="callout callout-info">
-          <strong>Rate Limited:</strong> Asset sync can only be triggered once every 5 minutes to prevent overloading external data sources.
+          <strong>Rate Limited:</strong> Asset sync can only be triggered once every 5 minutes to prevent overloading
+          external data sources.
         </div>
       </section>
 
       <!-- Footer -->
       <footer style="text-align: center; padding: 40px; color: var(--text-light);">
         <p>ArthSaarthi User Guide &copy; 2024</p>
-        <p>For more information, visit the <a href="https://github.com/aashishbhanawat/ArthSaarthi">GitHub Repository</a></p>
+        <p>For more information, visit the <a href="https://github.com/aashishbhanawat/ArthSaarthi">GitHub
+            Repository</a></p>
       </footer>
     </main>
   </div>
 </body>
+
 </html>
