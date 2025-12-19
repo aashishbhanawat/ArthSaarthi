@@ -32,6 +32,21 @@ async function createMainWindow(backendPort) {
     port: backendPort,
   }));
 
+  // Handle opening user guide from renderer process
+  ipcMain.removeHandler('open-user-guide');
+  ipcMain.handle('open-user-guide', async (event, sectionId) => {
+    const { shell } = require('electron');
+    let guidePath;
+    if (isDev) {
+      guidePath = path.join(__dirname, '../../docs/user_guide/index.html');
+    } else {
+      guidePath = path.join(process.resourcesPath, 'user_guide', 'index.html');
+    }
+    // Open the file in default browser with section anchor
+    const url = `file://${guidePath}${sectionId ? '#' + sectionId : ''}`;
+    shell.openExternal(url);
+  });
+
   if (isDev) {
     // In development, load the Vite dev server
     mainWindow.loadURL('http://localhost:3000');
