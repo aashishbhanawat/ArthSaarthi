@@ -10,7 +10,7 @@ a = Analysis(
         ('alembic', 'alembic'),
         ('alembic.ini', '.'),
     ],
-    hiddenimports=['uvicorn.lifespan', 'uvicorn.loops', 'uvicorn.protocols', 'passlib.handlers.bcrypt'],
+    hiddenimports=['uvicorn.lifespan', 'uvicorn.loops', 'uvicorn.protocols', 'passlib.handlers.bcrypt', 'openpyxl'],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],
