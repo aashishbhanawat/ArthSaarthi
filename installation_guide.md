@@ -18,7 +18,8 @@ This is the **easiest and recommended** way to use ArthSaarthi for personal port
     *   **Windows:** `ArthSaarthi-Setup-x.x.x.exe`
     *   **macOS (Apple Silicon - M1/M2/M3):** `ArthSaarthi-x.x.x-arm64.dmg`
     *   **macOS (Intel):** `ArthSaarthi-x.x.x.dmg`
-    *   **Linux:** `ArthSaarthi-x.x.x.AppImage` or `.deb`
+    *   **Linux (x64):** `ArthSaarthi-x.x.x.AppImage` or `.deb`
+    *   **Linux (ARM64 - Raspberry Pi):** `ArthSaarthi-x.x.x-arm64.AppImage` or `-arm64.deb`
 3.  **Run the Installer:**
     *   **Windows:** Double-click the `.exe` file and follow the installation prompts.
     *   **macOS:** See special instructions below.

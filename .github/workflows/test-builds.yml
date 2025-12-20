@@ -10,7 +10,8 @@ on:
         options:
           - all
           - windows
-          - linux
+          - linux-x64
+          - linux-arm64
           - macos-arm64
           - macos-intel
         default: 'all'
@@ -58,9 +59,9 @@ jobs:
           path: frontend/dist-electron/*.exe
           retention-days: 7
 
-  build-linux:
-    name: Test Build - Linux
-    if: ${{ inputs.platforms == 'all' || inputs.platforms == 'linux' }}
+  build-linux-x64:
+    name: Test Build - Linux (x64)
+    if: ${{ inputs.platforms == 'all' || inputs.platforms == 'linux-x64' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -102,7 +103,57 @@ jobs:
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-installer
+          name: linux-x64-installer
+          path: |
+            frontend/dist-electron/*.AppImage
+            frontend/dist-electron/*.deb
+          retention-days: 7
+
+  build-linux-arm64:
+    name: Test Build - Linux (ARM64)
+    if: ${{ inputs.platforms == 'all' || inputs.platforms == 'linux-arm64' }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev build-essential rpm
+          sudo gem install fpm
+
+      - name: Run Linux ARM64 build script
+        run: |
+          chmod +x ./scripts/build-linux-arm64.sh
+          ./scripts/build-linux-arm64.sh
+
+      - name: Find Linux Installers
+        id: find_linux
+        run: |
+          APPIMAGE=$(find frontend/dist-electron -name '*.AppImage' -type f | head -n 1)
+          DEB=$(find frontend/dist-electron -name '*.deb' -type f | head -n 1)
+          if [ -n "$APPIMAGE" ] || [ -n "$DEB" ]; then
+            echo "Found: $APPIMAGE $DEB"
+          else
+            echo "No Linux packages found"
+            exit 1
+          fi
+
+      - name: Upload Linux ARM64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-installer
           path: |
             frontend/dist-electron/*.AppImage
             frontend/dist-electron/*.deb
@@ -194,7 +245,7 @@ jobs:
 
   summary:
     name: Build Summary
-    needs: [build-windows, build-linux, build-macos-arm64, build-macos-intel]
+    needs: [build-windows, build-linux-x64, build-linux-arm64, build-macos-arm64, build-macos-intel]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -205,7 +256,8 @@ jobs:
           echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Windows | ${{ needs.build-windows.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Linux | ${{ needs.build-linux.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux (x64) | ${{ needs.build-linux-x64.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux (ARM64) | ${{ needs.build-linux-arm64.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| macOS (Apple Silicon) | ${{ needs.build-macos-arm64.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| macOS (Intel) | ${{ needs.build-macos-intel.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
