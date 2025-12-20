@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     ZERODHA_KITE_API_KEY: str = ""
 
     # CORS_ORIGINS: str = "http://localhost:3000"
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000"
-    DEBUG: bool = True
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000"
+    DEBUG: bool = False
 
     # For desktop encryption
     ENCRYPTION_KEY_PATH: str = "master.key"
