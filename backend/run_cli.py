@@ -25,6 +25,7 @@ def run_dev_server(
     import os
     import subprocess
     import sys
+    import threading
     from urllib.parse import urlparse
 
     from app.core.config import settings
@@ -42,12 +43,17 @@ def run_dev_server(
             subprocess.run([sys.executable, "db", "init-db"], check=True)
             print("--- Database initialization complete. ---")
 
-        print("--- Seeding initial asset data ---")
-        try:
-            subprocess.run([sys.executable, "db", "seed-assets"], check=True)
-            print("--- Asset seeding complete ---")
-        except Exception as e:
-            print(f"--- Asset seeding failed: {e} ---")
+        # Run seed-assets in a background thread so server starts immediately
+        def seed_in_background():
+            print("--- Starting background asset seeding ---")
+            try:
+                subprocess.run([sys.executable, "db", "seed-assets"], check=True)
+                print("--- Asset seeding complete ---")
+            except Exception as e:
+                print(f"--- Asset seeding failed: {e} ---")
+
+        seed_thread = threading.Thread(target=seed_in_background, daemon=True)
+        seed_thread.start()
 
     uvicorn.run(fastapi_app, host=host, port=port)
 
