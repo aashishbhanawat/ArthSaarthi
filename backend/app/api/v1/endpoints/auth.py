@@ -52,6 +52,24 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = crud.user.create(db=db, obj_in=user, is_admin=True)
     db.commit()
 
+    # After first user is created in desktop mode, trigger asset seeding
+    if settings.DEPLOYMENT_MODE == "desktop":
+        import subprocess
+        import sys
+        import threading
+
+        def seed_assets_background():
+            logger.info("Starting background asset seeding after first user setup...")
+            try:
+                subprocess.run([sys.executable, "db", "seed-assets"], check=True)
+                logger.info("Asset seeding completed successfully.")
+            except Exception as e:
+                logger.error(f"Asset seeding failed: {e}")
+
+        seed_thread = threading.Thread(target=seed_assets_background, daemon=True)
+        seed_thread.start()
+        logger.info("Background asset seeding thread started.")
+
     return db_user
 
 
