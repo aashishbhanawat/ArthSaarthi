@@ -89,7 +89,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "babel-plugin-transform-vite-meta-env": "^1.0.3",
-    "electron": "^31.2.1",
+    "electron": "^35.7.5",
     "electron-builder": "^25.0.0",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.2",
