@@ -54,6 +54,9 @@ class NseBhavcopyProvider(FinancialDataProvider):
         Fetches, parses, and caches the NSE Bhavcopy for a specific date.
         It tries the given date, then iterates backwards up to 5 days to find the
         most recent available trading day's data.
+
+        Returns a dictionary keyed by BOTH trading symbol AND ISIN for maximum
+        lookup flexibility (bonds often use ISIN as ticker_symbol).
         """
         for i in range(5):
             current_date = for_date - timedelta(days=i)
@@ -83,12 +86,21 @@ class NseBhavcopyProvider(FinancialDataProvider):
 
                             if series and series not in excluded_series:
                                 symbol = row["TckrSymb"].strip().upper()
-                                bhavcopy_data[symbol] = {
+                                price_data = {
                                     "current_price": Decimal(
                                         row["ClsPric"].strip().replace(",", "")),
                                     "previous_close": Decimal(
                                         row["PrvsClsgPric"].strip().replace(",", "")),
                                 }
+                                # Index by trading symbol
+                                bhavcopy_data[symbol] = price_data
+
+                                # Also index by ISIN if present (for bonds that use
+                                # ISIN as ticker_symbol)
+                                isin = row.get("ISIN", "").strip().upper()
+                                if isin and isin != symbol:
+                                    bhavcopy_data[isin] = price_data
+
                 return bhavcopy_data
             except (httpx.RequestError, KeyError, zipfile.BadZipFile, csv.Error) as e:
                 print(f"INFO: Failed to fetch/parse Bhavcopy for {current_date} "
