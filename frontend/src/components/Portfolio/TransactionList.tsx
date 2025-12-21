@@ -71,8 +71,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
                 <td className="p-3 text-right font-mono">{Number(tx.quantity).toLocaleString('en-IN', { maximumFractionDigits: tx.asset.asset_type === 'FIXED_DEPOSIT' ? 0 : 4 })}</td>
                 <td className="p-3 text-right font-mono">{formatCurrency(tx.price_per_unit, tx.asset.currency)}</td>
                 <td className="p-3 text-right font-mono">{formatCurrency(
-                    Number(tx.price_per_unit) * Number(tx.quantity) * (tx.details?.fx_rate || 1),
-                    'INR'
+                  Number(tx.price_per_unit) * Number(tx.quantity) * (Number(tx.details?.fx_rate) || 1),
+                  'INR'
                 )}</td>
                 <td className="p-3 text-center">
                   <div className="flex justify-center space-x-2">

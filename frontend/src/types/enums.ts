@@ -9,4 +9,5 @@ export enum TransactionType {
   COUPON = 'COUPON',
   ESPP_PURCHASE = 'ESPP_PURCHASE',
   RSU_VEST = 'RSU_VEST',
+  CORPORATE_ACTION = 'Corporate Action',
 }

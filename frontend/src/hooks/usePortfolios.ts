@@ -7,15 +7,7 @@ import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
 import { PortfolioAnalytics, AssetAnalytics } from '../types/analytics';
 import { useToast } from '../context/ToastContext';
-
-interface ApiError {
-  response?: {
-    data?: {
-      detail?: string;
-    };
-  };
-  message: string;
-}
+import { ApiError, getErrorMessage } from '../types/api';
 
 // Helper function to invalidate all queries related to portfolio and dashboard data
 const invalidatePortfolioAndDashboardQueries = (queryClient: QueryClient, portfolioId: string) => {
@@ -94,7 +86,7 @@ export const useCreateTransaction = () => {
             showToast('Transaction added successfully', 'success');
         },
         onError: (error: ApiError) => {
-            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+            showToast(`Error: ${getErrorMessage(error)}`, 'error');
         },
     });
 };
@@ -110,7 +102,7 @@ export const useCreatePpfAccount = () => {
             showToast('PPF account created successfully', 'success');
         },
         onError: (error: ApiError) => {
-            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+            showToast(`Error: ${getErrorMessage(error)}`, 'error');
         },
     });
 };
@@ -126,7 +118,7 @@ export const useCreateFixedDeposit = () => {
             showToast('Fixed Deposit created successfully', 'success');
         },
         onError: (error: ApiError) => {
-            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+            showToast(`Error: ${getErrorMessage(error)}`, 'error');
         },
     });
 };
@@ -142,7 +134,7 @@ export const useCreateRecurringDeposit = () => {
             showToast('Recurring Deposit created successfully', 'success');
         },
         onError: (error: ApiError) => {
-            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+            showToast(`Error: ${getErrorMessage(error)}`, 'error');
         },
     });
 };
@@ -158,7 +150,7 @@ export const useCreateBond = () => {
             showToast('Bond added successfully', 'success');
         },
         onError: (error: ApiError) => {
-            showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+            showToast(`Error: ${getErrorMessage(error)}`, 'error');
         },
     });
 };
@@ -166,7 +158,8 @@ export const useCreateBond = () => {
 export const useUpdateBond = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ portfolioId, bondId, data }: { portfolioId: string; bondId: string; data: BondUpdate }) => // eslint-disable-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        mutationFn: ({ portfolioId: _portfolioId, bondId, data }: { portfolioId: string; bondId: string; data: BondUpdate }) =>
             portfolioApi.updateBond(bondId, data),
         onSuccess: (_, variables) => invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId),
     });
@@ -176,7 +169,8 @@ export const useDeleteBond = () => {
     const queryClient = useQueryClient();
     const { showToast } = useToast();
     return useMutation({
-        mutationFn: ({ portfolioId, bondId }: { portfolioId: string; bondId: string }) => portfolioApi.deleteBond(bondId), // eslint-disable-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        mutationFn: ({ portfolioId: _portfolioId, bondId }: { portfolioId: string; bondId: string }) => portfolioApi.deleteBond(bondId),
         onSuccess: (_, variables) => {
             invalidatePortfolioAndDashboardQueries(queryClient, variables.portfolioId);
             showToast('Bond deleted successfully', 'success');
@@ -235,31 +229,31 @@ export const useAssetTransactions = (portfolioId?: string, assetId?: string) => 
 };
 
 export const useAssetAnalytics = (portfolioId?: string, assetId?: string) => {
-  return useQuery<AssetAnalytics, Error>({
-    queryKey: ['assetAnalytics', portfolioId, assetId],
-    queryFn: () => portfolioApi.getAssetAnalytics(portfolioId!, assetId!),
-    enabled: !!portfolioId && !!assetId,
-  });
+    return useQuery<AssetAnalytics, Error>({
+        queryKey: ['assetAnalytics', portfolioId, assetId],
+        queryFn: () => portfolioApi.getAssetAnalytics(portfolioId!, assetId!),
+        enabled: !!portfolioId && !!assetId,
+    });
 };
 
 export const useTransactions = (
-  portfolioId: string,
-  filters: {
-    asset_id?: string;
-    transaction_type?: 'BUY' | 'SELL';
-    start_date?: string;
-    end_date?: string;
-    skip?: number;
-    limit?: number;
-  },
-  enabled: boolean = true
+    portfolioId: string,
+    filters: {
+        asset_id?: string;
+        transaction_type?: 'BUY' | 'SELL';
+        start_date?: string;
+        end_date?: string;
+        skip?: number;
+        limit?: number;
+    },
+    enabled: boolean = true
 ) => {
-  return useQuery<TransactionsResponse, Error>({
-    queryKey: ['transactions', portfolioId, filters],
-    queryFn: () => portfolioApi.getTransactions(portfolioId, filters),
-    enabled: !!portfolioId && enabled,
-    placeholderData: (previousData) => previousData,
-  });
+    return useQuery<TransactionsResponse, Error>({
+        queryKey: ['transactions', portfolioId, filters],
+        queryFn: () => portfolioApi.getTransactions(portfolioId, filters),
+        enabled: !!portfolioId && enabled,
+        placeholderData: (previousData) => previousData,
+    });
 };
 
 export const usePortfolioAssets = (portfolioId: string, enabled: boolean = true) => {

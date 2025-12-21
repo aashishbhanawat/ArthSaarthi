@@ -74,7 +74,6 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
     const groupedAndSortedHoldings = useMemo(() => {
         if (!holdings) return {};
         const grouped = groupBy(holdings, 'group');
-        console.log("Grouped holdings by frontend:", grouped);
 
         for (const group in grouped) {
             const config = sortConfig[group];

@@ -3,15 +3,7 @@ import { updateProfile, changePassword } from '../services/userApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { UserUpdateMe, UserPasswordChange } from '../types/user';
-
-interface ApiError {
-  response?: {
-    data?: {
-      detail?: string;
-    };
-  };
-  message: string;
-}
+import { ApiError, getErrorMessage } from '../types/api';
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
@@ -26,7 +18,7 @@ export const useUpdateProfile = () => {
       showToast('Profile updated successfully!', 'success');
     },
     onError: (error: ApiError) => {
-      showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+      showToast(`Error: ${getErrorMessage(error)}`, 'error');
     },
   });
 };
@@ -39,7 +31,7 @@ export const useChangePassword = () => {
       showToast('Password changed successfully!', 'success');
     },
     onError: (error: ApiError) => {
-      showToast(`Error: ${error.response?.data?.detail || error.message}`, 'error');
+      showToast(`Error: ${getErrorMessage(error)}`, 'error');
     },
   });
 };

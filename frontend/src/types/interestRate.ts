@@ -1,7 +1,5 @@
-import { UUID } from 'crypto';
-
 export interface HistoricalInterestRate {
-  id: UUID;
+  id: string;
   scheme_name: string;
   start_date: string;
   end_date: string | null;

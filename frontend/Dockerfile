@@ -1,11 +1,12 @@
-FROM node:18-alpine
+# Node.js 20+ required for Vite 7.x (uses crypto.hash API)
+FROM node:20-alpine
 
 WORKDIR /app
 
 # Copy package.json and install dependencies
 # This is done in a separate step to leverage Docker layer caching
 COPY package*.json ./
-RUN npm install
+RUN npm install && npx update-browserslist-db@latest -y
 
 # Copy the rest of the application code
 COPY . .

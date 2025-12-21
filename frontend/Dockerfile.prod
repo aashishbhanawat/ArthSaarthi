@@ -1,6 +1,7 @@
 # Stage 1: Builder
 # This stage builds the React application.
-FROM node:18-alpine AS builder
+# Node.js 20+ required for Vite 7.x (uses crypto.hash API)
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 

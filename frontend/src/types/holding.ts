@@ -19,6 +19,7 @@ export interface Holding {
     account_number: string | null;
     opening_date: string | null;
     isin: string;
+    currency: string | null;
 }
 
 export interface HoldingsResponse {

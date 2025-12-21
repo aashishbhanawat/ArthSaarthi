@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     ZERODHA_KITE_API_KEY: str = ""
 
     # CORS_ORIGINS: str = "http://localhost:3000"
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000,http://10.12.6.254:3000"
-    DEBUG: bool = True
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000"
+    DEBUG: bool = False
 
     # For desktop encryption
     ENCRYPTION_KEY_PATH: str = "master.key"
@@ -66,6 +66,17 @@ class Settings(BaseSettings):
         if (values.get("DEPLOYMENT_MODE") == "desktop" or
                 values.get("DATABASE_TYPE") == "sqlite"):
             return "disk"
+        return v
+
+
+    @validator("IMPORT_UPLOAD_DIR", pre=True, always=True)
+    def set_upload_dir_for_desktop(cls, v, values):
+        if values.get("DEPLOYMENT_MODE") == "desktop":
+            from pathlib import Path
+            # Use a stable directory in the user's home for uploads
+            upload_dir = Path.home() / ".arthsaarthi" / "uploads"
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            return str(upload_dir)
         return v
 
     @validator("REDIS_URL", pre=True, always=True)

@@ -10,11 +10,28 @@ This application is designed to be self-hosted, giving you full control over you
 
 ➡️ **For detailed installation instructions, please see the [Installation Guide](./installation_guide.md).**
 
+**macOS Users:** If you see a "damaged" error, copy the app to Applications first, then run `xattr -cr /Applications/ArthSaarthi.app` in Terminal before launching.
+
 ### First-Time Admin Account Creation
 
 The most important part of the installation is the initial setup. The first time you access the application, you will be greeted with a setup screen.
 
 You **must** complete this form to create the first **administrator** account. This is the only time you will see this screen. After this account is created, all new users must be added by an administrator.
+
+### Desktop Mode vs Server Mode
+
+ArthSaarthi can run in two modes:
+
+| Feature | Desktop Mode | Server Mode |
+|---------|--------------|-------------|
+| **Users** | Single user | Multiple users |
+| **Database** | SQLite (encrypted) | PostgreSQL |
+| **User Management** | ❌ Not available | ✅ Full access |
+| **Interest Rates** | ✅ Available | ✅ Available |
+| **Asset Sync** | ✅ Available | ✅ Available |
+| **Data Storage** | Local files | Server database |
+
+> **Desktop Mode** is designed for personal use on your own computer. Since there's only one user, the User Management feature is disabled - you don't need to manage users when you're the only one!
 
 ---
 
@@ -174,9 +191,48 @@ The Goals feature allows you to set financial targets and link your investments 
 4.  The system will automatically calculate your progress towards the goal based on the current value of all linked items.
 ---
 
-## 7. User Management (Admin Only) {#user-management}
+## 7. Tracking RSU & ESPP Awards {#espp-rsu}
 
-If you are logged in as an administrator, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
+Track Restricted Stock Units (RSUs) and Employee Stock Purchase Plan (ESPP) awards with proper tax lot accounting.
+
+### Adding an RSU Award
+
+1.  From a portfolio detail page, click the "Additional actions" dropdown menu.
+2.  Select **"Add ESPP/RSU Award"**.
+3.  Search for and select the company stock.
+4.  Fill in the vest date, quantity, and Fair Market Value (FMV) at vesting.
+5.  Optionally record **Sell to Cover** shares sold to cover taxes.
+
+### Adding an ESPP Purchase
+
+1.  Follow the same steps as RSU, but enter the purchase price (usually discounted).
+2.  The system will track your cost basis correctly for tax purposes.
+
+---
+
+## 8. Backup & Restore {#backup-restore}
+
+Protect your financial data with the backup and restore feature.
+
+### Creating a Backup
+
+1.  Navigate to your **Profile** page.
+2.  In the "Backup & Restore" section, click **"Download Backup"**.
+3.  Save the JSON file to a secure location.
+
+### Restoring from Backup
+
+1.  Click **"Restore from Backup"** and select your backup file.
+2.  **Warning:** Restoring will replace all your current data. Type "DELETE" to confirm.
+3.  Your data will be restored from the backup file.
+
+---
+
+## 9. User Management (Admin Only - Server Mode) {#user-management}
+
+> **Note:** User Management is only available in **Server Mode** (multi-user). In Desktop Mode, the application is single-user, so user management is not needed.
+
+If you are logged in as an administrator in Server Mode, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
 
 *   **Create User:** Click the "Create New User" button to add a new user. You can choose whether to make them an administrator.
 *   **Edit User:** Click the "Edit" button on any user to change their details or admin status.
@@ -184,6 +240,21 @@ If you are logged in as an administrator, you will see a **"User Management"** l
 
 ---
 
-## 8. Getting Help & Reporting Bugs {#getting-help}
+## 10. System Maintenance (Admin Only) {#system-maintenance}
+
+Administrators can trigger asset master database updates without restarting the server.
+
+### Syncing Asset Data
+
+1.  Navigate to **System Maintenance** from the admin menu.
+2.  Click the **"Sync Assets"** button.
+3.  The system will download and process updated data from NSDL, BSE, NSE, and other sources.
+4.  **Rate Limit:** This can only be done once every 5 minutes.
+
+---
+
+## 11. Getting Help & Reporting Bugs {#getting-help}
 
 If you encounter a bug or have a feature request, please **open an issue on the project's GitHub repository**. Your feedback is essential for improving the application!
+
+➡️ **For a visual guide with screenshots, see the [HTML User Guide](./user_guide/index.html).**

@@ -18,13 +18,17 @@ import GoalDetailPage from './pages/GoalDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
+import AssetLoadingBanner from './components/AssetLoadingBanner';
 
 const AppLayout = () => (
-  <div className="grid grid-cols-[auto_1fr] h-screen bg-gray-50">
-    <NavBar />
-    <main className="p-8 overflow-y-auto">
-      <Outlet />
-    </main>
+  <div className="flex flex-col h-screen bg-gray-50">
+    <AssetLoadingBanner />
+    <div className="grid grid-cols-[auto_1fr] flex-1 overflow-hidden">
+      <NavBar />
+      <main className="p-8 overflow-y-auto">
+        <Outlet />
+      </main>
+    </div>
   </div>
 );
 

@@ -4,11 +4,12 @@ export interface AssetAllocation {
 }
 
 export interface TopMover {
-  ticker_symbol: string;
-  name: string;
-  current_price: number;
-  daily_change: number;
-  daily_change_percentage: number;
+    ticker_symbol: string;
+    name: string;
+    current_price: number;
+    daily_change: number;
+    daily_change_percentage: number;
+    currency: string;
 }
 
 export interface DashboardSummary {
