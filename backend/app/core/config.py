@@ -68,6 +68,17 @@ class Settings(BaseSettings):
             return "disk"
         return v
 
+    
+    @validator("IMPORT_UPLOAD_DIR", pre=True, always=True)
+    def set_upload_dir_for_desktop(cls, v, values):
+        if values.get("DEPLOYMENT_MODE") == "desktop":
+            from pathlib import Path
+            # Use a stable directory in the user's home for uploads
+            upload_dir = Path.home() / ".arthsaarthi" / "uploads"
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            return str(upload_dir)
+        return v
+
     @validator("REDIS_URL", pre=True, always=True)
     def assemble_redis_connection(cls, v, values):
         if isinstance(v, str):
