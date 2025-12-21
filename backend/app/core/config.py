@@ -68,7 +68,7 @@ class Settings(BaseSettings):
             return "disk"
         return v
 
-    
+
     @validator("IMPORT_UPLOAD_DIR", pre=True, always=True)
     def set_upload_dir_for_desktop(cls, v, values):
         if values.get("DEPLOYMENT_MODE") == "desktop":
