@@ -35,6 +35,12 @@ if settings.DEPLOYMENT_MODE == "desktop":
     )
     file_handler.setFormatter(logging.Formatter(log_format))
     root_logger.addHandler(file_handler)
+
+    # Also add file handler to uvicorn loggers for HTTP request logging
+    for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error"]:
+        uvicorn_logger = logging.getLogger(logger_name)
+        uvicorn_logger.addHandler(file_handler)
+
     logging.info(f"Desktop mode: Logging to {log_file}")
 # --- End Logging Configuration ---
 
