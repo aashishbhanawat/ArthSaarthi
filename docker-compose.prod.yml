@@ -1,7 +1,7 @@
 version: '3.8'
 
 networks:
-  pms_network:
+  arthsaarthi_network:
     driver: bridge
 
 volumes:
@@ -10,7 +10,7 @@ volumes:
 services:
   db:
     image: postgres:13
-    container_name: pms-db-prod
+    container_name: arthsaarthi-db-prod
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
@@ -22,11 +22,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - pms_network
+      - arthsaarthi_network
 
   redis:
     image: redis:alpine
-    container_name: pms-redis-prod
+    container_name: arthsaarthi-redis-prod
     restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -34,19 +34,19 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - pms_network
+      - arthsaarthi_network
 
   backend:
     image: ${DOCKER_REGISTRY:-aashishbhanawat}/arthsaarthi-backend:${APP_VERSION:-latest}
     pull_policy: if_not_present
-    container_name: pms-backend-prod
+    container_name: arthsaarthi-backend-prod
     restart: always    
     env_file:
       - ./backend/.env.prod
     environment:
       - PYTHONPATH=/app
     networks:
-      - pms_network
+      - arthsaarthi_network
     depends_on:
       db:
         condition: service_healthy
@@ -56,11 +56,11 @@ services:
   frontend:
     image: ${DOCKER_REGISTRY:-aashishbhanawat}/arthsaarthi-frontend:${APP_VERSION:-latest}
     pull_policy: if_not_present
-    container_name: pms-frontend-prod
+    container_name: arthsaarthi-frontend-prod
     restart: always
     ports:
       - "${FRONTEND_PORT:-80}:80"
     networks:
-      - pms_network
+      - arthsaarthi_network
     depends_on:
       - backend
