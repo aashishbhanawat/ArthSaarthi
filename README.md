@@ -5,6 +5,8 @@
 [![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-174/174-brightgreen)](#)
 [![E2E Tests](https://img.shields.io/badge/E2E_Tests-31/31-brightgreen)](#)
 
+[![Buy Me A Chai](https://buymeachai.ezee.li/assets/images/buymeachai-button.png)](https://buymeachai.ezee.li/aashishbhanawat)
+
 ---
 
 **ArthSaarthi** is a self-hostable, privacy-focused application designed to help users manage their personal investment portfolios. It provides a comprehensive suite of tools for tracking assets, analyzing performance, and making informed financial decisions.
