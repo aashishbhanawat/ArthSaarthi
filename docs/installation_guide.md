@@ -54,10 +54,19 @@ This mode is for technically advanced users who wish to self-host ArthSaarthi as
 
 This method uses pre-built Docker images from Docker Hub for a consistent and reliable environment. It is the recommended way to run ArthSaarthi in Server Mode.
 
+#### Docker Hub Images
+
+The official Docker images are available at:
+
+*   **Backend:** [`aashishbhanawat/arthsaarthi-backend`](https://hub.docker.com/r/aashishbhanawat/arthsaarthi-backend)
+*   **Frontend:** [`aashishbhanawat/arthsaarthi-frontend`](https://hub.docker.com/r/aashishbhanawat/arthsaarthi-frontend)
+
+Both images support **linux/amd64** and **linux/arm64** architectures.
+
 #### Prerequisites
 
-*   **Docker:** Get Docker
-*   **Docker Compose:** Install Docker Compose
+*   **Docker:** [Get Docker](https://docs.docker.com/get-docker/)
+*   **Docker Compose:** [Install Docker Compose](https://docs.docker.com/compose/install/)
 
 #### Step-by-Step Guide (Linux/macOS)
 
