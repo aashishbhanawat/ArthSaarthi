@@ -20,6 +20,7 @@ services:
       - ./e2e/tests:/app/tests
       - ./e2e/playwright.config.ts:/app/playwright.config.ts
       - ./e2e/global.setup.ts:/app/global.setup.ts
+      - ./e2e/screenshots:/app/screenshots
     networks:
       - pms_network
     ipc: host

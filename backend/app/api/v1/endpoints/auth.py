@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -12,6 +13,7 @@ from app.core.dependencies import get_current_active_user
 from app.core.key_manager import key_manager
 from app.db.session import get_db
 from app.models import user as user_model
+from app.models.asset import Asset
 from app.schemas import token as token_schema
 from app.schemas.auth import Status
 from app.schemas.msg import Msg
@@ -23,11 +25,32 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+class InitStatus(BaseModel):
+    setup_needed: bool
+    assets_ready: bool
+    asset_count: int
+
+
 @router.get("/status", response_model=Status)
 def get_setup_status(db: Session = Depends(get_db)):
     """Check if the initial admin user has been created."""
     user_count = db.query(user_model.User).count()
     return {"setup_needed": user_count == 0}
+
+
+@router.get("/init-status", response_model=InitStatus)
+def get_init_status(db: Session = Depends(get_db)):
+    """
+    Check initialization status for desktop mode.
+    Returns setup_needed and assets_ready to help UI show appropriate state.
+    """
+    user_count = db.query(user_model.User).count()
+    asset_count = db.query(Asset).count()
+    return {
+        "setup_needed": user_count == 0,
+        "assets_ready": asset_count > 1000,  # Consider ready if > 1000 assets
+        "asset_count": asset_count,
+    }
 
 
 @router.post("/setup", response_model=User)
@@ -51,6 +74,24 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
 
     db_user = crud.user.create(db=db, obj_in=user, is_admin=True)
     db.commit()
+
+    # After first user is created in desktop mode, trigger asset seeding
+    if settings.DEPLOYMENT_MODE == "desktop":
+        import subprocess
+        import sys
+        import threading
+
+        def seed_assets_background():
+            logger.info("Starting background asset seeding after first user setup...")
+            try:
+                subprocess.run([sys.executable, "db", "seed-assets"], check=True)
+                logger.info("Asset seeding completed successfully.")
+            except Exception as e:
+                logger.error(f"Asset seeding failed: {e}")
+
+        seed_thread = threading.Thread(target=seed_assets_background, daemon=True)
+        seed_thread.start()
+        logger.info("Background asset seeding thread started.")
 
     return db_user
 

@@ -8,13 +8,17 @@ Welcome to ArthSaarthi! This guide will walk you through setting up and using th
 
 This application is designed to be self-hosted, giving you full control over your data.
 
-➡️ **For detailed installation instructions, please refer to the [Installation Guide](https://github.com/aashishbhanawat/pms/blob/main/installation_guide.md) on the project's GitHub repository.**
+➡️ **For detailed installation instructions, please refer to the [Installation Guide](https://aashishbhanawat.github.io/ArthSaarthi/installation_guide/) on the project's documentation site.**
+
+**macOS Users:** If you see a "damaged" error, copy the app to Applications first, then run `xattr -cr /Applications/ArthSaarthi.app` in Terminal before launching.
 
 ### First-Time Admin Account Creation
 
 The most important part of the installation is the initial setup. The first time you access the application, you will be greeted with a setup screen.
 
 You **must** complete this form to create the first **administrator** account. This is the only time you will see this screen. After this account is created, all new users must be added by an administrator.
+
+**Desktop Mode Note:** User Management is not available in Desktop Mode (single-user). Interest Rates and Asset Sync features are available in all modes.
 
 ---
 

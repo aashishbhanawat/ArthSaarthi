@@ -19,28 +19,30 @@ const renderWithProviders = (ui: React.ReactElement) => {
 
 jest.mock('../../../hooks/useInterestRates');
 jest.mock('../../../components/Admin/InterestRateTable', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const React = require('react');
-    // Return a Jest mock function so we can change its implementation for specific tests
-    return jest.fn(() => React.createElement('div', null, 'InterestRateTable'));
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react');
+  // Return a Jest mock function so we can change its implementation for specific tests
+  return jest.fn(() => React.createElement('div', null, 'InterestRateTable'));
 });
 jest.mock('../../../components/Admin/InterestRateFormModal', () => {
-    return function DummyInterestRateFormModal({ isOpen }: { isOpen: boolean }) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const React = require('react');
-        return isOpen ? React.createElement('div', null, 'InterestRateFormModal') : null;
-    };
+  return function DummyInterestRateFormModal({ isOpen }: { isOpen: boolean }) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const React = require('react');
+    return isOpen ? React.createElement('div', null, 'InterestRateFormModal') : null;
+  };
 });
 jest.mock('../../../components/common/DeleteConfirmationModal', () => {
-    return {
-        DeleteConfirmationModal: function DummyDeleteConfirmationModal({ isOpen }: { isOpen: boolean }) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const React = require('react');
-        return isOpen ? React.createElement('div', null, 'DeleteConfirmationModal') : null;
-    }};
+  return {
+    DeleteConfirmationModal: function DummyDeleteConfirmationModal({ isOpen }: { isOpen: boolean }) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const React = require('react');
+      return isOpen ? React.createElement('div', null, 'DeleteConfirmationModal') : null;
+    }
+  };
 });
 
 const mockedUseInterestRates = useInterestRatesHook.useInterestRates as jest.Mock;
+const mockedUseDeleteInterestRate = useInterestRatesHook.useDeleteInterestRate as jest.Mock;
 
 const mockRates: HistoricalInterestRate[] = [
   { id: '1', scheme_name: 'PPF', start_date: '2023-04-01', end_date: '2024-03-31', rate: 7.1 },
@@ -49,6 +51,11 @@ const mockRates: HistoricalInterestRate[] = [
 describe('InterestRateManagementPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock useDeleteInterestRate to return a mock mutation object
+    mockedUseDeleteInterestRate.mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    });
   });
 
   it('renders loading state correctly', () => {

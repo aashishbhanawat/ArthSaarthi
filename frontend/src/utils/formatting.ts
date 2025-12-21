@@ -1,13 +1,13 @@
 import { usePrivacy } from '../context/PrivacyContext';
 
-export const formatCurrency = (value: number | string, currency = 'INR') => {
+export const formatCurrency = (value: number | string, currency?: string | null) => {
   const numericValue = Number(value);
   if (isNaN(numericValue) || value === null) {
     return '₹0.00';
   }
   const formatter = new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: currency,
+    currency: currency || 'INR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -32,20 +32,20 @@ export const formatPercentage = (value: number | undefined | null): string => {
 };
 
 export const formatInterestRate = (value: number | string | undefined | null): string => {
-    if (value === null || typeof value === 'undefined') {
-        return 'N/A';
-    }
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (typeof numValue !== 'number' || isNaN(numValue)) {
-        return 'N/A';
-    }
-    return `${numValue.toFixed(2)}%`;
+  if (value === null || typeof value === 'undefined') {
+    return 'N/A';
+  }
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (typeof numValue !== 'number' || isNaN(numValue)) {
+    return 'N/A';
+  }
+  return `${numValue.toFixed(2)}%`;
 }
 
 export const usePrivacySensitiveCurrency = () => {
   const { isPrivacyMode } = usePrivacy();
 
-  const format = (value: number | string, currency = 'INR') => {
+  const format = (value: number | string, currency?: string | null) => {
     if (isPrivacyMode) {
       return '₹**,***.**';
     }

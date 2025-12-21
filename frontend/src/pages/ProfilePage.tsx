@@ -1,4 +1,3 @@
-import React from 'react';
 import UpdateProfileForm from '../components/Profile/UpdateProfileForm';
 import ChangePasswordForm from '../components/Profile/ChangePasswordForm';
 import BackupRestoreCard from '../components/Profile/BackupRestoreCard';

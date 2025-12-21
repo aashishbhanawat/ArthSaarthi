@@ -94,7 +94,7 @@ def parsed_import_session(
         user_id=user.id,
         portfolio_id=user_portfolio.id,
         file_name="commit_test.csv",
-        file_path="/tmp/dummy.csv",
+        file_path="/tmp/dummy.csv",  # nosec B108 - test data only
         source="Generic CSV",
         status="PARSED",
         parsed_file_path=str(parsed_file_path),
@@ -326,7 +326,7 @@ def test_commit_import_session_asset_not_found(
         user_id=user.id,
         portfolio_id=user_portfolio.id,
         file_name="bad_asset.csv",
-        file_path="/tmp/dummy.csv",
+        file_path="/tmp/dummy.csv",  # nosec B108 - test data only
         source="Generic CSV",
         status="PARSED",
     )
@@ -363,7 +363,7 @@ def test_commit_import_session_wrong_status(
         user_id=user.id,
         portfolio_id=user_portfolio.id,
         file_name="test.csv",
-        file_path="/tmp/dummy.csv",
+        file_path="/tmp/dummy.csv",  # nosec B108 - test data only
         source="Generic CSV",
         status="UPLOADED",
     )
@@ -448,7 +448,7 @@ def test_get_import_session_preview_with_duplicate(
         user_id=user.id,
         portfolio_id=user_portfolio.id,
         file_name="duplicate.csv",
-        file_path="/tmp/dummy.csv",
+        file_path="/tmp/dummy.csv",  # nosec B108 - test data only
         source="Generic CSV",
         status="PARSED",
         parsed_file_path=str(parsed_file_path),
@@ -502,7 +502,7 @@ def test_get_import_session_preview_with_invalid_symbol(
         user_id=user.id,
         portfolio_id=user_portfolio.id,
         file_name="invalid.csv",
-        file_path="/tmp/dummy.csv",
+        file_path="/tmp/dummy.csv",  # nosec B108 - test data only
         source="Generic CSV",
         status="PARSED",
         parsed_file_path=str(parsed_file_path),

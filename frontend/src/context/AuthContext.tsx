@@ -59,7 +59,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('deployment_mode');
     delete api.defaults.headers.common['Authorization'];
-    window.location.href = '/login';
+    // Use hash-based redirect for HashRouter compatibility (works in Electron)
+    window.location.hash = '#/login';
   }, []);
 
   useEffect(() => {
@@ -109,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (email: string) => {
     // This function can be expanded if needed
-    console.log("Register function called for", email);
+    void email; // Acknowledge parameter usage
   };
 
   const getModalCountdown = () => {

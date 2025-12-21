@@ -161,7 +161,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                                 </tr>
                             </thead>
                             <tbody>
-                                {openTransactions.map(tx => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
+                                {openTransactions.map((tx: Transaction) => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
                             </tbody>
                         </table>
                     )}

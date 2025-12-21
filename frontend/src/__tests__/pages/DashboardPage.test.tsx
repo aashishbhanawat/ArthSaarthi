@@ -28,7 +28,7 @@ jest.mock('../../components/HelpLink', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
   return function DummyHelpLink({ sectionId }: { sectionId: string }) {
-    return React.createElement('a', { href: `/user_guide.md#${sectionId}` }, '?');
+    return React.createElement('a', { href: `https://aashishbhanawat.github.io/ArthSaarthi/user_guide/#${sectionId}` }, '?');
   };
 });
 const mockUseDashboardSummary = useDashboardSummary as jest.Mock;

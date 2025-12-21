@@ -72,6 +72,7 @@ export interface FixedDepositCreate {
   maturity_date: string;
   compounding_frequency: 'Annually' | 'Half-Yearly' | 'Quarterly';
   interest_payout: 'Cumulative' | 'Payout';
+  account_number?: string;
 }
 
 export interface FixedDepositUpdate {
@@ -82,6 +83,7 @@ export interface FixedDepositUpdate {
   maturity_date?: string;
   compounding_frequency?: 'Annually' | 'Half-Yearly' | 'Quarterly';
   interest_payout?: 'Cumulative' | 'Payout';
+  account_number?: string;
 }
 
 export interface FixedDeposit extends FixedDepositCreate {

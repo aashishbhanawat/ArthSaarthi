@@ -70,7 +70,7 @@ const InterestRateManagementPage: React.FC = () => {
       <InterestRateFormModal isOpen={isFormModalOpen} onClose={() => setFormModalOpen(false)} rateToEdit={rateToEdit} />
 
       {rateToDelete && (
-        <DeleteConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={handleConfirmDelete} title="Delete Interest Rate" message={`Are you sure you want to delete the rate for ${rateToDelete.scheme_name} starting ${rateToDelete.start_date}?`} />
+        <DeleteConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={handleConfirmDelete} title="Delete Interest Rate" message={`Are you sure you want to delete the rate for ${rateToDelete.scheme_name} starting ${rateToDelete.start_date}?`} isDeleting={deleteMutation.isPending} />
       )}
     </div>
   );

@@ -85,8 +85,10 @@ def _download_file(url: str, dest_path: str) -> bool:
         )
     }
     try:
+        # nosec B501: SSL verification disabled intentionally for NSDL/BSE/NSE
+        # data sources which have known certificate issues
         response = requests.get(
-            url, stream=True, verify=False, headers=headers, timeout=30
+            url, stream=True, verify=False, headers=headers, timeout=30  # nosec B501
         )
         response.raise_for_status()
         with open(dest_path, "wb") as f:

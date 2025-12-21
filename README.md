@@ -5,6 +5,8 @@
 [![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-174/174-brightgreen)](#)
 [![E2E Tests](https://img.shields.io/badge/E2E_Tests-31/31-brightgreen)](#)
 
+[![Buy Me A Chai](https://buymeachai.ezee.li/assets/images/buymeachai-button.png)](https://buymeachai.ezee.li/aashishbhanawat)
+
 ---
 
 **ArthSaarthi** is a self-hostable, privacy-focused application designed to help users manage their personal investment portfolios. It provides a comprehensive suite of tools for tracking assets, analyzing performance, and making informed financial decisions.
@@ -74,6 +76,30 @@ This project was built with a strong emphasis on developer experience and mainta
 *   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (both Docker and native), running tests, and understanding the local development workflow.
 *   **[Contributing Guide](./CONTRIBUTING.md):** Our guide for contributing to the project, including our AI-assisted development process.
 *   **[Architecture Overview](./docs/architecture.md):** A high-level look at the system's design.
+
+---
+
+## ⚠️ Disclaimer
+
+### Data Sources
+
+ArthSaarthi uses publicly available data from the following sources for asset master data and market information:
+
+*   **[NSDL (National Securities Depository Limited)](https://nsdl.co.in/)** - Debt instruments master data
+*   **[BSE (Bombay Stock Exchange)](https://www.bseindia.com/)** - Equity and debt bhavcopy, bond data, index data
+*   **[NSE (National Stock Exchange)](https://www.nseindia.com/)** - Equity bhavcopy, debt listings
+*   **[ICICI Direct](https://www.icicidirect.com/)** - Security master data (fallback source)
+
+This application downloads and processes publicly available data from these exchanges for informational purposes only. ArthSaarthi is not affiliated with, endorsed by, or sponsored by any of these organizations.
+
+### Financial Advice Notice
+
+**ArthSaarthi is not a registered investment advisor.** The information provided by this application is for general informational and educational purposes only and should not be construed as financial, investment, tax, or legal advice.
+
+*   All investment decisions should be made in consultation with a qualified financial advisor.
+*   Past performance is not indicative of future results.
+*   The data presented may contain errors or inaccuracies; always verify with official sources.
+*   Users are solely responsible for their investment decisions.
 
 ---
 

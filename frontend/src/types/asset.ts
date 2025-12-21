@@ -1,3 +1,5 @@
+import { Bond } from './bond';
+
 export interface Asset {
     id: string;
     name: string;
@@ -8,6 +10,8 @@ export interface Asset {
     exchange: string | null;
     current_price?: number;
     day_change?: number;
+    account_number?: string | null;
+    bond?: Bond | null;
 }
 
 export interface MutualFundSearchResult {

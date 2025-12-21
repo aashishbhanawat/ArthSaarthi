@@ -6,6 +6,9 @@ const apiClient = axios.create({
   // In Electron, it will be set to http://localhost:<port>.
 });
 
+// Only log in development mode
+const isDev = import.meta.env.DEV;
+
 // This interceptor dynamically sets the baseURL when running in Electron.
 // It runs only once and then is ejected.
 apiClient.interceptors.request.use(
@@ -20,11 +23,15 @@ apiClient.interceptors.request.use(
       try {
         const apiConfig = await window.electronAPI.getApiConfig();
         const baseUrl = `http://${apiConfig.host}:${apiConfig.port}`;
-        console.log(`Electron environment detected. Setting API base URL to: ${baseUrl}`);
+        if (isDev) {
+          console.log(`Electron environment detected. Setting API base URL to: ${baseUrl}`);
+        }
         apiClient.defaults.baseURL = baseUrl;
         config.baseURL = baseUrl;
       } catch (error) {
-        console.error("Failed to get API config from Electron main process:", error);
+        if (isDev) {
+          console.error("Failed to get API config from Electron main process:", error);
+        }
       }
     }
 
@@ -48,22 +55,30 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log("API Request:", config.method?.toUpperCase(), config.url, config.data);
+    if (isDev) {
+      console.log("API Request:", config.method?.toUpperCase(), config.url);
+    }
     return config;
   },
   (error) => {
-    console.error("API Request Error:", error);
+    if (isDev) {
+      console.error("API Request Error:", error);
+    }
     return Promise.reject(error);
   }
 );
 
 apiClient.interceptors.response.use(
   (response) => {
-    console.log("API Response:", response.status, response.config.url, response.data);
+    if (isDev) {
+      console.log("API Response:", response.status, response.config.url);
+    }
     return response;
   },
   (error) => {
-    console.error("API Response Error:", error.response?.status, error.config.url, error.response?.data);
+    if (isDev) {
+      console.error("API Response Error:", error.response?.status, error.config.url, error.response?.data);
+    }
     return Promise.reject(error);
   }
 );

@@ -46,9 +46,9 @@ def _download_file(url: str, dest_path: str) -> bool:
         )
     }
     try:
-        # verify=False for NSDL/Sandbox issues
+        # nosec B501: SSL verification disabled for NSDL/BSE/NSE with cert issues
         response = requests.get(
-            url, stream=True, verify=False, headers=headers, timeout=30
+            url, stream=True, verify=False, headers=headers, timeout=30  # nosec B501
         )
         response.raise_for_status()
         with open(dest_path, 'wb') as f:

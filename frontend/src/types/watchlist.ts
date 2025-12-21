@@ -6,6 +6,10 @@ export interface WatchlistItem {
   asset: Asset;
 }
 
+export interface WatchlistItemCreate {
+  asset_id: string;
+}
+
 export interface Watchlist {
   id: string;
   name: string;

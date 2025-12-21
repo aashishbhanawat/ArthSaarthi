@@ -73,12 +73,16 @@ const NavBar: React.FC = () => {
                     <TrophyIcon className="h-5 w-5" />
                     <span>Goals</span>
                 </NavLink>
-                {user?.is_admin && deploymentMode === 'server' && (
+                {user?.is_admin && (
                     <>
-                        <NavLink to="/admin/users" className={({ isActive }) => linkClass(isActive)}>
-                            <UsersIcon className="h-5 w-5" />
-                            <span>User Management</span>
-                        </NavLink>
+                        {/* User Management is only available in server mode (multi-user) */}
+                        {deploymentMode === 'server' && (
+                            <NavLink to="/admin/users" className={({ isActive }) => linkClass(isActive)}>
+                                <UsersIcon className="h-5 w-5" />
+                                <span>User Management</span>
+                            </NavLink>
+                        )}
+                        {/* Interest Rates and System Maintenance available in all modes */}
                         <NavLink to="/admin/interest-rates" className={({ isActive }) => linkClass(isActive)}>
                             <ScaleIcon className="h-5 w-5" />
                             <span>Interest Rates</span>

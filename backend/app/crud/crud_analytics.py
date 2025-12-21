@@ -21,7 +21,6 @@ from app.models.fixed_deposit import FixedDeposit
 from app.models.recurring_deposit import RecurringDeposit
 from app.models.transaction import Transaction
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

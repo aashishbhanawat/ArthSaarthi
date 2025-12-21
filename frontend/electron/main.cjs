@@ -1,10 +1,14 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const portfinder = require('portfinder');
 
 let backendProcess;
 let mainWindow;
+let storedBackendPort;  // Store port for window recreation on macOS
+
+// Set app name for correct menu labels (e.g., "Quit ArthSaarthi" not "Quit arthsaarthi-frontend")
+app.setName('ArthSaarthi');
 
 async function createMainWindow(backendPort) {
   const isDev = (await import('electron-is-dev')).default;
@@ -21,10 +25,27 @@ async function createMainWindow(backendPort) {
   });
 
   // Expose the backend port to the renderer process via IPC
+  // Remove existing handler if any (prevents error on window recreation)
+  ipcMain.removeHandler('get-api-config');
   ipcMain.handle('get-api-config', () => ({
     host: '127.0.0.1',
     port: backendPort,
   }));
+
+  // Handle opening user guide from renderer process
+  ipcMain.removeHandler('open-user-guide');
+  ipcMain.handle('open-user-guide', async (event, sectionId) => {
+    const { shell } = require('electron');
+    let guidePath;
+    if (isDev) {
+      guidePath = path.join(__dirname, '../../docs/user_guide/index.html');
+    } else {
+      guidePath = path.join(process.resourcesPath, 'user_guide', 'index.html');
+    }
+    // Open the file in default browser with section anchor
+    const url = `file://${guidePath}${sectionId ? '#' + sectionId : ''}`;
+    shell.openExternal(url);
+  });
 
   if (isDev) {
     // In development, load the Vite dev server
@@ -36,7 +57,78 @@ async function createMainWindow(backendPort) {
     mainWindow.loadFile(indexPath);
   }
 
-  mainWindow.setMenu(null);
+  // Create application menu
+  const menuTemplate = [
+    {
+      label: 'File',
+      submenu: [
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'User Guide',
+          click: async () => {
+            const isDev = (await import('electron-is-dev')).default;
+            // Open bundled user guide in default browser
+            const { shell } = require('electron');
+            if (isDev) {
+              // In development, open from docs folder
+              const guidePath = path.join(__dirname, '../../docs/user_guide/index.html');
+              shell.openPath(guidePath);
+            } else {
+              // In production, open from bundled resources
+              const guidePath = path.join(process.resourcesPath, 'user_guide', 'index.html');
+              shell.openPath(guidePath);
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'About ArthSaarthi',
+          click: () => {
+            const { dialog } = require('electron');
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'About ArthSaarthi',
+              message: 'ArthSaarthi - Personal Portfolio Management',
+              detail: 'Version 1.0.0\n\nA comprehensive wealth tracking and portfolio management application.'
+            });
+          }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -63,18 +155,19 @@ async function startBackend() {
             DEPLOYMENT_MODE: 'desktop',
             DATABASE_TYPE: 'sqlite',
             CACHE_TYPE: 'disk',
-               },
+            DEBUG: 'false',  // Disable debug logging in production desktop mode
+          },
         });
 
         let resolved = false;
         const handleData = (data) => {
-            const message = data.toString();
-            console.log(`Backend output: ${message}`);
-            if (!resolved && message.includes('Uvicorn running on')) {
-                console.log('Backend is ready. Resolving startBackend promise.');
-                resolved = true;
-                resolve(port);
-            }
+          const message = data.toString();
+          console.log(`Backend output: ${message}`);
+          if (!resolved && message.includes('Uvicorn running on')) {
+            console.log('Backend is ready. Resolving startBackend promise.');
+            resolved = true;
+            resolve(port);
+          }
         };
 
         backendProcess.stdout.on('data', handleData);
@@ -85,8 +178,8 @@ async function startBackend() {
         });
 
         backendProcess.on('error', (err) => {
-            console.error('Failed to start backend process.', err);
-            reject(err);
+          console.error('Failed to start backend process.', err);
+          reject(err);
         });
       })
       .catch(err => {
@@ -99,6 +192,7 @@ async function startBackend() {
 app.whenReady().then(async () => {
   try {
     const backendPort = await startBackend();
+    storedBackendPort = backendPort;  // Store for later use
     console.log(`Backend started on port ${backendPort}`);
     await createMainWindow(backendPort);
   } catch (error) {
@@ -107,8 +201,9 @@ app.whenReady().then(async () => {
   }
 
   app.on('activate', async () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      await createMainWindow();
+    // On macOS, recreate window when dock icon is clicked and all windows are closed
+    if (BrowserWindow.getAllWindows().length === 0 && storedBackendPort) {
+      await createMainWindow(storedBackendPort);
     }
   });
 });

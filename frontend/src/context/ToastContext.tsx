@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import { createContext, useState, useContext, ReactNode } from 'react';
 import Toast from '../components/common/Toast';
 
 type ToastType = 'success' | 'error';
@@ -11,6 +11,7 @@ interface ToastMessage {
 
 interface ToastContextType {
   showToast: (message: string, type: ToastType) => void;
+  addToast: (message: string, type: ToastType) => void;  // Alias for showToast
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -31,7 +32,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={{ showToast, addToast: showToast }}>
       {children}
       <div className="fixed top-5 right-5 z-50">
         {toasts.map((toast) => (

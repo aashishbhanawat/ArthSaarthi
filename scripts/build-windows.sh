@@ -7,10 +7,10 @@ set -x
 
 echo "--- Starting Windows Build ---"
 
-# Create a clean virtual environment
+# Create a clean virtual environment using Python from PATH (set by setup-python action)
 echo "Creating a clean virtual environment..."
 rm -rf ~/venc
-py -3 -m venv ~/venc
+python -m venv ~/venc
 
 # Clean up previous builds
 echo "Cleaning up previous builds..."
@@ -27,7 +27,7 @@ echo "Step 2: Building frontend..."
 # 3. Install Backend Dependencies
 echo "Step 3: Installing backend dependencies..."
 source ~/venc/Scripts/activate
-(cd backend && "$VIRTUAL_ENV/Scripts/pip.exe" install pyinstaller==6.10.0)
+(cd backend && "$VIRTUAL_ENV/Scripts/pip.exe" install pyinstaller==6.17.0)
 (cd backend && "$VIRTUAL_ENV/Scripts/pip.exe" install -r requirements-windows.txt)
 
 

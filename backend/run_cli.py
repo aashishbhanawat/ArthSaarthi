@@ -25,6 +25,7 @@ def run_dev_server(
     import os
     import subprocess
     import sys
+    import threading
     from urllib.parse import urlparse
 
     from app.core.config import settings
@@ -36,18 +37,30 @@ def run_dev_server(
         parsed_url = urlparse(settings.DATABASE_URL)
         db_path_str = parsed_url.path.lstrip('/')
 
-        if not os.path.exists(db_path_str):
+        is_first_run = not os.path.exists(db_path_str)
+
+        if is_first_run:
             print(f"--- Database not found at {db_path_str}, "
                   "initializing new database... ---")
             subprocess.run([sys.executable, "db", "init-db"], check=True)
             print("--- Database initialization complete. ---")
+            print("--- Skipping asset seeding on first run (complete setup first) ---")
+        else:
+            # Only seed in background on subsequent runs (database already exists)
+            # This avoids database locking issues during first-time user setup
+            def seed_in_background():
+                import time
+                # Wait a bit for server to stabilize
+                time.sleep(5)
+                print("--- Starting background asset seeding ---")
+                try:
+                    subprocess.run([sys.executable, "db", "seed-assets"], check=True)
+                    print("--- Asset seeding complete ---")
+                except Exception as e:
+                    print(f"--- Asset seeding failed: {e} ---")
 
-        print("--- Seeding initial asset data ---")
-        try:
-            subprocess.run([sys.executable, "db", "seed-assets"], check=True)
-            print("--- Asset seeding complete ---")
-        except Exception as e:
-            print(f"--- Asset seeding failed: {e} ---")
+            seed_thread = threading.Thread(target=seed_in_background, daemon=True)
+            seed_thread.start()
 
     uvicorn.run(fastapi_app, host=host, port=port)
 
