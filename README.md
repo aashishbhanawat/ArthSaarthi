@@ -77,6 +77,30 @@ This project was built with a strong emphasis on developer experience and mainta
 
 ---
 
+## ⚠️ Disclaimer
+
+### Data Sources
+
+ArthSaarthi uses publicly available data from the following sources for asset master data and market information:
+
+*   **[NSDL (National Securities Depository Limited)](https://nsdl.co.in/)** - Debt instruments master data
+*   **[BSE (Bombay Stock Exchange)](https://www.bseindia.com/)** - Equity and debt bhavcopy, bond data, index data
+*   **[NSE (National Stock Exchange)](https://www.nseindia.com/)** - Equity bhavcopy, debt listings
+*   **[ICICI Direct](https://www.icicidirect.com/)** - Security master data (fallback source)
+
+This application downloads and processes publicly available data from these exchanges for informational purposes only. ArthSaarthi is not affiliated with, endorsed by, or sponsored by any of these organizations.
+
+### Financial Advice Notice
+
+**ArthSaarthi is not a registered investment advisor.** The information provided by this application is for general informational and educational purposes only and should not be construed as financial, investment, tax, or legal advice.
+
+*   All investment decisions should be made in consultation with a qualified financial advisor.
+*   Past performance is not indicative of future results.
+*   The data presented may contain errors or inaccuracies; always verify with official sources.
+*   Users are solely responsible for their investment decisions.
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
