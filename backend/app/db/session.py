@@ -9,7 +9,7 @@ if settings.DATABASE_TYPE == "sqlite":
     engine = create_engine(
         str(settings.DATABASE_URL), connect_args={"check_same_thread": False}
     )
-    
+
     # Enable WAL mode for better concurrent access (prevents "database is locked")
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
