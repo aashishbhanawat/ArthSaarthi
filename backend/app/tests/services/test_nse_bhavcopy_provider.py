@@ -57,7 +57,9 @@ def test_fetch_and_parse_bhavcopy_success(mock_httpx_client_class):
     assert "TCS" in data
     # Should now include 'BE' series as it's not in the excluded list
     assert "INFY" in data
-    assert len(data) == 4
+    # Data is now indexed by both ticker symbol AND ISIN (8 entries)
+    assert "INE002A01018" in data  # RELIANCE ISIN
+    assert len(data) == 8
 
 
 @patch("app.services.providers.nse_bhavcopy_provider.httpx.Client")
@@ -81,7 +83,8 @@ def test_fetch_bhavcopy_with_fallback(mock_httpx_client_class):
 
     assert mock_client_instance.get.call_count == 2
     assert "RELIANCE" in data
-    assert len(data) == 4
+    # Data is now indexed by both ticker symbol AND ISIN (8 entries)
+    assert len(data) == 8
 
 
 def test_get_current_prices(mock_cache_client):
