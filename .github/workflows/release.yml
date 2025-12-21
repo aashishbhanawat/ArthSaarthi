@@ -67,17 +67,29 @@ jobs:
     needs: create-release
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
-            os_name: Windows
+            os_name: Windows (x64)
             build_script: ./scripts/build-windows.sh
+            asset_suffix: Windows-x64
           - os: macos-latest
-            os_name: macOS
+            os_name: macOS (Apple Silicon)
             build_script: ./scripts/build-macos.sh
+            asset_suffix: macOS-arm64
+          - os: macos-13
+            os_name: macOS (Intel)
+            build_script: ./scripts/build-macos-intel.sh
+            asset_suffix: macOS-x64
           - os: ubuntu-latest
-            os_name: Linux
+            os_name: Linux (x64)
             build_script: ./scripts/build-linux.sh
+            asset_suffix: Linux-x64
+          - os: ubuntu-22.04-arm
+            os_name: Linux (ARM64)
+            build_script: ./scripts/build-linux-arm64.sh
+            asset_suffix: Linux-arm64
 
     steps:
       - name: Checkout repository
@@ -124,7 +136,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: ${{ steps.find_exe.outputs.path }}
-          asset_name: ArthSaarthi-Windows-Setup-${{ github.ref_name }}.exe
+          asset_name: ArthSaarthi-${{ matrix.asset_suffix }}-Setup-${{ github.ref_name }}.exe
           asset_content_type: application/vnd.microsoft.portable-executable
 
       - name: Find macOS Installer
@@ -140,7 +152,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: ${{ steps.find_dmg.outputs.path }}
-          asset_name: ArthSaarthi-macOS-${{ github.ref_name }}.dmg
+          asset_name: ArthSaarthi-${{ matrix.asset_suffix }}-${{ github.ref_name }}.dmg
           asset_content_type: application/x-apple-diskimage
 
       - name: Find Linux AppImage
@@ -156,7 +168,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: ${{ steps.find_appimage.outputs.path }}
-          asset_name: ArthSaarthi-Linux-${{ github.ref_name }}.AppImage
+          asset_name: ArthSaarthi-${{ matrix.asset_suffix }}-${{ github.ref_name }}.AppImage
           asset_content_type: application/vnd.appimage
 
       - name: Find Linux Deb
@@ -172,7 +184,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: ${{ steps.find_deb.outputs.path }}
-          asset_name: ArthSaarthi-Linux-${{ github.ref_name }}.deb
+          asset_name: ArthSaarthi-${{ matrix.asset_suffix }}-${{ github.ref_name }}.deb
           asset_content_type: application/vnd.debian.binary-package
 
   upload-docs-and-source:
