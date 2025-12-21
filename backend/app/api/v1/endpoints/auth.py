@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -17,10 +18,17 @@ from app.schemas.auth import Status
 from app.schemas.msg import Msg
 from app.schemas.user import User, UserCreate, UserPasswordChange
 from app.services.audit_logger import log_event
+from app.models.asset import Asset
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
+
+
+class InitStatus(BaseModel):
+    setup_needed: bool
+    assets_ready: bool
+    asset_count: int
 
 
 @router.get("/status", response_model=Status)
@@ -28,6 +36,21 @@ def get_setup_status(db: Session = Depends(get_db)):
     """Check if the initial admin user has been created."""
     user_count = db.query(user_model.User).count()
     return {"setup_needed": user_count == 0}
+
+
+@router.get("/init-status", response_model=InitStatus)
+def get_init_status(db: Session = Depends(get_db)):
+    """
+    Check initialization status for desktop mode.
+    Returns setup_needed and assets_ready to help UI show appropriate state.
+    """
+    user_count = db.query(user_model.User).count()
+    asset_count = db.query(Asset).count()
+    return {
+        "setup_needed": user_count == 0,
+        "assets_ready": asset_count > 1000,  # Consider ready if > 1000 assets
+        "asset_count": asset_count,
+    }
 
 
 @router.post("/setup", response_model=User)
