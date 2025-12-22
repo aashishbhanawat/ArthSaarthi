@@ -10,6 +10,7 @@ This document outlines planned features and improvements for future releases.
 |-------|-------------|
 | Privacy setting for PPF/Bond | Privacy toggle not being applied on portfolio page |
 | Bond edit modal type | Edit modal shows "Stock" instead of "Bond" |
+| **Sharpe ratio per-portfolio** | Same value for all portfolios (using combined history) |
 
 ---
 
@@ -54,6 +55,17 @@ Requires PDF parsing with multi-section structure (KFintech).
 
 ---
 
+### P2: Dividend Statement Import
+
+| Source | Format |
+|--------|--------|
+| **Zerodha Dividend** | Excel (XLSX) |
+| **ICICI Dividend** | PDF |
+
+Creates DIVIDEND transactions with TDS tracking.
+
+---
+
 ### P2: Corporate Actions
 
 | Feature | Description |
@@ -88,6 +100,12 @@ Requires PDF parsing with multi-section structure (KFintech).
 ---
 
 ## Future Versions (v1.2+)
+
+### Historical Price Caching (NFR-Analytics-1)
+- **Daily Portfolio Snapshots** - Cache daily valuations for history chart
+- **MF NAV History** - Fetch and cache from AMFI for 1 year
+- **Bond Price History** - Cache NSE prices or use amortized cost
+- **Enhanced Sharpe Ratio** - Use cached history for all asset types
 
 ### Analytics & Reporting
 - Capital gains report for tax filing
