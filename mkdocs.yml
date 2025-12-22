@@ -5,6 +5,7 @@ site_url: https://aashishbhanawat.github.io/ArthSaarthi/
 
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - navigation.tabs
     - navigation.sections
@@ -31,6 +32,7 @@ theme:
 # All paths in nav are relative to the 'docs' directory
 nav:
   - 'Project Overview': index.md
+  - 'Downloads': downloads.md
   - 'Installation': installation_guide.md
   - 'User Guide': user_guide.md
   - 'User Guide (Visual)': user_guide/index.html
@@ -38,6 +40,7 @@ nav:
   - 'Development History': workflow_history.md
   - 'Troubleshooting': troubleshooting.md
   - 'Bug Reports': bug_reports.md
+  - 'Roadmap': roadmap.md
   - 'Development':
     - 'Architecture': architecture.md
     - 'Developer Guide': developer_guide.md

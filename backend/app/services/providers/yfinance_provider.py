@@ -325,10 +325,16 @@ class YFinanceProvider(FinancialDataProvider):
         for yf_ticker_str in [
             f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
         ]:
-            temp_ticker = yf.Ticker(yf_ticker_str)
-            if not temp_ticker.history(period="1d").empty:
-                ticker_obj = temp_ticker
-                break
+            try:
+                temp_ticker = yf.Ticker(yf_ticker_str)
+                if not temp_ticker.history(period="1d").empty:
+                    ticker_obj = temp_ticker
+                    break
+            except (ValueError, Exception) as e:
+                # yfinance raises ValueError for invalid ISIN-formatted symbols
+                # (e.g., bond ISINs like "IN0020210129" that start with country codes)
+                logger.debug(f"yfinance rejected ticker {yf_ticker_str}: {e}")
+                continue
         if ticker_obj:
             hist = ticker_obj.history(period="2d")
             if not hist.empty:
