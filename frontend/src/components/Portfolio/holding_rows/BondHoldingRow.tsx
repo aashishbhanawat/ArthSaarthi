@@ -1,6 +1,6 @@
 import React from 'react';
 import { Holding } from '../../../types/holding';
-import { formatCurrency, formatPercentage, formatDate } from '../../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatPercentage, formatDate } from '../../../utils/formatting';
 
 interface BondHoldingRowProps {
     holding: Holding;
@@ -8,6 +8,7 @@ interface BondHoldingRowProps {
 }
 
 const BondHoldingRow: React.FC<BondHoldingRowProps> = ({ holding, onRowClick }) => {
+    const formatCurrency = usePrivacySensitiveCurrency();
     return (
         <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer" onClick={() => onRowClick(holding)}>
             <td className="p-2">
@@ -29,3 +30,4 @@ const BondHoldingRow: React.FC<BondHoldingRowProps> = ({ holding, onRowClick }) 
 };
 
 export default BondHoldingRow;
+

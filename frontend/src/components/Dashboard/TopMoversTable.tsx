@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePrivacySensitiveCurrency, formatPercentage } from '../../utils/formatting';
+import { formatCurrency, formatPercentage } from '../../utils/formatting';
 import { TopMover } from '../../types/dashboard';
 
 
@@ -8,7 +8,7 @@ interface TopMoversTableProps {
 }
 
 const TopMoversTable: React.FC<TopMoversTableProps> = ({ assets }) => {
-  const formatCurrency = usePrivacySensitiveCurrency();
+  // Note: All data here is public market data, not personal holdings
   const getPnlColor = (value: number) => {
     if (value > 0) return 'text-green-600';
     if (value < 0) return 'text-red-600';

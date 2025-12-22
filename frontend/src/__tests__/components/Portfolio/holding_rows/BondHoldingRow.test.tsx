@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import BondHoldingRow from '../../../../components/Portfolio/holding_rows/BondHoldingRow';
 import { formatDate } from '../../../../utils/formatting';
 import { Holding } from '../../../types/holding';
+import { PrivacyProvider } from '../../../../context/PrivacyContext';
 
 const mockHolding: Holding = {
     asset_id: '3',
@@ -29,11 +30,13 @@ const mockHolding: Holding = {
 describe('BondHoldingRow', () => {
     it('renders the bond holding data correctly', () => {
         render(
-            <table>
-                <tbody>
-                    <BondHoldingRow holding={mockHolding} />
-                </tbody>
-            </table>
+            <PrivacyProvider>
+                <table>
+                    <tbody>
+                        <BondHoldingRow holding={mockHolding} onRowClick={() => { }} />
+                    </tbody>
+                </table>
+            </PrivacyProvider>
         );
 
         expect(screen.getByText('NHAI Bond')).toBeInTheDocument();
@@ -44,3 +47,4 @@ describe('BondHoldingRow', () => {
         expect(screen.getByText('₹10,500.00')).toBeInTheDocument();
     });
 });
+
