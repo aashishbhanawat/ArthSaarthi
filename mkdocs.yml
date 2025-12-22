@@ -39,6 +39,7 @@ nav:
   - 'Development History': workflow_history.md
   - 'Troubleshooting': troubleshooting.md
   - 'Bug Reports': bug_reports.md
+  - 'Roadmap': roadmap.md
   - 'Development':
     - 'Architecture': architecture.md
     - 'Developer Guide': developer_guide.md
