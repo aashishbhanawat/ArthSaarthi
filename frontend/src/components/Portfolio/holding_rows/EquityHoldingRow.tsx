@@ -1,6 +1,6 @@
 import React from 'react';
 import { Holding } from '../../../types/holding';
-import { usePrivacySensitiveCurrency, formatPercentage } from '../../../utils/formatting';
+import { formatCurrency, usePrivacySensitiveCurrency, formatPercentage } from '../../../utils/formatting';
 
 interface EquityHoldingRowProps {
     holding: Holding;
@@ -8,14 +8,14 @@ interface EquityHoldingRowProps {
 }
 
 const PnlCell: React.FC<{ value: number; currency?: string; isPercentage?: boolean }> = ({ value, currency = 'INR', isPercentage = false }) => {
-    const formatCurrency = usePrivacySensitiveCurrency();
+    const formatPrivateCurrency = usePrivacySensitiveCurrency();
     const getPnlColor = (pnl: number) => {
         if (pnl > 0) return 'text-green-600';
         if (pnl < 0) return 'text-red-600';
         return 'text-gray-900';
     };
 
-    const formattedValue = isPercentage ? formatPercentage(value) : formatCurrency(value, currency);
+    const formattedValue = isPercentage ? formatPercentage(value) : formatPrivateCurrency(value, currency);
 
     return (
         <td className={`p-2 text-right font-mono ${getPnlColor(value)}`}>
@@ -25,7 +25,7 @@ const PnlCell: React.FC<{ value: number; currency?: string; isPercentage?: boole
 };
 
 const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick }) => {
-    const formatCurrency = usePrivacySensitiveCurrency();
+    const formatPrivateCurrency = usePrivacySensitiveCurrency();
     return (
         <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer" onClick={() => onRowClick(holding)}>
             <td className="p-2">
@@ -35,9 +35,9 @@ const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick
                 </div>
             </td>
             <td className="p-2 text-right font-mono">{Number(holding.quantity).toLocaleString()}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(holding.average_buy_price, 'INR')}</td>
+            <td className="p-2 text-right font-mono">{formatPrivateCurrency(holding.average_buy_price, 'INR')}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.current_price, holding.currency)}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(holding.current_value, 'INR')}</td>
+            <td className="p-2 text-right font-mono">{formatPrivateCurrency(holding.current_value, 'INR')}</td>
             <PnlCell value={holding.days_pnl} currency="INR" />
             <PnlCell value={holding.unrealized_pnl} currency="INR" />
             <PnlCell value={holding.unrealized_pnl_percentage} isPercentage />
@@ -46,3 +46,4 @@ const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick
 };
 
 export default EquityHoldingRow;
+
