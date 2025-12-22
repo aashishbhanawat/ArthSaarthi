@@ -106,10 +106,21 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
 
 
 def _get_portfolio_history(
-    db: Session, *, user: User, range_str: str
+    db: Session,
+    *,
+    user: User,
+    range_str: str,
+    portfolio_id: uuid.UUID | None = None,
 ) -> List[Dict[str, Any]]:
     """
     Calculates the portfolio's total value over a specified time range.
+
+    Args:
+        db: Database session
+        user: The user whose portfolio history to calculate
+        range_str: Time range ("7d", "30d", "1y", "all")
+        portfolio_id: Optional. If provided, calculate history for only this
+                      portfolio. If None, calculate for all user portfolios.
     """
     from app import crud  # Local import to break circular dependency
 
@@ -121,23 +132,32 @@ def _get_portfolio_history(
     elif range_str == "1y":
         start_date = end_date - timedelta(days=365)
     else:  # "all"
-        first_transaction = (
-            db.query(crud.transaction.model)
-            .filter(crud.transaction.model.user_id == user.id)
-            .order_by(crud.transaction.model.transaction_date.asc())
-            .first()
+        first_txn_query = db.query(crud.transaction.model).filter(
+            crud.transaction.model.user_id == user.id
         )
+        if portfolio_id:
+            first_txn_query = first_txn_query.filter(
+                crud.transaction.model.portfolio_id == portfolio_id
+            )
+        first_transaction = first_txn_query.order_by(
+            crud.transaction.model.transaction_date.asc()
+        ).first()
         start_date = (
             first_transaction.transaction_date.date() if first_transaction else end_date
         )
 
-    all_user_assets = (
+    # Build asset query with optional portfolio filter
+    asset_query = (
         db.query(crud.asset.model)
         .join(crud.transaction.model)
         .filter(crud.transaction.model.user_id == user.id)
-        .distinct()
-        .all()
     )
+    if portfolio_id:
+        asset_query = asset_query.filter(
+            crud.transaction.model.portfolio_id == portfolio_id
+        )
+    all_user_assets = asset_query.distinct().all()
+
     if not all_user_assets:
         return []
 
@@ -178,15 +198,18 @@ def _get_portfolio_history(
             assets=fx_tickers_list, start_date=start_date, end_date=end_date
         )
 
-    transactions = (
-        db.query(crud.transaction.model)
-        .filter(
-            crud.transaction.model.user_id == user.id,
-            crud.transaction.model.transaction_date <= end_date,
-        )
-        .order_by(crud.transaction.model.transaction_date.asc())
-        .all()
+    # Build transactions query with optional portfolio filter
+    txn_query = db.query(crud.transaction.model).filter(
+        crud.transaction.model.user_id == user.id,
+        crud.transaction.model.transaction_date <= end_date,
     )
+    if portfolio_id:
+        txn_query = txn_query.filter(
+            crud.transaction.model.portfolio_id == portfolio_id
+        )
+    transactions = txn_query.order_by(
+        crud.transaction.model.transaction_date.asc()
+    ).all()
 
     history_points = []
     current_day = start_date

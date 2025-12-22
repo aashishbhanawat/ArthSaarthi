@@ -78,7 +78,7 @@ jobs:
             os_name: macOS (Apple Silicon)
             build_script: ./scripts/build-macos.sh
             asset_suffix: macOS-arm64
-          - os: macos-13
+          - os: macos-15
             os_name: macOS (Intel)
             build_script: ./scripts/build-macos-intel.sh
             asset_suffix: macOS-x64

@@ -518,7 +518,9 @@ class CRUDAnalytics:
             return 0.0
         user = portfolio.user
 
-        history_points = _get_portfolio_history(db=db, user=user, range_str="all")
+        history_points = _get_portfolio_history(
+            db=db, user=user, portfolio_id=portfolio_id, range_str="all"
+        )
         if len(history_points) < 2:
             logger.debug("Sharpe ratio: Not enough history points (<2).")
             return 0.0
