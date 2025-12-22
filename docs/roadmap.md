@@ -43,13 +43,14 @@ Support importing Mutual Fund transactions from major sources.
 
 ---
 
-### P2: MF Import - KFintech
+### P2: MF Import - KFintech & Others
 
 | Source | Format | Coverage |
 |--------|--------|----------|
 | **KFintech** | PDF | Full history (SBI, Axis, UTI, Nippon, Mirae, etc.) |
+| **Zerodha Coin** | Excel/CSV | Direct MF via Zerodha |
 
-Requires PDF parsing with multi-section structure.
+Requires PDF parsing with multi-section structure (KFintech).
 
 ---
 
@@ -82,7 +83,6 @@ Requires PDF parsing with multi-section structure.
 | Feature | Description |
 |---------|-------------|
 | Windows ARM64 native | Currently uses x64 via emulation |
-| Zerodha Coin MF parser | Direct Coin export import |
 | ICICI Direct MF PDF | Lower priority if CAMS covers same AMCs |
 
 ---
