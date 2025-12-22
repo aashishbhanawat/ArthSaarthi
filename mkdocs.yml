@@ -3,13 +3,9 @@ site_description: 'Technical and user documentation for the ArthSaarthi personal
 site_author: 'Aashish Bhanawat'
 site_url: https://aashishbhanawat.github.io/ArthSaarthi/
 
-extra:
-  meta:
-    - name: google-site-verification
-      content: szoE5SZCa1JS13u9tE06AYbllKPQv0F4Ji4vqa_Nkgg
-
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - navigation.tabs
     - navigation.sections
