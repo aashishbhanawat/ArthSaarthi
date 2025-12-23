@@ -541,8 +541,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
         if (assetType === 'PPF Account') {
             if (existingPpfAsset) {
-                // Add a new contribution to an existing PPF account
-                const payload: TransactionCreate = {
+                // Contribution to an existing PPF account
+                const payload = {
                     asset_id: existingPpfAsset.id!,
                     transaction_type: 'CONTRIBUTION' as TransactionType,
                     quantity: data.contributionAmount!,
@@ -550,7 +550,24 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     transaction_date: new Date(data.contributionDate!).toISOString(),
                     details,
                 };
-                createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+
+                if (isEditMode && transactionToEdit) {
+                    // Update existing contribution
+                    const updatePayload: TransactionUpdate = {
+                        quantity: data.contributionAmount!,
+                        price_per_unit: 1,
+                        transaction_date: new Date(data.contributionDate!).toISOString(),
+                        details,
+                    };
+                    updateTransactionMutation.mutate({
+                        portfolioId,
+                        transactionId: transactionToEdit.id,
+                        data: updatePayload
+                    }, mutationOptions);
+                } else {
+                    // Add new contribution
+                    createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+                }
             } else {
                 // Create a new PPF account and the first contribution
                 createPpfAccountMutation.mutate({
