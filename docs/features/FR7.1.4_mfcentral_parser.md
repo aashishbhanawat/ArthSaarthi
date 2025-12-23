@@ -90,11 +90,11 @@ Enable users to import Mutual Fund transactions from MFCentral Excel export. MFC
 
 ## 6. Acceptance Criteria
 
-- [ ] User can select "MFCentral" as statement type
-- [ ] Parser correctly extracts all transaction types
-- [ ] Scheme names are matched to AMFI codes
-- [ ] Unmatched schemes trigger asset alias mapping UI
-- [ ] Transactions are correctly committed to portfolio
+- [x] User can select "MFCentral" as statement type
+- [x] Parser correctly extracts all transaction types
+- [x] Scheme names are matched to AMFI codes (via alias modal)
+- [x] Unmatched schemes trigger asset alias mapping UI
+- [x] Transactions are correctly committed to portfolio
 
 ---
 
