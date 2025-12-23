@@ -1,4 +1,48 @@
-## 2025-12-16: Implement Manual Asset Seeding (FR2.3)
+## 2025-12-23: Implement Dark Theme Support (PR #172)
+
+**Task:** Implement comprehensive dark mode styling across the ArthSaarthi application, including modals, forms, and all major pages.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented class-based dark mode using Tailwind CSS with user preference persistence and system preference detection.
+
+1.  **Core Infrastructure:**
+    *   Enabled `darkMode: 'class'` in `tailwind.config.js`.
+    *   Created `ThemeContext.tsx` with `ThemeProvider` and `useTheme` hook.
+    *   Added dark mode variants to `index.css` for buttons, modals, forms, tables, and scrollbars.
+    *   Added theme toggle button to `NavBar.tsx` with Sun/Moon icons.
+
+2.  **Component Styling:**
+    *   **Modals:** BondDetailModal, HoldingDetailModal, FixedDepositDetailModal, RecurringDepositDetailModal, PpfHoldingDetailModal, SessionTimeoutModal, DeleteConfirmationModal.
+    *   **Forms:** TransactionFormModal (PPF section, INR Conversion, FD selects).
+    *   **Goals:** GoalList, GoalDetailView.
+    *   **Auth:** AuthPage, LoginForm.
+
+3.  **Bug Fixes:**
+    *   Fixed FD Compounding/Interest Payout dropdown values (uppercase: `QUARTERLY`, `CUMULATIVE`).
+    *   Fixed select element text visibility in dark mode with explicit CSS.
+    *   Updated test expectations in `TransactionFormModal.test.tsx`.
+
+### File Changes
+
+*   **New:** `frontend/src/context/ThemeContext.tsx`
+*   **Modified:** `tailwind.config.js`, `frontend/src/index.css`, `frontend/src/App.tsx`, `frontend/src/components/NavBar.tsx`
+*   **Modified:** 6 detail modals, 2 auth pages, 2 goal components, `TransactionFormModal.tsx`, `DeleteConfirmationModal.tsx`, `SessionTimeoutModal.tsx`
+*   **Modified:** `frontend/src/__tests__/components/Portfolio/TransactionFormModal.test.tsx` (test fix)
+
+### Verification
+
+*   **Tests:** Frontend tests pass (175/175), including updated FD test expectations.
+*   **Lint:** All linters pass (eslint-disable added for ThemeContext).
+
+### Outcome
+
+**Success.** Dark mode is fully functional with user-persisted preferences and system preference fallback.
+
+
 
 *   **Task Description:** Implemented admin-only manual asset sync endpoint allowing administrators to trigger asset master data updates from the UI without restarting the server.
 

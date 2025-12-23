@@ -18,10 +18,11 @@ import GoalDetailPage from './pages/GoalDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
+import { ThemeProvider } from './context/ThemeContext';
 import AssetLoadingBanner from './components/AssetLoadingBanner';
 
 const AppLayout = () => (
-  <div className="flex flex-col h-screen bg-gray-50">
+  <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
     <AssetLoadingBanner />
     <div className="grid grid-cols-[auto_1fr] flex-1 overflow-hidden">
       <NavBar />
@@ -66,9 +67,11 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <AppRoutes />
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AppRoutes />
+        </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

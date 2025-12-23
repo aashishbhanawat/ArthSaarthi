@@ -17,10 +17,10 @@ const DepositHoldingRow: React.FC<DepositHoldingRowProps> = ({ holding, onRowCli
     };
 
     return (
-        <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer" onClick={() => onRowClick(holding)}>
+        <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer dark:border-gray-700 dark:hover:bg-gray-700/50" onClick={() => onRowClick(holding)}>
             <td className="p-2">
-                <div className="font-semibold text-gray-900">{holding.asset_name}</div>
-                <div className="text-sm text-gray-500">{holding.account_number}</div>
+                <div className="font-semibold text-gray-900 dark:text-gray-100">{holding.asset_name}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{holding.account_number}</div>
             </td>
             <td className="p-2 text-right font-mono">{assetTypeDisplay(holding.asset_type)}</td>
             <td className="p-2 text-right font-mono">{formatInterestRate(holding.interest_rate)}</td>

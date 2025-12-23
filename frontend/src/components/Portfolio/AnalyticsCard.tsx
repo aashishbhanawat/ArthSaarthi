@@ -25,11 +25,11 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ analytics, isLoading, err
             <h3 className="text-lg font-semibold mb-2">Advanced Analytics</h3>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <p className="text-sm text-gray-500">XIRR</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">XIRR</p>
                     <p className="text-xl font-bold">{analytics.xirr != null ? `${(analytics.xirr * 100).toFixed(2)}%` : 'N/A'}</p>
                 </div>
                 <div>
-                    <p className="text-sm text-gray-500">Sharpe Ratio</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Sharpe Ratio</p>
                     <p className="text-xl font-bold">{analytics.sharpe_ratio != null ? analytics.sharpe_ratio.toFixed(2) : 'N/A'}</p>
                 </div>
             </div>

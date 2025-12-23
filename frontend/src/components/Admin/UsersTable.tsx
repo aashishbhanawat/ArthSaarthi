@@ -10,20 +10,20 @@ interface UsersTableProps {
 const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete }) => {
   return (
     <div className="card overflow-x-auto">
-      <table className="min-w-full bg-white">
-        <thead className="bg-gray-200">
+      <table className="min-w-full bg-white dark:bg-gray-800">
+        <thead className="bg-gray-200 dark:bg-gray-700">
           <tr>
-            <th className="text-left py-3 px-4 uppercase font-semibold text-sm">Email</th>
-            <th className="text-left py-3 px-4 uppercase font-semibold text-sm">Role</th>
-            <th className="text-right py-3 px-4 uppercase font-semibold text-sm">Actions</th>
+            <th className="text-left py-3 px-4 uppercase font-semibold text-sm dark:text-gray-300">Email</th>
+            <th className="text-left py-3 px-4 uppercase font-semibold text-sm dark:text-gray-300">Role</th>
+            <th className="text-right py-3 px-4 uppercase font-semibold text-sm dark:text-gray-300">Actions</th>
           </tr>
         </thead>
-        <tbody className="text-gray-700">
+        <tbody className="text-gray-700 dark:text-gray-300">
           {users.map((user) => (
-            <tr key={user.id} className="border-b odd:bg-gray-50">
+            <tr key={user.id} className="border-b dark:border-gray-700 odd:bg-gray-50 dark:odd:bg-gray-700/50">
               <td className="text-left py-3 px-4">{user.email}</td>
               <td className="text-left py-3 px-4">
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_admin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_admin ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'}`}>
                   {user.is_admin ? 'Admin' : 'User'}
                 </span>
               </td>
