@@ -178,11 +178,18 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 // Format date for input[type=date] which expects 'YYYY-MM-DD'
                 const formattedDate = new Date(transactionToEdit.transaction_date).toISOString().split('T')[0];
 
-                // DEBUG: Log asset type values to diagnose issue #151
+                // Map API asset_type to form asset_type
+                // API returns: 'BOND', 'Mutual Fund', 'PPF', 'Stock', etc.
+                // Form expects: 'Bond', 'Mutual Fund', 'PPF Account', 'Stock', etc.
                 const rawAssetType = transactionToEdit.asset.asset_type;
-                const computedAssetType = (['Mutual Fund', 'Bond', 'PPF'].includes(rawAssetType)
-                    ? rawAssetType as TransactionFormInputs['asset_type']
-                    : 'Stock');
+                const assetTypeMap: { [key: string]: TransactionFormInputs['asset_type'] } = {
+                    'BOND': 'Bond',
+                    'Bond': 'Bond',
+                    'Mutual Fund': 'Mutual Fund',
+                    'PPF': 'PPF Account',
+                    'Stock': 'Stock',
+                };
+                const computedAssetType = assetTypeMap[rawAssetType] || 'Stock';
                 debugLog('transaction', 'Edit mode - asset object:', transactionToEdit.asset);
                 debugLog('transaction', `Edit mode - rawAssetType: "${rawAssetType}", computedAssetType: "${computedAssetType}"`);
 
