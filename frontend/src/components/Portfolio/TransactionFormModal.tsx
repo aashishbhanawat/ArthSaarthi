@@ -14,6 +14,7 @@ import { RecurringDepositDetails } from '../../types/recurring_deposit'; // esli
 import { ApiError, getErrorMessage } from '../../types/api';
 import Select from 'react-select';
 import { formatCurrency } from '../../utils/formatting';
+import { debugLog } from '../../utils/debug';
 
 interface TransactionFormModalProps {
     portfolioId: string;
@@ -174,9 +175,24 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 // Format date for input[type=date] which expects 'YYYY-MM-DD'
                 const formattedDate = new Date(transactionToEdit.transaction_date).toISOString().split('T')[0];
 
+                // Map API asset_type to form asset_type
+                // API returns: 'BOND', 'Mutual Fund', 'PPF', 'Stock', etc.
+                // Form expects: 'Bond', 'Mutual Fund', 'PPF Account', 'Stock', etc.
+                const rawAssetType = transactionToEdit.asset.asset_type;
+                const assetTypeMap: { [key: string]: TransactionFormInputs['asset_type'] } = {
+                    'BOND': 'Bond',
+                    'Bond': 'Bond',
+                    'Mutual Fund': 'Mutual Fund',
+                    'PPF': 'PPF Account',
+                    'Stock': 'Stock',
+                };
+                const computedAssetType = assetTypeMap[rawAssetType] || 'Stock';
+                debugLog('transaction', 'Edit mode - asset object:', transactionToEdit.asset);
+                debugLog('transaction', `Edit mode - rawAssetType: "${rawAssetType}", computedAssetType: "${computedAssetType}"`);
+
                 reset({
                     transaction_type: transactionToEdit.transaction_type as TransactionFormInputs['transaction_type'],
-                    asset_type: transactionToEdit.asset.asset_type === 'Mutual Fund' ? 'Mutual Fund' : 'Stock',
+                    asset_type: computedAssetType,
                     quantity: Number(transactionToEdit.quantity),
                     price_per_unit: Number(transactionToEdit.price_per_unit),
                     transaction_date: formattedDate,
