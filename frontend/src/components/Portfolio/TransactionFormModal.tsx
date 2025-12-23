@@ -198,6 +198,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     transaction_date: formattedDate,
                     fees: Number(transactionToEdit.fees),
                     details: transactionToEdit.details ?? undefined,
+                    // PPF contribution fields - quantity represents the contribution amount
+                    ...(computedAssetType === 'PPF Account' && {
+                        contributionAmount: Number(transactionToEdit.quantity),
+                        contributionDate: formattedDate,
+                    }),
                 });
                 setSelectedAsset(transactionToEdit.asset);
                 setInputValue(transactionToEdit.asset.name);
@@ -939,7 +944,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             <p className="text-sm text-gray-600">Institution: {existingPpfAsset.name}</p>
                                             <p className="text-sm text-gray-600">Account #: {existingPpfAsset.account_number}</p>
                                         </div>
-                                        <h3 className="font-semibold text-lg text-gray-800 mb-2">Add New Contribution</h3>
+                                        <h3 className="font-semibold text-lg text-gray-800 mb-2">
+                                            {isEditMode ? 'Edit Contribution' : 'Add New Contribution'}
+                                        </h3>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="form-group">
                                                 <label htmlFor="contributionAmount" className="form-label">Contribution Amount (₹)</label>
