@@ -129,7 +129,7 @@ const PortfolioDetailPage: React.FC = () => {
     return (
         <div>
             <div className="mb-8">
-                <Link to="/portfolios" className="text-blue-600 hover:underline text-sm">
+                <Link to="/portfolios" className="text-blue-600 hover:underline text-sm dark:text-blue-400">
                     &larr; Back to Portfolios
                 </Link>
                 <div className="flex justify-between items-center mt-2">
@@ -159,10 +159,10 @@ const PortfolioDetailPage: React.FC = () => {
                             {isAddDropdownOpen && (
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setAddDropdownOpen(false)}></div>
-                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200 top-full">
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200 top-full dark:bg-gray-800 dark:border-gray-700">
                                         <button
                                             onClick={() => { setAddAwardModalOpen(true); setAddDropdownOpen(false); }}
-                                            className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                                            className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
                                         >
                                             Add ESPP/RSU Award
                                         </button>
@@ -172,7 +172,7 @@ const PortfolioDetailPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <p className="text-gray-600 mt-1">{portfolio.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">{portfolio.description}</p>
             </div>
 
             <PortfolioSummary summary={summary} isLoading={isSummaryLoading} error={summaryError} />
@@ -275,10 +275,10 @@ const PortfolioDetailPage: React.FC = () => {
                         fdToDelete
                             ? `Are you sure you want to delete the FD "${fdToDelete.asset_name}"? This action cannot be undone.`
                             : rdToDelete
-                            ? `Are you sure you want to delete the RD "${rdToDelete.asset_name}"? This action cannot be undone.`
-                            : bondToDelete
-                            ? `Are you sure you want to delete the bond "${bondToDelete.asset_name}" and all its transactions? This action cannot be undone.`
-                            : `Are you sure you want to delete this ${transactionToDelete?.transaction_type} transaction of ${Number(transactionToDelete?.quantity).toLocaleString()} units? This action cannot be undone.`
+                                ? `Are you sure you want to delete the RD "${rdToDelete.asset_name}"? This action cannot be undone.`
+                                : bondToDelete
+                                    ? `Are you sure you want to delete the bond "${bondToDelete.asset_name}" and all its transactions? This action cannot be undone.`
+                                    : `Are you sure you want to delete this ${transactionToDelete?.transaction_type} transaction of ${Number(transactionToDelete?.quantity).toLocaleString()} units? This action cannot be undone.`
                     }
                     isDeleting={deleteTransactionMutation.isPending || deleteFixedDepositMutation.isPending || deleteRecurringDepositMutation.isPending || deleteBondMutation.isPending}
                 />

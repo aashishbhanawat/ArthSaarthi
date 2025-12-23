@@ -41,8 +41,8 @@ const DataImportPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-4">Import Transactions</h1>
-            <p className="text-gray-600 mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">Import Transactions</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
                 Upload your transaction history from a CSV file. Select the correct source type for accurate parsing.
             </p>
 
@@ -97,22 +97,22 @@ const DataImportPage: React.FC = () => {
                             <label htmlFor="file-upload" className="form-label">
                                 Upload Statement
                             </label>
-                            <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+                            <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 dark:border-gray-600 px-6 py-10">
                                 <div className="text-center">
-                                    <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
-                                    <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                                    <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-500" aria-hidden="true" />
+                                    <div className="mt-4 flex text-sm leading-6 text-gray-600 dark:text-gray-400">
                                         <label
                                             htmlFor="file-upload"
-                                            className="relative cursor-pointer rounded-md bg-white font-semibold text-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2 hover:text-blue-500"
+                                            className="relative cursor-pointer rounded-md bg-white dark:bg-gray-800 font-semibold text-blue-600 dark:text-blue-400 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2 hover:text-blue-500"
                                         >
                                             <span>Upload a file</span>
                                             <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".csv" />
                                         </label>
                                         <p className="pl-1">or drag and drop</p>
                                     </div>
-                                    <p className="text-xs leading-5 text-gray-600">CSV up to 10MB</p>
+                                    <p className="text-xs leading-5 text-gray-600 dark:text-gray-400">CSV up to 10MB</p>
                                     {selectedFile && (
-                                        <p className="text-sm font-medium text-gray-800 mt-4">
+                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-4">
                                             Selected: {selectedFile.name}
                                         </p>
                                     )}
