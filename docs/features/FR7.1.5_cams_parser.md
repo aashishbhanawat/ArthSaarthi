@@ -82,11 +82,11 @@ Enable users to import Mutual Fund transactions from CAMS (Computer Age Manageme
 
 ## 5. Acceptance Criteria
 
-- [ ] User can select "CAMS Statement" as statement type
-- [ ] Parser handles both XLS and XLSX formats
-- [ ] All transaction types are correctly mapped
-- [ ] Scheme names matched to AMFI codes
-- [ ] Folio numbers stored with transactions
+- [x] User can select "CAMS Statement" as statement type
+- [x] Parser handles both XLS and XLSX formats
+- [x] All transaction types are correctly mapped
+- [x] Scheme names matched to AMFI codes (via alias modal)
+- [x] IDCW Reinvestment creates DIVIDEND + BUY transactions
 
 ---
 

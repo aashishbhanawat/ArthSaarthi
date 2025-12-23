@@ -1,4 +1,5 @@
 from .base_parser import BaseParser
+from .cams_parser import CamsParser
 from .generic_parser import GenericCsvParser
 from .icici_parser import IciciParser
 from .mfcentral_parser import MfCentralParser
@@ -12,6 +13,9 @@ def get_parser(source_type: str) -> BaseParser:
         return IciciParser()
     elif source_type == "MFCentral CAS":
         return MfCentralParser()
+    elif source_type == "CAMS Statement":
+        return CamsParser()
     # Add other parsers here in the future
     else:
         return GenericCsvParser()
+
