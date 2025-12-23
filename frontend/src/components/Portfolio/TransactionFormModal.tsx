@@ -176,7 +176,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
                 reset({
                     transaction_type: transactionToEdit.transaction_type as TransactionFormInputs['transaction_type'],
-                    asset_type: transactionToEdit.asset.asset_type === 'Mutual Fund' ? 'Mutual Fund' : 'Stock',
+                    asset_type: (['Mutual Fund', 'Bond', 'PPF'].includes(transactionToEdit.asset.asset_type)
+                        ? transactionToEdit.asset.asset_type as TransactionFormInputs['asset_type']
+                        : 'Stock'),
                     quantity: Number(transactionToEdit.quantity),
                     price_per_unit: Number(transactionToEdit.price_per_unit),
                     transaction_date: formattedDate,
