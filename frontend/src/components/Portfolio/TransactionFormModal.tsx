@@ -14,6 +14,7 @@ import { RecurringDepositDetails } from '../../types/recurring_deposit'; // esli
 import { ApiError, getErrorMessage } from '../../types/api';
 import Select from 'react-select';
 import { formatCurrency } from '../../utils/formatting';
+import { debugLog } from '../../utils/debug';
 
 interface TransactionFormModalProps {
     portfolioId: string;
@@ -179,9 +180,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 const computedAssetType = (['Mutual Fund', 'Bond', 'PPF'].includes(rawAssetType)
                     ? rawAssetType as TransactionFormInputs['asset_type']
                     : 'Stock');
-                console.log('[DEBUG #151] transactionToEdit.asset:', transactionToEdit.asset);
-                console.log('[DEBUG #151] rawAssetType:', rawAssetType);
-                console.log('[DEBUG #151] computedAssetType:', computedAssetType);
+                debugLog('transaction', 'Edit mode - asset object:', transactionToEdit.asset);
+                debugLog('transaction', `Edit mode - rawAssetType: "${rawAssetType}", computedAssetType: "${computedAssetType}"`);
 
                 reset({
                     transaction_type: transactionToEdit.transaction_type as TransactionFormInputs['transaction_type'],
