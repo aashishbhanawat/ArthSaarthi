@@ -88,13 +88,16 @@ async def create_import_session(
         file_extension = temp_file_path.suffix.lower()
 
         if file_extension in ['.xlsx', '.xls']:
-            # Excel files - for MFCentral CAS we need the Transaction Details sheet
+            # Excel files - handle source-specific sheet/header requirements
             if source_type == "MFCentral CAS":
                 df = pd.read_excel(
                     temp_file_path,
                     sheet_name='Transaction Details',
                     header=None  # MFCentral has header at row 8, parser handles this
                 )
+            elif source_type == "CAMS Statement":
+                # CAMS has headers in row 0
+                df = pd.read_excel(temp_file_path)
             else:
                 # Generic Excel handling
                 df = pd.read_excel(temp_file_path)
