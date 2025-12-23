@@ -117,10 +117,10 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
     if (isLoading) {
         return (
             <div className="card animate-pulse">
-                <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
                 <div className="space-y-2">
                     {Array.from({ length: 5 }).map((_, index) => (
-                        <div key={index} className="h-12 bg-gray-200 rounded"></div>
+                        <div key={index} className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
                     ))}
                 </div>
             </div>
@@ -134,8 +134,8 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
     if (!holdings || holdings.length === 0) {
         return (
             <div className="card text-center p-8">
-                <p className="text-gray-500">You have no current holdings in this portfolio.</p>
-                <p className="text-sm text-gray-400 mt-2">Add a "BUY" transaction to get started.</p>
+                <p className="text-gray-500 dark:text-gray-400">You have no current holdings in this portfolio.</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Add a "BUY" transaction to get started.</p>
             </div>
         );
     }
@@ -157,9 +157,9 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                     };
 
                     return (
-                        <Accordion.Item key={group} value={group} className="border rounded-lg" data-testid={`holdings-section-${group}`}>
+                        <Accordion.Item key={group} value={group} className="border rounded-lg dark:border-gray-700" data-testid={`holdings-section-${group}`}>
                             <Accordion.Header>
-                                <Accordion.Trigger className="flex justify-between items-center w-full p-4 font-semibold text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg">
+                                <Accordion.Trigger className="flex justify-between items-center w-full p-4 font-semibold text-left bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-t-lg">
                                     <span>{config.title} (Total Value: {formatCurrency(totalValue)})</span>
                                     <ChevronDownIcon className="w-5 h-5 transition-transform duration-200 ease-in-out transform group-radix-state-open:rotate-180" />
                                 </Accordion.Trigger>
@@ -167,7 +167,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                             <Accordion.Content className="overflow-x-auto">
                                 <table className="table-auto w-full">
                                     <thead>
-                                        <tr className="text-left text-gray-600 text-sm">
+                                        <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
                                             {config.columns.map((col, index) => (
                                                 <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''} cursor-pointer`} onClick={() => requestSort(group, col.key)}>
                                                     {col.label}{getSortIndicator(col.key)}

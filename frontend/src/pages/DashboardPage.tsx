@@ -29,13 +29,13 @@ const DashboardPage = () => {
         </div>
         <button
           onClick={togglePrivacyMode}
-          className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+          className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           aria-label={isPrivacyMode ? 'Show sensitive data' : 'Hide sensitive data'}
         >
           {isPrivacyMode ? (
-            <EyeSlashIcon className="h-6 w-6 text-gray-600" />
+            <EyeSlashIcon className="h-6 w-6 text-gray-600 dark:text-gray-400" />
           ) : (
-            <EyeIcon className="h-6 w-6 text-gray-600" />
+            <EyeIcon className="h-6 w-6 text-gray-600 dark:text-gray-400" />
           )}
         </button>
       </div>
