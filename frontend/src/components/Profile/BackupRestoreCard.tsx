@@ -64,13 +64,13 @@ const BackupRestoreCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Backup & Restore</h2>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 dark:text-gray-100">Backup & Restore</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Backup Section */}
-                <div className="border rounded-lg p-4 flex flex-col items-start">
-                    <h3 className="font-medium mb-2">Export Data</h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                <div className="border dark:border-gray-700 rounded-lg p-4 flex flex-col items-start">
+                    <h3 className="font-medium mb-2 dark:text-gray-200">Export Data</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         Download a copy of your data including portfolios, transactions, and settings.
                     </p>
                     <button
@@ -84,9 +84,9 @@ const BackupRestoreCard: React.FC = () => {
                 </div>
 
                 {/* Restore Section */}
-                <div className="border rounded-lg p-4 flex flex-col items-start">
-                    <h3 className="font-medium mb-2">Import Data</h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                <div className="border dark:border-gray-700 rounded-lg p-4 flex flex-col items-start">
+                    <h3 className="font-medium mb-2 dark:text-gray-200">Import Data</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         Restore your data from a backup file.
                     </p>
                     <input
@@ -94,7 +94,7 @@ const BackupRestoreCard: React.FC = () => {
                         accept=".json"
                         ref={fileInputRef}
                         onChange={handleFileChange}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4"
+                        className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300 dark:hover:file:bg-blue-800 mb-4"
                     />
                     <button
                         onClick={handleRestoreClick}

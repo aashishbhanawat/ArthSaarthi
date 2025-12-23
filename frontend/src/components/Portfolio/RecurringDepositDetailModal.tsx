@@ -20,18 +20,18 @@ const RecurringDepositDetailModal: React.FC<RecurringDepositDetailModalProps> = 
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content w-full max-w-3xl p-6 border border-gray-200 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content w-full max-w-3xl p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">Holding Detail: {holding.asset_name}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
+                    <h2 className="text-2xl font-bold dark:text-gray-100">Holding Detail: {holding.asset_name}</h2>
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>
 
                 <div className="card mb-4" data-testid="rd-details-section">
-                    <h3 className="text-lg font-semibold mb-2">Details</h3>
-                    {isLoadingDetails ? <p>Loading...</p> : details && (
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                    <h3 className="text-lg font-semibold mb-2 dark:text-gray-100">Details</h3>
+                    {isLoadingDetails ? <p className="dark:text-gray-300">Loading...</p> : details && (
+                        <div className="grid grid-cols-2 gap-2 text-sm dark:text-gray-300">
                             <p><strong>Institution:</strong></p><p>{details.name}</p>
                             <p><strong>Account Number:</strong></p><p>{details.account_number}</p>
                             <p><strong>Monthly Installment:</strong></p><p>{formatCurrency(details.monthly_installment)}</p>
@@ -44,9 +44,9 @@ const RecurringDepositDetailModal: React.FC<RecurringDepositDetailModalProps> = 
                 </div>
 
                 <div className="card mb-4">
-                    <h3 className="text-lg font-semibold mb-2">Valuation</h3>
-                     {isLoadingDetails ? <p>Loading...</p> : details && (
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                    <h3 className="text-lg font-semibold mb-2 dark:text-gray-100">Valuation</h3>
+                    {isLoadingDetails ? <p className="dark:text-gray-300">Loading...</p> : details && (
+                        <div className="grid grid-cols-2 gap-2 text-sm dark:text-gray-300">
                             <p><strong>Current Value:</strong></p><p>{formatCurrency(holding.current_value)}</p>
                             <p><strong>Total Invested:</strong></p><p>{formatCurrency(holding.total_invested_amount)}</p>
                             <p><strong>Unrealized Gain:</strong></p><p>{formatCurrency(holding.unrealized_pnl)}</p>
@@ -56,11 +56,11 @@ const RecurringDepositDetailModal: React.FC<RecurringDepositDetailModalProps> = 
                 </div>
 
                 <div className="card mb-4">
-                    <h3 className="text-lg font-semibold mb-2">Analytics (XIRR)</h3>
-                    {isLoadingAnalytics ? <p>Loading...</p> : analytics && (
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                    <h3 className="text-lg font-semibold mb-2 dark:text-gray-100">Analytics (XIRR)</h3>
+                    {isLoadingAnalytics ? <p className="dark:text-gray-300">Loading...</p> : analytics && (
+                        <div className="grid grid-cols-2 gap-2 text-sm dark:text-gray-300">
                             <p><strong>Annualized Return (XIRR):</strong></p><p>{formatInterestRate(analytics.unrealized_xirr * 100)}</p>
-                         </div>
+                        </div>
                     )}
                 </div>
 

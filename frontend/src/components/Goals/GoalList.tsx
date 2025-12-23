@@ -37,34 +37,34 @@ const GoalList: React.FC<GoalListProps> = ({ goals }) => {
 
   if (goals.length === 0) {
     return (
-      <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <h2 className="text-xl font-semibold text-gray-700">No goals yet.</h2>
-        <p className="text-gray-500 mt-2">Click "Create Goal" to get started with your financial planning.</p>
+      <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">No goals yet.</h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">Click "Create Goal" to get started with your financial planning.</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul role="list" className="divide-y divide-gray-200">
+      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+        <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
           {goals.map((goal) => (
             <li key={goal.id} className="px-4 py-4 sm:px-6">
               <div className="flex items-center justify-between">
-                <Link to={`/goals/${goal.id}`} className="block hover:bg-gray-50 -m-4 p-4 flex-grow">
+                <Link to={`/goals/${goal.id}`} className="block hover:bg-gray-50 dark:hover:bg-gray-700 -m-4 p-4 flex-grow">
                   <div className="flex-1 min-w-0">
-                      <p className="text-xl font-semibold text-blue-600">{goal.name}</p>
-                      <p className="mt-1 flex items-center text-sm text-gray-500">
-                        <span>Target: {formatCurrency(goal.target_amount)}</span>
-                        <span className="mx-2">|</span>
-                        <span>Date: {formatDate(goal.target_date)}</span>
-                      </p>
+                    <p className="text-xl font-semibold text-blue-600 dark:text-blue-400">{goal.name}</p>
+                    <p className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                      <span>Target: {formatCurrency(goal.target_amount)}</span>
+                      <span className="mx-2">|</span>
+                      <span>Date: {formatDate(goal.target_date)}</span>
+                    </p>
                   </div>
                 </Link>
                 <div className="ml-4 flex-shrink-0">
                   <button
                     onClick={() => handleDeleteClick(goal)}
-                    className="btn btn-sm btn-ghost text-red-600 hover:bg-red-50"
+                    className="btn btn-sm btn-ghost text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                     disabled={deleteGoalMutation.isPending && goalToDelete?.id === goal.id}
                   >
                     <TrashIcon className="h-5 w-5" />

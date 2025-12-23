@@ -19,7 +19,7 @@ const SystemMaintenancePage: React.FC = () => {
                         <h3 className="card-title">Coming Soon</h3>
                     </div>
                     <div className="card-body">
-                        <p className="text-gray-500">
+                        <p className="text-gray-500 dark:text-gray-400">
                             More maintenance options will be available here.
                         </p>
                     </div>

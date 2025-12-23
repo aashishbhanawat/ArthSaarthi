@@ -4,34 +4,34 @@
 
 /* A more professional-looking font and background color */
 body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
     font-family: 'Inter', sans-serif;
 }
 
 /* Custom component classes for a consistent design system */
 @layer components {
     .card {
-        @apply bg-white rounded-lg shadow-sm p-6;
+        @apply bg-white rounded-lg shadow-sm p-6 dark:bg-gray-800 dark:shadow-gray-900/20;
     }
 
     .btn {
-        @apply font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+        @apply font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed dark:focus:ring-offset-gray-900;
     }
 
     .btn-primary {
-        @apply bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500;
+        @apply bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600;
     }
 
     .btn-success {
-        @apply bg-green-600 hover:bg-green-700 text-white focus:ring-green-500;
+        @apply bg-green-600 hover:bg-green-700 text-white focus:ring-green-500 dark:bg-green-500 dark:hover:bg-green-600;
     }
 
     .btn-danger {
-        @apply bg-red-600 hover:bg-red-700 text-white focus:ring-red-500;
+        @apply bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600;
     }
 
     .btn-secondary {
-        @apply bg-gray-500 hover:bg-gray-600 text-white focus:ring-gray-400;
+        @apply bg-gray-500 hover:bg-gray-600 text-white focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-700;
     }
 
     .modal-overlay {
@@ -39,11 +39,11 @@ body {
     }
 
     .modal-content {
-        @apply bg-white rounded-lg shadow-xl w-full;
+        @apply bg-white rounded-lg shadow-xl w-full dark:bg-gray-800;
     }
 
     .modal-header {
-        @apply flex justify-between items-center p-4 border-b;
+        @apply flex justify-between items-center p-4 border-b dark:border-gray-700;
     }
 
     .form-group {
@@ -51,10 +51,58 @@ body {
     }
 
     .form-label {
-        @apply block text-gray-700 text-sm font-bold mb-2;
+        @apply block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300;
     }
 
     .form-input {
-        @apply shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500;
+        @apply shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:placeholder-gray-400;
     }
+
+    .form-select {
+        @apply shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600;
+    }
+
+    /* Table styles for dark mode */
+    .table-auto thead {
+        @apply dark:bg-gray-800;
+    }
+
+    .table-auto tbody tr {
+        @apply dark:border-gray-700;
+    }
+
+    .table-auto tbody tr:hover {
+        @apply dark:bg-gray-700/50;
+    }
+
+    /* Select element dark mode styling */
+    .dark select {
+        background-color: #374151 !important;
+        color: #f3f4f6 !important;
+        border-color: #4b5563 !important;
+    }
+
+    .dark select option {
+        background-color: #374151;
+        color: #f3f4f6;
+    }
+}
+
+/* Scrollbar styling for dark mode */
+.dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #374151;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
 }

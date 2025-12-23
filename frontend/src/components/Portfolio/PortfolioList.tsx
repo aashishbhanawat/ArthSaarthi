@@ -28,7 +28,7 @@ const PortfolioList: React.FC<PortfolioListProps> = ({ portfolios }) => {
     };
 
     if (portfolios.length === 0) {
-        return <p className="text-center text-gray-500 mt-8">You don't have any portfolios yet. Create one to get started!</p>;
+        return <p className="text-center text-gray-500 dark:text-gray-400 mt-8">You don't have any portfolios yet. Create one to get started!</p>;
     }
 
     return (
@@ -36,12 +36,12 @@ const PortfolioList: React.FC<PortfolioListProps> = ({ portfolios }) => {
             <div className="space-y-4">
                 {portfolios.map((portfolio) => (
                     <div key={portfolio.id} className="card flex justify-between items-center">
-                        <Link to={`/portfolios/${portfolio.id}`} className="text-xl font-semibold text-blue-600 hover:underline">
+                        <Link to={`/portfolios/${portfolio.id}`} className="text-xl font-semibold text-blue-600 hover:underline dark:text-blue-400">
                             {portfolio.name}
                         </Link>
                         <button
                             onClick={() => handleDeleteClick(portfolio)}
-                            className="btn btn-sm btn-ghost text-red-600 hover:bg-red-50"
+                            className="btn btn-sm btn-ghost text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
                             disabled={deletePortfolioMutation.isPending}
                             aria-label={`Delete portfolio ${portfolio.name}`}>
                             <TrashIcon className="h-5 w-5" />
