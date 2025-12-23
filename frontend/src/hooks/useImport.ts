@@ -53,6 +53,8 @@ export const useCommitImportSession = () => {
             queryClient.invalidateQueries({ queryKey: ['importSession', sessionId] });
             queryClient.invalidateQueries({ queryKey: ['importSessionPreview', sessionId] });
             queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['transactions', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });

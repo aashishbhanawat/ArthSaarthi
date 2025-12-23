@@ -712,9 +712,14 @@ class CRUDHolding:
         )
         for holding_item in holdings_list:
             group_map = {
-                "STOCK": "EQUITIES", "Mutual Fund": "EQUITIES", "ETF": "EQUITIES",
-                "FIXED_DEPOSIT": "DEPOSITS", "RECURRING_DEPOSIT": "DEPOSITS",
-                "BOND": "BONDS", "PPF": "GOVERNMENT_SCHEMES",
+                "STOCK": "EQUITIES",
+                "Mutual Fund": "EQUITIES",
+                "MUTUAL_FUND": "EQUITIES",
+                "ETF": "EQUITIES",
+                "FIXED_DEPOSIT": "DEPOSITS",
+                "RECURRING_DEPOSIT": "DEPOSITS",
+                "BOND": "BONDS",
+                "PPF": "GOVERNMENT_SCHEMES",
             }
             group_map_upper = {k.upper(): v for k, v in group_map.items()}
             holding_item.group = group_map_upper.get(

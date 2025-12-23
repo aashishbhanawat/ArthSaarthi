@@ -167,7 +167,7 @@ const ImportPreviewPage: React.FC = () => {
                 {transactions.map((tx, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                         <td className="p-3 whitespace-nowrap">{formatDate(tx.transaction_date)}</td>
-                        <td className="p-3 whitespace-nowrap font-medium">{tx.ticker_symbol}</td>
+                        <td className="p-3 font-medium max-w-xs break-words">{tx.ticker_symbol}</td>
                         <td className="p-3 whitespace-nowrap"><span className={`badge ${tx.transaction_type.toUpperCase() === 'BUY' ? 'badge-success' : 'badge-error'}`}>{tx.transaction_type.toUpperCase()}</span></td>
                         <td className="p-3 whitespace-nowrap text-right">{tx.quantity}</td>
                         <td className="p-3 whitespace-nowrap text-right">{formatCurrency(tx.price_per_unit)}</td>
