@@ -54,51 +54,51 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
 
   const renderContent = () => {
     if (isLoading) {
-      return <p>Loading transactions...</p>;
+      return <p className="dark:text-gray-300">Loading transactions...</p>;
     }
     if (isError) {
       return <p className="text-red-500">Error fetching transaction details.</p>;
     }
     if (!transactions) {
-      return <p>No transactions found for this holding.</p>;
+      return <p className="dark:text-gray-300">No transactions found for this holding.</p>;
     }
 
     return (
       <>
         {/* Summary Cards */}
         <div
-          className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 bg-gray-50 p-4 rounded-lg"
+          className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg"
           data-testid="ppf-summary-cards"
         >
           <div data-testid="summary-total-contributions">
-            <p className="text-sm text-gray-500">Total Contributions</p>
-            <p className="font-semibold">{formatCurrency(totalContributions)}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Total Contributions</p>
+            <p className="font-semibold dark:text-gray-100">{formatCurrency(totalContributions)}</p>
           </div>
           <div data-testid="summary-interest-earned">
-            <p className="text-sm text-gray-500">Interest Earned</p>
-            <p className="font-semibold text-green-600">{formatCurrency(totalInterest)}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Interest Earned</p>
+            <p className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(totalInterest)}</p>
           </div>
           <div data-testid="summary-current-value">
-            <p className="text-sm text-gray-500">Current Value</p>
-            <p className="font-semibold text-lg">{formatCurrency(holding.current_value)}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Current Value</p>
+            <p className="font-semibold text-lg dark:text-gray-100">{formatCurrency(holding.current_value)}</p>
           </div>
           <div data-testid="summary-annualized-return">
-            <p className="text-sm text-gray-500">Annualized Return</p>
-            <p className="font-semibold">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Annualized Return</p>
+            <p className="font-semibold dark:text-gray-100">
               {isLoadingAnalytics ? '...' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
             </p>
           </div>
           <div data-testid="summary-current-rate">
-            <p className="text-sm text-gray-500">Current Rate</p>
-            <p className="font-semibold">{holding.interest_rate ? Number(holding.interest_rate).toFixed(2) : 'N/A'}%</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Current Rate</p>
+            <p className="font-semibold dark:text-gray-100">{holding.interest_rate ? Number(holding.interest_rate).toFixed(2) : 'N/A'}%</p>
           </div>
         </div>
 
         {/* Transaction History Table */}
         <div className="overflow-y-auto max-h-96">
           <table className="table-auto w-full">
-            <thead className="sticky top-0 bg-white shadow-sm">
-              <tr className="text-left text-gray-600 text-sm">
+            <thead className="sticky top-0 bg-white dark:bg-gray-800 shadow-sm">
+              <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
                 <th className="p-2">Date</th>
                 <th className="p-2">Description</th>
                 <th className="p-2 text-right">Amount</th>
@@ -108,31 +108,31 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
             </thead>
             <tbody>
               {reversedTransactions.map(tx => (
-                <tr key={tx.id} className="border-t">
-                  <td className="p-2">{formatDate(tx.transaction_date)}</td>
-                  <td className="p-2 font-semibold">
+                <tr key={tx.id} className="border-t dark:border-gray-700">
+                  <td className="p-2 dark:text-gray-200">{formatDate(tx.transaction_date)}</td>
+                  <td className="p-2 font-semibold dark:text-gray-200">
                     {tx.transaction_type === 'CONTRIBUTION'
                       ? 'Contribution'
                       : `Interest Credit FY ${new Date(tx.transaction_date).getFullYear() - 1}-${new Date(
-                          tx.transaction_date
-                        ).getFullYear()}`}
+                        tx.transaction_date
+                      ).getFullYear()}`}
                   </td>
-                  <td className="p-2 text-right font-mono text-green-600">
+                  <td className="p-2 text-right font-mono text-green-600 dark:text-green-400">
                     + {formatCurrency(tx.amount)}
                   </td>
-                  <td className="p-2 text-right font-mono">{formatCurrency(tx.runningBalance)}</td>
+                  <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(tx.runningBalance)}</td>
                   <td className="p-2 text-center">
                     {tx.transaction_type === 'CONTRIBUTION' ? (
                       <div className="flex items-center justify-center space-x-3">
                         <button
-                          className="text-gray-500 hover:text-blue-600"
+                          className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                           title="Edit Transaction"
                           onClick={() => onEdit(tx)}
                         >
                           <PencilSquareIcon className="h-5 w-5" />
                         </button>
                         <button
-                          className="text-gray-500 hover:text-red-600"
+                          className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                           title="Delete Transaction"
                           onClick={() => onDelete(tx)}
                         >
@@ -140,7 +140,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
                         </button>
                       </div>
                     ) : (
-                      <span className="text-gray-400 italic text-sm">System</span>
+                      <span className="text-gray-400 dark:text-gray-500 italic text-sm">System</span>
                     )}
                   </td>
                 </tr>
@@ -154,32 +154,31 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity ${
-        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
     >
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={`ppf-holding-detail-modal-title-${holding.asset_id}`}
-        className="modal-content w-full max-w-3xl p-6 border border-gray-200 rounded-lg shadow-xl bg-white z-10"
+        className="modal-content w-full max-w-3xl p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl bg-white dark:bg-gray-800 z-10"
       >
         <div
           id={`ppf-holding-detail-modal-title-${holding.asset_id}`}
           className="flex justify-between items-center mb-4"
         >
           <div>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl font-bold dark:text-gray-100">
               PPF Account: {holding.asset_name} ({holding.account_number})
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Opened on: {holding.opening_date ? formatDate(holding.opening_date) : 'N/A'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2"
+            className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2"
           >
             <span className="text-2xl leading-none">&times;</span>
           </button>

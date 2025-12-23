@@ -74,6 +74,18 @@ body {
     .table-auto tbody tr:hover {
         @apply dark:bg-gray-700/50;
     }
+
+    /* Select element dark mode styling */
+    .dark select {
+        background-color: #374151 !important;
+        color: #f3f4f6 !important;
+        border-color: #4b5563 !important;
+    }
+
+    .dark select option {
+        background-color: #374151;
+        color: #f3f4f6;
+    }
 }
 
 /* Scrollbar styling for dark mode */

@@ -41,23 +41,23 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPri
         : null;
 
     return (
-        <tr className="border-t">
-            <td className="p-2">{formatDate(transaction.transaction_date)}</td>
-            <td className={`p-2 font-semibold ${transaction.transaction_type === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
+        <tr className="border-t dark:border-gray-700">
+            <td className="p-2 dark:text-gray-200">{formatDate(transaction.transaction_date)}</td>
+            <td className={`p-2 font-semibold ${transaction.transaction_type === 'BUY' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {transaction.transaction_type}
             </td>
-            <td className="p-2 text-right font-mono">{Number(transaction.quantity).toLocaleString('en-IN', { maximumFractionDigits: 4 })}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(transaction.price_per_unit, 'INR')}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(Number(transaction.quantity) * Number(transaction.price_per_unit), 'INR')}</td>
-            <td className="p-2 text-right font-mono">
+            <td className="p-2 text-right font-mono dark:text-gray-200">{Number(transaction.quantity).toLocaleString('en-IN', { maximumFractionDigits: 4 })}</td>
+            <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(transaction.price_per_unit, 'INR')}</td>
+            <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(Number(transaction.quantity) * Number(transaction.price_per_unit), 'INR')}</td>
+            <td className="p-2 text-right font-mono dark:text-gray-200">
                 {cagr !== null ? `${cagr.toFixed(2)}%` : 'N/A'}
             </td>
             <td className="p-2 text-right">
                 <div className="flex items-center justify-end space-x-3">
-                    <button onClick={() => onEdit(transaction)} className="text-gray-500 hover:text-blue-600" title="Edit Transaction">
+                    <button onClick={() => onEdit(transaction)} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Edit Transaction">
                         <PencilSquareIcon className="h-5 w-5" />
                     </button>
-                    <button onClick={() => onDelete(transaction)} className="text-gray-500 hover:text-red-600" title="Delete Transaction">
+                    <button onClick={() => onDelete(transaction)} className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Delete Transaction">
                         <TrashIcon className="h-5 w-5" />
                     </button>
                 </div>
@@ -98,59 +98,59 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div role="dialog" aria-modal="true" aria-labelledby="holding-detail-modal-title" className="modal-content w-full max-w-3xl p-6 border border-gray-200 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div role="dialog" aria-modal="true" aria-labelledby="holding-detail-modal-title" className="modal-content w-full max-w-3xl p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <div id="holding-detail-modal-title" className="flex justify-between items-center mb-4">
                     <div>
-                        <h2 className="text-2xl font-bold">
+                        <h2 className="text-2xl font-bold dark:text-gray-100">
                             {holding.asset_name} {holding.asset_type !== 'Mutual Fund' && `(${holding.ticker_symbol})`}
                         </h2>
-                        <p className="text-sm text-gray-500">Transaction History</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Transaction History</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
                         <span className="text-2xl leading-none">&times;</span>
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                     <div data-testid="summary-quantity">
-                        <p className="text-sm text-gray-500">Quantity</p>
-                        <p className="font-semibold">{Number(holding.quantity).toLocaleString()}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
+                        <p className="font-semibold dark:text-gray-100">{Number(holding.quantity).toLocaleString()}</p>
                     </div>
                     <div data-testid="summary-avg-buy-price">
-                        <p className="text-sm text-gray-500">Avg. Buy Price</p>
-                        <p className="font-semibold">{formatSensitiveCurrency(holding.average_buy_price, 'INR')}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Avg. Buy Price</p>
+                        <p className="font-semibold dark:text-gray-100">{formatSensitiveCurrency(holding.average_buy_price, 'INR')}</p>
                     </div>
                     <div data-testid="summary-current-value">
-                        <p className="text-sm text-gray-500">Current Value</p>
-                        <p className="font-semibold">{formatSensitiveCurrency(holding.current_value)}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Current Value</p>
+                        <p className="font-semibold dark:text-gray-100">{formatSensitiveCurrency(holding.current_value)}</p>
                     </div>
                     <div data-testid="summary-unrealized-pnl">
-                        <p className="text-sm text-gray-500">Unrealized P&L</p>
-                        <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Unrealized P&L</p>
+                        <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                             {formatSensitiveCurrency(holding.unrealized_pnl)}
                         </p>
                     </div>
                     <div data-testid="summary-xirr-current">
-                        <p className="text-sm text-gray-500">XIRR (Current)</p>
-                        <p className="font-semibold">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">XIRR (Current)</p>
+                        <p className="font-semibold dark:text-gray-100">
                             {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
                         </p>
                     </div>
                     <div data-testid="summary-xirr-historical">
-                        <p className="text-sm text-gray-500">XIRR (Historical)</p>
-                        <p className="font-semibold">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">XIRR (Historical)</p>
+                        <p className="font-semibold dark:text-gray-100">
                             {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.xirr_historical ?? 0) * 100).toFixed(2)}%`}
                         </p>
                     </div>
                 </div>
 
                 <div className="overflow-y-auto max-h-96">
-                    {isLoading && <p className="text-center p-4">Loading transactions...</p>}
+                    {isLoading && <p className="text-center p-4 dark:text-gray-300">Loading transactions...</p>}
                     {error && <p className="text-red-500 text-center p-4">Error loading transactions: {error.message}</p>}
                     {transactions && (
                         <table className="table-auto w-full">
-                            <thead className="sticky top-0 bg-white shadow-sm">
-                                <tr className="text-left text-gray-600 text-sm">
+                            <thead className="sticky top-0 bg-white dark:bg-gray-800 shadow-sm">
+                                <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
                                     <th className="p-2">Date</th>
                                     <th className="p-2">Type</th>
                                     <th className="p-2 text-right">Quantity</th>

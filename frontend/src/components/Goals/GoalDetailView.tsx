@@ -9,19 +9,19 @@ interface GoalDetailViewProps {
 }
 
 const SummaryItem: React.FC<{ label: string; value: string | number; }> = ({ label, value }) => (
-    <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
-        <p className="text-sm text-gray-500 truncate">{label}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
+  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{label}</p>
+    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+  </div>
 );
 
 const ProgressBar: React.FC<{ progress: number }> = ({ progress }) => (
-    <div className="w-full bg-gray-200 rounded-full h-4">
-        <div
-            className="bg-indigo-600 h-4 rounded-full"
-            style={{ width: `${Math.min(progress, 100)}%` }}
-        ></div>
-    </div>
+  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+    <div
+      className="bg-indigo-600 h-4 rounded-full"
+      style={{ width: `${Math.min(progress, 100)}%` }}
+    ></div>
+  </div>
 );
 
 
@@ -38,68 +38,68 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
 
   const handleUnlink = (linkId: string) => {
     if (window.confirm('Are you sure you want to unlink this item?')) {
-        deleteGoalLink.mutate({ goalId, linkId });
+      deleteGoalLink.mutate({ goalId, linkId });
     }
   };
 
-  if (isLoading) return <div>Loading goal details...</div>;
-  if (error) return <div>An error occurred: {(error as Error).message}</div>;
-  if (!goal) return <div>Goal not found.</div>;
+  if (isLoading) return <div className="dark:text-gray-300">Loading goal details...</div>;
+  if (error) return <div className="dark:text-gray-300">An error occurred: {(error as Error).message}</div>;
+  if (!goal) return <div className="dark:text-gray-300">Goal not found.</div>;
 
   return (
     <div className="space-y-8">
       {/* Summary Card */}
       <div className="card">
         <div className="card-body">
-            <h2 className="card-title">Summary</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <SummaryItem label="Target Amount" value={formatCurrency(goal.target_amount)} />
-                <SummaryItem label="Current Amount" value={formatCurrency(goal.current_amount)} />
-                <SummaryItem label="Target Date" value={formatDate(goal.target_date)} />
-            </div>
+          <h2 className="card-title dark:text-gray-100">Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <SummaryItem label="Target Amount" value={formatCurrency(goal.target_amount)} />
+            <SummaryItem label="Current Amount" value={formatCurrency(goal.current_amount)} />
+            <SummaryItem label="Target Date" value={formatDate(goal.target_date)} />
+          </div>
         </div>
       </div>
 
       {/* Progress Card */}
       <div className="card">
         <div className="card-body">
-            <h2 className="card-title">Progress</h2>
-            <div className="mt-4">
-                <ProgressBar progress={goal.progress} />
-                <p className="text-right font-semibold text-gray-700 mt-2">{goal.progress.toFixed(2)}%</p>
-            </div>
+          <h2 className="card-title dark:text-gray-100">Progress</h2>
+          <div className="mt-4">
+            <ProgressBar progress={goal.progress} />
+            <p className="text-right font-semibold text-gray-700 dark:text-gray-300 mt-2">{goal.progress.toFixed(2)}%</p>
+          </div>
         </div>
       </div>
 
       {/* Linked Items Card */}
       <div className="card">
         <div className="card-body">
-            <div className="flex justify-between items-center">
-                <h2 className="card-title">Linked Items</h2>
-                <button onClick={() => setIsLinkModalOpen(true)} className="btn btn-secondary btn-sm">
-                    <LinkIcon className="h-5 w-5 mr-2" />
-                    Link Item
+          <div className="flex justify-between items-center">
+            <h2 className="card-title dark:text-gray-100">Linked Items</h2>
+            <button onClick={() => setIsLinkModalOpen(true)} className="btn btn-secondary btn-sm">
+              <LinkIcon className="h-5 w-5 mr-2" />
+              Link Item
+            </button>
+          </div>
+          <div className="mt-4 space-y-3">
+            {goal.links.length > 0 ? goal.links.map(link => (
+              <div key={link.id} className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <div>
+                  <p className="font-semibold dark:text-gray-100">{link.asset?.name || link.portfolio?.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{link.asset ? `Asset: ${link.asset.ticker_symbol}` : 'Portfolio'}</p>
+                </div>
+                <button
+                  onClick={() => handleUnlink(link.id)}
+                  className="btn btn-ghost btn-sm text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                  disabled={deleteGoalLink.isPending}
+                >
+                  <TrashIcon className="h-5 w-5" />
                 </button>
-            </div>
-            <div className="mt-4 space-y-3">
-                {goal.links.length > 0 ? goal.links.map(link => (
-                    <div key={link.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                        <div>
-                            <p className="font-semibold">{link.asset?.name || link.portfolio?.name}</p>
-                            <p className="text-sm text-gray-500">{link.asset ? `Asset: ${link.asset.ticker_symbol}` : 'Portfolio'}</p>
-                        </div>
-                        <button
-                            onClick={() => handleUnlink(link.id)}
-                            className="btn btn-ghost btn-sm text-red-500 hover:bg-red-100"
-                            disabled={deleteGoalLink.isPending}
-                        >
-                            <TrashIcon className="h-5 w-5" />
-                        </button>
-                    </div>
-                )) : (
-                    <p className="text-gray-500 text-center py-4">No items linked to this goal yet.</p>
-                )}
-            </div>
+              </div>
+            )) : (
+              <p className="text-gray-500 dark:text-gray-400 text-center py-4">No items linked to this goal yet.</p>
+            )}
+          </div>
         </div>
       </div>
 

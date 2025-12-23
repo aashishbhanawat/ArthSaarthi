@@ -607,8 +607,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         interest_rate: data.interestRate!,
                         start_date: data.startDate!,
                         maturity_date: data.maturityDate!,
-                        compounding_frequency: data.compounding_frequency || 'Annually',
-                        interest_payout: data.interest_payout || 'Cumulative'
+                        compounding_frequency: data.compounding_frequency || 'ANNUALLY',
+                        interest_payout: data.interest_payout || 'CUMULATIVE'
                     }
                 }, mutationOptions);
             }
@@ -765,7 +765,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     return (
         <div className="modal-overlay z-30" onClick={onClose} data-testid="transaction-form-modal-overlay">
             <div role="dialog" aria-modal="true" aria-labelledby="transaction-form-modal-title" className="modal-content overflow-visible w-11/12 md:w-3/4 lg:max-w-2xl p-6" onClick={e => e.stopPropagation()} data-testid="transaction-form-modal-content">
-                <h2 id="transaction-form-modal-title" className="text-2xl font-bold mb-4">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
+                <h2 id="transaction-form-modal-title" className="text-2xl font-bold mb-4 dark:text-gray-100">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
                 <div className="max-h-[70vh] overflow-y-auto px-2 -mr-2">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -937,13 +937,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
                         {/* Foreign Asset Conversion Section */}
                         {isForeignAsset && (
-                            <div className="p-4 border rounded-md bg-blue-50 mb-4">
-                                <h3 className="font-semibold text-lg text-blue-800">INR Conversion</h3>
+                            <div className="p-4 border rounded-md bg-blue-50 dark:bg-blue-900/30 dark:border-blue-700 mb-4">
+                                <h3 className="font-semibold text-lg text-blue-800 dark:text-blue-300">INR Conversion</h3>
                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                     <div className="form-group">
-                                        <label htmlFor="editableFxRate" className="form-label text-blue-700">FX Rate ({selectedAsset.currency}-INR)</label>
+                                        <label htmlFor="editableFxRate" className="form-label text-blue-700 dark:text-blue-400">FX Rate ({selectedAsset.currency}-INR)</label>
                                         {isLoadingFxRate ? (
-                                            <div className="form-input bg-blue-100 text-blue-800">Fetching...</div>
+                                            <div className="form-input bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200">Fetching...</div>
                                         ) : (
                                             <input
                                                 id="editableFxRate"
@@ -956,11 +956,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 placeholder="Enter FX rate"
                                             />
                                         )}
-                                        <p className="text-xs text-blue-600 mt-1">Auto-fetched rate: {fetchedFxRate ?? 'N/A'}</p>
+                                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Auto-fetched rate: {fetchedFxRate ?? 'N/A'}</p>
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label text-blue-700">Total (INR)</label>
-                                        <div className="form-input bg-blue-100 text-blue-800 font-bold">
+                                        <label className="form-label text-blue-700 dark:text-blue-400">Total (INR)</label>
+                                        <div className="form-input bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 font-bold">
                                             {fxRate && quantity > 0 && pricePerUnit > 0 && !isNaN(fxRate)
                                                 ? formatCurrency(quantity * pricePerUnit * fxRate, 'INR')
                                                 : '0.00'}
@@ -971,15 +971,15 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         )}
 
                         {(assetType === 'PPF Account') && (
-                            isLoadingPpfAssets ? <p>Loading PPF details...</p> : (
+                            isLoadingPpfAssets ? <p className="dark:text-gray-300">Loading PPF details...</p> : (
                                 existingPpfAsset ? (
                                     <div>
-                                        <div className="p-4 border rounded-md bg-gray-50 mb-4">
-                                            <h3 className="font-semibold text-lg text-gray-800">Existing PPF Account</h3>
-                                            <p className="text-sm text-gray-600">Institution: {existingPpfAsset.name}</p>
-                                            <p className="text-sm text-gray-600">Account #: {existingPpfAsset.account_number}</p>
+                                        <div className="p-4 border rounded-md bg-gray-50 dark:bg-gray-700 dark:border-gray-600 mb-4">
+                                            <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100">Existing PPF Account</h3>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">Institution: {existingPpfAsset.name}</p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">Account #: {existingPpfAsset.account_number}</p>
                                         </div>
-                                        <h3 className="font-semibold text-lg text-gray-800 mb-2">
+                                        <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100 mb-2">
                                             {isEditMode ? 'Edit Contribution' : 'Add New Contribution'}
                                         </h3>
                                         <div className="grid grid-cols-2 gap-4">
@@ -995,7 +995,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     </div>
                                 ) : (
                                     <div>
-                                        <h3 className="font-semibold text-lg text-gray-800 mb-2">Create Your PPF Account</h3>
+                                        <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100 mb-2">Create Your PPF Account</h3>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="form-group col-span-2">
                                                 <label htmlFor="institutionName" className="form-label">Institution Name (e.g., SBI, HDFC)</label>
@@ -1364,18 +1364,20 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="compounding_frequency" className="form-label">Compounding</label>
-                                    <select id="compounding_frequency" {...register('compounding_frequency')} className="form-input">
-                                        <option value="Annually">Annually</option>
-                                        <option value="Semi-Annually">Semi-Annually</option>
-                                        <option value="Quarterly">Quarterly</option>
-                                        <option value="Monthly">Monthly</option>
+                                    <select id="compounding_frequency" {...register('compounding_frequency')} className="form-select">
+                                        <option value="">Select...</option>
+                                        <option value="ANNUALLY">Annually</option>
+                                        <option value="SEMI-ANNUALLY">Semi-Annually</option>
+                                        <option value="QUARTERLY">Quarterly</option>
+                                        <option value="MONTHLY">Monthly</option>
                                     </select>
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="interest_payout" className="form-label">Interest Payout</label>
-                                    <select id="interest_payout" {...register('interest_payout')} className="form-input">
-                                        <option value="Cumulative">Cumulative (Re-invested)</option>
-                                        <option value="Payout">Payout (Periodic)</option>
+                                    <select id="interest_payout" {...register('interest_payout')} className="form-select">
+                                        <option value="">Select...</option>
+                                        <option value="CUMULATIVE">Cumulative (Re-invested)</option>
+                                        <option value="PAYOUT">Payout (Periodic)</option>
                                     </select>
                                 </div>
                             </div>
