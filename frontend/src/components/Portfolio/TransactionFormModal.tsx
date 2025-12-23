@@ -173,7 +173,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         if (isEditMode) {
             if (transactionToEdit) {
                 // Format date for input[type=date] which expects 'YYYY-MM-DD'
-                const formattedDate = new Date(transactionToEdit.transaction_date).toISOString().split('T')[0];
+                // Extract date portion directly from API string to avoid timezone conversion issues
+                const formattedDate = transactionToEdit.transaction_date.split('T')[0];
 
                 // Map API asset_type to form asset_type
                 // API returns: 'BOND', 'Mutual Fund', 'PPF', 'Stock', etc.
