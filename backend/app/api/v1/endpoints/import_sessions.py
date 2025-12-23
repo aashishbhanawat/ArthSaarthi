@@ -86,7 +86,7 @@ async def create_import_session(
         # Load the uploaded file into a pandas DataFrame
         # Detect file type and use appropriate reader
         file_extension = temp_file_path.suffix.lower()
-        
+
         if file_extension in ['.xlsx', '.xls']:
             # Excel files - for MFCentral CAS we need the Transaction Details sheet
             if source_type == "MFCentral CAS":
