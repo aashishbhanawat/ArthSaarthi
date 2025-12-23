@@ -173,7 +173,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         if (isEditMode) {
             if (transactionToEdit) {
                 // Format date for input[type=date] which expects 'YYYY-MM-DD'
-                const formattedDate = new Date(transactionToEdit.transaction_date).toISOString().split('T')[0];
+                // Extract date portion directly from API string to avoid timezone conversion issues
+                const formattedDate = transactionToEdit.transaction_date.split('T')[0];
 
                 // Map API asset_type to form asset_type
                 // API returns: 'BOND', 'Mutual Fund', 'PPF', 'Stock', etc.
@@ -198,6 +199,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     transaction_date: formattedDate,
                     fees: Number(transactionToEdit.fees),
                     details: transactionToEdit.details ?? undefined,
+                    // PPF contribution fields - quantity represents the contribution amount
+                    ...(computedAssetType === 'PPF Account' && {
+                        contributionAmount: Number(transactionToEdit.quantity),
+                        contributionDate: formattedDate,
+                    }),
                 });
                 setSelectedAsset(transactionToEdit.asset);
                 setInputValue(transactionToEdit.asset.name);
@@ -535,8 +541,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
         if (assetType === 'PPF Account') {
             if (existingPpfAsset) {
-                // Add a new contribution to an existing PPF account
-                const payload: TransactionCreate = {
+                // Contribution to an existing PPF account
+                const payload = {
                     asset_id: existingPpfAsset.id!,
                     transaction_type: 'CONTRIBUTION' as TransactionType,
                     quantity: data.contributionAmount!,
@@ -544,7 +550,24 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     transaction_date: new Date(data.contributionDate!).toISOString(),
                     details,
                 };
-                createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+
+                if (isEditMode && transactionToEdit) {
+                    // Update existing contribution
+                    const updatePayload: TransactionUpdate = {
+                        quantity: data.contributionAmount!,
+                        price_per_unit: 1,
+                        transaction_date: new Date(data.contributionDate!).toISOString(),
+                        details,
+                    };
+                    updateTransactionMutation.mutate({
+                        portfolioId,
+                        transactionId: transactionToEdit.id,
+                        data: updatePayload
+                    }, mutationOptions);
+                } else {
+                    // Add new contribution
+                    createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
+                }
             } else {
                 // Create a new PPF account and the first contribution
                 createPpfAccountMutation.mutate({
@@ -616,6 +639,23 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 }, mutationOptions);
             }
         } else if (assetType === 'Bond') {
+            // Handle Bond edit mode first
+            if (isEditMode && transactionToEdit) {
+                const updatePayload: TransactionUpdate = {
+                    quantity: data.quantity,
+                    price_per_unit: data.price_per_unit,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                    fees: data.fees || 0,
+                    details,
+                };
+                updateTransactionMutation.mutate({
+                    portfolioId,
+                    transactionId: transactionToEdit.id,
+                    data: updatePayload
+                }, mutationOptions);
+                return;
+            }
+
             if (!selectedAsset) {
                 setApiError("Please select or create a bond asset.");
                 return;
@@ -939,7 +979,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             <p className="text-sm text-gray-600">Institution: {existingPpfAsset.name}</p>
                                             <p className="text-sm text-gray-600">Account #: {existingPpfAsset.account_number}</p>
                                         </div>
-                                        <h3 className="font-semibold text-lg text-gray-800 mb-2">Add New Contribution</h3>
+                                        <h3 className="font-semibold text-lg text-gray-800 mb-2">
+                                            {isEditMode ? 'Edit Contribution' : 'Add New Contribution'}
+                                        </h3>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="form-group">
                                                 <label htmlFor="contributionAmount" className="form-label">Contribution Amount (₹)</label>
