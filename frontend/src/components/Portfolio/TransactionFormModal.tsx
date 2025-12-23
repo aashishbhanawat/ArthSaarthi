@@ -639,6 +639,23 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 }, mutationOptions);
             }
         } else if (assetType === 'Bond') {
+            // Handle Bond edit mode first
+            if (isEditMode && transactionToEdit) {
+                const updatePayload: TransactionUpdate = {
+                    quantity: data.quantity,
+                    price_per_unit: data.price_per_unit,
+                    transaction_date: new Date(data.transaction_date).toISOString(),
+                    fees: data.fees || 0,
+                    details,
+                };
+                updateTransactionMutation.mutate({
+                    portfolioId,
+                    transactionId: transactionToEdit.id,
+                    data: updatePayload
+                }, mutationOptions);
+                return;
+            }
+
             if (!selectedAsset) {
                 setApiError("Please select or create a bond asset.");
                 return;
