@@ -360,3 +360,42 @@ Implemented `MfCentralParser` to parse MFCentral CAS Excel files, supporting:
 ### Outcome
 
 **Success.** Users can now import MF transactions from MFCentral CAS Excel files via the Import page. MF assets are created via AMFI search with proper asset type for price data integration.
+
+---
+
+## 2025-12-23: Implement CAMS Excel Parser (FR7.1.5, Issue #155)
+
+**Task:** Implement a parser for CAMS Excel files to import Mutual Fund transactions.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented `CamsParser` to parse CAMS Excel files with special handling:
+- **IDCW Reinvestment:** Creates 2 transactions (DIVIDEND + BUY)
+- **Ticker Symbol:** Merges MF_NAME + SCHEME_NAME for full fund name
+- **Transaction Types:** Purchase, SIP, Redemption, IDCW Paid/Reinvest
+- **Skipped:** Merger transactions, admin updates
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/import_parsers/cams_parser.py` - Parser class
+*   **New:** `backend/app/tests/services/test_cams_parser.py` - 11 unit tests
+*   **New:** `backend/app/tests/assets/sample_cams.xlsx` - Anonymized sample
+*   **Modified:** `backend/app/services/import_parsers/parser_factory.py` - Register parser
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` - CAMS handling
+
+**Frontend:**
+*   **Modified:** `frontend/src/pages/Import/DataImportPage.tsx` - Add dropdown option
+
+### Verification
+
+*   **Unit Tests:** 11 tests pass covering all transaction types
+*   **IDCW Reinvestment:** Verified dual-transaction creation
+
+### Outcome
+
+**Success.** Users can now import MF transactions from CAMS Excel files. IDCW Reinvestment correctly recorded as both dividend income and reinvestment purchase.
+
