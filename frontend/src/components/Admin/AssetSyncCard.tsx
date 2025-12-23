@@ -50,11 +50,11 @@ const AssetSyncCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">System Maintenance</h2>
-            <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">Asset Master Sync</h3>
-                <p className="text-sm text-gray-600 mb-4">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 dark:text-gray-100">System Maintenance</h2>
+            <div className="border dark:border-gray-700 rounded-lg p-4">
+                <h3 className="font-medium mb-2 dark:text-gray-200">Asset Master Sync</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Download and update the latest stock, mutual fund, and bond data from
                     exchanges (NSDL, BSE, NSE). This process may take a few minutes.
                 </p>
@@ -66,7 +66,7 @@ const AssetSyncCard: React.FC = () => {
                     <ArrowPathIcon className={`h-5 w-5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                     {isLoading ? 'Syncing Assets...' : 'Sync Assets'}
                 </button>
-                <p className="text-xs text-gray-500 mt-3">
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-3">
                     Note: Rate limited to once every 5 minutes.
                 </p>
             </div>
