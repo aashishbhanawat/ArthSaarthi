@@ -170,6 +170,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const [isLoadingLots, setIsLoadingLots] = useState(false);
 
     useEffect(() => {
+        // ALWAYS log to verify this effect is running
+        console.log('[TransactionFormModal] useEffect triggered - isEditMode:', isEditMode, 'transactionToEdit:', transactionToEdit);
+
         if (isEditMode) {
             if (transactionToEdit) {
                 // Format date for input[type=date] which expects 'YYYY-MM-DD'
