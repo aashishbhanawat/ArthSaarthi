@@ -1,49 +1,3 @@
-## 2025-12-23: Implement Dark Theme Support (PR #172)
-
-**Task:** Implement comprehensive dark mode styling across the ArthSaarthi application, including modals, forms, and all major pages.
-
-**AI Assistant:** Antigravity
-**Role:** Full-Stack Developer
-
-### Summary
-
-Implemented class-based dark mode using Tailwind CSS with user preference persistence and system preference detection.
-
-1.  **Core Infrastructure:**
-    *   Enabled `darkMode: 'class'` in `tailwind.config.js`.
-    *   Created `ThemeContext.tsx` with `ThemeProvider` and `useTheme` hook.
-    *   Added dark mode variants to `index.css` for buttons, modals, forms, tables, and scrollbars.
-    *   Added theme toggle button to `NavBar.tsx` with Sun/Moon icons.
-
-2.  **Component Styling:**
-    *   **Modals:** BondDetailModal, HoldingDetailModal, FixedDepositDetailModal, RecurringDepositDetailModal, PpfHoldingDetailModal, SessionTimeoutModal, DeleteConfirmationModal.
-    *   **Forms:** TransactionFormModal (PPF section, INR Conversion, FD selects).
-    *   **Goals:** GoalList, GoalDetailView.
-    *   **Auth:** AuthPage, LoginForm.
-
-3.  **Bug Fixes:**
-    *   Fixed FD Compounding/Interest Payout dropdown values (uppercase: `QUARTERLY`, `CUMULATIVE`).
-    *   Fixed select element text visibility in dark mode with explicit CSS.
-    *   Updated test expectations in `TransactionFormModal.test.tsx`.
-
-### File Changes
-
-*   **New:** `frontend/src/context/ThemeContext.tsx`
-*   **Modified:** `tailwind.config.js`, `frontend/src/index.css`, `frontend/src/App.tsx`, `frontend/src/components/NavBar.tsx`
-*   **Modified:** 6 detail modals, 2 auth pages, 2 goal components, `TransactionFormModal.tsx`, `DeleteConfirmationModal.tsx`, `SessionTimeoutModal.tsx`
-*   **Modified:** `frontend/src/__tests__/components/Portfolio/TransactionFormModal.test.tsx` (test fix)
-
-### Verification
-
-*   **Tests:** Frontend tests pass (175/175), including updated FD test expectations.
-*   **Lint:** All linters pass (eslint-disable added for ThemeContext).
-
-### Outcome
-
-**Success.** Dark mode is fully functional with user-persisted preferences and system preference fallback.
-
-
-
 *   **Task Description:** Implemented admin-only manual asset sync endpoint allowing administrators to trigger asset master data updates from the UI without restarting the server.
 
 *   **Key Prompts & Interactions:**
@@ -312,3 +266,97 @@ Implemented the complete backend and frontend infrastructure for Specific Lot Ac
 ### Outcome
 
 **Success.** The system now supports sophisticated tax planning with specific lot identification. Logic is verified by robust integration and E2E tests, and historical data integrity is preserved.
+
+---
+
+## 2025-12-23: Implement Dark Theme Support (PR #172)
+
+**Task:** Implement comprehensive dark mode styling across the ArthSaarthi application, including modals, forms, and all major pages.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented class-based dark mode using Tailwind CSS with user preference persistence and system preference detection.
+
+1.  **Core Infrastructure:**
+    *   Enabled `darkMode: 'class'` in `tailwind.config.js`.
+    *   Created `ThemeContext.tsx` with `ThemeProvider` and `useTheme` hook.
+    *   Added dark mode variants to `index.css` for buttons, modals, forms, tables, and scrollbars.
+    *   Added theme toggle button to `NavBar.tsx` with Sun/Moon icons.
+
+2.  **Component Styling:**
+    *   **Modals:** BondDetailModal, HoldingDetailModal, FixedDepositDetailModal, RecurringDepositDetailModal, PpfHoldingDetailModal, SessionTimeoutModal, DeleteConfirmationModal.
+    *   **Forms:** TransactionFormModal (PPF section, INR Conversion, FD selects).
+    *   **Goals:** GoalList, GoalDetailView.
+    *   **Auth:** AuthPage, LoginForm.
+
+3.  **Bug Fixes:**
+    *   Fixed FD Compounding/Interest Payout dropdown values (uppercase: `QUARTERLY`, `CUMULATIVE`).
+    *   Fixed select element text visibility in dark mode with explicit CSS.
+    *   Updated test expectations in `TransactionFormModal.test.tsx`.
+
+### File Changes
+
+*   **New:** `frontend/src/context/ThemeContext.tsx`
+*   **Modified:** `tailwind.config.js`, `frontend/src/index.css`, `frontend/src/App.tsx`, `frontend/src/components/NavBar.tsx`
+*   **Modified:** 6 detail modals, 2 auth pages, 2 goal components, `TransactionFormModal.tsx`, `DeleteConfirmationModal.tsx`, `SessionTimeoutModal.tsx`
+*   **Modified:** `frontend/src/__tests__/components/Portfolio/TransactionFormModal.test.tsx` (test fix)
+
+### Verification
+
+*   **Tests:** Frontend tests pass (175/175), including updated FD test expectations.
+*   **Lint:** All linters pass (eslint-disable added for ThemeContext).
+
+### Outcome
+
+**Success.** Dark mode is fully functional with user-persisted preferences and system preference fallback.
+
+---
+
+## 2025-12-23: Implement MFCentral CAS Excel Parser (FR7.1.4, Issue #154)
+
+**Task:** Implement a parser for MFCentral Consolidated Account Statement (CAS) Excel files to import Mutual Fund transactions.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented `MfCentralParser` to parse MFCentral CAS Excel files, supporting:
+- **Purchases:** Regular, SIP, BSE, Online
+- **Redemptions:** All types
+- **Dividends:** IDCW Paid (amount stored as quantity×1), IDCW Reinvestment
+- **Switches:** Switch In/Out (non-merger)
+- **Skipped:** Merger transactions (for future corporate action feature), admin updates
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/import_parsers/mfcentral_parser.py` - Main parser class
+*   **New:** `backend/app/tests/services/test_mfcentral_parser.py` - Unit tests
+*   **New:** `backend/app/tests/assets/sample_mfcentral.xlsx` - Anonymized sample file
+*   **New:** `backend/app/tests/services/__init__.py` - Package init
+*   **Modified:** `backend/app/services/import_parsers/parser_factory.py` - Register parser
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` - Excel file detection
+*   **Modified:** `backend/app/crud/crud_holding.py` - Add 'MUTUAL_FUND' to group_map
+
+**Frontend:**
+*   **Modified:** `frontend/src/pages/Import/DataImportPage.tsx` - Add MFCentral dropdown & .xlsx accept
+*   **Modified:** `frontend/src/pages/Import/ImportPreviewPage.tsx` - Fix ticker text wrapping
+*   **Modified:** `frontend/src/components/modals/AssetAliasMappingModal.tsx` - MF search via AMFI API
+*   **Modified:** `frontend/src/hooks/useImport.ts` - Add holdings/summary cache invalidation
+*   **Modified:** `frontend/src/hooks/usePortfolio.ts` - Add assetType param to search hook
+*   **Modified:** `frontend/src/services/portfolioApi.ts` - Add 'Mutual Fund' type
+
+### Verification
+
+*   **Unit Tests:** 11 tests covering transaction classification, date parsing, dividend handling
+*   **Manual Testing:** Successfully imported MFCentral CAS file with 59+ transactions
+*   **MF Asset Creation:** Assets created with 'Mutual Fund' type for NAV fetching
+*   **Holdings Display:** Imported MFs appear in "Equities & Mutual Funds" section
+
+### Outcome
+
+**Success.** Users can now import MF transactions from MFCentral CAS Excel files via the Import page. MF assets are created via AMFI search with proper asset type for price data integration.

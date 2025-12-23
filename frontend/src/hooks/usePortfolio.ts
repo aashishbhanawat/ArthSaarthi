@@ -9,10 +9,10 @@ export const usePortfolioAssets = (portfolioId: string) => {
     });
 };
 
-export const useAssetSearch = (query: string) => {
+export const useAssetSearch = (query: string, assetType?: string) => {
     return useQuery({
-        queryKey: ['assetSearch', query],
-        queryFn: () => portfolioApi.lookupAsset(query),
+        queryKey: ['assetSearch', query, assetType],
+        queryFn: () => portfolioApi.lookupAsset(query, assetType),
         enabled: !!query, // Only run the query if there is a search term
     });
 };

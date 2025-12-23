@@ -50,7 +50,7 @@ export const createPpfAccount = async (
 export type AssetCreationPayload = {
     ticker_symbol: string;
     name: string;
-    asset_type: 'STOCK' | 'MUTUAL_FUND' | 'CRYPTO' | 'OTHER' | 'BOND';
+    asset_type: 'STOCK' | 'MUTUAL_FUND' | 'Mutual Fund' | 'CRYPTO' | 'OTHER' | 'BOND';
     currency?: string;
     exchange?: string;
 };

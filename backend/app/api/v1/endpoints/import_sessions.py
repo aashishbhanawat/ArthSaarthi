@@ -84,8 +84,23 @@ async def create_import_session(
     # 3. Parse the file using the appropriate strategy
     try:
         # Load the uploaded file into a pandas DataFrame
-        # This is a simple approach; more complex files might need different readers
-        df = pd.read_csv(temp_file_path)
+        # Detect file type and use appropriate reader
+        file_extension = temp_file_path.suffix.lower()
+
+        if file_extension in ['.xlsx', '.xls']:
+            # Excel files - for MFCentral CAS we need the Transaction Details sheet
+            if source_type == "MFCentral CAS":
+                df = pd.read_excel(
+                    temp_file_path,
+                    sheet_name='Transaction Details',
+                    header=None  # MFCentral has header at row 8, parser handles this
+                )
+            else:
+                # Generic Excel handling
+                df = pd.read_excel(temp_file_path)
+        else:
+            # CSV files
+            df = pd.read_csv(temp_file_path)
 
         # Get the correct parser from the factory
         parser = parser_factory.get_parser(source_type)
