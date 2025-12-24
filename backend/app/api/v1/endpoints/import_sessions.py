@@ -87,13 +87,33 @@ async def create_import_session(
         # Detect file type and use appropriate reader
         file_extension = temp_file_path.suffix.lower()
 
-        if file_extension in ['.xlsx', '.xls']:
+        # Get the correct parser from the factory
+        parser = parser_factory.get_parser(source_type)
+
+        # Handle PDF files differently - they use file path, not DataFrame
+        if file_extension == '.pdf':
+            # PDF parsing - extract password from form data if provided
+            password = import_session_in.password if hasattr(
+                import_session_in, 'password'
+            ) else None
+            try:
+                parsed_transactions = parser.parse(
+                    str(temp_file_path), password=password
+                )
+            except ValueError as e:
+                if "PASSWORD_REQUIRED" in str(e):
+                    raise HTTPException(
+                        status_code=422,
+                        detail="PASSWORD_REQUIRED"
+                    )
+                raise
+        elif file_extension in ['.xlsx', '.xls']:
             # Excel files - handle source-specific sheet/header requirements
             if source_type == "MFCentral CAS":
                 df = pd.read_excel(
                     temp_file_path,
                     sheet_name='Transaction Details',
-                    header=None  # MFCentral has header at row 8, parser handles this
+                    header=None  # MFCentral has header at row 8
                 )
             elif source_type == "CAMS Statement":
                 # CAMS has headers in row 0
@@ -101,15 +121,13 @@ async def create_import_session(
             else:
                 # Generic Excel handling
                 df = pd.read_excel(temp_file_path)
+            # Parse the dataframe into a list of Pydantic models
+            parsed_transactions = parser.parse(df)
         else:
             # CSV files
             df = pd.read_csv(temp_file_path)
-
-        # Get the correct parser from the factory
-        parser = parser_factory.get_parser(source_type)
-
-        # Parse the dataframe into a list of Pydantic models
-        parsed_transactions = parser.parse(df)
+            # Parse the dataframe into a list of Pydantic models
+            parsed_transactions = parser.parse(df)
 
         # Sort transactions: by date, then ticker, then type (BUY before SELL)
         parsed_transactions.sort(

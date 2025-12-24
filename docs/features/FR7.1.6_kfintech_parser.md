@@ -97,11 +97,11 @@ Current Balance: 61.73 units @ ₹82.50 = ₹5,092.73
 
 ## 7. Acceptance Criteria
 
-- [ ] User can select "KFintech Statement" as statement type
-- [ ] Parser handles password-protected PDFs
-- [ ] Multi-section parsing works correctly
-- [ ] All transaction types mapped
-- [ ] Scheme names matched to AMFI codes
+- [x] User can select "KFintech Statement" as statement type
+- [x] Parser handles password-protected PDFs
+- [ ] Multi-section parsing works correctly (basic support)
+- [x] All transaction types mapped
+- [x] Scheme names matched to AMFI codes (via alias modal)
 
 ---
 

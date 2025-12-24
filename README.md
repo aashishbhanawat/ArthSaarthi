@@ -1,7 +1,7 @@
 # ArthSaarthi - Personal Portfolio Management System
 
 [![CI/CD Status](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml/badge.svg)](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml)
-[![Backend Tests](https://img.shields.io/badge/Backend_Tests-197/197-brightgreen)](#)
+[![Backend Tests](https://img.shields.io/badge/Backend_Tests-208/208-brightgreen)](#)
 [![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-174/174-brightgreen)](#)
 [![E2E Tests](https://img.shields.io/badge/E2E_Tests-31/31-brightgreen)](#)
 
@@ -35,7 +35,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Stock Dividend Reinvestment (DRIP):** Support for automatic reinvestment of stock dividends.
 *   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.
 *   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV/Excel files.
-    *   Includes pre-built parsers for Zerodha, ICICI Direct, MFCentral CAS, CAMS Statement, Zerodha Coin MF, and a generic format.
+    *   Includes pre-built parsers for Zerodha, ICICI Direct, MFCentral CAS, CAMS Statement, Zerodha Coin MF, KFintech PDF, and a generic format.
     *   Features an advanced UI for on-the-fly **asset alias mapping** for unrecognized ticker symbols.
 *   **Goal Planning & Tracking (Core):** Define financial goals, link assets or portfolios to them, and track your current progress.
 *   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.

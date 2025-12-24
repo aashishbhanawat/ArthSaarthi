@@ -436,3 +436,42 @@ Implemented `ZerodhaCoinParser` for Zerodha Coin MF exports (CSV/XLSX):
 
 **Success.** Users can now import MF transactions from Zerodha Coin exports.
 
+---
+
+## 2025-12-24: Implement KFintech PDF Parser (FR7.1.6, Issue #156)
+
+**Task:** Implement a parser for KFintech (formerly Karvy) PDF statements.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented `KFintechParser` for password-protected PDF statements:
+- **Password Handling:** Returns PASSWORD_REQUIRED error for encrypted PDFs
+- **Transaction Types:** Purchase, SIP Purchase, IDCW Reinvestment, Redemption
+- **IDCW Reinvestment:** Creates DIVIDEND + BUY (like CAMS)
+- **Skipped:** Stamp Duty, TDS, Merger transactions, admin updates
+- **pdfplumber:** Added to requirements.txt
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/import_parsers/kfintech_parser.py`
+*   **New:** `backend/app/tests/services/test_kfintech_parser.py` - 12 tests
+*   **Modified:** `backend/app/services/import_parsers/parser_factory.py`
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` - PDF handling
+*   **Modified:** `backend/requirements.txt` - pdfplumber
+
+**Frontend:**
+*   **Modified:** `frontend/src/pages/Import/DataImportPage.tsx`
+*   **Modified:** `frontend/src/components/modals/AssetAliasMappingModal.tsx`
+
+### Verification
+
+*   **Unit Tests:** 12 tests pass (208 backend tests total)
+
+### Outcome
+
+**Success.** Users can now import MF transactions from KFintech PDF statements.
+
