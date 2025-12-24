@@ -399,3 +399,40 @@ Implemented `CamsParser` to parse CAMS Excel files with special handling:
 
 **Success.** Users can now import MF transactions from CAMS Excel files. IDCW Reinvestment correctly recorded as both dividend income and reinvestment purchase.
 
+---
+
+## 2025-12-24: Implement Zerodha Coin MF Parser (FR7.1.7, Issue #158)
+
+**Task:** Implement a parser for Zerodha Coin MF tradebook exports.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented `ZerodhaCoinParser` for Zerodha Coin MF exports (CSV/XLSX):
+- **Simple Format:** symbol, trade_date, trade_type (buy/sell), quantity, price
+- **Transaction Types:** BUY and SELL only (no dividends in Coin exports)
+- **Asset Mapping:** Uses AMFI MF search for scheme name matching
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/import_parsers/zerodha_coin_parser.py`
+*   **New:** `backend/app/tests/services/test_zerodha_coin_parser.py` - 8 tests
+*   **New:** `backend/app/tests/assets/sample_zerodha_coin.csv`
+*   **Modified:** `backend/app/services/import_parsers/parser_factory.py`
+
+**Frontend:**
+*   **Modified:** `frontend/src/pages/Import/DataImportPage.tsx`
+*   **Modified:** `frontend/src/components/modals/AssetAliasMappingModal.tsx`
+
+### Verification
+
+*   **Unit Tests:** 8 tests pass
+*   **Manual Testing:** Import verified from both CSV and XLSX
+
+### Outcome
+
+**Success.** Users can now import MF transactions from Zerodha Coin exports.
+

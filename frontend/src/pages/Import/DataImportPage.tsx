@@ -91,6 +91,7 @@ const DataImportPage: React.FC = () => {
                                 <option value="ICICI Direct Tradebook">ICICI Direct Tradebook</option>
                                 <option value="MFCentral CAS">MFCentral CAS (Mutual Funds)</option>
                                 <option value="CAMS Statement">CAMS Statement (Mutual Funds)</option>
+                                <option value="Zerodha Coin">Zerodha Coin (Mutual Funds)</option>
                             </select>
                         </div>
 

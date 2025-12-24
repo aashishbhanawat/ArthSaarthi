@@ -64,10 +64,10 @@ Enable users to import Mutual Fund transactions from Zerodha Coin (direct MF pla
 
 ## 5. Acceptance Criteria
 
-- [ ] User can select "Zerodha Coin (MF)" as statement type
-- [ ] Parser handles both Excel and CSV formats
-- [ ] All MF transaction types correctly mapped
-- [ ] Scheme names matched to AMFI codes
+- [x] User can select "Zerodha Coin (MF)" as statement type
+- [x] Parser handles both Excel and CSV formats
+- [x] All MF transaction types correctly mapped (buy/sell)
+- [x] Scheme names matched to AMFI codes (via alias modal)
 
 ---
 

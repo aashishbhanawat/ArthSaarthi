@@ -3,6 +3,7 @@ from .cams_parser import CamsParser
 from .generic_parser import GenericCsvParser
 from .icici_parser import IciciParser
 from .mfcentral_parser import MfCentralParser
+from .zerodha_coin_parser import ZerodhaCoinParser
 from .zerodha_parser import ZerodhaParser
 
 
@@ -15,7 +16,10 @@ def get_parser(source_type: str) -> BaseParser:
         return MfCentralParser()
     elif source_type == "CAMS Statement":
         return CamsParser()
+    elif source_type == "Zerodha Coin":
+        return ZerodhaCoinParser()
     # Add other parsers here in the future
     else:
         return GenericCsvParser()
+
 
