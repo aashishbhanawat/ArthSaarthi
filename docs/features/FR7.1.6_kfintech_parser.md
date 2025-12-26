@@ -110,3 +110,26 @@ Current Balance: 61.73 units @ ₹82.50 = ₹5,092.73
 - Existing import framework (FR7)
 - pdfplumber library
 - AMFI asset database
+
+---
+
+## 9. Recent Improvements (Dec 2025)
+
+### Bug Fixes
+- **SELL Transaction Parsing**: Fixed parsing of parenthesized numbers (e.g., `(50,232.00)`) for SELL transactions
+- **Phantom Transaction Filtering**: Added validation that `units × NAV ≈ amount` to filter phantom transactions caused by PDF parsing errors
+- **Instalment Number Handling**: Fixed parsing of "Systematic Instalment No X" transactions where the instalment number was incorrectly parsed as amount
+
+### Duplicate Detection
+- Added tolerance-based duplicate detection (0.5% for price, 0.1% for quantity) to handle precision differences between parsers
+
+### User Experience
+- Added warning banner on import preview: "Cross-verify all imported transactions against original statements"
+
+---
+
+## 10. Known Limitations
+
+- Some transactions may not be extractable from PDFs with complex formatting
+- Users should manually verify imported data against original statements
+- If transactions are missing, they should be added manually after import

@@ -302,6 +302,17 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         quantity: Decimal,
         price_per_unit: Decimal,
     ) -> Transaction | None:
+        # Allow small tolerance for price_per_unit (0.5%) to handle NAV precision
+        # differences between different parsers (e.g., KFintech vs CAMS)
+        price_tolerance = price_per_unit * Decimal("0.005")  # 0.5% tolerance
+        price_low = price_per_unit - price_tolerance
+        price_high = price_per_unit + price_tolerance
+
+        # Also allow small tolerance for quantity (0.1%) for rounding differences
+        qty_tolerance = quantity * Decimal("0.001")  # 0.1% tolerance
+        qty_low = quantity - qty_tolerance
+        qty_high = quantity + qty_tolerance
+
         return (
             db.query(self.model)
             .filter(
@@ -309,8 +320,10 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 self.model.asset_id == asset_id,
                 self.model.transaction_date == transaction_date,
                 self.model.transaction_type == transaction_type,
-                self.model.quantity == quantity,
-                self.model.price_per_unit == price_per_unit,
+                self.model.quantity >= qty_low,
+                self.model.quantity <= qty_high,
+                self.model.price_per_unit >= price_low,
+                self.model.price_per_unit <= price_high,
             )
             .first()
         )
