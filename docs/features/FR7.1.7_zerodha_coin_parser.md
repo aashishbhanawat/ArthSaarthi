@@ -75,3 +75,28 @@ Enable users to import Mutual Fund transactions from Zerodha Coin (direct MF pla
 
 - Existing Zerodha parser is for equity tradebook
 - This is a separate parser for MF transactions from Coin
+
+### XLSX File Format
+- Zerodha Coin XLSX exports have 14 header rows of branding/info
+- Actual data headers start at row 14
+- The import system automatically skips these rows (`skiprows=14`)
+
+### ISIN-Based Matching
+- Parser extracts ISIN column if present in the file
+- Uses `ISIN:{code}` format for ticker_symbol (e.g., `ISIN:INF179K01XD8`)
+- Enables automatic asset matching via AMFI database
+- Falls back to scheme name if ISIN not available
+
+### Column Normalization
+- XLSX column names are normalized to lowercase with underscores
+- Example: `Trade Date` → `trade_date`, `Trade Type` → `trade_type`
+
+---
+
+## 7. Changelog
+
+| Date | Change |
+|------|--------|
+| 2025-12-27 | Added ISIN-based auto-matching for assets |
+| 2025-12-27 | Added XLSX header row handling (skiprows=14) |
+| 2025-12-27 | Added column name normalization for XLSX |
