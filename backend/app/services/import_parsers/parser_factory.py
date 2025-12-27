@@ -2,6 +2,7 @@ from .base_parser import BaseParser
 from .cams_parser import CamsParser
 from .generic_parser import GenericCsvParser
 from .icici_parser import IciciParser
+from .icici_securities_parser import ICICISecuritiesParser
 from .kfintech_parser import KFintechParser
 from .kfintech_xls_parser import KFintechXlsParser
 from .mfcentral_parser import MfCentralParser
@@ -24,6 +25,8 @@ def get_parser(source_type: str) -> BaseParser:
         return KFintechParser()
     elif source_type == "KFintech XLS":
         return KFintechXlsParser()
+    elif source_type == "ICICI Securities MF":
+        return ICICISecuritiesParser()
     # Add other parsers here in the future
     else:
         return GenericCsvParser()
