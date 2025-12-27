@@ -50,7 +50,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-    const isMfSource = source.includes('MFCentral') || source.includes('CAMS') || source.includes('Zerodha Coin') || source.includes('KFintech');
+    const isMfSource = source.includes('MFCentral') || source.includes('CAMS') || source.includes('Zerodha Coin') || source.includes('KFintech') || source.includes('ICICI Securities');
     const queryClient = useQueryClient();
 
     // Use different search based on source type
