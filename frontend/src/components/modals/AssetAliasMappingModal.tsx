@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAssetSearch } from '../../hooks/usePortfolio';
 import { searchMutualFunds } from '../../services/assetApi';
-import { createAsset, AssetCreationPayload } from '../../services/portfolioApi';
+import { createAsset, lookupAsset, AssetCreationPayload } from '../../services/portfolioApi';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
 
 // A simple debounce hook
@@ -50,7 +50,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-    const isMfSource = source.includes('MFCentral') || source.includes('CAMS') || source.includes('Zerodha Coin');
+    const isMfSource = source.includes('MFCentral') || source.includes('CAMS') || source.includes('Zerodha Coin') || source.includes('KFintech');
     const queryClient = useQueryClient();
 
     // Use different search based on source type
@@ -65,9 +65,25 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
     const isLoading = isMfSource ? isLoadingMf : isLoadingAssets;
     const error = isMfSource ? mfError : assetError;
 
-    // Mutation to create MF asset
+    // Mutation to create MF asset (or use existing if 409)
     const createAssetMutation = useMutation({
-        mutationFn: (payload: AssetCreationPayload) => createAsset(payload),
+        mutationFn: async (payload: AssetCreationPayload) => {
+            try {
+                return await createAsset(payload);
+            } catch (err: unknown) {
+                // If asset already exists (409), lookup by ticker symbol
+                const error = err as { response?: { status?: number } };
+                if (error.response?.status === 409) {
+                    // Use the lookupAsset API which handles auth properly
+                    // lookupAsset returns an array
+                    const existingAssets = await lookupAsset(payload.ticker_symbol);
+                    if (existingAssets && existingAssets.length > 0) {
+                        return existingAssets[0];
+                    }
+                }
+                throw err;
+            }
+        },
         onSuccess: (newAsset) => {
             queryClient.invalidateQueries({ queryKey: ['assetSearch'] });
             onAliasCreated({
@@ -81,7 +97,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
 
     const handleSave = () => {
         if (isMfSource && selectedMf) {
-            // For MF sources, create the asset first
+            // For MF sources, create the asset first (or use existing)
             createAssetMutation.mutate({
                 ticker_symbol: selectedMf.ticker_symbol,
                 name: selectedMf.name,

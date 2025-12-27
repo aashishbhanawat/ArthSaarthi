@@ -62,6 +62,10 @@ class AmfiIndiaProvider(FinancialDataProvider):
                         data[scheme_code] = {
                             "scheme_code": scheme_code,
                             "isin": row[1] if row[1] != "N.A." else None,
+                            "isin2": (
+                                row[2] if len(row) > 2 and row[2] != "N.A."
+                                else None
+                            ),
                             "scheme_name": row[3],
                             "nav": str(Decimal(row[4])) if row[4] != "N.A." else "0.0",
                             "date": (

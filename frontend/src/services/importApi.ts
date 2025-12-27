@@ -5,12 +5,16 @@ import { Msg } from '../types/msg';
 export const createImportSession = async (
     portfolioId: string,
     source_type: string,
-    file: File
+    file: File,
+    password?: string
 ): Promise<ImportSession> => {
     const formData = new FormData();
     formData.append('portfolio_id', portfolioId);
     formData.append('source_type', source_type);
     formData.append('file', file);
+    if (password) {
+        formData.append('password', password);
+    }
 
     const response = await apiClient.post(
         `/api/v1/import-sessions/`,
