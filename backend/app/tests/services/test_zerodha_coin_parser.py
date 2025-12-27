@@ -47,15 +47,17 @@ class TestZerodhaCoinParser:
         buy_transactions = [tx for tx in result if tx.transaction_type == "BUY"]
         assert len(buy_transactions) > 0
 
-    def test_parse_uses_symbol_as_ticker(self, parser, sample_zerodha_coin_df):
-        """Test that symbol column is used as ticker_symbol."""
+    def test_parse_uses_symbol_or_isin_as_ticker(self, parser, sample_zerodha_coin_df):
+        """Test that symbol or ISIN is used as ticker_symbol."""
         result = parser.parse(sample_zerodha_coin_df)
 
         for tx in result:
             assert tx.ticker_symbol is not None
             assert len(tx.ticker_symbol) > 0
-            # Should contain "FUND" or "PLAN"
-            assert "FUND" in tx.ticker_symbol or "PLAN" in tx.ticker_symbol
+            # Should be either ISIN format or contain "FUND"/"PLAN"
+            is_isin = tx.ticker_symbol.startswith("ISIN:")
+            is_fund_name = "FUND" in tx.ticker_symbol or "PLAN" in tx.ticker_symbol
+            assert is_isin or is_fund_name
 
     def test_parse_preserves_date_format(self, parser, sample_zerodha_coin_df):
         """Test that dates remain in YYYY-MM-DD format."""

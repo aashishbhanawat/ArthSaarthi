@@ -107,20 +107,25 @@ async def create_import_session(
                 raise
         elif file_extension in ['.xlsx', '.xls']:
             # Excel files - handle source-specific sheet/header requirements
-            if source_type == "MFCentral CAS":
+            if source_type == "KFintech XLS":
+                # KFintech XLS parser reads the file itself
+                parsed_transactions = parser.parse(str(temp_file_path))
+            elif source_type == "MFCentral CAS":
                 df = pd.read_excel(
                     temp_file_path,
                     sheet_name='Transaction Details',
                     header=None  # MFCentral has header at row 8
                 )
+                parsed_transactions = parser.parse(df)
             elif source_type == "CAMS Statement":
                 # CAMS has headers in row 0
                 df = pd.read_excel(temp_file_path)
+                parsed_transactions = parser.parse(df)
             else:
                 # Generic Excel handling
                 df = pd.read_excel(temp_file_path)
-            # Parse the dataframe into a list of Pydantic models
-            parsed_transactions = parser.parse(df)
+                # Parse the dataframe into a list of Pydantic models
+                parsed_transactions = parser.parse(df)
         else:
             # CSV files
             df = pd.read_csv(temp_file_path)

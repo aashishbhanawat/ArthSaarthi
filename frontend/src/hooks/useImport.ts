@@ -8,11 +8,13 @@ export const useCreateImportSession = () => {
             portfolioId,
             source_type,
             file,
+            password,
         }: {
             portfolioId: string;
             source_type: string;
             file: File;
-        }) => importApi.createImportSession(portfolioId, source_type, file),
+            password?: string;
+        }) => importApi.createImportSession(portfolioId, source_type, file, password),
     });
 };
 
