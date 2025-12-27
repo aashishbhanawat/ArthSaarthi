@@ -33,6 +33,9 @@ class ZerodhaCoinParser(BaseParser):
         "price",
     ]
 
+    # Optional columns
+    OPTIONAL_COLUMNS = ["isin"]
+
     def parse(self, df: pd.DataFrame) -> List[ParsedTransaction]:
         """
         Parse Zerodha Coin DataFrame into ParsedTransaction objects.
@@ -51,9 +54,15 @@ class ZerodhaCoinParser(BaseParser):
             )
             return []
 
+        # Check if isin column exists for better matching
+        has_isin = "isin" in df.columns
+        if has_isin:
+            logger.info("Zerodha Coin: ISIN column found, using for asset matching")
+
         for _, row in df.iterrows():
             try:
                 symbol = str(row.get("symbol", "")).strip()
+                isin = str(row.get("isin", "")).strip() if has_isin else ""
                 trade_date = str(row.get("trade_date", "")).strip()
                 trade_type = str(row.get("trade_type", "")).strip().lower()
                 quantity = row.get("quantity")
@@ -95,8 +104,14 @@ class ZerodhaCoinParser(BaseParser):
                     )
                     continue
 
+                # Use ISIN for ticker if available (enables auto-matching)
+                if isin and len(isin) == 12 and isin.startswith("INF"):
+                    ticker = f"ISIN:{isin}"
+                else:
+                    ticker = symbol
+
                 transactions.append(ParsedTransaction(
-                    ticker_symbol=symbol,
+                    ticker_symbol=ticker,
                     transaction_date=transaction_date,
                     transaction_type=tx_type,
                     quantity=abs(qty),

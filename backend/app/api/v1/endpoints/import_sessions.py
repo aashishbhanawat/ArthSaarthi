@@ -4,7 +4,7 @@ import shutil
 import uuid
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Optional
 
 import pandas as pd
 from fastapi import (
@@ -40,6 +40,7 @@ async def create_import_session(
     portfolio_id: uuid.UUID = Form(...),
     source_type: str = Form(...),
     file: UploadFile = File(...),
+    password: Optional[str] = Form(None),
 ) -> Any:
     """
     Create new import session.
@@ -87,29 +88,49 @@ async def create_import_session(
         # Detect file type and use appropriate reader
         file_extension = temp_file_path.suffix.lower()
 
-        if file_extension in ['.xlsx', '.xls']:
-            # Excel files - handle source-specific sheet/header requirements
-            if source_type == "MFCentral CAS":
-                df = pd.read_excel(
-                    temp_file_path,
-                    sheet_name='Transaction Details',
-                    header=None  # MFCentral has header at row 8, parser handles this
-                )
-            elif source_type == "CAMS Statement":
-                # CAMS has headers in row 0
-                df = pd.read_excel(temp_file_path)
-            else:
-                # Generic Excel handling
-                df = pd.read_excel(temp_file_path)
-        else:
-            # CSV files
-            df = pd.read_csv(temp_file_path)
-
         # Get the correct parser from the factory
         parser = parser_factory.get_parser(source_type)
 
-        # Parse the dataframe into a list of Pydantic models
-        parsed_transactions = parser.parse(df)
+        # Handle PDF files differently - they use file path, not DataFrame
+        if file_extension == '.pdf':
+            # PDF parsing - use password from form data if provided
+            try:
+                parsed_transactions = parser.parse(
+                    str(temp_file_path), password=password
+                )
+            except ValueError as e:
+                if "PASSWORD_REQUIRED" in str(e):
+                    raise HTTPException(
+                        status_code=422,
+                        detail="PASSWORD_REQUIRED"
+                    )
+                raise
+        elif file_extension in ['.xlsx', '.xls']:
+            # Excel files - handle source-specific sheet/header requirements
+            if source_type == "KFintech XLS":
+                # KFintech XLS parser reads the file itself
+                parsed_transactions = parser.parse(str(temp_file_path))
+            elif source_type == "MFCentral CAS":
+                df = pd.read_excel(
+                    temp_file_path,
+                    sheet_name='Transaction Details',
+                    header=None  # MFCentral has header at row 8
+                )
+                parsed_transactions = parser.parse(df)
+            elif source_type == "CAMS Statement":
+                # CAMS has headers in row 0
+                df = pd.read_excel(temp_file_path)
+                parsed_transactions = parser.parse(df)
+            else:
+                # Generic Excel handling
+                df = pd.read_excel(temp_file_path)
+                # Parse the dataframe into a list of Pydantic models
+                parsed_transactions = parser.parse(df)
+        else:
+            # CSV files
+            df = pd.read_csv(temp_file_path)
+            # Parse the dataframe into a list of Pydantic models
+            parsed_transactions = parser.parse(df)
 
         # Sort transactions: by date, then ticker, then type (BUY before SELL)
         parsed_transactions.sort(
@@ -133,6 +154,9 @@ async def create_import_session(
                 status_code=400,
                 detail="Failed to parse file. No valid transactions were found.",
             )
+    except HTTPException:
+        # Re-raise HTTP exceptions (like PASSWORD_REQUIRED) without wrapping
+        raise
     except Exception as e:
         log.error(f"Error parsing file {temp_file_path}: {e}")
         crud.import_session.update(
@@ -221,25 +245,71 @@ def get_import_session_preview(
         parsed_transaction = schemas.ParsedTransaction(**row_data)
 
         # 1. Asset Identification
-        asset = crud.asset.get_by_ticker(db, ticker_symbol=row["ticker_symbol"])
+        ticker_symbol = row["ticker_symbol"]
+        asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
+        if asset:
+            log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
+
+        # If ticker looks like "ISIN:XXX", try to lookup by ISIN
+        if not asset and ticker_symbol.startswith("ISIN:"):
+            isin_code = ticker_symbol.replace("ISIN:", "")
+            log.debug(f"Looking up by ISIN: {isin_code}")
+            asset = db.query(models.Asset).filter(
+                models.Asset.isin == isin_code
+            ).first()
+            if asset:
+                log.info(f"Auto-matched by ISIN: {isin_code} -> {asset.name}")
+            else:
+                log.debug(f"No asset found with ISIN: {isin_code}")
+                # Try to auto-create by looking up ISIN in AMFI
+                # Check both isin (payout) and isin2 (reinvestment)
+                from app.services.providers.amfi_provider import amfi_provider
+                all_mf_data = amfi_provider.get_all_nav_data()
+                for scheme_code, mf_info in all_mf_data.items():
+                    isin_match = mf_info.get("isin") == isin_code
+                    isin2_match = mf_info.get("isin2") == isin_code
+                    if isin_match or isin2_match:
+                        # Found in AMFI - create the asset
+                        scheme = mf_info['scheme_name']
+                        log.info(f"Found in AMFI: {isin_code} -> {scheme}")
+                        asset = crud.asset.get_or_create_by_ticker(
+                            db, ticker_symbol=scheme_code, asset_type="Mutual Fund"
+                        )
+                        if asset:
+                            log.info(
+                                f"Auto-created: {asset.name} ISIN {isin_code}"
+                            )
+                        break
+
         if not asset:
             # Check pending aliases from the current session first
-            if row["ticker_symbol"] in pending_alias_map:
-                asset_id = pending_alias_map[row["ticker_symbol"]]
+            if ticker_symbol in pending_alias_map:
+                asset_id = pending_alias_map[ticker_symbol]
                 asset = crud.asset.get(db, id=asset_id)
+                if asset:
+                    log.debug(
+                        f"Found in pending aliases: {ticker_symbol}"
+                    )
             else:
                 # Then check persisted aliases
                 asset_alias = crud.asset_alias.get_by_alias(
                     db,
-                    alias_symbol=row["ticker_symbol"],
+                    alias_symbol=ticker_symbol,
                     source=import_session.source,
                 )
                 if asset_alias:
                     asset = asset_alias.asset
+                    log.debug(f"Found by alias: {ticker_symbol} -> {asset.name}")
+
+        # NOTE: Fuzzy matching was removed because it caused incorrect mappings
+        # (e.g., "Short Term" matching "Ultra Short Term").
+        # For CAMS-style tickers, users must manually map via the mapping modal.
+
         if not asset:
-                # If no asset or alias is found, it needs user mapping
-                needs_mapping.append(parsed_transaction)
-                continue
+            # If no asset or alias is found, it needs user mapping
+            log.debug(f"No match found for: {ticker_symbol}")
+            needs_mapping.append(parsed_transaction)
+            continue
 
         # 2. Duplicate Detection
         existing_transaction = crud.transaction.get_by_details(
@@ -252,10 +322,17 @@ def get_import_session_preview(
             price_per_unit=Decimal(str(row["price_per_unit"])),
         )
 
+        # For display: replace ISIN ticker with actual fund name/ticker
+        if ticker_symbol.startswith("ISIN:") and asset:
+            parsed_transaction.ticker_symbol = asset.name or asset.ticker_symbol
+
         if existing_transaction:
             duplicates.append(parsed_transaction)
         else:
             valid_new.append(parsed_transaction)
+
+    log.info(f"Preview: {len(valid_new)} new, {len(duplicates)} duplicates, "
+             f"{len(needs_mapping)} needs_mapping, {len(invalid)} invalid")
 
     return schemas.ImportSessionPreview(
         valid_new=valid_new,
@@ -295,19 +372,36 @@ def commit_import_session(
         # 2. Commit the selected transactions.
         transactions_created = 0
         for parsed_tx in commit_payload.transactions_to_commit:
-            # Try to find asset by alias first, then by direct ticker
+            # Try to find asset by alias first, then by direct ticker, then by name
             asset = None
+            ticker_symbol = parsed_tx.ticker_symbol
+
+            # 1. Try alias lookup
             asset_alias = crud.asset_alias.get_by_alias(
                 db,
-                alias_symbol=parsed_tx.ticker_symbol,
+                alias_symbol=ticker_symbol,
                 source=import_session.source,
             )
             if asset_alias:
                 asset = asset_alias.asset
-            else:
-                asset = crud.asset.get_by_ticker(
-                    db, ticker_symbol=parsed_tx.ticker_symbol
-                )
+
+            # 2. Try ticker lookup
+            if not asset:
+                asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
+
+            # 3. Try ISIN lookup (if ticker is ISIN:XXX format)
+            if not asset and ticker_symbol.startswith("ISIN:"):
+                isin_code = ticker_symbol.replace("ISIN:", "")
+                asset = db.query(models.Asset).filter(
+                    models.Asset.isin == isin_code
+                ).first()
+
+            # 4. Try name lookup (for display-modified transactions)
+            if not asset:
+                asset = db.query(models.Asset).filter(
+                    models.Asset.name == ticker_symbol
+                ).first()
+
             if not asset:
                 log.error(
                     f"Asset '{parsed_tx.ticker_symbol}' not found during commit for "
