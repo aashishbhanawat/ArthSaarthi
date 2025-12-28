@@ -55,12 +55,12 @@ Requires PDF parsing with multi-section structure (KFintech).
 
 ---
 
-### P2: Dividend Statement Import
+### P2: Dividend Statement Import ✅
 
-| Source | Format |
-|--------|--------|
-| **Zerodha Dividend** | Excel (XLSX) |
-| **ICICI Dividend** | PDF |
+| Source | Format | Status |
+|--------|--------|--------|
+| Zerodha Dividend | Excel (XLSX) | ✅ Done |
+| ICICI DEMAT Dividend | PDF | ✅ Done |
 
 Creates DIVIDEND transactions with TDS tracking.
 

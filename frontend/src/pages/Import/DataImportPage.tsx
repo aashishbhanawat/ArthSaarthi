@@ -143,6 +143,8 @@ const DataImportPage: React.FC = () => {
                                 <option value="KFintech Statement">KFintech Statement (PDF) - Mutual Funds</option>
                                 <option value="KFintech XLS">KFintech Transaction (XLS) - Mutual Funds ★</option>
                                 <option value="ICICI Securities MF">ICICI Securities MF (PDF) - Mutual Funds</option>
+                                <option value="Zerodha Dividend">Zerodha Dividend (XLSX) - Equity</option>
+                                <option value="ICICI DEMAT Dividend">ICICI DEMAT Dividend (PDF) - Equity</option>
                             </select>
                         </div>
 
