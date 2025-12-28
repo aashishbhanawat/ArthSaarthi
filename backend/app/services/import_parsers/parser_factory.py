@@ -1,12 +1,14 @@
 from .base_parser import BaseParser
 from .cams_parser import CamsParser
 from .generic_parser import GenericCsvParser
+from .icici_demat_dividend_parser import IciciDematDividendParser
 from .icici_parser import IciciParser
 from .icici_securities_parser import ICICISecuritiesParser
 from .kfintech_parser import KFintechParser
 from .kfintech_xls_parser import KFintechXlsParser
 from .mfcentral_parser import MfCentralParser
 from .zerodha_coin_parser import ZerodhaCoinParser
+from .zerodha_dividend_parser import ZerodhaDividendParser
 from .zerodha_parser import ZerodhaParser
 
 
@@ -27,6 +29,10 @@ def get_parser(source_type: str) -> BaseParser:
         return KFintechXlsParser()
     elif source_type == "ICICI Securities MF":
         return ICICISecuritiesParser()
+    elif source_type == "Zerodha Dividend":
+        return ZerodhaDividendParser()
+    elif source_type == "ICICI DEMAT Dividend":
+        return IciciDematDividendParser()
     # Add other parsers here in the future
     else:
         return GenericCsvParser()

@@ -128,6 +128,13 @@ async def create_import_session(
                 # Normalize column names to lowercase for consistency
                 df.columns = df.columns.str.lower().str.replace(' ', '_')
                 parsed_transactions = parser.parse(df)
+            elif source_type == "Zerodha Dividend":
+                # Zerodha Dividend XLSX has branding/info rows at top
+                # Actual header is at row 14
+                df = pd.read_excel(temp_file_path, skiprows=14)
+                # Normalize column names to lowercase for consistency
+                df.columns = df.columns.str.lower().str.replace(' ', '_')
+                parsed_transactions = parser.parse(df)
             else:
                 # Generic Excel handling
                 df = pd.read_excel(temp_file_path)
