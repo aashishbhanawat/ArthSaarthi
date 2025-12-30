@@ -210,7 +210,58 @@ Track Restricted Stock Units (RSUs) and Employee Stock Purchase Plan (ESPP) awar
 
 ---
 
-## 8. Backup & Restore {#backup-restore}
+## 8. Corporate Actions {#corporate-actions}
+
+Handle mergers, demergers, and ticker renames that affect your holdings.
+
+### 8.1. Adding a Merger
+
+When two companies merge (e.g., HDFC Bank absorbed HDFC Ltd):
+
+1.  From a portfolio detail page, click **"Add Transaction"**.
+2.  Select the **old asset** you held (e.g., HDFC).
+3.  Select **"Corporate Action"** as Transaction Type.
+4.  Select **"Merger/Amalgamation"** as Action Type.
+5.  Enter the **Record Date** and **Conversion Ratio** (e.g., 1.68 for HDFC-HDFCBANK merger).
+6.  Search for and select the **new merged company ticker**.
+7.  Click **"Save Transaction"**.
+
+> **Cost Basis:** The system preserves your original acquisition dates and cost basis per Section 47(vii) of the Income Tax Act. XIRR calculations reflect your true investment timeline.
+
+### 8.2. Adding a Demerger
+
+When a company spins off a division (e.g., Reliance spun off Jio Financial):
+
+1.  From a portfolio detail page, click **"Add Transaction"**.
+2.  Select the **parent asset** (e.g., RELIANCE).
+3.  Select **"Corporate Action"** > **"Demerger/Spin-off"**.
+4.  Enter the **Record Date** and **Demerger Ratio** (shares of new company per old share).
+5.  Enter the **Cost Allocation %** to the demerged entity (from official sources).
+6.  Search for and select the **demerged company ticker**.
+7.  Click **"Save Transaction"**.
+
+> **Multi-Entity Demergers:** For 3-way splits (e.g., HDFC → HDFCBANK + HDFCLIFE + remaining), create separate demerger transactions for each child entity with their respective cost allocations.
+
+### 8.3. Ticker Rename
+
+When a company changes its ticker symbol only (e.g., VEDL → VEDANTA):
+
+1.  Select the **old ticker** and choose **"Ticker Rename"**.
+2.  Enter the effective date and search for the **new ticker**.
+3.  Click **"Save Transaction"**.
+
+### 8.4. Viewing Adjusted Holdings
+
+After a corporate action:
+- **Holdings Table:** Shows adjusted quantity and average buy price
+- **Transaction History:** Displays both adjusted and original prices (e.g., "₹360.00 (orig: ₹900.00)")
+- **XIRR/CAGR:** Calculated using adjusted investment amount
+
+> **Note:** Corporate actions require existing holdings on the record date. If you have no holdings, the transaction will be rejected.
+
+---
+
+## 9. Backup & Restore {#backup-restore}
 
 Protect your financial data with the backup and restore feature.
 
@@ -228,7 +279,7 @@ Protect your financial data with the backup and restore feature.
 
 ---
 
-## 9. User Management (Admin Only - Server Mode) {#user-management}
+## 10. User Management (Admin Only - Server Mode) {#user-management}
 
 > **Note:** User Management is only available in **Server Mode** (multi-user). In Desktop Mode, the application is single-user, so user management is not needed.
 
@@ -240,7 +291,7 @@ If you are logged in as an administrator in Server Mode, you will see a **"User 
 
 ---
 
-## 10. System Maintenance (Admin Only) {#system-maintenance}
+## 11. System Maintenance (Admin Only) {#system-maintenance}
 
 Administrators can trigger asset master database updates without restarting the server.
 
@@ -253,7 +304,7 @@ Administrators can trigger asset master database updates without restarting the 
 
 ---
 
-## 11. Getting Help & Reporting Bugs {#getting-help}
+## 12. Getting Help & Reporting Bugs {#getting-help}
 
 If you encounter a bug or have a feature request, please **open an issue on the project's GitHub repository**. Your feedback is essential for improving the application!
 

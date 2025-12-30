@@ -60,11 +60,34 @@ def _get_realized_and_unrealized_cash_flows(
     """
     sorted_txs = sorted(transactions, key=lambda t: t.transaction_date.date())
 
+    # Calculate total cost reduction from DEMERGER events for this asset
+    # This scales down the original BUY amounts for correct XIRR
+    total_cost_reduction = Decimal("0.0")
+    original_cost = Decimal("0.0")
+    for t in sorted_txs:
+        if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST"):
+            price = t.price_per_unit if t.price_per_unit else Decimal("0")
+            original_cost += t.quantity * price
+        if t.transaction_type == "DEMERGER":
+            if t.details and "total_cost_allocated" in t.details:
+                total_cost_reduction += Decimal(str(t.details["total_cost_allocated"]))
+
+    # Calculate remaining cost ratio after all demergers
+    if original_cost > 0 and total_cost_reduction > 0:
+        remaining_ratio = (original_cost - total_cost_reduction) / original_cost
+    else:
+        remaining_ratio = Decimal("1.0")
+
     # Create copies to avoid mutation and to track remaining quantities.
-    buys = [
-        t.model_copy(deep=True) for t in sorted_txs
-        if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST")
-    ]
+    # Scale price_per_unit by remaining_ratio for demerged assets
+    buys = []
+    for t in sorted_txs:
+        if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST"):
+            buy_copy = t.model_copy(deep=True)
+            if remaining_ratio < Decimal("1.0") and buy_copy.price_per_unit:
+                buy_copy.price_per_unit = buy_copy.price_per_unit * remaining_ratio
+            buys.append(buy_copy)
+
     sells = [t for t in sorted_txs if t.transaction_type == "SELL"]
     # Separate income from contributions, as they are handled differently.
     income_flows = [
@@ -251,6 +274,14 @@ def _get_portfolio_cash_flows(
             or behavior["cash_flow"] == CashFlowType.NONE
             or tx.transaction_type == "INTEREST_CREDIT"
         ):
+            continue
+
+        # Skip BUY transactions from corporate actions
+        if tx.details and tx.details.get("from_merger"):
+            continue
+        if tx.details and tx.details.get("from_demerger"):
+            continue
+        if tx.details and tx.details.get("from_rename"):
             continue
 
         amount = Decimal("0.0")

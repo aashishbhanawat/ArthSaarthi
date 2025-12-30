@@ -245,3 +245,518 @@ def test_handle_stock_split(db: Session) -> None:
     )
     assert asset_holding is not None
     assert asset_holding.quantity == Decimal("30")
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_handle_merger(db: Session) -> None:
+    """
+    Test case for handling a merger.
+    - GIVEN an existing user, portfolio, and asset with holdings.
+    - WHEN a merger is logged with a 1.5 conversion ratio.
+    - THEN the old asset should be converted to new asset with preserved cost basis.
+    - AND the MERGER audit transaction should be saved.
+    """
+    # GIVEN
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Merger Portfolio")
+    old_asset = create_test_asset(db, ticker_symbol="OLDCO")
+    new_asset = create_test_asset(db, ticker_symbol="NEWCO")
+
+    # Create initial holding of 100 shares at 200 per share = 20,000 cost basis
+    initial_buy = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("100"),
+        price_per_unit=Decimal("200"),
+        transaction_date=datetime(2023, 1, 1),
+    )
+    crud.transaction.create_with_portfolio(
+        db, obj_in=initial_buy, portfolio_id=portfolio.id
+    )
+    db.commit()
+
+    # WHEN - merger with 1.5:1 conversion ratio (100 old shares -> 150 new shares)
+    merger_transaction_in = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.MERGER,
+        quantity=Decimal("1.5"),  # Conversion ratio
+        price_per_unit=Decimal("1"),  # Not used for merger
+        transaction_date=datetime(2023, 6, 1),
+        details={"new_asset_id": str(new_asset.id)},
+    )
+
+    crud.crud_corporate_action.handle_merger(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=old_asset.id,
+        transaction_in=merger_transaction_in,
+    )
+    db.commit()
+
+    # THEN
+    # 1. Verify the MERGER audit transaction was saved
+    merger_audit_tx = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == old_asset.id,
+            models.Transaction.transaction_type == TransactionType.MERGER,
+        )
+        .first()
+    )
+    assert merger_audit_tx is not None
+
+    # 2. Verify BUY transaction was created for new shares
+    new_share_buy = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == new_asset.id,
+            models.Transaction.transaction_type == TransactionType.BUY,
+        )
+        .first()
+    )
+    assert new_share_buy is not None
+    assert new_share_buy.quantity == Decimal("150")  # 100 * 1.5
+    # Cost basis preserved: 20,000 / 150 ≈ 133.33 per share
+    expected_price = Decimal("20000") / Decimal("150")
+    assert abs(new_share_buy.price_per_unit - expected_price) < Decimal("0.01")
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_handle_demerger(db: Session) -> None:
+    """
+    Test case for handling a demerger.
+    - GIVEN an existing user, portfolio, and asset with holdings.
+    - WHEN a demerger is logged with 1:1 ratio and 30% cost allocation.
+    - THEN new shares should be created with proportional cost basis.
+    - AND the DEMERGER audit transaction should be saved.
+    """
+    # GIVEN
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Demerger Portfolio")
+    old_asset = create_test_asset(db, ticker_symbol="PARENT")
+    new_asset = create_test_asset(db, ticker_symbol="SPINOFF")
+
+    # Create initial holding of 100 shares at 300 per share = 30,000 cost basis
+    initial_buy = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("100"),
+        price_per_unit=Decimal("300"),
+        transaction_date=datetime(2023, 1, 1),
+    )
+    crud.transaction.create_with_portfolio(
+        db, obj_in=initial_buy, portfolio_id=portfolio.id
+    )
+    db.commit()
+
+    # WHEN - demerger with 1:1 ratio and 30% cost allocation to spinoff
+    demerger_transaction_in = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.DEMERGER,
+        quantity=Decimal("1"),  # 1:1 ratio
+        price_per_unit=Decimal("1"),  # Not used
+        transaction_date=datetime(2023, 7, 1),
+        details={
+            "new_asset_id": str(new_asset.id),
+            "cost_allocation_pct": "30",
+        },
+    )
+
+    crud.crud_corporate_action.handle_demerger(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=old_asset.id,
+        transaction_in=demerger_transaction_in,
+    )
+    db.commit()
+
+    # THEN
+    # 1. Verify the DEMERGER audit transaction was saved
+    demerger_audit_tx = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == old_asset.id,
+            models.Transaction.transaction_type == TransactionType.DEMERGER,
+        )
+        .first()
+    )
+    assert demerger_audit_tx is not None
+
+    # 2. Verify BUY transaction was created for demerged shares
+    spinoff_buy = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == new_asset.id,
+            models.Transaction.transaction_type == TransactionType.BUY,
+        )
+        .first()
+    )
+    assert spinoff_buy is not None
+    assert spinoff_buy.quantity == Decimal("100")  # 1:1 ratio
+    # Cost basis: 30% of 30,000 = 9,000 / 100 = 90 per share
+    expected_price = Decimal("90")
+    assert spinoff_buy.price_per_unit == expected_price
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_handle_rename(db: Session) -> None:
+    """
+    Test case for handling a ticker rename.
+    - GIVEN an existing user, portfolio, and asset with holdings.
+    - WHEN a rename is logged.
+    - THEN holdings should be transferred to new ticker with preserved cost basis.
+    - AND the RENAME audit transaction should be saved.
+    """
+    # GIVEN
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Rename Portfolio")
+    old_asset = create_test_asset(db, ticker_symbol="VEDL")
+    new_asset = create_test_asset(db, ticker_symbol="VEDANTA")
+
+    # Create initial holding of 50 shares at 400 per share = 20,000 cost basis
+    initial_buy = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("50"),
+        price_per_unit=Decimal("400"),
+        transaction_date=datetime(2023, 1, 1),
+    )
+    crud.transaction.create_with_portfolio(
+        db, obj_in=initial_buy, portfolio_id=portfolio.id
+    )
+    db.commit()
+
+    # WHEN - ticker rename
+    rename_transaction_in = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.RENAME,
+        quantity=Decimal("1"),  # Not used
+        price_per_unit=Decimal("1"),  # Not used
+        transaction_date=datetime(2023, 8, 1),
+        details={"new_asset_id": str(new_asset.id)},
+    )
+
+    crud.crud_corporate_action.handle_rename(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=old_asset.id,
+        transaction_in=rename_transaction_in,
+    )
+    db.commit()
+
+    # THEN
+    # 1. Verify the RENAME audit transaction was saved
+    rename_audit_tx = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == old_asset.id,
+            models.Transaction.transaction_type == TransactionType.RENAME,
+        )
+        .first()
+    )
+    assert rename_audit_tx is not None
+
+    # 2. Verify BUY transaction was created for new ticker
+    new_ticker_buy = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == new_asset.id,
+            models.Transaction.transaction_type == TransactionType.BUY,
+        )
+        .first()
+    )
+    assert new_ticker_buy is not None
+    assert new_ticker_buy.quantity == Decimal("50")  # Same quantity
+    # Cost basis preserved: 20,000 / 50 = 400 per share
+    assert new_ticker_buy.price_per_unit == Decimal("400")
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_merger_no_holdings_rejects(db: Session) -> None:
+    """
+    Test that merger is rejected when no holdings exist on record date.
+    """
+    from fastapi import HTTPException
+
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Empty Portfolio")
+    old_asset = create_test_asset(db, ticker_symbol="NOHOLD_M")
+    new_asset = create_test_asset(db, ticker_symbol="NEWHOLD_M")
+
+    # No holdings created - attempt merger
+    merger_in = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.MERGER,
+        quantity=Decimal("1.5"),
+        price_per_unit=Decimal("1"),
+        transaction_date=datetime(2023, 6, 1),
+        details={"new_asset_id": str(new_asset.id)},
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        crud.crud_corporate_action.handle_merger(
+            db, portfolio_id=portfolio.id, asset_id=old_asset.id,
+            transaction_in=merger_in,
+        )
+    assert exc_info.value.status_code == 400
+    assert "No holdings found" in str(exc_info.value.detail)
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_demerger_no_holdings_rejects(db: Session) -> None:
+    """
+    Test that demerger is rejected when no holdings exist on record date.
+    """
+    from fastapi import HTTPException
+
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Empty Demerger")
+    old_asset = create_test_asset(db, ticker_symbol="NOHOLD_D")
+    new_asset = create_test_asset(db, ticker_symbol="SPINOFF_D")
+
+    demerger_in = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.DEMERGER,
+        quantity=Decimal("1"),
+        price_per_unit=Decimal("1"),
+        transaction_date=datetime(2023, 7, 1),
+        details={"new_asset_id": str(new_asset.id), "cost_allocation_pct": "30"},
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        crud.crud_corporate_action.handle_demerger(
+            db, portfolio_id=portfolio.id, asset_id=old_asset.id,
+            transaction_in=demerger_in,
+        )
+    assert exc_info.value.status_code == 400
+    assert "No holdings found" in str(exc_info.value.detail)
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_rename_no_holdings_rejects(db: Session) -> None:
+    """
+    Test that rename is rejected when no holdings exist on record date.
+    """
+    from fastapi import HTTPException
+
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Empty Rename")
+    old_asset = create_test_asset(db, ticker_symbol="NOHOLD_R")
+    new_asset = create_test_asset(db, ticker_symbol="RENAMED_R")
+
+    rename_in = schemas.TransactionCreate(
+        asset_id=old_asset.id,
+        transaction_type=TransactionType.RENAME,
+        quantity=Decimal("1"),
+        price_per_unit=Decimal("1"),
+        transaction_date=datetime(2023, 8, 1),
+        details={"new_asset_id": str(new_asset.id)},
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        crud.crud_corporate_action.handle_rename(
+            db, portfolio_id=portfolio.id, asset_id=old_asset.id,
+            transaction_in=rename_in,
+        )
+    assert exc_info.value.status_code == 400
+    assert "No holdings found" in str(exc_info.value.detail)
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_demerger_preserves_original_dates(db: Session) -> None:
+    """
+    Test that demerger creates child BUYs with original acquisition dates.
+    """
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Date Test")
+    parent_asset = create_test_asset(db, ticker_symbol="PARENT_DATE")
+    child_asset = create_test_asset(db, ticker_symbol="CHILD_DATE")
+
+    # Create buy on Jan 1
+    original_date = datetime(2023, 1, 15)
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=parent_asset.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("100"),
+            price_per_unit=Decimal("500"),
+            transaction_date=original_date,
+        ),
+        portfolio_id=portfolio.id,
+    )
+    db.commit()
+
+    # Demerger on July 1
+    demerger_date = datetime(2023, 7, 1)
+    demerger_in = schemas.TransactionCreate(
+        asset_id=parent_asset.id,
+        transaction_type=TransactionType.DEMERGER,
+        quantity=Decimal("1"),
+        price_per_unit=Decimal("1"),
+        transaction_date=demerger_date,
+        details={"new_asset_id": str(child_asset.id), "cost_allocation_pct": "25"},
+    )
+    crud.crud_corporate_action.handle_demerger(
+        db, portfolio_id=portfolio.id, asset_id=parent_asset.id,
+        transaction_in=demerger_in,
+    )
+    db.commit()
+
+    # Verify child BUY has original date, not demerger date
+    child_buy = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == child_asset.id,
+            models.Transaction.transaction_type == TransactionType.BUY,
+        )
+        .first()
+    )
+    assert child_buy is not None
+    assert child_buy.transaction_date.date() == original_date.date()
+    assert child_buy.details.get("from_demerger") is True
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_demerger_stores_total_cost_allocated(db: Session) -> None:
+    """
+    Test that demerger stores total_cost_allocated in audit transaction.
+    """
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Cost Alloc Test")
+    parent_asset = create_test_asset(db, ticker_symbol="PARENT_COST")
+    child_asset = create_test_asset(db, ticker_symbol="CHILD_COST")
+
+    # 100 shares at 1000 = 100,000 cost basis
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=parent_asset.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("100"),
+            price_per_unit=Decimal("1000"),
+            transaction_date=datetime(2023, 1, 1),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    db.commit()
+
+    # Demerger with 30% cost allocation
+    demerger_in = schemas.TransactionCreate(
+        asset_id=parent_asset.id,
+        transaction_type=TransactionType.DEMERGER,
+        quantity=Decimal("1"),
+        price_per_unit=Decimal("1"),
+        transaction_date=datetime(2023, 7, 1),
+        details={"new_asset_id": str(child_asset.id), "cost_allocation_pct": "30"},
+    )
+    crud.crud_corporate_action.handle_demerger(
+        db, portfolio_id=portfolio.id, asset_id=parent_asset.id,
+        transaction_in=demerger_in,
+    )
+    db.commit()
+
+    # Verify total_cost_allocated is stored
+    demerger_audit = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.asset_id == parent_asset.id,
+            models.Transaction.transaction_type == TransactionType.DEMERGER,
+        )
+        .first()
+    )
+    assert demerger_audit is not None
+    assert "total_cost_allocated" in demerger_audit.details
+    # 30% of 100,000 = 30,000
+    assert Decimal(demerger_audit.details["total_cost_allocated"]) == Decimal("30000")
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_multi_demerger_cost_calculation(db: Session) -> None:
+    """
+    Test that multiple demergers correctly reduce parent cost basis.
+    Example: 90,000 -> 40% parent, 30% child1, 30% child2
+    """
+    from app.cache.utils import invalidate_caches_for_portfolio
+
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Multi Demerger")
+    parent = create_test_asset(db, ticker_symbol="MULTI_PARENT")
+    child1 = create_test_asset(db, ticker_symbol="MULTI_CHILD1")
+    child2 = create_test_asset(db, ticker_symbol="MULTI_CHILD2")
+
+    # 100 shares at 900 = 90,000 cost basis
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=parent.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("100"),
+            price_per_unit=Decimal("900"),
+            transaction_date=datetime(2023, 1, 1),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    db.commit()
+
+    # First demerger: 30% to child1
+    crud.crud_corporate_action.handle_demerger(
+        db, portfolio_id=portfolio.id, asset_id=parent.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=parent.id,
+            transaction_type=TransactionType.DEMERGER,
+            quantity=Decimal("1"),
+            price_per_unit=Decimal("1"),
+            transaction_date=datetime(2023, 7, 1),
+            details={"new_asset_id": str(child1.id), "cost_allocation_pct": "30"},
+        ),
+    )
+    db.commit()
+
+    # Second demerger: 30% to child2
+    crud.crud_corporate_action.handle_demerger(
+        db, portfolio_id=portfolio.id, asset_id=parent.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=parent.id,
+            transaction_type=TransactionType.DEMERGER,
+            quantity=Decimal("1"),
+            price_per_unit=Decimal("1"),
+            transaction_date=datetime(2023, 8, 1),
+            details={"new_asset_id": str(child2.id), "cost_allocation_pct": "30"},
+        ),
+    )
+    db.commit()
+
+    # Invalidate cache and get holdings
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
+    holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+        db=db, portfolio_id=portfolio.id
+    )
+
+    # Find holdings
+    holdings = holdings_data.holdings
+    parent_h = next((h for h in holdings if h.asset_id == parent.id), None)
+    child1_h = next((h for h in holdings if h.asset_id == child1.id), None)
+    child2_h = next((h for h in holdings if h.asset_id == child2.id), None)
+
+    # Verify cost distribution: 40% + 30% + 30% = 100%
+    # Parent: 90,000 - 27,000 - 27,000 = 36,000
+    assert parent_h is not None
+    assert parent_h.total_invested_amount == Decimal("36000")
+
+    # Child1: 30% of 90,000 = 27,000
+    assert child1_h is not None
+    assert child1_h.total_invested_amount == Decimal("27000")
+
+    # Child2: 30% of 90,000 = 27,000
+    assert child2_h is not None
+    assert child2_h.total_invested_amount == Decimal("27000")
+
+    # Total should still be 90,000
+    total = (
+        parent_h.total_invested_amount
+        + child1_h.total_invested_amount
+        + child2_h.total_invested_amount
+    )
+    assert total == Decimal("90000")
+

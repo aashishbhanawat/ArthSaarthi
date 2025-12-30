@@ -131,12 +131,16 @@ class TransactionType(str, Enum):
 
 ## 7. Acceptance Criteria
 
-- [ ] User can create merger transaction
-- [ ] User can create demerger transaction
-- [ ] User can create rename transaction
-- [ ] Holdings recalculated correctly after action
-- [ ] Cost basis preserved/allocated appropriately
-- [ ] Transaction appears in history
+- [x] User can create merger transaction
+- [x] User can create demerger transaction
+- [x] User can create rename transaction
+- [x] Holdings recalculated correctly after action
+- [x] Cost basis preserved/allocated appropriately
+- [x] Transaction appears in history
+- [x] Original acquisition dates preserved for XIRR
+- [x] Multi-entity demergers handled correctly
+- [x] No holdings on record date rejects transaction
+- [x] Asset lookup enabled for new ticker
 
 ---
 

@@ -29,7 +29,7 @@ interface TransactionFormModalProps {
 type TransactionFormInputs = {
     asset_type: 'Stock' | 'Mutual Fund' | 'Fixed Deposit' | 'Recurring Deposit' | 'PPF Account' | 'Bond';
     transaction_type: 'BUY' | 'SELL' | 'DIVIDEND' | 'CONTRIBUTION' | 'Corporate Action' | 'COUPON';
-    action_type: 'DIVIDEND' | 'SPLIT' | 'BONUS';
+    action_type: 'DIVIDEND' | 'SPLIT' | 'BONUS' | 'MERGER' | 'DEMERGER' | 'RENAME';
     quantity: number;
     price_per_unit: number;
     transaction_date: string;
@@ -76,6 +76,11 @@ type TransactionFormInputs = {
     // Stock DRIP fields
     isStockDividendReinvested?: boolean;
     stockReinvestmentPrice?: number;
+    // Merger/Demerger/Rename fields
+    mergerConversionRatio?: number;
+    demergerRatio?: number;
+    costAllocationPct?: number;
+    newAssetSearch?: string;
 };
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit }) => {
@@ -102,6 +107,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const [searchResults, setSearchResults] = useState<Asset[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+
+    // New asset search state for corporate actions (merger/demerger/rename)
+    const [newAssetInput, setNewAssetInput] = useState('');
+    const [newAssetSearchTerm, setNewAssetSearchTerm] = useState('');
+    const [newAssetResults, setNewAssetResults] = useState<Asset[]>([]);
+    const [selectedNewAsset, setSelectedNewAsset] = useState<Asset | null>(null);
+    const [isSearchingNewAsset, setIsSearchingNewAsset] = useState(false);
 
     // Watch fields to conditionally render inputs
     const assetType = useWatch({ control, name: 'asset_type' });
@@ -267,6 +279,41 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const handleClearSelectedAsset = () => {
         setSelectedAsset(null);
         setInputValue('');
+    };
+
+    // --- New Asset Search for Corporate Actions ---
+    // Debounce new asset input
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setNewAssetSearchTerm(newAssetInput);
+        }, 300);
+        return () => clearTimeout(handler);
+    }, [newAssetInput]);
+
+    // Search for new asset
+    useEffect(() => {
+        if (newAssetSearchTerm.length < 2 || selectedNewAsset) {
+            setNewAssetResults([]);
+            return;
+        }
+        setIsSearchingNewAsset(true);
+        lookupAsset(newAssetSearchTerm, 'STOCK')
+            .then(data => setNewAssetResults(data))
+            .catch(() => setNewAssetResults([]))
+            .finally(() => setIsSearchingNewAsset(false));
+    }, [newAssetSearchTerm, selectedNewAsset]);
+
+    const handleSelectNewAsset = (asset: Asset) => {
+        setSelectedNewAsset(asset);
+        setNewAssetInput(asset.ticker_symbol || asset.name);
+        setNewAssetResults([]);
+        setValue('newAssetSearch', asset.ticker_symbol || asset.name);
+    };
+
+    const handleClearNewAsset = () => {
+        setSelectedNewAsset(null);
+        setNewAssetInput('');
+        setValue('newAssetSearch', '');
     };
 
     const handleSelectMf = (mf: MutualFundSearchResult | null) => {
@@ -458,6 +505,50 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         price_per_unit: data.bonusRatioOld!, // Repurposed for old shares held
                         transaction_date: new Date(data.transaction_date).toISOString(),
                         details,
+                    };
+                    break;
+                case 'MERGER':
+                    // Merger: quantity = conversion ratio, details contains new_asset_id
+                    // Note: new asset needs to exist or be created first via ticker lookup
+                    payload = {
+                        asset_id: selectedAsset.id,
+                        transaction_type: 'MERGER' as TransactionType,
+                        quantity: data.mergerConversionRatio!,
+                        price_per_unit: 1, // Not used for merger
+                        transaction_date: new Date(data.transaction_date).toISOString(),
+                        details: {
+                            ...details,
+                            new_asset_ticker: data.newAssetSearch,
+                        },
+                    };
+                    break;
+                case 'DEMERGER':
+                    // Demerger: quantity = ratio, details contains new_asset_id and cost allocation
+                    payload = {
+                        asset_id: selectedAsset.id,
+                        transaction_type: 'DEMERGER' as TransactionType,
+                        quantity: data.demergerRatio!,
+                        price_per_unit: 1, // Not used for demerger
+                        transaction_date: new Date(data.transaction_date).toISOString(),
+                        details: {
+                            ...details,
+                            new_asset_ticker: data.newAssetSearch,
+                            cost_allocation_pct: data.costAllocationPct,
+                        },
+                    };
+                    break;
+                case 'RENAME':
+                    // Rename: transfers holdings to new ticker
+                    payload = {
+                        asset_id: selectedAsset.id,
+                        transaction_type: 'RENAME' as TransactionType,
+                        quantity: 1, // Not used for rename
+                        price_per_unit: 1, // Not used for rename
+                        transaction_date: new Date(data.transaction_date).toISOString(),
+                        details: {
+                            ...details,
+                            new_asset_ticker: data.newAssetSearch,
+                        },
                     };
                     break;
                 default:
@@ -1235,6 +1326,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         <option value="DIVIDEND">Dividend</option>
                                         <option value="SPLIT">Stock Split</option>
                                         <option value="BONUS">Bonus Issue</option>
+                                        <option value="MERGER">Merger/Amalgamation</option>
+                                        <option value="DEMERGER">Demerger/Spin-off</option>
+                                        <option value="RENAME">Ticker Rename</option>
                                     </select>
                                 </div>
 
@@ -1329,6 +1423,158 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 <span className='font-medium'>for every Old</span>
                                                 <input aria-label="Old held shares" type="number" {...register('bonusRatioOld', { required: true, valueAsNumber: true, min: 1 })} className="form-input w-20 text-center" />
                                                 <span>shares</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Merger Fields */}
+                                {actionType === 'MERGER' && (
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Enter the conversion ratio and new merged company ticker. Cost basis will be preserved per Section 47(vii).
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <label htmlFor="transaction_date_merger" className="form-label">Record Date</label>
+                                                <input id="transaction_date_merger" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="mergerConversionRatio" className="form-label">Conversion Ratio (new:old)</label>
+                                                <input id="mergerConversionRatio" type="number" step="any" {...register('mergerConversionRatio', { required: "Ratio is required", valueAsNumber: true, min: { value: 0.0001, message: "Must be positive" } })} className="form-input" placeholder="e.g., 1.68" />
+                                                {errors.mergerConversionRatio && <p className="text-red-500 text-xs italic">{errors.mergerConversionRatio.message}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="form-group relative">
+                                            <label htmlFor="newAssetSearch" className="form-label">New Merged Company Ticker</label>
+                                            <div className="relative">
+                                                <input
+                                                    id="newAssetSearch"
+                                                    type="text"
+                                                    value={newAssetInput}
+                                                    onChange={(e) => setNewAssetInput(e.target.value)}
+                                                    className="form-input"
+                                                    placeholder="Search for ticker..."
+                                                    autoComplete="off"
+                                                />
+                                                {selectedNewAsset && (
+                                                    <button type="button" onClick={handleClearNewAsset} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">×</button>
+                                                )}
+                                            </div>
+                                            {isSearchingNewAsset && <p className="text-xs text-gray-500">Searching...</p>}
+                                            {newAssetResults.length > 0 && (
+                                                <ul className="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1">
+                                                    {newAssetResults.map((asset) => (
+                                                        <li key={asset.id} onClick={() => handleSelectNewAsset(asset)} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                                            <span className="font-semibold">{asset.ticker_symbol}</span> - {asset.name}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                            <input type="hidden" {...register('newAssetSearch', { required: "New ticker is required" })} />
+                                            {errors.newAssetSearch && <p className="text-red-500 text-xs italic">{errors.newAssetSearch.message}</p>}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Demerger Fields */}
+                                {actionType === 'DEMERGER' && (
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Enter the spin-off ratio and cost basis allocation percentage for the demerged company.
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <label htmlFor="transaction_date_demerger" className="form-label">Record Date</label>
+                                                <input id="transaction_date_demerger" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                            </div>
+                                            <div className="form-group">
+                                                <label htmlFor="demergerRatio" className="form-label">Demerger Ratio (new:old)</label>
+                                                <input id="demergerRatio" type="number" step="any" {...register('demergerRatio', { required: "Ratio is required", valueAsNumber: true, min: { value: 0.0001, message: "Must be positive" } })} className="form-input" placeholder="e.g., 1" />
+                                                {errors.demergerRatio && <p className="text-red-500 text-xs italic">{errors.demergerRatio.message}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <label htmlFor="costAllocationPct" className="form-label">Cost Allocation to Demerged (%)</label>
+                                                <input id="costAllocationPct" type="number" step="any" {...register('costAllocationPct', { required: "Cost % is required", valueAsNumber: true, min: { value: 0, message: "Min 0%" }, max: { value: 100, message: "Max 100%" } })} className="form-input" placeholder="e.g., 30" />
+                                                {errors.costAllocationPct && <p className="text-red-500 text-xs italic">{errors.costAllocationPct.message}</p>}
+                                            </div>
+                                            <div className="form-group relative">
+                                                <label htmlFor="newAssetSearch_demerger" className="form-label">Demerged Company Ticker</label>
+                                                <div className="relative">
+                                                    <input
+                                                        id="newAssetSearch_demerger"
+                                                        type="text"
+                                                        value={newAssetInput}
+                                                        onChange={(e) => setNewAssetInput(e.target.value)}
+                                                        className="form-input"
+                                                        placeholder="Search for ticker..."
+                                                        autoComplete="off"
+                                                    />
+                                                    {selectedNewAsset && (
+                                                        <button type="button" onClick={handleClearNewAsset} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">×</button>
+                                                    )}
+                                                </div>
+                                                {isSearchingNewAsset && <p className="text-xs text-gray-500">Searching...</p>}
+                                                {newAssetResults.length > 0 && (
+                                                    <ul className="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1">
+                                                        {newAssetResults.map((asset) => (
+                                                            <li key={asset.id} onClick={() => handleSelectNewAsset(asset)} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                                                <span className="font-semibold">{asset.ticker_symbol}</span> - {asset.name}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                                <input type="hidden" {...register('newAssetSearch', { required: "New ticker is required" })} />
+                                                {errors.newAssetSearch && <p className="text-red-500 text-xs italic">{errors.newAssetSearch.message}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Rename Fields */}
+                                {actionType === 'RENAME' && (
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Enter the new ticker symbol. All holdings will be transferred with preserved cost basis and holding period.
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <label htmlFor="transaction_date_rename" className="form-label">Effective Date</label>
+                                                <input id="transaction_date_rename" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
+                                            </div>
+                                            <div className="form-group relative">
+                                                <label htmlFor="newAssetSearch_rename" className="form-label">New Ticker Symbol</label>
+                                                <div className="relative">
+                                                    <input
+                                                        id="newAssetSearch_rename"
+                                                        type="text"
+                                                        value={newAssetInput}
+                                                        onChange={(e) => setNewAssetInput(e.target.value)}
+                                                        className="form-input"
+                                                        placeholder="Search for ticker..."
+                                                        autoComplete="off"
+                                                    />
+                                                    {selectedNewAsset && (
+                                                        <button type="button" onClick={handleClearNewAsset} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">×</button>
+                                                    )}
+                                                </div>
+                                                {isSearchingNewAsset && <p className="text-xs text-gray-500">Searching...</p>}
+                                                {newAssetResults.length > 0 && (
+                                                    <ul className="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1">
+                                                        {newAssetResults.map((asset) => (
+                                                            <li key={asset.id} onClick={() => handleSelectNewAsset(asset)} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                                                <span className="font-semibold">{asset.ticker_symbol}</span> - {asset.name}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                                <input type="hidden" {...register('newAssetSearch', { required: "New ticker is required" })} />
+                                                {errors.newAssetSearch && <p className="text-red-500 text-xs italic">{errors.newAssetSearch.message}</p>}
                                             </div>
                                         </div>
                                     </div>

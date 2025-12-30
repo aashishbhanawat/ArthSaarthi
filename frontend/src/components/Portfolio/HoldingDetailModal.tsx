@@ -31,13 +31,18 @@ const calculateCagr = (buyPrice: number, currentPrice: number, buyDate: string):
 interface TransactionRowProps {
     transaction: Transaction;
     currentPrice: number;
+    costReductionRatio: number;
     onEdit: (transaction: Transaction) => void;
     onDelete: (transaction: Transaction) => void;
 }
 
-const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPrice, onEdit, onDelete }) => {
+const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPrice, costReductionRatio, onEdit, onDelete }) => {
+    // Scale price by cost reduction ratio for demerged parent assets
+    const originalPrice = Number(transaction.price_per_unit);
+    const adjustedPrice = originalPrice * costReductionRatio;
+    const hasDemergerAdjustment = costReductionRatio < 1;
     const cagr = transaction.transaction_type === 'BUY'
-        ? calculateCagr(Number(transaction.price_per_unit), currentPrice, transaction.transaction_date)
+        ? calculateCagr(adjustedPrice, currentPrice, transaction.transaction_date)
         : null;
 
     return (
@@ -47,8 +52,17 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPri
                 {transaction.transaction_type}
             </td>
             <td className="p-2 text-right font-mono dark:text-gray-200">{Number(transaction.quantity).toLocaleString('en-IN', { maximumFractionDigits: 4 })}</td>
-            <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(transaction.price_per_unit, 'INR')}</td>
-            <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(Number(transaction.quantity) * Number(transaction.price_per_unit), 'INR')}</td>
+            <td className="p-2 text-right font-mono dark:text-gray-200" title={hasDemergerAdjustment ? `Adjusted for demerger. Original: ${formatCurrency(originalPrice, 'INR')}` : undefined}>
+                {hasDemergerAdjustment ? (
+                    <span>
+                        {formatCurrency(adjustedPrice, 'INR')}
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(orig: {formatCurrency(originalPrice, 'INR')})</span>
+                    </span>
+                ) : (
+                    formatCurrency(originalPrice, 'INR')
+                )}
+            </td>
+            <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(Number(transaction.quantity) * adjustedPrice, 'INR')}</td>
             <td className="p-2 text-right font-mono dark:text-gray-200">
                 {cagr !== null ? `${cagr.toFixed(2)}%` : 'N/A'}
             </td>
@@ -71,13 +85,30 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
     const { data: analytics, isLoading: isLoadingAnalytics, isError: isErrorAnalytics } = useAssetAnalytics(portfolioId, holding.asset_id);
     const formatSensitiveCurrency = usePrivacySensitiveCurrency();
 
-    const openTransactions = useMemo(() => {
-        if (!transactions) return [];
+    const { costReductionRatio, openTransactions } = useMemo(() => {
+        if (!transactions) return { costReductionRatio: 1, openTransactions: [] };
 
         const sortedTxs = [...transactions].sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
 
-        // Include RSU_VEST and ESPP_PURCHASE as acquisition types alongside BUY
+        // Calculate cost reduction from DEMERGER events
+        let originalCost = 0;
+        let totalCostReduction = 0;
         const acquisitionTypes = ['BUY', 'RSU_VEST', 'ESPP_PURCHASE'];
+
+        for (const tx of sortedTxs) {
+            if (acquisitionTypes.includes(tx.transaction_type)) {
+                originalCost += Number(tx.quantity) * Number(tx.price_per_unit);
+            }
+            if (tx.transaction_type === 'DEMERGER' && tx.details?.total_cost_allocated) {
+                totalCostReduction += Number(tx.details.total_cost_allocated);
+            }
+        }
+
+        const ratio = originalCost > 0 && totalCostReduction > 0
+            ? (originalCost - totalCostReduction) / originalCost
+            : 1;
+
+        // Include RSU_VEST and ESPP_PURCHASE as acquisition types alongside BUY
         const buys = JSON.parse(JSON.stringify(sortedTxs.filter(tx => acquisitionTypes.includes(tx.transaction_type))));
         const sells = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'SELL')));
 
@@ -93,7 +124,10 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                 }
             }
         }
-        return buys.filter((buy: Transaction) => Number(buy.quantity) > 0.000001);
+        return {
+            costReductionRatio: ratio,
+            openTransactions: buys.filter((buy: Transaction) => Number(buy.quantity) > 0.000001)
+        };
     }, [transactions]);
 
     return (
@@ -161,7 +195,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                                 </tr>
                             </thead>
                             <tbody>
-                                {openTransactions.map((tx: Transaction) => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
+                                {openTransactions.map((tx: Transaction) => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} costReductionRatio={costReductionRatio} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
                             </tbody>
                         </table>
                     )}
