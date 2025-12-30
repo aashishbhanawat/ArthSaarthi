@@ -27,3 +27,6 @@ class TransactionType(str, Enum):
     COUPON = "COUPON"
     ESPP_PURCHASE = "ESPP_PURCHASE"
     RSU_VEST = "RSU_VEST"
+    MERGER = "MERGER"
+    DEMERGER = "DEMERGER"
+    RENAME = "RENAME"

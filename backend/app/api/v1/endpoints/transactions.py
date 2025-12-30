@@ -181,6 +181,30 @@ def create_transaction(
                     transaction_in=transaction_create_schema,
                 )
                 created_transactions.append(transaction)
+            elif transaction_type == TransactionType.MERGER:
+                transaction = crud_corporate_action.handle_merger(
+                    db=db,
+                    portfolio_id=portfolio_id,
+                    asset_id=asset_id_to_use,
+                    transaction_in=transaction_create_schema,
+                )
+                created_transactions.append(transaction)
+            elif transaction_type == TransactionType.DEMERGER:
+                transaction = crud_corporate_action.handle_demerger(
+                    db=db,
+                    portfolio_id=portfolio_id,
+                    asset_id=asset_id_to_use,
+                    transaction_in=transaction_create_schema,
+                )
+                created_transactions.append(transaction)
+            elif transaction_type == TransactionType.RENAME:
+                transaction = crud_corporate_action.handle_rename(
+                    db=db,
+                    portfolio_id=portfolio_id,
+                    asset_id=asset_id_to_use,
+                    transaction_in=transaction_create_schema,
+                )
+                created_transactions.append(transaction)
             else:
                 logger.debug(
                     "else part of create transaction logic for %s", transaction_type
