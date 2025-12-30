@@ -2,7 +2,7 @@ import logging
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from dateutil.relativedelta import relativedelta
@@ -60,31 +60,43 @@ def _get_realized_and_unrealized_cash_flows(
     """
     sorted_txs = sorted(transactions, key=lambda t: t.transaction_date.date())
 
-    # Calculate total cost reduction from DEMERGER events for this asset
-    # This scales down the original BUY amounts for correct XIRR
+    # First pass: find earliest demerger date and total cost reduction
     total_cost_reduction = Decimal("0.0")
-    original_cost = Decimal("0.0")
+    earliest_demerger_date: Optional[date] = None
     for t in sorted_txs:
-        if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST"):
-            price = t.price_per_unit if t.price_per_unit else Decimal("0")
-            original_cost += t.quantity * price
         if t.transaction_type == "DEMERGER":
             if t.details and "total_cost_allocated" in t.details:
                 total_cost_reduction += Decimal(str(t.details["total_cost_allocated"]))
+                tx_date = t.transaction_date.date()
+                if earliest_demerger_date is None or tx_date < earliest_demerger_date:
+                    earliest_demerger_date = tx_date
 
-    # Calculate remaining cost ratio after all demergers
-    if original_cost > 0 and total_cost_reduction > 0:
-        remaining_ratio = (original_cost - total_cost_reduction) / original_cost
+    # Second pass: calculate cost of BUYs BEFORE demerger date only
+    pre_demerger_cost = Decimal("0.0")
+    for t in sorted_txs:
+        if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST"):
+            price = t.price_per_unit if t.price_per_unit else Decimal("0")
+            # Only count if no demerger OR buy is before demerger
+            tx_date = t.transaction_date.date()
+            if earliest_demerger_date is None or tx_date < earliest_demerger_date:
+                pre_demerger_cost += t.quantity * price
+
+    # Ratio = remaining cost / original pre-demerger cost
+    if pre_demerger_cost > 0 and total_cost_reduction > 0:
+        remaining_ratio = (pre_demerger_cost - total_cost_reduction) / pre_demerger_cost
     else:
         remaining_ratio = Decimal("1.0")
 
     # Create copies to avoid mutation and to track remaining quantities.
-    # Scale price_per_unit by remaining_ratio for demerged assets
+    # Scale price_per_unit by remaining_ratio for BUYs BEFORE demerger date only
     buys = []
     for t in sorted_txs:
         if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST"):
             buy_copy = t.model_copy(deep=True)
-            if remaining_ratio < Decimal("1.0") and buy_copy.price_per_unit:
+            # Only scale if demerger exists AND buy is before demerger date
+            if (remaining_ratio < Decimal("1.0") and buy_copy.price_per_unit
+                    and earliest_demerger_date
+                    and t.transaction_date.date() < earliest_demerger_date):
                 buy_copy.price_per_unit = buy_copy.price_per_unit * remaining_ratio
             buys.append(buy_copy)
 

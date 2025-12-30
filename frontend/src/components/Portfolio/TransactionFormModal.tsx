@@ -1432,7 +1432,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 {actionType === 'MERGER' && (
                                     <div className="space-y-4">
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Enter the conversion ratio and new merged company ticker. Cost basis will be preserved per Section 47(vii).
+                                            Enter the conversion ratio and new merged company ticker. Cost basis will be preserved.
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">

@@ -226,7 +226,7 @@ When two companies merge (e.g., HDFC Bank absorbed HDFC Ltd):
 6.  Search for and select the **new merged company ticker**.
 7.  Click **"Save Transaction"**.
 
-> **Cost Basis:** The system preserves your original acquisition dates and cost basis per Section 47(vii) of the Income Tax Act. XIRR calculations reflect your true investment timeline.
+> **Cost Basis:** The system preserves your original acquisition dates and cost basis. XIRR calculations reflect your true investment timeline.
 
 ### 8.2. Adding a Demerger
 
