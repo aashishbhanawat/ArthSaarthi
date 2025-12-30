@@ -322,11 +322,10 @@ def _process_market_traded_assets(
     unique_asset_ids_query = (
         db.query(models.Transaction.asset_id)
         .filter(models.Transaction.portfolio_id == portfolio_id)
-        .filter(
-            models.Transaction.transaction_type.in_(
-                ["BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT", "BONUS"]
-            )
-        )
+        .filter(models.Transaction.transaction_type.in_([
+            "BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT",
+            "BONUS", "MERGER", "RENAME", "DEMERGER"
+        ]))
         .distinct()
     )
     unique_asset_ids = [row[0] for row in unique_asset_ids_query.all()]
@@ -391,6 +390,34 @@ def _process_market_traded_assets(
             if holdings_state[ticker]["quantity"] > 0 and tx.price_per_unit > 0:
                 ratio = tx.quantity / tx.price_per_unit
                 holdings_state[ticker]["quantity"] *= ratio
+
+        elif tx.transaction_type == TransactionType.MERGER:
+            # MERGER: Zero out old holdings - shares have been converted to new asset
+            # The BUY transaction for new shares was created by the merger handler
+            logger.debug(
+                f"Processing MERGER for {ticker}. Zeroing out old holdings."
+            )
+            holdings_state[ticker]["quantity"] = Decimal("0.0")
+            holdings_state[ticker]["total_invested"] = Decimal("0.0")
+
+        elif tx.transaction_type == TransactionType.RENAME:
+            # RENAME: Zero out old holdings - shares transferred to new ticker
+            # The BUY transaction for new ticker was created by the rename handler
+            logger.debug(
+                f"Processing RENAME for {ticker}. Zeroing out old holdings."
+            )
+            holdings_state[ticker]["quantity"] = Decimal("0.0")
+            holdings_state[ticker]["total_invested"] = Decimal("0.0")
+
+        elif tx.transaction_type == TransactionType.DEMERGER:
+            # DEMERGER: Reduce parent's cost basis by absolute amount allocated
+            # Use total_cost_allocated for absolute subtraction (multi-demerger safe)
+            if tx.details and "total_cost_allocated" in tx.details:
+                cost_to_subtract = Decimal(str(tx.details["total_cost_allocated"]))
+                old_cost = holdings_state[ticker]["total_invested"]
+                new_cost = old_cost - cost_to_subtract
+                logger.debug(f"DEMERGER {ticker}: {old_cost}->{new_cost}")
+                holdings_state[ticker]["total_invested"] = new_cost
 
         elif tx.transaction_type == "SELL":
             if holdings_state[ticker]["quantity"] > 0:

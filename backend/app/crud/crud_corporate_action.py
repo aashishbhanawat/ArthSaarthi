@@ -202,3 +202,336 @@ def handle_bonus_issue(
     logger.info("Saved BONUS audit transaction.")
 
     return bonus_audit_transaction
+
+
+def handle_merger(
+    db: Session,
+    *,
+    portfolio_id: UUID,
+    asset_id: UUID,
+    transaction_in: schemas.TransactionCreate,
+) -> models.Transaction:
+    """
+    Handles a stock merger (amalgamation) corporate action.
+
+    Tax Treatment (India - Section 47(vii)):
+    - Share exchange is NOT a "transfer" for capital gains purposes
+    - Original cost basis and acquisition dates are preserved
+    - Capital gains arise only upon eventual sale of new shares
+
+    Process:
+    1. Saves MERGER audit transaction with full details in JSON
+    2. Creates BUY transaction for new shares preserving cost basis
+    3. Holdings calculation will interpret MERGER to hide old holdings
+    """
+    logger.info(
+        f"Handling merger for asset {asset_id} in portfolio {portfolio_id}"
+    )
+
+    details = transaction_in.details or {}
+    record_date = transaction_in.transaction_date
+    conversion_ratio = transaction_in.quantity  # New shares per old share
+    new_asset_id = details.get("new_asset_id")
+    new_asset_ticker = details.get("new_asset_ticker")
+
+    # Resolve new asset - accept either ID or ticker
+    if not new_asset_id and not new_asset_ticker:
+        raise HTTPException(
+            status_code=400,
+            detail="new_asset_id or new_asset_ticker is required in details for merger"
+        )
+
+    if not new_asset_id and new_asset_ticker:
+        # Look up or create the new asset by ticker
+        new_asset = crud.asset.get_or_create_by_ticker(
+            db, ticker_symbol=new_asset_ticker, asset_type="STOCK"
+        )
+        new_asset_id = str(new_asset.id)
+
+    if conversion_ratio <= 0:
+        raise HTTPException(status_code=400, detail="Invalid conversion ratio.")
+
+    # Get the portfolio to access user_id
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    # Calculate current holdings of the old asset
+    old_holdings = crud.transaction.get_holdings_on_date(
+        db,
+        user_id=portfolio.user_id,
+        asset_id=asset_id,
+        on_date=record_date,
+    )
+
+    if old_holdings <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No holdings found for this asset on {record_date}"
+        )
+
+    # Calculate new shares based on conversion ratio
+    new_shares = old_holdings * conversion_ratio
+    logger.info(f"Converting {old_holdings} old shares to {new_shares} new shares")
+
+    # Fetch original BUY transactions to preserve acquisition dates
+    # This is critical for correct XIRR and holding period calculation
+    original_buys = db.query(models.Transaction).filter(
+        models.Transaction.portfolio_id == portfolio_id,
+        models.Transaction.asset_id == asset_id,
+        models.Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
+        models.Transaction.transaction_date <= record_date,
+    ).all()
+
+    # Create BUY transactions for new asset preserving original acquisition dates
+    for orig_buy in original_buys:
+        # Adjust quantity by conversion ratio
+        new_qty = orig_buy.quantity * conversion_ratio
+        # Adjust price inversely to preserve total cost basis
+        # (new_qty * new_price = orig_qty * orig_price)
+        adjusted_price = orig_buy.price_per_unit / conversion_ratio
+        new_share_buy = schemas.TransactionCreate(
+            asset_id=UUID(new_asset_id),
+            transaction_type=TransactionType.BUY,
+            quantity=new_qty,
+            price_per_unit=adjusted_price,
+            transaction_date=orig_buy.transaction_date,  # Preserve original date!
+            fees=Decimal("0.0"),
+            details={
+                "from_merger": True,
+                "original_asset_id": str(asset_id),
+                "original_transaction_id": str(orig_buy.id),
+            },
+        )
+        crud.transaction.create_with_portfolio(
+            db=db, obj_in=new_share_buy, portfolio_id=portfolio_id
+        )
+        logger.info(
+            f"Created BUY for {new_qty} shares, date {orig_buy.transaction_date}"
+        )
+
+    # Save the MERGER audit transaction
+    merger_audit = crud.transaction.create_with_portfolio(
+        db=db, obj_in=transaction_in, portfolio_id=portfolio_id
+    )
+    logger.info("Saved MERGER audit transaction.")
+
+    return merger_audit
+
+
+def handle_demerger(
+    db: Session,
+    *,
+    portfolio_id: UUID,
+    asset_id: UUID,
+    transaction_in: schemas.TransactionCreate,
+) -> models.Transaction:
+    """
+    Handles a stock demerger (spin-off) corporate action.
+
+    Process:
+    1. Keeps original holding (cost basis may be reduced)
+    2. Creates BUY transactions for demerged shares with proportional cost basis
+    3. Preserves original acquisition dates for holding period
+    """
+    logger.info(
+        f"Handling demerger for asset {asset_id} in portfolio {portfolio_id}"
+    )
+
+    details = transaction_in.details or {}
+    record_date = transaction_in.transaction_date
+    new_asset_id = details.get("new_asset_id")
+    new_asset_ticker = details.get("new_asset_ticker")
+    ratio = transaction_in.quantity  # New shares per old share
+    cost_allocation_pct = Decimal(str(details.get("cost_allocation_pct", "0")))
+
+    # Resolve new asset - accept either ID or ticker
+    if not new_asset_id and not new_asset_ticker:
+        raise HTTPException(
+            status_code=400,
+            detail="new_asset_id or new_asset_ticker required for demerger"
+        )
+
+    if not new_asset_id and new_asset_ticker:
+        new_asset = crud.asset.get_or_create_by_ticker(
+            db, ticker_symbol=new_asset_ticker, asset_type="STOCK"
+        )
+        new_asset_id = str(new_asset.id)
+
+    if ratio <= 0:
+        raise HTTPException(status_code=400, detail="Invalid demerger ratio.")
+
+    # Get the portfolio
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    # Calculate current holdings
+    old_holdings = crud.transaction.get_holdings_on_date(
+        db,
+        user_id=portfolio.user_id,
+        asset_id=asset_id,
+        on_date=record_date,
+    )
+
+    if old_holdings <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No holdings found for this asset on {record_date}"
+        )
+
+    # Calculate demerged shares
+    demerged_shares = old_holdings * ratio
+    logger.info(f"Demerging {demerged_shares} shares from {old_holdings}")
+
+    # Fetch original BUY transactions to preserve acquisition dates
+    # This is critical for correct XIRR and holding period calculation
+    original_buys = db.query(models.Transaction).filter(
+        models.Transaction.portfolio_id == portfolio_id,
+        models.Transaction.asset_id == asset_id,
+        models.Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
+        models.Transaction.transaction_date <= record_date,
+    ).all()
+
+    # Calculate total cost being allocated to child (for holdings reduction)
+    total_cost_allocated = Decimal("0.0")
+    pct = cost_allocation_pct / Decimal("100")
+
+    # Create BUY transactions for demerged child shares only
+    for orig_buy in original_buys:
+        # Adjust quantity by ratio for child
+        new_qty = orig_buy.quantity * ratio
+        # Adjust price by cost allocation percentage for child
+        adjusted_price = orig_buy.price_per_unit * pct
+        # Track total cost allocated
+        total_cost_allocated += orig_buy.quantity * orig_buy.price_per_unit * pct
+
+        # Create child BUY
+        demerged_buy = schemas.TransactionCreate(
+            asset_id=UUID(new_asset_id),
+            transaction_type=TransactionType.BUY,
+            quantity=new_qty,
+            price_per_unit=adjusted_price,
+            transaction_date=orig_buy.transaction_date,
+            fees=Decimal("0.0"),
+            details={
+                "from_demerger": True,
+                "original_asset_id": str(asset_id),
+                "original_transaction_id": str(orig_buy.id),
+            },
+        )
+        crud.transaction.create_with_portfolio(
+            db=db, obj_in=demerged_buy, portfolio_id=portfolio_id
+        )
+        logger.info(f"Created child BUY: {new_qty} @ {adjusted_price}")
+
+    # Add metadata to the DEMERGER audit transaction
+    updated_details = dict(transaction_in.details or {})
+    updated_details["total_cost_allocated"] = str(total_cost_allocated)
+    transaction_in_with_cost = transaction_in.model_copy(
+        update={"details": updated_details}
+    )
+
+    # Save the DEMERGER audit transaction with cost info
+    demerger_audit = crud.transaction.create_with_portfolio(
+        db=db, obj_in=transaction_in_with_cost, portfolio_id=portfolio_id
+    )
+    logger.info(f"Saved DEMERGER. Cost allocated: {total_cost_allocated}")
+
+    return demerger_audit
+
+
+def handle_rename(
+    db: Session,
+    *,
+    portfolio_id: UUID,
+    asset_id: UUID,
+    transaction_in: schemas.TransactionCreate,
+) -> models.Transaction:
+    """
+    Handles a ticker rename/symbol change corporate action.
+
+    Process:
+    1. Creates RENAME audit transaction with mapping details
+    2. Holdings calculation interprets RENAME to map old ticker to new
+    3. No cost basis or holding period changes
+    """
+    logger.info(
+        f"Handling rename for asset {asset_id} in portfolio {portfolio_id}"
+    )
+
+    details = transaction_in.details or {}
+    new_asset_id = details.get("new_asset_id")
+    new_asset_ticker = details.get("new_asset_ticker")
+
+    # Resolve new asset - accept either ID or ticker
+    if not new_asset_id and not new_asset_ticker:
+        raise HTTPException(
+            status_code=400,
+            detail="new_asset_id or new_asset_ticker is required in details for rename"
+        )
+
+    if not new_asset_id and new_asset_ticker:
+        new_asset = crud.asset.get_or_create_by_ticker(
+            db, ticker_symbol=new_asset_ticker, asset_type="STOCK"
+        )
+        new_asset_id = str(new_asset.id)
+
+    # Get the portfolio
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    # Get current holdings to transfer
+    record_date = transaction_in.transaction_date
+    old_holdings = crud.transaction.get_holdings_on_date(
+        db,
+        user_id=portfolio.user_id,
+        asset_id=asset_id,
+        on_date=record_date,
+    )
+
+    if old_holdings <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No holdings found for this asset on {record_date}"
+        )
+
+    # Fetch original BUY transactions to preserve acquisition dates
+    # This is critical for correct XIRR and holding period calculation
+    original_buys = db.query(models.Transaction).filter(
+        models.Transaction.portfolio_id == portfolio_id,
+        models.Transaction.asset_id == asset_id,
+        models.Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
+        models.Transaction.transaction_date <= record_date,
+    ).all()
+
+    # Create BUY transactions for new ticker preserving original acquisition dates
+    for orig_buy in original_buys:
+        new_ticker_buy = schemas.TransactionCreate(
+            asset_id=UUID(new_asset_id),
+            transaction_type=TransactionType.BUY,
+            quantity=orig_buy.quantity,  # Same quantity for rename
+            price_per_unit=orig_buy.price_per_unit,
+            transaction_date=orig_buy.transaction_date,  # Preserve original date!
+            fees=Decimal("0.0"),
+            details={
+                "from_rename": True,
+                "original_asset_id": str(asset_id),
+                "original_transaction_id": str(orig_buy.id),
+            },
+        )
+        crud.transaction.create_with_portfolio(
+            db=db, obj_in=new_ticker_buy, portfolio_id=portfolio_id
+        )
+        qty = orig_buy.quantity
+        dt = orig_buy.transaction_date
+        logger.info(f"Rename BUY: {qty} @ {dt}")
+
+    # Save the RENAME audit transaction
+    rename_audit = crud.transaction.create_with_portfolio(
+        db=db, obj_in=transaction_in, portfolio_id=portfolio_id
+    )
+    logger.info("Saved RENAME audit transaction.")
+
+    return rename_audit

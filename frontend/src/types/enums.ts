@@ -10,4 +10,7 @@ export enum TransactionType {
   ESPP_PURCHASE = 'ESPP_PURCHASE',
   RSU_VEST = 'RSU_VEST',
   CORPORATE_ACTION = 'Corporate Action',
+  MERGER = 'MERGER',
+  DEMERGER = 'DEMERGER',
+  RENAME = 'RENAME',
 }

@@ -46,6 +46,27 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
         return total_buys - total_sells
 
+    def get_cost_basis_on_date(
+        self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID, on_date: datetime
+    ) -> Decimal:
+        """
+        Calculate total cost basis for an asset up to a given date.
+        Cost basis = sum of (quantity * price_per_unit) for all
+        acquisition transactions. Used by merger/demerger handlers.
+        """
+        acquisition_types = ["BUY", "ESPP_PURCHASE", "RSU_VEST"]
+        # Sum of (quantity * price_per_unit) for all acquisitions
+        result = db.query(
+            func.sum(Transaction.quantity * Transaction.price_per_unit)
+        ).filter(
+            Transaction.user_id == user_id,
+            Transaction.asset_id == asset_id,
+            Transaction.transaction_type.in_(acquisition_types),
+            Transaction.transaction_date <= on_date,
+        ).scalar() or Decimal("0")
+
+        return Decimal(str(result))
+
     # The create_with_portfolio method is now simplified.
     # The complex logic for creating a new asset is removed.
     def create_with_portfolio(
