@@ -5,7 +5,7 @@ import { PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate, Tra
 import { RecurringDepositCreate } from '../types/recurring_deposit';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
-import { PortfolioAnalytics, AssetAnalytics } from '../types/analytics';
+import { PortfolioAnalytics, AssetAnalytics, DiversificationResponse } from '../types/analytics';
 import { useToast } from '../context/ToastContext';
 import { ApiError, getErrorMessage } from '../types/api';
 
@@ -269,5 +269,13 @@ export const useAssetSearch = (query: string) => {
         queryKey: ['assetSearch', query],
         queryFn: () => portfolioApi.lookupAsset(query),
         enabled: !!query && query.length > 1,
+    });
+};
+
+export const useDiversification = (portfolioId: string | undefined) => {
+    return useQuery<DiversificationResponse, Error>({
+        queryKey: ['diversification', portfolioId],
+        queryFn: () => portfolioApi.getDiversification(portfolioId!),
+        enabled: !!portfolioId,
     });
 };

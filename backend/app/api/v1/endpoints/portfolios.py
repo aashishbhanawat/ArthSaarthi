@@ -202,6 +202,29 @@ def get_asset_analytics(
         db=db, portfolio_id=portfolio_id, asset_id=asset_id
     )
 
+
+@router.get(
+    "/{portfolio_id}/diversification",
+    response_model=schemas.DiversificationResponse
+)
+def get_portfolio_diversification(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    current_user: models.User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get diversification analysis for a specific portfolio (FR6.4).
+    Returns breakdown by asset class, sector, and geography.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    return crud.analytics.get_diversification(db=db, portfolio_id=portfolio_id)
+
 router.include_router(
     bonds_router.router,
     prefix="/{portfolio_id}/bonds",

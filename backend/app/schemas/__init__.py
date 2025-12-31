@@ -1,4 +1,10 @@
-from .analytics import AssetAnalytics, FixedDepositAnalytics, PortfolioAnalytics
+from .analytics import (
+    AssetAnalytics,
+    DiversificationResponse,
+    DiversificationSegment,
+    FixedDepositAnalytics,
+    PortfolioAnalytics,
+)
 from .asset import (
     Asset,
     AssetCreate,  # noqa: F401
@@ -98,6 +104,8 @@ __all__ = [
     "AssetSearchResult",
     "AssetUpdate",
     "AssetAnalytics",
+    "DiversificationResponse",
+    "DiversificationSegment",
     "FixedDepositAnalytics",
     "PortfolioHoldingsAndSummary",
     "DashboardSummary",

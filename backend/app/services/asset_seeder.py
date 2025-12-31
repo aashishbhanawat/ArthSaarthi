@@ -654,3 +654,135 @@ class AssetSeeder:
 
         # Pass 6: Default (Handled by caller or return None)
         return None, None
+
+    # --- Phase 6: Diversification Enrichment (FR6.4) ---
+    def enrich_assets(self, max_assets: int = 50) -> dict:
+        """
+        Enriches assets with sector/industry/country/market_cap data.
+        Called as part of seed-assets to populate diversification metadata.
+
+        - Equities (STOCK, ETF): Fetches from yfinance
+        - Mutual Funds: Uses mf_category from AMFI NAVALL.txt
+        - Fixed Income (BOND, FD, RD, PPF): Sets sector = "Fixed Income"
+
+        Args:
+            max_assets: Maximum number of assets to enrich per run (rate limiting)
+
+        Returns:
+            Dict with enrichment statistics
+        """
+        import yfinance as yf
+
+        from app.cache.factory import get_cache_client
+        from app.services.providers.amfi_provider import AmfiIndiaProvider
+
+        stats = {"enriched": 0, "skipped": 0, "errors": 0}
+
+        # Query each asset type separately to ensure equities get enriched
+        # (otherwise fixed income assets would dominate due to their volume)
+        equities = self.db.query(models.Asset).filter(
+            models.Asset.sector.is_(None),
+            models.Asset.asset_type.in_(["STOCK", "ETF"])
+        ).limit(max_assets).all()
+
+        mutual_funds = self.db.query(models.Asset).filter(
+            models.Asset.sector.is_(None),
+            models.Asset.asset_type.in_(["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"])
+        ).limit(max_assets).all()
+
+        fixed_income = self.db.query(models.Asset).filter(
+            models.Asset.sector.is_(None),
+            models.Asset.asset_type.in_(
+                ["BOND", "FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF"]
+            )
+        ).limit(max_assets).all()
+
+        total_to_enrich = len(equities) + len(mutual_funds) + len(fixed_income)
+        if total_to_enrich == 0:
+            print("No assets need enrichment.")
+            return stats
+
+        print(f"Enriching: {len(equities)} equities, "
+              f"{len(mutual_funds)} MFs, {len(fixed_income)} fixed income...")
+
+        # Enrich Equities via yfinance (batch)
+        if equities:
+            print(f"Enriching {len(equities)} equities from yfinance...")
+            ticker_map = {}
+            for asset in equities:
+                # Build yfinance ticker
+                exchange = (asset.exchange or "").upper()
+                if exchange == "NSE":
+                    yf_ticker = f"{asset.ticker_symbol}.NS"
+                elif exchange == "BSE":
+                    yf_ticker = f"{asset.ticker_symbol}.BO"
+                else:
+                    yf_ticker = asset.ticker_symbol
+                ticker_map[yf_ticker] = asset
+
+            try:
+                yf_tickers_str = " ".join(ticker_map.keys())
+                yf_data = yf.Tickers(yf_tickers_str)
+
+                for yf_symbol, ticker_obj in yf_data.tickers.items():
+                    asset = ticker_map.get(yf_symbol)
+                    if not asset:
+                        continue
+                    try:
+                        info = ticker_obj.info
+                        if info:
+                            asset.sector = info.get("sector")
+                            asset.industry = info.get("industry")
+                            asset.country = info.get("country")
+                            asset.market_cap = info.get("marketCap")
+                            stats["enriched"] += 1
+                            if self.debug:
+                                print(
+                                    f"  {asset.ticker_symbol}: "
+                                    f"sector={asset.sector}"
+                                )
+                    except Exception as e:
+                        if self.debug:
+                            print(f"  Error for {yf_symbol}: {e}")
+                        stats["errors"] += 1
+            except Exception as e:
+                print(f"Error fetching yfinance batch: {e}")
+                stats["errors"] += len(equities)
+
+        # Enrich Mutual Funds via AMFI
+        if mutual_funds:
+            print(f"Enriching {len(mutual_funds)} mutual funds from AMFI...")
+            amfi = AmfiIndiaProvider(cache_client=get_cache_client())
+            nav_data = amfi.get_all_nav_data()
+
+            for asset in mutual_funds:
+                scheme_code = asset.ticker_symbol
+                fund_data = nav_data.get(scheme_code, {})
+                mf_category = fund_data.get("mf_category")
+                mf_sub_category = fund_data.get("mf_sub_category")
+
+                if mf_category:
+                    asset.sector = mf_category
+                    asset.industry = mf_sub_category
+                    asset.country = "India"
+                    stats["enriched"] += 1
+                else:
+                    asset.sector = "Mutual Fund"
+                    stats["skipped"] += 1
+
+        # Enrich Fixed Income (hardcoded)
+        if fixed_income:
+            print(f"Setting {len(fixed_income)} fixed income assets...")
+            for asset in fixed_income:
+                asset.sector = "Fixed Income"
+                asset.industry = asset.asset_type  # e.g., "BOND", "PPF"
+                asset.country = "India"
+                stats["enriched"] += 1
+
+        self.db.flush()
+        print(
+            f"Enrichment complete: {stats['enriched']} enriched, "
+            f"{stats['skipped']} skipped, {stats['errors']} errors"
+        )
+        return stats
+

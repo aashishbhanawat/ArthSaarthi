@@ -34,19 +34,23 @@ def _calculate_fd_current_value(
     For cumulative FDs, it uses compound interest.
     For payout FDs, it returns the principal.
     """
-    if interest_payout != "Cumulative":
+    # Payout FDs always return principal (interest is paid separately)
+    if (interest_payout or "").upper() != "CUMULATIVE":
         return principal
 
     if end_date < start_date:
         return principal
 
+    # Normalize compounding frequency
     compounding_frequency_map = {
-        "Annually": 1,
-        "Semi-Annually": 2,
-        "Quarterly": 4,
-        "Monthly": 12,
+        "ANNUALLY": 1,
+        "SEMI-ANNUALLY": 2,
+        "QUARTERLY": 4,
+        "MONTHLY": 12,
     }
-    n = Decimal(compounding_frequency_map.get(compounding_frequency, 1))
+    n = Decimal(compounding_frequency_map.get(
+        (compounding_frequency or "").upper(), 4
+    ))  # Default to quarterly
 
     t = Decimal((end_date - start_date).days / 365.25)
     r = Decimal(interest_rate / 100)
@@ -56,7 +60,8 @@ def _calculate_fd_current_value(
 
 def _calculate_total_interest_paid(fd: models.FixedDeposit, end_date: date) -> Decimal:
     """Calculates the total interest paid for a payout FD up to a given end date."""
-    if fd.interest_payout == "Cumulative":
+    # Cumulative FDs don't pay interest until maturity
+    if (fd.interest_payout or "").upper() == "CUMULATIVE":
         return Decimal(0)
 
     payout_frequency_map = {
@@ -527,6 +532,59 @@ def _process_market_traded_assets(
         if assets_to_price
         else {}
     )
+
+    # --- On-demand enrichment for assets with NULL sector ---
+    # This enriches sector/industry/country when fetching portfolio
+    needs_commit = False
+    for ticker in current_holdings_tickers:
+        asset = next(
+            (a for a in asset_map.values() if a.ticker_symbol == ticker), None
+        )
+        if asset and asset.sector is None:
+            if asset.asset_type in ["STOCK", "ETF"]:
+                # Equities: enrich via yfinance
+                enrichment = (
+                    financial_data_service.yfinance_provider.get_enrichment_data(
+                        ticker, asset.exchange
+                    )
+                )
+                if enrichment:
+                    asset.sector = enrichment.get("sector")
+                    asset.industry = enrichment.get("industry")
+                    asset.country = enrichment.get("country")
+                    asset.market_cap = enrichment.get("market_cap")
+                    db.add(asset)
+                    needs_commit = True
+            elif asset.asset_type in ["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"]:
+                # Mutual Funds: enrich via AMFI
+                nav_data = financial_data_service.amfi_provider.get_all_nav_data()
+                fund_data = nav_data.get(ticker, {})
+                mf_category = fund_data.get("mf_category")
+                mf_sub_category = fund_data.get("mf_sub_category")
+                if mf_category:
+                    asset.sector = mf_category
+                    asset.industry = mf_sub_category
+                    # FoF Overseas are international funds
+                    if mf_sub_category and "overseas" in mf_sub_category.lower():
+                        asset.country = "International"
+                    else:
+                        asset.country = "India"
+                    db.add(asset)
+                    needs_commit = True
+    if needs_commit:
+        try:
+            db.commit()
+        except Exception as e:
+            # Just log - don't rollback as it would delete session objects
+            logger.warning(f"Failed to commit enrichment data: {e}")
+            # Expire modified objects to reload from DB
+            for ticker in current_holdings_tickers:
+                asset = next(
+                    (a for a in asset_map.values() if a.ticker_symbol == ticker),
+                    None
+                )
+                if asset:
+                    db.expire(asset)
 
     # --- Pre-fetch FX rates for foreign assets ---
     currencies_needed = {

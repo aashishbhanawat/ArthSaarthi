@@ -1,6 +1,4 @@
 """Provider for fetching data from AMFI (Association of Mutual Funds in India)."""
-import csv
-import io
 from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal
@@ -27,12 +25,35 @@ class AmfiIndiaProvider(FinancialDataProvider):
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
 
+    def _parse_category_header(self, line: str) -> tuple[str | None, str | None]:
+        """
+        Parses category headers from NAVALL.txt.
+        Example: "Open Ended Schemes(Equity Scheme - Large Cap Fund)"
+        Returns: ("Equity Scheme", "Large Cap Fund")
+        """
+        import re
+        # Match pattern: "Open Ended Schemes(Category - Sub Category)"
+        # or "Close Ended Schemes(Category - Sub Category)"
+        match = re.match(
+            r"(?:Open|Close) Ended Schemes\s*\(([^)]+)\)", line.strip()
+        )
+        if match:
+            inner = match.group(1).strip()
+            if " - " in inner:
+                parts = inner.split(" - ", 1)
+                return parts[0].strip(), parts[1].strip()
+            return inner, None
+        return None, None
+
     def _fetch_and_parse_amfi_data(self) -> Dict[str, Dict[str, Any]]:
         """
         Fetches the raw NAV data from AMFI and parses it into a structured dict
-        keyed by scheme code.
+        keyed by scheme code. Also extracts MF category from header lines.
         """
         data: Dict[str, Dict[str, Any]] = {}
+        current_category: str | None = None
+        current_sub_category: str | None = None
+
         try:
             with httpx.Client(follow_redirects=True) as client:
                 response = client.get(self.AMFI_URL, timeout=15.0)
@@ -40,42 +61,49 @@ class AmfiIndiaProvider(FinancialDataProvider):
 
             content = response.text
             lines = content.strip().split("\n")
-            first_data_line_index = -1
-            for i, line in enumerate(lines):
-                if ";" in line and line.split(";", 1)[0].isdigit():
-                    first_data_line_index = i
-                    break
 
-            if first_data_line_index == -1:
-                return {}
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
 
-            reader = csv.reader(
-                io.StringIO("\n".join(lines[first_data_line_index:])),
-                delimiter=";",
-                skipinitialspace=True,
-            )
+                # Check if this is a category header line
+                cat, sub_cat = self._parse_category_header(line)
+                if cat:
+                    current_category = cat
+                    current_sub_category = sub_cat
+                    continue
 
-            for row in reader:
-                if len(row) >= 5 and row[0].isdigit():
-                    try:
-                        scheme_code = row[0]
-                        data[scheme_code] = {
-                            "scheme_code": scheme_code,
-                            "isin": row[1] if row[1] != "N.A." else None,
-                            "isin2": (
-                                row[2] if len(row) > 2 and row[2] != "N.A."
-                                else None
-                            ),
-                            "scheme_name": row[3],
-                            "nav": str(Decimal(row[4])) if row[4] != "N.A." else "0.0",
-                            "date": (
-                                datetime.strptime(row[5], "%d-%b-%Y").date().isoformat()
-                                if row[5] != "N.A."
-                                else None
-                            ),
-                        }
-                    except (ValueError, IndexError):
-                        continue
+                # Parse data rows (scheme code;ISIN;ISIN2;name;NAV;date)
+                if ";" in line:
+                    parts = line.split(";")
+                    if len(parts) >= 5 and parts[0].isdigit():
+                        try:
+                            scheme_code = parts[0]
+                            data[scheme_code] = {
+                                "scheme_code": scheme_code,
+                                "isin": parts[1] if parts[1] != "N.A." else None,
+                                "isin2": (
+                                    parts[2] if len(parts) > 2 and parts[2] != "N.A."
+                                    else None
+                                ),
+                                "scheme_name": parts[3],
+                                "nav": (
+                                    str(Decimal(parts[4]))
+                                    if parts[4] != "N.A." else "0.0"
+                                ),
+                                "date": (
+                                    datetime.strptime(
+                                        parts[5], "%d-%b-%Y"
+                                    ).date().isoformat()
+                                    if len(parts) > 5 and parts[5] != "N.A."
+                                    else None
+                                ),
+                                "mf_category": current_category,
+                                "mf_sub_category": current_sub_category,
+                            }
+                        except (ValueError, IndexError):
+                            continue
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             print(f"ERROR: Could not fetch AMFI data: {e}")
 
