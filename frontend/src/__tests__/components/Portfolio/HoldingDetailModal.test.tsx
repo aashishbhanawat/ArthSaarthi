@@ -32,13 +32,13 @@ const mockTransactions: Transaction[] = [
     fees: 10,
     transaction_date: '2023-01-15T10:00:00Z',
     asset: {
-        id: 'asset-1',
-        name: 'Test Asset',
-        ticker_symbol: 'TEST',
-        asset_type: 'Stock',
-        currency: 'INR',
-        isin: 'US0378331005',
-        exchange: 'NASDAQ',
+      id: 'asset-1',
+      name: 'Test Asset',
+      ticker_symbol: 'TEST',
+      asset_type: 'Stock',
+      currency: 'INR',
+      isin: 'US0378331005',
+      exchange: 'NASDAQ',
     }
   },
 ];
@@ -95,7 +95,7 @@ function createUseQueryResultMock<TData>(
 describe('HoldingDetailModal', () => {
   beforeEach(() => {
     jest.spyOn(portfolioHooks, 'useAssetTransactions').mockReturnValue(
-        createUseQueryResultMock(mockTransactions)
+      createUseQueryResultMock(mockTransactions)
     );
   });
 
@@ -105,7 +105,7 @@ describe('HoldingDetailModal', () => {
 
   it('renders holding details and transaction list correctly', () => {
     jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
-        createUseQueryResultMock({ xirr_current: 0.1234, xirr_historical: 0.2345 })
+      createUseQueryResultMock({ xirr_current: 0.1234, xirr_historical: 0.2345 })
     );
 
     renderComponent();
@@ -120,6 +120,8 @@ describe('HoldingDetailModal', () => {
     // Check for analytics data
     expect(within(screen.getByTestId('summary-xirr-current')).getByText('12.34%')).toBeInTheDocument();
     expect(within(screen.getByTestId('summary-xirr-historical')).getByText('23.45%')).toBeInTheDocument();
+    expect(within(screen.getByTestId('summary-realized-pnl')).getByText('₹0.00')).toBeInTheDocument();
+    expect(within(screen.getByTestId('summary-dividend-income')).getByText('₹0.00')).toBeInTheDocument();
 
     // Check for transaction row
     const table = screen.getByRole('table');
@@ -128,7 +130,7 @@ describe('HoldingDetailModal', () => {
 
   it('displays loading state for analytics', () => {
     jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
-        createUseQueryResultMock(undefined, { isLoading: true, isSuccess: false, status: 'pending' })
+      createUseQueryResultMock(undefined, { isLoading: true, isSuccess: false, status: 'pending' })
     );
 
     renderComponent();
@@ -136,12 +138,12 @@ describe('HoldingDetailModal', () => {
     expect(screen.getByText('XIRR (Current)')).toBeInTheDocument();
     expect(screen.getByText('XIRR (Historical)')).toBeInTheDocument();
     const loadingElements = screen.getAllByText('...');
-    expect(loadingElements).toHaveLength(2);
+    expect(loadingElements).toHaveLength(4);
   });
 
   it('displays error state for analytics', () => {
     jest.spyOn(portfolioHooks, 'useAssetAnalytics').mockReturnValue(
-        createUseQueryResultMock(undefined, { isError: true, isSuccess: false, status: 'error', error: new Error('Failed to fetch') })
+      createUseQueryResultMock(undefined, { isError: true, isSuccess: false, status: 'error', error: new Error('Failed to fetch') })
     );
 
     renderComponent();
@@ -149,6 +151,6 @@ describe('HoldingDetailModal', () => {
     expect(screen.getByText('XIRR (Current)')).toBeInTheDocument();
     expect(screen.getByText('XIRR (Historical)')).toBeInTheDocument();
     const errorElements = screen.getAllByText('N/A');
-    expect(errorElements).toHaveLength(2);
+    expect(errorElements).toHaveLength(4);
   });
 });
