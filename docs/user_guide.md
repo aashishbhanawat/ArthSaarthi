@@ -59,7 +59,18 @@ An interactive line chart showing the total value of your portfolios over time. 
 
 A pie chart showing the distribution of your investments across different assets.
 
-### 2.1. Privacy Mode {#privacy-mode}
+### 2.1. Holding Details & Analytics {#holding-details}
+
+Clicking on any asset in the Top Movers or Portfolio Holdings table opens a **Holding Detail View**, providing deep insights into that specific investment:
+
+*   **Unrealized P&L:** Paper profit/loss on your *currently held* shares.
+*   **Capital Gains:** Realized profit/loss from shares you have *sold*. This is calculated using **Fair Market Value (FMV)** for RSUs and actual buy price for other assets.
+    *   *Note:* Sell transactions linked efficiently to specific tax lots (like ESPP/RSU) use that specific cost basis. Unlinked sells use First-In-First-Out (FIFO).
+*   **Dividend Income:** Total income received from Dividends, Coupons, and Interest Credits for this asset.
+*   **XIRR (Current):** The annualized return of your *current* holdings.
+*   **XIRR (Historical):** The annualized return of the *entire* investment lifecycle, including sold positions.
+
+### 2.2. Privacy Mode {#privacy-mode}
 
 If you wish to show your dashboard to others without revealing sensitive financial totals, you can use Privacy Mode.
 

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic import BaseModel, Field
 
 
@@ -21,6 +23,13 @@ class AssetAnalytics(BaseModel):
     xirr_historical: float = Field(
         ...,
         description="XIRR for the entire history of the asset, including sold lots.",
+    )
+    realized_pnl: Decimal = Field(
+        default=Decimal("0"),
+        description="Realized P&L from sold shares (Capital Gains)",
+    )
+    dividend_income: Decimal = Field(
+        default=Decimal("0"), description="Total dividend/interest income received"
     )
 
 

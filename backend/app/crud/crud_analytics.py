@@ -1,8 +1,9 @@
 import logging
 import uuid
+from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from dateutil.relativedelta import relativedelta
@@ -20,6 +21,7 @@ from app.crud.crud_holding import (
 from app.models.fixed_deposit import FixedDeposit
 from app.models.recurring_deposit import RecurringDeposit
 from app.models.transaction import Transaction
+from app.models.transaction_link import TransactionLink
 
 logger = logging.getLogger(__name__)
 
@@ -52,13 +54,29 @@ def _calculate_xirr(dates: List[date], values: List[Decimal]) -> float:
 
 def _get_realized_and_unrealized_cash_flows(
     transactions: List[schemas.Transaction],
-) -> Tuple[List[Tuple[date, float]], List[Tuple[date, float]]]:
+    transaction_links: Optional[List[TransactionLink]] = None,
+) -> Dict[str, Any]:
     """
-    Applies FIFO logic to separate transactions into realized and unrealized lots.
+    Applies FIFO logic (with Tax Lot overrides) to separate transactions
+    into realized/unrealized lots.
+    Also calculates Realized P&L and Total Dividend Income.
 
-    Returns a tuple of two lists: (realized_cash_flows, unrealized_cash_flows).
+    Returns:
+        {
+            "realized_cash_flows": List[Tuple[date, float]],
+            "unrealized_cash_flows": List[Tuple[date, float]],
+            "realized_pnl": Decimal,
+            "dividend_income": Decimal
+        }
     """
     sorted_txs = sorted(transactions, key=lambda t: t.transaction_date.date())
+
+    # Map for quick Buy lookup
+    # Group links by Sell ID
+    links_by_sell_id = defaultdict(list)
+    if transaction_links:
+        for link in transaction_links:
+            links_by_sell_id[link.sell_transaction_id].append(link)
 
     # First pass: find earliest demerger date and total cost reduction
     total_cost_reduction = Decimal("0.0")
@@ -88,8 +106,8 @@ def _get_realized_and_unrealized_cash_flows(
         remaining_ratio = Decimal("1.0")
 
     # Create copies to avoid mutation and to track remaining quantities.
-    # Scale price_per_unit by remaining_ratio for BUYs BEFORE demerger date only
     buys = []
+    buy_id_to_copy_map = {} # To easily find the mutable copy by ID for linking
     for t in sorted_txs:
         if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST"):
             buy_copy = t.model_copy(deep=True)
@@ -99,12 +117,13 @@ def _get_realized_and_unrealized_cash_flows(
                     and t.transaction_date.date() < earliest_demerger_date):
                 buy_copy.price_per_unit = buy_copy.price_per_unit * remaining_ratio
             buys.append(buy_copy)
+            buy_id_to_copy_map[buy_copy.id] = buy_copy
 
     sells = [t for t in sorted_txs if t.transaction_type == "SELL"]
-    # Separate income from contributions, as they are handled differently.
+
+    # Separate income from contributions
     income_flows = [
-        t
-        for t in sorted_txs
+        t for t in sorted_txs
         if t.transaction_type in ("DIVIDEND", "COUPON", "INTEREST_CREDIT")
     ]
     contribution_flows = [
@@ -112,60 +131,147 @@ def _get_realized_and_unrealized_cash_flows(
     ]
 
     realized_cash_flows = []
+    realized_pnl = Decimal("0.0")
+    total_dividend_income = Decimal("0.0")
 
     for sell_tx in sells:
         sell_quantity_to_match = sell_tx.quantity
 
-        for buy_tx in buys:
-            if sell_quantity_to_match == 0:
-                break
+        sell_price = (
+            sell_tx.price_per_unit
+            if sell_tx.price_per_unit is not None
+            else Decimal("0.0")
+        )
+        sell_fx_rate = (
+            Decimal(str(sell_tx.details.get("fx_rate", 1)))
+            if sell_tx.details
+            else Decimal(1)
+        )
 
-            if buy_tx.quantity > 0:
-                match_quantity = min(sell_quantity_to_match, buy_tx.quantity)
+        # --- Priority 1: Linked Lots ---
+        if sell_tx.id in links_by_sell_id:
+            for link in links_by_sell_id[sell_tx.id]:
+                if sell_quantity_to_match <= 0:
+                    break
 
-                if (
-                    buy_tx.transaction_type == "RSU_VEST"
-                    and buy_tx.details
-                    and "fmv" in buy_tx.details
-                ):
-                    buy_price = Decimal(str(buy_tx.details["fmv"]))
-                else:
-                    buy_price = (
-                        buy_tx.price_per_unit
-                        if buy_tx.price_per_unit is not None
-                        else Decimal("0.0")
+                buy_copy = buy_id_to_copy_map.get(link.buy_transaction_id)
+                if not buy_copy:
+                    logger.warning(
+                        f"Linked Buy ID {link.buy_transaction_id} "
+                        f"not found in transactions."
+                    )
+                    continue
+
+                # Determine quantity to use from this link
+                # (capped by what's left in sell)
+                match_quantity = min(
+                    Decimal(str(link.quantity)), sell_quantity_to_match
+                )
+                if match_quantity <= 0:
+                    continue
+
+                # Safety check: available buy quantity
+                if buy_copy.quantity < match_quantity:
+                    logger.warning(
+                        f"Buy ID {buy_copy.id} has insufficient quantity "
+                        f"({buy_copy.quantity}) for link ({match_quantity}). "
+                        f"Using available."
+                    )
+                    match_quantity = buy_copy.quantity
+
+                if match_quantity > 0:
+                     # --- Price & P&L Calculation logic (Shared) ---
+                    if (
+                        buy_copy.transaction_type == "RSU_VEST"
+                        and buy_copy.details
+                        and "fmv" in buy_copy.details
+                    ):
+                        buy_price = Decimal(str(buy_copy.details["fmv"]))
+                    else:
+                        buy_price = (
+                            buy_copy.price_per_unit
+                            if buy_copy.price_per_unit is not None
+                            else Decimal("0.0")
+                        )
+
+                    buy_fx_rate = (
+                        Decimal(str(buy_copy.details.get("fx_rate", 1)))
+                        if buy_copy.details
+                        else Decimal(1)
                     )
 
-                sell_price = (
-                    sell_tx.price_per_unit
-                    if sell_tx.price_per_unit is not None
-                    else Decimal("0.0")
-                )
+                    buy_cost_for_match = match_quantity * buy_price * buy_fx_rate
+                    sell_proceeds_for_match = match_quantity * sell_price * sell_fx_rate
 
-                # --- FX Rate Adjustment ---
-                buy_fx_rate = (
-                    Decimal(str(buy_tx.details.get("fx_rate", 1)))
-                    if buy_tx.details
-                    else Decimal(1)
-                )
-                sell_fx_rate = (
-                    Decimal(str(sell_tx.details.get("fx_rate", 1)))
-                    if sell_tx.details
-                    else Decimal(1)
-                )
+                    # P&L
+                    pnl = sell_proceeds_for_match - buy_cost_for_match
+                    realized_pnl += pnl
 
-                buy_cost_for_match = match_quantity * buy_price * buy_fx_rate
-                sell_proceeds_for_match = match_quantity * sell_price * sell_fx_rate
+                    # Cashflows
+                    realized_cash_flows.append(
+                        (buy_copy.transaction_date.date(), float(-buy_cost_for_match))
+                    )
+                    realized_cash_flows.append(
+                        (
+                            sell_tx.transaction_date.date(),
+                            float(sell_proceeds_for_match),
+                        )
+                    )
 
-                realized_cash_flows.append(
-                    (buy_tx.transaction_date.date(), float(-buy_cost_for_match))
-                )
-                realized_cash_flows.append(
-                    (sell_tx.transaction_date.date(), float(sell_proceeds_for_match))
-                )
+                    # Update state
+                    buy_copy.quantity -= match_quantity
+                    sell_quantity_to_match -= match_quantity
 
-                buy_tx.quantity -= match_quantity
-                sell_quantity_to_match -= match_quantity
+        # --- Priority 2: FIFO for remaining quantity ---
+        if sell_quantity_to_match > 0:
+            for buy_copy in buys:
+                if sell_quantity_to_match == 0:
+                    break
+
+                if buy_copy.quantity > 0:
+                    match_quantity = min(sell_quantity_to_match, buy_copy.quantity)
+
+                    # --- Price & P&L Calculation logic (Shared) ---
+                    if (
+                        buy_copy.transaction_type == "RSU_VEST"
+                        and buy_copy.details
+                        and "fmv" in buy_copy.details
+                    ):
+                        buy_price = Decimal(str(buy_copy.details["fmv"]))
+                    else:
+                        buy_price = (
+                            buy_copy.price_per_unit
+                            if buy_copy.price_per_unit is not None
+                            else Decimal("0.0")
+                        )
+
+                    buy_fx_rate = (
+                        Decimal(str(buy_copy.details.get("fx_rate", 1)))
+                        if buy_copy.details
+                        else Decimal(1)
+                    )
+
+                    buy_cost_for_match = match_quantity * buy_price * buy_fx_rate
+                    sell_proceeds_for_match = match_quantity * sell_price * sell_fx_rate
+
+                    # P&L
+                    pnl = sell_proceeds_for_match - buy_cost_for_match
+                    realized_pnl += pnl
+
+                    # Cashflows
+                    realized_cash_flows.append(
+                        (buy_copy.transaction_date.date(), float(-buy_cost_for_match))
+                    )
+                    realized_cash_flows.append(
+                        (
+                            sell_tx.transaction_date.date(),
+                            float(sell_proceeds_for_match),
+                        )
+                    )
+
+                    # Update state
+                    buy_copy.quantity -= match_quantity
+                    sell_quantity_to_match -= match_quantity
 
     unrealized_cash_flows = []
     for buy_tx in buys:
@@ -199,6 +305,21 @@ def _get_realized_and_unrealized_cash_flows(
 
     # Prorate each income event based on the holding status AT THAT TIME.
     for income_tx in income_flows:
+        # Calculate Total Dividend Income (sum of all dividends)
+        fx_rate = (
+            Decimal(str(income_tx.details.get("fx_rate", 1)))
+            if income_tx.details
+            else Decimal(1)
+        )
+        # COUPON amount is in quantity, DIVIDEND amount is quantity * price
+        if income_tx.transaction_type == "COUPON":
+            amount_val = income_tx.quantity * fx_rate
+        else:
+            amount_val = income_tx.quantity * income_tx.price_per_unit * fx_rate
+
+        total_dividend_income += amount_val
+        amount = float(amount_val)
+
         # Find total shares bought up to the date of this income event.
         acquisition_types = ("BUY", "ESPP_PURCHASE", "RSU_VEST")
         bought_at_income_date = sum(
@@ -217,18 +338,6 @@ def _get_realized_and_unrealized_cash_flows(
 
         if bought_at_income_date <= 0:
             continue
-
-        fx_rate = (
-            Decimal(str(income_tx.details.get("fx_rate", 1)))
-            if income_tx.details
-            else Decimal(1)
-        )
-
-        # COUPON amount is in quantity, DIVIDEND amount is quantity * price
-        if income_tx.transaction_type == "COUPON":
-            amount = float(income_tx.quantity * fx_rate)
-        else:
-            amount = float(income_tx.quantity * income_tx.price_per_unit * fx_rate)
 
         # Correct proration: based on shares sold out of the total held at the time.
         proportion_realized = float(sold_from_that_lot / bought_at_income_date)
@@ -251,7 +360,12 @@ def _get_realized_and_unrealized_cash_flows(
         # Also add to realized flows to ensure "Historical XIRR" is correct
         realized_cash_flows.append((contrib_tx.transaction_date.date(), amount))
 
-    return realized_cash_flows, unrealized_cash_flows
+    return {
+        "realized_cash_flows": realized_cash_flows,
+        "unrealized_cash_flows": unrealized_cash_flows,
+        "realized_pnl": realized_pnl,
+        "dividend_income": total_dividend_income
+    }
 
 
 def _calculate_xirr_from_cashflows_tuple(
@@ -385,12 +499,23 @@ class CRUDAnalytics:
             db, portfolio_id=portfolio_id, asset_id=asset_id
         )
 
+        # Fetch transaction links for tax lot identification
+        transaction_ids = [tx.id for tx in transactions]
+        links = db.query(TransactionLink).filter(
+            TransactionLink.sell_transaction_id.in_(transaction_ids)
+        ).all()
+
         transactions_schemas = [
             schemas.Transaction.model_validate(tx) for tx in transactions
         ]
-        realized_cfs, unrealized_cfs = _get_realized_and_unrealized_cash_flows(
-            transactions_schemas
+
+        analytics_result = _get_realized_and_unrealized_cash_flows(
+            transactions_schemas, transaction_links=links
         )
+        realized_cfs = analytics_result["realized_cash_flows"]
+        unrealized_cfs = analytics_result["unrealized_cash_flows"]
+        realized_pnl = analytics_result["realized_pnl"]
+        dividend_income = analytics_result["dividend_income"]
 
         # --- Calculate Current XIRR (for open positions) ---
         xirr_current_cfs = list(unrealized_cfs)
@@ -411,7 +536,10 @@ class CRUDAnalytics:
             )
 
         return schemas.AssetAnalytics(
-            xirr_current=xirr_current_value, xirr_historical=xirr_historical_value
+            xirr_current=xirr_current_value,
+            xirr_historical=xirr_historical_value,
+            realized_pnl=realized_pnl,
+            dividend_income=dividend_income
         )
 
     def get_fixed_deposit_analytics(
