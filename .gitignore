@@ -64,3 +64,10 @@ core
 
 # CI/CD logs
 log.txt
+
+# Temp files
+logs.txt
+NAVAll.txt
+vite
+*_extracted.txt
+backend/extract_pdf_text.py

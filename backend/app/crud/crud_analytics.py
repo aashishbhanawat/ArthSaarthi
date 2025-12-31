@@ -798,10 +798,14 @@ class CRUDAnalytics:
                     else:
                         cap_class = "Unknown"
                 else:
-                    # Foreign thresholds (yfinance returns USD)
-                    if market_cap >= 10_000_000_000:  # $10B+
+                    # Foreign thresholds - uses USD-based thresholds.
+                    # NOTE: yfinance returns market cap in the stock's trading
+                    # currency (EUR for AIR.PA, GBP for ULVR.L, etc.), not USD.
+                    # For major currencies (USD/EUR/GBP), thresholds are roughly
+                    # equivalent. Future enhancement: apply live FX conversion.
+                    if market_cap >= 10_000_000_000:  # ~$10B / €10B
                         cap_class = "Large Cap"
-                    elif market_cap >= 2_000_000_000:  # $2B-10B
+                    elif market_cap >= 2_000_000_000:  # ~$2B-10B
                         cap_class = "Mid Cap"
                     elif market_cap > 0:
                         cap_class = "Small Cap"

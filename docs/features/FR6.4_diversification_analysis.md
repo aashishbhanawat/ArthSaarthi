@@ -147,4 +147,7 @@ Modify `_fetch_and_parse_amfi_data()` in `amfi_provider.py` to:
 ### Future Enhancements
 - [ ] Drill-down: Clicking "Equity" shows Sector breakdown
 - [ ] Drill-down: Clicking "Mutual Funds" shows Scheme Type breakdown
+- [ ] Market Cap: Apply live FX conversion for non-USD foreign stocks
 
+### Known Limitations
+- **Foreign stock market cap**: yfinance returns market cap in the stock's trading currency (EUR for AIR.PA, GBP for ULVR.L). Current thresholds assume USD-equivalent values, which is approximately correct for major currencies.
