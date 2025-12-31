@@ -379,11 +379,19 @@ def _process_market_traded_assets(
             cost_in_inr = tx.quantity * cost_basis_price * fx_rate
             holdings_state[ticker]["total_invested"] += cost_in_inr
         elif tx.transaction_type == "DIVIDEND":
-            dividend_amount = tx.quantity * tx.price_per_unit
+            fx_rate = (
+                Decimal(str(tx.details.get("fx_rate", 1))) if tx.details else Decimal(1)
+            )
+            dividend_amount = tx.quantity * tx.price_per_unit * fx_rate
             total_realized_pnl += dividend_amount
             holdings_state[ticker]["realized_pnl"] += dividend_amount
         elif tx.transaction_type == "COUPON":
-            coupon_amount = tx.quantity * tx.price_per_unit
+            fx_rate = (
+                Decimal(str(tx.details.get("fx_rate", 1))) if tx.details else Decimal(1)
+            )
+            # Coupons are usually cash amounts, but quantity * price fits the model if
+            # quantity is the amount
+            coupon_amount = tx.quantity * tx.price_per_unit * fx_rate
             total_realized_pnl += coupon_amount
             holdings_state[ticker]["realized_pnl"] += coupon_amount
         elif tx.transaction_type == TransactionType.SPLIT:

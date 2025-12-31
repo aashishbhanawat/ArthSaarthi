@@ -3,7 +3,7 @@ import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
 import { usePrivacySensitiveCurrency, formatCurrency, formatDate } from '../../utils/formatting';
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface HoldingDetailModalProps {
     holding: Holding;
@@ -154,7 +154,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div role="dialog" aria-modal="true" aria-labelledby="holding-detail-modal-title" className="modal-content w-full max-w-3xl p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div role="dialog" aria-modal="true" aria-labelledby="holding-detail-modal-title" className="modal-content w-full max-w-6xl p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <div id="holding-detail-modal-title" className="flex justify-between items-center mb-4">
                     <div>
                         <h2 className="text-2xl font-bold dark:text-gray-100">
@@ -163,11 +163,11 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                         <p className="text-sm text-gray-500 dark:text-gray-400">Transaction History</p>
                     </div>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
-                        <span className="text-2xl leading-none">&times;</span>
+                        <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                     <div data-testid="summary-quantity">
                         <p className="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
                         <p className="font-semibold dark:text-gray-100">{Number(holding.quantity).toLocaleString()}</p>
@@ -184,6 +184,18 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                         <p className="text-sm text-gray-500 dark:text-gray-400">Unrealized P&L</p>
                         <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                             {formatSensitiveCurrency(holding.unrealized_pnl)}
+                        </p>
+                    </div>
+                    <div data-testid="summary-realized-pnl">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Capital Gains</p>
+                        <p className={`font-semibold ${(analytics?.realized_pnl ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatSensitiveCurrency(analytics?.realized_pnl ?? 0)}
+                        </p>
+                    </div>
+                    <div data-testid="summary-dividend-income">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Dividend Income</p>
+                        <p className="font-semibold text-green-600 dark:text-green-400">
+                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatSensitiveCurrency(analytics?.dividend_income ?? 0)}
                         </p>
                     </div>
                     <div data-testid="summary-xirr-current">

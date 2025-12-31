@@ -22,6 +22,12 @@ frontend/.env
 __pycache__/
 .pytest_cache/
 venv/
+.venv/
+*.pdf
+*.xls
+*.xlsx
+*.csv
+*.zip
 .mypy_cache/
 .tox/
 *.pyc

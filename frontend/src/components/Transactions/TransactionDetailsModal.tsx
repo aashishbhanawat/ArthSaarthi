@@ -51,7 +51,7 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ trans
                                 {Object.entries(transaction.details).map(([key, value]) => (
                                     <div key={key} className="grid grid-cols-2 gap-2 text-sm py-1 border-b border-gray-100 last:border-0">
                                         <div className="text-gray-600">{formatDetailKey(key)}</div>
-                                        <div className="font-mono text-gray-800">{formatDetailValue(key, value)}</div>
+                                        <div className="font-mono text-gray-800 break-all whitespace-pre-wrap">{formatDetailValue(key, value)}</div>
                                     </div>
                                 ))}
                             </div>
