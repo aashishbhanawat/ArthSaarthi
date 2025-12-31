@@ -165,6 +165,50 @@ class YFinanceProvider(FinancialDataProvider):
         logger.debug(f"YFinanceProvider: returning prices for: {prices_data.keys()}")
         return prices_data
 
+    def get_enrichment_data(
+        self, ticker_symbol: str, exchange: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Fetches sector, industry, country, and marketCap for a single ticker.
+        Called on-demand when an asset's sector is NULL.
+        Returns dict with keys: sector, industry, country, market_cap
+        """
+        yf_ticker = self._get_yfinance_ticker(ticker_symbol, exchange)
+        cache_key = f"enrichment:{yf_ticker}"
+
+        # Check cache first
+        if self.cache_client:
+            cached = self.cache_client.get_json(cache_key)
+            if cached:
+                logger.debug(f"Enrichment cache HIT for {yf_ticker}")
+                return cached
+
+        try:
+            ticker_obj = yf.Ticker(yf_ticker)
+            info = ticker_obj.info
+            if info:
+                enrichment_data = {
+                    "sector": info.get("sector"),
+                    "industry": info.get("industry"),
+                    "country": info.get("country"),
+                    "market_cap": info.get("marketCap"),
+                }
+                # Cache for 24 hours
+                if self.cache_client:
+                    self.cache_client.set_json(
+                        cache_key, enrichment_data, expire=CACHE_TTL_HISTORICAL_PRICE
+                    )
+                logger.debug(
+                    f"Enrichment fetched for {ticker_symbol}: "
+                    f"sector={info.get('sector')}"
+                )
+                return enrichment_data
+        except Exception as e:
+            logger.warning(f"Error fetching enrichment for {ticker_symbol}: {e}")
+
+        return None
+
+
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:

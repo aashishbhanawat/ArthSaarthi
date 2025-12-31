@@ -3,10 +3,44 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 
+class MockYFinanceProvider:
+    """Mock yfinance provider for testing."""
+    def get_enrichment_data(self, ticker_symbol: str, exchange: str = None):
+        """Returns mock enrichment data."""
+        return {
+            "sector": "Technology",
+            "industry": "Software",
+            "country": "India",
+            "market_cap": 100000000000,  # 100B (1000 Cr) - fits in BigInteger
+        }
+
+
+class MockAmfiProvider:
+    """Mock AMFI provider for testing."""
+    def get_all_nav_data(self):
+        """Returns mock NAV data with category info."""
+        return {
+            "100033": {
+                "nav": "58.98",
+                "mf_category": "Equity Scheme",
+                "mf_sub_category": "Large Cap Fund",
+            },
+            "120503": {
+                "nav": "654.32",
+                "mf_category": "Debt Scheme",
+                "mf_sub_category": "Corporate Bond Fund",
+            },
+        }
+
+
 class MockFinancialDataService:
     """
     A mock financial data service that returns predictable data for testing.
     """
+
+    def __init__(self):
+        self.yfinance_provider = MockYFinanceProvider()
+        self.amfi_provider = MockAmfiProvider()
 
     MOCK_PRICES = {
         "AAPL": {

@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Date, String, UniqueConstraint
+from sqlalchemy import BigInteger, Date, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -30,6 +30,13 @@ class Asset(Base):
     account_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     # For PPF accounts
     opening_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    # For diversification analysis (FR6.4)
+    sector: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    industry: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    country: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    market_cap: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True
+    )  # BigInteger for large market caps
     transactions: Mapped[List["Transaction"]] = relationship(back_populates="asset")
     aliases: Mapped[List[AssetAlias]] = relationship(
         "AssetAlias", back_populates="asset", cascade="all, delete-orphan"

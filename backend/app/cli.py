@@ -284,9 +284,17 @@ def seed_assets_command(
     if "icici" in files:
         seeder.process_icici_fallback(files["icici"])
 
+    # Phase 6: Enrichment (FR6.4)
+    typer.echo("\n--- Phase 6: Enriching assets with sector/geography data ---")
+    enrichment_stats = seeder.enrich_assets(max_assets=50)
+
     typer.echo("\n--- Seeding Summary ---")
     typer.echo(f"Total assets created: {seeder.created_count}")
     typer.echo(f"Total assets skipped: {seeder.skipped_count}")
+    typer.echo(
+        f"Enrichment: {enrichment_stats['enriched']} enriched, "
+        f"{enrichment_stats['errors']} errors"
+    )
 
     if seeder.skipped_series_counts:
         typer.echo("\n--- Skipped Series Summary (BSE Equity) ---")

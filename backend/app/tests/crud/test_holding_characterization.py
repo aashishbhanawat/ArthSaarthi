@@ -101,6 +101,9 @@ def test_holding_calculation_characterization(
 
     with patch("app.crud.crud_holding.financial_data_service") as mock_fds:
         mock_fds.get_current_prices.return_value = mock_price_data
+        # Mock enrichment providers to avoid DB errors with MagicMock values
+        mock_fds.yfinance_provider.get_enrichment_data.return_value = None
+        mock_fds.amfi_provider.get_all_nav_data.return_value = {}
 
         result = crud.holding.get_portfolio_holdings_and_summary(
             db, portfolio_id=portfolio.id
