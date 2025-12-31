@@ -34,30 +34,30 @@ jest.mock('../../../components/Portfolio/AddAwardModal', () => {
 
 // Mock child components to isolate the page component logic
 jest.mock('../../../components/Portfolio/PortfolioSummary', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const React = require('react');
-    return () => React.createElement('div', { 'data-testid': 'portfolio-summary' });
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react');
+  return () => React.createElement('div', { 'data-testid': 'portfolio-summary' });
 });
 jest.mock('../../../components/Portfolio/HoldingsTable', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const React = require('react');
-    // The mock needs to be able to trigger the onRowClick prop
-    return (props: { onRowClick: (holding: Holding) => void }) => 
-        React.createElement('div', { 
-            'data-testid': 'holdings-table',
-            onClick: () => props.onRowClick(mockHoldings[0]) // Simulate clicking the first holding
-        });
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react');
+  // The mock needs to be able to trigger the onRowClick prop
+  return (props: { onRowClick: (holding: Holding) => void }) =>
+    React.createElement('div', {
+      'data-testid': 'holdings-table',
+      onClick: () => props.onRowClick(mockHoldings[0]) // Simulate clicking the first holding
+    });
 });
 jest.mock('../../../components/Portfolio/AnalyticsCard', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const React = require('react');
-    return () => React.createElement('div', { 'data-testid': 'analytics-card' });
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react');
+  return () => React.createElement('div', { 'data-testid': 'analytics-card' });
 });
 jest.mock('../../../components/Portfolio/HoldingDetailModal', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const React = require('react');
-    // Mock the modal to verify it opens and can be closed
-    return ({ holding, onClose }: { holding: Holding, onClose: () => void }) => React.createElement('div', { 'data-testid': 'holding-detail-modal' }, `Details for ${holding.ticker_symbol}`, React.createElement('button', { onClick: onClose }, 'Close Modal'));
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react');
+  // Mock the modal to verify it opens and can be closed
+  return ({ holding, onClose }: { holding: Holding, onClose: () => void }) => React.createElement('div', { 'data-testid': 'holding-detail-modal' }, `Details for ${holding.ticker_symbol}`, React.createElement('button', { onClick: onClose }, 'Close Modal'));
 });
 
 const queryClient = new QueryClient();
@@ -70,26 +70,26 @@ const mockPortfolio: Portfolio = {
 };
 
 const mockSummary: PortfolioSummary = {
-    total_value: 15000,
-    total_invested_amount: 12000,
-    days_pnl: 250,
-    total_unrealized_pnl: 3000,
-    total_realized_pnl: 500,
+  total_value: 15000,
+  total_invested_amount: 12000,
+  days_pnl: 250,
+  total_unrealized_pnl: 3000,
+  total_realized_pnl: 500,
 };
 
 const mockHoldings: Holding[] = [{ // This needs to be accessible to the HoldingsTable mock
-    asset_id: "a-1",
-    ticker_symbol: "AAPL",
-    asset_name: "Apple Inc.",
-    quantity: 100,
-    average_buy_price: 120,
-    total_invested_amount: 12000,
-    current_price: 150,
-    current_value: 15000,
-    days_pnl: 250,
-    days_pnl_percentage: 1.69,
-    unrealized_pnl: 3000,
-    unrealized_pnl_percentage: 25,
+  asset_id: "a-1",
+  ticker_symbol: "AAPL",
+  asset_name: "Apple Inc.",
+  quantity: 100,
+  average_buy_price: 120,
+  total_invested_amount: 12000,
+  current_price: 150,
+  current_value: 15000,
+  days_pnl: 250,
+  days_pnl_percentage: 1.69,
+  unrealized_pnl: 3000,
+  unrealized_pnl_percentage: 25,
 }];
 
 const renderComponent = () => {
@@ -111,6 +111,7 @@ describe('PortfolioDetailPage', () => {
     mockedPortfolioHooks.usePortfolioSummary.mockReturnValue({ data: mockSummary, isLoading: false, error: null } as UseQueryResult<PortfolioSummary, Error>);
     mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue({ data: { holdings: mockHoldings }, isLoading: false, error: null } as UseQueryResult<{ holdings: Holding[] }, Error>);
     mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue({ data: {} as PortfolioAnalytics, isLoading: false, isError: false } as UseQueryResult<PortfolioAnalytics, Error>);
+    mockedPortfolioHooks.useDiversification.mockReturnValue({ data: undefined, isLoading: false, isError: false } as UseQueryResult<unknown, Error>);
   });
 
   it('renders the portfolio name and child components', () => {

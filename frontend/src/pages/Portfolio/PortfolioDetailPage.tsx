@@ -16,6 +16,7 @@ import HoldingDetailModal from '../../components/Portfolio/HoldingDetailModal';
 import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDetailModal';
 import RecurringDepositDetailModal from '../../components/Portfolio/RecurringDepositDetailModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
+import DiversificationCharts from '../../components/Portfolio/DiversificationCharts';
 import { RecurringDepositDetails } from '../../types/recurring_deposit';
 
 const PortfolioDetailPage: React.FC = () => {
@@ -178,6 +179,10 @@ const PortfolioDetailPage: React.FC = () => {
             <PortfolioSummary summary={summary} isLoading={isSummaryLoading} error={summaryError} />
 
             <AnalyticsCard analytics={analytics} isLoading={isAnalyticsLoading} error={analyticsError} />
+
+            <div className="mt-8">
+                <DiversificationCharts portfolioId={portfolio.id} />
+            </div>
 
             <div className="mt-8">
                 <HoldingsTable

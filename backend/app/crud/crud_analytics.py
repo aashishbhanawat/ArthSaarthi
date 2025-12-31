@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 from pyxirr import xirr
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
+from app import crud, models, schemas
 from app.cache.utils import cache_analytics_data
 from app.core.financial_definitions import TRANSACTION_BEHAVIORS, CashFlowType
 from app.crud.crud_dashboard import _get_portfolio_history
@@ -439,7 +439,7 @@ def _get_portfolio_cash_flows(
         cash_flows.append((fd.start_date, -fd.principal_amount))
 
         # For non-cumulative FDs, interest payments are inflows
-        if fd.interest_payout != "Cumulative":
+        if (fd.interest_payout or "").upper() != "CUMULATIVE":
             payout_frequency_map = {
                 "MONTHLY": 1, "QUARTERLY": 3, "HALF_YEARLY": 6,
                 "SEMI-ANNUALLY": 6, "ANNUALLY": 12
@@ -709,6 +709,160 @@ class CRUDAnalytics:
         logger.debug(f"Sharpe ratio: Calculated value is {sharpe_ratio}")
         return float(sharpe_ratio) if np.isfinite(sharpe_ratio) else 0.0
 
+    def get_diversification(
+        self, db: Session, *, portfolio_id: uuid.UUID
+    ) -> schemas.DiversificationResponse:
+        """
+        Calculates diversification breakdown by sector, country, and asset class
+        for a portfolio (FR6.4).
+        """
+        # Get holdings with current values
+        holdings_result = crud.holding.get_portfolio_holdings_and_summary(
+            db, portfolio_id=portfolio_id
+        )
+        holdings = holdings_result.holdings
+        total_value = holdings_result.summary.total_value or Decimal("0.0")
+
+        if total_value == 0:
+            return schemas.DiversificationResponse(total_value=Decimal("0"))
+
+        # Aggregate by various dimensions
+        by_sector: Dict[str, Dict] = defaultdict(
+            lambda: {"value": Decimal("0"), "count": 0}
+        )
+        by_industry: Dict[str, Dict] = defaultdict(
+            lambda: {"value": Decimal("0"), "count": 0}
+        )
+        by_country: Dict[str, Dict] = defaultdict(
+            lambda: {"value": Decimal("0"), "count": 0}
+        )
+        by_asset_class: Dict[str, Dict] = defaultdict(
+            lambda: {"value": Decimal("0"), "count": 0}
+        )
+        by_market_cap: Dict[str, Dict] = defaultdict(
+            lambda: {"value": Decimal("0"), "count": 0}
+        )
+        equity_total = Decimal("0")  # Track equity-only total for Sector/Industry/Cap
+
+        for h in holdings:
+            # Get asset details for sector/country
+            asset = db.query(models.Asset).filter(
+                models.Asset.id == h.asset_id
+            ).first()
+            if not asset:
+                continue
+
+            value = h.current_value or Decimal("0")
+            asset_type = (asset.asset_type or "").upper()
+
+            # By Country (all assets)
+            # Default country to India for Indian instruments
+            if asset.country:
+                country = asset.country
+            elif asset_type in ["FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF", "BOND"]:
+                country = "India"
+            elif asset_type in ["MUTUAL_FUND", "MUTUAL FUND"]:
+                country = "India"  # Most MFs are Indian
+            else:
+                country = "Unknown"
+            by_country[country]["value"] += value
+            by_country[country]["count"] += 1
+
+            # By Asset Class (derive from asset_type and sector for MFs)
+            if asset_type in ["STOCK", "ETF"]:
+                asset_class = "Equity"
+                equity_total += value  # Track equity-only total
+
+                # Sector/Industry only for equities
+                sector = asset.sector or "Unknown"
+                by_sector[sector]["value"] += value
+                by_sector[sector]["count"] += 1
+
+                industry = asset.industry or "Unknown"
+                by_industry[industry]["value"] += value
+                by_industry[industry]["count"] += 1
+
+                # Market Cap classification for equities
+                # Different thresholds for Indian vs foreign stocks
+                market_cap = asset.market_cap or 0
+                is_indian = (asset.country or "").lower() == "india"
+
+                if is_indian:
+                    # Indian thresholds (in INR)
+                    if market_cap >= 20000_00_00_000:  # 20,000 Cr = 200B INR
+                        cap_class = "Large Cap"
+                    elif market_cap >= 5000_00_00_000:  # 5,000 Cr = 50B INR
+                        cap_class = "Mid Cap"
+                    elif market_cap > 0:
+                        cap_class = "Small Cap"
+                    else:
+                        cap_class = "Unknown"
+                else:
+                    # Foreign thresholds - uses USD-based thresholds.
+                    # NOTE: yfinance returns market cap in the stock's trading
+                    # currency (EUR for AIR.PA, GBP for ULVR.L, etc.), not USD.
+                    # For major currencies (USD/EUR/GBP), thresholds are roughly
+                    # equivalent. Future enhancement: apply live FX conversion.
+                    if market_cap >= 10_000_000_000:  # ~$10B / €10B
+                        cap_class = "Large Cap"
+                    elif market_cap >= 2_000_000_000:  # ~$2B-10B
+                        cap_class = "Mid Cap"
+                    elif market_cap > 0:
+                        cap_class = "Small Cap"
+                    else:
+                        cap_class = "Unknown"
+                by_market_cap[cap_class]["value"] += value
+                by_market_cap[cap_class]["count"] += 1
+
+            elif asset_type in ["MUTUAL_FUND", "MUTUAL FUND"]:
+                # Map AMFI categories to asset classes
+                mf_sector = (asset.sector or "").lower()
+                if "equity" in mf_sector or "growth" in mf_sector:
+                    asset_class = "Equity"
+                elif ("debt" in mf_sector or "gilt" in mf_sector
+                      or "income" in mf_sector or "money market" in mf_sector
+                      or "liquid" in mf_sector):
+                    asset_class = "Debt"
+                elif "hybrid" in mf_sector:
+                    asset_class = "Hybrid"
+                elif "other" in mf_sector or "solution" in mf_sector:
+                    asset_class = "Hybrid"
+                else:
+                    # Fallback - check if any debt keywords
+                    asset_class = "Equity"
+            elif asset_type in ["BOND", "FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF"]:
+                asset_class = "Debt"  # Consolidated with Debt MFs
+            else:
+                asset_class = "Other"
+
+            by_asset_class[asset_class]["value"] += value
+            by_asset_class[asset_class]["count"] += 1
+
+        # Convert to response format
+        def to_segments(
+            data: Dict[str, Dict], total: Decimal
+        ) -> list[schemas.DiversificationSegment]:
+            segments = []
+            for name, info in sorted(
+                data.items(), key=lambda x: x[1]["value"], reverse=True
+            ):
+                pct = float(info["value"] / total * 100) if total else 0.0
+                segments.append(schemas.DiversificationSegment(
+                    name=name,
+                    value=info["value"],
+                    percentage=round(pct, 2),
+                    count=info["count"]
+                ))
+            return segments
+
+        return schemas.DiversificationResponse(
+            by_asset_class=to_segments(by_asset_class, total_value),
+            by_sector=to_segments(by_sector, equity_total),  # % of equities
+            by_industry=to_segments(by_industry, equity_total),  # % of equities
+            by_market_cap=to_segments(by_market_cap, equity_total),  # % of equities
+            by_country=to_segments(by_country, total_value),
+            total_value=total_value
+        )
 
 def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decimal:
     """Helper to get the total current value of a portfolio."""

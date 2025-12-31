@@ -23,6 +23,8 @@ def mock_db_session_empty(mocker):
     mock_db = mock_db_session_context.return_value.__next__.return_value
     mock_query_object = mocker.Mock()
     mock_query_object.filter.return_value.all.return_value = []  # for isin
+    # For enrich_assets: .filter(...).limit(...).all()
+    mock_query_object.filter.return_value.limit.return_value.all.return_value = []
     mock_query_object.all.return_value = []  # for ticker
     mock_db.query.return_value = mock_query_object
     # Also need inspector
