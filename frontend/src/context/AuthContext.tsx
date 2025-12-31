@@ -104,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (data: { access_token: string, deployment_mode: 'server' | 'desktop' }) => {
     setToken(data.access_token);
     setDeploymentMode(data.deployment_mode);
+    setIsIdle(false);  // Reset idle state on login
     localStorage.setItem('token', data.access_token);
     localStorage.setItem('deployment_mode', data.deployment_mode);
   };
