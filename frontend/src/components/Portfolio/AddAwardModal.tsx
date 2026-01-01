@@ -305,12 +305,12 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                         </div>
                         {/* Search Results */}
                         {!selectedAsset && searchResults.length > 0 && (
-                            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                            <ul className="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
                                 {searchResults.map(asset => (
                                     <li
                                         key={asset.id}
                                         onClick={() => handleSelectAsset(asset)}
-                                        className="p-2 hover:bg-gray-100 cursor-pointer"
+                                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer dark:text-gray-200"
                                     >
                                         {asset.name} ({asset.ticker_symbol})
                                     </li>
@@ -318,8 +318,8 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                             </ul>
                         )}
                         {!selectedAsset && !isSearching && searchTerm.length >= 2 && searchResults.length === 0 && (
-                            <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">
-                                <p className="text-sm text-gray-500 mb-2">No asset found.</p>
+                            <div className="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg">
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No asset found.</p>
                                 <button
                                     type="button"
                                     onClick={handleCreateAsset}
@@ -363,7 +363,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
                     {/* FX Rate Info */}
                     {selectedAsset && selectedAsset.currency !== 'INR' && (
-                        <div className="p-3 bg-gray-50 rounded border border-gray-200">
+                        <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
                             <div className="form-group">
                                 <label htmlFor="fxRate" className="form-label">FX Rate ({selectedAsset.currency}-INR)</label>
                                 <input
@@ -376,7 +376,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                 />
                             </div>
                             {getValues('fxRate') > 1 && (
-                                <div className="text-xs text-gray-600">
+                                <div className="text-xs text-gray-600 dark:text-gray-400">
                                     {awardType === 'RSU_VEST'
                                         ? `Taxable Income: ₹${taxableIncome.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
                                         : `Total Cost: ₹${totalCost.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
@@ -388,14 +388,14 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
                     {/* Sell to Cover (RSU Only) */}
                     {awardType === 'RSU_VEST' && (
-                        <div className="border-t pt-4 mt-4">
+                        <div className="border-t dark:border-gray-600 pt-4 mt-4">
                             <label className="flex items-center space-x-2 mb-4 cursor-pointer">
                                 <input type="checkbox" {...register('sellToCover')} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                <span className="font-semibold text-gray-700">Record 'Sell to Cover' for taxes</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-200">Record 'Sell to Cover' for taxes</span>
                             </label>
 
                             {sellToCover && (
-                                <div className="grid grid-cols-2 gap-4 pl-6 border-l-2 border-gray-200">
+                                <div className="grid grid-cols-2 gap-4 pl-6 border-l-2 border-gray-200 dark:border-gray-600">
                                     <div className="form-group">
                                         <label htmlFor="sellQuantity" className="form-label">Shares Sold</label>
                                         <input id="sellQuantity" type="number" step="any" {...register('sellQuantity', { required: sellToCover, valueAsNumber: true })} className="form-input" />
@@ -410,8 +410,8 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                     )}
 
                     {/* Summary */}
-                    <div className="border-t pt-4 mt-4 bg-blue-50 p-4 rounded">
-                        <div className="flex justify-between font-bold">
+                    <div className="border-t dark:border-gray-600 pt-4 mt-4 bg-blue-50 dark:bg-blue-900/30 p-4 rounded">
+                        <div className="flex justify-between font-bold dark:text-gray-200">
                             <span>Net Shares Received:</span>
                             <span>{netShares.toFixed(4)}</span>
                         </div>

@@ -115,25 +115,25 @@ const ImportPreviewPage: React.FC = () => {
 
     const TransactionTable = ({ transactions, selectable = false, isDuplicate = false, offset = 0 }: { transactions: ParsedTransaction[], selectable?: boolean, isDuplicate?: boolean, offset?: number }) => (
         <table className="table-auto w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     {selectable && (
                         <th className="p-3 w-12"><input type="checkbox" className="checkbox" checked={selectedTransactionIndices.size === allSelectableTransactions.length && allSelectableTransactions.length > 0} onChange={handleToggleSelectAll} /></th>
                     )}
-                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
-                    <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ticker</th>
+                    <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
                     <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                     <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Unit</th>
                     <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fees</th>
                 </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-gray-900">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600 text-gray-900 dark:text-gray-200">
                 {transactions.map((tx, index) => {
                     const overallIndex = offset + index;
                     return (
-                        <tr key={overallIndex} className="hover:bg-gray-50">
+                        <tr key={overallIndex} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                             {selectable && (
                                 <td className="p-3"><input type="checkbox" className="checkbox" checked={selectedTransactionIndices.has(overallIndex)} onChange={() => handleToggleSelection(overallIndex)} /></td>
                             )}
@@ -163,9 +163,9 @@ const ImportPreviewPage: React.FC = () => {
                     <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-gray-900">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600 text-gray-900 dark:text-gray-200">
                 {transactions.map((tx, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
+                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="p-3 whitespace-nowrap">{formatDate(tx.transaction_date)}</td>
                         <td className="p-3 font-medium max-w-xs break-words">{tx.ticker_symbol}</td>
                         <td className="p-3 whitespace-nowrap"><span className={`badge ${tx.transaction_type.toUpperCase() === 'BUY' ? 'badge-success' : 'badge-error'}`}>{tx.transaction_type.toUpperCase()}</span></td>
@@ -194,9 +194,9 @@ const ImportPreviewPage: React.FC = () => {
                         <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
                     </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200 text-gray-900">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600 text-gray-900 dark:text-gray-200">
                     {invalidRows.map((item, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
+                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td className="p-3 text-xs text-gray-500 break-all">{JSON.stringify(item.row_data)}</td>
                             <td className="p-3 whitespace-nowrap"><span className="badge badge-error">{item.error}</span></td>
                         </tr>
@@ -209,10 +209,10 @@ const ImportPreviewPage: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h1 className="text-3xl font-bold text-gray-800">Import Preview</h1>
+                <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Import Preview</h1>
                 <span className={renderStatusBadge(session.status)}>{session.status}</span>
             </div>
-            <p className="text-gray-600 mb-4">Review the transactions parsed from <span className="font-semibold">{session.file_name}</span> for portfolio <span className="font-semibold">{session.portfolio.name}</span>.</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Review the transactions parsed from <span className="font-semibold">{session.file_name}</span> for portfolio <span className="font-semibold">{session.portfolio.name}</span>.</p>
 
             {/* Warning about cross-verification */}
             <div className="alert alert-warning mb-8">
@@ -250,11 +250,11 @@ const ImportPreviewPage: React.FC = () => {
 
                 {/* Transactions Needing Mapping */}
                 {previewData.needs_mapping.length > 0 && (
-                    <div className="card p-4 sm:p-6 bg-blue-50 border-blue-200">
-                        <h2 className="text-xl font-medium mb-4 text-blue-800">
+                    <div className="card p-4 sm:p-6 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700">
+                        <h2 className="text-xl font-medium mb-4 text-blue-800 dark:text-blue-300">
                             Transactions Needing Mapping ({previewData.needs_mapping.length})
                         </h2>
-                        <p className="text-sm text-blue-700 mb-4">
+                        <p className="text-sm text-blue-700 dark:text-blue-400 mb-4">
                             These transactions have unrecognized ticker symbols. Map them to an existing asset to include them in the import.
                         </p>
                         <div className="overflow-x-auto">
@@ -265,11 +265,11 @@ const ImportPreviewPage: React.FC = () => {
 
                 {/* Invalid Transactions */}
                 {previewData.invalid.length > 0 && (
-                    <div className="card p-4 sm:p-6 bg-red-50 border-red-200">
-                        <h2 className="text-xl font-medium mb-4 text-red-800">
+                    <div className="card p-4 sm:p-6 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700">
+                        <h2 className="text-xl font-medium mb-4 text-red-800 dark:text-red-300">
                             Invalid Transactions ({previewData.invalid.length})
                         </h2>
-                        <p className="text-sm text-red-700 mb-4">
+                        <p className="text-sm text-red-700 dark:text-red-400 mb-4">
                             These rows from the file could not be parsed and will be ignored. This is usually due to missing or malformed data.
                         </p>
                         <div className="overflow-x-auto">
