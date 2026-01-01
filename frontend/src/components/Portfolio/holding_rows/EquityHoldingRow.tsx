@@ -28,9 +28,9 @@ const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick
     const formatPrivateCurrency = usePrivacySensitiveCurrency();
     return (
         <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer dark:border-gray-700 dark:hover:bg-gray-700/50" onClick={() => onRowClick(holding)}>
-            <td className="p-2">
+            <td className="p-2 max-w-xs">
                 {holding.asset_type !== 'Mutual Fund' && <div className="font-bold dark:text-gray-100">{holding.ticker_symbol}</div>}
-                <div className={`text-sm ${holding.asset_type !== 'Mutual Fund' ? 'text-gray-500 dark:text-gray-400' : 'font-semibold text-gray-900 dark:text-gray-100'} truncate`}>
+                <div className={`text-sm ${holding.asset_type !== 'Mutual Fund' ? 'text-gray-500 dark:text-gray-400' : 'font-semibold text-gray-900 dark:text-gray-100'} break-words`}>
                     {holding.asset_name}
                 </div>
             </td>

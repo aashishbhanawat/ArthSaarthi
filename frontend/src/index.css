@@ -86,6 +86,27 @@ body {
         background-color: #374151;
         color: #f3f4f6;
     }
+
+    /* DaisyUI-style input dark mode styling */
+    .dark .input {
+        background-color: #374151 !important;
+        color: #f3f4f6 !important;
+        border-color: #4b5563 !important;
+    }
+
+    .dark .input::placeholder {
+        color: #9ca3af !important;
+    }
+
+    /* DaisyUI modal-box dark mode */
+    .dark .modal-box {
+        background-color: #1f2937;
+        color: #f3f4f6;
+    }
+
+    .dark .label-text {
+        color: #d1d5db;
+    }
 }
 
 /* Scrollbar styling for dark mode */
@@ -105,4 +126,56 @@ body {
 
 .dark ::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
+}
+
+/* Global dark mode text color fixes for gray text */
+.dark .text-gray-500,
+.dark .text-gray-500.dark\:text-gray-400 {
+    color: #d1d5db !important;
+    /* gray-300 - brighter for visibility */
+}
+
+.dark .text-gray-600 {
+    color: #d1d5db !important;
+    /* gray-300 */
+}
+
+.dark .text-gray-700 {
+    color: #e5e7eb !important;
+    /* gray-200 */
+}
+
+.dark .text-gray-800:not(.dark\:text-gray-100):not(.dark\:text-gray-200) {
+    color: #e5e7eb !important;
+    /* gray-200 */
+}
+
+.dark .text-gray-900:not(.dark\:text-gray-100):not(.dark\:text-gray-200) {
+    color: #f3f4f6 !important;
+    /* gray-100 */
+}
+
+/* Fix bg-gray colors in dark mode */
+.dark .bg-gray-50:not(.dark\:bg-gray-700):not(.dark\:bg-gray-800) {
+    background-color: #374151 !important;
+    /* gray-700 */
+}
+
+.dark .bg-gray-100:not(.dark\:bg-gray-700):not(.dark\:bg-gray-800) {
+    background-color: #374151 !important;
+    /* gray-700 */
+}
+
+.dark .bg-white:not(.dark\:bg-gray-800):not(.dark\:bg-gray-700) {
+    background-color: #1f2937 !important;
+    /* gray-800 */
+}
+
+/* Fix hover:bg-gray in dark mode */
+.dark .hover\:bg-gray-50:hover {
+    background-color: #374151 !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+    background-color: #4b5563 !important;
 }
