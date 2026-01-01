@@ -134,9 +134,9 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
             <div className="modal-box">
                 <h3 className="font-bold text-lg">Map Unrecognized Symbol</h3>
                 <p className="py-4">
-                    <span className="font-mono bg-gray-200 px-1 rounded text-sm break-all">{unrecognizedTicker}</span>
+                    <span className="font-mono bg-gray-200 dark:bg-gray-600 dark:text-gray-200 px-1 rounded text-sm break-all">{unrecognizedTicker}</span>
                     <span className="block mt-2">Search for an existing asset to map it to.</span>
-                    {isMfSource && <span className="text-xs text-blue-600 block mt-1">Searching AMFI Mutual Fund database</span>}
+                    {isMfSource && <span className="text-xs text-blue-600 dark:text-blue-400 block mt-1">Searching AMFI Mutual Fund database</span>}
                 </p>
 
                 <div className="form-control w-full">

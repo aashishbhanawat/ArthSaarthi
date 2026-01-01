@@ -899,19 +899,19 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                                 &times;
                                                             </button>
                                                         )}
-                                                        {isSearching && <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">Searching...</div>}
+                                                        {isSearching && <div className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg dark:text-gray-200">Searching...</div>}
                                                         {!isSearching && searchResults.length > 0 && !selectedAsset && (
-                                                            <ul className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                                                            <ul className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
                                                                 {searchResults.map(asset => (
-                                                                    <li key={asset.id} onClick={() => handleSelectAsset(asset)} className="p-2 hover:bg-gray-100 cursor-pointer">
+                                                                    <li key={asset.id} onClick={() => handleSelectAsset(asset)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer dark:text-gray-200">
                                                                         {asset.name} ({asset.ticker_symbol})
                                                                     </li>
                                                                 ))}
                                                             </ul>
                                                         )}
                                                         {!isSearching && searchResults.length === 0 && inputValue.length > 1 && !selectedAsset && (
-                                                            <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-3 shadow-lg space-y-2">
-                                                                <p className="text-sm text-gray-600">No asset found. Create a new one:</p>
+                                                            <div className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-3 shadow-lg space-y-2">
+                                                                <p className="text-sm text-gray-600 dark:text-gray-300">No asset found. Create a new one:</p>
                                                                 <div className="form-group">
                                                                     <label htmlFor="newAssetCurrency" className="form-label text-xs">Currency</label>
                                                                     <select id="newAssetCurrency" {...register('newAssetCurrency')} className="form-input form-input-sm">
@@ -953,15 +953,36 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                         : 'No funds found'
                                                 }
                                                 styles={{
-                                                    control: (base) => ({
+                                                    control: (base, state) => ({
                                                         ...base,
-                                                        backgroundColor: '#fff',
-                                                        borderColor: '#d1d5db',
+                                                        backgroundColor: document.documentElement.classList.contains('dark') ? '#374151' : '#fff',
+                                                        borderColor: document.documentElement.classList.contains('dark') ? '#4b5563' : '#d1d5db',
                                                         minHeight: '42px',
+                                                        color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111',
                                                     }),
                                                     menu: (base) => ({
                                                         ...base,
                                                         zIndex: 30,
+                                                        backgroundColor: document.documentElement.classList.contains('dark') ? '#374151' : '#fff',
+                                                    }),
+                                                    option: (base, state) => ({
+                                                        ...base,
+                                                        backgroundColor: state.isFocused
+                                                            ? (document.documentElement.classList.contains('dark') ? '#4b5563' : '#e5e7eb')
+                                                            : 'transparent',
+                                                        color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111',
+                                                    }),
+                                                    singleValue: (base) => ({
+                                                        ...base,
+                                                        color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111',
+                                                    }),
+                                                    input: (base) => ({
+                                                        ...base,
+                                                        color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111',
+                                                    }),
+                                                    placeholder: (base) => ({
+                                                        ...base,
+                                                        color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280',
                                                     }),
                                                 }}
                                             />
@@ -993,24 +1014,24 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                                 &times;
                                                             </button>
                                                         )}
-                                                        {isSearching && <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg">Searching...</div>}
+                                                        {isSearching && <div className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg dark:text-gray-200">Searching...</div>}
                                                         {!isSearching && searchResults.length > 0 && !selectedAsset && (
-                                                            <ul className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg" data-testid="bond-search-results">
+                                                            <ul className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg" data-testid="bond-search-results">
                                                                 {searchResults.map(asset => (
-                                                                    <li key={asset.id} onClick={() => handleSelectAsset(asset)} className="p-2 hover:bg-gray-100 cursor-pointer">
+                                                                    <li key={asset.id} onClick={() => handleSelectAsset(asset)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer dark:text-gray-200">
                                                                         {asset.name} ({asset.ticker_symbol})
                                                                     </li>
                                                                 ))}
                                                             </ul>
                                                         )}
                                                         {!isSearching && searchResults.length > 0 && searchResults.filter(a => a.asset_type === 'BOND').length === 0 && !selectedAsset && assetType === 'Bond' && (
-                                                            <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg" data-testid="no-bond-results">
-                                                                <p className="text-sm text-gray-500">No bond assets found for "{inputValue}" .</p>
+                                                            <div className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg" data-testid="no-bond-results">
+                                                                <p className="text-sm text-gray-500 dark:text-gray-400">No bond assets found for "{inputValue}" .</p>
                                                             </div>
                                                         )}
                                                         {!isSearching && searchResults.length === 0 && inputValue.length > 1 && !selectedAsset && (
-                                                            <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 p-2 shadow-lg" data-testid="create-new-asset-section">
-                                                                <p className="text-sm text-gray-500 mb-2">No {String(assetType).toLowerCase()} found. You can create it.</p>
+                                                            <div className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg" data-testid="create-new-asset-section">
+                                                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No {String(assetType).toLowerCase()} found. You can create it.</p>
                                                                 <button type="button" onClick={handleCreateAsset} className="btn btn-secondary btn-sm w-full" disabled={createAssetMutation.isPending}>
                                                                     {createAssetMutation.isPending ? 'Creating...' : `Create ${assetType} "${inputValue.toUpperCase()}"`}
                                                                 </button>
@@ -1206,32 +1227,32 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
                                 {/* Tax Lot Selection Section */}
                                 {transactionType === 'SELL' && (assetType === 'Stock' || assetType === 'Mutual Fund') && (
-                                    <div className="mt-6 border-t pt-4">
+                                    <div className="mt-6 border-t dark:border-gray-600 pt-4">
                                         <div className="flex justify-between items-center mb-2">
-                                            <h4 className="font-semibold text-gray-700">Select Tax Lots (Optional)</h4>
+                                            <h4 className="font-semibold text-gray-700 dark:text-gray-200">Select Tax Lots (Optional)</h4>
                                             <div className="space-x-2">
-                                                <button type="button" onClick={applyFIFO} className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">FIFO</button>
-                                                <button type="button" onClick={applyLIFO} className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">LIFO</button>
-                                                <button type="button" onClick={applyHighestCost} className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">Highest Cost</button>
+                                                <button type="button" onClick={applyFIFO} className="text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 dark:text-gray-200 px-2 py-1 rounded">FIFO</button>
+                                                <button type="button" onClick={applyLIFO} className="text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 dark:text-gray-200 px-2 py-1 rounded">LIFO</button>
+                                                <button type="button" onClick={applyHighestCost} className="text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 dark:text-gray-200 px-2 py-1 rounded">Highest Cost</button>
                                             </div>
                                         </div>
 
                                         {isLoadingLots ? (
-                                            <p className="text-sm text-gray-500">Loading available lots...</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Loading available lots...</p>
                                         ) : availableLots.length === 0 ? (
-                                            <p className="text-sm text-gray-500">No available lots found.</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">No available lots found.</p>
                                         ) : (
-                                            <div className="overflow-x-auto max-h-60 border rounded-md">
-                                                <table className="min-w-full divide-y divide-gray-200">
-                                                    <thead className="bg-gray-50">
+                                            <div className="overflow-x-auto max-h-60 border dark:border-gray-600 rounded-md">
+                                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                                                    <thead className="bg-gray-50 dark:bg-gray-700">
                                                         <tr>
-                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avail</th>
-                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Sell Qty</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Avail</th>
+                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cost</th>
+                                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sell Qty</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="bg-white divide-y divide-gray-200">
+                                                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
                                                         {availableLots.map((lot) => (
                                                             <tr key={lot.id}>
                                                                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
@@ -1251,7 +1272,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                                         max={Number(lot.available_quantity)}
                                                                         value={lotSelections[lot.id] || ''}
                                                                         onChange={(e) => handleLotChange(lot.id, parseFloat(e.target.value) || 0)}
-                                                                        className="w-20 text-right text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 p-1 border"
+                                                                        className="w-20 text-right text-sm border-gray-300 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:ring-blue-500 focus:border-blue-500 p-1 border"
                                                                     />
                                                                 </td>
                                                             </tr>
@@ -1260,7 +1281,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 </table>
                                             </div>
                                         )}
-                                        <div className="mt-2 text-right text-sm text-gray-600">
+                                        <div className="mt-2 text-right text-sm text-gray-600 dark:text-gray-400">
                                             Selected: <span className="font-medium">{totalSelectedQty.toFixed(4)}</span>
                                         </div>
                                     </div>
