@@ -11,8 +11,8 @@ const BondHoldingRow: React.FC<BondHoldingRowProps> = ({ holding, onRowClick }) 
     const formatCurrency = usePrivacySensitiveCurrency();
     return (
         <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer dark:border-gray-700 dark:hover:bg-gray-700/50" onClick={() => onRowClick(holding)}>
-            <td className="p-2">
-                <div className="font-semibold text-gray-900 dark:text-gray-100">{holding.asset_name}</div>
+            <td className="p-2 max-w-xs">
+                <div className="font-semibold text-gray-900 dark:text-gray-100 break-words">{holding.asset_name}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">{holding.isin}</div>
             </td>
             <td className="p-2 text-right font-mono">{`${Number(holding.interest_rate || 0).toFixed(2)}%`}</td>

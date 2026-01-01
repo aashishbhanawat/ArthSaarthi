@@ -219,6 +219,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 });
                 setSelectedAsset(transactionToEdit.asset);
                 setInputValue(transactionToEdit.asset.name);
+                // For Mutual Fund transactions, also set selectedMf so the react-select shows the value
+                if (computedAssetType === 'Mutual Fund') {
+                    setSelectedMf({
+                        name: transactionToEdit.asset.name,
+                        ticker_symbol: transactionToEdit.asset.ticker_symbol,
+                    });
+                }
             } else if (fixedDepositToEdit) {
                 reset({
                     asset_type: 'Fixed Deposit',
@@ -955,7 +962,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 styles={{
                                                     control: (base, state) => ({
                                                         ...base,
-                                                        backgroundColor: document.documentElement.classList.contains('dark') ? '#374151' : '#fff',
+                                                        backgroundColor: state.isDisabled
+                                                            ? (document.documentElement.classList.contains('dark') ? '#4b5563' : '#f3f4f6')
+                                                            : (document.documentElement.classList.contains('dark') ? '#374151' : '#fff'),
                                                         borderColor: document.documentElement.classList.contains('dark') ? '#4b5563' : '#d1d5db',
                                                         minHeight: '42px',
                                                         color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111',
@@ -972,9 +981,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                             : 'transparent',
                                                         color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111',
                                                     }),
-                                                    singleValue: (base) => ({
+                                                    singleValue: (base, state) => ({
                                                         ...base,
-                                                        color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111',
+                                                        color: state.isDisabled
+                                                            ? (document.documentElement.classList.contains('dark') ? '#d1d5db' : '#4b5563')
+                                                            : (document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111'),
                                                     }),
                                                     input: (base) => ({
                                                         ...base,
