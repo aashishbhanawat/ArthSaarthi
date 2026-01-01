@@ -109,7 +109,10 @@ const TransactionFilterBar: React.FC = () => {
         <div className="form-group"><label htmlFor="end-date-filter" className="form-label">End Date</label><input type="date" id="end-date-filter" className="form-input" value={endDate} onChange={(e) => handleFilterChange('end_date', e.target.value)} /></div>
 
         {/* Action Buttons */}
-        <div className="flex space-x-2"><button type="button" onClick={handleReset} className="btn btn-secondary w-full">Reset</button></div>
+        <div className="form-group">
+          <label className="form-label invisible">Actions</label>
+          <button type="button" onClick={handleReset} className="btn btn-secondary w-full">Reset</button>
+        </div>
       </div>
     </div>
   );
