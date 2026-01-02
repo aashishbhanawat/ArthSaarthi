@@ -15,7 +15,7 @@ if settings.DATABASE_TYPE == "sqlite":
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA busy_timeout=30000")  # Wait 30 seconds if locked
+        cursor.execute("PRAGMA busy_timeout=60000")  # Wait 60 seconds if locked
         cursor.close()
 else:
     engine = create_engine(str(settings.DATABASE_URL))

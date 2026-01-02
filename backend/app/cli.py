@@ -302,6 +302,7 @@ def seed_assets_command(
             typer.echo(f"Series '{series}': {count} skipped")
 
     typer.echo("-----------------------")
+    seeder.flush_pending()  # Commit any remaining assets
     db.commit()
 
 
