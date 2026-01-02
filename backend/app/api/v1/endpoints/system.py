@@ -54,14 +54,14 @@ MIN_ASSETS_FOR_COMPLETE = 100
 def _run_seeding_subprocess():
     """Run seeding as a subprocess."""
     global _seeding_state
-    
+
     try:
         _seeding_state["status"] = SeedingStatus.IN_PROGRESS
         _seeding_state["progress"] = 10
         _seeding_state["message"] = "Starting asset seeding..."
-        
+
         logger.info("Starting background asset seeding subprocess...")
-        
+
         # Run the seed-assets command
         result = subprocess.run(
             [sys.executable, "db", "seed-assets"],
@@ -69,7 +69,7 @@ def _run_seeding_subprocess():
             text=True,
             cwd=None,  # Use current working directory
         )
-        
+
         if result.returncode == 0:
             _seeding_state["status"] = SeedingStatus.COMPLETE
             _seeding_state["progress"] = 100
@@ -80,7 +80,7 @@ def _run_seeding_subprocess():
             _seeding_state["error"] = result.stderr or "Seeding failed"
             _seeding_state["message"] = "Seeding failed"
             logger.error(f"Asset seeding failed: {result.stderr}")
-            
+
     except Exception as e:
         logger.error(f"Seeding subprocess error: {e}")
         _seeding_state["status"] = SeedingStatus.FAILED

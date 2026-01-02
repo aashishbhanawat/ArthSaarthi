@@ -198,7 +198,7 @@ class AssetSeeder:
             self.db.commit()
             self._pending_commits = 0
             if self.debug:
-                print(f"[DEBUG] Flushed pending commits, total created: {self.created_count}")
+                print(f"[DEBUG] Flushed pending, total: {self.created_count}")
 
     # --- Phase 1: Master Debt Lists ---
     def process_nsdl_file(self, filepath: str):
