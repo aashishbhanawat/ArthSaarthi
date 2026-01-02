@@ -329,8 +329,8 @@ describe('TransactionFormModal', () => {
               interest_rate: 6.5,
               start_date: '2023-01-01',
               maturity_date: '2025-01-01',
-              compounding_frequency: 'ANNUALLY',
-              interest_payout: 'CUMULATIVE'
+              compounding_frequency: 'Annually',
+              interest_payout: 'Cumulative'
             },
           },
           expect.any(Object)

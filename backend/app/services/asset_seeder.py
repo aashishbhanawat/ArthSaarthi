@@ -19,12 +19,16 @@ logger = logging.getLogger(__name__)
 
 
 class AssetSeeder:
+    # Commit every N assets for live progress updates
+    COMMIT_BATCH_SIZE = 500
+
     def __init__(self, db: Session, debug: bool = False):
         self.db = db
         self.debug = debug
         self.created_count = 0
         self.skipped_count = 0
         self.skipped_series_counts = collections.Counter()
+        self._pending_commits = 0  # Track pending assets since last commit
 
         # Caches to prevent duplicates
         self.existing_isins: Set[str] = set()
@@ -168,6 +172,15 @@ class AssetSeeder:
             self.existing_tickers.add(ticker)
             self.existing_composite_keys.add(composite_key)
             self.created_count += 1
+            self._pending_commits += 1
+
+            # Commit periodically for live progress updates
+            if self._pending_commits >= self.COMMIT_BATCH_SIZE:
+                self.db.commit()
+                self._pending_commits = 0
+                if self.debug:
+                    print(f"[DEBUG] Committed batch, total: {self.created_count}")
+
             return True
         except IntegrityError:
             self.db.rollback()
@@ -178,6 +191,14 @@ class AssetSeeder:
                 print(f"[ERROR] Failed to create asset {name}: {e}")
             self.skipped_count += 1
             return False
+
+    def flush_pending(self):
+        """Commit any pending assets that haven't been committed yet."""
+        if self._pending_commits > 0:
+            self.db.commit()
+            self._pending_commits = 0
+            if self.debug:
+                print(f"[DEBUG] Flushed pending, total: {self.created_count}")
 
     # --- Phase 1: Master Debt Lists ---
     def process_nsdl_file(self, filepath: str):
