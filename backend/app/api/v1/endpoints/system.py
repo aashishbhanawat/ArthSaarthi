@@ -110,10 +110,10 @@ def get_seeding_status(db: Session = Depends(get_db)):
             asset_count = db.query(models.Asset).count()
         except Exception:
             asset_count = 0
-            
+
         # Estimate progress based on asset count (target ~40000 assets)
         estimated_progress = min(95, 10 + int((asset_count / 40000) * 85))
-        
+
         return SeedingStatusResponse(
             status=SeedingStatus.IN_PROGRESS,
             progress=estimated_progress,
@@ -163,16 +163,16 @@ def get_seeding_status(db: Session = Depends(get_db)):
 def trigger_seeding(db: Session = Depends(get_db)):
     """
     Trigger asset seeding process.
-    
+
     Called by Electron splash screen on first run to start seeding
     before user login.
     """
     global _seeding_state
-    
+
     # Don't start if already in progress
     if _seeding_state["seeding_started"]:
         return {"status": "already_started"}
-    
+
     # Check if seeding is actually needed
     try:
         asset_count = db.query(models.Asset).count()
@@ -180,16 +180,16 @@ def trigger_seeding(db: Session = Depends(get_db)):
             return {"status": "not_needed", "asset_count": asset_count}
     except Exception:
         pass
-    
+
     # Start seeding in background thread
     _seeding_state["seeding_started"] = True
     _seeding_state["status"] = SeedingStatus.IN_PROGRESS
     _seeding_state["progress"] = 5
     _seeding_state["message"] = "Initializing..."
-    
+
     seed_thread = threading.Thread(target=_run_seeding_subprocess, daemon=True)
     seed_thread.start()
-    
+
     return {"status": "started"}
 
 

@@ -179,7 +179,7 @@ class AssetSeeder:
                 self.db.commit()
                 self._pending_commits = 0
                 if self.debug:
-                    print(f"[DEBUG] Committed batch, total created: {self.created_count}")
+                    print(f"[DEBUG] Committed batch, total: {self.created_count}")
 
             return True
         except IntegrityError:
