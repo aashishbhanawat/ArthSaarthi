@@ -100,7 +100,7 @@ export default function UpdateBanner() {
                     onClick={handleDismiss}
                     className="update-dismiss-btn"
                     title="Dismiss this notification"
-                    aria-label="Dismiss update notification"
+                    aria-label="Close banner"
                 >
                     <FiX />
                 </button>
@@ -134,7 +134,7 @@ export default function UpdateBanner() {
                 onClick={handleDismiss}
                 className="update-dismiss-btn"
                 title="Dismiss this notification"
-                aria-label="Dismiss update notification"
+                aria-label="Close banner"
             >
                 <FiX />
             </button>
