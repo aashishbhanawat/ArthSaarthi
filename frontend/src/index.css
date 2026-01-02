@@ -179,3 +179,32 @@ body {
 .dark .hover\:bg-gray-100:hover {
     background-color: #4b5563 !important;
 }
+
+/* Update Banner Styles */
+.update-banner {
+    @apply fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-blue-500 text-white py-2 px-4 flex items-center justify-between shadow-md;
+}
+
+.update-banner-content {
+    @apply flex items-center gap-3;
+}
+
+.update-icon {
+    @apply text-lg;
+}
+
+.update-text {
+    @apply text-sm;
+}
+
+.update-download-btn {
+    @apply bg-white text-blue-600 font-semibold py-1 px-3 rounded text-sm hover:bg-blue-50 transition-colors;
+}
+
+.update-dismiss-btn {
+    @apply p-1 hover:bg-blue-700 rounded transition-colors;
+}
+
+.update-admin-note {
+    @apply text-blue-100 ml-1;
+}
