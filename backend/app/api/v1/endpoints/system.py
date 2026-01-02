@@ -235,3 +235,77 @@ def reset_seeding_status():
         "seeding_started": False,
     }
     return {"status": "reset"}
+
+
+# --- Update Check Endpoint ---
+
+class UpdateCheckResponse(BaseModel):
+    """Response model for update check."""
+    available: bool
+    version: Optional[str] = None
+    url: Optional[str] = None
+    name: Optional[str] = None
+    error: Optional[str] = None
+
+
+# Current app version (should match package.json)
+APP_VERSION = "0.9.0"  # TODO: Update to 1.0.0 before release
+
+
+@router.get("/check-updates", response_model=UpdateCheckResponse)
+def check_for_updates():
+    """
+    Check GitHub Releases for newer version.
+
+    Used by both desktop and server modes to show update notifications.
+    """
+    import json
+    import urllib.request
+
+    try:
+        url = "https://api.github.com/repos/aashishbhanawat/ArthSaarthi/releases/latest"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "ArthSaarthi-Server",
+                "Accept": "application/vnd.github.v3+json",
+            }
+        )
+
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode())
+
+        latest_version = (data.get("tag_name") or "").lstrip("v")
+
+        if latest_version and _is_newer_version(latest_version, APP_VERSION):
+            return UpdateCheckResponse(
+                available=True,
+                version=latest_version,
+                url=data.get("html_url"),
+                name=data.get("name") or f"Version {latest_version}",
+            )
+
+        return UpdateCheckResponse(available=False)
+
+    except Exception as e:
+        logger.warning(f"Update check failed: {e}")
+        return UpdateCheckResponse(available=False, error=str(e))
+
+
+def _is_newer_version(v1: str, v2: str) -> bool:
+    """Compare version strings. Returns True if v1 > v2."""
+    try:
+        parts1 = [int(p) for p in v1.split(".")]
+        parts2 = [int(p) for p in v2.split(".")]
+
+        for i in range(max(len(parts1), len(parts2))):
+            p1 = parts1[i] if i < len(parts1) else 0
+            p2 = parts2[i] if i < len(parts2) else 0
+            if p1 > p2:
+                return True
+            if p1 < p2:
+                return False
+        return False
+    except ValueError:
+        return False
+

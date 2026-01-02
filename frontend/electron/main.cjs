@@ -234,6 +234,80 @@ async function waitForSeedingComplete(port) {
   return { success: false, error: 'Seeding timeout' };
 }
 
+/**
+ * Check for app updates from GitHub Releases
+ */
+async function checkForUpdates() {
+  const https = require('https');
+
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/aashishbhanawat/ArthSaarthi/releases/latest',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'ArthSaarthi-Desktop',
+        'Accept': 'application/vnd.github.v3+json',
+      },
+      timeout: 10000,
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const release = JSON.parse(data);
+          const latestVersion = (release.tag_name || '').replace(/^v/, '');
+          const currentVersion = app.getVersion();
+
+          // Simple version comparison (works for semver-like versions)
+          if (latestVersion && isNewerVersion(latestVersion, currentVersion)) {
+            resolve({
+              available: true,
+              version: latestVersion,
+              url: release.html_url,
+              name: release.name || `Version ${latestVersion}`,
+            });
+          } else {
+            resolve({ available: false });
+          }
+        } catch {
+          resolve({ available: false, error: 'Failed to parse response' });
+        }
+      });
+    });
+
+    req.on('error', (err) => {
+      console.log('Update check failed:', err.message);
+      resolve({ available: false, error: err.message });
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      resolve({ available: false, error: 'Request timeout' });
+    });
+
+    req.end();
+  });
+}
+
+/**
+ * Compare version strings (returns true if v1 > v2)
+ */
+function isNewerVersion(v1, v2) {
+  const parts1 = v1.split('.').map(Number);
+  const parts2 = v2.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+    const p1 = parts1[i] || 0;
+    const p2 = parts2[i] || 0;
+    if (p1 > p2) return true;
+    if (p1 < p2) return false;
+  }
+  return false;
+}
+
 async function createMainWindow(backendPort) {
   const isDev = (await import('electron-is-dev')).default;
 
@@ -265,6 +339,23 @@ async function createMainWindow(backendPort) {
     }
     const url = `file://${guidePath}${sectionId ? '#' + sectionId : ''}`;
     shell.openExternal(url);
+  });
+
+  // Update notification handlers
+  ipcMain.removeHandler('check-for-updates');
+  ipcMain.handle('check-for-updates', async () => {
+    return await checkForUpdates();
+  });
+
+  ipcMain.removeHandler('open-release-page');
+  ipcMain.handle('open-release-page', async (event, url) => {
+    const { shell } = require('electron');
+    shell.openExternal(url);
+  });
+
+  ipcMain.removeHandler('get-app-version');
+  ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
   });
 
   if (isDev) {
