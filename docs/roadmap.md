@@ -86,7 +86,25 @@ Creates DIVIDEND transactions with TDS tracking.
 
 | Feature | Description |
 |---------|-------------|
-| System tray integration | Minimize to tray instead of taskbar |
+| **System tray integration** | Minimize to tray instead of taskbar |
+
+---
+
+### P3: UX Improvements
+
+| Feature | Description |
+|---------|-------------|
+| **System theme preference** | Add "System" option to follow OS light/dark mode changes dynamically |
+
+---
+
+### P3: Analytics Enhancements
+
+| Feature | Description |
+|---------|-------------|
+| **Capital gains view** | Display unrealized and realized capital gains summary for tax planning |
+| **Investment Style (Growth vs Value)** | Classify holdings by P/E, P/B ratios; on-demand fetch and cache |
+| **Benchmark comparison (basic)** | Compare portfolio returns against Nifty 50 / Sensex |
 
 ---
 
@@ -108,9 +126,7 @@ Creates DIVIDEND transactions with TDS tracking.
 - **Enhanced Sharpe Ratio** - Use cached history for all asset types
 
 ### Analytics & Reporting
-- Capital gains report for tax filing
-- Benchmark comparison (Nifty, Sensex)
-- Sector/geography diversification analysis
+- Capital gains report for tax filing (ITR format)
 
 ### Goal Planning
 - Link assets to financial goals

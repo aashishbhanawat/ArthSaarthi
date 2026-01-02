@@ -85,7 +85,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR6.2: Advanced Risk Analytics.** The system must calculate and display advanced risk metrics including:
     -   Volatility (Standard Deviation), Beta, Alpha, Tracking Error, and Maximum Drawdown. `📝 Planned`
 -   **FR6.3: Benchmarking.** Users must be able to compare their portfolio's performance against standard market benchmarks (e.g., Nifty 50, S&P 500) over a rolling 12-month period. `📝 Planned`
--   **FR6.4: Diversification Analysis.** Provide visual breakdowns of the portfolio by: Asset Class, Industry/Sector, Geography, Currency, Market Cap, and Investment Style (Growth vs. Value). `📝 Planned`
+-   **FR6.4: Diversification Analysis.** Provide visual breakdowns of the portfolio by: Asset Class, Industry/Sector, Geography, Currency, Market Cap, and Investment Style (Growth vs. Value). `✅ Done`
 -   **FR6.5: Capital Gains Reporting.** `📝 Planned`
     -   **FR6.5.1:** Generate reports for realized long-term, short-term, and intra-day capital gains in ITR (Income Tax Return) format. `📝 Planned`
     -   **FR6.5.2:** Reports must account for provisions like LTCG Grandfathering and Indexation. `📝 Planned`
@@ -98,10 +98,10 @@ This document outlines the functional and non-functional requirements for the Ar
 ### FR7: Data Import
 -   **FR7.1: Automated Import.** The system must support direct import of statements to automate transaction logging. `⚠️ Partially Implemented`
     -   **FR7.1.1:** Stock/F&O contract notes from brokers like Zerodha and ICICI Direct. `⚠️ Partially Implemented` (CSV only)
-    -   **FR7.1.2:** Mutual Fund CAS statements from CAMSOnline or NSDL. `📝 Planned`
+    -   **FR7.1.2:** Mutual Fund CAS statements from CAMSOnline or NSDL. `✅ Done` (CAMS, KFintech, MFCentral, Zerodha Coin)
     -   **FR7.1.3:** eNPS statements from Karvy or NSDL. `📝 Planned`
     -   **FR7.1.4:** PMS & AIF statements. `📝 Planned`
--   **FR7.2: File Format Support.** The import engine must handle various file formats, including PDF, Excel, HTML, CSV, TXT, and DBF. `⚠️ Partially Implemented` (CSV only)
+-   **FR7.2: File Format Support.** The import engine must handle various file formats, including PDF, Excel, HTML, CSV, TXT, and DBF. `⚠️ Partially Implemented` (CSV, Excel, PDF)
 
 ### FR8: Market Insights & Research
 -   **FR8.1: Watchlists.** Users must be able to create and manage lists of assets to monitor without owning them, displaying key metrics for each. `✅ Done`
@@ -122,7 +122,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR10.6: AI-Powered Digest.** The system will generate a daily/weekly/monthly digest summarizing the performance of the user's holdings and watchlist, highlighting key news and events. `📝 Planned`
 
 ### FR11: User Experience
--   **FR11.1: Theming.** The application must support Light and Dark mode themes. `📝 Planned`
+-   **FR11.1: Theming.** The application must support Light and Dark mode themes. `✅ Done`
 -   **FR11.2: Internationalization (i18n).** The application should be designed to support multiple languages in the future. `📝 Planned`
 
 ### FR12: Risk Profile Management
