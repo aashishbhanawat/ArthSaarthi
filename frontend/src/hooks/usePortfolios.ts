@@ -19,6 +19,7 @@ const invalidatePortfolioAndDashboardQueries = (queryClient: QueryClient, portfo
         ['portfolioAnalytics', portfolioId],
         ['portfolioSummary', portfolioId],
         ['portfolioHoldings', portfolioId],
+        ['diversification', portfolioId],    // Diversification charts
         ['assetTransactions', portfolioId], // Invalidate all asset transactions for this portfolio
         ['assetAnalytics', portfolioId],    // Invalidate all asset analytics for this portfolio
     ];
