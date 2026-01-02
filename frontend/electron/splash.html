@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArthSaarthi - Loading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+
+        .logo-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .logo-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 16px;
+        }
+
+        .logo-text {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .tagline {
+            font-size: 12px;
+            color: #8892a6;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .progress-container {
+            width: 280px;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.indeterminate {
+            width: 30%;
+            animation: indeterminate 1.5s ease-in-out infinite;
+        }
+
+        @keyframes indeterminate {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            50% {
+                transform: translateX(200%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        .status-text {
+            font-size: 13px;
+            color: #8892a6;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        .error-container {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error-container.show {
+            display: block;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .retry-button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            color: #0d1b2a;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-app-region: no-drag;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+        }
+
+        .version {
+            position: absolute;
+            bottom: 16px;
+            font-size: 11px;
+            color: #4a5568;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="logo-container">
+        <img src="../dist/ArthSaarthi.png" alt="ArthSaarthi" class="logo-img" onerror="this.style.display='none'">
+        <div class="logo-text">ArthSaarthi</div>
+        <div class="tagline">Personal Portfolio Management</div>
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+            <div class="progress-fill indeterminate" id="progressFill"></div>
+        </div>
+    </div>
+
+    <div class="status-text" id="statusText">Initializing...</div>
+
+    <div class="error-container" id="errorContainer">
+        <div class="error-message" id="errorMessage"></div>
+        <button class="retry-button" id="retryButton">Retry</button>
+    </div>
+
+    <div class="version">v1.0.0</div>
+
+    <script>
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const retryButton = document.getElementById('retryButton');
+        const progressContainer = document.getElementById('progressContainer');
+
+        function setProgress(percent, message) {
+            progressFill.classList.remove('indeterminate');
+            progressFill.style.width = percent + '%';
+            statusText.textContent = message || '';
+        }
+
+        function showError(error) {
+            progressContainer.style.display = 'none';
+            statusText.style.display = 'none';
+            errorContainer.classList.add('show');
+            errorMessage.textContent = error;
+        }
+
+        function hideError() {
+            progressContainer.style.display = 'block';
+            statusText.style.display = 'block';
+            errorContainer.classList.remove('show');
+            progressFill.classList.add('indeterminate');
+            progressFill.style.width = '30%';
+        }
+
+        // Listen for progress updates from main process via contextBridge
+        if (window.splashAPI) {
+            window.splashAPI.onSeedingProgress((data) => {
+                setProgress(data.progress, data.message);
+            });
+
+            window.splashAPI.onSeedingError((error) => {
+                showError(error);
+            });
+
+            retryButton.addEventListener('click', () => {
+                hideError();
+                statusText.textContent = 'Retrying...';
+                window.splashAPI.retrySeeding();
+            });
+
+            // Notify main process that splash is ready
+            window.splashAPI.splashReady();
+        }
+    </script>
+</body>
+
+</html>

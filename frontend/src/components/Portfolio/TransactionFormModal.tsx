@@ -224,6 +224,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     setSelectedMf({
                         name: transactionToEdit.asset.name,
                         ticker_symbol: transactionToEdit.asset.ticker_symbol,
+                        asset_type: 'Mutual Fund',
                     });
                 }
             } else if (fixedDepositToEdit) {
@@ -705,8 +706,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                         interest_rate: data.interestRate!,
                         start_date: data.startDate!,
                         maturity_date: data.maturityDate!,
-                        compounding_frequency: data.compounding_frequency || 'ANNUALLY',
-                        interest_payout: data.interest_payout || 'CUMULATIVE'
+                        compounding_frequency: data.compounding_frequency || 'Annually',
+                        interest_payout: data.interest_payout || 'Cumulative'
                     }
                 }, mutationOptions);
             }
@@ -1644,18 +1645,17 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <label htmlFor="compounding_frequency" className="form-label">Compounding</label>
                                     <select id="compounding_frequency" {...register('compounding_frequency')} className="form-select">
                                         <option value="">Select...</option>
-                                        <option value="ANNUALLY">Annually</option>
-                                        <option value="SEMI-ANNUALLY">Semi-Annually</option>
-                                        <option value="QUARTERLY">Quarterly</option>
-                                        <option value="MONTHLY">Monthly</option>
+                                        <option value="Annually">Annually</option>
+                                        <option value="Half-Yearly">Semi-Annually</option>
+                                        <option value="Quarterly">Quarterly</option>
                                     </select>
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="interest_payout" className="form-label">Interest Payout</label>
                                     <select id="interest_payout" {...register('interest_payout')} className="form-select">
                                         <option value="">Select...</option>
-                                        <option value="CUMULATIVE">Cumulative (Re-invested)</option>
-                                        <option value="PAYOUT">Payout (Periodic)</option>
+                                        <option value="Cumulative">Cumulative (Re-invested)</option>
+                                        <option value="Payout">Payout (Periodic)</option>
                                     </select>
                                 </div>
                             </div>

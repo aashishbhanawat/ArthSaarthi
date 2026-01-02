@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     portfolios,
     ppf_accounts,
     recurring_deposits,
+    system,
     testing,
     transactions,
     users,
@@ -70,3 +71,6 @@ if settings.ENVIRONMENT == "test":
 api_router.include_router(
     import_sessions.router, prefix="/import-sessions", tags=["import-sessions"]
 )
+
+# System endpoints for desktop app (seeding status, etc.)
+api_router.include_router(system.router, prefix="/system", tags=["system"])
