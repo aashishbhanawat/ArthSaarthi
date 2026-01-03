@@ -20,6 +20,7 @@ export interface Holding {
     opening_date: string | null;
     isin: string;
     currency: string | null;
+    investment_style?: string | null; // Value, Growth, Blend
 }
 
 export interface HoldingsResponse {

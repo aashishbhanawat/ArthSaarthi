@@ -553,6 +553,7 @@ def _process_market_traded_assets(
                     asset.industry = enrichment.get("industry")
                     asset.country = enrichment.get("country")
                     asset.market_cap = enrichment.get("market_cap")
+                    asset.investment_style = enrichment.get("investment_style")
                     db.add(asset)
                     needs_commit = True
             elif asset.asset_type in ["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"]:
@@ -707,6 +708,7 @@ def _process_market_traded_assets(
                 unrealized_pnl=Decimal("0.0"),
                 realized_pnl=data.get("realized_pnl", Decimal("0.0")),
                 unrealized_pnl_percentage=0.0,
+                investment_style=asset.investment_style,
                 bond=asset.bond,
             )
         )

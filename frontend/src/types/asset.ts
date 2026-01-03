@@ -11,6 +11,7 @@ export interface Asset {
     current_price?: number;
     day_change?: number;
     account_number?: string | null;
+    investment_style?: string | null; // Value, Growth, Blend
     bond?: Bond | null;
 }
 
