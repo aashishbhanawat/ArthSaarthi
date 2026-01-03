@@ -42,6 +42,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "public/ArthSaarthi.png",
+        "to": "tray-icon.png"
       }
     ],
     "icon": "public/ArthSaarthi.png",

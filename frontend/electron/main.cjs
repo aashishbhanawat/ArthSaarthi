@@ -330,12 +330,22 @@ function isNewerVersion(v1, v2) {
 /**
  * Create system tray icon with context menu
  */
-function createTray() {
+async function createTray() {
+  const isDev = (await import('electron-is-dev')).default;
+
   console.log('[TRAY] createTray() called');
   console.log('[TRAY] Platform:', process.platform);
+  console.log('[TRAY] isDev:', isDev);
 
-  // Use the app icon for tray
-  const iconPath = path.join(__dirname, '../public/ArthSaarthi.png');
+  // In dev, use the public folder; in production, use extraResources
+  let iconPath;
+  if (isDev) {
+    iconPath = path.join(__dirname, '../public/ArthSaarthi.png');
+  } else {
+    // In production, the icon is extracted to Resources folder via extraResources
+    iconPath = path.join(process.resourcesPath, 'tray-icon.png');
+  }
+
   console.log('[TRAY] Icon path:', iconPath);
 
   let icon = nativeImage.createFromPath(iconPath);
@@ -682,7 +692,7 @@ app.whenReady().then(async () => {
     await createMainWindow(backendPort);
 
     // Create system tray icon
-    createTray();
+    await createTray();
 
     // Small delay for backend to be fully ready
     await new Promise(resolve => setTimeout(resolve, 1000));
