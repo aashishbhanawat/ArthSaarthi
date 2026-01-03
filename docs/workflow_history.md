@@ -1,3 +1,37 @@
+## 2026-01-03: Implement System Tray Integration (FR-Desktop-3, Issue #190)
+
+**Task:** Implement system tray integration for the desktop app, allowing users to minimize to tray instead of closing.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented system tray functionality using Electron's Tray API:
+- **Tray Icon:** App icon appears in system tray when running
+- **Minimize to Tray:** Closing window hides to tray instead of quitting
+- **Context Menu:** Right-click tray for "Show ArthSaarthi" and "Quit"
+- **Double-click:** Restores window from tray
+
+### File Changes
+
+**Backend:**
+*   **New:** `docs/features/FR-Desktop-3_system_tray.md` - Feature plan
+
+**Frontend (Electron):**
+*   **Modified:** `frontend/electron/main.cjs` - Added Tray, nativeImage imports, createTray function, window close handler override, before-quit handler
+
+### Verification
+
+*   **Frontend Tests:** 175 tests pass
+*   **Linting:** main.cjs lint errors are false positives (Node.js globals not recognized)
+
+### Outcome
+
+**Success.** Desktop users can now minimize the app to the system tray and restore it via the tray icon.
+
+---
+
 *   **Task Description:** Implemented admin-only manual asset sync endpoint allowing administrators to trigger asset master data updates from the UI without restarting the server.
 
 *   **Key Prompts & Interactions:**
