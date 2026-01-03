@@ -16,6 +16,7 @@ import {
     WrenchScrewdriverIcon,
     SunIcon,
     MoonIcon,
+    ComputerDesktopIcon,
 } from '@heroicons/react/24/outline';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
@@ -23,7 +24,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION;
 
 const NavBar: React.FC = () => {
     const { user, logout, deploymentMode } = useAuth();
-    const { isDarkMode, toggleDarkMode } = useTheme();
+    const { theme, setTheme } = useTheme();
 
     const baseLinkClass = "py-2 px-3 rounded-md transition-colors";
     const inactiveLinkClass = "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100";
@@ -39,17 +40,39 @@ const NavBar: React.FC = () => {
                     <img src="ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-8 w-8" />
                     <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">ArthSaarthi</h2>
                 </div>
-                <button
-                    onClick={toggleDarkMode}
-                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
-                    title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                    {isDarkMode ? (
-                        <SunIcon className="h-5 w-5 text-yellow-500" />
-                    ) : (
-                        <MoonIcon className="h-5 w-5 text-gray-600" />
-                    )}
-                </button>
+                {/* Theme Selector */}
+                <div className="flex items-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-700">
+                    <button
+                        onClick={() => setTheme('light')}
+                        className={`p-1.5 rounded-md transition-colors ${theme === 'light'
+                            ? 'bg-white dark:bg-gray-600 shadow-sm'
+                            : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                        title="Light mode"
+                    >
+                        <SunIcon className={`h-4 w-4 ${theme === 'light' ? 'text-yellow-500' : 'text-gray-500 dark:text-gray-400'}`} />
+                    </button>
+                    <button
+                        onClick={() => setTheme('system')}
+                        className={`p-1.5 rounded-md transition-colors ${theme === 'system'
+                            ? 'bg-white dark:bg-gray-600 shadow-sm'
+                            : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                        title="System preference"
+                    >
+                        <ComputerDesktopIcon className={`h-4 w-4 ${theme === 'system' ? 'text-blue-500' : 'text-gray-500 dark:text-gray-400'}`} />
+                    </button>
+                    <button
+                        onClick={() => setTheme('dark')}
+                        className={`p-1.5 rounded-md transition-colors ${theme === 'dark'
+                            ? 'bg-white dark:bg-gray-600 shadow-sm'
+                            : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                        title="Dark mode"
+                    >
+                        <MoonIcon className={`h-4 w-4 ${theme === 'dark' ? 'text-indigo-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                    </button>
+                </div>
             </div>
             <nav className="flex flex-col gap-2 flex-grow">
                 <NavLink
