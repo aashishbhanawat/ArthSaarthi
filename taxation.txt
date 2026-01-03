@@ -1,0 +1,135 @@
+The primary goal for investing in any asset is to generate a profit by selling it after its value appreciates. But, these profits are not always tax-free. The Income Tax Act specifies the various capital assets that are taxable as well as the tax rates that apply to them.
+
+As per the Income Tax Act, any profit earned from capital assets such as stocks, Mutual Funds, Gold, Real Estate, etc., is termed “capital gain.” These capital gains are subject to tax depending on the type of investment.
+
+In this blog, we will discuss the capital gains tax rules of key investments such as stocks, mutual funds, ETFs, fixed-income instruments, gold, and Real Estate.
+
+Taxation Rules for Equity Shares
+Under Income Tax rules, Equity shares are capital assets, so any profits from the sale of Equity shares are subject to Capital Gains Taxation rules. In India, investors can opt for listed domestic Equity shares, unlisted domestic Equity shares, and Foreign Equity Shares. Each of these has a different tax treatment.
+
+Listed Domestic Equity Shares
+If listed Equity shares are held for less than 12 months before being sold for a profit, the gains are Short-Term Capital Gains (STCG). Similarly, Capital Gains from Equity Shares held for over 12 months is Long Term Capital Gains (LTCG).
+
+STCG rate for listed domestic Equity Shares is 20%, while the LTCG tax rate is 12.5%. The LTCG is calculated after an exemption of up to Rs. 1.25 lakh on aggregate long-term capital gains in a financial year.
+
+Unlisted Domestic Equity Shares
+In the case of unlisted domestic Equity shares, LTCG tax rules are applicable if the holding period is 24 months or more. So, STCG tax rules apply to investments that have a holding period shorter than 24 months.
+
+In the case of unlisted domestic Equity shares, STCG is applicable based on the Income Tax slab rate of the investor for the Financial Year. The LTCG, in this case, is computed as 20% of gains with the benefit of indexation.
+
+Foreign Equity Shares
+Resident Indians can invest up to US$2.5 lakh in a financial year in stocks listed on a foreign stock exchange. From a taxation perspective, foreign Equity shares are treated the same as unlisted Equity shares. So, Capital Gains from foreign Equity stocks held for less than 24 months are treated as STCG, while the LTCG tax rate is applicable if the holding period exceeds 24 months.
+
+The STCG tax rate for foreign Equity shares is as per the Income Tax slab rate of the investor. Similarly, the LTCG tax rate applicable to foreign Equity shares is 20% with indexation.
+
+The table below summarizes the Capital Gain Tax applicable to various types of Equity shares:
+
+Type of Equity Share	Holding Period	Type of Capital Gain	Tax Rate
+Listed Domestic Shares	Up to 12 months	Short Term Capital Gain (STCG)	20%
+More than 12 months	Long Term Capital Gains (LTCG)	12.5% on cumulative LTCG exceeding Rs. 1.25 lakh in a Financial Year
+Unlisted Domestic Shares	Up to 24 months	STCG	As per the Income Tax slab rate of the investor
+More than 24 months	LTCG	20% with indexation
+Foreign Shares	Up to 24 months	STCG	As per the Income Tax slab rate of the investor
+More than 24 months	LTCG	20% with indexation
+Now shares are not always purchased through stock market transactions. Some special types of Equity Shares also exist, like rights issues, bonus shares, sweat Equity, shares received as a gift, etc. In such cases, the holding period for determining the tax implications is calculated differently. The table below shows some key types of Equity shares and the holding period calculation for each type:
+
+Type of Equity Share	Holding Period Calculation
+Shares Held in a Company in Liquidation	The period after the date of liquidation is excluded
+Rights Shares	Starting from the date of allotment of shares
+Right Entitlement	From the date of the subscription offer to the date of renouncing the right entitlement
+Bonus Shares	Starting from the date of allotment
+Shares received due to the Demerger	Counted from the date of acquisition of shares in the demerged company
+Sweat Shares issued by an employer	Calculated from the date of allotment or transfer of the shares
+Preference Shares converted to Equity Shares	Includes the period during which the preference shares were held before conversion
+Conversion of Stock-in-trade to Capital Asset	Calculated from the date of conversion onwards
+Shares received as a gift or through will, succession, inheritance, or partition	Includes the period of holding for the previous owner
+
+Capital Gains Taxation Rules for Mutual Funds
+Mutual Funds can invest in various asset classes such as Equities, Debt, or a combination of different asset classes. Based on the type of investment, Mutual Funds can be classified as Equity Mutual Funds, Debt Mutual Funds, or Hybrid Mutual Funds. Taxation rules of Mutual Funds differ based on the underlying investments.
+
+Equity Mutual Funds
+Equity Mutual Funds invest 65% or more of their investable assets in Equity-oriented assets such as domestic Equity shares. From a taxation standpoint, Equity Mutual Funds are treated the same as domestic Equity shares.
+
+So STCG at 20% applies to capital gains from Equity Mutual Fund units held for 12 months or less. For a holding period exceeding 12 months, capital gains from Equity Mutual Funds are treated as LTCG. The LTCG rate, in this case, is 12.5% of cumulative capital gains over Rs. 1.25 lakh for a financial year.
+
+Debt Mutual Funds
+Debt Mutual Funds are mandatorily required to invest 65% or more of their assets in Debt investments such as bonds, T-bills, Certificates of Deposits, etc. The tax rates and holding period for Debt Funds are quite different from Equity Mutual Funds.
+
+In the case of Debt Mutual Funds, capital gains from units held for 3 years or less are subject to Short Term Capital Gains. So Long Term Capital Gains in Debt Funds apply to units held for more than 3 years before being redeemed at a profit.
+
+As per the Budget 2023, LTCG and STCG earned on the debt mutual funds are taxable as per your income tax slab. This applies to the investment made after April 1, 2023.
+However, if you have invested in debt funds before April 1, 2023, then taxability is different.
+
+In this case, the STCG is taxed as per your applicable Income Tax slab rate. However, long-term capital gains are taxed at 20% with indexation benefits. An earlier provision to opt for LTCG at 10% without indexation is unavailable to any units sold after 10 July 2014.
+
+Hybrid Funds
+As per SEBI regulations, Hybrid Funds can invest in 2 more or more asset classes such as Equity, Debt, Gold, etc. The taxation of Hybrid Funds thus depends on whether Equity-oriented investments comprise up to or more than 65% of the scheme’s portfolio.
+
+A Hybrid Fund that invests 65% or more of its assets in Equity-oriented investments is taxed like an Equity Mutual Fund. Similarly, if Equity-oriented investments account for less than 65% of a Hybrid Fund’s assets, it is taxed like a Debt Mutual Fund.
+
+The table below shows the proportion of Equity and non-Equity assets held by different types of Hybrid Funds:
+
+Type of Hybrid Fund	Equity (%)	Other Asset Classes (%)
+Aggressive Hybrid Fund	65 – 80	20 – 35
+Balanced Hybrid Fund	40 – 60	40 – 60
+Conservative Hybrid Fund	10 – 25	75 – 90
+Multi-Asset Allocation Fund	10 – 100	10 -100
+Equity Savings Fund	65 – 100	0 – 35
+Arbitrage Funds	65 – 100	0 – 35
+Dynamic Asset Allocation / Balanced Advantage Fund	0 – 100	0 – 100
+As you can see, in most cases, Hybrid Funds have an Equity Allocation of either less than 65% or over 65%, so determining whether Equity or Debt Fund taxation rules are applicable is quite simple.
+
+However, some types of Hybrid Funds, such as Dynamic Asset Allocation Funds and Multi-Asset Allocation Funds, are a bit more dynamic. So their Equity Allocation can exceed or be less than the 65% threshold from time to time. In such cases, investors should use the asset allocation information in the latest monthly factsheet to determine which set of capital gains taxation rules will be applicable.
+
+International Funds
+In recent years, International Funds, which primarily invest in Equity shares listed on foreign stock exchanges, have become quite popular among investors. Even though these Mutual Funds invest in Equities, they are taxed like Debt Mutual Funds.
+
+So, International Fund units sold at a profit before completion of 3 years are taxed as per the Income Tax Slab rate of the investor. And, fund units held more than 3 years before redemption qualify for long-term capital gains equal to 20% with indexation.
+
+Some Equity Funds in India, such as Parag Parikh Flexicap Fund, invest in both domestic and international equities. In the case of these funds, the applicable taxation rule will depend on what proportion of the scheme’s assets are invested in domestic Equities.
+
+Under current rules, if an Equity Mutual Fund has invested 65% or more of its assets in domestic Equity shares, it will be taxed based on the same rules as any other Equity Mutual Fund. However, if the fund has invested less than 65% of its assets in domestic Equity stocks, it will be treated the same as a Debt Fund from a taxation perspective.
+
+Taxation Rules for Exchange Traded Funds
+Exchange Traded Funds or ETFs are similar to Mutual Funds as they have pooled investments but can be traded on stock exchanges like Equity shares. They are currently 4 types of ETFs in India – Index ETFs, Sectoral ETFs, Gold ETFs, and International ETFs.
+
+Index ETFs track the movement of indices such as the SENSEX or the NIFTY, whereas sectoral ETFs track sector-specific indices such as the Bank Nifty. For taxation purposes, Index and Sectoral ETFs are treated the same as Equity-oriented investments. So, for holding periods exceeding 12 months, LTCG tax at 12.5% is applicable on aggregate gains exceeding Rs. 1.25 lakh in a financial year., Whereas the STCG tax at 20% is applicable for a holding period shorter than 12 months.
+
+Gold ETFs and International ETFs are taxed similar to Debt Mutual Funds. So, if the holding period is less than 36 months, STCG tax is as per the income tax slab rate of the investor. If the holding period exceeds 36 months, LTCG tax at 20% with indexation is applicable.
+
+Taxation Rules for Fixed Income Investments
+Fixed Income investments, such as bonds, can be either listed or unlisted, which impacts the rules governing the taxation of the investment. Examples of listed Debt instruments are debentures, Government Securities, corporate bonds, tax-free bonds, etc.
+
+In the case of listed Debt instruments, LTCG is applicable if the holding period exceeds 12 months, while STCG is applicable if the holding period is less than 12 months. The STCG rate for these investments is according to the Income Tax slab rate of the investor. The LTCG tax rate is either 20% with indexation or 12.5% without indexation.
+
+But, as per current taxation rules, the indexation benefit is only applicable to a few listed Debt instruments such as Sovereign Gold Bonds issued by the RBI and Capital-Indexed Bonds issued by the Government of India.
+
+In the case of unlisted bonds and debentures, the threshold holding period of 36 months is applicable for determining short-term or long-term capital gains. In this case, the STCG tax rate is as per the Income Tax slab of the investor. The LTCG tax rate for unlisted Debt instruments is 20% without indexation.
+
+The table below summarizes the holding period, type of capital gain, and tax rate applicable to listed and unlisted Debt investments:
+
+Type of Debt Investment	Holding Period	Type of Capital Gain	Tax Rate
+Listed Debt Instruments	Less than 12 months	Short Term	Income Tax Slab Rate
+More than 12 months	Long Term	Lower among:
+20% with indexation
+10% without indexation
+Unlisted Debt Instruments	Less than 36 months	Short Term	Income Tax Slab Rate
+More than 36 months	Long Term	20% without indexation
+Taxation Rules of Gold Investments
+Currently, there are multiple ways to invest in gold, even though traditionally, the physical form has been most popular. Physical gold can be in the form of jewelry, gold coins, and bars. Gold is also purchased as financial products such as digital gold, Gold ETFs, Gold Mutual Funds, and Sovereign Gold Bonds.
+
+From the perspective of taxation, 4 of these Gold investments in India – physical gold, digital gold, gold ETFs and Gold Mutual Funds are considered the same. All of these investments qualify as LTCG if the holding period exceeds 36 months. The STCG tax rate for a holding period shorter than 36 months is as per the Income Tax slab rate of the investor. LTCG rate is 20% with indexation.
+
+The tax rules are a bit different for Sovereign Gold Bonds. In this case, all capital gains are tax-free when the bond matures. But, if an investor exits this investment before maturity, then the same STCG and LTCG tax rules are applicable, as with other types of gold investments.
+
+Taxation Rules for Real Estate Investments
+Immovable property such as Real Estate is subject to its own unique set of capital gains taxation rules. In the case of these investments, STCG tax rules are applicable for a holding period shorter than 24 months, whereas LTCG rules apply if the holding period exceeds 24 months.
+
+In the case of real estate investments, the STCG tax rate is according to the investor’s Income Tax slab rate. The LTCG tax rate applicable to these investments is 20% with indexation. But the purchase and sale of Real Estate also feature some additional types of tax rules and conditions. These regulations include 1% TDS on property sales exceeding Rs. 50 lakh, mandatorily reporting sales exceeding Rs. 30 lakh to the Income Tax Department, etc.
+
+In recent years, another type of Real Estate investment has gained significant popularity in India. These are Real Estate Investment Trusts or REITs. At present, there are two key types of REITs available in India – Listed REITs and REITs Mutual Funds.
+
+Investors can purchase listed REITs on the stock exchange, and a Demat account is mandatory for this investment. Examples of listed REITs in India are Brookfield India, Mindspace Business Parks, and Embassy Office REITs. In the case of these REITs, a holding period of more than 36 months is necessary to qualify for long-term capital gains. The STCG tax rate on REIT units held for less than 36 months is 15%. The LTCG tax rate for REIT investments is 10% on gains exceeding Rs. 1 lakh.
+
+Investors can purchase REITs Mutual Funds such as International REITs fund of funds without a Demat account. These investments are taxed as per the rules of Debt Mutual Funds. So STCG rate is according to the Income Tax Slab rate of the investor if the holding period is 36 months. In contrast, the LTCG tax rate for REITs Mutual Funds is 20% with indexation if the holding period is more than 36 months.
+

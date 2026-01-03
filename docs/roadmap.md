@@ -102,7 +102,6 @@ Creates DIVIDEND transactions with TDS tracking.
 
 | Feature | Description |
 |---------|-------------|
-| **Capital gains view** | Display unrealized and realized capital gains summary for tax planning |
 | **Investment Style (Growth vs Value)** | Classify holdings by P/E, P/B ratios; on-demand fetch and cache |
 | **Benchmark comparison (basic)** | Compare portfolio returns against Nifty 50 / Sensex |
 
@@ -117,7 +116,17 @@ Creates DIVIDEND transactions with TDS tracking.
 
 ---
 
-## Future Versions (v1.2+)
+## v1.2.0 (Target: Feb 2026)
+
+### Capital Gains View (FR6.5)
+
+| Feature | Description |
+|---------|-------------|
+| **Capital gains summary** | Unrealized/realized gains with short-term vs long-term breakdown |
+| **Asset-type-specific thresholds** | Listed equity (12mo), unlisted (24mo), debt/gold (36mo), SGBs (36mo + maturity exemption) |
+| **Tax calculation** | STCG/LTCG rates per asset class |
+
+---
 
 ### Historical Price Caching (NFR-Analytics-1)
 - **Daily Portfolio Snapshots** - Cache daily valuations for history chart
