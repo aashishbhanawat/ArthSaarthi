@@ -333,10 +333,6 @@ function isNewerVersion(v1, v2) {
 async function createTray() {
   const isDev = (await import('electron-is-dev')).default;
 
-  console.log('[TRAY] createTray() called');
-  console.log('[TRAY] Platform:', process.platform);
-  console.log('[TRAY] isDev:', isDev);
-
   // In dev, use the public folder; in production, use extraResources
   let iconPath;
   if (isDev) {
@@ -346,14 +342,10 @@ async function createTray() {
     iconPath = path.join(process.resourcesPath, 'tray-icon.png');
   }
 
-  console.log('[TRAY] Icon path:', iconPath);
-
   let icon = nativeImage.createFromPath(iconPath);
-  console.log('[TRAY] Icon loaded, isEmpty:', icon.isEmpty());
-  console.log('[TRAY] Icon size:', icon.getSize());
 
   if (icon.isEmpty()) {
-    console.error('[TRAY] ERROR: Failed to load tray icon from:', iconPath);
+    console.error('Failed to load tray icon from:', iconPath);
     return;
   }
 
@@ -363,24 +355,21 @@ async function createTray() {
 
   let trayIcon;
   if (isLinux) {
-    console.log('[TRAY] Using Linux icon size: 22x22');
+    // Linux needs larger icon for visibility in some desktop environments
     trayIcon = icon.resize({ width: 22, height: 22 });
   } else if (isMac) {
-    console.log('[TRAY] Using macOS icon size: 16x16 with template');
+    // macOS uses template images for proper dark/light mode support
     trayIcon = icon.resize({ width: 16, height: 16 });
     trayIcon.setTemplateImage(true);
   } else {
-    console.log('[TRAY] Using Windows icon size: 16x16');
+    // Windows
     trayIcon = icon.resize({ width: 16, height: 16 });
   }
 
-  console.log('[TRAY] Resized icon size:', trayIcon.getSize());
-
   try {
     tray = new Tray(trayIcon);
-    console.log('[TRAY] Tray created successfully');
   } catch (err) {
-    console.error('[TRAY] ERROR creating Tray:', err);
+    console.error('Error creating Tray:', err);
     return;
   }
 
@@ -390,7 +379,6 @@ async function createTray() {
     {
       label: 'Show ArthSaarthi',
       click: () => {
-        console.log('[TRAY] Context menu "Show" clicked');
         showMainWindow();
       }
     },
@@ -398,7 +386,6 @@ async function createTray() {
     {
       label: 'Quit',
       click: () => {
-        console.log('[TRAY] Context menu "Quit" clicked');
         isQuitting = true;
         app.quit();
       }
@@ -406,60 +393,33 @@ async function createTray() {
   ]);
 
   tray.setContextMenu(contextMenu);
-  console.log('[TRAY] Context menu set');
 
   // Single click on tray icon shows window
   tray.on('click', () => {
-    console.log('[TRAY] Tray icon clicked');
     showMainWindow();
   });
 
   // Double-click also shows window
   tray.on('double-click', () => {
-    console.log('[TRAY] Tray icon double-clicked');
     showMainWindow();
   });
-
-  console.log('[TRAY] All event handlers registered');
 }
 
 /**
  * Helper to show and focus the main window
  */
 function showMainWindow() {
-  console.log('[SHOW] showMainWindow() called');
-  console.log('[SHOW] mainWindow exists:', !!mainWindow);
-
-  if (mainWindow) {
-    console.log('[SHOW] Window state - isMinimized:', mainWindow.isMinimized(),
-      'isVisible:', mainWindow.isVisible(),
-      'isDestroyed:', mainWindow.isDestroyed());
-
-    if (mainWindow.isDestroyed()) {
-      console.log('[SHOW] Window is destroyed, cannot show');
-      return;
-    }
-
+  if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.isMinimized()) {
-      console.log('[SHOW] Restoring minimized window');
       mainWindow.restore();
     }
-
-    console.log('[SHOW] Calling mainWindow.show()');
     mainWindow.show();
-
-    console.log('[SHOW] Calling mainWindow.focus()');
     mainWindow.focus();
 
     // On macOS, bring app to foreground
     if (process.platform === 'darwin') {
-      console.log('[SHOW] macOS: showing dock');
       app.dock.show();
     }
-
-    console.log('[SHOW] Done - window should be visible');
-  } else {
-    console.log('[SHOW] ERROR: mainWindow is null/undefined!');
   }
 }
 
@@ -719,17 +679,11 @@ app.whenReady().then(async () => {
   }
 
   app.on('activate', async () => {
-    console.log('[ACTIVATE] Dock icon clicked');
-    console.log('[ACTIVATE] mainWindow exists:', !!mainWindow);
-    console.log('[ACTIVATE] getAllWindows count:', BrowserWindow.getAllWindows().length);
-
     if (mainWindow && !mainWindow.isDestroyed()) {
       // Window exists but may be hidden - show it
-      console.log('[ACTIVATE] Showing existing window');
       showMainWindow();
     } else if (BrowserWindow.getAllWindows().length === 0 && storedBackendPort) {
       // No windows exist - create new one
-      console.log('[ACTIVATE] Creating new window');
       await createMainWindow(storedBackendPort);
       mainWindow.show();
     }
