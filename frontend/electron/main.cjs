@@ -719,7 +719,17 @@ app.whenReady().then(async () => {
   }
 
   app.on('activate', async () => {
-    if (BrowserWindow.getAllWindows().length === 0 && storedBackendPort) {
+    console.log('[ACTIVATE] Dock icon clicked');
+    console.log('[ACTIVATE] mainWindow exists:', !!mainWindow);
+    console.log('[ACTIVATE] getAllWindows count:', BrowserWindow.getAllWindows().length);
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      // Window exists but may be hidden - show it
+      console.log('[ACTIVATE] Showing existing window');
+      showMainWindow();
+    } else if (BrowserWindow.getAllWindows().length === 0 && storedBackendPort) {
+      // No windows exist - create new one
+      console.log('[ACTIVATE] Creating new window');
       await createMainWindow(storedBackendPort);
       mainWindow.show();
     }
