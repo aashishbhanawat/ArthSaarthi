@@ -1,10 +1,13 @@
 from .analytics import (
     AssetAnalytics,
+    CapitalGainsHolding,
     CapitalGainsResponse,
     DiversificationResponse,
     DiversificationSegment,
     FixedDepositAnalytics,
+    GainsBreakdown,
     PortfolioAnalytics,
+    TermBreakdown,
 )
 from .asset import (
     Asset,
@@ -105,10 +108,13 @@ __all__ = [
     "AssetSearchResult",
     "AssetUpdate",
     "AssetAnalytics",
+    "CapitalGainsHolding",
     "CapitalGainsResponse",
     "DiversificationResponse",
     "DiversificationSegment",
     "FixedDepositAnalytics",
+    "GainsBreakdown",
+    "TermBreakdown",
     "PortfolioHoldingsAndSummary",
     "DashboardSummary",
     "Holding",
