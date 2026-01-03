@@ -331,40 +331,56 @@ function isNewerVersion(v1, v2) {
  * Create system tray icon with context menu
  */
 function createTray() {
+  console.log('[TRAY] createTray() called');
+  console.log('[TRAY] Platform:', process.platform);
+
   // Use the app icon for tray
   const iconPath = path.join(__dirname, '../public/ArthSaarthi.png');
+  console.log('[TRAY] Icon path:', iconPath);
+
   let icon = nativeImage.createFromPath(iconPath);
+  console.log('[TRAY] Icon loaded, isEmpty:', icon.isEmpty());
+  console.log('[TRAY] Icon size:', icon.getSize());
 
   if (icon.isEmpty()) {
-    console.error('Failed to load tray icon from:', iconPath);
+    console.error('[TRAY] ERROR: Failed to load tray icon from:', iconPath);
     return;
   }
 
   // Platform-specific icon sizing
-  // Windows: 16x16, macOS: 16x16 or 22x22, Linux: 22x22 or higher
   const isMac = process.platform === 'darwin';
   const isLinux = process.platform === 'linux';
 
   let trayIcon;
   if (isLinux) {
-    // Linux needs larger icon for visibility in some desktop environments
+    console.log('[TRAY] Using Linux icon size: 22x22');
     trayIcon = icon.resize({ width: 22, height: 22 });
   } else if (isMac) {
-    // macOS uses template images for proper dark/light mode support
+    console.log('[TRAY] Using macOS icon size: 16x16 with template');
     trayIcon = icon.resize({ width: 16, height: 16 });
     trayIcon.setTemplateImage(true);
   } else {
-    // Windows
+    console.log('[TRAY] Using Windows icon size: 16x16');
     trayIcon = icon.resize({ width: 16, height: 16 });
   }
 
-  tray = new Tray(trayIcon);
+  console.log('[TRAY] Resized icon size:', trayIcon.getSize());
+
+  try {
+    tray = new Tray(trayIcon);
+    console.log('[TRAY] Tray created successfully');
+  } catch (err) {
+    console.error('[TRAY] ERROR creating Tray:', err);
+    return;
+  }
+
   tray.setToolTip('ArthSaarthi');
 
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Show ArthSaarthi',
       click: () => {
+        console.log('[TRAY] Context menu "Show" clicked');
         showMainWindow();
       }
     },
@@ -372,6 +388,7 @@ function createTray() {
     {
       label: 'Quit',
       click: () => {
+        console.log('[TRAY] Context menu "Quit" clicked');
         isQuitting = true;
         app.quit();
       }
@@ -379,33 +396,60 @@ function createTray() {
   ]);
 
   tray.setContextMenu(contextMenu);
+  console.log('[TRAY] Context menu set');
 
-  // Single click on tray icon shows window (works on all platforms)
+  // Single click on tray icon shows window
   tray.on('click', () => {
+    console.log('[TRAY] Tray icon clicked');
     showMainWindow();
   });
 
   // Double-click also shows window
   tray.on('double-click', () => {
+    console.log('[TRAY] Tray icon double-clicked');
     showMainWindow();
   });
+
+  console.log('[TRAY] All event handlers registered');
 }
 
 /**
  * Helper to show and focus the main window
  */
 function showMainWindow() {
+  console.log('[SHOW] showMainWindow() called');
+  console.log('[SHOW] mainWindow exists:', !!mainWindow);
+
   if (mainWindow) {
+    console.log('[SHOW] Window state - isMinimized:', mainWindow.isMinimized(),
+      'isVisible:', mainWindow.isVisible(),
+      'isDestroyed:', mainWindow.isDestroyed());
+
+    if (mainWindow.isDestroyed()) {
+      console.log('[SHOW] Window is destroyed, cannot show');
+      return;
+    }
+
     if (mainWindow.isMinimized()) {
+      console.log('[SHOW] Restoring minimized window');
       mainWindow.restore();
     }
+
+    console.log('[SHOW] Calling mainWindow.show()');
     mainWindow.show();
+
+    console.log('[SHOW] Calling mainWindow.focus()');
     mainWindow.focus();
 
     // On macOS, bring app to foreground
     if (process.platform === 'darwin') {
+      console.log('[SHOW] macOS: showing dock');
       app.dock.show();
     }
+
+    console.log('[SHOW] Done - window should be visible');
+  } else {
+    console.log('[SHOW] ERROR: mainWindow is null/undefined!');
   }
 }
 
