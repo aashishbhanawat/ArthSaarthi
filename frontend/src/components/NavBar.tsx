@@ -37,7 +37,7 @@ const NavBar: React.FC = () => {
         <aside className="bg-white flex flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700">
             {/* Header with Logo */}
             <div className="flex items-center gap-3 mb-4">
-                <img src="ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-8 w-8" />
+                <img src="ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-16 w-16" />
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">ArthSaarthi</h2>
             </div>
 
