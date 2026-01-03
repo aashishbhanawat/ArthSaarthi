@@ -884,13 +884,13 @@ class CRUDAnalytics:
         # Get all transactions for this portfolio to find first buy dates
         transactions = db.query(Transaction).filter(
             Transaction.portfolio_id == portfolio_id
-        ).order_by(Transaction.date).all()
+        ).order_by(Transaction.transaction_date).all()
         
         # Build first buy date lookup per asset
         first_buy_dates: Dict[uuid.UUID, date_type] = {}
         for txn in transactions:
             if txn.transaction_type == "BUY" and txn.asset_id not in first_buy_dates:
-                first_buy_dates[txn.asset_id] = txn.date
+                first_buy_dates[txn.asset_id] = txn.transaction_date.date() if hasattr(txn.transaction_date, 'date') else txn.transaction_date
         
         # Classify holdings
         today = date_type.today()
