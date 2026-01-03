@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const portfinder = require('portfinder');
@@ -8,6 +8,8 @@ let backendProcess;
 let mainWindow;
 let splashWindow;
 let storedBackendPort;
+let tray = null;
+let isQuitting = false;
 
 app.setName('ArthSaarthi');
 
@@ -308,6 +310,51 @@ function isNewerVersion(v1, v2) {
   return false;
 }
 
+/**
+ * Create system tray icon with context menu
+ */
+function createTray() {
+  // Use the app icon for tray
+  const iconPath = path.join(__dirname, '../public/ArthSaarthi.png');
+  const icon = nativeImage.createFromPath(iconPath);
+
+  // Resize for tray (16x16 on most platforms)
+  const trayIcon = icon.resize({ width: 16, height: 16 });
+
+  tray = new Tray(trayIcon);
+  tray.setToolTip('ArthSaarthi');
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show ArthSaarthi',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setContextMenu(contextMenu);
+
+  // Double-click to show window
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
 async function createMainWindow(backendPort) {
   const isDev = (await import('electron-is-dev')).default;
 
@@ -433,6 +480,14 @@ async function createMainWindow(backendPort) {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
+  // Minimize to tray on close instead of quitting
+  mainWindow.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -528,6 +583,9 @@ app.whenReady().then(async () => {
     // Create main window (hidden)
     await createMainWindow(backendPort);
 
+    // Create system tray icon
+    createTray();
+
     // Small delay for backend to be fully ready
     await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -576,9 +634,16 @@ ipcMain.on('splash-ready', () => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
+  // Don't quit when all windows are closed - we're minimized to tray
+  // Windows will quit when isQuitting is set
+  if (process.platform === 'darwin') {
+    // On macOS, don't quit - standard behavior
   }
+});
+
+// Set isQuitting flag before quitting so window close handler knows to really close
+app.on('before-quit', () => {
+  isQuitting = true;
 });
 
 app.on('will-quit', () => {
