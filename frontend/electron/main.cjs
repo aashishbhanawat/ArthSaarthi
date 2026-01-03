@@ -13,6 +13,23 @@ let isQuitting = false;
 
 app.setName('ArthSaarthi');
 
+// Single instance lock - prevent multiple instances
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  console.log('Another instance is already running. Quitting...');
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    // Someone tried to run a second instance, focus our window
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
 /**
  * Create splash screen window
  */
@@ -316,10 +333,30 @@ function isNewerVersion(v1, v2) {
 function createTray() {
   // Use the app icon for tray
   const iconPath = path.join(__dirname, '../public/ArthSaarthi.png');
-  const icon = nativeImage.createFromPath(iconPath);
+  let icon = nativeImage.createFromPath(iconPath);
 
-  // Resize for tray (16x16 on most platforms)
-  const trayIcon = icon.resize({ width: 16, height: 16 });
+  if (icon.isEmpty()) {
+    console.error('Failed to load tray icon from:', iconPath);
+    return;
+  }
+
+  // Platform-specific icon sizing
+  // Windows: 16x16, macOS: 16x16 or 22x22, Linux: 22x22 or higher
+  const isMac = process.platform === 'darwin';
+  const isLinux = process.platform === 'linux';
+
+  let trayIcon;
+  if (isLinux) {
+    // Linux needs larger icon for visibility in some desktop environments
+    trayIcon = icon.resize({ width: 22, height: 22 });
+  } else if (isMac) {
+    // macOS uses template images for proper dark/light mode support
+    trayIcon = icon.resize({ width: 16, height: 16 });
+    trayIcon.setTemplateImage(true);
+  } else {
+    // Windows
+    trayIcon = icon.resize({ width: 16, height: 16 });
+  }
 
   tray = new Tray(trayIcon);
   tray.setToolTip('ArthSaarthi');
@@ -328,10 +365,7 @@ function createTray() {
     {
       label: 'Show ArthSaarthi',
       click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-        }
+        showMainWindow();
       }
     },
     { type: 'separator' },
@@ -346,13 +380,33 @@ function createTray() {
 
   tray.setContextMenu(contextMenu);
 
-  // Double-click to show window
-  tray.on('double-click', () => {
-    if (mainWindow) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
+  // Single click on tray icon shows window (works on all platforms)
+  tray.on('click', () => {
+    showMainWindow();
   });
+
+  // Double-click also shows window
+  tray.on('double-click', () => {
+    showMainWindow();
+  });
+}
+
+/**
+ * Helper to show and focus the main window
+ */
+function showMainWindow() {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.show();
+    mainWindow.focus();
+
+    // On macOS, bring app to foreground
+    if (process.platform === 'darwin') {
+      app.dock.show();
+    }
+  }
 }
 
 async function createMainWindow(backendPort) {
