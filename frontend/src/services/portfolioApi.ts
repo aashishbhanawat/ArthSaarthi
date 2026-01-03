@@ -4,7 +4,7 @@ import { Bond, BondCreate, BondUpdate } from '../types/bond';
 import { RecurringDeposit, RecurringDepositCreate, RecurringDepositUpdate, RecurringDepositDetails, RecurringDepositAnalytics } from '../types/recurring_deposit';
 import { Asset } from '../types/asset';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
-import { PortfolioAnalytics, AssetAnalytics, DiversificationResponse } from '../types/analytics';
+import { PortfolioAnalytics, AssetAnalytics, DiversificationResponse, CapitalGainsResponse } from '../types/analytics';
 
 export const getPortfolios = async (): Promise<Portfolio[]> => {
     const response = await apiClient.get<Portfolio[]>('/api/v1/portfolios/');
@@ -282,5 +282,10 @@ export const getAvailableLots = async (assetId: string): Promise<AvailableLot[]>
 
 export const getDiversification = async (portfolioId: string): Promise<DiversificationResponse> => {
     const response = await apiClient.get<DiversificationResponse>(`/api/v1/portfolios/${portfolioId}/diversification`);
+    return response.data;
+};
+
+export const getCapitalGains = async (portfolioId: string): Promise<CapitalGainsResponse> => {
+    const response = await apiClient.get<CapitalGainsResponse>(`/api/v1/portfolios/${portfolioId}/capital-gains`);
     return response.data;
 };

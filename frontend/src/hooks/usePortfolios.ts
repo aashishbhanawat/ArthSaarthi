@@ -5,7 +5,7 @@ import { PortfolioCreate, Transaction, TransactionCreate, TransactionUpdate, Tra
 import { RecurringDepositCreate } from '../types/recurring_deposit';
 import { HoldingsResponse, PortfolioSummary } from '../types/holding';
 import { Asset } from '../types/asset';
-import { PortfolioAnalytics, AssetAnalytics, DiversificationResponse } from '../types/analytics';
+import { PortfolioAnalytics, AssetAnalytics, DiversificationResponse, CapitalGainsResponse } from '../types/analytics';
 import { useToast } from '../context/ToastContext';
 import { ApiError, getErrorMessage } from '../types/api';
 
@@ -184,6 +184,14 @@ export const usePortfolioAnalytics = (id: string | undefined) => {
         queryKey: ['portfolioAnalytics', id],
         queryFn: () => portfolioApi.getPortfolioAnalytics(id!),
         enabled: !!id, // The query will not run if the id is undefined.
+    });
+};
+
+export const useCapitalGains = (id: string | undefined) => {
+    return useQuery<CapitalGainsResponse, Error>({
+        queryKey: ['capitalGains', id],
+        queryFn: () => portfolioApi.getCapitalGains(id!),
+        enabled: !!id,
     });
 };
 

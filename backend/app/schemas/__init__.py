@@ -1,5 +1,6 @@
 from .analytics import (
     AssetAnalytics,
+    CapitalGainsResponse,
     DiversificationResponse,
     DiversificationSegment,
     FixedDepositAnalytics,
@@ -104,6 +105,7 @@ __all__ = [
     "AssetSearchResult",
     "AssetUpdate",
     "AssetAnalytics",
+    "CapitalGainsResponse",
     "DiversificationResponse",
     "DiversificationSegment",
     "FixedDepositAnalytics",

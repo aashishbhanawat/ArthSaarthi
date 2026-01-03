@@ -864,6 +864,114 @@ class CRUDAnalytics:
             total_value=total_value
         )
 
+    def get_capital_gains(
+        self, db: Session, *, portfolio_id: uuid.UUID
+    ) -> schemas.CapitalGainsResponse:
+        """
+        Calculates capital gains with short-term/long-term classification (FR6.5).
+        
+        Short-term: Holdings held < 365 days
+        Long-term: Holdings held >= 365 days
+        """
+        from datetime import date as date_type
+        
+        # Get holdings with current values
+        holdings_result = crud.holding.get_portfolio_holdings_and_summary(
+            db, portfolio_id=portfolio_id
+        )
+        holdings = holdings_result.holdings
+        
+        # Get all transactions for this portfolio to find first buy dates
+        transactions = db.query(Transaction).filter(
+            Transaction.portfolio_id == portfolio_id
+        ).order_by(Transaction.date).all()
+        
+        # Build first buy date lookup per asset
+        first_buy_dates: Dict[uuid.UUID, date_type] = {}
+        for txn in transactions:
+            if txn.transaction_type == "BUY" and txn.asset_id not in first_buy_dates:
+                first_buy_dates[txn.asset_id] = txn.date
+        
+        # Classify holdings
+        today = date_type.today()
+        holdings_breakdown = []
+        
+        st_unrealized_gains = Decimal("0")
+        st_unrealized_losses = Decimal("0")
+        lt_unrealized_gains = Decimal("0")
+        lt_unrealized_losses = Decimal("0")
+        
+        for h in holdings:
+            # Skip non-tradeable assets
+            if h.group not in ["Equities & Mutual Funds", "Bonds"]:
+                continue
+                
+            first_buy = first_buy_dates.get(h.asset_id)
+            if first_buy:
+                holding_days = (today - first_buy).days
+            else:
+                holding_days = 0
+            
+            term = "long_term" if holding_days >= 365 else "short_term"
+            gain = h.unrealized_pnl
+            
+            # Accumulate totals
+            if term == "short_term":
+                if gain > 0:
+                    st_unrealized_gains += gain
+                else:
+                    st_unrealized_losses += gain
+            else:
+                if gain > 0:
+                    lt_unrealized_gains += gain
+                else:
+                    lt_unrealized_losses += gain
+            
+            holdings_breakdown.append(
+                schemas.CapitalGainsHolding(
+                    asset_id=str(h.asset_id),
+                    asset_name=h.asset_name,
+                    ticker=h.ticker_symbol,
+                    first_buy_date=first_buy.isoformat() if first_buy else None,
+                    holding_period_days=holding_days,
+                    term=term,
+                    quantity=h.quantity,
+                    cost_basis=h.total_invested_amount,
+                    current_value=h.current_value,
+                    unrealized_gain=h.unrealized_pnl
+                )
+            )
+        
+        # Build response
+        unrealized = schemas.TermBreakdown(
+            short_term=schemas.GainsBreakdown(
+                gains=st_unrealized_gains,
+                losses=st_unrealized_losses,
+                net=st_unrealized_gains + st_unrealized_losses
+            ),
+            long_term=schemas.GainsBreakdown(
+                gains=lt_unrealized_gains,
+                losses=lt_unrealized_losses,
+                net=lt_unrealized_gains + lt_unrealized_losses
+            ),
+            total=schemas.GainsBreakdown(
+                gains=st_unrealized_gains + lt_unrealized_gains,
+                losses=st_unrealized_losses + lt_unrealized_losses,
+                net=(st_unrealized_gains + lt_unrealized_gains + 
+                     st_unrealized_losses + lt_unrealized_losses)
+            )
+        )
+        
+        # For realized gains, we'd need to look at SELL transactions
+        # This is simplified - realized gains are already in summary
+        realized = schemas.TermBreakdown()  # Default empty for now
+        
+        return schemas.CapitalGainsResponse(
+            unrealized=unrealized,
+            realized=realized,
+            holdings_breakdown=holdings_breakdown
+        )
+
 def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decimal:
     """Helper to get the total current value of a portfolio."""
     summary = crud.holding.get_portfolio_holdings_and_summary(

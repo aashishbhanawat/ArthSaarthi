@@ -77,3 +77,59 @@ class DiversificationResponse(BaseModel):
         default=Decimal("0"), description="Total portfolio value"
     )
 
+
+# Capital Gains schemas (FR6.5)
+class GainsBreakdown(BaseModel):
+    """Breakdown of gains and losses."""
+    gains: Decimal = Field(default=Decimal("0"), description="Total gains")
+    losses: Decimal = Field(default=Decimal("0"), description="Total losses (negative)")
+    net: Decimal = Field(default=Decimal("0"), description="Net gain/loss")
+
+
+class TermBreakdown(BaseModel):
+    """Short-term and long-term breakdown."""
+    short_term: GainsBreakdown = Field(
+        default_factory=GainsBreakdown,
+        description="Holdings held < 12 months"
+    )
+    long_term: GainsBreakdown = Field(
+        default_factory=GainsBreakdown,
+        description="Holdings held >= 12 months"
+    )
+    total: GainsBreakdown = Field(
+        default_factory=GainsBreakdown,
+        description="Combined total"
+    )
+
+
+class CapitalGainsHolding(BaseModel):
+    """Details of a single holding's capital gains."""
+    asset_id: str
+    asset_name: str
+    ticker: str
+    first_buy_date: str | None = None
+    holding_period_days: int = 0
+    term: str = Field(
+        ...,
+        description="'short_term' or 'long_term'"
+    )
+    quantity: Decimal
+    cost_basis: Decimal
+    current_value: Decimal
+    unrealized_gain: Decimal
+
+
+class CapitalGainsResponse(BaseModel):
+    """Response model for capital gains analysis (FR6.5)."""
+    unrealized: TermBreakdown = Field(
+        default_factory=TermBreakdown,
+        description="Unrealized gains from current holdings"
+    )
+    realized: TermBreakdown = Field(
+        default_factory=TermBreakdown,
+        description="Realized gains from sold holdings"
+    )
+    holdings_breakdown: list[CapitalGainsHolding] = Field(
+        default_factory=list,
+        description="Detailed breakdown by holding"
+    )

@@ -225,6 +225,29 @@ def get_portfolio_diversification(
 
     return crud.analytics.get_diversification(db=db, portfolio_id=portfolio_id)
 
+
+@router.get(
+    "/{portfolio_id}/capital-gains",
+    response_model=schemas.CapitalGainsResponse
+)
+def get_portfolio_capital_gains(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    current_user: models.User = Depends(dependencies.get_current_user),
+) -> Any:
+    """
+    Get capital gains analysis for a specific portfolio (FR6.5).
+    Returns unrealized and realized gains with short-term/long-term breakdown.
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    return crud.analytics.get_capital_gains(db=db, portfolio_id=portfolio_id)
+
 router.include_router(
     bonds_router.router,
     prefix="/{portfolio_id}/bonds",

@@ -26,3 +26,34 @@ export interface DiversificationResponse {
   total_value: number;
 }
 
+// Capital Gains types (FR6.5)
+export interface GainsBreakdown {
+  gains: number;
+  losses: number;
+  net: number;
+}
+
+export interface TermBreakdown {
+  short_term: GainsBreakdown;
+  long_term: GainsBreakdown;
+  total: GainsBreakdown;
+}
+
+export interface CapitalGainsHolding {
+  asset_id: string;
+  asset_name: string;
+  ticker: string;
+  first_buy_date: string | null;
+  holding_period_days: number;
+  term: 'short_term' | 'long_term';
+  quantity: number;
+  cost_basis: number;
+  current_value: number;
+  unrealized_gain: number;
+}
+
+export interface CapitalGainsResponse {
+  unrealized: TermBreakdown;
+  realized: TermBreakdown;
+  holdings_breakdown: CapitalGainsHolding[];
+}

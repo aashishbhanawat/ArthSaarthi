@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction, useDeleteBond } from '../../hooks/usePortfolios';
+import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction, useDeleteBond, useCapitalGains } from '../../hooks/usePortfolios';
 import { useDeleteFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useDeleteRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import TransactionFormModal from '../../components/Portfolio/TransactionFormModal';
@@ -17,6 +17,7 @@ import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDeta
 import RecurringDepositDetailModal from '../../components/Portfolio/RecurringDepositDetailModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 import DiversificationCharts from '../../components/Portfolio/DiversificationCharts';
+import CapitalGainsCard from '../../components/Portfolio/CapitalGainsCard';
 import { RecurringDepositDetails } from '../../types/recurring_deposit';
 
 const PortfolioDetailPage: React.FC = () => {
@@ -26,6 +27,7 @@ const PortfolioDetailPage: React.FC = () => {
     const { data: summary, isLoading: isSummaryLoading, error: summaryError } = usePortfolioSummary(portfolioId);
     const { data: holdings, isLoading: isHoldingsLoading, error: holdingsError } = usePortfolioHoldings(portfolioId);
     const { data: analytics, isLoading: isAnalyticsLoading, error: analyticsError } = usePortfolioAnalytics(portfolioId);
+    const { data: capitalGains, isLoading: isCapitalGainsLoading, error: capitalGainsError } = useCapitalGains(portfolioId);
     const deleteTransactionMutation = useDeleteTransaction();
     const deleteBondMutation = useDeleteBond();
     const deleteFixedDepositMutation = useDeleteFixedDeposit();
@@ -182,6 +184,10 @@ const PortfolioDetailPage: React.FC = () => {
 
             <div className="mt-8">
                 <DiversificationCharts portfolioId={portfolio.id} />
+            </div>
+
+            <div className="mt-8">
+                <CapitalGainsCard data={capitalGains} isLoading={isCapitalGainsLoading} error={capitalGainsError} />
             </div>
 
             <div className="mt-8">
