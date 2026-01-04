@@ -69,6 +69,10 @@ class DiversificationResponse(BaseModel):
         default_factory=list,
         description="Breakdown by market cap (equities only)"
     )
+    by_investment_style: list[DiversificationSegment] = Field(
+        default_factory=list,
+        description="Breakdown by investment style (Value, Growth, Blend)"
+    )
     by_country: list[DiversificationSegment] = Field(
         default_factory=list,
         description="Breakdown by country/geography"

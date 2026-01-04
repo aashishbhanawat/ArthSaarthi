@@ -23,6 +23,6 @@ export interface DiversificationResponse {
   by_industry: DiversificationSegment[];
   by_market_cap: DiversificationSegment[];
   by_country: DiversificationSegment[];
+  by_investment_style: DiversificationSegment[];
   total_value: number;
 }
-

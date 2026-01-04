@@ -742,6 +742,9 @@ class CRUDAnalytics:
         by_market_cap: Dict[str, Dict] = defaultdict(
             lambda: {"value": Decimal("0"), "count": 0}
         )
+        by_investment_style: Dict[str, Dict] = defaultdict(
+            lambda: {"value": Decimal("0"), "count": 0}
+        )
         equity_total = Decimal("0")  # Track equity-only total for Sector/Industry/Cap
 
         for h in holdings:
@@ -814,6 +817,12 @@ class CRUDAnalytics:
                 by_market_cap[cap_class]["value"] += value
                 by_market_cap[cap_class]["count"] += 1
 
+                # Investment Style classification logic
+                # Only applicable if enrichment data is available
+                style = asset.investment_style or "Unknown"
+                by_investment_style[style]["value"] += value
+                by_investment_style[style]["count"] += 1
+
             elif asset_type in ["MUTUAL_FUND", "MUTUAL FUND"]:
                 # Map AMFI categories to asset classes
                 mf_sector = (asset.sector or "").lower()
@@ -839,28 +848,28 @@ class CRUDAnalytics:
             by_asset_class[asset_class]["count"] += 1
 
         # Convert to response format
-        def to_segments(
-            data: Dict[str, Dict], total: Decimal
-        ) -> list[schemas.DiversificationSegment]:
-            segments = []
-            for name, info in sorted(
-                data.items(), key=lambda x: x[1]["value"], reverse=True
-            ):
-                pct = float(info["value"] / total * 100) if total else 0.0
-                segments.append(schemas.DiversificationSegment(
-                    name=name,
-                    value=info["value"],
-                    percentage=round(pct, 2),
-                    count=info["count"]
-                ))
-            return segments
+        # Helper to convert dicts to list
+        def to_list(d: Dict, total: Decimal) -> list[schemas.DiversificationSegment]:
+            result = []
+            for name, data in d.items():
+                percentage = float((data["value"] / total) * 100) if total > 0 else 0.0
+                result.append(
+                    schemas.DiversificationSegment(
+                        name=name,
+                        value=data["value"],
+                        percentage=percentage,
+                        count=data["count"],
+                    )
+                )
+            return sorted(result, key=lambda x: x.value, reverse=True)
 
         return schemas.DiversificationResponse(
-            by_asset_class=to_segments(by_asset_class, total_value),
-            by_sector=to_segments(by_sector, equity_total),  # % of equities
-            by_industry=to_segments(by_industry, equity_total),  # % of equities
-            by_market_cap=to_segments(by_market_cap, equity_total),  # % of equities
-            by_country=to_segments(by_country, total_value),
+            by_asset_class=to_list(by_asset_class, total_value),
+            by_sector=to_list(by_sector, equity_total),
+            by_industry=to_list(by_industry, equity_total),
+            by_market_cap=to_list(by_market_cap, equity_total),
+            by_country=to_list(by_country, total_value),
+            by_investment_style=to_list(by_investment_style, equity_total),
             total_value=total_value
         )
 

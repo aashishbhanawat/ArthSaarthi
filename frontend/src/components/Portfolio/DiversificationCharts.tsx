@@ -138,7 +138,7 @@ const DiversificationCharts: React.FC<DiversificationChartsProps> = ({ portfolio
             </div>
 
             {/* Row 2: Equity drill-down charts */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <DiversificationPieChart
                     title="By Sector (Equities)"
                     data={data.by_sector}
@@ -146,6 +146,10 @@ const DiversificationCharts: React.FC<DiversificationChartsProps> = ({ portfolio
                 <DiversificationPieChart
                     title="By Industry (Equities)"
                     data={data.by_industry}
+                />
+                <DiversificationPieChart
+                    title="By Investment Style (Equities)"
+                    data={data.by_investment_style}
                 />
             </div>
         </div>
