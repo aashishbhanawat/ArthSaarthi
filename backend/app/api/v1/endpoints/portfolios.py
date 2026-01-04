@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.cache.factory import get_cache_client
 from app.core import dependencies
-
-from . import bonds as bonds_router
 from app.services.benchmark_service import BenchmarkService
 from app.services.financial_data_service import FinancialDataService
-from app.cache.factory import get_cache_client
+
+from . import bonds as bonds_router
 
 router = APIRouter()
 
@@ -236,7 +236,9 @@ router.include_router(
 
 
 
-def get_benchmark_service(db: Session = Depends(dependencies.get_db)) -> BenchmarkService:
+def get_benchmark_service(
+    db: Session = Depends(dependencies.get_db),
+) -> BenchmarkService:
     cache_client = get_cache_client()
     financial_service = FinancialDataService(cache_client=cache_client)
     return BenchmarkService(db=db, financial_service=financial_service)

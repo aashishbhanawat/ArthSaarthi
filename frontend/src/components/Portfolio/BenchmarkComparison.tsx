@@ -7,7 +7,8 @@ import {
     LineElement,
     Title,
     Tooltip,
-    Legend
+    Legend,
+    TooltipItem
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useBenchmarkComparison } from '../../hooks/usePortfolios';
@@ -30,14 +31,6 @@ interface Props {
 const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
     const [benchmarkTicker, setBenchmarkTicker] = useState<"^NSEI" | "^BSESN">("^NSEI");
     const { data, isLoading, error } = useBenchmarkComparison(portfolioId, benchmarkTicker);
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0,
-        }).format(value);
-    };
 
     const formatPercent = (value: number) => {
         return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
@@ -85,7 +78,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
             },
             tooltip: {
                 callbacks: {
-                    label: function (context: any) {
+                    label: function (context: TooltipItem<'line'>) {
                         let label = context.dataset.label || '';
                         if (label) {
                             label += ': ';
@@ -101,10 +94,11 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
         scales: {
             y: {
                 ticks: {
-                    callback: function (value: any) {
-                        if (Math.abs(value) >= 10000000) return (value / 10000000).toFixed(1) + 'Cr';
-                        if (Math.abs(value) >= 100000) return (value / 100000).toFixed(1) + 'L';
-                        if (Math.abs(value) >= 1000) return (value / 1000).toFixed(1) + 'k';
+                    callback: function (value: string | number) {
+                        const numValue = typeof value === 'string' ? parseFloat(value) : value;
+                        if (Math.abs(numValue) >= 10000000) return (numValue / 10000000).toFixed(1) + 'Cr';
+                        if (Math.abs(numValue) >= 100000) return (numValue / 100000).toFixed(1) + 'L';
+                        if (Math.abs(numValue) >= 1000) return (numValue / 1000).toFixed(1) + 'k';
                         return value;
                     }
                 }
@@ -126,7 +120,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                 <div className="mt-4 sm:mt-0">
                     <select
                         value={benchmarkTicker}
-                        onChange={(e) => setBenchmarkTicker(e.target.value as any)}
+                        onChange={(e) => setBenchmarkTicker(e.target.value as "^NSEI" | "^BSESN")}
                         className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                     >
                         <option value="^NSEI">Nifty 50</option>

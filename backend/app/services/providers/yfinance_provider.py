@@ -377,7 +377,9 @@ class YFinanceProvider(FinancialDataProvider):
         Returns a dict of {date_str: close_price}.
         """
         yf_ticker = ticker_symbol  # Index tickers are already in yfinance format
-        cache_key = f"index_history:{yf_ticker}:{start_date.isoformat()}:{end_date.isoformat()}"
+        cache_key = (
+            f"index_history:{yf_ticker}:{start_date.isoformat()}:{end_date.isoformat()}"
+        )
 
         if self.cache_client:
             cached = self.cache_client.get_json(cache_key)
@@ -386,11 +388,16 @@ class YFinanceProvider(FinancialDataProvider):
                 return cached
 
         try:
-            logger.info(f"Fetching index history for {yf_ticker} from {start_date} to {end_date}")
+            logger.info(
+                f"Fetching index history for {yf_ticker} "
+                f"from {start_date} to {end_date}"
+            )
             ticker_obj = yf.Ticker(yf_ticker)
             # Fetch data with slight buffer
-            hist = ticker_obj.history(start=start_date, end=end_date + timedelta(days=1))
-            
+            hist = ticker_obj.history(
+                start=start_date, end=end_date + timedelta(days=1)
+            )
+
             if hist.empty:
                 logger.warning(f"No history found for index {yf_ticker}")
                 return {}
@@ -406,7 +413,7 @@ class YFinanceProvider(FinancialDataProvider):
                 self.cache_client.set_json(
                     cache_key, history_dict, expire=CACHE_TTL_HISTORICAL_PRICE
                 )
-            
+
             return history_dict
 
         except Exception as e:

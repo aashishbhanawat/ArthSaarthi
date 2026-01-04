@@ -116,7 +116,7 @@ describe('PortfolioDetailPage', () => {
       data: { portfolio_xirr: 0, benchmark_xirr: 0, chart_data: [] },
       isLoading: false,
       error: null
-    } as UseQueryResult<any, Error>);
+    } as UseQueryResult<{ portfolio_xirr: number; benchmark_xirr: number; chart_data: { date: string; portfolio_value: number; benchmark_value: number; invested_amount: number }[] }, Error>);
   });
 
   it('renders the portfolio name and child components', () => {
