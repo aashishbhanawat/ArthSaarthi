@@ -54,8 +54,16 @@ class BenchmarkService:
             logger.warning(f"Could not fetch history for benchmark {benchmark_ticker}")
             # Fallback: Just return portfolio XIRR
             pf_analytics = crud.analytics.get_portfolio_analytics(self.db, portfolio_id=portfolio_id)
+            if pf_analytics:
+                if isinstance(pf_analytics, dict):
+                    portfolio_xirr = pf_analytics.get("xirr", 0.0)
+                else:
+                    portfolio_xirr = getattr(pf_analytics, "xirr", 0.0)
+            else:
+                portfolio_xirr = 0.0
+
             return {
-                "portfolio_xirr": pf_analytics.xirr if pf_analytics else 0.0,
+                "portfolio_xirr": portfolio_xirr,
                 "benchmark_xirr": 0.0,
                 "chart_data": []
             }
@@ -92,7 +100,7 @@ class BenchmarkService:
             daily_flow_xirr = 0.0 
             
             for txn in daily_txns:
-                amount = txn.amount 
+                amount = txn.quantity * txn.price_per_unit 
                 
                 # Update Invested Amount
                 if txn.transaction_type in ["BUY", "DEPOSIT"]:
@@ -136,7 +144,13 @@ class BenchmarkService:
 
         # Portfolio XIRR
         pf_analytics = crud.analytics.get_portfolio_analytics(self.db, portfolio_id=portfolio_id)
-        portfolio_xirr = pf_analytics.xirr if pf_analytics else 0.0
+        if pf_analytics:
+            if isinstance(pf_analytics, dict):
+                portfolio_xirr = pf_analytics.get("xirr", 0.0)
+            else:
+                portfolio_xirr = getattr(pf_analytics, "xirr", 0.0)
+        else:
+            portfolio_xirr = 0.0
 
         return {
             "portfolio_xirr": portfolio_xirr,
