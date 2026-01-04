@@ -38,6 +38,9 @@ def test_calculate_benchmark_performance_success(benchmark_service, mock_db, moc
     txn2.transaction_type = "BUY"
     txn2.amount = Decimal("5000")
     
+    # Setup mock attributes
+    mock_financial_service.yfinance_provider = MagicMock()
+    
     with patch("app.crud.transaction.get_multi_by_portfolio", return_value=[txn1, txn2]):
         # Mock Index History
         # index 100 on Jan 1, 110 on Jun 1, 120 Today

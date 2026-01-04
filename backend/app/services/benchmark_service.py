@@ -33,7 +33,7 @@ class BenchmarkService:
         }
         """
         # 1. Fetch all portfolio transactions
-        transactions = crud.transaction.get_by_portfolio(self.db, portfolio_id=portfolio_id)
+        transactions = crud.transaction.get_multi_by_portfolio(self.db, portfolio_id=portfolio_id)
         if not transactions:
             return {
                 "portfolio_xirr": 0.0,
