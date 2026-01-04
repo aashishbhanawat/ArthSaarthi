@@ -171,7 +171,7 @@ class YFinanceProvider(FinancialDataProvider):
         """
         Fetches sector, industry, country, marketCap, P/E, P/B for a single ticker.
         Called on-demand when an asset's sector is NULL.
-        Returns dict with keys: sector, industry, country, market_cap, 
+        Returns dict with keys: sector, industry, country, market_cap,
                                 trailing_pe, price_to_book, investment_style
         """
         yf_ticker = self._get_yfinance_ticker(ticker_symbol, exchange)
@@ -190,12 +190,12 @@ class YFinanceProvider(FinancialDataProvider):
             if info:
                 trailing_pe = info.get("trailingPE")
                 price_to_book = info.get("priceToBook")
-                
+
                 # Classify investment style based on P/E and P/B
                 investment_style = self._classify_investment_style(
                     trailing_pe, price_to_book
                 )
-                
+
                 enrichment_data = {
                     "sector": info.get("sector"),
                     "industry": info.get("industry"),
@@ -225,29 +225,29 @@ class YFinanceProvider(FinancialDataProvider):
     ) -> str:
         """
         Classifies investment style based on P/E and P/B ratios.
-        
+
         Classification thresholds (based on typical market benchmarks):
         - Value: P/E < 15 AND P/B < 1.5
         - Growth: P/E > 25 OR P/B > 3.0
         - Blend: Everything else (moderate ratios)
-        
+
         Returns: 'Value', 'Growth', or 'Blend'
         """
         if trailing_pe is None and price_to_book is None:
             return "Unknown"
-        
+
         # Use available metrics
         pe = trailing_pe if trailing_pe and trailing_pe > 0 else None
         pb = price_to_book if price_to_book and price_to_book > 0 else None
-        
+
         # Value criteria: Low P/E AND Low P/B
         is_value_pe = pe is not None and pe < 15
         is_value_pb = pb is not None and pb < 1.5
-        
+
         # Growth criteria: High P/E OR High P/B
         is_growth_pe = pe is not None and pe > 25
         is_growth_pb = pb is not None and pb > 3.0
-        
+
         # Classification logic
         if is_value_pe and is_value_pb:
             return "Value"
