@@ -247,6 +247,27 @@ export const getAssetAnalytics = async (portfolioId: string, assetId: string): P
     return response.data;
 };
 
+export interface BenchmarkComparisonResponse {
+    portfolio_xirr: number;
+    benchmark_xirr: number;
+    chart_data: {
+        date: string;
+        portfolio_value?: number;
+        benchmark_value: number;
+        invested_amount: number;
+    }[];
+}
+
+export const getBenchmarkComparison = async (
+    portfolioId: string,
+    benchmarkTicker: string = "^NSEI"
+): Promise<BenchmarkComparisonResponse> => {
+    const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/benchmark-comparison`, {
+        params: { benchmark_ticker: benchmarkTicker }
+    });
+    return response.data;
+};
+
 export const getPortfolioAssets = async (portfolioId: string): Promise<Asset[]> => {
     const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/assets`);
     return response.data;

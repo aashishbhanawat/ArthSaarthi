@@ -58,6 +58,7 @@ The goal of this release is to act on the critical feedback from the pilot relea
 
 -   **Advanced Reporting & Analytics (FR6):**
     -   Implement XIRR and Sharpe Ratio for portfolios.
+    -   **Benchmarking (FR6.3):** Compare portfolio performance against Nifty 50 and Sensex.
     -   **Status: ✅ Complete**
 
 -   **Context-Sensitive User Guide (FR11 Enhancement):** Make the user guide accessible from within the application via context-sensitive help icons.

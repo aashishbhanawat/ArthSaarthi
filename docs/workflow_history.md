@@ -509,3 +509,41 @@ Implemented `KFintechParser` for password-protected PDF statements:
 
 **Success.** Users can now import MF transactions from KFintech PDF statements.
 
+
+## 2026-01-04: Implement Benchmark Comparison (FR6.3)
+
+**Task:** Implement benchmark comparison feature (FR6.3), allowing users to compare their portfolio's XIRR against a hypothetical investment in Nifty 50 or Sensex.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented a "Benchmark Comparison" feature that answers the question: "What if I had invested in Nifty 50 instead?"
+-   **XIRR Comparison:** Calculates the XIRR of a hypothetical benchmark portfolio with identical cash flows (dates and amounts).
+-   **Visual Comparison:** Chart showing "Invested Amount" vs "Hypothetical Benchmark Value" over time.
+-   **Indices:** Supports Nifty 50 (`^NSEI`) and Sensex (`^BSESN`).
+-   **Caching:** Historical index data is cached in Redis (24h TTL) to minimize external API calls.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/benchmark_service.py` - Added `calculate_benchmark_performance` method using `pyxirr`.
+*   **Modified:** `backend/app/services/providers/yfinance_provider.py` - Added `get_index_history` with caching.
+*   **Modified:** `backend/app/api/v1/endpoints/portfolios.py` - Added `GET /:id/benchmark` endpoint.
+*   **Modified:** `backend/app/models/transaction.py` - Updated docstrings.
+
+**Frontend:**
+*   **New:** `frontend/src/components/Portfolio/BenchmarkComparison.tsx` - ChartJS visualization of benchmark performance.
+*   **Modified:** `frontend/src/pages/Portfolio/PortfolioDetailPage.tsx` - Integrated comparison chart.
+*   **Modified:** `frontend/src/hooks/usePortfolios.ts` - Added `useBenchmarkComparison` hook.
+
+### Verification
+
+*   **Unit Tests:** Added `test_benchmark_service.py` covering XIRR calculation, zero-value handling, and caching scenarios. All passed.
+*   **Linting:** Resolved all E501 (line length) and TypeScript `any` errors.
+*   **Manual Verification:** Verified chart rendering and XIRR values against manual calculations for known cash flows.
+
+### Outcome
+
+**Success.** Users can now verify if they are beating the market index (Alpha) directly from the portfolio dashboard.

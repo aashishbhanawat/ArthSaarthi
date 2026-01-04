@@ -136,6 +136,10 @@ Creates DIVIDEND transactions with TDS tracking.
 
 ### Analytics & Reporting
 - Capital gains report for tax filing (ITR format)
+- **Advanced Benchmarking**:
+    - **Hybrid Benchmarks**: Support mixed indices (e.g., CRISIL Hybrid 35+65) for balanced portfolios.
+    - **Risk-Free Rate**: Overlay "Risk-Free" growth line (e.g., 6-7% p.a.) on comparison charts.
+    - **Category Benchmarking**: Compare Equity portion vs Nifty, Debt vs Bond Yields independently.
 
 ### Goal Planning
 - Link assets to financial goals

@@ -5,7 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
+from app.cache.factory import get_cache_client
 from app.core import dependencies
+from app.services.benchmark_service import BenchmarkService
+from app.services.financial_data_service import FinancialDataService
 
 from . import bonds as bonds_router
 
@@ -230,3 +233,35 @@ router.include_router(
     prefix="/{portfolio_id}/bonds",
     tags=["bonds"],
 )
+
+
+
+def get_benchmark_service(
+    db: Session = Depends(dependencies.get_db),
+) -> BenchmarkService:
+    cache_client = get_cache_client()
+    financial_service = FinancialDataService(cache_client=cache_client)
+    return BenchmarkService(db=db, financial_service=financial_service)
+
+
+@router.get("/{portfolio_id}/benchmark-comparison")
+def get_benchmark_comparison(
+    *,
+    db: Session = Depends(dependencies.get_db),
+    portfolio_id: uuid.UUID,
+    benchmark_ticker: str = "^NSEI",
+    current_user: models.User = Depends(dependencies.get_current_user),
+    benchmark_service: BenchmarkService = Depends(get_benchmark_service),
+) -> Any:
+    """
+    Compare portfolio performance with a benchmark (hypothesis: invested in index).
+    """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if not current_user.is_admin and (portfolio.user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    return benchmark_service.calculate_benchmark_performance(
+        portfolio_id=portfolio_id, benchmark_ticker=benchmark_ticker
+    )
