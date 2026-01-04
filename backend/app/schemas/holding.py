@@ -30,6 +30,7 @@ class Holding(BaseModel):
     account_number: Optional[str] = None
     isin: Optional[str] = None
     opening_date: Optional[date] = None
+    investment_style: Optional[str] = None  # Value, Growth, Blend
     bond: Optional[BondSchema] = None
 
     class Config:

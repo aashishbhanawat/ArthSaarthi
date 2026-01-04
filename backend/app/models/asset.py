@@ -37,6 +37,8 @@ class Asset(Base):
     market_cap: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True
     )  # BigInteger for large market caps
+    # Investment style classification (Value/Growth/Blend)
+    investment_style: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     transactions: Mapped[List["Transaction"]] = relationship(back_populates="asset")
     aliases: Mapped[List[AssetAlias]] = relationship(
         "AssetAlias", back_populates="asset", cascade="all, delete-orphan"
