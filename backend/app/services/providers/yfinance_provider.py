@@ -369,6 +369,50 @@ class YFinanceProvider(FinancialDataProvider):
 
         return historical_data
 
+    def get_index_history(
+        self, ticker_symbol: str, start_date: date, end_date: date
+    ) -> Dict[str, float]:
+        """
+        Fetches historical closing prices for an index (e.g., ^NSEI, ^BSESN).
+        Returns a dict of {date_str: close_price}.
+        """
+        yf_ticker = ticker_symbol  # Index tickers are already in yfinance format
+        cache_key = f"index_history:{yf_ticker}:{start_date.isoformat()}:{end_date.isoformat()}"
+
+        if self.cache_client:
+            cached = self.cache_client.get_json(cache_key)
+            if cached:
+                logger.debug(f"Index history cache HIT for {yf_ticker}")
+                return cached
+
+        try:
+            logger.info(f"Fetching index history for {yf_ticker} from {start_date} to {end_date}")
+            ticker_obj = yf.Ticker(yf_ticker)
+            # Fetch data with slight buffer
+            hist = ticker_obj.history(start=start_date, end=end_date + timedelta(days=1))
+            
+            if hist.empty:
+                logger.warning(f"No history found for index {yf_ticker}")
+                return {}
+
+            # Convert to dict {YYYY-MM-DD: price}
+            history_dict = {}
+            for index, row in hist.iterrows():
+                date_str = index.date().isoformat()
+                history_dict[date_str] = float(row["Close"])
+
+            if self.cache_client:
+                # Cache for 24 hours
+                self.cache_client.set_json(
+                    cache_key, history_dict, expire=CACHE_TTL_HISTORICAL_PRICE
+                )
+            
+            return history_dict
+
+        except Exception as e:
+            logger.error(f"Error fetching index history for {yf_ticker}: {e}")
+            return {}
+
     def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
         if self.cache_client:
             cache_key = f"asset_details_not_found:{ticker_symbol.upper()}"

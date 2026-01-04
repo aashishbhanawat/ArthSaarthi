@@ -17,6 +17,7 @@ import FixedDepositDetailModal from '../../components/Portfolio/FixedDepositDeta
 import RecurringDepositDetailModal from '../../components/Portfolio/RecurringDepositDetailModal';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 import DiversificationCharts from '../../components/Portfolio/DiversificationCharts';
+import BenchmarkComparison from '../../components/Portfolio/BenchmarkComparison';
 import { RecurringDepositDetails } from '../../types/recurring_deposit';
 
 const PortfolioDetailPage: React.FC = () => {
@@ -182,6 +183,7 @@ const PortfolioDetailPage: React.FC = () => {
 
             <div className="mt-8">
                 <DiversificationCharts portfolioId={portfolio.id} />
+                <BenchmarkComparison portfolioId={portfolio.id} />
             </div>
 
             <div className="mt-8">

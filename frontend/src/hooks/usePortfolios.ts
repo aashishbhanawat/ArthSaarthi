@@ -273,6 +273,14 @@ export const useAssetSearch = (query: string) => {
     });
 };
 
+export const useBenchmarkComparison = (portfolioId: string, benchmarkTicker: string) => {
+    return useQuery({
+        queryKey: ['benchmarkComparison', portfolioId, benchmarkTicker],
+        queryFn: () => portfolioApi.getBenchmarkComparison(portfolioId, benchmarkTicker),
+        enabled: !!portfolioId,
+    });
+};
+
 export const useDiversification = (portfolioId: string | undefined) => {
     return useQuery<DiversificationResponse, Error>({
         queryKey: ['diversification', portfolioId],
