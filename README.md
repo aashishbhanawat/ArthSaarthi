@@ -22,7 +22,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 *   **Secure Authentication & Administration:** JWT-based authentication, initial admin setup, a full admin dashboard for user management (CRUD), a backend **Audit Logging Engine** to record all sensitive events, a dedicated **User Profile Page** to manage your account, and an **Inactivity Timeout** to automatically log out users.
 *   **Dynamic Dashboard:** Get a bird's-eye view of your financial health with a dashboard showing total portfolio value, realized/unrealized P&L, top daily market movers, and interactive charts for portfolio history and asset allocation.
-*   **Advanced Portfolio Analytics:** On-demand calculation and display of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio** at both the portfolio and individual asset levels.
+*   **Advanced Portfolio Analytics:** On-demand calculation of **XIRR (Extended Internal Rate of Return)** and **Sharpe Ratio**. Compare your performance against market benchmarks (**Nifty 50**, **Sensex**) with interactive charts.
 *   **Comprehensive Portfolio & Transaction Management:**
     *   Full CRUD functionality for portfolios.
     *   Full CRUD functionality for transactions, including a dedicated, filterable **Transaction History** page and support for logging corporate actions (**Dividends, Stock Splits, Bonus Issues**).
@@ -47,7 +47,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 ### On the Horizon (Future Features)
 
 *   **Corporate Actions & Income Tracking:** Automatically handle dividends, stock splits, and bonuses, and track income from interest payments.
-*   **Deeper Analytics & Reporting:** Generate capital gains reports for tax filing, benchmark your portfolio against market indices, and analyze diversification by sector, geography, and more.
+*   **Deeper Analytics & Reporting:** Generate capital gains reports for tax filing and analyze diversification by sector, geography, and more.
 *   **Goal-Oriented Planning:** Define financial goals (e.g., "Retirement", "House Down Payment"), link assets to them, and track your progress with projections.
 *   **AI-Powered Insights:** Leverage AI to get suggestions for tax-loss harvesting, portfolio rebalancing, and receive a personalized daily digest of your financial world.
 *   **Market Insights:** Get relevant news feeds and perform deep-dive research on individual assets.

@@ -84,7 +84,10 @@ This document outlines the functional and non-functional requirements for the Ar
     -   Time-weighted Return (TWR) and Money-weighted Return (MWR). `📝 Planned`
 -   **FR6.2: Advanced Risk Analytics.** The system must calculate and display advanced risk metrics including:
     -   Volatility (Standard Deviation), Beta, Alpha, Tracking Error, and Maximum Drawdown. `📝 Planned`
--   **FR6.3: Benchmarking.** Users must be able to compare their portfolio's performance against standard market benchmarks (e.g., Nifty 50, S&P 500) over a rolling 12-month period. `📝 Planned`
+-   **FR6.3: Benchmarking.** Users must be able to compare their portfolio's performance against standard market benchmarks (e.g., Nifty 50, S&P 500) over a rolling 12-month period. `✅ Done`
+    -   **FR6.3.1: Hybrid Benchmarks.** Support mixed indices (e.g., CRISIL Hybrid 35+65) for balanced portfolios. `📝 Planned`
+    -   **FR6.3.2: Risk-Free Rate.** Overlay "Risk-Free" growth line (e.g., 6-7% p.a.) on comparison charts. `📝 Planned`
+    -   **FR6.3.3: Category Benchmarking.** Compare Equity portion vs Nifty, Debt vs Bond Yields independently. `📝 Planned`
 -   **FR6.4: Diversification Analysis.** Provide visual breakdowns of the portfolio by: Asset Class, Industry/Sector, Geography, Currency, Market Cap, and Investment Style (Growth vs. Value). `✅ Done`
 -   **FR6.5: Capital Gains Reporting.** `📝 Planned`
     -   **FR6.5.1:** Generate reports for realized long-term, short-term, and intra-day capital gains in ITR (Income Tax Return) format. `📝 Planned`
