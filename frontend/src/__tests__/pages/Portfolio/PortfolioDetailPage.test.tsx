@@ -112,6 +112,11 @@ describe('PortfolioDetailPage', () => {
     mockedPortfolioHooks.usePortfolioHoldings.mockReturnValue({ data: { holdings: mockHoldings }, isLoading: false, error: null } as UseQueryResult<{ holdings: Holding[] }, Error>);
     mockedPortfolioHooks.usePortfolioAnalytics.mockReturnValue({ data: {} as PortfolioAnalytics, isLoading: false, isError: false } as UseQueryResult<PortfolioAnalytics, Error>);
     mockedPortfolioHooks.useDiversification.mockReturnValue({ data: undefined, isLoading: false, isError: false } as UseQueryResult<unknown, Error>);
+    mockedPortfolioHooks.useBenchmarkComparison.mockReturnValue({
+      data: { portfolio_xirr: 0, benchmark_xirr: 0, chart_data: [] },
+      isLoading: false,
+      error: null
+    } as UseQueryResult<any, Error>);
   });
 
   it('renders the portfolio name and child components', () => {
