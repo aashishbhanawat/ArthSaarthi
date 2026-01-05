@@ -61,17 +61,16 @@ const PortfolioHistoryChart: React.FC = () => {
   return (
     <div className="card">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Portfolio History</h2>
+        <h2 className="text-xl font-semibold dark:text-white">Portfolio History</h2>
         <div className="flex items-center space-x-2">
           {ranges.map((r) => (
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                range === r.value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className={`px-3 py-1 text-sm rounded-md transition-colors ${range === r.value
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
             >
               {r.label}
             </button>
