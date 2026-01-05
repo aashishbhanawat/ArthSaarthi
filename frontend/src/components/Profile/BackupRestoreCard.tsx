@@ -125,7 +125,7 @@ const BackupRestoreCard: React.FC = () => {
                                 </p>
                                 <input
                                     type="text"
-                                    className="mt-3 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    className="mt-3 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                                     placeholder="DELETE"
                                     value={confirmationWord}
                                     onChange={(e) => setConfirmationWord(e.target.value)}
