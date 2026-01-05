@@ -547,3 +547,26 @@ Implemented a "Benchmark Comparison" feature that answers the question: "What if
 ### Outcome
 
 **Success.** Users can now verify if they are beating the market index (Alpha) directly from the portfolio dashboard.
+
+## 2026-01-05: Dark Theme UI Polish (Fixes)
+
+**Task:** Resolve specific dark mode visibility issues reported by the user in the Restore modal and Portfolio History chart.
+
+**AI Assistant:** Antigravity
+**Role:** Frontend Developer
+
+### Summary
+
+Addressed visibility regressions where text was unreadable in dark mode:
+-   **Restore Modal:** The "DELETE" confirmation input now has proper dark background and light text.
+-   **Portfolio History:** Inactive retention range buttons (1D, 7D etc.) now have dark mode variants.
+
+### File Changes
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/Profile/BackupRestoreCard.tsx` - Added `dark:text-white` etc. to input.
+*   **Modified:** `frontend/src/components/Dashboard/PortfolioHistoryChart.tsx` - Added dark variants to range buttons.
+
+### Outcome
+
+**Success.** Restored usability for critical actions and charts in dark mode.
