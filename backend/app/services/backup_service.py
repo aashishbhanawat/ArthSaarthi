@@ -12,7 +12,7 @@ from app.schemas.transaction import TransactionType
 
 logger = logging.getLogger(__name__)
 
-BACKUP_VERSION = "1.1"
+BACKUP_VERSION = "1.2"
 
 
 def _serialize_date(d: date | datetime | None) -> str | None:
@@ -65,6 +65,7 @@ def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
                 "price_per_unit": _serialize_decimal(tx.price_per_unit),
                 "transaction_date": _serialize_date(tx.transaction_date),
                 "fees": _serialize_decimal(tx.fees),
+                "details": tx.details,
             }
 
             if asset:
@@ -163,15 +164,19 @@ def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
     goal_list = []
     for g in goals:
         linked_names = []
+        linked_assets = []
         for link in g.links:
             if link.portfolio:
                 linked_names.append(link.portfolio.name)
+            elif link.asset:
+                linked_assets.append(link.asset.ticker_symbol)
 
         goal_list.append({
             "name": g.name,
             "target_amount": _serialize_decimal(g.target_amount),
             "target_date": _serialize_date(g.target_date),
-            "linked_portfolios": linked_names
+            "linked_portfolios": linked_names,
+            "linked_assets": linked_assets
         })
 
     # Fetch Watchlists
@@ -377,6 +382,13 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                 if t_type == "PPF_CONTRIBUTION":
                     t_type = TransactionType.CONTRIBUTION
 
+                # Skip sell-to-cover SELL transactions - they are auto-created
+                # when restoring the parent RSU_VEST transaction
+                details = tx_data.get("details")
+                if t_type == "SELL" and details and details.get("related_rsu_vest_id"):
+                    logger.debug(f"Skipping sell-to-cover SELL: {tx_data}")
+                    continue
+
                 # Find Asset
                 asset = None
                 if "ppf_account_number" in tx_data:
@@ -410,7 +422,8 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                     quantity=Decimal(tx_data["quantity"]),
                     price_per_unit=Decimal(tx_data["price_per_unit"]),
                     transaction_date=_parse_date(tx_data["transaction_date"]),
-                    fees=Decimal(tx_data.get("fees", 0))
+                    fees=Decimal(tx_data.get("fees", 0)),
+                    details=tx_data.get("details"),
                 )
                 crud.transaction.create_with_portfolio(
                     db, obj_in=tx_in, portfolio_id=p_id
@@ -432,6 +445,18 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                             db,
                             obj_in=schemas.GoalLinkCreate(
                                 goal_id=goal.id, portfolio_id=portfolio_map[p_name]
+                            ),
+                            user_id=user_id,
+                        )
+
+                # Asset Links
+                for ticker in g_data.get("linked_assets", []):
+                    asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
+                    if asset:
+                        crud.goal_link.create_with_owner(
+                            db,
+                            obj_in=schemas.GoalLinkCreate(
+                                goal_id=goal.id, asset_id=asset.id
                             ),
                             user_id=user_id,
                         )

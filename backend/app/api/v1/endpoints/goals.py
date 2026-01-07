@@ -35,6 +35,8 @@ def create_goal(
     goal = crud.goal.create_with_owner(
         db=db, obj_in=goal_in, user_id=current_user.id
     )
+    db.commit()
+    db.refresh(goal)
     return goal
 
 
@@ -126,6 +128,8 @@ def create_goal_link(
     link = crud.goal_link.create_with_owner(
         db=db, obj_in=link_in, user_id=current_user.id
     )
+    db.commit()
+    db.refresh(link)
     return link
 
 

@@ -25,7 +25,7 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
     ) -> Goal:
         db_obj = Goal(**obj_in.model_dump(), user_id=user_id)
         db.add(db_obj)
-        db.commit()
+        db.flush()
         db.refresh(db_obj)
         return db_obj
 
@@ -89,7 +89,7 @@ class CRUDGoalLink(CRUDBase[GoalLink, GoalLinkCreate, GoalLinkUpdate]):
     ) -> GoalLink:
         db_obj = GoalLink(**obj_in.model_dump(), user_id=user_id)
         db.add(db_obj)
-        db.commit()
+        db.flush()
         db.refresh(db_obj)
         return db_obj
 

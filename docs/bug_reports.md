@@ -6887,6 +6887,62 @@ Added the missing fixture to the test function.
 **Classification:** Implementation (Backend)
 **Severity:** High
 **Description:**
-The `TransactionLinkCreate` Pydantic model was defined in `transaction.py` but not exported in `app/schemas/__init__.py`, causing `AttributeError` in tests.
 **Resolution:**
 Exported the schema in `__init__.py`.
+
+---
+
+**Bug ID:** 2026-01-07-01
+**Title:** Backup/Restore missing `details` field causes foreign stock prices to display in INR.
+**Module:** Backup/Restore (Backend)
+**Reported By:** User Testing
+**Date Reported:** 2026-01-07
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+After restoring a backup, foreign stock transactions (e.g., GOOG, CSCO) displayed average prices in INR instead of USD. The root cause was that the `details` field (which contains `fx_rate`) was not being serialized during backup or restored during import.
+**Resolution:**
+Modified `backup_service.py` to serialize `tx.details` in `create_backup` and restore it via `tx_data.get("details")` in `restore_backup`. Bumped `BACKUP_VERSION` from 1.1 to 1.2.
+
+---
+
+**Bug ID:** 2026-01-07-02
+**Title:** RSU Sell-to-Cover transactions double-counted after restore.
+**Module:** Backup/Restore (Backend)
+**Reported By:** User Testing
+**Date Reported:** 2026-01-07
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+After restoring an RSU_VEST with sell_to_cover, the portfolio showed incorrect holdings (e.g., 20 shares instead of 60). The sell-to-cover SELL transaction was being created twice: once automatically by the RSU_VEST creation logic, and once from the backup data.
+**Resolution:**
+Modified `restore_backup` to skip SELL transactions that have `related_rsu_vest_id` in their `details`, as these are auto-created by the RSU_VEST restoration.
+
+---
+
+**Bug ID:** 2026-01-07-03
+**Title:** Asset lookup fails with duplicate key error for foreign stocks.
+**Module:** Asset Management (Backend)
+**Reported By:** User Testing
+**Date Reported:** 2026-01-07
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+When searching for a foreign stock (e.g., CSCO) that already exists in the database, the lookup endpoint crashed with `UniqueViolation: duplicate key value violates unique constraint "uq_ticker_symbol"`. The external lookup returned data but the code tried to create the asset without checking if it already existed.
+**Resolution:**
+Added a check in `assets.py:lookup_ticker_symbol` to verify if the asset exists before creating from external data.
+
+---
+
+**Bug ID:** 2026-01-07-04
+**Title:** Foreign stocks show "Unknown" in diversification charts.
+**Module:** Portfolio Analytics (Backend)
+**Reported By:** User Testing
+**Date Reported:** 2026-01-07
+**Classification:** Implementation (Backend)
+**Severity:** Medium
+**Description:**
+After restore, foreign stocks (GOOG, CSCO) showed "Unknown" for sector/industry/country in diversification analysis. The on-demand enrichment logic was checking for `asset_type == "STOCK"` but foreign stocks from yfinance have `asset_type = "Stock"` (title case).
+**Resolution:**
+Made the asset_type check case-insensitive in `crud_holding.py` using `.upper()`.
+

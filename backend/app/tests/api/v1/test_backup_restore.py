@@ -77,6 +77,21 @@ def test_backup_restore_flow(client: TestClient, db: Session, get_auth_headers):
         db, obj_in=ppf_tx_in, portfolio_id=portfolio.id
     )
 
+    # Create a Goal linked to Stock Asset
+    goal_in = schemas.GoalCreate(
+        name="Buy House",
+        target_amount=10000000,
+        target_date=date(2030, 1, 1),
+    )
+    goal = crud.goal.create_with_owner(db, obj_in=goal_in, user_id=user.id)
+    # Link to Reliance stock
+    stock_asset = crud.asset.get_by_ticker(db, ticker_symbol="RELIANCE")
+    crud.goal_link.create_with_owner(
+        db,
+        obj_in=schemas.GoalLinkCreate(goal_id=goal.id, asset_id=stock_asset.id),
+        user_id=user.id
+    )
+
     # 2. Backup
     response = client.get("/api/v1/users/me/backup", headers=headers)
     assert response.status_code == 200
@@ -127,3 +142,11 @@ def test_backup_restore_flow(client: TestClient, db: Session, get_auth_headers):
     assert t_ppf is not None
     assert t_ppf.transaction_type == "CONTRIBUTION"
     assert t_ppf.quantity == 10000
+
+    # Verify Goal and Asset Link
+    goals = crud.goal.get_multi_by_owner(db, user_id=user.id)
+    assert len(goals) == 1
+    assert goals[0].name == "Buy House"
+    assert len(goals[0].links) == 1
+    assert goals[0].links[0].asset is not None
+    assert goals[0].links[0].asset.ticker_symbol == "RELIANCE"
