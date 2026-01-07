@@ -111,21 +111,36 @@ class BenchmarkService:
 
             for txn in daily_txns:
                 amount = txn.quantity * txn.price_per_unit
+                # Convert enum to string for comparison
+                tx_type = str(txn.transaction_type)
+                if hasattr(txn.transaction_type, 'value'):
+                    tx_type = txn.transaction_type.value
+
+                # For foreign stocks, convert amount to INR using fx_rate
+                # This is needed because benchmark (^NSEI) is in INR
+                amount_inr = amount
+                if txn.details and isinstance(txn.details, dict):
+                    fx_rate = txn.details.get("fx_rate")
+                    if fx_rate and float(fx_rate) > 0:
+                        amount_inr = amount * Decimal(str(fx_rate))
 
                 # Update Invested Amount
-                if txn.transaction_type in ["BUY", "DEPOSIT"]:
-                    invested_amount += amount
+                # Inflows: BUY, DEPOSIT, RSU_VEST, ESPP_PURCHASE, BONUS
+                if tx_type in [
+                    "BUY", "DEPOSIT", "RSU_VEST", "ESPP_PURCHASE", "BONUS"
+                ]:
+                    invested_amount += amount_inr
                     if bench_price > 0:
-                        units_bought = float(amount) / bench_price
+                        units_bought = float(amount_inr) / bench_price
                         bench_units += units_bought
-                    daily_flow_xirr -= float(amount) # Outflow
+                    daily_flow_xirr -= float(amount_inr)  # Outflow
 
-                elif txn.transaction_type in ["SELL", "WITHDRAWAL"]:
-                    invested_amount -= amount
+                elif tx_type in ["SELL", "WITHDRAWAL"]:
+                    invested_amount -= amount_inr
                     if bench_price > 0:
-                        units_sold = float(amount) / bench_price
+                        units_sold = float(amount_inr) / bench_price
                         bench_units -= units_sold
-                    daily_flow_xirr += float(amount) # Inflow
+                    daily_flow_xirr += float(amount_inr)  # Inflow
 
             if daily_flow_xirr != 0:
                 xirr_cashflows_bench.append((d_date, daily_flow_xirr))
@@ -143,11 +158,17 @@ class BenchmarkService:
         final_bench_value = chart_data[-1]["benchmark_value"]
         xirr_cashflows_bench.append((end_date, final_bench_value))
 
+        logger.debug(
+            f"Benchmark XIRR inputs: {len(xirr_cashflows_bench)} cashflows, "
+            f"final_value={final_bench_value}"
+        )
+
         try:
             dates = [d for d, v in xirr_cashflows_bench]
             values = [v for d, v in xirr_cashflows_bench]
             benchmark_xirr = xirr(dates, values)
             benchmark_xirr = float(benchmark_xirr) if benchmark_xirr else 0.0
+            logger.debug(f"Benchmark XIRR calculated: {benchmark_xirr}")
         except Exception as e:
             logger.warning(f"Failed to calculate benchmark XIRR: {e}")
             benchmark_xirr = 0.0
@@ -171,16 +192,23 @@ class BenchmarkService:
         }
 
     def _get_price_for_date(self, history: Dict[str, float], d: date) -> float:
-        """Finds price for date, or looks back up to 7 days."""
+        """Finds price for date, or looks back/forward up to 7 days."""
         d_str = d.isoformat()
         if d_str in history:
             return history[d_str]
 
-        # Look back
+        # Look back first (for weekends/holidays mid-range)
         for i in range(1, 8):
             prev_d = d - timedelta(days=i)
             prev_d_str = prev_d.isoformat()
             if prev_d_str in history:
                 return history[prev_d_str]
+
+        # Look forward (for dates at the start of the range)
+        for i in range(1, 8):
+            next_d = d + timedelta(days=i)
+            next_d_str = next_d.isoformat()
+            if next_d_str in history:
+                return history[next_d_str]
 
         return 0.0
