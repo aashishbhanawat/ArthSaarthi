@@ -133,8 +133,19 @@ def lookup_ticker_symbol(
     # 3. If found externally, create it locally
     details["ticker_symbol"] = query.upper()
     details["asset_type"] = details["asset_type"].upper()
-    asset_in = schemas.AssetCreate(**details)
 
+    # Check if asset already exists (may have been created by
+    # concurrent request or restore)
+    ticker = details["ticker_symbol"]
+    existing_asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
+    if existing_asset:
+        if settings.DEBUG:
+            print("--- BACKEND DEBUG: Asset Lookup ---")
+            print(f"Asset '{ticker}' already exists. Returning.")
+            print("---------------------------------")
+        return [existing_asset]
+
+    asset_in = schemas.AssetCreate(**details)
     new_asset = crud.asset.create(db=db, obj_in=asset_in)
     db.commit()
     db.refresh(new_asset)

@@ -1,4 +1,39 @@
-## 2026-01-03: Implement System Tray Integration (FR-Desktop-3, Issue #190)
+## 2026-01-07: Fix Backup/Restore for Foreign Stocks & RSU Sell-to-Cover (NFR7)
+
+**Task:** Fix multiple issues with backup and restore functionality for foreign stocks and RSU transactions.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Fixed critical backup/restore issues that caused data loss and display errors:
+- **BACKUP_VERSION:** Upgraded from 1.1 → 1.2
+- **Details Field:** Added `details` field serialization/restore (contains `fx_rate` for foreign stocks)
+- **RSU Sell-to-Cover:** Skip restoring SELL transactions with `related_rsu_vest_id` to prevent double-counting
+- **Asset Lookup:** Fixed duplicate key error when looking up existing foreign assets
+- **Diversification:** Fixed case-insensitive asset_type check for foreign stock enrichment
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/backup_service.py` - Added `details` serialization, skip sell-to-cover SELLs, version bump
+*   **Modified:** `backend/app/api/v1/endpoints/assets.py` - Check existing asset before external create
+*   **Modified:** `backend/app/crud/crud_holding.py` - Case-insensitive asset_type check for enrichment
+*   **Modified:** `backend/app/schemas/__init__.py` - Export missing schemas
+
+### Verification
+
+*   **Backend Tests:** All tests pass
+*   **Manual Testing:** Foreign stock backup/restore verified with GOOG/CSCO
+
+### Outcome
+
+**Success.** Users can now backup and restore foreign stock transactions with preserved FX rates and correct holdings.
+
+---
+
+
 
 **Task:** Implement system tray integration for the desktop app, allowing users to minimize to tray instead of closing.
 
