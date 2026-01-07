@@ -16,6 +16,8 @@ from .asset import (
 )
 from .asset_alias import AssetAlias, AssetAliasCreate
 from .bond import (
+    BondCreate,
+    BondUpdate,
     BondWithTransactionCreate,
 )
 from .dashboard import (
@@ -81,6 +83,13 @@ from .transaction import (
     TransactionUpdate,
 )
 from .user import User, UserCreate, UserPasswordChange, UserUpdate, UserUpdateMe
+from .watchlist import (
+    Watchlist,
+    WatchlistCreate,
+    WatchlistItem,
+    WatchlistItemCreate,
+    WatchlistUpdate,
+)
 
 __all__ = [
     "RecurringDeposit",
@@ -147,11 +156,18 @@ __all__ = [
     "GoalLinkCreate",
     "GoalLinkUpdate",
     "GoalWithAnalytics",
+    "BondCreate",
+    "BondUpdate",
     "BondWithTransactionCreate",
     "HistoricalInterestRate",
     "HistoricalInterestRateCreate",
     "HistoricalInterestRateUpdate",
     "PpfAccountCreate",
+    "Watchlist",
+    "WatchlistCreate",
+    "WatchlistItem",
+    "WatchlistItemCreate",
+    "WatchlistUpdate",
 ]
 
 # Manually update forward references to resolve circular dependencies

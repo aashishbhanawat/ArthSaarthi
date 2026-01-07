@@ -541,7 +541,8 @@ def _process_market_traded_assets(
             (a for a in asset_map.values() if a.ticker_symbol == ticker), None
         )
         if asset and asset.sector is None:
-            if asset.asset_type in ["STOCK", "ETF"]:
+            asset_type_upper = (asset.asset_type or "").upper()
+            if asset_type_upper in ["STOCK", "ETF"]:
                 # Equities: enrich via yfinance
                 enrichment = (
                     financial_data_service.yfinance_provider.get_enrichment_data(
