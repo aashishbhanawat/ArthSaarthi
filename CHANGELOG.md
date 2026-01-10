@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- Updated urllib3 to 2.7.0 (CVE-2026-21441)
+- Updated urllib3 to 2.6.3 (CVE-2026-21441)
 - Updated react-router-dom to 7.1.1 (CVE-2025-68470, CVE-2026-22029)
 
 ## [1.0.0] - 2025-12-15
