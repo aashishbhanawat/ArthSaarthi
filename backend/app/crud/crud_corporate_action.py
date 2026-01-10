@@ -401,8 +401,10 @@ def handle_demerger(
     for orig_buy in original_buys:
         # Adjust quantity by ratio for child
         new_qty = orig_buy.quantity * ratio
-        # Adjust price by cost allocation percentage for child
-        adjusted_price = orig_buy.price_per_unit * pct
+        # Adjusted price = (total cost allocated to child) / (child shares)
+        # = (orig_price * pct) / ratio
+        # This ensures: new_qty * adjusted_price = orig_qty * orig_price * pct
+        adjusted_price = orig_buy.price_per_unit * pct / Decimal(str(ratio))
         # Track total cost allocated
         total_cost_allocated += orig_buy.quantity * orig_buy.price_per_unit * pct
 

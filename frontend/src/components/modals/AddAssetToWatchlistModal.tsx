@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAssetSearch } from '../../hooks/useAssets';
-import { Asset } from '../../types/asset';
+import { AssetSearchResult } from '../../services/portfolioApi';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { useDebounce } from '../../hooks/useDebounce';
 
@@ -16,7 +16,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
   onAddAsset,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<AssetSearchResult | null>(null);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const { data: searchResults, isLoading } = useAssetSearch(debouncedSearchTerm);
 
@@ -28,7 +28,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
   }, [isOpen]);
 
   const handleAdd = () => {
-    if (selectedAsset) {
+    if (selectedAsset && selectedAsset.id) {
       onAddAsset(selectedAsset.id);
       onClose();
     }
@@ -92,7 +92,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
             )}
           </div>
         </div>
-        
+
         <div className="modal-action mt-6 flex justify-between items-center w-full">
           <div className="flex-1 min-w-0">
             {selectedAsset && (

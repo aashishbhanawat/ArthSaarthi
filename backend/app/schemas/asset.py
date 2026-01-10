@@ -69,6 +69,10 @@ class Asset(AssetInDBBase):
 
 # Properties to return from asset search
 class AssetSearchResult(BaseModel):
+    id: Optional[str] = None  # Only present for local assets
     ticker_symbol: str
     name: str
     asset_type: str
+    exchange: Optional[str] = None
+    currency: Optional[str] = None
+    source: Optional[str] = None  # "local" or "yahoo"

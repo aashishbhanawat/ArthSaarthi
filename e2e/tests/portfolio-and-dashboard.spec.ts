@@ -7,8 +7,8 @@ const standardUser = {
 };
 
 const adminUser = {
-    email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
-    password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
+  email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
+  password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
 };
 
 test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
@@ -82,6 +82,8 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('BUY');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
+    // Wait for search API response before checking dropdown
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/search-stocks'));
     const listItem = page.locator(`li:has-text("${newAssetName}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
@@ -108,7 +110,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(newAssetName);
 
     // Wait for the debounced search API call to complete before interacting with the results
-    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/search-stocks'));
 
     // Use a direct locator strategy that is more robust for this component.
     const listItemSell = page.locator(`li:has-text("${newAssetName}")`);
@@ -166,7 +168,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await page.getByLabel('Asset Type').selectOption('Stock');
     await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
-    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/search-stocks'));
     const listItemSell = page.locator(`li:has-text("${assetName}")`);
     await expect(listItemSell).toBeVisible();
     await listItemSell.click();
@@ -290,7 +292,7 @@ test.describe.serial('Portfolio and Dashboard E2E Flow', () => {
     await expect(page.getByRole('heading', { name: 'Add Transaction' })).toBeVisible();
 
     await page.getByLabel('Asset Type').selectOption('Mutual Fund');
-    
+
     // Search and select the mutual fund
     const mfSelect = page.locator('input#mf-search-input');
     await mfSelect.fill(mfName);

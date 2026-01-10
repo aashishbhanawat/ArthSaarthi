@@ -60,7 +60,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         await page.getByRole('textbox', { name: 'Asset' }).pressSequentially('RELIANCE');
 
         // Wait for the lookup to find the asset and create it on the fly
-        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup/'));
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks/'));
 
         // Now click the result
         await page.locator('li:has-text("RELIANCE")').click();
@@ -106,7 +106,7 @@ test.describe.serial('Data Import with Asset Mapping', () => {
         await page.getByPlaceholder('Type to search by name or ticker...').fill('RELIANCE');
         
         // Explicitly wait for the network call to finish before checking the UI
-        await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
+        await page.waitForResponse(response => response.url().includes('/api/v1/assets/search-stocks'));
 
         const searchResult = page.locator('li', { hasText: 'RELIANCE' });
         await expect(searchResult).toBeVisible();
