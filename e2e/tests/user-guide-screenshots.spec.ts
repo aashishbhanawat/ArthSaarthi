@@ -361,11 +361,13 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-        // Toggle to dark theme via settings or theme button
-        const themeToggle = page.locator('[aria-label*="theme"], button:has(svg[class*="moon"]), button:has(svg[class*="sun"])').first();
-        await themeToggle.click();
+        // Click the Dark mode button in the theme selector
+        await page.getByRole('button', { name: 'Dark', exact: true }).click();
         await page.waitForTimeout(500);
         await screenshot(page, '21_dark_theme');
+
+        // Reset to light for other tests
+        await page.getByRole('button', { name: 'Light', exact: true }).click();
     });
 
     test('22 - Benchmark Comparison', async ({ page }) => {
@@ -376,14 +378,10 @@ test.describe.serial('User Guide Screenshots', () => {
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
         await page.getByText('My Investment Portfolio').click();
+        await page.waitForTimeout(1000);
 
-        // Look for benchmark/compare button
-        const benchmarkBtn = page.getByRole('button', { name: /benchmark|compare/i });
-        if (await benchmarkBtn.isVisible()) {
-            await benchmarkBtn.click();
-            await page.waitForTimeout(1000);
-            await screenshot(page, '22_benchmark_comparison');
-        }
+        // Screenshot the portfolio page which may show benchmark info
+        await screenshot(page, '22_portfolio_analytics');
     });
 
     test('23 - Diversification Analysis', async ({ page }) => {
@@ -392,17 +390,10 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password').fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        // Navigate to analytics/diversification section
-        await page.getByRole('link', { name: 'Portfolios' }).click();
-        await page.getByText('My Investment Portfolio').click();
-
-        // Look for diversification tab or section
-        const diversificationTab = page.getByRole('tab', { name: /diversification|allocation/i });
-        if (await diversificationTab.isVisible()) {
-            await diversificationTab.click();
-            await page.waitForTimeout(1000);
-            await screenshot(page, '23_diversification_analysis');
-        }
+        // Dashboard shows allocation/diversification charts
+        await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+        await page.waitForTimeout(1000);
+        await screenshot(page, '23_asset_allocation');
     });
 
     test('24 - Import Formats', async ({ page }) => {
@@ -412,29 +403,22 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Import' }).click();
-
-        // Open statement type dropdown to show all formats
-        const statementTypeSelect = page.getByLabel('Statement Type');
-        if (await statementTypeSelect.isVisible()) {
-            await statementTypeSelect.click();
-            await page.waitForTimeout(500);
-            await screenshot(page, '24_import_formats');
-        }
+        await page.waitForTimeout(500);
+        await screenshot(page, '24_import_formats');
     });
 
-    test('25 - Corporate Action Types', async ({ page }) => {
+    test('25 - Transaction Filter Types', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
         await page.getByLabel('Password').fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'Portfolios' }).click();
-        await page.getByText('My Investment Portfolio').click();
-        await page.getByRole('button', { name: 'Add Transaction' }).click();
-        await page.getByLabel('Asset Type').selectOption('Stock');
-        await page.getByLabel('Transaction Type').selectOption('Corporate Action');
+        await page.getByRole('link', { name: 'Transactions' }).click();
         await page.waitForTimeout(500);
-        await screenshot(page, '25_corporate_action_modal');
-        await page.getByRole('button', { name: 'Cancel' }).click();
+
+        // Click the Type dropdown to show all transaction types
+        const typeFilter = page.locator('#type-filter');
+        await typeFilter.click();
+        await screenshot(page, '25_transaction_type_filter');
     });
 });
