@@ -166,7 +166,45 @@ class MockFinancialDataService:
                 }
 
         # If it's not a mutual fund, check if it's a known stock.
-        if ticker_symbol in self.MOCK_PRICES:
+        # Use consistent names matching what search_stocks returns
+        mock_stocks = {
+            "AAPL": {
+                "name": "Apple Inc.", "exchange": "NASDAQ", "currency": "USD"
+            },
+            "GOOGL": {
+                "name": "Alphabet Inc.", "exchange": "NASDAQ", "currency": "USD"
+            },
+            "MSFT": {
+                "name": "Microsoft Corporation",
+                "exchange": "NASDAQ", "currency": "USD"
+            },
+            "RELIANCE": {
+                "name": "Reliance Industries Ltd.",
+                "exchange": "NSE", "currency": "INR"
+            },
+            "TCS": {
+                "name": "Tata Consultancy Services",
+                "exchange": "NSE", "currency": "INR"
+            },
+            "NTPC": {
+                "name": "NTPC Ltd", "exchange": "NSE", "currency": "INR"
+            },
+            "SCI": {
+                "name": "Shipping Corporation of India",
+                "exchange": "NSE", "currency": "INR"
+            },
+        }
+
+        if ticker_symbol in mock_stocks:
+            stock = mock_stocks[ticker_symbol]
+            return {
+                "name": stock["name"],
+                "asset_type": "Stock",
+                "exchange": stock["exchange"],
+                "currency": stock["currency"],
+            }
+        elif ticker_symbol in self.MOCK_PRICES:
+            # Fallback for other tickers in MOCK_PRICES
             return {
                 "name": f"{ticker_symbol} Inc.",
                 "asset_type": "Stock",
@@ -189,3 +227,52 @@ class MockFinancialDataService:
         if from_currency == "USD" and to_currency == "INR":
             return Decimal("83.50")
         return None
+
+    def search_stocks(self, query: str) -> List[Dict[str, Any]]:
+        """
+        Mock search for stocks. Returns mock stock data that matches the query.
+        Used by the /search-stocks/ endpoint in E2E tests.
+        """
+        query_upper = query.upper()
+        results = []
+
+        # Mock stock data for common tickers
+        mock_stocks = {
+            "AAPL": {
+                "name": "Apple Inc.", "exchange": "NASDAQ", "currency": "USD"
+            },
+            "GOOGL": {
+                "name": "Alphabet Inc.", "exchange": "NASDAQ", "currency": "USD"
+            },
+            "MSFT": {
+                "name": "Microsoft Corporation",
+                "exchange": "NASDAQ", "currency": "USD"
+            },
+            "RELIANCE": {
+                "name": "Reliance Industries Ltd.",
+                "exchange": "NSE", "currency": "INR"
+            },
+            "TCS": {
+                "name": "Tata Consultancy Services",
+                "exchange": "NSE", "currency": "INR"
+            },
+            "NTPC": {
+                "name": "NTPC Ltd", "exchange": "NSE", "currency": "INR"
+            },
+            "SCI": {
+                "name": "Shipping Corporation of India",
+                "exchange": "NSE", "currency": "INR"
+            },
+        }
+
+        for ticker, data in mock_stocks.items():
+            if query_upper in ticker or query_upper in data["name"].upper():
+                results.append({
+                    "ticker_symbol": ticker,
+                    "name": data["name"],
+                    "asset_type": "STOCK",
+                    "exchange": data["exchange"],
+                    "currency": data["currency"],
+                })
+
+        return results

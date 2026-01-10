@@ -65,10 +65,78 @@ def read_assets(
     return assets
 
 
+@router.get("/search-stocks/", response_model=List[schemas.AssetSearchResult])
+def search_stocks(
+    query: str = Query(..., min_length=2, max_length=50),
+    asset_type: Optional[str] = None,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
+):
+    """
+    Search for stocks/assets without creating them. Returns search results
+    from both local database and Yahoo Finance. Use this endpoint for
+    autocomplete/typeahead. Asset is only created when user selects via /lookup/.
+    """
+    results = []
+
+    # 1. Search local database first
+    local_assets = crud.asset.search_by_name_or_ticker(
+        db, query=query, asset_type=asset_type
+    )
+    for asset in local_assets:
+        results.append({
+            "id": str(asset.id),  # Include id for local assets
+            "ticker_symbol": asset.ticker_symbol,
+            "name": asset.name,
+            "asset_type": asset.asset_type,
+            "exchange": asset.exchange,
+            "currency": asset.currency,
+            "source": "local",
+        })
+
+    # 2. If few local results, also search Yahoo Finance
+    if len(results) < 5:
+        search_results = financial_data_service.search_stocks(query)
+        for r in search_results:
+            ticker = r.get("ticker_symbol", "")
+
+            # Skip Indian exchange tickers (already in local DB via NSDL sync)
+            if ticker.upper().endswith('.NS') or ticker.upper().endswith('.BO'):
+                continue
+
+            # Skip if already in local results
+            if any(
+                lr["ticker_symbol"] == ticker
+                for lr in results
+            ):
+                continue
+
+            # Filter by asset_type if provided
+            if asset_type and r.get("asset_type", "").upper() != asset_type.upper():
+                continue
+
+            results.append({
+                "ticker_symbol": ticker,
+                "name": r.get("name"),
+                "asset_type": r.get("asset_type", "STOCK"),
+                "exchange": r.get("exchange"),
+                "currency": r.get("currency"),
+                "source": "yahoo",
+            })
+
+    if settings.DEBUG:
+        print(f"Search for '{query}' returned {len(results)} results")
+
+    return results[:15]  # Limit total results
+
+
 @router.get("/lookup/", response_model=List[schemas.Asset])
 def lookup_ticker_symbol(
     query: str = Query(..., min_length=2, max_length=50),
     asset_type: Optional[str] = None,
+    force_external: bool = Query(
+        False, description="Skip local search and force external lookup"
+    ),
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user),
 ):
@@ -77,15 +145,21 @@ def lookup_ticker_symbol(
     It first searches the local database. If not found, it queries the
     external financial data service. If found there, it creates the asset
     locally and returns it.
+
+    Set force_external=true to skip local search and create from external source
+    (used when user selects a Yahoo result from search).
     """
-    # 1. Search local database
-    assets = crud.asset.search_by_name_or_ticker(db, query=query, asset_type=asset_type)
-    if assets:
-        if settings.DEBUG:
-            print("--- BACKEND DEBUG: Asset Lookup ---")
-            print(f"Found {len(assets)} assets locally for query: '{query}'")
-            print("---------------------------------")
-        return assets
+    # 1. Search local database (unless force_external)
+    if not force_external:
+        assets = crud.asset.search_by_name_or_ticker(
+            db, query=query, asset_type=asset_type
+        )
+        if assets:
+            if settings.DEBUG:
+                print("--- BACKEND DEBUG: Asset Lookup ---")
+                print(f"Found {len(assets)} assets locally for query: '{query}'")
+                print("---------------------------------")
+            return assets
 
     # If asset_type is BOND and no local assets were found, do not query external
     # service.
@@ -103,7 +177,36 @@ def lookup_ticker_symbol(
         print(f"No local asset found for '{query}'. Querying external service...")
         print("---------------------------------")
 
-    details = financial_data_service.get_asset_details(ticker_symbol=query.upper())
+    # 2a. First, try direct ticker lookup (for exact ticker matches like "LEN")
+    resolved_ticker = query.upper().strip()  # Default to cleaned query
+    details = financial_data_service.get_asset_details(ticker_symbol=resolved_ticker)
+
+    # 2b. If direct lookup fails and query contains spaces or is a company name,
+    # use Yahoo search to find the ticker
+    if not details:
+        if settings.DEBUG:
+            print(f"Direct lookup failed. Trying Yahoo search for '{query}'...")
+
+        search_results = financial_data_service.search_stocks(query)
+        if search_results:
+            # Filter by asset_type if provided
+            if asset_type:
+                search_results = [
+                    r for r in search_results
+                    if r.get("asset_type", "").upper() == asset_type.upper()
+                ]
+
+            if search_results:
+                # Try to get details for the first matching result
+                ticker = search_results[0].get("ticker_symbol")
+                if ticker:
+                    if settings.DEBUG:
+                        print(f"Yahoo search found ticker: {ticker}")
+                    details = financial_data_service.get_asset_details(
+                        ticker_symbol=ticker
+                    )
+                    if details:
+                        resolved_ticker = ticker  # Use the ticker from search
 
     if not details:
         if settings.DEBUG:
@@ -131,10 +234,11 @@ def lookup_ticker_symbol(
         return []
 
     # 3. If found externally, create it locally
-    details["ticker_symbol"] = query.upper()
+    # Use the resolved ticker (from search or cleaned query)
+    details["ticker_symbol"] = resolved_ticker
     details["asset_type"] = details["asset_type"].upper()
 
-    # Check if asset already exists (may have been created by
+    # Check if asset already exists by ticker (may have been created by
     # concurrent request or restore)
     ticker = details["ticker_symbol"]
     existing_asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
@@ -144,6 +248,24 @@ def lookup_ticker_symbol(
             print(f"Asset '{ticker}' already exists. Returning.")
             print("---------------------------------")
         return [existing_asset]
+
+    # Also check by name+type+currency to avoid duplicate key errors.
+    # This handles cases where the same asset has different tickers
+    # on different exchanges.
+    existing_by_name = db.query(models.Asset).filter(
+        models.Asset.name == details.get("name"),
+        models.Asset.asset_type == details.get("asset_type"),
+        models.Asset.currency == details.get("currency")
+    ).first()
+    if existing_by_name:
+        if settings.DEBUG:
+            print("--- BACKEND DEBUG: Asset Lookup ---")
+            print(
+                f"Asset with same name/type/currency exists: "
+                f"{existing_by_name.ticker_symbol}"
+            )
+            print("---------------------------------")
+        return [existing_by_name]
 
     asset_in = schemas.AssetCreate(**details)
     new_asset = crud.asset.create(db=db, obj_in=asset_in)

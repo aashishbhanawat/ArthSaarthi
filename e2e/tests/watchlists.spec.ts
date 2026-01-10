@@ -74,7 +74,7 @@ test.describe('Watchlists Feature', () => {
     await modal.getByLabel('Search for an asset').fill('AAPL');
     
     // Wait for the debounced search API call to complete before interacting with the results.
-    await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
 
     // Find the list item containing the asset and click the "Link" button inside it.
     // The snapshot shows the button's accessible name is the asset name itself, not "Link".

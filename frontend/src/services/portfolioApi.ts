@@ -27,9 +27,30 @@ export const deletePortfolio = async (id: string): Promise<void> => {
 
 export const lookupAsset = async (
     query: string,
-    assetType?: string
+    assetType?: string,
+    forceExternal: boolean = false
 ): Promise<Asset[]> => {
     const response = await apiClient.get<Asset[]>('/api/v1/assets/lookup/', {
+        params: { query, asset_type: assetType, force_external: forceExternal },
+    });
+    return response.data;
+};
+
+export interface AssetSearchResult {
+    id?: string;  // Only present for local assets
+    ticker_symbol: string;
+    name: string;
+    asset_type: string;
+    exchange?: string;
+    currency?: string;
+    source?: 'local' | 'yahoo';
+}
+
+export const searchStocks = async (
+    query: string,
+    assetType?: string
+): Promise<AssetSearchResult[]> => {
+    const response = await apiClient.get<AssetSearchResult[]>('/api/v1/assets/search-stocks/', {
         params: { query, asset_type: assetType },
     });
     return response.data;

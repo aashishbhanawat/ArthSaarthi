@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app import crud, models, schemas
@@ -135,7 +135,10 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
             )
         )
         if asset_type:
-            db_query = db_query.filter(self.model.asset_type == asset_type)
+            # Use case-insensitive comparison for asset_type
+            db_query = db_query.filter(
+                func.upper(self.model.asset_type) == asset_type.upper()
+            )
 
         # Eager load bond details if asset_type is BOND
         if asset_type == "BOND":

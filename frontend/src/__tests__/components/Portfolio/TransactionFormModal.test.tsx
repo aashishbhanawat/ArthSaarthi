@@ -11,6 +11,7 @@ import { Asset, MutualFundSearchResult } from '../../../types/asset';
 const mockCreateTransaction = jest.fn();
 const mockUpdateTransaction = jest.fn();
 const mockLookupAsset = jest.fn();
+const mockSearchStocks = jest.fn();
 const mockCreateFixedDeposit = jest.fn();
 const mockCreatePpfAccount = jest.fn();
 const mockCreateBond = jest.fn();
@@ -46,6 +47,7 @@ jest.mock('../../../hooks/useAssets', () => ({
 jest.mock('../../../services/portfolioApi', () => ({
   // Use a function factory to avoid hoisting issues with mockLookupAsset
   lookupAsset: (...args: unknown[]) => mockLookupAsset(...args),
+  searchStocks: (...args: unknown[]) => mockSearchStocks(...args),
   getFxRate: (...args: unknown[]) => mockGetFxRate(...args),
 }));
 
@@ -65,6 +67,11 @@ const queryClient = new QueryClient({
 const mockAssets: Asset[] = [
   { id: 'asset-1', ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'Stock', currency: 'USD', isin: null, exchange: 'NASDAQ' },
   { id: 'asset-2', ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'Stock', currency: 'USD', isin: null, exchange: 'NASDAQ' },
+];
+
+// INR assets for corporate action tests (Split/Bonus require non-foreign stocks)
+const mockInrAssets: Asset[] = [
+  { id: 'asset-inr-1', ticker_symbol: 'RELIANCE', name: 'Reliance Industries', asset_type: 'Stock', currency: 'INR', isin: null, exchange: 'NSE' },
 ];
 
 const mockMfSearchResults: MutualFundSearchResult[] = [
@@ -118,6 +125,8 @@ describe('TransactionFormModal', () => {
       isLoading: false,
     });
     mockLookupAsset.mockResolvedValue(mockAssets);
+    // searchStocks returns results with source field - use local source so it uses id directly
+    mockSearchStocks.mockResolvedValue(mockAssets.map(a => ({ ...a, source: 'local' })));
     mockGetFxRate.mockResolvedValue(84.0);
     (assetHooks.useMfSearch as jest.Mock).mockReturnValue({
       data: mockMfSearchResults,
@@ -138,7 +147,7 @@ describe('TransactionFormModal', () => {
       fireEvent.change(assetInput, { target: { value: 'Apple' } });
 
       await waitFor(() => {
-        expect(mockLookupAsset).toHaveBeenCalledWith('Apple', 'STOCK');
+        expect(mockSearchStocks).toHaveBeenCalledWith('Apple', 'STOCK');
       });
 
       fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
@@ -458,11 +467,13 @@ describe('TransactionFormModal', () => {
     });
 
     it('renders the Stock Split form and submits correctly', async () => {
+      // Use INR asset for corporate action tests (Split/Bonus hidden for foreign stocks)
+      mockSearchStocks.mockResolvedValue(mockInrAssets.map(a => ({ ...a, source: 'local' })));
       renderComponent();
-      // Select a stock asset first, as corporate actions are stock-only
+      // Select an INR stock asset first, as corporate actions are only shown for non-foreign stocks
       const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
-      fireEvent.change(assetInput, { target: { value: 'Apple' } });
-      fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+      fireEvent.change(assetInput, { target: { value: 'Reliance' } });
+      fireEvent.click(await screen.findByText('Reliance Industries (RELIANCE)'));
 
       // Select 'Corporate Action' transaction type
       const transactionTypeSelect = screen.getByLabelText('Transaction Type');
@@ -476,8 +487,7 @@ describe('TransactionFormModal', () => {
       // Fill form (Effective Date is the transaction date)
       fireEvent.change(screen.getByLabelText('Effective Date'), { target: { value: '2024-08-01' } });
 
-      // Wait for FX rate to load because Apple is USD and date is set
-      await screen.findByDisplayValue('84');
+      // No FX rate wait needed - using INR asset
 
       fireEvent.change(screen.getByRole('spinbutton', { name: 'New shares' }), { target: { value: '3' } });
       fireEvent.change(screen.getByRole('spinbutton', { name: 'Old shares' }), { target: { value: '1' } });
@@ -489,7 +499,7 @@ describe('TransactionFormModal', () => {
         expect(mockCreateTransaction).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
-              asset_id: 'asset-1',
+              asset_id: 'asset-inr-1',
               transaction_type: 'SPLIT',
               quantity: 3, // Repurposed for new ratio
               price_per_unit: 1, // Repurposed for old ratio
@@ -502,11 +512,13 @@ describe('TransactionFormModal', () => {
     });
 
     it('renders the Bonus Issue form and submits correctly', async () => {
+      // Use INR asset for corporate action tests (Split/Bonus hidden for foreign stocks)
+      mockSearchStocks.mockResolvedValue(mockInrAssets.map(a => ({ ...a, source: 'local' })));
       renderComponent();
-      // Select a stock asset first, as corporate actions are stock-only
+      // Select an INR stock asset first, as corporate actions are only shown for non-foreign stocks
       const assetInput = screen.getByLabelText('Asset', { selector: 'input' });
-      fireEvent.change(assetInput, { target: { value: 'Apple' } });
-      fireEvent.click(await screen.findByText('Apple Inc. (AAPL)'));
+      fireEvent.change(assetInput, { target: { value: 'Reliance' } });
+      fireEvent.click(await screen.findByText('Reliance Industries (RELIANCE)'));
 
       // Select 'Corporate Action' transaction type
       const transactionTypeSelect = screen.getByLabelText('Transaction Type');
@@ -520,8 +532,7 @@ describe('TransactionFormModal', () => {
       // Fill form
       fireEvent.change(screen.getByLabelText('Effective Date'), { target: { value: '2024-09-10' } });
 
-      // Wait for FX rate to load because Apple is USD
-      await screen.findByDisplayValue('84');
+      // No FX rate wait needed - using INR asset
 
       fireEvent.change(screen.getByRole('spinbutton', { name: 'New bonus shares' }), { target: { value: '1' } });
       fireEvent.change(screen.getByRole('spinbutton', { name: 'Old held shares' }), { target: { value: '5' } });
@@ -533,7 +544,7 @@ describe('TransactionFormModal', () => {
         expect(mockCreateTransaction).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
-              asset_id: 'asset-1',
+              asset_id: 'asset-inr-1',
               transaction_type: 'BONUS',
               quantity: 1, // Repurposed for new shares
               price_per_unit: 5, // Repurposed for old shares

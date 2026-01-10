@@ -51,7 +51,7 @@ test.describe('Goal Planning Feature', () => {
     await linkModal.getByLabel('Search Assets').fill(assetToLink);
 
     // Wait for the debounced search API call to complete before interacting with the results.
-    await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+    await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
 
     const searchResult = linkModal.locator('li', { hasText: assetToLink });
     await expect(searchResult).toBeVisible();

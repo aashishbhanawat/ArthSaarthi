@@ -6,20 +6,15 @@ const adminUser = {
 };
 
 test.describe.serial('Corporate Actions E2E Flow', () => {
-    const stockTicker = 'MSFT';
-    const stockName = 'Microsoft Corporation';
+    // Use an INR stock for corporate actions since Split/Bonus are hidden for foreign stocks
+    const stockTicker = 'RELIANCE';
+    const stockName = 'Reliance Industries Ltd.';
     let standardUser;
 
     // Before each test, create a unique user, log in, and set up a portfolio with an initial holding.
     // This ensures each test runs in complete isolation.
     test.beforeEach(async ({ page, request }) => {
-        await page.route('**/api/v1/fx-rate/**', route => {
-            route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({ rate: 85.0 }),
-            });
-        });
+        // No FX rate route needed since we're using INR stocks
         standardUser = {
             name: 'Corp Actions E2E User',
             email: `ca.e2e.${Date.now()}@example.com`,
@@ -65,6 +60,8 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         await transactionModal.getByLabel('Asset Type').selectOption('Stock');
         await transactionModal.getByLabel('Transaction Type').selectOption('BUY');
         await transactionModal.getByRole('textbox', { name: 'Asset' }).pressSequentially(stockTicker);
+        // Wait for search API response before checking dropdown
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
 
         const listItem = transactionModal.locator(`li:has-text("${stockName}")`);
         await expect(listItem).toBeVisible();
@@ -84,9 +81,8 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         const holdingRow = holdingsTable.getByRole('row', { name: new RegExp(stockTicker) });
         await expect(holdingRow).toBeVisible({ timeout: 20000 });
         await expect(holdingRow.getByRole('cell', { name: '10', exact: true })).toBeVisible();
-        // The average price should be Price * FX Rate = 100 * 85 = 8500
-        // The total invested is 10 * 100 * 85 = 85000. Avg price = 85000 / 10 = 8500.
-        await expect(holdingRow.getByRole('cell', { name: '₹8,500.00' })).toBeVisible();
+        // The average price is 100 INR (no FX conversion needed for INR stocks)
+        await expect(holdingRow.getByRole('cell', { name: '₹100.00' }).first()).toBeVisible();
     });
 
     test('should correctly apply a 2-for-1 stock split', async ({ page }) => {
@@ -96,7 +92,7 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         await expect(modal).toBeVisible();
 
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
-        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
         await modal.locator(`li:has-text("${stockName}")`).click();
 
         await modal.getByLabel('Transaction Type').selectOption({ label: 'Corporate Action' });
@@ -115,8 +111,8 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         const updatedHoldingRow = holdingsTable.getByRole('row', { name: new RegExp(stockTicker) });
 
         await expect(updatedHoldingRow.getByRole('cell', { name: '20' }).first()).toBeVisible({ timeout: 10000 });
-        // After a 2-for-1 split, the average price is halved: 8500 / 2 = 4250
-        await expect(updatedHoldingRow.getByRole('cell', { name: '₹4,250.00' })).toBeVisible();
+        // After a 2-for-1 split, the average price is halved: 100 / 2 = 50
+        await expect(updatedHoldingRow.getByRole('cell', { name: '₹50.00' }).first()).toBeVisible();
 
         await updatedHoldingRow.click();
         const detailModal = page.locator('.modal-content');
@@ -132,7 +128,7 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
         const modal = page.locator('.modal-content');
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
-        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
         await modal.locator(`li:has-text("${stockName}")`).click();
 
         await modal.getByLabel('Transaction Type').selectOption({ label: 'Corporate Action' });
@@ -153,8 +149,8 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         // 1. First, wait for the quantity to update. This is a reliable first check.
         await expect(updatedHoldingRow.getByRole('cell', { name: '20' }).first()).toBeVisible({ timeout: 15000 });
         // 2. Then, wait for the average price to update. This might take slightly longer.
-        // After a 1:1 bonus, the average price is halved: 8500 / 2 = 4250
-        await expect(updatedHoldingRow.getByRole('cell', { name: '₹4,250.00' })).toBeVisible({ timeout: 15000 });
+        // After a 1:1 bonus, the average price is halved: 100 / 2 = 50
+        await expect(updatedHoldingRow.getByRole('cell', { name: '₹50.00' }).first()).toBeVisible({ timeout: 15000 });
 
         await updatedHoldingRow.click();
         const detailModal = page.locator('.modal-content');
@@ -179,7 +175,7 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
         const modal = page.locator('.modal-content');
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
-        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
         await modal.locator(`li:has-text("${stockName}")`).click();
 
         await modal.getByLabel('Transaction Type').selectOption({ label: 'Corporate Action' });
@@ -203,9 +199,8 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
         const dividendRow = page.locator('tr', { hasText: /0?1 Apr 2023/ }).filter({ hasText: stockTicker });
         await expect(dividendRow).toBeVisible();
         await expect(dividendRow).toContainText('DIVIDEND');
-        // The total value should be the dividend amount (50) multiplied by the mocked FX rate (85.0).
-        // 50 * 85 = 4250
-        await expect(dividendRow).toContainText('₹4,250.00');
+        // For INR stocks, no FX conversion - dividend amount is 50 INR
+        await expect(dividendRow).toContainText('₹50.00');
     });
 
     test('should correctly log a stock DRIP (reinvested dividend)', async ({ page }) => {
@@ -216,7 +211,7 @@ test.describe.serial('Corporate Actions E2E Flow', () => {
 
         const modal = page.locator('.modal-content');
         await modal.getByLabel('Asset', { exact: true }).pressSequentially(stockTicker);
-        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
         await modal.locator(`li:has-text("${stockName}")`).click();
 
         await modal.getByLabel('Transaction Type').selectOption({ label: 'Corporate Action' });

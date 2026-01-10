@@ -153,6 +153,10 @@ class FinancialDataService:
         """Proxy to AMFI provider search."""
         return self.amfi_provider.search(query)
 
+    def search_stocks(self, query: str) -> List[Dict[str, Any]]:
+        """Search Yahoo Finance for stocks by name, ticker, or ISIN."""
+        return self.yfinance_provider.search(query)
+
     def get_price_from_yfinance(self, ticker_symbol: str) -> Optional[Decimal]:
         """Proxy to YFinance provider to get a single price."""
         return self.yfinance_provider.get_price(ticker_symbol)
