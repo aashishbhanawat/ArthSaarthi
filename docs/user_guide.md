@@ -326,7 +326,60 @@ Administrators can trigger asset master database updates without restarting the 
 
 ---
 
-## 12. Getting Help & Reporting Bugs {#getting-help}
+## 12. What's New in v1.1.0 {#v110-features}
+
+### Analytics Enhancements
+
+#### Benchmark Comparison
+Compare your portfolio performance against market indices like Nifty 50 or Sensex:
+- Navigate to any portfolio and click the **"Compare"** button
+- Select a benchmark index from the dropdown
+- View side-by-side XIRR comparison
+
+#### Investment Style Classification
+Understand your portfolio's style bias (Growth vs Value):
+- See P/E and P/B ratio analysis on the Analytics page
+- Holdings are classified based on fundamental metrics
+
+#### Diversification Analysis
+Visual breakdown of your asset allocation:
+- Pie charts by sector, asset type, and market cap
+- Concentration risk indicators
+
+#### Realized P&L Tracking
+Track locked-in profits and losses:
+- View realized gains on the Dashboard
+- Dividend income tracking by asset
+
+### Data Import
+
+#### Mutual Fund Imports
+Import MF statements from multiple sources:
+- **MFCentral CAS** (Excel) - Covers all RTAs
+- **CAMS** (Excel) - Full history for HDFC, ICICI Pru, DSP, etc.
+- **KFintech** (PDF) - SBI, Axis, UTI, Nippon, etc.
+- **Zerodha Coin** (Excel/CSV) - Direct MF via Zerodha
+- **ICICI Securities** (Excel) - ICICI MF transactions
+
+#### Dividend Imports
+Import dividend statements:
+- **Zerodha** (XLSX) - Equity dividends with TDS
+- **ICICI DEMAT** (PDF) - Dividend statements
+
+### Desktop App Enhancements
+
+- **System Tray:** Minimize to tray instead of taskbar
+- **Splash Screen:** Progress indicator during asset database seeding
+- **Update Notifications:** Get notified when new versions are available
+
+### Theme Support
+
+- **Dark Mode:** Toggle between light and dark themes
+- **System Theme:** Follow your OS appearance setting automatically
+
+---
+
+## 13. Getting Help & Reporting Bugs {#getting-help}
 
 If you encounter a bug or have a feature request, please **open an issue on the project's GitHub repository**. Your feedback is essential for improving the application!
 
