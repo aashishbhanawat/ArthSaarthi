@@ -1,14 +1,14 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
-import { createAsset, lookupAsset, getAssetsByType, AssetCreationPayload } from '../services/portfolioApi';
+import { createAsset, searchStocks, getAssetsByType, AssetCreationPayload, AssetSearchResult } from '../services/portfolioApi';
 import { searchMutualFunds } from '../services/assetApi';
 import { Asset, MutualFundSearchResult } from '../types/asset';
 import { useDebounce } from './useDebounce';
 
-// Hook to search for assets
+// Hook to search for assets using the unified search-stocks endpoint
 export const useAssetSearch = (searchTerm: string) => {
-  return useQuery<Asset[], Error>({
+  return useQuery<AssetSearchResult[], Error>({
     queryKey: ['assetSearch', searchTerm],
-    queryFn: () => lookupAsset(searchTerm),
+    queryFn: () => searchStocks(searchTerm),
     enabled: !!searchTerm, // Only run the query if there is a search term
   });
 };

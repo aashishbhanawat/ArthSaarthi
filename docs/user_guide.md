@@ -270,6 +270,17 @@ After a corporate action:
 
 > **Note:** Corporate actions require existing holdings on the record date. If you have no holdings, the transaction will be rejected.
 
+### 8.5. Foreign Stock Limitations
+
+> **Important:** Corporate actions (mergers, demergers, splits, bonus shares) are **not currently supported for foreign stocks** (non-INR assets). The Corporate Action option is hidden for foreign stocks in the transaction form.
+
+If you hold foreign stocks affected by corporate actions, you will need to manually handle these by:
+1. **For Splits/Bonus:** Add a BUY transaction for the new shares at price 0 (or adjust existing quantity)
+2. **For Mergers:** Add a SELL for old shares and BUY for new shares
+3. **For Demergers:** Add a BUY for the spun-off shares, adjusting cost basis manually
+
+> **Dividends work correctly for foreign stocks** and will be converted using the FX rate at the time of the dividend.
+
 ---
 
 ## 9. Backup & Restore {#backup-restore}

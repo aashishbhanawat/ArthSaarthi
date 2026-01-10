@@ -20,3 +20,13 @@ export interface MutualFundSearchResult {
     name: string;
     asset_type: 'Mutual Fund';
 }
+
+export interface AssetSearchResult {
+    id?: string;
+    ticker_symbol: string;
+    name: string;
+    asset_type: string;
+    exchange?: string;
+    currency?: string;
+    source?: 'local' | 'yahoo';
+}

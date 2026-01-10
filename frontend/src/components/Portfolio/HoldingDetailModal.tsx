@@ -31,6 +31,7 @@ const calculateCagr = (buyPrice: number, currentPrice: number, buyDate: string):
 interface TransactionRowProps {
     transaction: Transaction;
     currentPrice: number;
+    currency: string;
     demergerInfo: {
         ratio: number;
         earliestDemergerDate: string | null;
@@ -39,7 +40,7 @@ interface TransactionRowProps {
     onDelete: (tx: Transaction) => void;
 }
 
-const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPrice, demergerInfo, onEdit, onDelete }) => {
+const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPrice, currency, demergerInfo, onEdit, onDelete }) => {
     // Scale price by cost reduction ratio for demerged parent assets (only for BUYs before demerger)
     const originalPrice = Number(transaction.price_per_unit);
     const txDate = new Date(transaction.transaction_date);
@@ -61,17 +62,17 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPri
                 {transaction.transaction_type}
             </td>
             <td className="p-2 text-right font-mono dark:text-gray-200">{Number(transaction.quantity).toLocaleString('en-IN', { maximumFractionDigits: 4 })}</td>
-            <td className="p-2 text-right font-mono dark:text-gray-200" title={hasDemergerAdjustment ? `Adjusted for demerger. Original: ${formatCurrency(originalPrice, 'INR')}` : undefined}>
+            <td className="p-2 text-right font-mono dark:text-gray-200" title={hasDemergerAdjustment ? `Adjusted for demerger. Original: ${formatCurrency(originalPrice, currency)}` : undefined}>
                 {hasDemergerAdjustment ? (
                     <span>
-                        {formatCurrency(adjustedPrice, 'INR')}
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(orig: {formatCurrency(originalPrice, 'INR')})</span>
+                        {formatCurrency(adjustedPrice, currency)}
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(orig: {formatCurrency(originalPrice, currency)})</span>
                     </span>
                 ) : (
-                    formatCurrency(originalPrice, 'INR')
+                    formatCurrency(originalPrice, currency)
                 )}
             </td>
-            <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(Number(transaction.quantity) * adjustedPrice, 'INR')}</td>
+            <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(Number(transaction.quantity) * adjustedPrice, currency)}</td>
             <td className="p-2 text-right font-mono dark:text-gray-200">
                 {cagr !== null ? `${cagr.toFixed(2)}%` : 'N/A'}
             </td>
@@ -229,7 +230,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                                 </tr>
                             </thead>
                             <tbody>
-                                {openTransactions.map((tx: Transaction) => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} demergerInfo={demergerInfo} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
+                                {openTransactions.map((tx: Transaction) => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} currency={holding.currency || 'INR'} demergerInfo={demergerInfo} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
                             </tbody>
                         </table>
                     )}

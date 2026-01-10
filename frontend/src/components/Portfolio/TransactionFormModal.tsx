@@ -5,7 +5,7 @@ import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useC
 import { useCreateRecurringDeposit, useUpdateRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
-import { lookupAsset, getFxRate, getAvailableLots, AvailableLot } from '../../services/portfolioApi';
+import { lookupAsset, searchStocks, AssetSearchResult, getFxRate, getAvailableLots, AvailableLot } from '../../services/portfolioApi';
 import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
@@ -272,15 +272,32 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
         const assetTypeFilter = assetType === 'Bond' ? 'BOND' : (assetType === 'Stock' ? 'STOCK' : undefined);
         setIsSearching(true);
-        lookupAsset(searchTerm, assetTypeFilter)
-            .then(data => setSearchResults(data))
+        searchStocks(searchTerm, assetTypeFilter)
+            .then(data => setSearchResults(data as Asset[]))  // Cast to Asset[] for display compatibility
             .catch(() => setSearchResults([]))
             .finally(() => setIsSearching(false));
     }, [searchTerm, selectedAsset, assetType]);
 
-    const handleSelectAsset = (asset: Asset) => {
-        setSelectedAsset(asset);
-        setInputValue(asset.name);
+    const handleSelectAsset = async (asset: Asset | AssetSearchResult) => {
+        // If from Yahoo search (external), call lookupAsset to create it
+        const searchResult = asset as AssetSearchResult;
+        if (searchResult.source === 'yahoo') {
+            try {
+                const assetTypeFilter = assetType === 'Bond' ? 'BOND' : (assetType === 'Stock' ? 'STOCK' : undefined);
+                const createdAssets = await lookupAsset(searchResult.ticker_symbol, assetTypeFilter, true);  // forceExternal
+                if (createdAssets.length > 0) {
+                    setSelectedAsset(createdAssets[0]);
+                    setInputValue(createdAssets[0].name);
+                }
+            } catch {
+                // Fallback to using the search result as-is
+                setSelectedAsset(asset as Asset);
+                setInputValue(asset.name);
+            }
+        } else {
+            setSelectedAsset(asset as Asset);
+            setInputValue(asset.name);
+        }
         setSearchResults([]);
     };
 
@@ -305,17 +322,33 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             return;
         }
         setIsSearchingNewAsset(true);
-        lookupAsset(newAssetSearchTerm, 'STOCK')
-            .then(data => setNewAssetResults(data))
+        searchStocks(newAssetSearchTerm, 'STOCK')
+            .then(data => setNewAssetResults(data as Asset[]))
             .catch(() => setNewAssetResults([]))
             .finally(() => setIsSearchingNewAsset(false));
     }, [newAssetSearchTerm, selectedNewAsset]);
 
-    const handleSelectNewAsset = (asset: Asset) => {
-        setSelectedNewAsset(asset);
-        setNewAssetInput(asset.ticker_symbol || asset.name);
+    const handleSelectNewAsset = async (asset: Asset | AssetSearchResult) => {
+        const searchResult = asset as AssetSearchResult;
+        if (searchResult.source === 'yahoo') {
+            try {
+                const createdAssets = await lookupAsset(searchResult.ticker_symbol, 'STOCK', true);  // forceExternal
+                if (createdAssets.length > 0) {
+                    setSelectedNewAsset(createdAssets[0]);
+                    setNewAssetInput(createdAssets[0].ticker_symbol || createdAssets[0].name);
+                    setValue('newAssetSearch', createdAssets[0].ticker_symbol || createdAssets[0].name);
+                }
+            } catch {
+                setSelectedNewAsset(asset as Asset);
+                setNewAssetInput(asset.ticker_symbol || asset.name);
+                setValue('newAssetSearch', asset.ticker_symbol || asset.name);
+            }
+        } else {
+            setSelectedNewAsset(asset as Asset);
+            setNewAssetInput(asset.ticker_symbol || asset.name);
+            setValue('newAssetSearch', asset.ticker_symbol || asset.name);
+        }
         setNewAssetResults([]);
-        setValue('newAssetSearch', asset.ticker_symbol || asset.name);
     };
 
     const handleClearNewAsset = () => {
@@ -1085,9 +1118,18 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <div className="form-group">
                                         <label className="form-label text-blue-700 dark:text-blue-400">Total (INR)</label>
                                         <div className="form-input bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 font-bold">
-                                            {fxRate && quantity > 0 && pricePerUnit > 0 && !isNaN(fxRate)
-                                                ? formatCurrency(quantity * pricePerUnit * fxRate, 'INR')
-                                                : '0.00'}
+                                            {(() => {
+                                                if (!fxRate || isNaN(fxRate)) return '0.00';
+                                                // For corporate action dividends, use dividendAmount
+                                                if (transactionType === 'Corporate Action' && actionType === 'DIVIDEND' && dividendAmount > 0) {
+                                                    return formatCurrency(dividendAmount * fxRate, 'INR');
+                                                }
+                                                // For regular transactions, use quantity * pricePerUnit
+                                                if (quantity > 0 && pricePerUnit > 0) {
+                                                    return formatCurrency(quantity * pricePerUnit * fxRate, 'INR');
+                                                }
+                                                return '0.00';
+                                            })()}
                                         </div>
                                     </div>
                                 </div>
@@ -1274,7 +1316,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                                     {Number(lot.available_quantity).toFixed(4)}
                                                                 </td>
                                                                 <td className="px-3 py-2 whitespace-nowrap text-xs text-right text-gray-900">
-                                                                    {formatCurrency(Number(lot.price_per_unit), 'INR')}
+                                                                    {formatCurrency(Number(lot.price_per_unit), selectedAsset?.currency || 'INR')}
                                                                 </td>
                                                                 <td className="px-3 py-2 whitespace-nowrap text-right">
                                                                     <input
@@ -1357,11 +1399,16 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <label htmlFor="action_type" className="form-label">Action Type</label>
                                     <select id="action_type" {...register('action_type')} className="form-input">
                                         <option value="DIVIDEND">Dividend</option>
-                                        <option value="SPLIT">Stock Split</option>
-                                        <option value="BONUS">Bonus Issue</option>
-                                        <option value="MERGER">Merger/Amalgamation</option>
-                                        <option value="DEMERGER">Demerger/Spin-off</option>
-                                        <option value="RENAME">Ticker Rename</option>
+                                        {/* Hide non-dividend corporate actions for foreign stocks */}
+                                        {!isForeignAsset && (
+                                            <>
+                                                <option value="SPLIT">Stock Split</option>
+                                                <option value="BONUS">Bonus Issue</option>
+                                                <option value="MERGER">Merger/Amalgamation</option>
+                                                <option value="DEMERGER">Demerger/Spin-off</option>
+                                                <option value="RENAME">Ticker Rename</option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
 

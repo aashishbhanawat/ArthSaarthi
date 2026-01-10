@@ -7,8 +7,8 @@ const standardUser = {
 };
 
 const adminUser = {
-    email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
-    password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
+  email: process.env.FIRST_SUPERUSER_EMAIL || 'admin@example.com',
+  password: process.env.FIRST_SUPERUSER_PASSWORD || 'AdminPass123!',
 };
 
 // Helper to get a date in the past in YYYY-MM-DD format
@@ -59,7 +59,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
-    
+
     // Get portfolio ID for later use
     const url = page.url();
     const portfolioId = url.split('/').pop()!;
@@ -71,17 +71,19 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Transaction Type').selectOption('BUY');
     // Use a more specific locator to avoid ambiguity with "Asset Type"
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
+    // Wait for search API response before checking dropdown
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/search-stocks'));
     const listItemBuy = page.locator(`li:has-text("${assetName}")`);
     await expect(listItemBuy).toBeVisible();
     await listItemBuy.click();
     await page.getByLabel('Quantity').fill('10');
     await page.getByLabel('Price per Unit').fill('200');
     await page.getByLabel('Date').fill('2023-01-01');
-    
+
     console.log('[E2E DEBUG] Submitting first transaction (BUY MSFT)...');
     // Set up a promise to wait for the holdings to be refetched AFTER the transaction is created.
-    const holdingsResponsePromise = page.waitForResponse(resp => 
-        resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
+    const holdingsResponsePromise = page.waitForResponse(resp =>
+      resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
     );
     await page.getByRole('button', { name: 'Save Transaction' }).click();
     await holdingsResponsePromise;
@@ -96,6 +98,8 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
+    // Wait for search API response before checking dropdown
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/search-stocks'));
     const listItem = page.locator(`li:has-text("${assetName}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();
@@ -104,8 +108,8 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Date').fill('2023-06-01');
 
     console.log('[E2E DEBUG] Submitting second transaction (SELL MSFT)...');
-    const holdingsResponsePromise2 = page.waitForResponse(resp => 
-        resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
+    const holdingsResponsePromise2 = page.waitForResponse(resp =>
+      resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
     );
     await page.getByRole('button', { name: 'Save Transaction' }).click();
     await holdingsResponsePromise2;
@@ -138,7 +142,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByLabel('Name').fill(portfolioName);
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
-    
+
     // Get portfolio ID for later use
     const url = page.url();
     const portfolioId = url.split('/').pop()!;
@@ -165,17 +169,17 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     // 2. Add transactions with specific dates for XIRR calculation
     // BUY 10 shares @ 100, 1 year ago
     await page.getByRole('button', { name: 'Add Transaction' }).click();
-    
+
     // The asset exists in the master list but not in this portfolio yet.
     // The correct flow is to search for it and select it.
     // UPDATE: The lookup is failing, so we must test the "create" flow.
     await page.getByRole('textbox', { name: 'Asset' }).fill(assetTicker);
-    
+
     // Select the currency for the new asset
     const currencyDropdown = page.locator('select#newAssetCurrency');
     await expect(currencyDropdown).toBeVisible();
     await currencyDropdown.selectOption('INR');
-    
+
     const createAssetButton = page.getByTestId('create-new-asset-button');
     await createAssetButton.click();
 
@@ -196,7 +200,7 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Transaction' }).click();
     await page.getByLabel('Transaction Type').selectOption('SELL');
     await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetTicker);
-    await page.waitForResponse(response => response.url().includes('/api/v1/assets/lookup'));
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/search-stocks'));
     const listItem = page.locator(`li:has-text("${assetTicker}")`);
     await expect(listItem).toBeVisible();
     await listItem.click();

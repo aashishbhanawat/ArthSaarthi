@@ -27,6 +27,11 @@ class YFinanceProvider(FinancialDataProvider):
         self, ticker_symbol: str, exchange: Optional[str]
     ) -> str:
         """Constructs the correct ticker for yfinance."""
+        # Don't add suffix if already present
+        upper_ticker = ticker_symbol.upper()
+        if upper_ticker.endswith('.NS') or upper_ticker.endswith('.BO'):
+            return ticker_symbol
+
         if str(exchange).upper() in ("NSE", "NSI"):
             return f"{ticker_symbol}.NS"
         if exchange == "BSE":
@@ -488,8 +493,40 @@ class YFinanceProvider(FinancialDataProvider):
         return None
 
     def search(self, query: str) -> List[Dict[str, Any]]:
-        """Yahoo Finance does not provide a direct search API. This is a no-op."""
-        return []
+        """
+        Search Yahoo Finance for matching tickers by name, ticker, or ISIN.
+        Returns a list of matching assets with their details.
+        """
+        try:
+            # yfinance provides a Search class for querying Yahoo Finance
+            search_obj = yf.Search(query)
+            quotes = getattr(search_obj, 'quotes', [])
+
+            results = []
+            for quote in quotes[:10]:  # Limit to top 10 results
+                # Map Yahoo's quoteType to our asset types
+                quote_type = quote.get("quoteType", "").upper()
+                asset_type = "STOCK"  # Default
+                if quote_type == "ETF":
+                    asset_type = "ETF"
+                elif quote_type == "MUTUALFUND":
+                    asset_type = "Mutual Fund"
+                elif quote_type in ("EQUITY", "STOCK"):
+                    asset_type = "STOCK"
+
+                results.append({
+                    "ticker_symbol": quote.get("symbol"),
+                    "name": quote.get("shortname") or quote.get("longname"),
+                    "exchange": quote.get("exchange"),
+                    "asset_type": asset_type,
+                    "currency": quote.get("currency"),
+                })
+
+            logger.debug(f"Yahoo search for '{query}' returned {len(results)} results")
+            return results
+        except Exception as e:
+            logger.warning(f"Yahoo search failed for '{query}': {e}")
+            return []
 
     def get_exchange_rate(
         self, from_currency: str, to_currency: str, date_obj: date

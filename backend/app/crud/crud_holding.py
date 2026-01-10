@@ -463,18 +463,25 @@ def _process_market_traded_assets(
 
                         if buy_tx:
                             buy_price = buy_tx.price_per_unit
+                            # Get buy transaction's FX rate to convert to INR
+                            buy_fx_rate = (
+                                Decimal(str(buy_tx.details.get("fx_rate", 1)))
+                                if buy_tx.details else Decimal(1)
+                            )
+                            buy_price_inr = buy_price * buy_fx_rate
 
-                            # Calculate P&L for this linked portion
+                            # Calculate P&L: both sell and buy in INR
                             pnl = (
-                                (tx.price_per_unit * fx_rate) - buy_price
+                                (tx.price_per_unit * fx_rate) - buy_price_inr
                             ) * link.quantity
                             realized_pnl_for_sale += pnl
 
-                            cost_of_shares_sold += buy_price * link.quantity
+                            # Cost is in INR (matches total_invested)
+                            cost_of_shares_sold += buy_price_inr * link.quantity
                             sold_qty -= link.quantity
 
                             logger.debug(
-                                "Linked Sell: Sold %s @ %s, Bought @ %s. PnL: %s",
+                                "Linked Sell: qty=%s, sell=%s, buy=%s, PnL=%s",
                                 link.quantity,
                                 tx.price_per_unit,
                                 buy_price,

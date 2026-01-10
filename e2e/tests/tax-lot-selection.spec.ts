@@ -63,7 +63,7 @@ test.describe.serial('Tax Lot Selection E2E Flow', () => {
 
         // Type ticker and select from dropdown (asset is pre-seeded)
         await modal.getByRole('textbox', { name: 'Asset' }).pressSequentially(stockTicker);
-        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
         await modal.locator(`li:has-text("${stockName}")`).click();
 
         await modal.getByLabel('Quantity').fill('10');
@@ -79,7 +79,7 @@ test.describe.serial('Tax Lot Selection E2E Flow', () => {
         await expect(modal).toBeVisible();
         await modal.getByLabel('Transaction Type').selectOption('BUY');
         await modal.getByRole('textbox', { name: 'Asset' }).pressSequentially(stockTicker);
-        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
         await modal.locator(`li:has-text("${stockName}")`).click();
         await modal.getByLabel('Quantity').fill('10');
         await modal.getByLabel('Price per Unit').fill('200');
@@ -93,7 +93,7 @@ test.describe.serial('Tax Lot Selection E2E Flow', () => {
         modal = page.locator('.modal-content');
         await expect(modal).toBeVisible();
         await modal.getByRole('textbox', { name: 'Asset' }).pressSequentially(stockTicker);
-        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/lookup'));
+        await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
         await modal.locator(`li:has-text("${stockName}")`).click();
         await modal.getByLabel('Transaction Type').selectOption('SELL');
 
