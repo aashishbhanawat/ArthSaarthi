@@ -45,7 +45,7 @@ ecdsa==0.19.1
     # via python-jose
 email-validator==2.2.0
     # via -r backend/requirements.in
-fastapi==0.116.1
+fastapi==0.121.3
     # via -r backend/requirements.in
 frozendict==2.4.6
     # via yfinance
