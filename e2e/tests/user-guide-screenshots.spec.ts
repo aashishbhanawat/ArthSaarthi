@@ -93,8 +93,13 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
+        // Wait for dashboard data to fully load
+        await page.waitForTimeout(2000);
+
         // Toggle privacy mode using the eye button with aria-label
-        await page.getByRole('button', { name: 'Hide sensitive data' }).click();
+        const privacyButton = page.locator('button[aria-label="Hide sensitive data"]');
+        await expect(privacyButton).toBeVisible();
+        await privacyButton.click();
         await page.waitForTimeout(500);
         await screenshot(page, '03_dashboard_privacy');
 
@@ -407,12 +412,10 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Import' }).click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1000);
 
-        // Click the Statement Type dropdown to show all formats
-        const statementTypeDropdown = page.getByLabel('Statement Type');
-        await statementTypeDropdown.click();
-        await page.waitForTimeout(300);
+        // Note: Statement Type is a native <select> - can't show expanded options in screenshot
+        // The page shows all available import formats in the dropdown when clicked by user
         await screenshot(page, '24_import_formats');
     });
 
