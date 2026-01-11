@@ -93,11 +93,13 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-        // Toggle privacy mode
-        const privacyToggle = page.locator('[aria-label*="privacy"], [title*="privacy"], button:has(svg)').first();
-        await privacyToggle.click();
+        // Toggle privacy mode using the eye button with aria-label
+        await page.getByRole('button', { name: 'Hide sensitive data' }).click();
         await page.waitForTimeout(500);
         await screenshot(page, '03_dashboard_privacy');
+
+        // Reset privacy mode for other tests
+        await page.getByRole('button', { name: 'Show sensitive data' }).click();
     });
 
     test('04 - Portfolios List', async ({ page }) => {
@@ -143,8 +145,10 @@ test.describe.serial('User Guide Screenshots', () => {
         await screenshot(page, '05c_add_stock_modal');
         await page.getByRole('button', { name: 'Save Transaction' }).click();
 
-        // Portfolio with holding
+        // Portfolio with holding - scroll to show holdings table
         await page.waitForTimeout(1000);
+        await page.evaluate(() => window.scrollTo(0, 300));
+        await page.waitForTimeout(500);
         await screenshot(page, '05d_portfolio_with_holding');
     });
 
@@ -404,6 +408,11 @@ test.describe.serial('User Guide Screenshots', () => {
 
         await page.getByRole('link', { name: 'Import' }).click();
         await page.waitForTimeout(500);
+
+        // Click the Statement Type dropdown to show all formats
+        const statementTypeDropdown = page.getByLabel('Statement Type');
+        await statementTypeDropdown.click();
+        await page.waitForTimeout(300);
         await screenshot(page, '24_import_formats');
     });
 
