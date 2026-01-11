@@ -116,6 +116,7 @@ test.describe.serial('User Guide Screenshots', () => {
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
         await expect(page.getByRole('heading', { name: 'Portfolios' })).toBeVisible();
+        await page.waitForTimeout(500); // Wait for navigation state to settle
         await screenshot(page, '04_portfolios');
     });
 
