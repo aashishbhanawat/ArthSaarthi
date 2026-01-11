@@ -1,4 +1,9 @@
 import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util';
+
+// Polyfill TextEncoder/TextDecoder for react-router-dom v7 compatibility
+// These are required by react-router v7 but not available in Jest's Node environment
+Object.assign(global, { TextEncoder, TextDecoder });
 
 // Mock the entire react-router-dom module
 // This is a general mock. Specific tests can override parts of it if needed.
@@ -11,10 +16,10 @@ jest.mock('react-router-dom', () => ({
 
 // Mock the entire react-chartjs-2 module to prevent canvas errors in JSDOM
 jest.mock('react-chartjs-2', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const React = require('react');
-    return {
-        Line: () => React.createElement('div', { 'data-testid': 'line-chart-mock' }),
-        Pie: () => React.createElement('div', { 'data-testid': 'pie-chart-mock' }),
-    };
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react');
+  return {
+    Line: () => React.createElement('div', { 'data-testid': 'line-chart-mock' }),
+    Pie: () => React.createElement('div', { 'data-testid': 'pie-chart-mock' }),
+  };
 });

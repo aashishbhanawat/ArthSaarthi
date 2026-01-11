@@ -1121,8 +1121,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             {(() => {
                                                 if (!fxRate || isNaN(fxRate)) return '0.00';
                                                 // For corporate action dividends, use dividendAmount
-                                                if (transactionType === 'Corporate Action' && actionType === 'DIVIDEND' && dividendAmount > 0) {
-                                                    return formatCurrency(dividendAmount * fxRate, 'INR');
+                                                if (transactionType === 'Corporate Action' && actionType === 'DIVIDEND' && (dividendAmount ?? 0) > 0) {
+                                                    return formatCurrency((dividendAmount ?? 0) * fxRate, 'INR');
                                                 }
                                                 // For regular transactions, use quantity * pricePerUnit
                                                 if (quantity > 0 && pricePerUnit > 0) {
