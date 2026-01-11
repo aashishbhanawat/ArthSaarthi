@@ -14,6 +14,41 @@ app.add_typer(
 )
 
 
+def run_sqlite_migrations(db_path: str) -> None:
+    """
+    Runs necessary schema migrations for SQLite databases.
+    This is used for upgrading existing desktop installations to new schema versions.
+    For new installs, create_all() handles everything.
+    """
+    import sqlite3
+    
+    # List of migrations to run: (table_name, column_name, column_definition)
+    migrations = [
+        ("assets", "investment_style", "TEXT"),
+    ]
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        for table_name, column_name, column_def in migrations:
+            # Check if column exists
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = [col[1] for col in cursor.fetchall()]
+            
+            if column_name not in columns:
+                print(f"  Adding column {column_name} to {table_name}...")
+                cursor.execute(
+                    f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_def}"
+                )
+                conn.commit()
+                print(f"  Column {column_name} added successfully.")
+        
+        conn.close()
+    except Exception as e:
+        print(f"  Migration warning: {e}")
+
+
 @app.command("run-dev-server")
 def run_dev_server(
     host: str = typer.Option("127.0.0.1", help="The host to bind the server to."),
@@ -45,6 +80,12 @@ def run_dev_server(
             print("--- Database initialization complete. ---")
             # Note: Asset seeding is now triggered by the splash screen
             # via the /api/v1/system/trigger-seeding endpoint
+        else:
+            # For existing databases, run any necessary schema migrations
+            # This handles the upgrade path for adding new columns
+            print("--- Checking for database schema updates... ---")
+            run_sqlite_migrations(db_path_str)
+            print("--- Schema update check complete. ---")
 
     uvicorn.run(fastapi_app, host=host, port=port)
 
