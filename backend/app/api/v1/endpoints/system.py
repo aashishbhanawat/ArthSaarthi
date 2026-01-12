@@ -249,7 +249,7 @@ class UpdateCheckResponse(BaseModel):
 
 
 # Current app version (should match package.json)
-APP_VERSION = "0.9.0"  # TODO: Update to 1.0.0 before release
+APP_VERSION = "1.1.0"
 
 
 @router.get("/check-updates", response_model=UpdateCheckResponse)
