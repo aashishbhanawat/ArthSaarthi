@@ -42,8 +42,8 @@ class YFinanceProvider(FinancialDataProvider):
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
         logger.debug(
-            "YFinanceProvider: get_current_prices called for assets: "
-            f"{[a.get('ticker_symbol') for a in assets]}"
+            f"get_current_prices: {len(assets)} assets - "
+            f"{[(a.get('ticker_symbol'), a.get('exchange')) for a in assets]}"
         )
         prices_data: Dict[str, Dict[str, Decimal]] = {}
         tickers_to_fetch: List[Dict[str, Any]] = []
@@ -53,6 +53,10 @@ class YFinanceProvider(FinancialDataProvider):
                 original_ticker = asset["ticker_symbol"]
                 ticker = self._get_yfinance_ticker(
                     original_ticker, asset.get("exchange")
+                )
+                logger.debug(
+                    f"Ticker transform: {original_ticker} "
+                    f"(exchange={asset.get('exchange')}) -> {ticker}"
                 )
                 cache_key = (
                     f"price_details:{ticker}"
@@ -95,21 +99,24 @@ class YFinanceProvider(FinancialDataProvider):
                 for a in tickers_to_fetch
             ]
         )
-        logger.debug(
-            f"Fetching from yfinance API with tickers: '{yfinance_tickers_str}'"
-        )
+        logger.debug(f"yfinance batch request: '{yfinance_tickers_str}'")
 
         try:
             yf_data = yf.Tickers(yfinance_tickers_str)
+            logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
             for ticker_obj in yf_data.tickers.values():
                 hist = ticker_obj.history(period="2d", auto_adjust=True)
                 yf_symbol = ticker_obj.ticker
                 original_ticker = yf_symbol.split(".")[0]
+                logger.debug(
+                    f"Processing ticker: request={yf_symbol}, "
+                    f"mapped_to={original_ticker}, has_data={not hist.empty}"
+                )
 
                 if not hist.empty and len(hist) >= 2:
                     current_price = Decimal(str(hist["Close"].iloc[-1]))
                     logger.debug(
-                        f"yfinance API SUCCESS for {yf_symbol}. Price: {current_price}"
+                        f"Price fetched: {original_ticker}={current_price}"
                     )
                     previous_close = Decimal(str(hist["Close"].iloc[-2]))
                     prices_data[original_ticker] = {
@@ -431,16 +438,20 @@ class YFinanceProvider(FinancialDataProvider):
             if self.cache_client.get_json(cache_key):
                 return None
 
+        logger.debug(f"get_asset_details: Looking up {ticker_symbol}")
         ticker_obj = None
         for yf_ticker_str in [
             f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
         ]:
             try:
+                logger.debug(f"Trying ticker variant: {yf_ticker_str}")
                 temp_ticker = yf.Ticker(yf_ticker_str)
                 if not temp_ticker.history(period="1d").empty:
+                    logger.debug(f"Found data with variant: {yf_ticker_str}")
                     ticker_obj = temp_ticker
                     break
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Ticker variant {yf_ticker_str} failed: {e}")
                 continue
 
         if ticker_obj:
@@ -453,7 +464,7 @@ class YFinanceProvider(FinancialDataProvider):
                         "ETF": "ETF",
                         "CRYPTOCURRENCY": "Crypto",
                     }
-                    return {
+                    result = {
                         "name": info.get("shortName") or info.get("longName"),
                         "asset_type": asset_type_map.get(
                             info.get("quoteType"), "Stock"
@@ -461,6 +472,8 @@ class YFinanceProvider(FinancialDataProvider):
                         "exchange": info.get("exchange"),
                         "currency": info.get("currency", "INR"),
                     }
+                    logger.debug(f"Asset details for {ticker_symbol}: {result}")
+                    return result
             except (IndexError, KeyError):
                 pass
 
@@ -522,7 +535,10 @@ class YFinanceProvider(FinancialDataProvider):
                     "currency": quote.get("currency"),
                 })
 
-            logger.debug(f"Yahoo search for '{query}' returned {len(results)} results")
+            logger.debug(
+                f"Yahoo search for '{query}': "
+                f"{[(r['ticker_symbol'], r['name']) for r in results]}"
+            )
             return results
         except Exception as e:
             logger.warning(f"Yahoo search failed for '{query}': {e}")
