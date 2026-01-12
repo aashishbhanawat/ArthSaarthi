@@ -87,6 +87,42 @@ def _calculate_ppf_interest_for_fy(
 
     return total_interest.quantize(Decimal("0.01"))
 
+
+def _cleanup_duplicate_interest_credits(db: Session, asset_id: uuid.UUID) -> None:
+    """
+    Removes duplicate interest credits for a PPF asset.
+    Keeps the first one (by ID) for each FY and deletes the rest.
+    This handles race conditions from concurrent API calls.
+    """
+    # Get all interest credits for this asset, ordered by date and id
+    all_credits = db.query(Transaction).filter(
+        Transaction.asset_id == asset_id,
+        Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
+    ).order_by(Transaction.transaction_date, Transaction.id).all()
+    
+    if not all_credits:
+        return
+    
+    # Group by FY (based on transaction_date which is the FY end date)
+    seen_fy_dates = set()
+    duplicates_to_delete = []
+    
+    for credit in all_credits:
+        fy_date = credit.transaction_date.date()
+        if fy_date in seen_fy_dates:
+            duplicates_to_delete.append(credit)
+        else:
+            seen_fy_dates.add(fy_date)
+    
+    if duplicates_to_delete:
+        logger.info(
+            f"[PPF] Cleaning up {len(duplicates_to_delete)} duplicate "
+            f"interest credits for asset {asset_id}"
+        )
+        for dup in duplicates_to_delete:
+            db.delete(dup)
+        db.commit()
+
 def process_ppf_holding(
     db: Session, ppf_asset: Asset, portfolio_id: uuid.UUID
 ) -> schemas.Holding:
@@ -162,17 +198,42 @@ def process_ppf_holding(
                     db, fy_start, fy_end, balance, transactions_in_fy
                 )
                 if interest_for_fy > 0:
-                    crud.transaction.create_with_portfolio(
-                        db,
-                        portfolio_id=portfolio_id,
-                        obj_in=schemas.TransactionCreate(
-                            asset_id=ppf_asset.id,
-                            transaction_type=TransactionType.INTEREST_CREDIT,
-                            quantity=interest_for_fy,
-                            price_per_unit=1,
-                            transaction_date=fy_end.isoformat(),
-                        ),
-                    )
+                    # Check for existing credit before inserting (race condition protection)
+                    existing_credit = db.query(Transaction).filter(
+                        Transaction.asset_id == ppf_asset.id,
+                        Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
+                        Transaction.transaction_date >= fy_end,
+                        Transaction.transaction_date < fy_end + timedelta(days=1),
+                    ).first()
+                    
+                    if not existing_credit:
+                        try:
+                            crud.transaction.create_with_portfolio(
+                                db,
+                                portfolio_id=portfolio_id,
+                                obj_in=schemas.TransactionCreate(
+                                    asset_id=ppf_asset.id,
+                                    transaction_type=TransactionType.INTEREST_CREDIT,
+                                    quantity=interest_for_fy,
+                                    price_per_unit=1,
+                                    transaction_date=fy_end.isoformat(),
+                                ),
+                            )
+                            # Commit immediately to prevent duplicates from concurrent calls
+                            db.commit()
+                        except Exception:
+                            # Another concurrent call may have inserted - rollback and check
+                            db.rollback()
+                            existing_credit = db.query(Transaction).filter(
+                                Transaction.asset_id == ppf_asset.id,
+                                Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
+                                Transaction.transaction_date >= fy_end,
+                                Transaction.transaction_date < fy_end + timedelta(days=1),
+                            ).first()
+                            if existing_credit:
+                                interest_for_fy = existing_credit.quantity
+                    else:
+                        interest_for_fy = existing_credit.quantity
             total_credited_interest += interest_for_fy
             balance += (
                 sum(
@@ -196,6 +257,9 @@ def process_ppf_holding(
             )
 
         current_fy_start += relativedelta(years=1)
+
+    # Clean up any duplicate interest credits created by concurrent calls
+    _cleanup_duplicate_interest_credits(db, ppf_asset.id)
 
     total_interest_earned = total_credited_interest + on_the_fly_interest
     unrealized_pnl_percentage = (
