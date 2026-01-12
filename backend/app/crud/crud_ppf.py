@@ -94,21 +94,20 @@ def _cleanup_duplicate_interest_credits(db: Session, asset_id: uuid.UUID) -> Non
     Keeps the first one (by ID) for each FY and deletes the rest.
     This handles race conditions from concurrent API calls.
     """
-    from sqlalchemy import func, extract
-    
+
     # Get all interest credits for this asset, ordered by date and id
     all_credits = db.query(Transaction).filter(
         Transaction.asset_id == asset_id,
         Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
     ).order_by(Transaction.transaction_date, Transaction.id).all()
-    
+
     if not all_credits:
         return
-    
+
     # Group by FY (based on transaction_date which is the FY end date)
     seen_fy_dates = set()
     duplicates_to_delete = []
-    
+
     for credit in all_credits:
         fy_date = credit.transaction_date.date()
         if fy_date in seen_fy_dates:
@@ -116,7 +115,7 @@ def _cleanup_duplicate_interest_credits(db: Session, asset_id: uuid.UUID) -> Non
             duplicates_to_delete.append(credit)
         else:
             seen_fy_dates.add(fy_date)
-    
+
     if duplicates_to_delete:
         logger.info(
             f"[PPF] Cleaning up {len(duplicates_to_delete)} duplicate "
@@ -195,27 +194,37 @@ def process_ppf_holding(
         if fy_end < today:  # Completed financial year
             if fy_end in interest_credits:
                 interest_for_fy = interest_credits[fy_end]
-                logger.info(f"[PPF] FY {fy_end}: Found existing interest credit = {interest_for_fy}")
+                logger.info(
+                    f"[PPF] FY {fy_end}: Found existing credit = {interest_for_fy}"
+                )
             else:
                 # Calculate and create missing interest transaction
-                logger.info(f"[PPF] FY {fy_end}: No existing interest credit found, calculating...")
+                logger.info(
+                    f"[PPF] FY {fy_end}: No existing credit, calculating..."
+                )
                 interest_for_fy = _calculate_ppf_interest_for_fy(
                     db, fy_start, fy_end, balance, transactions_in_fy
                 )
-                logger.info(f"[PPF] FY {fy_end}: Calculated interest = {interest_for_fy}")
+                logger.info(
+                    f"[PPF] FY {fy_end}: Calculated interest = {interest_for_fy}"
+                )
                 if interest_for_fy > 0:
                     # Double-check with a fresh query before inserting to prevent
                     # duplicates from concurrent calls (race condition protection)
-                    logger.info(f"[PPF] FY {fy_end}: Checking for existing credit before insert...")
+                    logger.info(
+                        f"[PPF] FY {fy_end}: Checking for existing credit..."
+                    )
                     existing_credit = db.query(Transaction).filter(
                         Transaction.asset_id == ppf_asset.id,
                         Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
                         Transaction.transaction_date >= fy_end,
                         Transaction.transaction_date < fy_end + timedelta(days=1),
                     ).first()
-                    
+
                     if not existing_credit:
-                        logger.info(f"[PPF] FY {fy_end}: No existing credit found, INSERTING new transaction")
+                        logger.info(
+                            f"[PPF] FY {fy_end}: INSERTING new transaction"
+                        )
                         try:
                             crud.transaction.create_with_portfolio(
                                 db,
@@ -228,26 +237,38 @@ def process_ppf_holding(
                                     transaction_date=fy_end.isoformat(),
                                 ),
                             )
-                            # Commit immediately to prevent duplicate entries from concurrent calls
+                            # Commit to prevent duplicates
                             db.commit()
-                            logger.info(f"[PPF] FY {fy_end}: Committed interest credit transaction")
+                            logger.info(
+                                f"[PPF] FY {fy_end}: Committed transaction"
+                            )
                         except Exception as e:
-                            # Another concurrent call may have inserted - rollback and check
-                            logger.warning(f"[PPF] FY {fy_end}: Insert failed ({e}), checking for concurrent insert...")
+                            # Another call may have inserted
+                            logger.warning(
+                                f"[PPF] FY {fy_end}: Insert failed ({e})"
+                            )
                             db.rollback()
                             # Re-check after rollback
                             existing_credit = db.query(Transaction).filter(
                                 Transaction.asset_id == ppf_asset.id,
-                                Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
+                                Transaction.transaction_type
+                                == TransactionType.INTEREST_CREDIT,
                                 Transaction.transaction_date >= fy_end,
-                                Transaction.transaction_date < fy_end + timedelta(days=1),
+                                Transaction.transaction_date
+                                < fy_end + timedelta(days=1),
                             ).first()
                             if existing_credit:
                                 interest_for_fy = existing_credit.quantity
-                                logger.info(f"[PPF] FY {fy_end}: Found concurrent insert = {interest_for_fy}")
+                                logger.info(
+                                    f"[PPF] FY {fy_end}: Found = "
+                                    f"{interest_for_fy}"
+                                )
                     else:
-                        # Another concurrent call already created it, use their value
-                        logger.info(f"[PPF] FY {fy_end}: SKIPPED insert - existing credit found = {existing_credit.quantity}")
+                        # Another call already created it
+                        logger.info(
+                            f"[PPF] FY {fy_end}: SKIPPED = "
+                            f"{existing_credit.quantity}"
+                        )
                         interest_for_fy = existing_credit.quantity
             total_credited_interest += interest_for_fy
             balance += (
