@@ -23,7 +23,12 @@ def run_sqlite_migrations(db_path: str) -> None:
     import sqlite3
     
     # List of migrations to run: (table_name, column_name, column_definition)
+    # These columns were added in various v1.x releases
     migrations = [
+        ("assets", "sector", "TEXT"),
+        ("assets", "industry", "TEXT"),
+        ("assets", "country", "TEXT"),
+        ("assets", "market_cap", "REAL"),
         ("assets", "investment_style", "TEXT"),
     ]
     
@@ -67,11 +72,32 @@ def run_dev_server(
     # This command is for the desktop app, so we assume DEPLOYMENT_MODE is 'desktop'
     # The environment variable is set by the Electron process that calls this.
     if settings.DEPLOYMENT_MODE == "desktop":
+        print("=== [DEBUG] Desktop mode detected ===")
+        print(f"=== [DEBUG] DATABASE_URL: {settings.DATABASE_URL} ===")
+        
         # Use urlparse to robustly get the path from the database URL
+        # SQLite URLs are like sqlite:////home/user/.arthsaarthi/arthsaarthi.db
+        # urlparse gives path as ///home/... so we need to extract the absolute path
         parsed_url = urlparse(settings.DATABASE_URL)
-        db_path_str = parsed_url.path.lstrip('/')
-
+        raw_path = parsed_url.path
+        print(f"=== [DEBUG] Parsed raw_path: '{raw_path}' ===")
+        
+        # For sqlite:////path, path is "///path" - we want "/path"
+        # Remove the extra slashes but keep one leading slash for absolute path
+        if raw_path.startswith('///'):
+            db_path_str = raw_path[2:]  # ///home -> /home
+            print(f"=== [DEBUG] Path starts with '///', stripped to: '{db_path_str}' ===")
+        elif raw_path.startswith('//'):
+            db_path_str = raw_path[1:]  # //home -> /home
+            print(f"=== [DEBUG] Path starts with '//', stripped to: '{db_path_str}' ===")
+        else:
+            db_path_str = raw_path
+            print(f"=== [DEBUG] Path unchanged: '{db_path_str}' ===")
+        
+        print(f"--- Checking database path: {db_path_str} ---")
         is_first_run = not os.path.exists(db_path_str)
+        print(f"=== [DEBUG] os.path.exists('{db_path_str}'): {os.path.exists(db_path_str)} ===")
+        print(f"=== [DEBUG] is_first_run: {is_first_run} ===")
 
         if is_first_run:
             print(f"--- Database not found at {db_path_str}, "
