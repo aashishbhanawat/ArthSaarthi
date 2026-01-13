@@ -162,9 +162,12 @@ def _get_portfolio_history(
         return []
 
     # Filter for assets that are likely to have market data from yfinance
-    yfinance_supported_types = ["STOCK", "ETF", "MUTUAL_FUND"]
-    market_traded_assets = [asset for asset in all_user_assets
-                            if asset.asset_type in yfinance_supported_types]
+    # Filter for assets that are likely to have market data from yfinance/amfi
+    supported_types = ["STOCK", "ETF", "MUTUAL_FUND", "MUTUAL FUND"]
+    market_traded_assets = [
+        asset for asset in all_user_assets
+        if str(asset.asset_type).upper().replace("_", " ") in supported_types
+    ]
 
     asset_map = {a.ticker_symbol: a for a in market_traded_assets}
 
