@@ -434,4 +434,26 @@ test.describe.serial('User Guide Screenshots', () => {
         await typeFilter.click();
         await screenshot(page, '25_transaction_type_filter');
     });
+
+    test('26 - Investment Style Classification', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Portfolios' }).click();
+        await page.getByText('My Investment Portfolio').click();
+        await page.waitForTimeout(1000);
+
+        // Scroll to find Investment Style section if it exists
+        // Try to locate the Investment Style card/panel
+        const investmentStyleCard = page.locator('text=Investment Style').first();
+        if (await investmentStyleCard.isVisible()) {
+            await investmentStyleCard.scrollIntoViewIfNeeded();
+            await page.waitForTimeout(500);
+        }
+
+        // Take screenshot of the analytics section
+        await screenshot(page, '26_investment_style');
+    });
 });
