@@ -587,19 +587,6 @@ Click the **eye icon** next to the page title to toggle privacy mode, which hide
 
 For questions or issues, please contact your system administrator.
 
-## Data Sources & Disclaimer
-
-ArthSaarthi aggregates data from various sources to provide portfolio analytics:
-- **Stocks & ETFs**: Real-time prices from Yahoo Finance.
-- **Mutual Funds**: 
-  - Current NAV from AMFI (Official).
-  - Historical NAV from `mfapi.in` (Unofficial, open-source API). 
-  - *Note: While `mfapi.in` is highly reliable, it is not an official AMFI service.*
-- **Forex Rates**: Yahoo Finance.
-
-> [!IMPORTANT]
-> Investment data is for informational purposes only. Always verify with official brokerage statements before making financial decisions.
-
 ---
 
 *ArthSaarthi - Empowering Your Investment Journey* 🚀
