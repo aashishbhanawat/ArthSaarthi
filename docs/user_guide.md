@@ -53,7 +53,8 @@ Access ArthSaarthi by navigating to the application URL. You'll be greeted with 
 3. Click the **Login** button
 
 > [!TIP]
-> If you don't have an account, contact your administrator to create one for you.
+> **Server Mode Users:** If you don't have an account, contact your system administrator to create one for you.
+> **Desktop Mode Users:** You are the administrator of your local instance.
 
 ### Desktop Mode vs Server Mode
 
