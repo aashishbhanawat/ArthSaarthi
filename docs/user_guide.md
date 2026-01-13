@@ -67,13 +67,6 @@ ArthSaarthi supports two deployment modes:
 > [!NOTE]
 > In Desktop Mode, your data is stored locally on your machine and encrypted. User Management is disabled since you're the only user.
 
-### First-Time Setup
-
-When ArthSaarthi is first installed:
-- The **first user to register** automatically becomes the **Administrator**
-- Admins can create additional user accounts (Server Mode only)
-- All subsequent users must be created by an admin
-
 ---
 
 ## Dashboard Overview
