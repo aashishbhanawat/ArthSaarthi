@@ -36,7 +36,11 @@ class FinancialDataService:
         prices_data: Dict[str, Dict[str, Decimal]] = {}
 
         # 1. Separate assets by type for different providers
-        mf_assets = [a for a in assets if a.get("asset_type") == "Mutual Fund"]
+        # Robust check for "Mutual Fund", "MUTUAL_FUND", "MUTUAL FUND"
+        mf_assets = [
+            a for a in assets
+            if str(a.get("asset_type")).upper().replace("_", " ") == "MUTUAL FUND"
+        ]
         stock_assets = [
             a for a in assets if str(a.get("asset_type")).upper() in ("STOCK", "ETF")
         ]
@@ -114,11 +118,14 @@ class FinancialDataService:
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
         # Separate assets by type for different providers
+        # Robust check for "Mutual Fund", "MUTUAL_FUND", "MUTUAL FUND"
         mf_assets = [
-            a for a in assets if a.get("asset_type") == "Mutual Fund"
+            a for a in assets
+            if str(a.get("asset_type")).upper().replace("_", " ") == "MUTUAL FUND"
         ]
         other_assets = [
-            a for a in assets if a.get("asset_type") != "Mutual Fund"
+            a for a in assets
+            if str(a.get("asset_type")).upper().replace("_", " ") != "MUTUAL FUND"
         ]
 
         historical_data: Dict[str, Dict[date, Decimal]] = {}
