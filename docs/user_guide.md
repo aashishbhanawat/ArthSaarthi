@@ -35,6 +35,12 @@ ArthSaarthi is a powerful web-based application designed to help you track, mana
 
 ## Getting Started
 
+### First-Time Setup
+
+The first time you access the application, you will be greeted with a setup screen.
+
+You **must** complete this form to create the first **administrator** account. This is the only time you will see this screen. After this account is created, all new users must be added by an administrator.
+
 ### Login
 
 Access ArthSaarthi by navigating to the application URL. You'll be greeted with the login page where you can enter your credentials.
