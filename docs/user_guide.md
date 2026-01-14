@@ -163,7 +163,7 @@ Comprehensive analytics for your investments are displayed at the top of the por
 
 **Advanced Analytics** includes:
 - **XIRR**: Extended Internal Rate of Return - measures actual annualized returns
-- **Sharpe Ratio**: Risk-adjusted return metric (calculated for Stocks and Mutual Funds only)
+- **Sharpe Ratio**: Risk-adjusted return metric. *Note: Calculated only for market-traded assets (Stocks, MFs) to accurately measure volatility risk; excludes fixed-income assets like FDs/PPF.*
 
 **Diversification Analysis** shows your portfolio distribution across:
 - Asset Class
