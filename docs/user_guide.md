@@ -211,7 +211,7 @@ Click **Add Transaction** button in your portfolio and select **Stock** as the a
 
 **Required fields:**
 - **Asset Type**: Stock
-- **Transaction Type**: Buy or Sell
+- **Transaction Type**: Buy, Sell, or Corporate Action
 - **Stock Symbol**: Search by **Ticker** (e.g., RELIANCE) or **Company Name** (e.g., Reliance Industries)
 - **Quantity**: Number of shares
 - **Price per Unit**: Purchase/sale price
