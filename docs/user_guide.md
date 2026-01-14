@@ -236,8 +236,16 @@ When selling shares, ArthSaarthi lets you choose which specific lots to sell fro
 3. Select the lots you want to sell from
 4. The system calculates capital gains based on your selection
 
-> [!TIP]
-> Selling shares with higher cost basis results in lower capital gains and less tax liability.
+> [!IMPORTANT]
+> **Indian Tax Compliance Notice:**
+> For standard **Demat holdings** (Stocks, Mutual Funds), Indian tax laws generally mandate the **FIFO (First-In, First-Out)** method for Capital Gains calculation. You cannot arbitrarily choose tax lots for these assets to lower tax liability.
+>
+> **Tax Lot Selection** in ArthSaarthi is primarily intended for:
+> 1. **ESPP & RSU Sales:** Where specific shares are vested and sold, often with different cost bases (FMV vs Purchase Price).
+> 2. **Physical Shares / Private Equity:** Assets not held in a standard demat account.
+> 3. **Non-Indian Jurisdictions:** For users subject to tax laws where Specific Identification is permitted.
+
+
 
 ### Mutual Fund Transactions
 
