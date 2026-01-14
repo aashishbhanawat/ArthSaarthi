@@ -295,6 +295,7 @@ Track your recurring deposits with monthly contribution tracking.
 - **Interest Rate**: Annual interest rate
 - **Tenure**: Number of months
 - **Start Date**: When the RD began
+- **Compounding Frequency**: e.g., Quarterly
 
 ### PPF Account
 
