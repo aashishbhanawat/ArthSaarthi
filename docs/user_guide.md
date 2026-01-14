@@ -332,7 +332,7 @@ For employees with stock compensation, track RSU and ESPP awards.
 
 **How to navigate:**
 1. Go to your Portfolio detail page
-2. Click the **Additional Actions** dropdown (⋮ menu)
+2. Click the **dropdown icon** next to the **Add Transaction** button
 3. Select **Add ESPP/RSU Award**
 
 ![RSU ESPP Modal](./images/rsu_espp_modal_1768318354551.png)
