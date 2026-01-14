@@ -255,10 +255,13 @@ For mutual fund investments, select **Mutual Fund** as the asset type.
 
 **Required fields:**
 - **Mutual Fund Name**: Search and select the fund
-- **Transaction Type**: Buy/Sell/Corporate Action
+- **Transaction Type**: Buy, Sell, Corporate Action, or **DRIP** (Dividend Reinvestment)
 - **Units**: Number of units
 - **NAV**: Net Asset Value per unit
 - **Transaction Date**: Date of transaction
+
+> [!NOTE]
+> **DRIP (Dividend Reinvestment Plan):** Use this option when dividends are automatically reinvested into additional units. Enter the dividend amount as the reinvestment value.
 
 ### Bond Transactions
 
@@ -325,19 +328,35 @@ Manage your Public Provident Fund investments with automatic interest calculatio
 
 ### RSU/ESPP Awards
 
-For employees with stock compensation, track RSU and ESPP awards via **Additional Actions > Add ESPP/RSU Award**.
+For employees with stock compensation, track RSU and ESPP awards.
+
+**How to navigate:**
+1. Go to your Portfolio detail page
+2. Click the **Additional Actions** dropdown (⋮ menu)
+3. Select **Add ESPP/RSU Award**
 
 ![RSU ESPP Modal](./images/rsu_espp_modal_1768318354551.png)
+
+#### RSU Vest Form
 
 **Key fields:**
 - **Stock Symbol**: Your company's stock
 - **Vest Date**: When shares were delivered
 - **Quantity**: Number of shares vested
 - **Fair Market Value (FMV)**: Stock price at vesting
-- **Sell to Cover** (Optional): Shares sold to cover taxes
+- **Sell to Cover** (Optional): Shares sold to pay withholding taxes
+
+#### ESPP Purchase Form
+
+**Key fields:**
+- **Stock Symbol**: Your company's stock
+- **Purchase Date**: Date of ESPP purchase
+- **Quantity**: Number of shares purchased
+- **Purchase Price**: Discounted price you paid
+- **Fair Market Value (FMV)**: Market price at purchase (used for tax basis)
 
 > [!TIP]
-> The "Sell to Cover" option automatically records shares sold to pay withholding taxes — a common RSU vesting scenario.
+> The "Sell to Cover" option (RSU only) automatically records shares sold to pay withholding taxes — a common RSU vesting scenario.
 
 ### Editing & Deleting Transactions
 
@@ -406,7 +425,6 @@ Navigate to **Transactions** from the sidebar to see all transactions across por
 
 **Features:**
 - Filter by date range, asset type, or transaction type
-- Sort by any column
 - Quick edit or delete transactions
 - Export transaction data
 
@@ -549,9 +567,18 @@ Configure system-wide interest rates for fixed deposits and other instruments.
 
 ### System Maintenance
 
-Perform system maintenance tasks like data cleanup and cache refresh.
+Perform system maintenance tasks including Asset Master synchronization.
 
 ![Admin System Maintenance](./images/admin_system_maintenance_1768318837854.png)
+
+**Asset Master Sync (Asset Seeding):**
+- Click **Sync Assets** to update the internal database of stocks, mutual funds, and ETFs
+- Downloads latest data from NSDL, BSE, NSE, and AMFI sources
+- Ensures newly listed securities are searchable in the application
+- **Rate Limit:** Can only be triggered once every 5 minutes
+
+> [!NOTE]
+> In **Desktop Mode**, asset seeding runs automatically on first launch (shown in splash screen). In **Server Mode**, admins must manually trigger the sync.
 
 ---
 
