@@ -265,6 +265,9 @@ For mutual fund investments, select **Mutual Fund** as the asset type.
 Track your bond investments by selecting **Bond** as the asset type.
 
 ![Add Bond Modal](./images/add_bond_modal_1768317964289.png)
+> [!WARNING]
+> **Verify Data Accuracy:** The system attempts to pre-fill **Coupon Rate**, **Face Value**, and **Maturity Date**, but reliable public data for bonds is limited.
+> **You must review these fields manually.** If they are missing or incorrect, please update them to ensure accurate calculations.
 
 ### Fixed Deposit
 
