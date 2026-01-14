@@ -275,6 +275,11 @@ def sync_assets(
             # Process all files
             _process_all_sources(seeder, files)
 
+            # Seed/update interest rates (PPF, etc.)
+            from app.db.initial_data import seed_interest_rates
+            logger.info("Seeding interest rates...")
+            seed_interest_rates(db)
+
             # Commit changes
             db.commit()
 
