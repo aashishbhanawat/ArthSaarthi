@@ -155,7 +155,7 @@ This view displays:
 
 ### Portfolio Analytics
 
-Scroll down on the portfolio detail page to access comprehensive analytics for your investments.
+Comprehensive analytics for your investments are displayed at the top of the portfolio detail page, above the holdings list.
 
 #### Advanced Analytics & Diversification
 
