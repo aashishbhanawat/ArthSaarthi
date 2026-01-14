@@ -578,7 +578,8 @@ Perform system maintenance tasks including Asset Master synchronization.
 - **Rate Limit:** Can only be triggered once every 5 minutes
 
 > [!NOTE]
-> In **Desktop Mode**, asset seeding runs automatically on first launch (shown in splash screen). In **Server Mode**, admins must manually trigger the sync.
+> **Server Mode:** Asset seeding runs automatically on every server launch/restart. Use **Sync Assets** to update without restarting.
+> **Desktop Mode:** Asset seeding runs only once on first boot. After that, you must manually run **Sync Assets** to get the latest securities.
 
 ---
 
