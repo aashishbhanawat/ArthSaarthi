@@ -107,9 +107,7 @@ Navigate to **Portfolios** from the sidebar to see all your investment portfolio
 
 Each portfolio card shows:
 - Portfolio name
-- Total invested amount
-- Current value
-- Profit/Loss percentage
+- **Delete** button to remove the portfolio
 
 ### Creating a New Portfolio
 
