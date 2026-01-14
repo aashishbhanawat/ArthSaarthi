@@ -537,7 +537,7 @@ async function createMainWindow(backendPort) {
               type: 'info',
               title: 'About ArthSaarthi',
               message: 'ArthSaarthi - Personal Portfolio Management',
-              detail: 'Version 1.0.0\n\nA comprehensive wealth tracking and portfolio management application.'
+              detail: `Version ${app.getVersion()}\n\nA comprehensive wealth tracking and portfolio management application.`
             });
           }
         }
