@@ -280,6 +280,8 @@ Record your fixed deposits with maturity tracking.
 - **Interest Rate**: Annual interest rate
 - **Start Date** and **Maturity Date**
 - **Bank/Institution Name**
+- **Compounding Frequency**: e.g., Quarterly, Annually
+- **Payout Frequency**: e.g., On Maturity, Monthly
 
 ### Recurring Deposit
 
