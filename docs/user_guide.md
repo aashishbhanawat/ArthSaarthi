@@ -171,6 +171,7 @@ Comprehensive analytics for your investments are displayed at the top of the por
 - Market Cap (Large/Mid/Small)
 - Sector
 - Industry
+- Investment Style
 
 #### Investment Style Classification
 
