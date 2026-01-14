@@ -147,7 +147,8 @@ Click on any holding to drill down into its complete transaction history.
 ![Holding Drilldown](./images/holding_drilldown_1768318989034.png)
 
 This view displays:
-- Complete list of all BUY/SELL transactions
+- List of active BUY transactions (Tax Lots) constituting the current holding
+- **Note:** For a complete history including closed SELL transactions, refer to the **Transactions** page.
 - Date, quantity, price per unit, and total value
 - CAGR and XIRR (Current & Historical) calculations
 - Edit and delete options for each transaction
