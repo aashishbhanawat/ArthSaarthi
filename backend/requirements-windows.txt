@@ -49,6 +49,12 @@ fastapi==0.121.3
     # via -r backend/requirements.in
 frozendict==2.4.6
     # via yfinance
+et-xmlfile==2.0.0
+    # via openpyxl
+openpyxl==3.1.5
+    # via -r backend/requirements.in
+xlrd==2.0.2
+    # via -r backend/requirements.in
 greenlet==3.2.4
     # via sqlalchemy
 h11==0.16.0
