@@ -11,7 +11,14 @@ from typing import List, Optional
 
 import pdfplumber
 from pdfminer.pdfdocument import PDFPasswordIncorrect
-from pdfplumber.utils.exceptions import PdfminerException
+
+# pdfplumber.utils.exceptions may not be bundled correctly by PyInstaller
+# Use a fallback exception class if the module is unavailable
+try:
+    from pdfplumber.utils.exceptions import PdfminerException
+except ImportError:
+    # Fallback: catch generic Exception in the parse method
+    PdfminerException = Exception
 
 from app.schemas.import_session import ParsedTransaction
 
