@@ -41,7 +41,9 @@ def seed_interest_rates(db: Session) -> None:
                     end_date=rate_data["end_date"],
                     rate=rate_data["rate"]
                 )
-                crud.historical_interest_rate.update(db, db_obj=existing, obj_in=update_data)
+                crud.historical_interest_rate.update(
+                    db, db_obj=existing, obj_in=update_data
+                )
                 updated_count += 1
                 logger.info(
                     f"Updated PPF rate for {rate_data['start_date']}: "
