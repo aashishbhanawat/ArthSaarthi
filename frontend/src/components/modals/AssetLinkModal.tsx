@@ -3,7 +3,7 @@ import { usePortfolios } from '../../hooks/usePortfolios';
 import { useAssetSearch } from '../../hooks/useAssets';
 import { Goal } from '../../types/goal';
 import { Portfolio } from '../../types/portfolio';
-import { Asset } from '../../types/asset';
+import { AssetSearchResult } from '../../types/asset';
 
 interface AssetLinkModalProps {
     isOpen: boolean;
@@ -87,14 +87,14 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
                                 <ul>
                                     <li className="p-2 text-sm font-semibold text-gray-500 dark:text-gray-400">Assets</li>
                                     {isLoadingAssets ? <li className="p-2 dark:text-gray-300">Searching...</li> :
-                                        assets?.map((asset: Asset) => (
+                                        assets?.filter((asset: AssetSearchResult) => asset.id).map((asset: AssetSearchResult) => (
                                             <li key={asset.id} className="flex justify-between items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200">
                                                 <div>
                                                     <p>{asset.name}</p>
                                                     <p className="text-sm text-gray-500 dark:text-gray-400">{asset.ticker_symbol}</p>
                                                 </div>
-                                                <button onClick={() => handleLink({ asset_id: asset.id })} className="btn btn-sm btn-secondary" disabled={alreadyLinked('asset', asset.id)}>
-                                                    {alreadyLinked('asset', asset.id) ? 'Linked' : 'Link'}
+                                                <button onClick={() => handleLink({ asset_id: asset.id! })} className="btn btn-sm btn-secondary" disabled={alreadyLinked('asset', asset.id!)}>
+                                                    {alreadyLinked('asset', asset.id!) ? 'Linked' : 'Link'}
                                                 </button>
                                             </li>
                                         ))}

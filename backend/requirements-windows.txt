@@ -45,10 +45,16 @@ ecdsa==0.19.1
     # via python-jose
 email-validator==2.2.0
     # via -r backend/requirements.in
-fastapi==0.116.1
+fastapi==0.121.3
     # via -r backend/requirements.in
 frozendict==2.4.6
     # via yfinance
+et-xmlfile==2.0.0
+    # via openpyxl
+openpyxl==3.1.5
+    # via -r backend/requirements.in
+xlrd==2.0.2
+    # via -r backend/requirements.in
 greenlet==3.2.4
     # via sqlalchemy
 h11==0.16.0
@@ -102,6 +108,14 @@ psycopg2-binary==2.9.10
     # via -r backend/requirements.in
 pyarrow==21.0.0
     # via -r backend/requirements.in
+pdfplumber==0.11.4
+    # via -r backend/requirements.in
+pdfminer.six==20231228
+    # via pdfplumber
+pillow>=9.1.0
+    # via pdfplumber
+pypdfium2>=4.18.0
+    # via pdfplumber
 pyasn1==0.6.1
     # via
     #   python-jose
@@ -193,7 +207,7 @@ typing-inspection==0.4.1
     #   pydantic-settings
 tzdata==2025.2
     # via pandas
-urllib3==2.6.0
+urllib3==2.6.3
     # via requests
 uvicorn[standard]==0.35.0
     # via -r backend/requirements.in

@@ -13,7 +13,7 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <h1>ArthSaarthi</h1>
-      <p class="version">User Guide v1.0</p>
+      <p class="version">User Guide v1.1</p>
       <nav>
         <ul>
           <li><a href="#getting-started">Getting Started</a></li>
@@ -28,6 +28,7 @@
           <li><a href="#profile">Profile & Backup</a></li>
           <li><a href="#admin">Admin Features</a></li>
           <li><a href="#getting-help">Getting Help</a></li>
+          <li><a href="#whats-new">What's New in v1.1</a></li>
         </ul>
       </nav>
     </aside>
@@ -51,6 +52,12 @@
         <div class="callout callout-info">
           <strong>First Time Setup:</strong> If this is a fresh installation, the first user to register becomes the
           administrator.
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Server Mode Users:</strong> If you don't have an account, contact your system administrator to create
+          one for you.<br>
+          <strong>Desktop Mode Users:</strong> You are the administrator of your local instance.
         </div>
 
         <h3>Desktop Mode vs Server Mode</h3>
@@ -228,6 +235,12 @@
           <li><strong>Specific Lot:</strong> Manually select which lots to sell from.</li>
         </ul>
 
+        <div class="callout callout-warning">
+          <strong>Indian Tax Compliance:</strong> For standard Demat holdings (Stocks, Mutual Funds), Indian tax laws
+          mandate <strong>FIFO</strong> for Capital Gains calculation. Tax Lot Selection is primarily intended for
+          <strong>ESPP/RSU sales</strong> or non-Indian jurisdictions where Specific Identification is permitted.
+        </div>
+
         <h3>Corporate Actions</h3>
         <p>Corporate actions such as stock splits, mergers, and spin-offs can be recorded via the "Additional actions"
           menu on the portfolio detail page. These help maintain accurate cost basis and share counts.</p>
@@ -260,8 +273,16 @@
         <h3 id="tracking-fixed-deposits">Tracking Fixed Deposits (FDs)</h3>
         <ul>
           <li><strong>Adding an FD:</strong> From the "Add Transaction" modal, select "Fixed Deposit" from the "Asset
-            Type" dropdown. Fill in the FD-specific details, such as Institution Name, Principal Amount, Interest Rate,
-            and Maturity Date, then save.</li>
+            Type" dropdown. Fill in the FD-specific details:
+            <ul>
+              <li>Institution Name</li>
+              <li>Principal Amount</li>
+              <li>Interest Rate</li>
+              <li>Start Date and Maturity Date</li>
+              <li><strong>Compounding Frequency</strong> (e.g., Quarterly, Annually)</li>
+              <li><strong>Payout Frequency</strong> (e.g., On Maturity, Monthly)</li>
+            </ul>
+          </li>
           <li><strong>Viewing an FD:</strong> FDs are displayed in the "Deposits" section of the holdings table.
             Clicking on an FD row opens a detailed drill-down view with its current value, projected maturity value, and
             XIRR analytics. You can also edit or delete the FD from this view.</li>
@@ -274,8 +295,16 @@
         <h3 id="tracking-recurring-deposits">Tracking Recurring Deposits (RDs)</h3>
         <ul>
           <li><strong>Adding an RD:</strong> From the "Add Transaction" modal, select "Recurring Deposit" from the
-            "Asset Type" dropdown. Fill in the RD-specific details, such as Institution Name, Monthly Installment,
-            Interest Rate, and Tenure.</li>
+            "Asset Type" dropdown. Fill in:
+            <ul>
+              <li>Institution Name</li>
+              <li>Monthly Installment</li>
+              <li>Interest Rate</li>
+              <li>Tenure (months)</li>
+              <li>Start Date</li>
+              <li><strong>Compounding Frequency</strong> (e.g., Quarterly)</li>
+            </ul>
+          </li>
           <li><strong>Viewing an RD:</strong> RDs are displayed in the "Deposits" section of the holdings table.
             Clicking on an RD row opens a detailed drill-down view with its current value, projected maturity value, and
             XIRR analytics.</li>
@@ -333,14 +362,30 @@
           <strong>Sell to Cover:</strong> Record the automatic sale of shares used to cover taxes at vesting time.
         </div>
 
-        <h3>Adding an RSU Award</h3>
+        <h3>How to Navigate</h3>
         <ol>
-          <li>From a portfolio detail page, click the <strong>"Additional actions"</strong> dropdown menu.</li>
+          <li>Go to your Portfolio detail page.</li>
+          <li>Click the <strong>dropdown icon</strong> next to the <strong>Add Transaction</strong> button.</li>
           <li>Select <strong>"Add ESPP/RSU Award"</strong>.</li>
-          <li>Search for and select the company stock.</li>
-          <li>Fill in the vest date, quantity, and Fair Market Value (FMV) at vesting.</li>
-          <li>Optionally record <strong>Sell to Cover</strong> shares sold to cover taxes.</li>
         </ol>
+
+        <h3>RSU Vest Form</h3>
+        <ul>
+          <li><strong>Stock Symbol:</strong> Your company's stock</li>
+          <li><strong>Vest Date:</strong> When shares were delivered</li>
+          <li><strong>Quantity:</strong> Number of shares vested</li>
+          <li><strong>Fair Market Value (FMV):</strong> Stock price at vesting</li>
+          <li><strong>Sell to Cover (Optional):</strong> Shares sold to pay withholding taxes</li>
+        </ul>
+
+        <h3>ESPP Purchase Form</h3>
+        <ul>
+          <li><strong>Stock Symbol:</strong> Your company's stock</li>
+          <li><strong>Purchase Date:</strong> Date of ESPP purchase</li>
+          <li><strong>Quantity:</strong> Number of shares purchased</li>
+          <li><strong>Purchase Price:</strong> Discounted price you paid</li>
+          <li><strong>Fair Market Value (FMV):</strong> Market price at purchase (for tax basis)</li>
+        </ul>
 
         <h3>Key Features</h3>
         <ul>
@@ -404,6 +449,13 @@
           <li>Generic CSV</li>
           <li>Zerodha contract notes</li>
           <li>ICICI Direct statements</li>
+          <li><strong>v1.1+:</strong> MFCentral CAS (Excel)</li>
+          <li><strong>v1.1+:</strong> CAMS MF (Excel)</li>
+          <li><strong>v1.1+:</strong> KFintech MF (PDF)</li>
+          <li><strong>v1.1+:</strong> Zerodha Coin MF (Excel)</li>
+          <li><strong>v1.1+:</strong> ICICI Securities MF (Excel)</li>
+          <li><strong>v1.1+:</strong> Zerodha Dividend (XLSX)</li>
+          <li><strong>v1.1+:</strong> ICICI DEMAT Dividend (PDF)</li>
         </ul>
       </section>
 
@@ -481,16 +533,23 @@
           <div class="screenshot-caption">Admin interest rates management</div>
         </div>
 
-        <h3 id="system-maintenance">System Maintenance</h3>
-        <p>Trigger asset master data updates without restarting the server.</p>
+        <h3 id="system-maintenance">System Maintenance (Asset Seeding)</h3>
+        <p>Update the internal database of stocks, mutual funds, and ETFs from official sources (NSDL, BSE, NSE, AMFI).
+        </p>
         <div class="screenshot">
           <img src="assets/19_admin_maintenance.png" alt="System Maintenance">
           <div class="screenshot-caption">System maintenance - sync asset master data</div>
         </div>
 
         <div class="callout callout-info">
-          <strong>Rate Limited:</strong> Asset sync can only be triggered once every 5 minutes to prevent overloading
-          external data sources.
+          <strong>Server Mode:</strong> Asset seeding runs automatically on every server launch/restart. Use
+          <strong>Sync Assets</strong> to update without restarting.<br><br>
+          <strong>Desktop Mode:</strong> Asset seeding runs only once on first boot. After that, you must manually run
+          <strong>Sync Assets</strong> to get the latest securities.
+        </div>
+
+        <div class="callout callout-info">
+          <strong>Rate Limited:</strong> Asset sync can only be triggered once every 5 minutes.
         </div>
       </section>
 
@@ -506,9 +565,83 @@
         </ul>
       </section>
 
+      <!-- What's New in v1.1 -->
+      <section id="whats-new" class="section">
+        <h2>13. What's New in v1.1</h2>
+        <p>ArthSaarthi v1.1 brings powerful analytics, extensive import support, and a modern dark theme.</p>
+
+        <h3>Dark Theme</h3>
+        <p>Switch between light, dark, or system themes using the theme toggle in the header.</p>
+        <div class="screenshot">
+          <img src="assets/21_dark_theme.png" alt="Dark Theme">
+          <div class="screenshot-caption">Dark theme for comfortable night-time viewing</div>
+        </div>
+
+        <h3>Benchmark Comparison</h3>
+        <p>Compare your portfolio returns against market indices like Nifty 50 or Sensex.</p>
+        <div class="screenshot">
+          <img src="assets/22_portfolio_analytics.png" alt="Portfolio Analytics">
+          <div class="screenshot-caption">Portfolio analytics with benchmark comparison and XIRR</div>
+        </div>
+        <ul>
+          <li>Side-by-side XIRR comparison</li>
+          <li>Visual performance charts</li>
+          <li>Multiple benchmark options</li>
+        </ul>
+
+        <h3>Investment Style Classification</h3>
+        <p>Understand your portfolio's style bias towards Growth or Value investing. The system analyzes your holdings
+          based on fundamental metrics and shows how your portfolio leans.</p>
+        <div class="screenshot">
+          <img src="assets/26_investment_style.png" alt="Investment Style">
+          <div class="screenshot-caption">Investment Style gauge showing Growth vs Value bias with P/E and P/B breakdown
+          </div>
+        </div>
+        <ul>
+          <li><strong>Style Gauge:</strong> Visual meter showing Growth vs Value bias percentage</li>
+          <li><strong>P/E Ratio Analysis:</strong> Holdings categorized by Price-to-Earnings ratio</li>
+          <li><strong>P/B Ratio Analysis:</strong> Holdings categorized by Price-to-Book ratio</li>
+        </ul>
+
+        <h3>Diversification Analysis</h3>
+        <p>Visual breakdown of your asset allocation:</p>
+        <div class="screenshot">
+          <img src="assets/23_asset_allocation.png" alt="Asset Allocation">
+          <div class="screenshot-caption">Diversification analysis with sector and asset type breakdown</div>
+        </div>
+        <ul>
+          <li>Pie charts by sector, asset type, and market cap</li>
+          <li>Concentration risk indicators</li>
+        </ul>
+
+        <h3>Expanded Import Support</h3>
+        <p>Import from many more sources:</p>
+        <div class="screenshot">
+          <img src="assets/24_import_formats.png" alt="Import Formats">
+          <div class="screenshot-caption">Expanded import support for multiple brokers and RTAs</div>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>Mutual Funds</h4>
+            <p>MFCentral, CAMS, KFintech, Zerodha Coin, ICICI Securities</p>
+          </div>
+          <div class="feature-card">
+            <h4>Dividends</h4>
+            <p>Zerodha XLSX, ICICI DEMAT PDF</p>
+          </div>
+        </div>
+
+        <h3>Desktop Enhancements</h3>
+        <ul>
+          <li><strong>System Tray:</strong> Minimize to tray instead of taskbar</li>
+          <li><strong>Splash Screen:</strong> Progress indicator during startup</li>
+          <li><strong>Update Notifications:</strong> Get notified of new versions</li>
+        </ul>
+      </section>
+
       <!-- Footer -->
       <footer style="text-align: center; padding: 40px; color: var(--text-light);">
-        <p>ArthSaarthi User Guide &copy; 2024</p>
+        <p>ArthSaarthi User Guide &copy; 2024-2026</p>
         <p>For more information, visit the <a href="https://github.com/aashishbhanawat/ArthSaarthi">GitHub
             Repository</a></p>
       </footer>

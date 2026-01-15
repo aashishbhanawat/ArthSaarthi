@@ -692,21 +692,36 @@ class CRUDAnalytics:
         history_points = _get_portfolio_history(
             db=db, user=user, portfolio_id=portfolio_id, range_str="all"
         )
+        logger.debug(
+            f"Sharpe Ratio Debug: Portfolio {portfolio_id} "
+            f"has {len(history_points)} history points."
+        )
         if len(history_points) < 2:
             logger.debug("Sharpe ratio: Not enough history points (<2).")
             return 0.0
 
         daily_values = [float(p["value"]) for p in history_points]
+        logger.debug(
+            f"Sharpe Ratio Debug: First value: {daily_values[0]}, "
+            f"Last value: {daily_values[-1]}"
+        )
         daily_values = [v if v > 0 else 1e-9 for v in daily_values]
 
         daily_returns = np.diff(daily_values) / daily_values[:-1]
 
         if len(daily_returns) == 0 or np.std(daily_returns) == 0:
-            logger.debug("Sharpe ratio: Not enough returns or zero standard deviation.")
+            std_val = np.std(daily_returns) if len(daily_returns) > 0 else 'N/A'
+            logger.debug(
+                f"Sharpe ratio: Not enough returns or zero std dev. "
+                f"Returns count: {len(daily_returns)}, Std Dev: {std_val}"
+            )
             return 0.0
 
         sharpe_ratio = (np.mean(daily_returns) / np.std(daily_returns)) * np.sqrt(252)
-        logger.debug(f"Sharpe ratio: Calculated value is {sharpe_ratio}")
+        logger.debug(
+            f"Sharpe ratio: Calculated value is {sharpe_ratio}. "
+            f"Mean return: {np.mean(daily_returns)}"
+        )
         return float(sharpe_ratio) if np.isfinite(sharpe_ratio) else 0.0
 
     def get_diversification(

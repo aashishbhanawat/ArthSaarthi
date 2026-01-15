@@ -1,333 +1,634 @@
-# ArthSaarthi - User Guide
+# ArthSaarthi - Comprehensive User Guide
 
-Welcome to ArthSaarthi! This guide will walk you through setting up and using the application.
+**Your Personal Investment Portfolio Manager**
+
+ArthSaarthi is a powerful web-based application designed to help you track, manage, and analyze your investment portfolios across multiple asset classes including stocks, mutual funds, bonds, fixed deposits, recurring deposits, PPF, and RSU/ESPP awards.
 
 ---
 
-## 1. Initial Installation & Setup
+## Table of Contents
 
-This application is designed to be self-hosted, giving you full control over your data. To get started, you'll need to install and run the application on your own system or server.
+1. [Getting Started](#getting-started)
+   - Desktop Mode vs Server Mode
+   - First-Time Setup
+2. [Dashboard Overview](#dashboard-overview)
+   - Top Movers
+3. [Managing Portfolios](#managing-portfolios)
+   - Portfolio Analytics
+   - Benchmark Comparison
+4. [Adding Transactions](#adding-transactions)
+   - Tax Lot Selection
+   - Corporate Actions
+   - Dividends & Income
+   - Stock Splits & Bonus Shares
+5. [Viewing Transaction History](#viewing-transaction-history)
+6. [Import Data](#import-data)
+   - Supported Formats (v1.1)
+7. [Goals](#goals)
+8. [Watchlists](#watchlists)
+9. [Profile & Settings](#profile--settings)
+   - Backup & Restore
+10. [Admin Features](#admin-features)
+11. [Themes & Privacy](#themes--privacy)
 
-➡️ **For detailed installation instructions, please see the [Installation Guide](./installation_guide.md).**
+---
 
-**macOS Users:** If you see a "damaged" error, copy the app to Applications first, then run `xattr -cr /Applications/ArthSaarthi.app` in Terminal before launching.
+## Getting Started
 
-### First-Time Admin Account Creation
+### First-Time Setup
 
-The most important part of the installation is the initial setup. The first time you access the application, you will be greeted with a setup screen.
+The first time you access the application, you will be greeted with a setup screen.
 
 You **must** complete this form to create the first **administrator** account. This is the only time you will see this screen. After this account is created, all new users must be added by an administrator.
 
+### Login
+
+Access ArthSaarthi by navigating to the application URL. You'll be greeted with the login page where you can enter your credentials.
+
+![Login Page](./images/login_page_1768317181108.png)
+
+**To log in:**
+1. Enter your **Email** address
+2. Enter your **Password**
+3. Click the **Login** button
+
+> [!TIP]
+> **Server Mode Users:** If you don't have an account, contact your system administrator to create one for you.
+> **Desktop Mode Users:** You are the administrator of your local instance.
+
 ### Desktop Mode vs Server Mode
 
-ArthSaarthi can run in two modes:
+ArthSaarthi supports two deployment modes:
 
-| Feature | Desktop Mode | Server Mode |
-|---------|--------------|-------------|
-| **Users** | Single user | Multiple users |
-| **Database** | SQLite (encrypted) | PostgreSQL |
-| **User Management** | ❌ Not available | ✅ Full access |
-| **Interest Rates** | ✅ Available | ✅ Available |
-| **Asset Sync** | ✅ Available | ✅ Available |
-| **Data Storage** | Local files | Server database |
+| Mode | Use Case | Database | Features |
+|------|----------|----------|----------|
+| **Desktop** | Personal use, single user | SQLite (local, encrypted) | All features except User Management |
+| **Server** | Self-hosted, multiple users | PostgreSQL | Full features including User Management |
 
-> **Desktop Mode** is designed for personal use on your own computer. Since there's only one user, the User Management feature is disabled - you don't need to manage users when you're the only one!
+> [!NOTE]
+> In Desktop Mode, your data is stored locally on your machine and encrypted. User Management is disabled since you're the only user.
 
 ---
 
-## 2. The Dashboard {#dashboard}
+## Dashboard Overview
 
-After logging in, you will land on your main dashboard. This is your central hub for viewing the overall health of your investment portfolios.
+After logging in, you'll be taken to the **Dashboard** - your central hub for portfolio insights.
 
-Here's what each section means:
+![Dashboard Main View](./images/dashboard_main_1768317306374.png)
 
-### Summary Cards {#dashboard-summary-cards}
+### Key Dashboard Components
 
-*   **Total Value:** The current market value of all assets across all your portfolios.
-*   **Unrealized P/L:** The total paper profit or loss for assets you still hold.
-*   **Realized P/L:** The total profit or loss you have locked in from selling assets.
+| Component | Description |
+|-----------|-------------|
+| **Total Value** | The combined current value of all your investments |
+| **Unrealized P/L** | Profit or loss on holdings you still own |
+| **Realized P/L** | Profit or loss from investments you've sold |
+| **Portfolio History** | Interactive chart showing value changes over time (7D, 30D, 1Y, All) |
+| **Asset Allocation** | Pie chart showing distribution across different stocks/assets |
+| **Top Movers** | Your best and worst performing assets today |
 
-### Top Movers {#dashboard-top-movers}
+### Top Movers
 
-A table showing the assets that have had the largest price change over the last 24 hours.
+The **Top Movers** section highlights assets driving your portfolio's daily performance:
+- **Top Gainers**: Assets with the highest positive change today
+- **Top Losers**: Assets with the largest decline today
 
-### Portfolio History {#dashboard-portfolio-history}
-
-An interactive line chart showing the total value of your portfolios over time. You can select different time ranges (7D, 30D, 1Y, All).
-
-### Asset Allocation {#dashboard-asset-allocation}
-
-A pie chart showing the distribution of your investments across different assets.
-
-### 2.1. Holding Details & Analytics {#holding-details}
-
-Clicking on any asset in the Top Movers or Portfolio Holdings table opens a **Holding Detail View**, providing deep insights into that specific investment:
-
-*   **Unrealized P&L:** Paper profit/loss on your *currently held* shares.
-*   **Capital Gains:** Realized profit/loss from shares you have *sold*. This is calculated using **Fair Market Value (FMV)** for RSUs and actual buy price for other assets.
-    *   *Note:* Sell transactions linked efficiently to specific tax lots (like ESPP/RSU) use that specific cost basis. Unlinked sells use First-In-First-Out (FIFO).
-*   **Dividend Income:** Total income received from Dividends, Coupons, and Interest Credits for this asset.
-*   **XIRR (Current):** The annualized return of your *current* holdings.
-*   **XIRR (Historical):** The annualized return of the *entire* investment lifecycle, including sold positions.
-
-### 2.2. Privacy Mode {#privacy-mode}
-
-If you wish to show your dashboard to others without revealing sensitive financial totals, you can use Privacy Mode.
-
-*   **Location:** Look for the "eye" icon in the header of the Dashboard page.
-*   **Toggle:** Clicking this icon will toggle Privacy Mode on or off.
-    *   When **on** (slashed eye icon), all sensitive monetary values (like Total Value and P&L) will be replaced with a placeholder like `₹**,***.**`.
-    *   When **off** (regular eye icon), all values will be visible.
-*   **Persistence:** Your choice is saved in your browser, so the application will remember your preference the next time you visit.
+This helps you quickly identify what's moving your portfolio without checking each holding individually.
 
 ---
 
-## 3. Managing Your Portfolios {#managing-portfolios}
+## Managing Portfolios
 
-You can create multiple portfolios to track different investment strategies or accounts.
+### Viewing Your Portfolios
 
-### Creating a Portfolio {#creating-portfolio}
+Navigate to **Portfolios** from the sidebar to see all your investment portfolios.
 
-1.  Navigate to the **Portfolios** page from the main menu.
-2.  Click the **"Create New Portfolio"** button.
-3.  A modal will appear. Enter a unique name for your portfolio.
-4.  Click **"Create"**. You will be automatically taken to the detail page for your new portfolio.
+![Portfolios List](./images/portfolios_list_1768317371312.png)
 
-### Viewing and Deleting a Portfolio {#deleting-portfolio}
+Each portfolio card shows:
+- Portfolio name
+- **Delete** button to remove the portfolio
 
-*   From the **Portfolios** page, you can see a list of all your portfolios.
-*   Click on any portfolio's name to go to its **Detail Page**, where you can see its transaction history.
-*   Click the **"Delete"** button next to a portfolio to permanently remove it and all its associated transactions. You will be asked to confirm this action.
+### Creating a New Portfolio
+
+Click the **Create New Portfolio** button to add a new portfolio.
+
+![Create Portfolio Modal](./images/create_portfolio_modal_1768317398646.png)
+
+**Steps:**
+1. Enter a **Portfolio Name** (e.g., "Retirement Fund", "Children's Education")
+2. Click **Create Portfolio**
+
+### Deleting a Portfolio
+
+To delete a portfolio:
+1. Navigate to **Portfolios** page
+2. Click the **Delete** button on the portfolio card
+3. Confirm the deletion when prompted
+
+> [!CAUTION]
+> Deleting a portfolio permanently removes all holdings and transactions within it. This action cannot be undone.
+
+### Portfolio Detail View
+
+Click on any portfolio to see its detailed holdings and performance.
+
+![Portfolio Detail with Holdings](./images/portfolio_detail_holdings_1768317659010.png)
+
+The portfolio detail view shows:
+- Summary cards (Invested, Current Value, Unrealized P/L, Realized P/L)
+- Holdings breakdown by asset type (Stocks, Mutual Funds, etc.)
+- Individual holding details with quantity, average price, and returns
+
+### Holding Transaction History
+
+Click on any holding to drill down into its complete transaction history.
+
+![Holding Drilldown](./images/holding_drilldown_1768318989034.png)
+
+This view displays:
+- List of active BUY transactions (Tax Lots) constituting the current holding
+- **Note:** For a complete history including closed SELL transactions, refer to the **Transactions** page.
+- Date, quantity, price per unit, and total value
+- CAGR and XIRR (Current & Historical) calculations
+- Edit and delete options for each transaction
+
+### Portfolio Analytics
+
+Comprehensive analytics for your investments are displayed at the top of the portfolio detail page, above the holdings list.
+
+#### Advanced Analytics & Diversification
+
+![Advanced Analytics](./images/portfolio_analytics_full_1768320754826.png)
+
+**Advanced Analytics** includes:
+- **XIRR**: Extended Internal Rate of Return - measures actual annualized returns
+- **Sharpe Ratio**: Risk-adjusted return metric. *Note: Calculated only for market-traded assets (Stocks, MFs) to accurately measure volatility risk; excludes fixed-income assets like FDs/PPF.*
+
+**Diversification Analysis** shows your portfolio distribution across:
+- Asset Class
+- Geography
+- Market Cap (Large/Mid/Small)
+- Sector
+- Industry
+- Investment Style
+
+#### Investment Style Classification
+
+Understand whether your portfolio leans toward **Growth** or **Value** investing:
+
+| Style | Characteristics | Typical Metrics |
+|-------|-----------------|-----------------|
+| **Growth** | High growth potential, reinvested earnings | High P/E, High P/B |
+| **Value** | Undervalued, dividend-paying | Low P/E, Low P/B |
+| **Blend** | Mix of both styles | Moderate ratios |
+
+The Investment Style gauge analyzes your holdings based on:
+- **P/E Ratio**: Price-to-Earnings ratio classification
+- **P/B Ratio**: Price-to-Book ratio classification
+
+> [!NOTE]
+> Investment style is calculated for equity holdings only. Mutual funds, FDs, and other assets are excluded from this analysis.
+
+#### Benchmark Comparison
+
+![Benchmark Comparison](./images/portfolio_benchmark_comparison_clean_1768320996408.png)
+
+Compare your portfolio's performance against market benchmarks like **Nifty 50**:
+- **Your Portfolio XIRR**: Your actual returns
+- **Benchmark XIRR**: What you'd have earned in the benchmark
+- **Alpha (Excess Return)**: The difference - positive means you outperformed!
 
 ---
 
-## 4. Managing Transactions {#managing-transactions}
+## Adding Transactions
 
-The core of the application is tracking your individual buy and sell transactions.
+### Stock Transactions
 
-### Adding a Transaction {#adding-transaction}
+Click **Add Transaction** button in your portfolio and select **Stock** as the asset type.
 
-1.  Navigate to the detail page of the portfolio where you want to add a market-traded asset (like a Stock or Mutual Fund).
-2.  Click the **"Add Transaction"** button.
-3.  The "Add Transaction" modal will appear. Fill in the following details:
-    *   **Asset:** Start typing the ticker symbol (e.g., 'AAPL', 'BTC-USD').
-        *   If the asset exists, it will appear in a dropdown list. Click to select it.
-        *   If the asset is not found, a **"Create new asset '[TICKER]'"** button will appear. Click this to validate the ticker with an external service and add it to your system.
-    *   **Type:** Choose BUY or SELL.
-    *   **Quantity:** The number of shares or units.
-    *   **Price per Unit:** The price you paid or received for each unit.
-    *   **Transaction Date:** The date the transaction occurred.
-    *   **Fees:** Any associated fees (optional).
-4.  Click **"Save Transaction"**.
+![Add Stock Modal](./images/add_stock_modal_1768317698208.png)
 
-The backend includes validation to prevent you from selling more of an asset than you own on a given date. If you attempt this, you will see a specific error message.
+**Required fields:**
+- **Asset Type**: Stock
+- **Transaction Type**: Buy, Sell, or Corporate Action
+- **Stock Symbol**: Search by **Ticker** (e.g., RELIANCE) or **Company Name** (e.g., Reliance Industries)
+- **Quantity**: Number of shares
+- **Price per Unit**: Purchase/sale price
+- **Transaction Date**: Date of transaction
+- **Broker Fee** (Optional): Brokerage charges
 
-### Importing Transactions from a CSV File {#importing-transactions}
+### Selling with Tax Lot Selection
 
-Instead of adding transactions one by one, you can use the data import feature to upload a CSV file.
+When selling shares, ArthSaarthi lets you choose which specific lots to sell from — crucial for tax optimization.
 
-1.  Navigate to the **"Import"** page from the main menu.
-2.  Select the portfolio you want to import the transactions into.
-3.  Select the **Statement Type** (e.g., "Generic CSV", "Zerodha", "ICICI Direct") that matches your file format. This ensures the file is parsed correctly.
-4.  Choose the CSV file from your computer.
-4.  Click **"Upload and Preview"**.
-6.  The system will show you a preview of the transactions it has parsed, categorized into sections:
-    *   **New Transactions:** Valid transactions that can be imported.
-    *   **Transactions Requiring Mapping:** Transactions with a ticker symbol that is not recognized by the system (e.g., `INFY-BE` instead of `INFY.NS`).
-    *   **Duplicate Transactions:** Transactions that appear to already exist in your portfolio.
-    *   **Invalid Transactions:** Transactions with errors that prevent them from being imported.
+**Tax Lot Methods:**
+
+| Method | Description | Best For |
+|--------|-------------|----------|
+| **FIFO** | First In, First Out - sells oldest shares first | Default method, simple |
+| **LIFO** | Last In, First Out - sells newest shares first | Minimizing short-term gains |
+| **Specific Lot** | Manually select which lots to sell | Maximum tax control |
+
+**To use Specific Lot selection:**
+1. When adding a SELL transaction, select **Specific Lot** as the method
+2. View available lots with their purchase date, quantity, and cost basis
+3. Select the lots you want to sell from
+4. The system calculates capital gains based on your selection
+
+> [!IMPORTANT]
+> **Indian Tax Compliance Notice:**
+> For standard **Demat holdings** (Stocks, Mutual Funds), Indian tax laws generally mandate the **FIFO (First-In, First-Out)** method for Capital Gains calculation. You cannot arbitrarily choose tax lots for these assets to lower tax liability.
+>
+> **Tax Lot Selection** in ArthSaarthi is primarily intended for:
+> 1. **ESPP & RSU Sales:** Where specific shares are vested and sold, often with different cost bases (FMV vs Purchase Price).
+> 2. **Physical Shares / Private Equity:** Assets not held in a standard demat account.
+> 3. **Non-Indian Jurisdictions:** For users subject to tax laws where Specific Identification is permitted.
+
+
+
+### Mutual Fund Transactions
+
+For mutual fund investments, select **Mutual Fund** as the asset type.
+
+![Add Mutual Fund Modal](./images/add_mutual_fund_modal_1768317753510.png)
+
+**Required fields:**
+- **Mutual Fund Name**: Search and select the fund
+- **Transaction Type**: Buy, Sell, Corporate Action, or **DRIP** (Dividend Reinvestment)
+- **Units**: Number of units
+- **NAV**: Net Asset Value per unit
+- **Transaction Date**: Date of transaction
+
+> [!NOTE]
+> **DRIP (Dividend Reinvestment Plan):** Use this option when dividends are automatically reinvested into additional units. Enter the dividend amount as the reinvestment value.
+
+### Bond Transactions
+
+Track your bond investments by selecting **Bond** as the asset type.
+
+![Add Bond Modal](./images/add_bond_modal_1768317964289.png)
+> [!WARNING]
+> **Verify Data Accuracy:** The system attempts to pre-fill **Coupon Rate**, **Face Value**, and **Maturity Date**, but reliable public data for bonds is limited.
+> **You must review these fields manually.** If they are missing or incorrect, please update them to ensure accurate calculations.
+
+### Fixed Deposit
+
+Record your fixed deposits with maturity tracking.
+
+![Add Fixed Deposit Modal](./images/add_fixed_deposit_modal_1768317823011.png)
+
+**Key fields:**
+- **Principal Amount**: Invested amount
+- **Interest Rate**: Annual interest rate
+- **Start Date** and **Maturity Date**
+- **Bank/Institution Name**
+- **Compounding Frequency**: e.g., Quarterly, Annually
+- **Payout Frequency**: e.g., On Maturity, Monthly
+
+### Recurring Deposit
+
+Track your recurring deposits with monthly contribution tracking.
+
+![Add Recurring Deposit Modal](./images/add_rd_modal_1768317857506.png)
+
+**Key fields:**
+- **Institution Name**: Bank or post office
+- **Monthly Installment**: Amount deposited each month
+- **Interest Rate**: Annual interest rate
+- **Tenure**: Number of months
+- **Start Date**: When the RD began
+- **Compounding Frequency**: e.g., Quarterly
+
+### PPF Account
+
+Manage your Public Provident Fund investments with automatic interest calculation.
+
+![Add PPF Modal](./images/add_ppf_modal_1768318247973.png)
+
+**First-time setup:**
+1. Select **PPF Account** as asset type
+2. Enter institution name and account number
+3. Set the account opening date
+4. Add your first contribution amount and date
+5. Click **Save** — this creates both the PPF asset and first transaction
+
+**Adding subsequent contributions:**
+- When you select PPF Account again, the system detects your existing account
+- The form only asks for contribution amount and date
+- New contributions are automatically linked to your existing PPF
+
+**PPF Passbook View:**
+- Click on your PPF holding to see a passbook-style statement
+- View all contributions and system-calculated interest credits
+- Interest is calculated using official government rates for each financial year
+
+> [!NOTE]
+> PPF interest rates are managed by administrators and updated quarterly based on government announcements.
+
+### RSU/ESPP Awards
+
+For employees with stock compensation, track RSU and ESPP awards.
+
+**How to navigate:**
+1. Go to your Portfolio detail page
+2. Click the **dropdown icon** next to the **Add Transaction** button
+3. Select **Add ESPP/RSU Award**
+
+![RSU ESPP Modal](./images/rsu_espp_modal_1768318354551.png)
+
+#### RSU Vest Form
+
+**Key fields:**
+- **Stock Symbol**: Your company's stock
+- **Vest Date**: When shares were delivered
+- **Quantity**: Number of shares vested
+- **Fair Market Value (FMV)**: Stock price at vesting
+- **Sell to Cover** (Optional): Shares sold to pay withholding taxes
+
+#### ESPP Purchase Form
+
+**Key fields:**
+- **Stock Symbol**: Your company's stock
+- **Purchase Date**: Date of ESPP purchase
+- **Quantity**: Number of shares purchased
+- **Purchase Price**: Discounted price you paid
+- **Fair Market Value (FMV)**: Market price at purchase (used for tax basis)
+
+> [!TIP]
+> The "Sell to Cover" option (RSU only) automatically records shares sold to pay withholding taxes — a common RSU vesting scenario.
+
+### Editing & Deleting Transactions
+
+**To edit a transaction:**
+1. Click on the transaction in the holding drill-down or Transactions page
+2. Modify any field (quantity, price, date, fees)
+3. Click **Save** — all metrics recalculate automatically
+
+**To delete a transaction:**
+1. Click the **Delete** button on the transaction
+2. Confirm the deletion
+3. Portfolio values update accordingly
+
+> [!WARNING]
+> Deleting transactions cannot be undone. Consider editing instead if you need to correct an error.
+
+### Corporate Actions
+
+Record corporate actions that affect your holdings via **Additional Actions** menu:
+
+**Mergers & Amalgamations:**
+- Record when two companies merge (e.g., HDFC Bank merger)
+- Enter the conversion ratio
+- System adjusts holdings while preserving cost basis
+
+**Demergers & Spin-offs:**
+- Record when a company splits (e.g., Reliance-Jio Financial)
+- Specify demerger ratio and cost allocation
+- Creates new holding with proportional cost basis
+
+**Ticker Renames:**
+- Record when a stock symbol changes (e.g., VEDL → VEDANTA)
+- Historical transactions remain linked correctly
+
+### Dividends & Income
+
+**Recording Dividends:**
+- **Automatic:** Import your broker's dividend statement (e.g., Zerodha, ICICI) to bulk add all dividend income.
+- **Manual:** Use "Add Transaction" → **Dividend** type to record individual payouts.
+  > [!NOTE]
+  > When adding manually, enter the **Total Amount** received (e.g., ₹500), NOT the amount per share.
+
+**Tracking:**
+- View total dividend income in **Advanced Analytics**
+- Check asset drill-down to see dividends received per holding
+
+### Stock Splits & Bonus Shares
+
+**Stock Split:**
+- Use **Corporate Actions** → **Stock Split**
+- Enter the Split Ratio (e.g., 5:1 for 5 new shares for every 1 held)
+- The system increases your quantity and reduces buy price proportionally
+
+**Bonus Shares:**
+- Use **Corporate Actions** → **Bonus Issue**
+- Enter Ratio (e.g., 1:1 for 1 bonus share for every 1 held)
+- This increases your total quantity; cost basis per share decreases accordingly
+
+---
+
+## Viewing Transaction History
+
+Navigate to **Transactions** from the sidebar to see all transactions across portfolios.
+
+![Transactions History](./images/transactions_history_1768318393022.png)
+
+**Features:**
+- Filter by date range, asset type, or transaction type
+- Quick edit or delete transactions
+- Export transaction data
+
+---
+
+## Import Data
+
+Bulk import your transaction history from CSV files or brokerage statements.
+
+![Import Page](./images/import_page_1768318416664.png)
+
+### Import Workflow
+
+1. Navigate to **Import** from the sidebar
+2. Select the **Portfolio** to import into
+3. Choose the **Statement Type** matching your file format
+4. Upload your file
+5. Click **Upload and Preview**
+6. Review parsed transactions:
+   - **New Transactions**: Ready to import
+   - **Requiring Mapping**: Need ticker mapping (see below)
+   - **Duplicates**: Already exist in portfolio
+   - **Invalid**: Errors preventing import
+7. Select transactions to import
+8. Click **Commit Transactions**
 
 ### Mapping Unrecognized Tickers
 
-For transactions in the "Requiring Mapping" section, you must map the unrecognized ticker from your file to an existing asset in the system.
+When the system doesn't recognize a ticker from your file:
+1. Click **Map Ticker** next to the transaction
+2. Search for the correct asset (e.g., "Infosys" for "INFY-BE")
+3. Select the match and click **Create Alias**
+4. Future imports will use this mapping automatically
 
-1.  Click the **"Map Ticker"** button next to the transaction.
-2.  In the modal that appears, search for the correct asset that the alias belongs to (e.g., search for "Infosys" or "INFY.NS").
-3.  Select the correct asset from the search results and click **"Create Alias"**.
-4.  Once the alias is created, the transaction will automatically move to the "New Transactions" section.
+### Supported Formats
 
-### Committing Transactions
+| Category | Format | File Type |
+|----------|--------|-----------|
+| **Stocks** | Generic CSV | .csv |
+| **Stocks** | Zerodha Contract Notes | .csv |
+| **Stocks** | ICICI Direct Statements | .csv |
+| **Mutual Funds** | MFCentral CAS | .xlsx |
+| **Mutual Funds** | CAMS Statement | .xlsx |
+| **Mutual Funds** | KFintech Statement | .pdf |
+| **Mutual Funds** | Zerodha Coin | .xlsx |
+| **Mutual Funds** | ICICI Securities MF | .xlsx |
+| **Dividends** | Zerodha Dividend Statement | .xlsx |
+| **Dividends** | ICICI DEMAT Dividend | .pdf |
 
-1.  Use the checkboxes to select which "New" and "Duplicate" transactions you wish to import.
-2.  Click **"Commit Transactions"** to save the selected transactions to your portfolio.
-
----
-
-## 5. Tracking Other Asset Types
-
-The "Add Transaction" modal is also your gateway to tracking non-market assets like Fixed Deposits, Recurring Deposits, and PPF accounts.
-
-### 5.1. Tracking Fixed Deposits (FDs) {#tracking-fixed-deposits}
-
-1.  **Adding an FD:** From the "Add Transaction" modal, select **"Fixed Deposit"** from the "Asset Type" dropdown. Fill in the FD-specific details, such as Institution Name, Principal Amount, Interest Rate, and Maturity Date, then save.
-2.  **Viewing an FD:** FDs are displayed in the "Deposits" section of the holdings table. Clicking on an FD row opens a detailed drill-down view with its current value, projected maturity value, and XIRR analytics. You can also edit or delete the FD from this view.
-
-### 5.2. Tracking Recurring Deposits (RDs) {#tracking-recurring-deposits}
-
-1.  **Adding an RD:** From the "Add Transaction" modal, select **"Recurring Deposit"** from the "Asset Type" dropdown. Fill in the RD-specific details, such as Institution Name, Monthly Installment, Interest Rate, and Tenure.
-2.  **Viewing an RD:** RDs are displayed in the "Deposits" section of the holdings table. Clicking on an RD row opens a detailed drill-down view with its current value, projected maturity value, and XIRR analytics.
-
-### 5.3. Tracking Public Provident Fund (PPF) {#tracking-ppf}
-
-The application has a specialized workflow for PPF accounts, as users typically only have one.
-
-1.  **Adding Your First PPF Account:**
-    *   From the "Add Transaction" modal, select **"PPF Account"** from the "Asset Type" dropdown.
-    *   Because no PPF account exists, the form will show fields to **create the account** (Institution Name, Account Number, Opening Date) and fields for your **first contribution** (Amount, Date).
-    *   Fill out all fields and click "Save". This will create both the PPF asset and its first transaction in one step.
-
-2.  **Adding Subsequent Contributions:**
-    *   The next time you select "PPF Account" from the "Asset Type" dropdown, the application will detect that you already have a PPF account.
-    *   The form will now show your existing account details as read-only and will only ask for the **Contribution Amount** and **Contribution Date** for your new transaction.
-
-3.  **Viewing PPF Details:**
-    *   Your PPF account is displayed in the "Government Schemes" section of the holdings table.
-    *   Clicking on the PPF row opens a special **passbook-style drill-down view**.
-    *   This view shows a summary of your total contributions, interest earned, and the current balance. It also provides a chronological history of all your contributions and the system-generated interest credits for each financial year.
-
----
-## 6. Tracking Your Goals {#managing-goals}
-
-The Goals feature allows you to set financial targets and link your investments to track your progress.
-
-### Creating a Goal
-1.  Navigate to the **Goals** page from the main menu.
-2.  Click **"Create Goal"**.
-3.  In the modal, provide a name, a target amount, and a target date.
-
-### Linking Investments to a Goal
-1.  From the Goals page, click **"View"** on any goal card to go to its detail page.
-2.  In the "Linked Items" section, click **"Link Item"**.
-3.  A modal will appear. You can either select one of your existing portfolios or search for a specific asset to link to the goal.
-4.  The system will automatically calculate your progress towards the goal based on the current value of all linked items.
----
-
-## 7. Tracking RSU & ESPP Awards {#espp-rsu}
-
-Track Restricted Stock Units (RSUs) and Employee Stock Purchase Plan (ESPP) awards with proper tax lot accounting.
-
-### Adding an RSU Award
-
-1.  From a portfolio detail page, click the "Additional actions" dropdown menu.
-2.  Select **"Add ESPP/RSU Award"**.
-3.  Search for and select the company stock.
-4.  Fill in the vest date, quantity, and Fair Market Value (FMV) at vesting.
-5.  Optionally record **Sell to Cover** shares sold to cover taxes.
-
-### Adding an ESPP Purchase
-
-1.  Follow the same steps as RSU, but enter the purchase price (usually discounted).
-2.  The system will track your cost basis correctly for tax purposes.
+> [!TIP]
+> For Mutual Funds, download your Consolidated Account Statement (CAS) from MFCentral for the most complete data.
 
 ---
 
-## 8. Corporate Actions {#corporate-actions}
+## Goals
 
-Handle mergers, demergers, and ticker renames that affect your holdings.
+Set and track your financial goals in the **Goals** section.
 
-### 8.1. Adding a Merger
+![Goals Page](./images/goals_page_1768318441380.png)
 
-When two companies merge (e.g., HDFC Bank absorbed HDFC Ltd):
-
-1.  From a portfolio detail page, click **"Add Transaction"**.
-2.  Select the **old asset** you held (e.g., HDFC).
-3.  Select **"Corporate Action"** as Transaction Type.
-4.  Select **"Merger/Amalgamation"** as Action Type.
-5.  Enter the **Record Date** and **Conversion Ratio** (e.g., 1.68 for HDFC-HDFCBANK merger).
-6.  Search for and select the **new merged company ticker**.
-7.  Click **"Save Transaction"**.
-
-> **Cost Basis:** The system preserves your original acquisition dates and cost basis. XIRR calculations reflect your true investment timeline.
-
-### 8.2. Adding a Demerger
-
-When a company spins off a division (e.g., Reliance spun off Jio Financial):
-
-1.  From a portfolio detail page, click **"Add Transaction"**.
-2.  Select the **parent asset** (e.g., RELIANCE).
-3.  Select **"Corporate Action"** > **"Demerger/Spin-off"**.
-4.  Enter the **Record Date** and **Demerger Ratio** (shares of new company per old share).
-5.  Enter the **Cost Allocation %** to the demerged entity (from official sources).
-6.  Search for and select the **demerged company ticker**.
-7.  Click **"Save Transaction"**.
-
-> **Multi-Entity Demergers:** For 3-way splits (e.g., HDFC → HDFCBANK + HDFCLIFE + remaining), create separate demerger transactions for each child entity with their respective cost allocations.
-
-### 8.3. Ticker Rename
-
-When a company changes its ticker symbol only (e.g., VEDL → VEDANTA):
-
-1.  Select the **old ticker** and choose **"Ticker Rename"**.
-2.  Enter the effective date and search for the **new ticker**.
-3.  Click **"Save Transaction"**.
-
-### 8.4. Viewing Adjusted Holdings
-
-After a corporate action:
-- **Holdings Table:** Shows adjusted quantity and average buy price
-- **Transaction History:** Displays both adjusted and original prices (e.g., "₹360.00 (orig: ₹900.00)")
-- **XIRR/CAGR:** Calculated using adjusted investment amount
-
-> **Note:** Corporate actions require existing holdings on the record date. If you have no holdings, the transaction will be rejected.
-
-### 8.5. Foreign Stock Limitations
-
-> **Important:** Corporate actions (mergers, demergers, splits, bonus shares) are **not currently supported for foreign stocks** (non-INR assets). The Corporate Action option is hidden for foreign stocks in the transaction form.
-
-If you hold foreign stocks affected by corporate actions, you will need to manually handle these by:
-1. **For Splits/Bonus:** Add a BUY transaction for the new shares at price 0 (or adjust existing quantity)
-2. **For Mergers:** Add a SELL for old shares and BUY for new shares
-3. **For Demergers:** Add a BUY for the spun-off shares, adjusting cost basis manually
-
-> **Dividends work correctly for foreign stocks** and will be converted using the FX rate at the time of the dividend.
+**Features:**
+- Create goals with target amounts and dates
+- Link portfolios to specific goals
+- Track progress with visual indicators
+- Get insights on whether you're on track
 
 ---
 
-## 9. Backup & Restore {#backup-restore}
+## Watchlists
 
-Protect your financial data with the backup and restore feature.
+Monitor stocks and funds you're interested in without adding them to your portfolio.
 
-### Creating a Backup
+![Watchlists Page](./images/watchlists_page_1768318466860.png)
 
-1.  Navigate to your **Profile** page.
-2.  In the "Backup & Restore" section, click **"Download Backup"**.
-3.  Save the JSON file to a secure location.
-
-### Restoring from Backup
-
-1.  Click **"Restore from Backup"** and select your backup file.
-2.  **Warning:** Restoring will replace all your current data. Type "DELETE" to confirm.
-3.  Your data will be restored from the backup file.
+**Features:**
+- Create multiple watchlists
+- Add stocks/mutual funds to track
+- View real-time price updates
+- Quick add to portfolio when ready to invest
 
 ---
 
-## 10. User Management (Admin Only - Server Mode) {#user-management}
+## Profile & Settings
 
-> **Note:** User Management is only available in **Server Mode** (multi-user). In Desktop Mode, the application is single-user, so user management is not needed.
+Manage your account settings from the **Profile** page.
 
-If you are logged in as an administrator in Server Mode, you will see a **"User Management"** link in the navigation bar. This page allows you to manage all users of the application.
+![Profile Page](./images/profile_page_1768318495413.png)
 
-*   **Create User:** Click the "Create New User" button to add a new user. You can choose whether to make them an administrator.
-*   **Edit User:** Click the "Edit" button on any user to change their details or admin status.
-*   **Delete User:** Click the "Delete" button to permanently remove a user.
+**Available settings:**
+- Update profile information (name, email)
+- Change password
+- Configure notification preferences
+
+### Backup & Restore
+
+Protect your financial data with backup and restore capabilities.
+
+**Creating a Backup:**
+1. Go to **Profile** page
+2. Click **Download Backup**
+3. Save the JSON file to a secure location
+
+The backup includes:
+- All portfolios and holdings
+- Complete transaction history
+- Goals and watchlists
+- Asset aliases and mappings
+
+**Restoring from Backup:**
+1. Go to **Profile** page
+2. Click **Restore from Backup**
+3. Select your backup JSON file
+4. Confirm the restoration
+
+> [!CAUTION]
+> Restoring from backup **replaces all current data**. This cannot be undone. Always create a fresh backup before restoring.
 
 ---
 
-## 11. System Maintenance (Admin Only) {#system-maintenance}
+## Admin Features
 
-Administrators can trigger asset master database updates without restarting the server.
+Admin users have access to additional management features.
 
-### Syncing Asset Data
+### User Management
 
-1.  Navigate to **System Maintenance** from the admin menu.
-2.  Click the **"Sync Assets"** button.
-3.  The system will download and process updated data from NSDL, BSE, NSE, and other sources.
-4.  **Rate Limit:** This can only be done once every 5 minutes.
+Create and manage user accounts from **Admin > User Management**.
+
+![Admin User Management](./images/admin_user_management_1768318655458.png)
+
+**Capabilities:**
+- Create new user accounts
+- Assign roles (Admin, User)
+- Edit or delete existing users
+
+### Interest Rates
+
+Configure system-wide interest rates for fixed deposits and other instruments.
+
+![Admin Interest Rates](./images/admin_interest_rates_1768318880092.png)
+
+### System Maintenance
+
+Perform system maintenance tasks including Asset Master synchronization.
+
+![Admin System Maintenance](./images/admin_system_maintenance_1768318837854.png)
+
+**Asset Master Sync (Asset Seeding):**
+- Click **Sync Assets** to update the internal database of stocks, mutual funds, and ETFs
+- Downloads latest data from NSDL, BSE, NSE, and AMFI sources
+- Ensures newly listed securities are searchable in the application
+- **Rate Limit:** Can only be triggered once every 5 minutes
+
+> [!NOTE]
+> **Server Mode:** Asset seeding runs automatically on every server launch/restart. Use **Sync Assets** to update without restarting.
+> **Desktop Mode:** Asset seeding runs only once on first boot. After that, you must manually run **Sync Assets** to get the latest securities.
 
 ---
 
-## 12. Getting Help & Reporting Bugs {#getting-help}
+## Themes & Privacy
 
-If you encounter a bug or have a feature request, please **open an issue on the project's GitHub repository**. Your feedback is essential for improving the application!
+### Theme Toggle
 
-➡️ **For a visual guide with screenshots, see the [HTML User Guide](./user_guide/index.html).**
+Switch between **Light**, **Auto**, and **Dark** themes using the toggle in the sidebar.
+
+| Light Theme | Dark Theme |
+|-------------|------------|
+| ![Light Theme](./images/dashboard_main_1768317306374.png) | ![Dark Theme](./images/dark_theme_1768319158480.png) |
+
+### Privacy Mode
+
+Click the **eye icon** next to the page title to toggle privacy mode, which hides sensitive financial data.
+
+![Dashboard with Privacy Mode](./images/dashboard_privacy_on_1768317339237.png)
+
+> [!TIP]
+> Use privacy mode when viewing your portfolio in public spaces.
+
+---
+
+## Quick Reference
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Esc` | Close modal dialogs |
+
+### Navigation Menu
+
+| Menu Item | Description |
+|-----------|-------------|
+| Dashboard | Overview of all portfolios |
+| Portfolios | Manage individual portfolios |
+| Transactions | View all transactions |
+| Import | Bulk import data |
+| Watchlists | Track potential investments |
+| Goals | Financial goal tracking |
+
+---
+
+## Support
+
+For questions or issues, please contact your system administrator.
+
+---
+
+*ArthSaarthi - Empowering Your Investment Journey* 🚀

@@ -303,6 +303,12 @@ def seed_assets_command(
 
     typer.echo("-----------------------")
     seeder.flush_pending()  # Commit any remaining assets
+
+    # Seed/update interest rates (PPF, etc.) every time assets are seeded
+    from app.db.initial_data import seed_interest_rates
+    typer.echo("\n--- Seeding Interest Rates ---")
+    seed_interest_rates(db)
+
     db.commit()
 
 

@@ -71,3 +71,6 @@ NAVAll.txt
 vite
 *_extracted.txt
 backend/extract_pdf_text.py
+frontend/*.AppImage
+frontend/*.deb
+frontend/*.rpm

@@ -395,16 +395,51 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                     ticker = f"PPF-{tx_data['ppf_account_number']}"
                     asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
                 elif "isin" in tx_data and tx_data["isin"]:
+                    # First try to find by ISIN in the database
                     asset = (
                         db.query(models.Asset)
                         .filter(models.Asset.isin == tx_data["isin"])
                         .first()
                     )
+                    # If not found in DB, try looking up ISIN in AMFI data
+                    if not asset:
+                        try:
+                            from app.services.providers.amfi_provider import (
+                                amfi_provider,
+                            )
+                            isin_code = tx_data["isin"]
+                            all_mf_data = amfi_provider.get_all_nav_data()
+                            for scheme_code, mf_info in all_mf_data.items():
+                                isin_match = mf_info.get("isin") == isin_code
+                                isin2_match = mf_info.get("isin2") == isin_code
+                                if isin_match or isin2_match:
+                                    # Found in AMFI - create the asset
+                                    logger.info(
+                                        f"Found MF in AMFI: {isin_code} -> "
+                                        f"{mf_info.get('scheme_name', scheme_code)}"
+                                    )
+                                    asset = crud.asset.get_or_create_by_ticker(
+                                        db,
+                                        ticker_symbol=scheme_code,
+                                        asset_type="Mutual Fund",
+                                    )
+                                    break
+                        except Exception as e:
+                            logger.warning(f"AMFI lookup failed for {tx_data}: {e}")
+                    # Final fallback: try yfinance with ticker_symbol
                     if not asset and "ticker_symbol" in tx_data:
+                        logger.debug(
+                            f"AMFI lookup failed, trying yfinance: "
+                            f"{tx_data['ticker_symbol']}"
+                        )
                         asset = crud.asset.get_or_create_by_ticker(
                             db, ticker_symbol=tx_data["ticker_symbol"]
                         )
                 elif "ticker_symbol" in tx_data:
+                    logger.debug(
+                        f"Looking up foreign stock via yfinance: "
+                        f"{tx_data['ticker_symbol']}"
+                    )
                     asset = crud.asset.get_or_create_by_ticker(
                         db, ticker_symbol=tx_data["ticker_symbol"]
                     )

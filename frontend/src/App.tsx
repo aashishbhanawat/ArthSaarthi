@@ -19,13 +19,11 @@ import ProfilePage from './pages/ProfilePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
-import AssetLoadingBanner from './components/AssetLoadingBanner';
 import UpdateBanner from './components/UpdateBanner';
 
 const AppLayout = () => (
   <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
     <UpdateBanner />
-    <AssetLoadingBanner />
     <div className="grid grid-cols-[auto_1fr] flex-1 overflow-hidden">
       <NavBar />
       <main className="p-8 overflow-y-auto">

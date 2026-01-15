@@ -10,7 +10,7 @@ This application retrieves financial data from multiple publicly available sourc
 *   **[ICICI Direct](https://www.icicidirect.com/):** For comprehensive security master data (used as fallback source).
 *   **[Yahoo Finance](https://finance.yahoo.com/)** (via `yfinance` library): For real-time and historical stock prices.
 *   **[AMFI India](https://www.amfiindia.com/):** For the latest Mutual Fund Net Asset Values (NAVs).
-*   **[MFAPI](https://mfapi.in/):** For historical Mutual Fund NAV data.
+*   **[MFAPI](https://mfapi.in/):** For historical Mutual Fund NAV data. *Note: `mfapi.in` is an open-source, unofficial API. While highly reliable, it is not an official AMFI service.*
 *   **[Exchange Rate API](https://exchangerate-api.com/):** For foreign exchange rates.
 
 ArthSaarthi is **not affiliated with, endorsed by, or sponsored by** any of these organizations. Data is used for informational purposes only.

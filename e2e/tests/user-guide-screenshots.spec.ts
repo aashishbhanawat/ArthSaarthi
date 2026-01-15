@@ -93,11 +93,18 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-        // Toggle privacy mode
-        const privacyToggle = page.locator('[aria-label*="privacy"], [title*="privacy"], button:has(svg)').first();
-        await privacyToggle.click();
+        // Wait for dashboard data to fully load
+        await page.waitForTimeout(2000);
+
+        // Toggle privacy mode using the eye button with aria-label
+        const privacyButton = page.locator('button[aria-label="Hide sensitive data"]');
+        await expect(privacyButton).toBeVisible();
+        await privacyButton.click();
         await page.waitForTimeout(500);
         await screenshot(page, '03_dashboard_privacy');
+
+        // Reset privacy mode for other tests
+        await page.getByRole('button', { name: 'Show sensitive data' }).click();
     });
 
     test('04 - Portfolios List', async ({ page }) => {
@@ -109,6 +116,7 @@ test.describe.serial('User Guide Screenshots', () => {
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
         await expect(page.getByRole('heading', { name: 'Portfolios' })).toBeVisible();
+        await page.waitForTimeout(500); // Wait for navigation state to settle
         await screenshot(page, '04_portfolios');
     });
 
@@ -143,8 +151,10 @@ test.describe.serial('User Guide Screenshots', () => {
         await screenshot(page, '05c_add_stock_modal');
         await page.getByRole('button', { name: 'Save Transaction' }).click();
 
-        // Portfolio with holding
+        // Portfolio with holding - scroll to show holdings table
         await page.waitForTimeout(1000);
+        await page.evaluate(() => window.scrollTo(0, 300));
+        await page.waitForTimeout(500);
         await screenshot(page, '05d_portfolio_with_holding');
     });
 
@@ -350,5 +360,100 @@ test.describe.serial('User Guide Screenshots', () => {
         await holdingRow.click();
         await page.waitForTimeout(500);
         await screenshot(page, '20_holding_drilldown');
+    });
+
+    // ========== v1.1.0 Features ==========
+
+    test('21 - Dark Theme Toggle', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+        await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+
+        // Click the Dark mode button in the theme selector
+        await page.getByRole('button', { name: 'Dark', exact: true }).click();
+        await page.waitForTimeout(500);
+        await screenshot(page, '21_dark_theme');
+
+        // Reset to light for other tests
+        await page.getByRole('button', { name: 'Light', exact: true }).click();
+    });
+
+    test('22 - Benchmark Comparison', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Portfolios' }).click();
+        await page.getByText('My Investment Portfolio').click();
+        await page.waitForTimeout(1000);
+
+        // Screenshot the portfolio page which may show benchmark info
+        await screenshot(page, '22_portfolio_analytics');
+    });
+
+    test('23 - Diversification Analysis', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        // Dashboard shows allocation/diversification charts
+        await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+        await page.waitForTimeout(1000);
+        await screenshot(page, '23_asset_allocation');
+    });
+
+    test('24 - Import Formats', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Import' }).click();
+        await page.waitForTimeout(1000);
+
+        // Note: Statement Type is a native <select> - can't show expanded options in screenshot
+        // The page shows all available import formats in the dropdown when clicked by user
+        await screenshot(page, '24_import_formats');
+    });
+
+    test('25 - Transaction Filter Types', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Transactions' }).click();
+        await page.waitForTimeout(500);
+
+        // Click the Type dropdown to show all transaction types
+        const typeFilter = page.locator('#type-filter');
+        await typeFilter.click();
+        await screenshot(page, '25_transaction_type_filter');
+    });
+
+    test('26 - Investment Style Classification', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Portfolios' }).click();
+        await page.getByText('My Investment Portfolio').click();
+        await page.waitForTimeout(1000);
+
+        // Scroll to find Investment Style section if it exists
+        // Try to locate the Investment Style card/panel
+        const investmentStyleCard = page.locator('text=Investment Style').first();
+        if (await investmentStyleCard.isVisible()) {
+            await investmentStyleCard.scrollIntoViewIfNeeded();
+            await page.waitForTimeout(500);
+        }
+
+        // Take screenshot of the analytics section
+        await screenshot(page, '26_investment_style');
     });
 });
