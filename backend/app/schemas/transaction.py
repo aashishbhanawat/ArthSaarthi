@@ -47,6 +47,16 @@ class TransactionCreateIn(TransactionBase):
             raise ValueError("Either asset_id or ticker_symbol must be provided")
         return self
 
+    @model_validator(mode="after")
+    def check_integer_quantities_for_corporate_actions(self) -> "TransactionCreateIn":
+        if self.transaction_type in [TransactionType.BONUS, TransactionType.SPLIT]:
+            # For these types, quantity and price_per_unit represent ratios and must be integers
+            if self.quantity % 1 != 0:
+                raise ValueError("Quantity (Ratio New) must be an integer for Bonus/Split.")
+            if self.price_per_unit % 1 != 0:
+                raise ValueError("Price per unit (Ratio Old) must be an integer for Bonus/Split.")
+        return self
+
 
 # Properties to receive on transaction update
 class TransactionUpdate(TransactionBase):

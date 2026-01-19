@@ -1,4 +1,5 @@
 import logging
+import math
 from decimal import Decimal
 from uuid import UUID
 
@@ -177,6 +178,13 @@ def handle_bonus_issue(
 
     bonus_shares_to_issue = (net_holdings / old_shares_ratio) * new_shares_ratio
     logger.info(f"Calculated bonus shares to issue: {bonus_shares_to_issue}")
+
+    # For Indian stocks, fractional shares are not issued.
+    # Truncate to the nearest lower integer (floor).
+    asset = crud.asset.get(db, id=asset_id)
+    if asset and asset.currency == "INR":
+        bonus_shares_to_issue = Decimal(math.floor(bonus_shares_to_issue))
+        logger.info(f"Asset is INR. Floored bonus shares to: {bonus_shares_to_issue}")
 
     if bonus_shares_to_issue > 0:
         bonus_buy_transaction_in = schemas.TransactionCreate(
