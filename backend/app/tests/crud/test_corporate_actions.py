@@ -760,3 +760,135 @@ def test_multi_demerger_cost_calculation(db: Session) -> None:
     )
     assert total == Decimal("90000")
 
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_handle_bonus_issue_fractional_inr(db: Session) -> None:
+    """
+    Test case for handling a bonus issue with fractional result for INR asset.
+    - GIVEN an INR asset with 100 shares.
+    - WHEN a 1:3 bonus issue is logged (1 new for 3 old).
+    - THEN the resulting bonus shares should be floored to 33 (integer), not 33.33.
+    """
+    # GIVEN
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Bonus Fractional Portfolio")
+    asset = create_test_asset(db, ticker_symbol="INFY")
+
+    # Manually update currency to INR since helper defaults to USD
+    asset.currency = "INR"
+    db.add(asset)
+    db.commit()
+    db.refresh(asset)
+
+    # Create initial holding of 100 shares
+    initial_buy = schemas.TransactionCreate(
+        asset_id=asset.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("100"),
+        price_per_unit=Decimal("1500"),
+        transaction_date=datetime(2023, 1, 1),
+    )
+    crud.transaction.create_with_portfolio(
+        db, obj_in=initial_buy, portfolio_id=portfolio.id
+    )
+    db.commit()
+
+    # WHEN
+    # A 1:3 bonus issue (1 new for 3 old)
+    # Expected: 100 / 3 * 1 = 33.3333 -> Floored to 33
+    bonus_transaction_in = schemas.TransactionCreate(
+        asset_id=asset.id,
+        transaction_type=TransactionType.BONUS,
+        quantity=Decimal("1"),  # New shares
+        price_per_unit=Decimal("3"),  # Old shares
+        transaction_date=datetime(2023, 6, 1),
+    )
+
+    crud.crud_corporate_action.handle_bonus_issue(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=bonus_transaction_in,
+    )
+    db.commit()
+
+    # THEN
+    txs = db.query(models.Transaction).filter(
+        models.Transaction.portfolio_id == portfolio.id,
+        models.Transaction.asset_id == asset.id,
+        models.Transaction.transaction_type == TransactionType.BUY,
+        models.Transaction.price_per_unit == 0,
+        models.Transaction.transaction_date == datetime(2023, 6, 1)
+    ).all()
+
+    assert len(txs) == 1
+    bonus_tx = txs[0]
+    assert bonus_tx.quantity == Decimal("33")
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_handle_split_issue_fractional_inr(db: Session) -> None:
+    """
+    Test case for handling a split issue with fractional result for INR asset.
+    - GIVEN an INR asset with 1 share.
+    - WHEN a 3:2 split is logged (3 new for 2 old).
+    - THEN the resulting shares should be floored to 1 (integer), not 1.5.
+    """
+    # GIVEN
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Split Fractional Portfolio")
+    asset = create_test_asset(db, ticker_symbol="TATASTEEL")
+
+    # Manually update currency to INR
+    asset.currency = "INR"
+    db.add(asset)
+    db.commit()
+    db.refresh(asset)
+
+    # Create initial holding of 1 share
+    initial_buy = schemas.TransactionCreate(
+        asset_id=asset.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("1"),
+        price_per_unit=Decimal("100"),
+        transaction_date=datetime(2023, 1, 1),
+    )
+    crud.transaction.create_with_portfolio(
+        db, obj_in=initial_buy, portfolio_id=portfolio.id
+    )
+    db.commit()
+
+    # WHEN
+    # A 3:2 split (3 new for 2 old)
+    # Expected: 1 * (3/2) = 1.5 -> Floored to 1
+    split_transaction_in = schemas.TransactionCreate(
+        asset_id=asset.id,
+        transaction_type=TransactionType.SPLIT,
+        quantity=Decimal("3"),  # New shares (ratio numerator)
+        price_per_unit=Decimal("2"),  # Old shares (ratio denominator)
+        transaction_date=datetime(2023, 6, 1),
+    )
+
+    crud.crud_corporate_action.handle_stock_split(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=split_transaction_in,
+    )
+    db.commit()
+
+    # THEN
+    from app.cache.utils import invalidate_caches_for_portfolio
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
+
+    holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+        db=db, portfolio_id=portfolio.id
+    )
+
+    asset_holding = next(
+        (h for h in holdings_data.holdings if h.asset_id == asset.id), None
+    )
+
+    assert asset_holding is not None
+    assert asset_holding.quantity == Decimal("1")
