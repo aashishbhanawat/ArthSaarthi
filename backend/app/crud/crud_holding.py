@@ -596,11 +596,12 @@ def _process_market_traded_assets(
                     db.expire(asset)
 
     # --- Pre-fetch FX rates for foreign assets ---
-    currencies_needed = {
-        asset.currency
-        for asset in asset_map.values()
-        if asset.currency and asset.currency != "INR"
-    }
+    currencies_needed = set()
+    for ticker in current_holdings_tickers:
+        asset = next((a for a in asset_map.values() if a.ticker_symbol == ticker), None)
+        if asset and asset.currency and asset.currency != "INR":
+            currencies_needed.add(asset.currency)
+
     fx_rates = {}
     if currencies_needed:
         fx_assets_to_fetch = [
