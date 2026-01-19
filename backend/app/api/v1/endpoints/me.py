@@ -1,13 +1,13 @@
 import json
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.dependencies import get_current_active_user
-from app.db.session import get_db
+from app.db.session import SessionLocal, get_db
 from app.services import backup_service
 
 router = APIRouter()
@@ -37,14 +37,26 @@ def backup_user_data(
     )
 
 
+def restore_backup_task_wrapper(user_id: str, backup_data: dict):
+    """
+    Wrapper to get a new DB session for the background task.
+    """
+    db = SessionLocal()
+    try:
+        backup_service.restore_backup(db, user_id, backup_data)
+    finally:
+        db.close()
+
+
 @router.post("/me/restore")
 async def restore_user_data(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user),
 ):
     """
     Restore user data from a backup file.
+    This is a background task. The user will be notified upon completion.
     WARNING: This will delete all existing data for the user!
     """
     content = await file.read()
@@ -53,5 +65,7 @@ async def restore_user_data(
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON file")
 
-    backup_service.restore_backup(db, current_user.id, backup_data)
-    return {"message": "Restore successful"}
+    background_tasks.add_task(
+        restore_backup_task_wrapper, current_user.id, backup_data
+    )
+    return {"message": "Restore process started in the background."}
