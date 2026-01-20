@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy.orm import Session
@@ -236,9 +237,14 @@ def test_handle_stock_split(db: Session) -> None:
     from app.cache.utils import invalidate_caches_for_portfolio
     invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
 
-    holdings_data = crud.holding.get_portfolio_holdings_and_summary(
-        db=db, portfolio_id=portfolio.id
-    )
+    # Mock financial service to prevent external calls
+    with patch("app.crud.crud_holding.financial_data_service") as mock_service:
+        mock_service.get_current_prices.return_value = {}
+        mock_service.yfinance_provider.get_enrichment_data.return_value = {}
+
+        holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+            db=db, portfolio_id=portfolio.id
+        )
     # Find the holding for this asset
     asset_holding = next(
         (h for h in holdings_data.holdings if h.asset_id == asset.id), None
@@ -729,9 +735,15 @@ def test_multi_demerger_cost_calculation(db: Session) -> None:
 
     # Invalidate cache and get holdings
     invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
-    holdings_data = crud.holding.get_portfolio_holdings_and_summary(
-        db=db, portfolio_id=portfolio.id
-    )
+
+    # Mock financial service to prevent external calls
+    with patch("app.crud.crud_holding.financial_data_service") as mock_service:
+        mock_service.get_current_prices.return_value = {}
+        mock_service.yfinance_provider.get_enrichment_data.return_value = {}
+
+        holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+            db=db, portfolio_id=portfolio.id
+        )
 
     # Find holdings
     holdings = holdings_data.holdings
@@ -882,9 +894,14 @@ def test_handle_split_issue_fractional_inr(db: Session) -> None:
     from app.cache.utils import invalidate_caches_for_portfolio
     invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
 
-    holdings_data = crud.holding.get_portfolio_holdings_and_summary(
-        db=db, portfolio_id=portfolio.id
-    )
+    # Mock financial service to prevent external calls
+    with patch("app.crud.crud_holding.financial_data_service") as mock_service:
+        mock_service.get_current_prices.return_value = {}
+        mock_service.yfinance_provider.get_enrichment_data.return_value = {}
+
+        holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+            db=db, portfolio_id=portfolio.id
+        )
 
     asset_holding = next(
         (h for h in holdings_data.holdings if h.asset_id == asset.id), None
