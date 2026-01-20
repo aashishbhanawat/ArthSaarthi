@@ -90,12 +90,12 @@ describe('WatchlistTable', () => {
     renderComponent({ watchlist: watchlistWithPrices });
 
     // Check prices are formatted
-    expect(screen.getByText('₹150.00')).toBeInTheDocument();
-    expect(screen.getByText('₹2,800.00')).toBeInTheDocument();
+    expect(screen.getByText('$150.00')).toBeInTheDocument();
+    expect(screen.getByText('$2,800.00')).toBeInTheDocument();
 
     // Check P&L colors
-    expect(screen.getByText('₹2.50')).toHaveClass('text-green-600');
-    expect(screen.getByText('-₹10.00')).toHaveClass('text-red-600');
-    expect(screen.getByText('₹0.00')).toHaveClass('text-gray-900');
+    expect(screen.getByText('$2.50')).toHaveClass('text-green-600');
+    expect(screen.getByText('-$10.00')).toHaveClass('text-red-600');
+    expect(screen.getByText('$0.00')).toHaveClass('text-gray-900');
   });
 });
