@@ -321,7 +321,7 @@ class ScheduleFAService:
         For ESPP/RSU, this should be the FMV at the time of acquisition
         (which is our cost basis).
         """
-        """
+
         # If the lot was fully acquired *after* start of year, the initial investment
         # for reporting purposes is still the cost of that lot.
         # Actually, if we are reporting "Initial Value of investment", it is ALWAYS
