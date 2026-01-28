@@ -394,9 +394,11 @@ const CapitalGainsPage: React.FC = () => {
                                 const link = document.createElement("a");
                                 link.setAttribute("href", encodedUri);
                                 link.setAttribute("download", `schedule_fa_${selectedCalendarYear}.csv`);
+                                /* eslint-disable testing-library/no-node-access */
                                 document.body.appendChild(link);
                                 link.click();
                                 document.body.removeChild(link);
+                                /* eslint-enable testing-library/no-node-access */
                             }}
                             className="btn btn-secondary flex items-center gap-2"
                         >

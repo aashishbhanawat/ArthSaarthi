@@ -63,25 +63,39 @@ def fix_rsu_links():
                 # Check if it is valid Sell to Cover?
                 # Usually Sell Qty < Vest Qty.
                 if sell.quantity > vest.quantity:
-                    logger.warning(f"  Skipping: Sell Qty {sell.quantity} > Vest Qty {vest.quantity}. Unlikely to be purely Sell-to-Cover.")
+                    logger.warning(
+                        f"  Skipping: Sell Qty {sell.quantity} > "
+                        f"Vest Qty {vest.quantity}. "
+                        "Unlikely to be purely Sell-to-Cover."
+                    )
                     continue
 
                 # Check if ALREADY correctly linked
-                fully_linked_to_vest = False
                 if existing_links:
-                    total_linked_to_vest = sum(l.quantity for l in existing_links if l.buy_transaction_id == vest.id)
-                    total_linked_other = sum(l.quantity for l in existing_links if l.buy_transaction_id != vest.id)
+                    vest_id = vest.id
+                    total_linked_to_vest = sum(
+                        link.quantity for link in existing_links
+                        if link.buy_transaction_id == vest_id
+                    )
+                    total_linked_other = sum(
+                        link.quantity for link in existing_links
+                        if link.buy_transaction_id != vest_id
+                    )
 
-                    if total_linked_to_vest == sell.quantity and total_linked_other == 0:
+                    if (total_linked_to_vest == sell.quantity and
+                            total_linked_other == 0):
                         logger.info("  Already correctly linked.")
                         continue
 
                     if total_linked_other > 0:
-                        logger.info(f"  Found links to OTHER lots ({total_linked_other}). Fixing...")
+                        logger.info(
+                            f"  Found links to OTHER lots ({total_linked_other}). "
+                            "Fixing..."
+                        )
 
                         # DELETE existing links
-                        for l in existing_links:
-                            db.delete(l)
+                        for link in existing_links:
+                            db.delete(link)
                         db.flush()
                 else:
                     logger.info("  No existing links. Linking to RSU...")

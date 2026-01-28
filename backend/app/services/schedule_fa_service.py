@@ -70,9 +70,9 @@ class ScheduleFAService:
     ) -> List[dict]:
         """
         Generate Schedule FA A3 data for a calendar year.
-        
+
         IMPORTANT: Each BUY lot is a separate entry (per ITR requirements).
-        
+
         Args:
             calendar_year: The calendar year to report (Jan 1 - Dec 31)
         """
@@ -248,8 +248,10 @@ class ScheduleFAService:
                     qty_at_start -= d["qty"]
             qty_at_start = max(Decimal(0), qty_at_start)
 
-            # Reconstruct Quantity at End (current_qty from replay matches end state? Yes, if replay includes all history)
-            # But we need check if any disposals happened AFTER end_date (not possible if query restricted?
+            # Reconstruct Quantity at End (current_qty from replay matches end state?
+            # Yes, if replay includes all history)
+            # But we need check if any disposals happened AFTER end_date
+            # (not possible if query restricted?
             # Wait, we queried ALL txs? No, we need ALL history to replay correctly.
             # But the query filters? The query logic uses user_id generally.
             # If query is filtered by date, replay is broken.
@@ -329,8 +331,8 @@ class ScheduleFAService:
         # (as long as it's held during the year).
 
         # However, `quantity_at_start` in our lot dict refers to "qty held on Jan 1".
-        # But for the "Initial Value" column in ITR, we want the cost of the *entire* lot
-        # that contributes to this entry?
+        # But for the "Initial Value" column in ITR, we want the cost of the *entire*
+        # lot that contributes to this entry?
         # The user's request implies per-lot reporting.
         # So we should report the cost of the *original* quantity of this lot?
         # Or the cost of the quantity that was held during the period?
@@ -350,7 +352,8 @@ class ScheduleFAService:
         # Or just the cost of the portion relevant to this year?
         # Usually, Schedule FA asks for the investment details.
 
-        # Current logic checks `quantity_at_start`. If we bought it mid-year, qty_at_start is 0.
+        # Current logic checks `quantity_at_start`.
+        # If we bought it mid-year, qty_at_start is 0.
         # This causes the issue.
         # We should use the `buy_transaction` quantity if we want the full lot cost,
         # OR better: The cost of the quantity that justifies this entry.
@@ -376,7 +379,8 @@ class ScheduleFAService:
         # WHICH Quantity?
         # If we sold 50% last year, do we report 100% of cost or 50%?
         # Schedule FA usually tracks the *current* holding's history.
-        # If we use original buy quantity, it might be misleading if we only hold a fraction.
+        # If we use original buy quantity, it might be misleading if we only
+        # hold a fraction.
         # BUT, if we use only remaining qty, it might look like a smaller investment.
         # However, Peak Value uses max holding.
         # Let's use the Max Quantity held during the period for the "Investment Value".

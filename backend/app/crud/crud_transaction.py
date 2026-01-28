@@ -436,8 +436,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         )
 
         # Sort by date, then by type priority (Acquisitions BEFORE Disposals)
-        # This ensures that if RSU Vest and Sell-to-Cover share the exact same timestamp,
-        # the Vest is processed first so the lot exists for the Sell to consume.
+        # This ensures that if RSU Vest and Sell-to-Cover share the exact same
+        # timestamp, the Vest is processed first so the lot exists for the Sell
+        # to consume.
         def get_type_priority(tx_type: str) -> int:
             if tx_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
                 return 1
