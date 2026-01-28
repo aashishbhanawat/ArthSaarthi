@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     admin_interest_rates,
     assets,
     auth,
+    capital_gains,
     dashboard,
     fixed_deposits,
     fx,
@@ -16,6 +17,7 @@ from app.api.v1.endpoints import (
     portfolios,
     ppf_accounts,
     recurring_deposits,
+    schedule_fa,
     system,
     testing,
     transactions,
@@ -74,3 +76,13 @@ api_router.include_router(
 
 # System endpoints for desktop app (seeding status, etc.)
 api_router.include_router(system.router, prefix="/system", tags=["system"])
+
+# Capital Gains Tax Reports (FR6.5)
+api_router.include_router(
+    capital_gains.router, prefix="/capital-gains", tags=["capital-gains"]
+)
+
+# Schedule FA - Foreign Assets (Calendar Year)
+api_router.include_router(
+    schedule_fa.router, prefix="/schedule-fa", tags=["schedule-fa"]
+)

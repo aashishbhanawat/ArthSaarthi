@@ -7,6 +7,8 @@ This document serves as the official bug log for **ArthSaarthi**. All issues dis
 Copy and paste the template below to file a new bug report.
 
 ```markdown
+
+
 **Bug ID:** YYYY-MM-DD-NN (e.g., 2025-07-17-01)
 **Title:**
 **Module:** (e.g., User Management, Authentication, Core Backend, UI/Styling)
@@ -6946,3 +6948,55 @@ After restore, foreign stocks (GOOG, CSCO) showed "Unknown" for sector/industry/
 **Resolution:**
 Made the asset_type check case-insensitive in `crud_holding.py` using `.upper()`.
 
+
+---
+
+**Bug ID:** 2026-01-28-01
+**Title:** Schedule FA "Peak Value" significantly overestimated (Max Qty * Max Price).
+**Module:** Reporting (Backend)
+**Reported By:** Developer (Unit Testing)
+**Date Reported:** 2026-01-28
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:**
+The initial implementation calculated Peak Value as `Max(Quantity over year) * Max(Price over year)`. This is incorrect for assets with partial sales, as the maximum quantity might not have been held on the day of the maximum price.
+**Steps to Reproduce:**
+1. Buy 10 units @ 100 on Jan 1.
+2. Price hits 200 on June 1.
+3. Sell 5 units on July 1.
+4. Price hits 300 on Aug 1.
+5. Old Logic: Max Qty (10) * Max Price (300) = 3000.
+6. True Peak: Max(June 1 Val: 2000, Aug 1 Val: 1500) = 2000.
+**Expected Behavior:** Peak Value should be the maximum daily market value considering the actual balance on that specific day.
+**Actual Behavior:** Overestimated value (3000 vs 2000).
+**Resolution:** Implemented `_calculate_lot_peak_value` using a FIFO replay mechanism to check daily balances against daily prices.
+
+---
+
+**Bug ID:** 2026-01-28-02
+**Title:** Bonus transactions double-counted in holdings calculation.
+**Module:** Core Portfolio (Backend)
+**Reported By:** Developer (Integration Testing)
+**Date Reported:** 2026-01-28
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:**
+The system creates two transactions for a bonus issue: a `BONUS` type (audit record) and a `BUY` type (actual zero-cost shares). The holdings calculation was summing both, leading to inflated quantities.
+**Steps to Reproduce:**
+1. Run `handle_bonus_issue` (1:2 ratio on 100 shares).
+2. Expected Holdings: 100 + 50 = 150.
+3. Actual Holdings: 100 + 50 (BUY) + 1 (BONUS) = 151.
+**Resolution:** Updated `crud_transaction.py` to exclude `TransactionType.BONUS` from quantity summation.
+
+---
+
+**Bug ID:** 2026-01-28-03
+**Title:** Dashboard PnL unit test expectation mismatch (WAC vs FIFO).
+**Module:** Dashboard (Test Suite)
+**Reported By:** Developer (Test Failure)
+**Date Reported:** 2026-01-28
+**Classification:** Test Suite
+**Severity:** Medium
+**Description:**
+The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (Unrealized 1200), but the system implements FIFO (Unrealized 1150).
+**Resolution:** Updated test assertions to match correct FIFO logic.

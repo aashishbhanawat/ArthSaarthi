@@ -22,29 +22,46 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
     def get_holdings_on_date(
         self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID, on_date: datetime
     ) -> Decimal:
-        # Calculate total buys (and other acquisitions) up to the date
-        acquisition_types = ["BUY", "ESPP_PURCHASE", "RSU_VEST"]
-        total_buys = db.query(func.sum(Transaction.quantity)).filter(
-            Transaction.user_id == user_id,
-            Transaction.asset_id == asset_id,
-            Transaction.transaction_type.in_(acquisition_types),
-            Transaction.transaction_date <= on_date,
-        ).scalar() or Decimal("0")
+        # Fetch all relevant transactions sorted by date
+        transactions = (
+            db.query(Transaction)
+            .filter(
+                Transaction.user_id == user_id,
+                Transaction.asset_id == asset_id,
+                Transaction.transaction_date <= on_date,
+            )
+            .order_by(Transaction.transaction_date)
+            .all()
+        )
 
-        # Calculate total sells up to the date
-        total_sells = db.query(func.sum(Transaction.quantity)).filter(
-            Transaction.user_id == user_id,
-            Transaction.asset_id == asset_id,
-            Transaction.transaction_type == "SELL",
-            Transaction.transaction_date <= on_date,
-        ).scalar() or Decimal("0")
+        units = Decimal("0")
+        
+        for tx in transactions:
+            ttype = tx.transaction_type
+            qty = tx.quantity
+            
+            if ttype in [
+                TransactionType.BUY, 
+                TransactionType.ESPP_PURCHASE, 
+                TransactionType.RSU_VEST, 
+                # TransactionType.BONUS - Excluded as it is an audit record; actual shares are in a BUY tx
+                TransactionType.CONTRIBUTION
+            ]:
+                units += qty
+            elif ttype == TransactionType.SELL:
+                units -= qty
+            elif ttype == TransactionType.SPLIT:
+                # Split logic: multiplier = new_ratio / old_ratio
+                # quantity = new, price_per_unit = old
+                if tx.price_per_unit and tx.price_per_unit > 0:
+                    multiplier = tx.quantity / tx.price_per_unit
+                    units = units * multiplier
+            # Merger/Demerger/Rename usually effectively close position or open new 
+            # assets, but strict holding count logic might need fine tuning 
+            # if we wanted to prevent selling "old" merged shares.
+            # For now, SPLIT is the primary in-place modifier.
 
-        # Note: This simple calculation does not account for SPLITs correctly if they
-        # just record the ratio. However, typically splits might be recorded as
-        # closing old position and opening new, or adding difference.
-        # For RSU/ESPP support, we explicitly added them to acquisition_types.
-
-        return total_buys - total_sells
+        return units
 
     def get_cost_basis_on_date(
         self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID, on_date: datetime
@@ -155,6 +172,39 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 db.add(link)
             db.flush()
             db.refresh(db_obj)
+        elif obj_in.transaction_type.upper() == "SELL":
+            # --- Auto-FIFO Linking ---
+            # If no explicit links provided, automatically create links using FIFO.
+            logger.debug(
+                f"Auto-FIFO linking for SELL tx {db_obj.id}, qty: {obj_in.quantity}"
+            )
+            available_lots = self.get_available_lots(
+                db=db, user_id=portfolio.user_id, asset_id=obj_in.asset_id,
+                exclude_sell_id=db_obj.id
+            )
+            remaining_qty = obj_in.quantity
+            for lot in available_lots:
+                if remaining_qty <= 0:
+                    break
+                take_qty = min(lot["available_quantity"], remaining_qty)
+                if take_qty > 0:
+                    link = TransactionLink(
+                        sell_transaction_id=db_obj.id,
+                        buy_transaction_id=lot["id"],
+                        quantity=take_qty,
+                    )
+                    db.add(link)
+                    remaining_qty -= take_qty
+                    logger.debug(
+                        f"  Linked {take_qty} from lot {lot['id']} (date: {lot['date']})"
+                    )
+            if remaining_qty > 0:
+                logger.warning(
+                    f"Auto-FIFO: Could not fully link SELL tx {db_obj.id}. "
+                    f"Remaining: {remaining_qty}"
+                )
+            db.flush()
+            db.refresh(db_obj)
 
         # --- Handle "Sell to Cover" for RSU Vest ---
         # If the transaction is an RSU vest and has sell_to_cover details,
@@ -208,6 +258,12 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                         "fx_rate": db_obj.details.get("fx_rate"),
                         "related_rsu_vest_id": str(db_obj.id),
                     },
+                    links=[
+                        schemas.TransactionLinkCreate(
+                            buy_transaction_id=db_obj.id,
+                            quantity=sell_quantity
+                        )
+                    ]
                 )
                 # Recursively call create_with_portfolio for the SELL transaction
                 logger.debug(
@@ -351,11 +407,16 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
 
     def get_available_lots(
-        self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID
+        self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID,
+        exclude_sell_id: Optional[uuid.UUID] = None
     ) -> List[dict]:
         """
         Calculates available lots for an asset using FIFO matching for unlinked sells
         and specific identification for linked sells.
+        
+        Args:
+            exclude_sell_id: Optional SELL transaction ID to exclude from processing
+                            (used during auto-linking to avoid the new SELL consuming its own lots)
         """
         # Fetch all relevant transactions sorted by date
         transactions = (
@@ -371,6 +432,18 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             .all()
         )
 
+        # Sort by date, then by type priority (Acquisitions BEFORE Disposals)
+        # This ensures that if RSU Vest and Sell-to-Cover share the exact same timestamp,
+        # the Vest is processed first so the lot exists for the Sell to consume.
+        def get_type_priority(tx_type: str) -> int:
+            if tx_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
+                return 1
+            if tx_type == "SELL":
+                return 2
+            return 3
+
+        transactions.sort(key=lambda t: (t.transaction_date, get_type_priority(t.transaction_type)))
+
         lots = []  # List of buys: {tx, available_quantity}
 
         for tx in transactions:
@@ -383,6 +456,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                     }
                 )
             elif tx.transaction_type == "SELL":
+                # Skip the excluded sell (used during auto-linking)
+                if exclude_sell_id and tx.id == exclude_sell_id:
+                    continue
                 sell_qty = tx.quantity
 
                 # 1. Process Specific Links

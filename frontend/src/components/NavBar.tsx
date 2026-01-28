@@ -100,6 +100,13 @@ const NavBar: React.FC = () => {
                     <ListBulletIcon className="h-5 w-5" />
                     <span>Transactions</span>
                 </NavLink>
+                <NavLink
+                    to="/capital-gains"
+                    className={({ isActive }) => linkClass(isActive)}
+                >
+                    <ScaleIcon className="h-5 w-5" />
+                    <span>Capital Gains</span>
+                </NavLink>
                 <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
                     <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>
                 </NavLink>
@@ -134,6 +141,10 @@ const NavBar: React.FC = () => {
                         <NavLink to="/admin/maintenance" className={({ isActive }) => linkClass(isActive)}>
                             <WrenchScrewdriverIcon className="h-5 w-5" />
                             <span>System Maintenance</span>
+                        </NavLink>
+                        <NavLink to="/admin/fmv" className={({ isActive }) => linkClass(isActive)}>
+                            <ScaleIcon className="h-5 w-5" />
+                            <span>FMV Management</span>
                         </NavLink>
                     </>
                 )}

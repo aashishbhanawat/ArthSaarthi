@@ -74,6 +74,7 @@ def get_available_lots(
     *,
     db: Session = Depends(dependencies.get_db),
     asset_id: uuid.UUID,
+    exclude_transaction_id: Optional[uuid.UUID] = None,
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
     """
@@ -82,7 +83,7 @@ def get_available_lots(
     # Verify asset belongs to user's portfolio implicitly by checking user_id
     # Actually availability depends on user + asset.
     return crud.transaction.get_available_lots(
-        db=db, user_id=current_user.id, asset_id=asset_id
+        db=db, user_id=current_user.id, asset_id=asset_id, exclude_sell_id=exclude_transaction_id
     )
 
 

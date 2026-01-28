@@ -376,9 +376,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     useEffect(() => {
         if (selectedAsset && selectedAsset.id && transactionType === 'SELL' && (assetType === 'Stock' || assetType === 'Mutual Fund')) {
             setIsLoadingLots(true);
-            getAvailableLots(selectedAsset.id)
+            const editTxId = transactionToEdit?.id;
+            getAvailableLots(selectedAsset.id, editTxId)
                 .then(lots => {
                     setAvailableLots(lots);
+                    // If detailed lot selection mapping exists in edited transaction, populate it?
+                    // Currently `transactionToEdit` doesn't have `links` hydrated fully maybe, 
+                    // or we need to fetch them. 
+                    // But for now, just showing available lots correct is the fix.
                     setLotSelections({});
                 })
                 .catch(err => console.error("Failed to fetch lots", err))
@@ -387,7 +392,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             setAvailableLots([]);
             setLotSelections({});
         }
-    }, [selectedAsset, transactionType, assetType]);
+    }, [selectedAsset, transactionType, assetType, transactionToEdit]);
 
     // Helper to calculate total selected quantity
     const totalSelectedQty = Object.values(lotSelections).reduce((sum, qty) => sum + qty, 0);

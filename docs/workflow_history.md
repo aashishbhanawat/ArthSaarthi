@@ -1,4 +1,55 @@
-## 2026-01-07: Fix Backup/Restore for Foreign Stocks & RSU Sell-to-Cover (NFR7)
+## 2026-01-28: Implement Foreign Assets (Schedule FA) & Capital Gains Reporting
+
+**Task:** Implement detailed Foreign Assets reporting (Schedule FA) compliant with Calendar Year rules, and Capital Gains reporting (Schedule 112A) for Grandfathered Equity.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Delivered a comprehensive compliance reporting suite:
+
+1.  **Schedule FA (Foreign Assets):**
+    -   Implemented Calendar Year tracking (Jan 1 - Dec 31) independent of Financial Year.
+    -   **Peak Value Logic:** Fixed overestimation bug by implementing specific-identifcation daily balance checks (FIFO replay) to find the true peak value, handling partial disposals correctly.
+    -   **Reporting:** Added "Peak Date" and "Closing Balance" fields.
+    -   **Refactoring:** Created `ScheduleFAService` to encapsulate this complex logic.
+
+2.  **Capital Gains (Schedule 112A):**
+    -   Implemented Grandfathered Equity support (ISIN, FMV 2018).
+    -   **CSV Export:** Added feature to export Schedule 112A data in ITR-2 compatible format.
+    -   **Foreign Gains:** Separated foreign equity gains (displayed in native currency) for Rule 115 compliance.
+
+3.  **Stability & Testing:**
+    -   Added `test_schedule_fa_service.py` to unit test the Peak Value algorithm.
+    -   Fixed Dashboard PnL tests to align with FIFO accounting.
+    -   Fixed Bonus Issue double-counting bug.
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/schedule_fa_service.py`, `backend/app/tests/services/test_schedule_fa_service.py`
+*   **Modified:** `backend/app/services/capital_gains_service.py` - Foreign separation, 112A logic
+*   **Modified:** `backend/app/api/v1/endpoints/schedule_fa.py` - New endpoints
+*   **Modified:** `backend/app/api/v1/endpoints/capital_gains.py` - CSV Export
+*   **Modified:** `backend/app/crud/crud_transaction.py` - FIFO Replay logic
+*   **Modified:** `backend/alembic/versions/f1a2b3c4d5e6_backfill_transaction_links_fifo.py` - FIFO Backfill
+
+**Frontend:**
+*   **Modified:** `frontend/src/pages/CapitalGainsPage.tsx` - Added Tabs, Export Button, Foreign Section
+*   **Modified:** `frontend/src/services/portfolioApi.ts` - API integration
+
+### Verification
+
+*   **Unit Tests:** New `test_schedule_fa_service.py` **PASSED**. Existing suite **PASSED**.
+*   **Manual Verification:** Verified CSV export format and Schedule FA table values against known partial-sale scenarios.
+
+### Outcome
+
+**Success.** Users can now generate accurate Tax Reports for Foreign Assets and Capital Gains, fully compliant with Indian Income Tax rules.
+
+---
+
 
 **Task:** Fix multiple issues with backup and restore functionality for foreign stocks and RSU transactions.
 

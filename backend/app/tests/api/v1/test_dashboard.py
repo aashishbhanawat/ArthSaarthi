@@ -116,16 +116,27 @@ def test_get_dashboard_summary_success(
     # Total Value = (15 AAPL * 150) + (2 GOOG * 2800) = 2250 + 5600 = 7850
     assert Decimal(data["total_value"]).quantize(Decimal("0.01")) == Decimal("7850.00")
 
-    # Unrealized P/L for AAPL = (150 - 110) * 15 = 600
-    # Unrealized P/L for GOOG = (2800 - 2500) * 2 = 600
-    # Total Unrealized P/L = 600 + 600 = 1200
+    # Unrealized P/L calculation (FIFO):
+    # AAPL:
+    #   Sell 5 consumed 5 from Jan 1 (Buy @ 100).
+    #   Remaining: 5 @ 100, 10 @ 120. Total 15.
+    #   Cost Basis = (5 * 100) + (10 * 120) = 500 + 1200 = 1700.
+    #   Current Value = 15 * 150 = 2250.
+    #   Unrealized P/L = 2250 - 1700 = 550.
+    # GOOG:
+    #   Unrealized P/L = (2800 - 2500) * 2 = 600.
+    # Total Unrealized P/L = 550 + 600 = 1150.
     assert Decimal(data["total_unrealized_pnl"]).quantize(Decimal("0.01")) == Decimal(
-        "1200.00"
+        "1150.00"
     )
 
-    # Realized P/L was calculated in the scenario above as 100
+    # Realized P/L calculation (FIFO):
+    # Sell 5 @ 130.
+    # Cost Basis (FIFO) = 5 @ 100 = 500.
+    # Proceeds = 5 * 130 = 650.
+    # Realized PnL = 650 - 500 = 150.
     assert Decimal(data["total_realized_pnl"]).quantize(Decimal("0.01")) == Decimal(
-        "100.00"
+        "150.00"
     )
 
     assert len(data["asset_allocation"]) == 2

@@ -61,11 +61,21 @@ class TransactionUpdate(TransactionBase):
 
 
 # Properties to return to client
+class TransactionLink(BaseModel):
+    id: uuid.UUID
+    sell_transaction_id: uuid.UUID
+    buy_transaction_id: uuid.UUID
+    quantity: Decimal
+    model_config = ConfigDict(from_attributes=True)
+
+
 class Transaction(TransactionBase):
     id: uuid.UUID
     portfolio_id: uuid.UUID
     asset: "Asset"
+    sell_links: List[TransactionLink] = []  # Include links for accurate lot tracking
     model_config = ConfigDict(from_attributes=True)
+
 
 
 class TransactionsResponse(BaseModel):

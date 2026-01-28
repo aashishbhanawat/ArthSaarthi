@@ -1,6 +1,13 @@
 import { Asset } from './asset';
 import { TransactionType } from './enums';
 
+export interface TransactionLink {
+  id: string;
+  sell_transaction_id: string;
+  buy_transaction_id: string;
+  quantity: string;
+}
+
 export interface Transaction {
   id: string;
   asset_id: string;
@@ -13,6 +20,7 @@ export interface Transaction {
   asset: Asset;
   is_reinvested: boolean;
   details?: Record<string, unknown> | null;
+  sell_links?: TransactionLink[];
 }
 
 export interface Portfolio {
