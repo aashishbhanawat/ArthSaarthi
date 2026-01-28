@@ -95,7 +95,7 @@ class ScheduleFAService:
             buy_tx = lot["buy_transaction"]
             ticker = asset.ticker_symbol
             asset_prices = price_data.get(ticker, {})
-            
+
             # Calculate values for this specific lot
             initial_value = self._calculate_lot_initial_value(
                 lot, start_date, asset_prices
@@ -159,16 +159,18 @@ class ScheduleFAService:
         )
         if portfolio_id:
             query = query.filter(Transaction.portfolio_id == portfolio_id)
-            
+
         all_txs = query.order_by(Transaction.transaction_date).all()
-        
-        # Track lots: {buy_id: { 'buy_tx': tx, 'initial_qty': qty, 'current_qty': qty, 'disposals': [(date, qty)] }}
+
+        # Track lots: {buy_id: {
+        # 'buy_tx': tx, 'initial_qty': qty, 'current_qty': qty, 'disposals': [(d,q)]
+        # }}
         lots_map = {}
-        
+
         for tx in all_txs:
             # Use IST adjustment for dates
             tx_date_ist = tx.transaction_date + timedelta(hours=5, minutes=30)
-            
+
             if tx.transaction_type in [
                 TransactionType.BUY, TransactionType.RSU_VEST,
                 TransactionType.ESPP_PURCHASE, TransactionType.BONUS
@@ -181,43 +183,50 @@ class ScheduleFAService:
                     "disposals": [],
                     "gross_proceeds": Decimal(0)
                 }
-                
+
             elif tx.transaction_type == TransactionType.SELL:
                 qty_to_sell = tx.quantity
-                
+
                 # 1. Process Links first
                 if tx.sell_links:
                     for link in tx.sell_links:
                         if link.buy_transaction_id in lots_map:
                             lot = lots_map[link.buy_transaction_id]
                             take = link.quantity
-                            
+
                             # Deduct
                             if lot["current_qty"] >= take: # Should usually match
                                 lot["current_qty"] -= take
-                                lot["disposals"].append({"date": tx_date_ist, "qty": take})
+                                lot["disposals"].append({
+                                    "date": tx_date_ist, "qty": take
+                                })
                                 qty_to_sell -= take
-                                
+
                                 # Track proceeds if in reporting period
                                 if start_date <= tx_date_ist <= end_date:
                                     lot["gross_proceeds"] += take * tx.price_per_unit
-                
+
                 # 2. FIFO Fallback for remaining unlinked quantity
                 if qty_to_sell > 0.000001:
                     # Sort active lots by buy date
                     active_lots = sorted(
-                        [l for l in lots_map.values() if l["current_qty"] > 0 and l["asset"].id == tx.asset_id],
+                        [
+                            lot for lot in lots_map.values()
+                            if lot["current_qty"] > 0
+                            and lot["asset"].id == tx.asset_id
+                        ],
                         key=lambda x: x["buy_transaction"].transaction_date
                     )
-                    
+
                     for lot in active_lots:
-                        if qty_to_sell <= 0.000001: break
-                        
+                        if qty_to_sell <= 0.000001:
+                            break
+
                         take = min(lot["current_qty"], qty_to_sell)
                         lot["current_qty"] -= take
                         lot["disposals"].append({"date": tx_date_ist, "qty": take})
                         qty_to_sell -= take
-                        
+
                         if start_date <= tx_date_ist <= end_date:
                             lot["gross_proceeds"] += take * tx.price_per_unit
 
@@ -225,25 +234,27 @@ class ScheduleFAService:
         # Valid if: (Held at start) OR (Acquired during period)
         # Held at start: Acquired < Start AND Not fully sold before Start
         # Acquired during: Start <= Acquired <= End
-        
+
         final_lots = []
         for lot in lots_map.values():
-            buy_date_ist = lot["buy_transaction"].transaction_date + timedelta(hours=5, minutes=30)
-            
+            buy_date_ist = lot["buy_transaction"].transaction_date + timedelta(
+                hours=5, minutes=30
+            )
+
             # Reconstruct Quantity at Start
             qty_at_start = lot["initial_qty"]
             for d in lot["disposals"]:
                 if d["date"] < start_date:
                     qty_at_start -= d["qty"]
             qty_at_start = max(Decimal(0), qty_at_start)
-            
+
             # Reconstruct Quantity at End (current_qty from replay matches end state? Yes, if replay includes all history)
-            # But we need check if any disposals happened AFTER end_date (not possible if query restricted? 
+            # But we need check if any disposals happened AFTER end_date (not possible if query restricted?
             # Wait, we queried ALL txs? No, we need ALL history to replay correctly.
             # But the query filters? The query logic uses user_id generally.
             # If query is filtered by date, replay is broken.
             # My query above does NOT filter by date. It gets all transactions. Good.
-            
+
             # Calculate Qty at End of Period
             qty_at_end = lot["initial_qty"]
             for d in lot["disposals"]:
@@ -264,7 +275,7 @@ class ScheduleFAService:
                      "disposals": lot["disposals"], # needed for Peak Value
                      "dividends": Decimal(0)
                  })
-                 
+
         return final_lots
 
 
@@ -285,10 +296,10 @@ class ScheduleFAService:
                     "ticker_symbol": asset.ticker_symbol,
                     "exchange": asset.exchange,
                 })
-        
+
         if not assets_for_yf:
             return {}
-        
+
         try:
             prices = self.yf_provider.get_historical_prices(
                 assets_for_yf, start_date, end_date
@@ -306,60 +317,62 @@ class ScheduleFAService:
         Initial value of the investment.
         For Schedule FA, this is the Cost of Acquisition (Historical Cost).
         It is NOT the market value at the start of the year.
-        
-        For ESPP/RSU, this should be the FMV at the time of acquisition (which is our cost basis).
+
+        For ESPP/RSU, this should be the FMV at the time of acquisition
+        (which is our cost basis).
         """
-        qty = lot["quantity_at_start"]
+        """
         # If the lot was fully acquired *after* start of year, the initial investment
         # for reporting purposes is still the cost of that lot.
         # Actually, if we are reporting "Initial Value of investment", it is ALWAYS
-        # the cost of acquisition, regardless of when it was bought (as long as it's held during the year).
-        
+        # the cost of acquisition, regardless of when it was bought
+        # (as long as it's held during the year).
+
         # However, `quantity_at_start` in our lot dict refers to "qty held on Jan 1".
-        # But for the "Initial Value" column in ITR, we want the cost of the *entire* lot 
+        # But for the "Initial Value" column in ITR, we want the cost of the *entire* lot
         # that contributes to this entry?
         # The user's request implies per-lot reporting.
         # So we should report the cost of the *original* quantity of this lot?
         # Or the cost of the quantity that was held during the period?
-        
+
         # "Initial value of the investment":
         # Usually means the original cost of the holding.
         # If we sold part of it in previous years, do we report the full original cost?
         # ITR instructions say "Initial value of investment".
         # Let's use the Cost of Acquisition for the quantity related to this lot logic.
-        
+
         # Our `lots` logic breaks down holdings. `lot["buy_transaction"]` is the source.
         # `lot["quantity_at_start"]` is what we had on Jan 1.
         # `lot["quantity_remaining"]` is what we have on Dec 31.
-        
+
         # If we iterate per BUY transaction (which we do now),
         # then "Initial value" should likely be the total cost of that BUY transaction?
         # Or just the cost of the portion relevant to this year?
         # Usually, Schedule FA asks for the investment details.
-        
+
         # Current logic checks `quantity_at_start`. If we bought it mid-year, qty_at_start is 0.
         # This causes the issue.
         # We should use the `buy_transaction` quantity if we want the full lot cost,
         # OR better: The cost of the quantity that justifies this entry.
-        
+
         # Let's assume we report the cost of the share counts we are tracking.
         # Since we split by lot, the "Investment" is this specific lot.
         # Value = Price * Quantity.
-        
+
         buy_tx = lot["buy_transaction"]
         buy_price = buy_tx.price_per_unit
-        
+
         # Use FMV for ESPP/RSU if available (same logic as Capital Gains)
-        if (buy_tx.transaction_type in [TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST]
-            and buy_tx.details 
-            and "fmv" in buy_tx.details):
+        if (buy_tx.transaction_type in [
+            TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST
+        ] and buy_tx.details and "fmv" in buy_tx.details):
              buy_price = Decimal(str(buy_tx.details["fmv"]))
 
         # For the "Initial Value" field:
         # If it's a lot held from previous years, it's the cost of that lot.
         # If it's acquired this year, it's the cost of acquisition.
         # So it's always Buy Price * Quantity.
-        
+
         # WHICH Quantity?
         # If we sold 50% last year, do we report 100% of cost or 50%?
         # Schedule FA usually tracks the *current* holding's history.
@@ -368,11 +381,11 @@ class ScheduleFAService:
         # However, Peak Value uses max holding.
         # Let's use the Max Quantity held during the period for the "Investment Value".
         # i.e. The cost basis of the maximum shares we held this year.
-        
+
         max_qty = max(lot["quantity_at_start"], lot["quantity_remaining"])
         if buy_tx.transaction_date >= start_date:
             max_qty = buy_tx.quantity # Acquired this year, so max is what we bought
-            
+
         return max_qty * buy_price
 
     def _calculate_lot_peak_value(
@@ -388,31 +401,37 @@ class ScheduleFAService:
         buy_date = buy_tx.transaction_date.date()
         s_date = start_date.date()
         e_date = end_date.date()
-        
+
         # 1. Identify critical dates (boundaries + disposals) in chronological order
         critical_dates = {s_date, e_date}
         if s_date <= buy_date <= e_date:
             critical_dates.add(buy_date)
-            
-        disposals = sorted([d for d in lot["disposals"] if s_date <= d["date"].date() <= e_date], key=lambda x: x["date"])
+
+        disposals = sorted(
+            [d for d in lot["disposals"] if s_date <= d["date"].date() <= e_date],
+            key=lambda x: x["date"]
+        )
         for d in disposals:
             d_date = d["date"].date()
             critical_dates.add(d_date)
             # Add next day to start a new interval with reduced quantity
             if d_date < e_date:
                 critical_dates.add(d_date + timedelta(days=1))
-            
+
         sorted_dates = sorted(list(critical_dates))
-        
+
         # 2. Iterate intervals
         global_peak = Decimal(0)
         global_peak_date = None
-        
+
         # Helper to get qty on date
         def get_qty_on_date(d: date):
-            if d < buy_date: return Decimal(0)
-            q = lot["buy_transaction"].quantity # Start with full lot
-            return q - sum(disp["qty"] for disp in lot["disposals"] if disp["date"].date() < d)
+            if d < buy_date:
+                return Decimal(0)
+            q = lot["buy_transaction"].quantity  # Start with full lot
+            return q - sum(
+                disp["qty"] for disp in lot["disposals"] if disp["date"].date() < d
+            )
 
         current_idx = 0
         while sorted_dates[current_idx] < e_date:
@@ -421,35 +440,36 @@ class ScheduleFAService:
                 seg_end = sorted_dates[current_idx + 1]
             else:
                 seg_end = e_date
-                
+
             qty = get_qty_on_date(seg_start)
-            
+
             if qty > 0:
                 # Find max price in range [seg_start, seg_end]
                 max_p = Decimal(0)
                 max_p_date = seg_start # Fallback
-                
+
                 if yahoo_prices:
                     curr = seg_start
                     while curr <= seg_end and curr <= e_date:
                         p = yahoo_prices.get(curr, Decimal(0))
-                        if p > max_p: 
+                        if p > max_p:
                             max_p = p
                             max_p_date = curr
                         curr += timedelta(days=1)
-                
+
                 if max_p == 0:
                     max_p = buy_tx.price_per_unit
                     max_p_date = seg_start # Use start of interval if flat price
-                    
+
                 val = qty * max_p
                 if val > global_peak:
                     global_peak = val
                     global_peak_date = max_p_date
-            
+
             current_idx += 1
-            if current_idx >= len(sorted_dates): break
-            
+            if current_idx >= len(sorted_dates):
+                break
+
         return global_peak, global_peak_date
 
     def _calculate_lot_closing_value(
@@ -462,15 +482,15 @@ class ScheduleFAService:
         qty = lot["quantity_remaining"]
         if qty <= 0:
             return Decimal(0)
-        
+
         buy_tx = lot["buy_transaction"]
-        
+
         # Try to get Dec 31 price from Yahoo
         if yahoo_prices:
             sorted_dates = sorted(yahoo_prices.keys(), reverse=True)
             if sorted_dates:
                 return qty * yahoo_prices[sorted_dates[0]]
-        
+
         # Fallback to buy price
         return qty * buy_tx.price_per_unit
 
@@ -487,10 +507,10 @@ class ScheduleFAService:
                 "ticker_symbol": asset.ticker_symbol,
                 "exchange": asset.exchange,
             })
-        
+
         if not assets_for_yf:
             return {}
-        
+
         try:
             prices = self.yf_provider.get_historical_prices(
                 assets_for_yf, start_date, end_date
@@ -518,7 +538,7 @@ class ScheduleFAService:
                 Asset.currency.isnot(None),
             )
         )
-        
+
         if portfolio_id:
             query = query.filter(Transaction.portfolio_id == portfolio_id)
 
@@ -537,20 +557,22 @@ class ScheduleFAService:
                     "quantity_at_end": Decimal(0),
                 }
             asset_holdings[asset_id]["transactions"].append(tx)
-            
+
             # Track first buy date
             if tx.transaction_type in [
-                TransactionType.BUY, TransactionType.RSU_VEST, 
+                TransactionType.BUY, TransactionType.RSU_VEST,
                 TransactionType.ESPP_PURCHASE
             ]:
                 if asset_holdings[asset_id]["first_buy_date"] is None:
-                    asset_holdings[asset_id]["first_buy_date"] = tx.transaction_date.date()
+                    asset_holdings[asset_id]["first_buy_date"] = (
+                        tx.transaction_date.date()
+                    )
 
         # Calculate quantity at start and end of period
         for asset_id, holding in asset_holdings.items():
             qty_at_start = Decimal(0)
             qty_at_end = Decimal(0)
-            
+
             for tx in holding["transactions"]:
                 if tx.transaction_type in [
                     TransactionType.BUY, TransactionType.RSU_VEST,
@@ -565,7 +587,7 @@ class ScheduleFAService:
                         qty_at_start -= tx.quantity
                     if tx.transaction_date <= end_date:
                         qty_at_end -= tx.quantity
-            
+
             holding["quantity_at_start"] = max(Decimal(0), qty_at_start)
             holding["quantity_at_end"] = max(Decimal(0), qty_at_end)
 
@@ -588,7 +610,7 @@ class ScheduleFAService:
         qty = holding["quantity_at_start"]
         if qty <= 0:
             return Decimal(0)
-        
+
         # Use average cost basis
         total_cost = Decimal(0)
         total_qty = Decimal(0)
@@ -601,7 +623,7 @@ class ScheduleFAService:
             ]:
                 total_cost += tx.quantity * tx.price_per_unit
                 total_qty += tx.quantity
-        
+
         if total_qty > 0:
             avg_price = total_cost / total_qty
             return qty * avg_price
@@ -618,13 +640,13 @@ class ScheduleFAService:
         # Get max quantity held during period
         max_qty = holding["quantity_at_start"]
         current_qty = holding["quantity_at_start"]
-        
+
         for tx in holding["transactions"]:
             if tx.transaction_date < start_date:
                 continue
             if tx.transaction_date > end_date:
                 break
-                
+
             if tx.transaction_type in [
                 TransactionType.BUY, TransactionType.RSU_VEST,
                 TransactionType.ESPP_PURCHASE, TransactionType.BONUS
@@ -632,7 +654,7 @@ class ScheduleFAService:
                 current_qty += tx.quantity
             elif tx.transaction_type == TransactionType.SELL:
                 current_qty -= tx.quantity
-            
+
             max_qty = max(max_qty, current_qty)
 
         # Get highest price from Yahoo data
@@ -640,14 +662,14 @@ class ScheduleFAService:
         if yahoo_prices:
             max_price = max(yahoo_prices.values())
             logger.debug(f"Yahoo peak price for {asset.ticker_symbol}: {max_price}")
-        
+
         # Fallback to transaction prices if no Yahoo data
         if max_price == 0:
             for tx in holding["transactions"]:
                 if start_date <= tx.transaction_date <= end_date:
                     if tx.price_per_unit > max_price:
                         max_price = tx.price_per_unit
-            
+
             if max_price == 0 and holding["transactions"]:
                 max_price = holding["transactions"][-1].price_per_unit
 
@@ -664,9 +686,9 @@ class ScheduleFAService:
         qty = holding["quantity_at_end"]
         if qty <= 0:
             return Decimal(0)
-        
+
         closing_price = Decimal(0)
-        
+
         # Try to get Dec 31 price from Yahoo data
         if yahoo_prices:
             # Get the last available price (closest to Dec 31)
@@ -677,14 +699,14 @@ class ScheduleFAService:
                     f"Yahoo closing price for {asset.ticker_symbol} "
                     f"on {sorted_dates[0]}: {closing_price}"
                 )
-        
+
         # Fallback to last transaction price
         if closing_price == 0:
             for tx in reversed(holding["transactions"]):
                 if tx.transaction_date <= end_date:
                     closing_price = tx.price_per_unit
                     break
-        
+
         return qty * closing_price
 
     def _calculate_gross_proceeds(
@@ -710,7 +732,7 @@ class ScheduleFAService:
         country = getattr(asset, 'country', None)
         if country:
             return country, country
-        
+
         # Default from currency
         currency_country_map = {
             "USD": ("US", "United States"),

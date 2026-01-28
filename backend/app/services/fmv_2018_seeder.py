@@ -5,10 +5,9 @@ Downloads and parses official BSE/AMFI data for Jan 31, 2018 to populate fmv_201
 
 import io
 import logging
-import tempfile
 import zipfile
 from decimal import Decimal
-from typing import Dict, Tuple
+from typing import Dict
 
 import pandas as pd
 import requests
@@ -48,7 +47,9 @@ class FMV2018Seeder:
         try:
             bse_prices = self._download_and_parse_bse()
             logger.info(f"Parsed {len(bse_prices)} prices from BSE Bhavcopy")
-            self._update_assets_from_prices(bse_prices, source="BSE", overwrite=overwrite)
+            self._update_assets_from_prices(
+                bse_prices, source="BSE", overwrite=overwrite
+            )
         except Exception as e:
             logger.error(f"Failed to process BSE data: {e}")
             self.errors.append(f"BSE: {str(e)}")
@@ -57,7 +58,9 @@ class FMV2018Seeder:
         try:
             amfi_navs = self._download_and_parse_amfi()
             logger.info(f"Parsed {len(amfi_navs)} NAVs from AMFI")
-            self._update_assets_from_prices(amfi_navs, source="AMFI", overwrite=overwrite)
+            self._update_assets_from_prices(
+                amfi_navs, source="AMFI", overwrite=overwrite
+            )
         except Exception as e:
             logger.error(f"Failed to process AMFI data: {e}")
             self.errors.append(f"AMFI: {str(e)}")
@@ -104,10 +107,11 @@ class FMV2018Seeder:
                     with zf.open(filename) as f:
                         df = pd.read_csv(f)
 
-                        # BSE Bhavcopy columns: SC_CODE, SC_NAME, ISIN_CODE, CLOSE, HIGH, LOW
+                        # BSE Bhavcopy columns:
+                        # SC_CODE, SC_NAME, ISIN_CODE, CLOSE, HIGH, LOW
                         for _, row in df.iterrows():
                             isin = str(row.get("ISIN_CODE", "")).strip()
-                            high_price = row.get("HIGH") 
+                            high_price = row.get("HIGH")
 
                             if isin and high_price and pd.notna(high_price):
                                 try:

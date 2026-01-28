@@ -9,12 +9,10 @@ docker compose run --rm backend python app/scripts/backfill_transaction_links.py
 """
 import logging
 import sys
-from decimal import Decimal
 
 # Add app to path
 sys.path.insert(0, "/app")
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal

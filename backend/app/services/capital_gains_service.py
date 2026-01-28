@@ -46,9 +46,10 @@ class CapitalGainsService:
         # 1. Fetch ALL realized sell transactions for the FY
         # We need links to know which Buy lots were sold
         from sqlalchemy.orm import aliased
-        from app.models.transaction import Transaction
+
         from app.models.asset import Asset
-        
+        from app.models.transaction import Transaction
+
         SellTx = aliased(Transaction)
         BuyTx = aliased(Transaction)
         AssetModel = aliased(Asset)
@@ -101,7 +102,9 @@ class CapitalGainsService:
                 foreign_gains.append(foreign_entry)
             else:
                 # 2. Calculate Gain for this specific lot (domestic)
-                entry, s112a_entry = self._process_single_link(link, asset, sell_tx, buy_tx)
+                entry, s112a_entry = self._process_single_link(
+                    link, asset, sell_tx, buy_tx
+                )
                 gains.append(entry)
 
                 if s112a_entry:
@@ -161,14 +164,14 @@ class CapitalGainsService:
         quantity = link.quantity
 
         buy_price = buy_tx.price_per_unit
-        
+
         # --- ESPP Cost Basis Adjustment ---
         # For ESPP_PURCHASE, use FMV as cost basis, not discounted price.
-        if (buy_tx.transaction_type in [TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST] 
-            and buy_tx.details 
-            and "fmv" in buy_tx.details):
+        if (buy_tx.transaction_type in [
+            TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST
+        ] and buy_tx.details and "fmv" in buy_tx.details):
             buy_price = Decimal(str(buy_tx.details["fmv"]))
-            
+
         sell_price = sell_tx.price_per_unit
 
         total_buy_value = buy_price * quantity
@@ -236,16 +239,18 @@ class CapitalGainsService:
         # No, the `HoldingDetailModal` computes it on fly.
         # We need a helper to get `adjusted_buy_price`.
         buy_price = buy_tx.price_per_unit
-        
+
         # --- ESPP Cost Basis Adjustment ---
         # For ESPP_PURCHASE, use FMV as cost basis, not discounted price.
         # The perquisite benefit (FMV - discount price) is already taxed as income.
-        if (buy_tx.transaction_type in [TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST]
-            and buy_tx.details 
-            and "fmv" in buy_tx.details):
+        if (buy_tx.transaction_type in [
+            TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST
+        ] and buy_tx.details and "fmv" in buy_tx.details):
             buy_price = Decimal(str(buy_tx.details["fmv"]))
-            logger.debug(f"Using ESPP FMV {buy_price} as cost basis for {asset.ticker_symbol}")
-        
+            logger.debug(
+                f"Using ESPP FMV {buy_price} as cost basis for {asset.ticker_symbol}"
+            )
+
         # TODO: Implement demerger cost reduction lookup
 
         sell_price = sell_tx.price_per_unit

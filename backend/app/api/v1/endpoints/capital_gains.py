@@ -50,15 +50,17 @@ def export_capital_gains_csv(
     if report_type == "112a":
         # Header for Schedule 112A
         output.write(
-            "ISIN,Asset Name,Quantity,Sale Price per Unit,Full Value Consideration,"
-            "Cost of Acquisition Orig,FMV 31 Jan 2018,Total FMV,Cost of Acquisition Final,"
+            "ISIN,Asset Name,Quantity,Sale Price per Unit,"
+            "Full Value Consideration,Cost of Acquisition Orig,"
+            "FMV 31 Jan 2018,Total FMV,Cost of Acquisition Final,"
             "Expenditure,Total Deductions,Balance\n"
         )
         for row in summary.schedule_112a:
             output.write(
                 f'"{row.isin}","{row.asset_name}",{row.quantity},{row.sale_price},'
                 f"{row.full_value_consideration},{row.cost_of_acquisition_orig},"
-                f"{row.fmv_31jan2018 or ''},{row.total_fmv or ''},{row.cost_of_acquisition_final},"
+                f"{row.fmv_31jan2018 or ''},{row.total_fmv or ''},"
+                f"{row.cost_of_acquisition_final},"
                 f"{row.expenditure},{row.total_deductions},{row.balance}\n"
             )
         filename = f"schedule_112a_{fy.replace('-', '_')}.csv"

@@ -35,16 +35,17 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         )
 
         units = Decimal("0")
-        
+
         for tx in transactions:
             ttype = tx.transaction_type
             qty = tx.quantity
-            
+
             if ttype in [
-                TransactionType.BUY, 
-                TransactionType.ESPP_PURCHASE, 
-                TransactionType.RSU_VEST, 
-                # TransactionType.BONUS - Excluded as it is an audit record; actual shares are in a BUY tx
+                TransactionType.BUY,
+                TransactionType.ESPP_PURCHASE,
+                TransactionType.RSU_VEST,
+                # TransactionType.BONUS - Excluded as it is an audit record;
+                # actual shares are in a BUY tx
                 TransactionType.CONTRIBUTION
             ]:
                 units += qty
@@ -56,8 +57,8 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 if tx.price_per_unit and tx.price_per_unit > 0:
                     multiplier = tx.quantity / tx.price_per_unit
                     units = units * multiplier
-            # Merger/Demerger/Rename usually effectively close position or open new 
-            # assets, but strict holding count logic might need fine tuning 
+            # Merger/Demerger/Rename usually effectively close position or open new
+            # assets, but strict holding count logic might need fine tuning
             # if we wanted to prevent selling "old" merged shares.
             # For now, SPLIT is the primary in-place modifier.
 
@@ -196,7 +197,8 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                     db.add(link)
                     remaining_qty -= take_qty
                     logger.debug(
-                        f"  Linked {take_qty} from lot {lot['id']} (date: {lot['date']})"
+                        f"  Linked {take_qty} from lot {lot['id']} "
+                        f"(date: {lot['date']})"
                     )
             if remaining_qty > 0:
                 logger.warning(
@@ -413,10 +415,11 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         """
         Calculates available lots for an asset using FIFO matching for unlinked sells
         and specific identification for linked sells.
-        
+
         Args:
             exclude_sell_id: Optional SELL transaction ID to exclude from processing
-                            (used during auto-linking to avoid the new SELL consuming its own lots)
+                            (used during auto-linking to avoid the new SELL
+                            consuming its own lots)
         """
         # Fetch all relevant transactions sorted by date
         transactions = (
@@ -442,7 +445,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 return 2
             return 3
 
-        transactions.sort(key=lambda t: (t.transaction_date, get_type_priority(t.transaction_type)))
+        transactions.sort(key=lambda t: (
+            t.transaction_date, get_type_priority(t.transaction_type)
+        ))
 
         lots = []  # List of buys: {tx, available_quantity}
 

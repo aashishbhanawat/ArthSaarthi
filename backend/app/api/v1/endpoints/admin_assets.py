@@ -452,6 +452,7 @@ def lookup_fmv_2018(
     Returns the closing price on Jan 31, 2018 (or nearest trading day).
     """
     from datetime import date
+
     from app.models import Asset
     from app.services.financial_data_service import financial_data_service
 

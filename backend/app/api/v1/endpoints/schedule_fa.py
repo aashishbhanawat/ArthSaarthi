@@ -4,7 +4,6 @@ Schedule FA API Endpoint
 Reports foreign assets for ITR-2/ITR-3 Schedule FA.
 Uses CALENDAR YEAR (Jan-Dec) not Financial Year.
 """
-from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -27,10 +26,10 @@ def get_schedule_fa(
 ):
     """
     Get Schedule FA (Foreign Assets) Report for a calendar year.
-    
+
     Note: Schedule FA follows CALENDAR YEAR (Jan 1 - Dec 31),
     NOT Financial Year. For AY 2025-26, use calendar_year=2024.
-    
+
     Returns:
     - List of foreign assets held during the year
     - Initial value (Jan 1), Peak value, Closing value (Dec 31)
