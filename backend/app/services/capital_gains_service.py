@@ -315,7 +315,9 @@ class CapitalGainsService:
         if asset_category == "SGB" and "Exempt" not in tax_rate_label:
             # 5 years = approx 1825 days
             if holding_days > 1825:
-                 note = "Potential Exemption: Tax-free if redeemed with RBI (Premature)."
+                note = (
+                    "Potential Exemption: Tax-free if redeemed with RBI (Premature)."
+                )
 
         # Grandfathering Logic
         fmv_2018 = None
@@ -479,7 +481,11 @@ class CapitalGainsService:
 
             # D. Explicit Mutual Fund Checks (if not caught above)
             if "MUTUAL" in atype:
-                if "EQUITY" in sector_upper or "INDEX" in sector_upper or "ELSS" in sector_upper:
+                if (
+                    "EQUITY" in sector_upper
+                    or "INDEX" in sector_upper
+                    or "ELSS" in sector_upper
+                ):
                     return "EQUITY_LISTED"
                 return "DEBT"  # Default for MFs is Debt unless Equity sector
 
@@ -502,7 +508,14 @@ class CapitalGainsService:
         if str(asset.asset_type).upper() != "MUTUAL FUND":
             return False
 
-        keywords = ["HYBRID", "BALANCED", "DYNAMIC", "MULTI ASSET", "ARBITRAGE", "OTHER SCHEME"]
+        keywords = [
+            "HYBRID",
+            "BALANCED",
+            "DYNAMIC",
+            "MULTI ASSET",
+            "ARBITRAGE",
+            "OTHER SCHEME",
+        ]
         sector = str(asset.sector).upper() if asset.sector else ""
         name = str(asset.name).upper()
 

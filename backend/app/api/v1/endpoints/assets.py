@@ -107,9 +107,10 @@ def search_stocks(
             ticker = r.get("ticker_symbol", "")
 
             # Check if this is an Indian ticker (ends with .NS or .BO)
-            # We only want to show it if the "root" ticker is NOT already in local results.
-            # This prevents duplicates (e.g. locally we have "MON100", Yahoo gives "MON100.NS")
-            # but allows new assets (e.g. locally missing "MAHKTECH", Yahoo gives "MAHKTECH.NS")
+            # We only want to show it if the "root" ticker is NOT already in local
+            # results. This prevents duplicates (e.g. locally we have "MON100",
+            # Yahoo gives "MON100.NS") but allows new assets (e.g. locally missing
+            # "MAHKTECH", Yahoo gives "MAHKTECH.NS")
             is_indian_variant = False
             root_ticker = ticker
             if ticker.upper().endswith('.NS'):
@@ -141,8 +142,9 @@ def search_stocks(
                 r_name = r.get("name", "").upper()
                 if asset_type.upper() == "STOCK":
                     # Allow STOCK, ETF
-                    # ALSO ALLOW 'MUTUAL FUND' if the Name contains "ETF" (e.g. MAHKTECH)
-                    is_etf_named_mf = r_type == "MUTUAL FUND" and ("ETF" in r_name)
+                    # ALSO ALLOW 'MUTUAL FUND' if the Name contains "ETF"
+                    # (e.g. MAHKTECH)
+                    is_etf_named_mf = r_type == "MUTUAL FUND" and "ETF" in r_name
                     if r_type not in ["STOCK", "ETF"] and not is_etf_named_mf:
                         continue
                 elif r_type != asset_type.upper():
