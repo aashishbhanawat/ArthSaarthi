@@ -58,6 +58,9 @@ class KFintechParser(BaseParser):
             r"^S\s*witch\s*-?\s*Out",  # Handle "S witch Out"
             r"^S\s*ystematic\s*Withdrawal",  # Handle broken "S ystematic Withdrawal"
             r"^Systematic\s*Withdrawal",
+            r"^Sale",
+            r"^Sold",
+            r"^SGB\s*Sell",
         ],
         "IDCW_REINVEST": [
             r"^I\s*DCW\s*Reinvest",  # Handle "I DCW Reinvestment"

@@ -30,6 +30,9 @@ class ICICISecuritiesParser(BaseParser):
         'systematic investment': 'BUY',
         'redemption': 'SELL',
         'switch out': 'SELL',
+        'sale': 'SELL',
+        'sold': 'SELL',
+        'sgb sell': 'SELL',
         'dividend': 'DIVIDEND',
         'idcw': 'DIVIDEND',
     }

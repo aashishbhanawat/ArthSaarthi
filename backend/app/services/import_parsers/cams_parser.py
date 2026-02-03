@@ -37,6 +37,8 @@ class CamsParser(BaseParser):
         ],
         "SELL": [
             r"^Redemption",
+            r"^Sale",
+            r"^Sold",
         ],
         "DIVIDEND": [
             r"^IDCW Paid",

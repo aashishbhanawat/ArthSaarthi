@@ -80,8 +80,13 @@ def search_stocks(
     results = []
 
     # 1. Search local database first
+    # If explicitly searching for STOCK, also include ETF
+    search_types = [asset_type] if asset_type else None
+    if asset_type and asset_type.upper() == "STOCK":
+        search_types = ["STOCK", "ETF"]
+
     local_assets = crud.asset.search_by_name_or_ticker(
-        db, query=query, asset_type=asset_type
+        db, query=query, asset_type=search_types
     )
     for asset in local_assets:
         results.append({
@@ -92,6 +97,7 @@ def search_stocks(
             "exchange": asset.exchange,
             "currency": asset.currency,
             "source": "local",
+            "fmv_2018": float(asset.fmv_2018) if asset.fmv_2018 else None,
         })
 
     # 2. If few local results, also search Yahoo Finance
@@ -100,11 +106,30 @@ def search_stocks(
         for r in search_results:
             ticker = r.get("ticker_symbol", "")
 
-            # Skip Indian exchange tickers (already in local DB via NSDL sync)
-            if ticker.upper().endswith('.NS') or ticker.upper().endswith('.BO'):
-                continue
+            # Check if this is an Indian ticker (ends with .NS or .BO)
+            # We only want to show it if the "root" ticker is NOT already in local
+            # results. This prevents duplicates (e.g. locally we have "MON100",
+            # Yahoo gives "MON100.NS") but allows new assets (e.g. locally missing
+            # "MAHKTECH", Yahoo gives "MAHKTECH.NS")
+            is_indian_variant = False
+            root_ticker = ticker
+            if ticker.upper().endswith('.NS'):
+                root_ticker = ticker[:-3]
+                is_indian_variant = True
+            elif ticker.upper().endswith('.BO'):
+                root_ticker = ticker[:-3]
+                is_indian_variant = True
 
-            # Skip if already in local results
+            # Check if root ticker matches any local result
+            if is_indian_variant:
+                root_exists = any(
+                    lr["ticker_symbol"].upper() == root_ticker.upper()
+                    for lr in results
+                )
+                if root_exists:
+                    continue  # Skip because we have the clean version locally
+
+            # Skip if exact ticker is already in local results
             if any(
                 lr["ticker_symbol"] == ticker
                 for lr in results
@@ -112,8 +137,18 @@ def search_stocks(
                 continue
 
             # Filter by asset_type if provided
-            if asset_type and r.get("asset_type", "").upper() != asset_type.upper():
-                continue
+            if asset_type:
+                r_type = r.get("asset_type", "STOCK").upper()
+                r_name = r.get("name", "").upper()
+                if asset_type.upper() == "STOCK":
+                    # Allow STOCK, ETF
+                    # ALSO ALLOW 'MUTUAL FUND' if the Name contains "ETF"
+                    # (e.g. MAHKTECH)
+                    is_etf_named_mf = r_type == "MUTUAL FUND" and "ETF" in r_name
+                    if r_type not in ["STOCK", "ETF"] and not is_etf_named_mf:
+                        continue
+                elif r_type != asset_type.upper():
+                    continue
 
             results.append({
                 "ticker_symbol": ticker,
@@ -192,8 +227,13 @@ def lookup_ticker_symbol(
             # Filter by asset_type if provided
             if asset_type:
                 search_results = [
-                    r for r in search_results
-                    if r.get("asset_type", "").upper() == asset_type.upper()
+                    r
+                    for r in search_results
+                    if (
+                        asset_type.upper() == "STOCK"
+                        and r.get("asset_type", "").upper() in ["STOCK", "ETF"]
+                    )
+                    or r.get("asset_type", "").upper() == asset_type.upper()
                 ]
 
             if search_results:
@@ -216,22 +256,21 @@ def lookup_ticker_symbol(
         return []
 
     # 2a. If an asset_type filter was provided, ensure the external result matches.
-    if asset_type and details.get("asset_type", "").upper() != asset_type.upper():
-        if settings.DEBUG:
-            print("--- BACKEND DEBUG: Asset Lookup ---")
-            print(f"External asset found, but type '{details.get('asset_type')}' "
-                  f"does not match requested type '{asset_type}'. Discarding.")
-            print("---------------------------------")
-        return []
+    if asset_type:
+        found_type = details.get("asset_type", "").upper()
+        allowed = False
+        if asset_type.upper() == "STOCK" and found_type in ["STOCK", "ETF"]:
+            allowed = True
+        elif found_type == asset_type.upper():
+            allowed = True
 
-    # 2a. If an asset_type filter was provided, ensure the external result matches.
-    if asset_type and details.get("asset_type", "").upper() != asset_type.upper():
-        if settings.DEBUG:
-            print("--- BACKEND DEBUG: Asset Lookup ---")
-            print(f"External asset found, but type '{details.get('asset_type')}' "
-                  f"does not match requested type '{asset_type}'. Discarding.")
-            print("---------------------------------")
-        return []
+        if not allowed:
+            if settings.DEBUG:
+                print("--- BACKEND DEBUG: Asset Lookup ---")
+                print(f"External asset found, but type '{found_type}' "
+                      f"does not match requested type '{asset_type}'. Discarding.")
+                print("---------------------------------")
+            return []
 
     # 3. If found externally, create it locally
     # Use the resolved ticker (from search or cleaned query)

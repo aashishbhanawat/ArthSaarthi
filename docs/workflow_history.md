@@ -1,4 +1,55 @@
-## 2026-01-07: Fix Backup/Restore for Foreign Stocks & RSU Sell-to-Cover (NFR7)
+## 2026-01-28: Implement Foreign Assets (Schedule FA) & Capital Gains Reporting
+
+**Task:** Implement detailed Foreign Assets reporting (Schedule FA) compliant with Calendar Year rules, and Capital Gains reporting (Schedule 112A) for Grandfathered Equity.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Delivered a comprehensive compliance reporting suite:
+
+1.  **Schedule FA (Foreign Assets):**
+    -   Implemented Calendar Year tracking (Jan 1 - Dec 31) independent of Financial Year.
+    -   **Peak Value Logic:** Fixed overestimation bug by implementing specific-identifcation daily balance checks (FIFO replay) to find the true peak value, handling partial disposals correctly.
+    -   **Reporting:** Added "Peak Date" and "Closing Balance" fields.
+    -   **Refactoring:** Created `ScheduleFAService` to encapsulate this complex logic.
+
+2.  **Capital Gains (Schedule 112A):**
+    -   Implemented Grandfathered Equity support (ISIN, FMV 2018).
+    -   **CSV Export:** Added feature to export Schedule 112A data in ITR-2 compatible format.
+    -   **Foreign Gains:** Separated foreign equity gains (displayed in native currency) for Rule 115 compliance.
+
+3.  **Stability & Testing:**
+    -   Added `test_schedule_fa_service.py` to unit test the Peak Value algorithm.
+    -   Fixed Dashboard PnL tests to align with FIFO accounting.
+    -   Fixed Bonus Issue double-counting bug.
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/schedule_fa_service.py`, `backend/app/tests/services/test_schedule_fa_service.py`
+*   **Modified:** `backend/app/services/capital_gains_service.py` - Foreign separation, 112A logic
+*   **Modified:** `backend/app/api/v1/endpoints/schedule_fa.py` - New endpoints
+*   **Modified:** `backend/app/api/v1/endpoints/capital_gains.py` - CSV Export
+*   **Modified:** `backend/app/crud/crud_transaction.py` - FIFO Replay logic
+*   **Modified:** `backend/alembic/versions/f1a2b3c4d5e6_backfill_transaction_links_fifo.py` - FIFO Backfill
+
+**Frontend:**
+*   **Modified:** `frontend/src/pages/CapitalGainsPage.tsx` - Added Tabs, Export Button, Foreign Section
+*   **Modified:** `frontend/src/services/portfolioApi.ts` - API integration
+
+### Verification
+
+*   **Unit Tests:** New `test_schedule_fa_service.py` **PASSED**. Existing suite **PASSED**.
+*   **Manual Verification:** Verified CSV export format and Schedule FA table values against known partial-sale scenarios.
+
+### Outcome
+
+**Success.** Users can now generate accurate Tax Reports for Foreign Assets and Capital Gains, fully compliant with Indian Income Tax rules.
+
+---
+
 
 **Task:** Fix multiple issues with backup and restore functionality for foreign stocks and RSU transactions.
 
@@ -605,3 +656,54 @@ Addressed visibility regressions where text was unreadable in dark mode:
 ### Outcome
 
 **Success.** Restored usability for critical actions and charts in dark mode.
+
+## 2026-02-02: Fix ETF/Bond Classification and Taxation (FR4.3/FR6.5)
+
+**Task:** Resolve misclassification of Bond ETFs and International ETFs, ensure correct tax treatment (Slab Rate vs LTCG), and fix UI form behavior for these assets. Also addressed critical SGB parsing and tax handling issues.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Addressed multiple issues regarding Asset Classification and Taxation:
+1.  **Bond ETF UI:** Fixed `TransactionFormModal` where "Bond ETFs" (e.g., LIQUID BEES) were forcing the "Bond" UI (requiring Coupon/Maturity). Added name-based detection ("ETF" keyword) to force "Stock" UI.
+2.  **ETF Taxation:** Refined `capital_gains_service.py` to distinguish `EQUITY_INTERNATIONAL` (taxed as Debt/Slab) vs `GOLD` / `DEBT` funds.
+3.  **ETF Search Visibility:** Fixed `MAHKTECH` visibility issue by conditionally allowing Yahoo Finance results with `.NS` suffix if the root ticker is missing locally.
+4.  **SGB Enhancements:**
+    -   Fixed "Sell" transaction parsing from brokerage statements.
+    -   Fixed "Manual Entry" defaulting to BUY.
+    -   Implemented Tax Exemption for SGB Clean Redemption (Maturity).
+    -   Added "Tax Free" notes for RBI Buybacks.
+5.  **FMV Seeding:** Fixed AMFI parser dependency (`lxml`) to ensure accurate 2018 FMV seeding for grandfathering.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/capital_gains_service.py` - New asset categories (`EQUITY_INTERNATIONAL`, `GOLD`), tax rules.
+*   **Modified:** `backend/app/api/v1/endpoints/assets.py` - Improved Stock search logic.
+*   **Modified:** `backend/app/services/financial_data_service.py` - Improved FMV parsing.
+*   **Modified:** `backend/app/tests/services/test_capital_gains_service.py` - Updated tests for new signatures.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/Portfolio/TransactionFormModal.tsx` - Smart asset-type switching.
+
+### Verification
+
+*   **Unit Tests:** Backend tests passed (27 tests in `test_capital_gains_service.py`).
+*   **Manual Verification:** Confirmed `LIQUID BEES` shows Stock UI. Confirmed `MAHKTECH` appears in search. Confirmed SGB tax exemption logic.
+
+### 6. Linting & Polish
+- **Task**: Fix Critical Lint Errors and Build Artifact Exclusion.
+- **Files Modified**:
+    - `backend/app/api/v1/endpoints/assets.py`: Fixed long lines (~88 chars).
+    - `backend/app/services/capital_gains_service.py`: Fixed `F821` (undefined name), `F841` (unused variable), and `E501` errors.
+    - `backend/verify_hybrid.py`: Fixed formatting.
+    - `backend/pyproject.toml`: Excluded `dist` and `build` folders from `ruff` to prevent false positives on build artifacts.
+- **Verification**:
+    - Ran full lint suite: `ruff check . --fix`.
+    - Result: `All checks passed!`
+
+### Outcome
+
+**Success.** Asset classification is now robust, handling edge cases like International ETFs and Bond ETFs correctly in both UI and Tax Reporting. The codebase is clean and passes strict linting.

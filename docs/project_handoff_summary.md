@@ -1,11 +1,11 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2025-12-15
+**Last Updated:** 2026-02-02
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** All major features planned for the current development cycle, including Foreign Stock & Currency Support, are complete and stable. All automated test suites (backend, frontend, and E2E) are passing following a final stabilization phase. The application has been manually tested and is considered ready for the next phase of development or for a new release.
+*   **Summary:** Capital Gains Reporting, Foreign Asset Taxation, and SGB/Bond handling are complete. Automated tests (backend, frontend, E2E) are passing. The application is ready for release v1.2.0.
 
 ## 2. Test Suite Status
 
@@ -57,6 +57,10 @@
 -   **UX Enhancements:**
     -   Privacy Mode to obscure sensitive values.
     -   Context-sensitive help links.
+-   **Capital Gains Reporting (New):**
+    -   Comprehensive Capital Gains reports for Schedule 112A (Grandfathered Equity) and Schedule FA (Foreign Assets).
+    -   Support for Tax Lot Accounting (Specific Identification) vs FIFO.
+    -   Accurate taxation rules for Bond ETFs, International ETFs, and SGBs.
 
 ## 4. Architectural Improvements
 
@@ -68,7 +72,5 @@
 
 Based on the `product_backlog.md`, the next features to consider are:
 
-1.  **Manual Asset Seeding (FR2.3):** Allow admins to trigger asset master updates from the UI without restarting the server (FR defined).
-2.  **Capital Gains Report:** Generate Short-Term (STCG) and Long-Term (LTCG) capital gains reports, leveraging the new Tax Lot Accounting logic.
-3.  **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to simplify Mutual Fund onboarding.
-4.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
+1.  **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to simplify Mutual Fund onboarding.
+2.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.

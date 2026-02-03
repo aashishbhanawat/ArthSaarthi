@@ -172,7 +172,8 @@ The goal of this release was to build a robust and user-friendly system for impo
 **Features:**
 
 -   **Manual Asset Seeding (FR9):** Allow admins to trigger asset master updates from the UI without restarting the server.
--   **Capital Gains Report (FR10):** Generate Short-Term (STCG) and Long-Term (LTCG) capital gains reports.
+-   **Capital Gains Report (FR10):** Generate Short-Term (STCG), Long-Term (LTCG), and Schedule 112A reports. **✅ Complete**
+-   **Foreign Assets Reporting (Schedule FA):** Peak Value tracking and Calendar Year reporting. **✅ Complete**
 -   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS).
 -   **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
 

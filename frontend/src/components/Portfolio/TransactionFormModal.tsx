@@ -281,24 +281,44 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const handleSelectAsset = async (asset: Asset | AssetSearchResult) => {
         // If from Yahoo search (external), call lookupAsset to create it
         const searchResult = asset as AssetSearchResult;
+        let finalAsset: Asset | AssetSearchResult = asset;
+
         if (searchResult.source === 'yahoo') {
             try {
-                const assetTypeFilter = assetType === 'Bond' ? 'BOND' : (assetType === 'Stock' ? 'STOCK' : undefined);
-                const createdAssets = await lookupAsset(searchResult.ticker_symbol, assetTypeFilter, true);  // forceExternal
+                // Determine potential type from search result if available
+                const resultType = searchResult.asset_type?.toUpperCase();
+                let typeFilter = assetType === 'Bond' ? 'BOND' : (assetType === 'Stock' ? 'STOCK' : undefined);
+
+                // If the search result is clearly an ETF, don't force 'BOND' filter
+                if (resultType === 'ETF') {
+                    typeFilter = 'STOCK'; // Treat ETF as Stock for lookup
+                }
+
+                const createdAssets = await lookupAsset(searchResult.ticker_symbol, typeFilter, true);  // forceExternal
                 if (createdAssets.length > 0) {
-                    setSelectedAsset(createdAssets[0]);
-                    setInputValue(createdAssets[0].name);
+                    finalAsset = createdAssets[0];
                 }
             } catch {
-                // Fallback to using the search result as-is
-                setSelectedAsset(asset as Asset);
-                setInputValue(asset.name);
+                // Fallback handled below
             }
-        } else {
-            setSelectedAsset(asset as Asset);
-            setInputValue(asset.name);
         }
+
+        setSelectedAsset(finalAsset as Asset);
+        setInputValue(finalAsset.name);
         setSearchResults([]);
+
+        // Auto-switch form mode based on asset type
+        const type = finalAsset.asset_type?.toUpperCase();
+        const nameUpper = finalAsset.name.toUpperCase();
+
+        // Priority: Name check for ETF (overrides type='BOND' if misclassified)
+        if (nameUpper.includes(' ETF') || nameUpper.includes('ETF ') || type === 'ETF' || type === 'STOCK' || type === 'EQUITY') {
+            setValue('asset_type', 'Stock');
+        } else if (type === 'BOND' || type === 'SGB') {
+            setValue('asset_type', 'Bond');
+        } else if (type === 'MUTUAL FUND') {
+            setValue('asset_type', 'Mutual Fund');
+        }
     };
 
     const handleClearSelectedAsset = () => {
@@ -376,9 +396,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     useEffect(() => {
         if (selectedAsset && selectedAsset.id && transactionType === 'SELL' && (assetType === 'Stock' || assetType === 'Mutual Fund')) {
             setIsLoadingLots(true);
-            getAvailableLots(selectedAsset.id)
+            const editTxId = transactionToEdit?.id;
+            getAvailableLots(selectedAsset.id, editTxId)
                 .then(lots => {
                     setAvailableLots(lots);
+                    // If detailed lot selection mapping exists in edited transaction, populate it?
+                    // Currently `transactionToEdit` doesn't have `links` hydrated fully maybe, 
+                    // or we need to fetch them. 
+                    // But for now, just showing available lots correct is the fix.
                     setLotSelections({});
                 })
                 .catch(err => console.error("Failed to fetch lots", err))
@@ -387,7 +412,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             setAvailableLots([]);
             setLotSelections({});
         }
-    }, [selectedAsset, transactionType, assetType]);
+    }, [selectedAsset, transactionType, assetType, transactionToEdit]);
 
     // Helper to calculate total selected quantity
     const totalSelectedQty = Object.values(lotSelections).reduce((sum, qty) => sum + qty, 0);
@@ -803,7 +828,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     payment_frequency: null,
                     first_payment_date: null,
                 };
-                const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: 'BUY' as TransactionType, quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0, details };
+                const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: data.transaction_type as TransactionType, quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0, details };
 
                 // If the asset already exists and its bond details are complete (i.e., not a placeholder),
                 // we just add a new transaction. Otherwise, we use the bond creation endpoint which
