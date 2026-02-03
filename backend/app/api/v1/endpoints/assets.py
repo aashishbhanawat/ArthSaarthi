@@ -142,7 +142,7 @@ def search_stocks(
                 if asset_type.upper() == "STOCK":
                     # Allow STOCK, ETF
                     # ALSO ALLOW 'MUTUAL FUND' if the Name contains "ETF" (e.g. MAHKTECH)
-                    is_etf_named_mf = (r_type == "MUTUAL FUND" and ("ETF" in r_name))
+                    is_etf_named_mf = r_type == "MUTUAL FUND" and ("ETF" in r_name)
                     if r_type not in ["STOCK", "ETF"] and not is_etf_named_mf:
                         continue
                 elif r_type != asset_type.upper():
@@ -225,8 +225,12 @@ def lookup_ticker_symbol(
             # Filter by asset_type if provided
             if asset_type:
                 search_results = [
-                    r for r in search_results
-                    if (asset_type.upper() == "STOCK" and r.get("asset_type", "").upper() in ["STOCK", "ETF"])
+                    r
+                    for r in search_results
+                    if (
+                        asset_type.upper() == "STOCK"
+                        and r.get("asset_type", "").upper() in ["STOCK", "ETF"]
+                    )
                     or r.get("asset_type", "").upper() == asset_type.upper()
                 ]
 
@@ -257,7 +261,7 @@ def lookup_ticker_symbol(
             allowed = True
         elif found_type == asset_type.upper():
             allowed = True
-        
+
         if not allowed:
             if settings.DEBUG:
                 print("--- BACKEND DEBUG: Asset Lookup ---")

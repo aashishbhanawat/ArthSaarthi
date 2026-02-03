@@ -137,7 +137,9 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         if asset_type:
             if isinstance(asset_type, list):
                  db_query = db_query.filter(
-                     func.upper(self.model.asset_type).in_([t.upper() for t in asset_type])
+                     func.upper(self.model.asset_type).in_(
+                         [t.upper() for t in asset_type]
+                     )
                  )
             else:
                 # Use case-insensitive comparison for asset_type

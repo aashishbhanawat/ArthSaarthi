@@ -16,7 +16,9 @@ router = APIRouter()
 def get_capital_gains(
     fy: str = Query(..., description="Financial Year (e.g., '2025-26')"),
     portfolio_id: Optional[str] = Query(None, description="Filter by Portfolio ID"),
-    slab_rate: float = Query(30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"),
+    slab_rate: float = Query(
+        30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"
+    ),
     db: Session = Depends(get_db),
 ):
     """
@@ -39,7 +41,9 @@ def export_capital_gains_csv(
     fy: str = Query(..., description="Financial Year (e.g., '2025-26')"),
     report_type: str = Query("gains", description="Type of report: 'gains' or '112a'"),
     portfolio_id: Optional[str] = Query(None, description="Filter by Portfolio ID"),
-    slab_rate: float = Query(30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"),
+    slab_rate: float = Query(
+        30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"
+    ),
     db: Session = Depends(get_db),
 ):
     """

@@ -129,7 +129,7 @@ class CapitalGainsService:
         # 6. Estimate Tax (Simplistic estimation - domestic only)
         est_stcg_tax = Decimal(0)
         est_ltcg_tax = Decimal(0)
-        
+
         # Slab rate as decimal
         slab_decimal = Decimal(str(slab_rate)) / Decimal(100)
 
@@ -294,7 +294,9 @@ class CapitalGainsService:
         # Classification
         asset_category = self._classify_asset_category(asset)
         holding_days = (sell_date - buy_date).days
-        is_ltcg = self._is_ltcg(asset_category, holding_days, sell_date, buy_date) # Updated signature
+        is_ltcg = self._is_ltcg(
+            asset_category, holding_days, sell_date, buy_date
+        )  # Updated signature
         gain_type = "LTCG" if is_ltcg else "STCG"
 
         # Determine Tax Rate Label
@@ -392,7 +394,7 @@ class CapitalGainsService:
             # 1. Invested ON/AFTER 1 Apr 2023 -> Always STCG (Sec 50AA)
             if buy_date >= DATE_2023_04_01:
                 return False # Always Short Term regardless of holding
-            
+
             # 2. Invested BEFORE 1 Apr 2023 -> Normal Debt Rules
             # Post July 2024 -> 24 months
             if sell_date >= DATE_2024_07_23:
@@ -437,22 +439,43 @@ class CapitalGainsService:
         if atype in ["STOCK", "ETF"] or "MUTUAL" in atype:
             name_upper = str(asset.name).upper()
             sector_upper = str(asset.sector).upper() if asset.sector else ""
-            ticker_upper = str(asset.ticker_symbol).upper()
+
 
             # A. Gold / Silver ETFs
-            if "GOLD" in name_upper or "SILVER" in name_upper or "GOLD" in sector_upper or "SILVER" in sector_upper:
+            if (
+                "GOLD" in name_upper
+                or "SILVER" in name_upper
+                or "GOLD" in sector_upper
+                or "SILVER" in sector_upper
+            ):
                 return "GOLD"
 
             # B. Debt / Bond / Liquid ETFs
             debt_keywords = ["LIQUID", "GILT", "BOND", "DEBT", "GOVT", "TREASURY"]
-            if any(k in name_upper for k in debt_keywords) or any(k in sector_upper for k in debt_keywords):
+            if any(k in name_upper for k in debt_keywords) or any(
+                k in sector_upper for k in debt_keywords
+            ):
                 return "DEBT"
 
-            # C. International / Overseas ETFs (Treated as Debt for tax if > Apr 2023, else LTCG 20%/12.5%)
+            # C. International / Overseas ETFs
+            # Treated as Debt for tax if > Apr 2023, else LTCG 20%/12.5%
             # Examples: MAHKTECH, MON100, NASDAQ, HANG SENG, FANG, US EQUITY
-            intl_keywords = ["NASDAQ", "HANG SENG", "US EQUITY", "Global", "WORLD", "OVERSEAS", "INTERNATIONAL", "MAHKTECH", "MON100", "FANG+"]
-            if any(k in name_upper for k in intl_keywords) or any(k in sector_upper for k in intl_keywords):
-                 return "EQUITY_INTERNATIONAL"
+            intl_keywords = [
+                "NASDAQ",
+                "HANG SENG",
+                "US EQUITY",
+                "Global",
+                "WORLD",
+                "OVERSEAS",
+                "INTERNATIONAL",
+                "MAHKTECH",
+                "MON100",
+                "FANG+",
+            ]
+            if any(k in name_upper for k in intl_keywords) or any(
+                k in sector_upper for k in intl_keywords
+            ):
+                return "EQUITY_INTERNATIONAL"
 
             # D. Explicit Mutual Fund Checks (if not caught above)
             if "MUTUAL" in atype:
@@ -478,11 +501,11 @@ class CapitalGainsService:
         """Check if asset is a Hybrid/Balanced fund requiring user verification"""
         if str(asset.asset_type).upper() != "MUTUAL FUND":
             return False
-            
+
         keywords = ["HYBRID", "BALANCED", "DYNAMIC", "MULTI ASSET", "ARBITRAGE", "OTHER SCHEME"]
         sector = str(asset.sector).upper() if asset.sector else ""
         name = str(asset.name).upper()
-        
+
         # Check both sector and name
         for k in keywords:
             if k in sector or k in name:
@@ -500,11 +523,11 @@ class CapitalGainsService:
         if gain_type == "STCG":
             if category == "EQUITY_LISTED":
                 return "STCG 20%" if is_post_july else "STCG 15%"
-            
+
             # Debt Funds post Apr 2023 are purely slab rate (STCG)
             if category == "DEBT" and buy_date >= DATE_2023_04_01:
                 return "STCG Slab"
-            
+
             if category == "EQUITY_INTERNATIONAL":
                 return "STCG Slab"
 
@@ -526,20 +549,18 @@ class CapitalGainsService:
             if category == "DEBT":
                 # Only reaches here if Pre-Apr 2023 buy + >2/3yr hold
                 # User Requirement: Taxed at 12.5% flat (if post-July 2024?)
-                # Actually, user said: "For investments before April 1, 2023, gains after a 2-year hold are taxed at 12.5% without indexation"
+                # Actually, user said: "For investments before April 1, 2023,
+                # gains after a 2-year hold are taxed at 12.5% without indexation"
                 # This only applies if sold AFTER 23 July 2024.
                 # If sold BEFORE 23 July 2024, old rule (20% with indexation) applies?
                 # User Example used "sold in 2025".
                 # We will handle "Post July 2024" as 12.5%
                 if is_post_july:
-                     return "LTCG 12.5%" 
+                     return "LTCG 12.5%"
                 else:
                      return "LTCG 20%" # Old regime with indexation
 
         return "Unknown"
-
-        current_val = matrix[row_key][period_key]
-        matrix[row_key][period_key] = current_val + entry.gain
 
     def _bucket_into_matrix(
         self, matrix, entry: GainEntry, sell_date: date, asset: Asset

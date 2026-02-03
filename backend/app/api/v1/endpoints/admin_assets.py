@@ -358,7 +358,7 @@ def search_local_assets(
 
     q = db.query(Asset).filter(
         Asset.asset_type.in_([
-            "STOCK", "ETF", "MUTUAL_FUND", 
+            "STOCK", "ETF", "MUTUAL_FUND",
             "MUTUAL FUND", "Mutual Fund"
         ])
     )

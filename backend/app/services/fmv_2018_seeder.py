@@ -158,13 +158,15 @@ class FMV2018Seeder:
             logger.warning(f"HTML parse failed, trying Excel: {html_err}")
             # Fallback to Excel parsing
             try:
-                df = pd.read_excel(io.BytesIO(response.content), engine="xlrd", header=None)
+                df = pd.read_excel(
+                    io.BytesIO(response.content), engine="xlrd", header=None
+                )
             except Exception as excel_err:
                  logger.error(f"Excel parse failed: {excel_err}")
                  return navs
 
         target_col_idx = 0
-        
+
         # Parse interleaved rows (Scheme Name in row i, NAV in row i+1)
         # Based on observation: Col 0 contains both Scheme Name and NAV alternating
         for i in range(len(df) - 1):
@@ -173,29 +175,31 @@ class FMV2018Seeder:
 
             # Logic: If val2 is a float (NAV) and val1 is a string (Name), it's a pair.
             # Avoid cases where val1 is also a number (unlikely for Name)
-            
+
             is_val2_nav = False
             nav_val = None
-            
+
             try:
                 # remove commas and 'N.A.'
                 val2_clean = val2.replace(',', '').replace('N.A.', '').strip()
                 if val2_clean:
                     nav_val = Decimal(val2_clean)
-                    # Sanity check: NAV shouldn't be a huge integer like a scheme code, 
-                    # but some NAVs can be high. 100,000 is a safe upper bound for 2018 NAVs usually,
-                    # but MRF stock sort of prices don't apply to MF units usually. 
+                    # Sanity check: NAV shouldn't be a huge integer like a scheme code,
+                    # but some NAVs can be high. 100,000 is a safe upper bound
+                    # for 2018 NAVs usually, but MRF stock sort of prices don't
+                    # apply to MF units usually.
                     # Let's check format: usually has a decimal point or is < 100000.
-                    if 0 < nav_val < 200000: 
+                    if 0 < nav_val < 200000:
                         is_val2_nav = True
             except Exception:
                 pass
-            
+
             if is_val2_nav and val1 and not val1.replace('.','',1).isdigit():
                 # val1 is likely the name
                 scheme_name = val1
                 navs[scheme_name] = nav_val
-                # We could skip i+1, but the loop handles it (next i will treat NAV as val1, next row as val2)
+                # We could skip i+1, but the loop handles it
+                # (next i will treat NAV as val1, next row as val2)
                 # Next iteration: val1=NAV, val2=NextName (String). Won't trigger.
                 pass
 
@@ -225,18 +229,18 @@ class FMV2018Seeder:
             # Use a map of standardized names from DB to avoid N queries
             # Or iterate prices and query.
             # Optimization: Load all Mutual Funds data first
-            
+
             db_assets = self.db.query(Asset).filter(
                 Asset.asset_type.in_(["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"])
             ).all()
-            
+
             # Map normalized name to asset
             name_map = {a.name.strip().upper(): a for a in db_assets if a.name}
-            
+
             for scheme_name, nav in prices.items():
                 norm_name = scheme_name.strip().upper()
                 asset = name_map.get(norm_name)
-                
+
                 if asset:
                     if asset.fmv_2018 is None or overwrite:
                         asset.fmv_2018 = nav

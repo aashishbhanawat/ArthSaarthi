@@ -21,39 +21,53 @@ class TestIsLTCG:
     # --- Equity Tests ---
     def test_equity_365_days_is_stcg(self):
         """Equity held exactly 365 days should be STCG (boundary)."""
-        result = self.service._is_ltcg("EQUITY_LISTED", 365, date(2025, 1, 1), date(2024, 1, 1))
+        result = self.service._is_ltcg(
+            "EQUITY_LISTED", 365, date(2025, 1, 1), date(2024, 1, 1)
+        )
         assert result is False
 
     def test_equity_366_days_is_ltcg(self):
         """Equity held 366 days should be LTCG."""
         # Buy date irrelevant for equity holding period check > 365
-        result = self.service._is_ltcg("EQUITY_LISTED", 366, date(2025, 1, 1), date(2024, 1, 1))
+        result = self.service._is_ltcg(
+            "EQUITY_LISTED", 366, date(2025, 1, 1), date(2024, 1, 1)
+        )
         assert result is True
 
     def test_equity_1_year_is_stcg(self):
         """Equity held exactly 1 year (365 days) is STCG."""
-        result = self.service._is_ltcg("EQUITY_LISTED", 365, date(2023, 1, 1), date(2022, 1, 1))
+        result = self.service._is_ltcg(
+            "EQUITY_LISTED", 365, date(2023, 1, 1), date(2022, 1, 1)
+        )
         assert result is False
 
     # --- Gold/Debt Tests with Budget 2024 Threshold ---
     def test_gold_730_days_pre_july_2024_is_stcg(self):
         """Gold held 730 days (24m) pre-July 2024 is STCG (old 36m rule)."""
-        result = self.service._is_ltcg("GOLD", 730, date(2024, 7, 22), date(2022, 7, 22))
+        result = self.service._is_ltcg(
+            "GOLD", 730, date(2024, 7, 22), date(2022, 7, 22)
+        )
         assert result is False
 
     def test_gold_1096_days_pre_july_2024_is_ltcg(self):
         """Gold held 1096 days (>36m) before July 2024 should be LTCG."""
-        result = self.service._is_ltcg("GOLD", 1096, date(2024, 7, 22), date(2021, 7, 22))
+        result = self.service._is_ltcg(
+            "GOLD", 1096, date(2024, 7, 22), date(2021, 7, 22)
+        )
         assert result is True
 
     def test_gold_731_days_post_july_2024_is_ltcg(self):
         """Gold held 731 days (>24m) after July 2024 should be LTCG (new rule)."""
-        result = self.service._is_ltcg("GOLD", 731, date(2024, 7, 23), date(2022, 7, 23))
+        result = self.service._is_ltcg(
+            "GOLD", 731, date(2024, 7, 23), date(2022, 7, 23)
+        )
         assert result is True
 
     def test_gold_730_days_post_july_2024_is_stcg(self):
         """Gold held 730 days (exactly 24m) after July 2024 should be STCG."""
-        result = self.service._is_ltcg("GOLD", 730, date(2024, 7, 23), date(2022, 7, 23))
+        result = self.service._is_ltcg(
+            "GOLD", 730, date(2024, 7, 23), date(2022, 7, 23)
+        )
         assert result is False
 
     # --- SGB Tests with Post-July 2024 Rules ---
@@ -74,7 +88,9 @@ class TestIsLTCG:
 
     def test_sgb_1096_days_pre_july_2024_is_ltcg(self):
         """SGB held >36m before July 2024 should be LTCG."""
-        result = self.service._is_ltcg("SGB", 1096, date(2024, 7, 22), date(2021, 7, 22))
+        result = self.service._is_ltcg(
+            "SGB", 1096, date(2024, 7, 22), date(2021, 7, 22)
+        )
         assert result is True
 
 
