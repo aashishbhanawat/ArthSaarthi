@@ -317,8 +317,9 @@ export interface AvailableLot {
     details: Record<string, unknown>;
 }
 
-export const getAvailableLots = async (assetId: string): Promise<AvailableLot[]> => {
-    const response = await apiClient.get<AvailableLot[]>(`/api/v1/transactions/available-lots/${assetId}`);
+export const getAvailableLots = async (assetId: string, transactionId?: string): Promise<AvailableLot[]> => {
+    const params = transactionId ? { exclude_transaction_id: transactionId } : {};
+    const response = await apiClient.get<AvailableLot[]>(`/api/v1/transactions/available-lots/${assetId}`, { params });
     return response.data;
 };
 

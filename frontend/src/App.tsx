@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import UserManagementPage from './pages/Admin/UserManagementPage';
 import SystemMaintenancePage from './pages/Admin/SystemMaintenancePage';
+import AdminFMVPage from './pages/Admin/AdminFMVPage';
 import PortfolioPage from './pages/Portfolio/PortfolioPage';
 import PortfolioDetailPage from './pages/Portfolio/PortfolioDetailPage';
 import DataImportPage from './pages/Import/DataImportPage';
@@ -15,6 +16,7 @@ import TransactionsPage from './pages/TransactionsPage';
 import WatchlistsPage from './pages/WatchlistsPage';
 import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
+import CapitalGainsPage from './pages/CapitalGainsPage';
 import ProfilePage from './pages/ProfilePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
@@ -50,6 +52,7 @@ function AppRoutes() {
           <Route path="/import" element={<DataImportPage />} />
           <Route path="/import/:sessionId/preview" element={<ImportPreviewPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/capital-gains" element={<CapitalGainsPage />} />
           <Route path="/watchlists" element={<WatchlistsPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/goals/:goalId" element={<GoalDetailPage />} />
@@ -57,6 +60,7 @@ function AppRoutes() {
             <Route path="/admin/users" element={<UserManagementPage />} />
             <Route path="/admin/interest-rates" element={<InterestRateManagementPage />} />
             <Route path="/admin/maintenance" element={<SystemMaintenancePage />} />
+            <Route path="/admin/fmv" element={<AdminFMVPage />} />
           </Route>
         </Route>
       </Route>

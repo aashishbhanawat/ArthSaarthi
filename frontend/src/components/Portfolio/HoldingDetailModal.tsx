@@ -137,8 +137,24 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
 
         for (const sell of sells) {
             let sellQuantityToMatch = Number(sell.quantity);
+
+            // 1. Process Specific Links from Backend
+            if (sell.sell_links && sell.sell_links.length > 0) {
+                for (const link of sell.sell_links) {
+                    const linkedBuy = buys.find((b: Transaction) => b.id === link.buy_transaction_id);
+                    if (linkedBuy) {
+                        const linkQty = Number(link.quantity);
+                        const currentBuyQty = Number(linkedBuy.quantity);
+                        const consumed = Math.min(linkQty, currentBuyQty);
+                        linkedBuy.quantity = String(Math.max(0, currentBuyQty - consumed));
+                        sellQuantityToMatch -= consumed;
+                    }
+                }
+            }
+
+            // 2. FIFO Fallback for Remaining Quantity
             for (const buy of buys) {
-                if (sellQuantityToMatch <= 0) break;
+                if (sellQuantityToMatch <= 0.000001) break;
                 const buyQuantity = Number(buy.quantity);
                 if (buyQuantity > 0) {
                     const matchQuantity = Math.min(sellQuantityToMatch, buyQuantity);
@@ -161,7 +177,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                         <h2 className="text-2xl font-bold dark:text-gray-100">
                             {holding.asset_name} {holding.asset_type !== 'Mutual Fund' && `(${holding.ticker_symbol})`}
                         </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Transaction History</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Current Holdings Breakdown</p>
                     </div>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
                         <XMarkIcon className="h-6 w-6" />

@@ -2,6 +2,9 @@
 line-length = 88
 exclude = [
     "alembic/versions/*",
+    "dist",
+    "build",
+    ".venv",
 ]
 
 [tool.ruff.lint]

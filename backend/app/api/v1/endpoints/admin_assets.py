@@ -312,3 +312,269 @@ def sync_assets(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Asset sync failed: {str(e)}",
         )
+
+
+class FMV2018Update(BaseModel):
+    """Request model for updating FMV 2018."""
+    fmv_2018: float
+
+
+class FMV2018Response(BaseModel):
+    """Response model for FMV 2018 update."""
+    ticker_symbol: str
+    fmv_2018: float
+    message: str
+
+
+class LocalAssetResult(BaseModel):
+    """Search result for local assets only."""
+    id: str
+    ticker_symbol: str
+    name: str
+    asset_type: str
+    exchange: str | None
+    isin: str | None
+    fmv_2018: float | None
+
+
+@router.get(
+    "/fmv-search",
+    response_model=list[LocalAssetResult],
+    status_code=status.HTTP_200_OK,
+    summary="Search Local Assets for FMV Management",
+    description="Search local asset DB only (no external calls). For FMV page.",
+)
+def search_local_assets(
+    query: str = "",
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+) -> Any:
+    """
+    Search assets in local database only.
+    Returns assets for FMV 2018 management without calling external APIs.
+    """
+    from app.models import Asset
+
+    q = db.query(Asset).filter(
+        Asset.asset_type.in_([
+            "STOCK", "ETF", "MUTUAL_FUND",
+            "MUTUAL FUND", "Mutual Fund"
+        ])
+    )
+
+    if query and len(query) >= 2:
+        search_term = f"%{query.upper()}%"
+        q = q.filter(
+            (Asset.ticker_symbol.ilike(search_term)) |
+            (Asset.name.ilike(search_term))
+        )
+
+    assets = q.order_by(Asset.ticker_symbol).limit(limit).all()
+
+    return [
+        LocalAssetResult(
+            id=str(asset.id),
+            ticker_symbol=asset.ticker_symbol,
+            name=asset.name,
+            asset_type=asset.asset_type,
+            exchange=asset.exchange,
+            isin=asset.isin,
+            fmv_2018=float(asset.fmv_2018) if asset.fmv_2018 else None,
+        )
+        for asset in assets
+    ]
+
+
+@router.patch(
+    "/{ticker}/fmv-2018",
+    response_model=FMV2018Response,
+    status_code=status.HTTP_200_OK,
+    summary="Update FMV 2018 for Grandfathering",
+    description="Set Jan 31, 2018 FMV for capital gains grandfathering.",
+)
+def update_asset_fmv_2018(
+    ticker: str,
+    payload: FMV2018Update,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+) -> Any:
+    """
+    Update the FMV (Fair Market Value) as of Jan 31, 2018 for an asset.
+
+    This price is used for grandfathering calculations under Section 112A
+    for equity investments held before the indexation cutoff date.
+    """
+    from app.models import Asset
+
+    asset = db.query(Asset).filter(Asset.ticker_symbol == ticker).first()
+    if not asset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Asset with ticker '{ticker}' not found",
+        )
+
+    asset.fmv_2018 = payload.fmv_2018
+    db.commit()
+    db.refresh(asset)
+
+    logger.info(
+        f"FMV 2018 updated: {ticker} = {payload.fmv_2018} by {current_user.email}"
+    )
+
+    return FMV2018Response(
+        ticker_symbol=ticker,
+        fmv_2018=payload.fmv_2018,
+        message=f"FMV 2018 updated successfully for {ticker}",
+    )
+
+
+class FMV2018LookupResponse(BaseModel):
+    """Response model for FMV 2018 lookup."""
+    ticker_symbol: str
+    fmv_2018: float | None
+    source: str
+    message: str
+
+
+@router.get(
+    "/{ticker}/fmv-2018/lookup",
+    response_model=FMV2018LookupResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Fetch FMV 2018 from Yahoo Finance",
+    description="Fetch Jan 31, 2018 closing price from yfinance.",
+)
+def lookup_fmv_2018(
+    ticker: str,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+) -> Any:
+    """
+    Lookup the FMV (Fair Market Value) as of Jan 31, 2018 from Yahoo Finance.
+
+    Returns the closing price on Jan 31, 2018 (or nearest trading day).
+    """
+    from datetime import date
+
+    from app.models import Asset
+    from app.services.financial_data_service import financial_data_service
+
+    # Find the asset
+    asset = db.query(Asset).filter(Asset.ticker_symbol == ticker).first()
+    if not asset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Asset with ticker '{ticker}' not found",
+        )
+
+    # Determine the yfinance ticker
+    yf_ticker = ticker
+    if asset.currency == "INR" and not ticker.endswith(".NS"):
+        yf_ticker = f"{ticker}.NS"
+
+    # Fetch historical price for Jan 31, 2018
+    fmv_date = date(2018, 1, 31)
+    try:
+        historical_data = financial_data_service.get_historical_prices(
+            assets=[{
+                "ticker_symbol": yf_ticker,
+                "asset_type": asset.asset_type,
+                "exchange": asset.exchange or "NSE",
+            }],
+            start_date=date(2018, 1, 25),
+            end_date=date(2018, 2, 5),
+        )
+
+        # Find the closest date to Jan 31, 2018
+        prices = historical_data.get(yf_ticker, {})
+        if not prices:
+            # Try without .NS suffix
+            prices = historical_data.get(ticker, {})
+
+        if prices:
+            # Get Jan 31 or closest available date
+            sorted_dates = sorted(prices.keys())
+            fmv_price = None
+            for d in sorted_dates:
+                if d <= fmv_date:
+                    fmv_price = float(prices[d])
+                elif fmv_price is None:
+                    fmv_price = float(prices[d])
+                    break
+
+            if fmv_price:
+                return FMV2018LookupResponse(
+                    ticker_symbol=ticker,
+                    fmv_2018=fmv_price,
+                    source="yfinance",
+                    message=f"Found FMV: ₹{fmv_price:.2f}",
+                )
+
+        return FMV2018LookupResponse(
+            ticker_symbol=ticker,
+            fmv_2018=None,
+            source="yfinance",
+            message="No historical data found for Jan 31, 2018",
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to fetch FMV 2018 for {ticker}: {e}")
+        return FMV2018LookupResponse(
+            ticker_symbol=ticker,
+            fmv_2018=None,
+            source="yfinance",
+            message=f"Lookup failed: {str(e)}",
+        )
+
+
+class FMV2018BulkSeedResponse(BaseModel):
+    """Response model for bulk FMV 2018 seeding."""
+    status: str
+    updated: int
+    skipped: int
+    errors: int
+    message: str
+
+
+@router.post(
+    "/fmv-2018/seed",
+    response_model=FMV2018BulkSeedResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Bulk Seed FMV 2018 from Official Sources",
+    description="Bulk updates FMV 2018 from official BSE/AMFI files on Jan 31, 2018.",
+)
+def bulk_seed_fmv_2018(
+    overwrite: bool = False,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+) -> Any:
+    """
+    Bulk seed FMV 2018 from official BSE Bhavcopy and AMFI NAV data.
+
+    Downloads:
+    - BSE Bhavcopy for stocks (matches by ISIN)
+    - AMFI NAV for mutual funds (matches by scheme code)
+
+    Only updates assets where fmv_2018 is currently NULL.
+    """
+    from app.services.fmv_2018_seeder import FMV2018Seeder
+
+    logger.info(f"Bulk FMV 2018 seeding triggered by {current_user.email}")
+
+    try:
+        seeder = FMV2018Seeder(db)
+        result = seeder.seed_all(overwrite=overwrite)
+
+        return FMV2018BulkSeedResponse(
+            status="success",
+            updated=result["updated"],
+            skipped=result["skipped"],
+            errors=result["errors"],
+            message=f"Updated {result['updated']} assets from BSE/AMFI data",
+        )
+    except Exception as e:
+        logger.error(f"Bulk seed failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bulk seed failed: {str(e)}",
+        )

@@ -1,8 +1,9 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import BigInteger, Date, String, UniqueConstraint
+from sqlalchemy import BigInteger, Date, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -39,6 +40,8 @@ class Asset(Base):
     )  # BigInteger for large market caps
     # Investment style classification (Value/Growth/Blend)
     investment_style: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # Grandfathering Price (Jan 31, 2018 FMV) - Per unit
+    fmv_2018: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 4), nullable=True)
     transactions: Mapped[List["Transaction"]] = relationship(back_populates="asset")
     aliases: Mapped[List[AssetAlias]] = relationship(
         "AssetAlias", back_populates="asset", cascade="all, delete-orphan"
