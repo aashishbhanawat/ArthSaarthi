@@ -693,6 +693,17 @@ Addressed multiple issues regarding Asset Classification and Taxation:
 *   **Unit Tests:** Backend tests passed (27 tests in `test_capital_gains_service.py`).
 *   **Manual Verification:** Confirmed `LIQUID BEES` shows Stock UI. Confirmed `MAHKTECH` appears in search. Confirmed SGB tax exemption logic.
 
+### 6. Linting & Polish
+- **Task**: Fix Critical Lint Errors and Build Artifact Exclusion.
+- **Files Modified**:
+    - `backend/app/api/v1/endpoints/assets.py`: Fixed long lines (~88 chars).
+    - `backend/app/services/capital_gains_service.py`: Fixed `F821` (undefined name), `F841` (unused variable), and `E501` errors.
+    - `backend/verify_hybrid.py`: Fixed formatting.
+    - `backend/pyproject.toml`: Excluded `dist` and `build` folders from `ruff` to prevent false positives on build artifacts.
+- **Verification**:
+    - Ran full lint suite: `ruff check . --fix`.
+    - Result: `All checks passed!`
+
 ### Outcome
 
-**Success.** Asset classification is now robust, handling edge cases like International ETFs and Bond ETFs correctly in both UI and Tax Reporting.
+**Success.** Asset classification is now robust, handling edge cases like International ETFs and Bond ETFs correctly in both UI and Tax Reporting. The codebase is clean and passes strict linting.
