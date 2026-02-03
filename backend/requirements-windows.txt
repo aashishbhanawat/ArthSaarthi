@@ -148,7 +148,7 @@ python-dotenv==1.1.1
     #   uvicorn
 python-jose[cryptography]==3.5.0
     # via -r backend/requirements.in
-python-multipart==0.0.20
+python-multipart==0.0.22
     # via -r backend/requirements.in
 pytz==2025.2
     # via
