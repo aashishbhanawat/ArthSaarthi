@@ -123,7 +123,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         )
 
     def search_by_name_or_ticker(
-        self, db: Session, *, query: str, asset_type: Optional[str] = None
+        self, db: Session, *, query: str, asset_type: Optional[str | List[str]] = None
     ) -> List[Asset]:
         # Use ILIKE for case-insensitive search on PostgreSQL, and it works
         # correctly on SQLite as well, providing a consistent behavior.
@@ -135,10 +135,15 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
             )
         )
         if asset_type:
-            # Use case-insensitive comparison for asset_type
-            db_query = db_query.filter(
-                func.upper(self.model.asset_type) == asset_type.upper()
-            )
+            if isinstance(asset_type, list):
+                 db_query = db_query.filter(
+                     func.upper(self.model.asset_type).in_([t.upper() for t in asset_type])
+                 )
+            else:
+                # Use case-insensitive comparison for asset_type
+                db_query = db_query.filter(
+                    func.upper(self.model.asset_type) == asset_type.upper()
+                )
 
         # Eager load bond details if asset_type is BOND
         if asset_type == "BOND":

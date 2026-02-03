@@ -32,6 +32,7 @@ export interface GainEntry {
     tax_rate: string;
     is_grandfathered: boolean;
     corporate_action_adjusted: boolean;
+    is_hybrid_warning: boolean;
 }
 
 export interface Schedule112AEntry {
@@ -85,13 +86,17 @@ export interface CapitalGainsSummary {
 interface CapitalGainsParams {
     fy: string;
     portfolio_id?: string;
+    slab_rate: number;
 }
 
 export const useCapitalGains = (params: CapitalGainsParams) => {
     return useQuery<CapitalGainsSummary>({
-        queryKey: ['capital-gains', params.fy, params.portfolio_id],
+        queryKey: ['capital-gains', params.fy, params.portfolio_id, params.slab_rate],
         queryFn: async () => {
-            const queryParams = new URLSearchParams({ fy: params.fy });
+            const queryParams = new URLSearchParams({
+                fy: params.fy,
+                slab_rate: params.slab_rate.toString()
+            });
             if (params.portfolio_id) {
                 queryParams.append('portfolio_id', params.portfolio_id);
             }

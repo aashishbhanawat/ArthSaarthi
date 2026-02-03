@@ -28,6 +28,8 @@ HOLDING_PERIOD_GENERAL_LTCG_NEW = 730   # 24 months (Post July 2024)
 DATE_2018_01_31 = date(2018, 1, 31)
 DATE_2024_07_23 = date(2024, 7, 23)
 
+DATE_2023_04_01 = date(2023, 4, 1)
+
 class CapitalGainsService:
     def __init__(self, db: Session):
         self.db = db
@@ -35,7 +37,8 @@ class CapitalGainsService:
     def calculate_capital_gains(
         self,
         portfolio_id: Optional[str],
-        fy_year: str # e.g. "2025-26"
+        fy_year: str, # e.g. "2025-26"
+        slab_rate: float = 30.0 # Default to 30% if not provided
     ) -> CapitalGainsSummary:
         """
         Main entry point to calculate Capital Gains for a financial year.
@@ -124,9 +127,39 @@ class CapitalGainsService:
         itr_matrix = self._build_itr_matrix(matrix_data)
 
         # 6. Estimate Tax (Simplistic estimation - domestic only)
-        # Note: Foreign gains require SBI TT rate conversion before tax calculation
-        est_stcg_tax = total_stcg * Decimal("0.20") # Placeholder
-        est_ltcg_tax = total_ltcg * Decimal("0.125") # Placeholder
+        est_stcg_tax = Decimal(0)
+        est_ltcg_tax = Decimal(0)
+        
+        # Slab rate as decimal
+        slab_decimal = Decimal(str(slab_rate)) / Decimal(100)
+
+        for g in gains:
+            if g.gain <= 0:
+                continue
+
+            if g.gain_type == "STCG":
+                if "Exempt" in g.tax_rate:
+                    continue
+                elif "STCG 20%" in g.tax_rate:
+                    est_stcg_tax += g.gain * Decimal("0.20")
+                elif "STCG 15%" in g.tax_rate:
+                    est_stcg_tax += g.gain * Decimal("0.15")
+                else:
+                    # Slab Rate STCG
+                    est_stcg_tax += g.gain * slab_decimal
+            else: # LTCG
+                if "Exempt" in g.tax_rate:
+                    continue
+                elif "LTCG 10%" in g.tax_rate:
+                     # 1L Exemption not handled per stock, this is gross est
+                     est_ltcg_tax += g.gain * Decimal("0.10")
+                elif "LTCG 12.5%" in g.tax_rate:
+                    est_ltcg_tax += g.gain * Decimal("0.125")
+                elif "LTCG 20%" in g.tax_rate:
+                    est_ltcg_tax += g.gain * Decimal("0.20")
+                else:
+                     # Fallback or Slab? Assuming 20% for unknown
+                     est_ltcg_tax += g.gain * Decimal("0.20")
 
         return CapitalGainsSummary(
             financial_year=fy_year,
@@ -261,13 +294,26 @@ class CapitalGainsService:
         # Classification
         asset_category = self._classify_asset_category(asset)
         holding_days = (sell_date - buy_date).days
-        is_ltcg = self._is_ltcg(asset_category, holding_days, sell_date)
+        is_ltcg = self._is_ltcg(asset_category, holding_days, sell_date, buy_date) # Updated signature
         gain_type = "LTCG" if is_ltcg else "STCG"
 
         # Determine Tax Rate Label
         tax_rate_label = self._determine_tax_rate_label(
-            gain_type, asset_category, sell_date
+            gain_type, asset_category, sell_date, buy_date # Updated signature
         )
+
+        # SGB Exemption Check (Redemption on Maturity)
+        # SGB interest is taxable, but capital gains on redemption are tax free.
+        if asset_category == "SGB" and asset.bond and asset.bond.maturity_date:
+            if sell_date >= asset.bond.maturity_date:
+                tax_rate_label = "Exempt (Maturity)"
+
+        # SGB Premature Redemption Note
+        note = None
+        if asset_category == "SGB" and "Exempt" not in tax_rate_label:
+            # 5 years = approx 1825 days
+            if holding_days > 1825:
+                 note = "Potential Exemption: Tax-free if redeemed with RBI (Premature)."
 
         # Grandfathering Logic
         fmv_2018 = None
@@ -301,7 +347,9 @@ class CapitalGainsService:
             gain_type=gain_type,
             holding_days=holding_days,
             tax_rate=tax_rate_label,
-            is_grandfathered=is_grandfathered
+            is_grandfathered=is_grandfathered,
+            is_hybrid_warning=self._is_hybrid_fund(asset),
+            note=note
         )
 
         # Schedule 112A Entry (Only for Grandfathered Equity LTCG)
@@ -326,7 +374,9 @@ class CapitalGainsService:
 
         return entry, s112a_entry
 
-    def _is_ltcg(self, category: str, days: int, sell_date: date) -> bool:
+    def _is_ltcg(
+        self, category: str, days: int, sell_date: date, buy_date: date
+    ) -> bool:
         """Determine if holding period qualifies for LTCG"""
         if category == "EQUITY_LISTED":
             return days > 365
@@ -337,7 +387,25 @@ class CapitalGainsService:
                 return days > 365
             return days > 1095 # Old rule (36 months)
 
-        # General / Debt / Gold - 24 months post July 2024
+        if category == "DEBT":
+            # Debt Fund Rules
+            # 1. Invested ON/AFTER 1 Apr 2023 -> Always STCG (Sec 50AA)
+            if buy_date >= DATE_2023_04_01:
+                return False # Always Short Term regardless of holding
+            
+            # 2. Invested BEFORE 1 Apr 2023 -> Normal Debt Rules
+            # Post July 2024 -> 24 months
+            if sell_date >= DATE_2024_07_23:
+                return days > 730
+            # Pre July 2024 -> 36 months
+            return days > 1095
+
+        # General / Gold - 24 months post July 2024
+        if category == "EQUITY_INTERNATIONAL":
+            # Per User: Debt/Intl -> Any Period -> As per Slab Rate
+            # This effectively means treated as Short Term for tax rates
+            return False
+
         if sell_date >= DATE_2024_07_23:
             threshold = HOLDING_PERIOD_GENERAL_LTCG_NEW
         else:
@@ -353,6 +421,7 @@ class CapitalGainsService:
         Classifies asset into tax categories:
         - EQUITY_LISTED: Stocks, ETFs, Equity MFs (STT paid)
         - EQUITY_UNLISTED: Unlisted shares
+        - EQUITY_INTERNATIONAL: Overseas ETFs/Funds (Taxed as Debt/Slab)
         - DEBT: Debt MFs, Corporate Bonds
         - SGB: Sovereign Gold Bonds
         - GOLD: Physical Gold, Gold ETFs (if treated as Debt/Gold)
@@ -364,22 +433,39 @@ class CapitalGainsService:
         if asset.currency != "INR":
             return "FOREIGN"
 
-        # 2. Equity
-        if atype in ["STOCK", "ETF"]:
-            # Assumption: All INR Stocks/ETFs in system are listed
-            return "EQUITY_LISTED"
+        # 2. Equity / ETF / Stock
+        if atype in ["STOCK", "ETF"] or "MUTUAL" in atype:
+            name_upper = str(asset.name).upper()
+            sector_upper = str(asset.sector).upper() if asset.sector else ""
+            ticker_upper = str(asset.ticker_symbol).upper()
 
-        if "MUTUAL" in atype:
-            # Check sector/category from enrichment
-            sector = str(asset.sector).upper() if asset.sector else ""
-            if "EQUITY" in sector or "INDEX" in sector or "ELSS" in sector:
-                return "EQUITY_LISTED"
-            # Debt / Liquid / Hybrid (Non-Equity)
-            return "DEBT"
+            # A. Gold / Silver ETFs
+            if "GOLD" in name_upper or "SILVER" in name_upper or "GOLD" in sector_upper or "SILVER" in sector_upper:
+                return "GOLD"
+
+            # B. Debt / Bond / Liquid ETFs
+            debt_keywords = ["LIQUID", "GILT", "BOND", "DEBT", "GOVT", "TREASURY"]
+            if any(k in name_upper for k in debt_keywords) or any(k in sector_upper for k in debt_keywords):
+                return "DEBT"
+
+            # C. International / Overseas ETFs (Treated as Debt for tax if > Apr 2023, else LTCG 20%/12.5%)
+            # Examples: MAHKTECH, MON100, NASDAQ, HANG SENG, FANG, US EQUITY
+            intl_keywords = ["NASDAQ", "HANG SENG", "US EQUITY", "Global", "WORLD", "OVERSEAS", "INTERNATIONAL", "MAHKTECH", "MON100", "FANG+"]
+            if any(k in name_upper for k in intl_keywords) or any(k in sector_upper for k in intl_keywords):
+                 return "EQUITY_INTERNATIONAL"
+
+            # D. Explicit Mutual Fund Checks (if not caught above)
+            if "MUTUAL" in atype:
+                if "EQUITY" in sector_upper or "INDEX" in sector_upper or "ELSS" in sector_upper:
+                    return "EQUITY_LISTED"
+                return "DEBT"  # Default for MFs is Debt unless Equity sector
+
+            # E. Default for Stock/ETF -> Equity Listed
+            return "EQUITY_LISTED"
 
         # 3. Bonds
         if "BOND" in atype:
-            if asset.bond_type == BondType.SGB:
+            if asset.bond and asset.bond.bond_type == BondType.SGB:
                 return "SGB"
             return "DEBT" # Corporate/Govt Bonds
 
@@ -388,8 +474,23 @@ class CapitalGainsService:
 
         return "OTHER"
 
+    def _is_hybrid_fund(self, asset: Asset) -> bool:
+        """Check if asset is a Hybrid/Balanced fund requiring user verification"""
+        if str(asset.asset_type).upper() != "MUTUAL FUND":
+            return False
+            
+        keywords = ["HYBRID", "BALANCED", "DYNAMIC", "MULTI ASSET", "ARBITRAGE", "OTHER SCHEME"]
+        sector = str(asset.sector).upper() if asset.sector else ""
+        name = str(asset.name).upper()
+        
+        # Check both sector and name
+        for k in keywords:
+            if k in sector or k in name:
+                return True
+        return False
+
     def _determine_tax_rate_label(
-        self, gain_type: str, category: str, sell_date: date
+        self, gain_type: str, category: str, sell_date: date, buy_date: date
     ) -> str:
         """
         Returns label like 'STCG 20%', 'LTCG 12.5%' based on rules.
@@ -399,6 +500,14 @@ class CapitalGainsService:
         if gain_type == "STCG":
             if category == "EQUITY_LISTED":
                 return "STCG 20%" if is_post_july else "STCG 15%"
+            
+            # Debt Funds post Apr 2023 are purely slab rate (STCG)
+            if category == "DEBT" and buy_date >= DATE_2023_04_01:
+                return "STCG Slab"
+            
+            if category == "EQUITY_INTERNATIONAL":
+                return "STCG Slab"
+
             # All other STCG is Slab
             return "STCG Slab"
 
@@ -415,14 +524,29 @@ class CapitalGainsService:
                 return "LTCG 12.5%" # Secondary market
 
             if category == "DEBT":
-                # Debt MFs are STCG usually (Sec 50AA), but check logic
-                return "LTCG 20%" # Fallback likely
+                # Only reaches here if Pre-Apr 2023 buy + >2/3yr hold
+                # User Requirement: Taxed at 12.5% flat (if post-July 2024?)
+                # Actually, user said: "For investments before April 1, 2023, gains after a 2-year hold are taxed at 12.5% without indexation"
+                # This only applies if sold AFTER 23 July 2024.
+                # If sold BEFORE 23 July 2024, old rule (20% with indexation) applies?
+                # User Example used "sold in 2025".
+                # We will handle "Post July 2024" as 12.5%
+                if is_post_july:
+                     return "LTCG 12.5%" 
+                else:
+                     return "LTCG 20%" # Old regime with indexation
 
         return "Unknown"
+
+        current_val = matrix[row_key][period_key]
+        matrix[row_key][period_key] = current_val + entry.gain
 
     def _bucket_into_matrix(
         self, matrix, entry: GainEntry, sell_date: date, asset: Asset
     ):
+        if "Exempt" in entry.tax_rate:
+            return
+
         # 1. Determine Period Column
         month = sell_date.month
         day = sell_date.day

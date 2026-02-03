@@ -357,7 +357,10 @@ def search_local_assets(
     from app.models import Asset
 
     q = db.query(Asset).filter(
-        Asset.asset_type.in_(["STOCK", "ETF", "MUTUAL_FUND"])
+        Asset.asset_type.in_([
+            "STOCK", "ETF", "MUTUAL_FUND", 
+            "MUTUAL FUND", "Mutual Fund"
+        ])
     )
 
     if query and len(query) >= 2:

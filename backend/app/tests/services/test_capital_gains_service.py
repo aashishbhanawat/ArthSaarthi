@@ -21,59 +21,60 @@ class TestIsLTCG:
     # --- Equity Tests ---
     def test_equity_365_days_is_stcg(self):
         """Equity held exactly 365 days should be STCG (boundary)."""
-        result = self.service._is_ltcg("EQUITY_LISTED", 365, date(2025, 1, 1))
+        result = self.service._is_ltcg("EQUITY_LISTED", 365, date(2025, 1, 1), date(2024, 1, 1))
         assert result is False
 
     def test_equity_366_days_is_ltcg(self):
         """Equity held 366 days should be LTCG."""
-        result = self.service._is_ltcg("EQUITY_LISTED", 366, date(2025, 1, 1))
+        # Buy date irrelevant for equity holding period check > 365
+        result = self.service._is_ltcg("EQUITY_LISTED", 366, date(2025, 1, 1), date(2024, 1, 1))
         assert result is True
 
     def test_equity_1_year_is_stcg(self):
         """Equity held exactly 1 year (365 days) is STCG."""
-        result = self.service._is_ltcg("EQUITY_LISTED", 365, date(2023, 1, 1))
+        result = self.service._is_ltcg("EQUITY_LISTED", 365, date(2023, 1, 1), date(2022, 1, 1))
         assert result is False
 
     # --- Gold/Debt Tests with Budget 2024 Threshold ---
     def test_gold_730_days_pre_july_2024_is_stcg(self):
         """Gold held 730 days (24m) pre-July 2024 is STCG (old 36m rule)."""
-        result = self.service._is_ltcg("GOLD", 730, date(2024, 7, 22))
+        result = self.service._is_ltcg("GOLD", 730, date(2024, 7, 22), date(2022, 7, 22))
         assert result is False
 
     def test_gold_1096_days_pre_july_2024_is_ltcg(self):
         """Gold held 1096 days (>36m) before July 2024 should be LTCG."""
-        result = self.service._is_ltcg("GOLD", 1096, date(2024, 7, 22))
+        result = self.service._is_ltcg("GOLD", 1096, date(2024, 7, 22), date(2021, 7, 22))
         assert result is True
 
     def test_gold_731_days_post_july_2024_is_ltcg(self):
         """Gold held 731 days (>24m) after July 2024 should be LTCG (new rule)."""
-        result = self.service._is_ltcg("GOLD", 731, date(2024, 7, 23))
+        result = self.service._is_ltcg("GOLD", 731, date(2024, 7, 23), date(2022, 7, 23))
         assert result is True
 
     def test_gold_730_days_post_july_2024_is_stcg(self):
         """Gold held 730 days (exactly 24m) after July 2024 should be STCG."""
-        result = self.service._is_ltcg("GOLD", 730, date(2024, 7, 23))
+        result = self.service._is_ltcg("GOLD", 730, date(2024, 7, 23), date(2022, 7, 23))
         assert result is False
 
     # --- SGB Tests with Post-July 2024 Rules ---
     def test_sgb_366_days_post_july_2024_is_ltcg(self):
         """SGB held 366 days after July 2024 should be LTCG (12m rule)."""
-        result = self.service._is_ltcg("SGB", 366, date(2024, 8, 1))
+        result = self.service._is_ltcg("SGB", 366, date(2024, 8, 1), date(2023, 8, 1))
         assert result is True
 
     def test_sgb_365_days_post_july_2024_is_stcg(self):
         """SGB held 365 days after July 2024 should be STCG."""
-        result = self.service._is_ltcg("SGB", 365, date(2024, 8, 1))
+        result = self.service._is_ltcg("SGB", 365, date(2024, 8, 1), date(2023, 8, 1))
         assert result is False
 
     def test_sgb_365_days_pre_july_2024_is_stcg(self):
         """SGB held 365 days before July 2024 should be STCG (old 36m rule)."""
-        result = self.service._is_ltcg("SGB", 365, date(2024, 7, 22))
+        result = self.service._is_ltcg("SGB", 365, date(2024, 7, 22), date(2023, 7, 22))
         assert result is False
 
     def test_sgb_1096_days_pre_july_2024_is_ltcg(self):
         """SGB held >36m before July 2024 should be LTCG."""
-        result = self.service._is_ltcg("SGB", 1096, date(2024, 7, 22))
+        result = self.service._is_ltcg("SGB", 1096, date(2024, 7, 22), date(2021, 7, 22))
         assert result is True
 
 
@@ -86,49 +87,49 @@ class TestDetermineTaxRateLabel:
     def test_stcg_equity_post_july_is_20_percent(self):
         """Equity STCG after July 2024 should be 20%."""
         result = self.service._determine_tax_rate_label(
-            "STCG", "EQUITY_LISTED", date(2024, 8, 1)
+            "STCG", "EQUITY_LISTED", date(2024, 8, 1), date(2024, 1, 1)
         )
         assert result == "STCG 20%"
 
     def test_stcg_equity_pre_july_is_15_percent(self):
         """Equity STCG before July 2024 should be 15%."""
         result = self.service._determine_tax_rate_label(
-            "STCG", "EQUITY_LISTED", date(2024, 7, 22)
+            "STCG", "EQUITY_LISTED", date(2024, 7, 22), date(2024, 1, 1)
         )
         assert result == "STCG 15%"
 
     def test_stcg_debt_is_slab(self):
         """Debt STCG should be at slab rates."""
         result = self.service._determine_tax_rate_label(
-            "STCG", "DEBT", date(2025, 1, 1)
+            "STCG", "DEBT", date(2025, 1, 1), date(2023, 4, 1)
         )
         assert result == "STCG Slab"
 
     def test_ltcg_equity_post_july_is_12_5_percent(self):
         """Equity LTCG after July 2024 should be 12.5%."""
         result = self.service._determine_tax_rate_label(
-            "LTCG", "EQUITY_LISTED", date(2024, 8, 1)
+            "LTCG", "EQUITY_LISTED", date(2024, 8, 1), date(2022, 1, 1)
         )
         assert result == "LTCG 12.5%"
 
     def test_ltcg_equity_pre_july_is_10_percent(self):
         """Equity LTCG before July 2024 should be 10%."""
         result = self.service._determine_tax_rate_label(
-            "LTCG", "EQUITY_LISTED", date(2024, 7, 22)
+            "LTCG", "EQUITY_LISTED", date(2024, 7, 22), date(2022, 1, 1)
         )
         assert result == "LTCG 10%"
 
     def test_ltcg_gold_post_july_is_12_5_percent(self):
         """Gold LTCG after July 2024 should be 12.5% (no indexation)."""
         result = self.service._determine_tax_rate_label(
-            "LTCG", "GOLD", date(2024, 8, 1)
+            "LTCG", "GOLD", date(2024, 8, 1), date(2022, 1, 1)
         )
         assert result == "LTCG 12.5%"
 
     def test_ltcg_gold_pre_july_is_20_percent(self):
         """Gold LTCG before July 2024 should be 20% (with indexation)."""
         result = self.service._determine_tax_rate_label(
-            "LTCG", "GOLD", date(2024, 7, 22)
+            "LTCG", "GOLD", date(2024, 7, 22), date(2020, 1, 1)
         )
         assert result == "LTCG 20%"
 

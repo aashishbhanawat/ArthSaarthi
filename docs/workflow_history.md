@@ -656,3 +656,43 @@ Addressed visibility regressions where text was unreadable in dark mode:
 ### Outcome
 
 **Success.** Restored usability for critical actions and charts in dark mode.
+
+## 2026-02-02: Fix ETF/Bond Classification and Taxation (FR4.3/FR6.5)
+
+**Task:** Resolve misclassification of Bond ETFs and International ETFs, ensure correct tax treatment (Slab Rate vs LTCG), and fix UI form behavior for these assets. Also addressed critical SGB parsing and tax handling issues.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Addressed multiple issues regarding Asset Classification and Taxation:
+1.  **Bond ETF UI:** Fixed `TransactionFormModal` where "Bond ETFs" (e.g., LIQUID BEES) were forcing the "Bond" UI (requiring Coupon/Maturity). Added name-based detection ("ETF" keyword) to force "Stock" UI.
+2.  **ETF Taxation:** Refined `capital_gains_service.py` to distinguish `EQUITY_INTERNATIONAL` (taxed as Debt/Slab) vs `GOLD` / `DEBT` funds.
+3.  **ETF Search Visibility:** Fixed `MAHKTECH` visibility issue by conditionally allowing Yahoo Finance results with `.NS` suffix if the root ticker is missing locally.
+4.  **SGB Enhancements:**
+    -   Fixed "Sell" transaction parsing from brokerage statements.
+    -   Fixed "Manual Entry" defaulting to BUY.
+    -   Implemented Tax Exemption for SGB Clean Redemption (Maturity).
+    -   Added "Tax Free" notes for RBI Buybacks.
+5.  **FMV Seeding:** Fixed AMFI parser dependency (`lxml`) to ensure accurate 2018 FMV seeding for grandfathering.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/capital_gains_service.py` - New asset categories (`EQUITY_INTERNATIONAL`, `GOLD`), tax rules.
+*   **Modified:** `backend/app/api/v1/endpoints/assets.py` - Improved Stock search logic.
+*   **Modified:** `backend/app/services/financial_data_service.py` - Improved FMV parsing.
+*   **Modified:** `backend/app/tests/services/test_capital_gains_service.py` - Updated tests for new signatures.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/Portfolio/TransactionFormModal.tsx` - Smart asset-type switching.
+
+### Verification
+
+*   **Unit Tests:** Backend tests passed (27 tests in `test_capital_gains_service.py`).
+*   **Manual Verification:** Confirmed `LIQUID BEES` shows Stock UI. Confirmed `MAHKTECH` appears in search. Confirmed SGB tax exemption logic.
+
+### Outcome
+
+**Success.** Asset classification is now robust, handling edge cases like International ETFs and Bond ETFs correctly in both UI and Tax Reporting.

@@ -54,11 +54,12 @@ type TabType = 'capital-gains' | 'schedule-fa';
 const CapitalGainsPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('capital-gains');
     const [selectedFY, setSelectedFY] = useState<string>(getCurrentFY());
+    const [slabRate, setSlabRate] = useState<number>(30); // Default 30%
     const [selectedCalendarYear, setSelectedCalendarYear] = useState<number>(new Date().getFullYear() - 1);
     const fyOptions = useMemo(() => generateFYOptions(), []);
     const calendarYearOptions = useMemo(() => generateCalendarYearOptions(), []);
 
-    const { data, isLoading, isError, error } = useCapitalGains({ fy: selectedFY });
+    const { data, isLoading, isError, error } = useCapitalGains({ fy: selectedFY, slab_rate: slabRate });
     const { data: faData, isLoading: faLoading, isError: faError, error: faErrorObj } = useScheduleFA({ calendar_year: selectedCalendarYear });
 
     const periodLabels = ['Upto 15/6', '16/6 - 15/9', '16/9 - 15/12', '16/12 - 15/3', '16/3 - 31/3'];
@@ -92,23 +93,41 @@ const CapitalGainsPage: React.FC = () => {
             {/* Capital Gains Tab */}
             {activeTab === 'capital-gains' && (
                 <>
-                    {/* FY Selector */}
-                    <div className="mb-6 flex items-center gap-4">
-                        <label htmlFor="fy-select" className="font-medium dark:text-gray-200">Financial Year:</label>
-                        <select
-                            id="fy-select"
-                            value={selectedFY}
-                            onChange={(e) => setSelectedFY(e.target.value)}
-                            className="form-input w-40"
-                        >
-                            {fyOptions.map((fy) => (
-                                <option key={fy} value={fy}>FY {fy}</option>
-                            ))}
-                        </select>
+                    {/* FY and Slab Rate Selector */}
+                    <div className="mb-6 flex items-center gap-4 flex-wrap">
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="fy-select" className="font-medium dark:text-gray-200">Financial Year:</label>
+                            <select
+                                id="fy-select"
+                                value={selectedFY}
+                                onChange={(e) => setSelectedFY(e.target.value)}
+                                className="form-input w-36"
+                            >
+                                {fyOptions.map((fy) => (
+                                    <option key={fy} value={fy}>FY {fy}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="slab-rate" className="font-medium dark:text-gray-200">Tax Slab (%):</label>
+                            <input
+                                id="slab-rate"
+                                type="number"
+                                value={slabRate}
+                                onChange={(e) => setSlabRate(Number(e.target.value))}
+                                className="form-input w-20"
+                                min="0"
+                                max="100"
+                            />
+                        </div>
+
+                        <div className="flex-grow"></div>
+
                         <button
                             onClick={() => {
                                 window.open(
-                                    `/api/v1/capital-gains/export?fy=${selectedFY}`,
+                                    `/api/v1/capital-gains/export?fy=${selectedFY}&slab_rate=${slabRate}`,
                                     '_blank'
                                 );
                             }}
@@ -181,11 +200,18 @@ const CapitalGainsPage: React.FC = () => {
                                 </table>
                             </div>
 
-                            {/* Disclaimer */}
                             <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-8">
-                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    ⚠️ Tax estimates are for informational purposes only. Please consult a tax professional for accurate filing.
-                                </p>
+                                <div className="flex gap-2">
+                                    <span className="text-xl">⚠️</span>
+                                    <div className="text-sm text-yellow-800 dark:text-yellow-200 space-y-1">
+                                        <p>
+                                            Tax estimates are for informational purposes only. Please consult a tax professional for accurate filing.
+                                        </p>
+                                        <p>
+                                            <strong>Hybrid / Balanced Funds:</strong> Funds marked with ⚠️ may vary in taxation (Equity vs Debt) depending on their equity component (e.g. &gt;65% Equity). Please verify manually.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Detailed Gains Table */}
@@ -210,9 +236,21 @@ const CapitalGainsPage: React.FC = () => {
                                         {(data.gains || []).map((gain: GainEntry) => (
                                             <tr key={gain.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
                                                 <td className="p-2 dark:text-gray-200">
-                                                    <span className="font-medium">{gain.asset_ticker}</span>
-                                                    {gain.is_grandfathered && <span className="ml-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 px-1 rounded">GF</span>}
-                                                    {gain.corporate_action_adjusted && <span className="ml-1 text-xs bg-orange-100 dark:bg-orange-800 text-orange-700 dark:text-orange-200 px-1 rounded">CA</span>}
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="font-medium">{gain.asset_name || gain.asset_ticker}</span>
+                                                            {gain.is_hybrid_warning && (
+                                                                <span title="Hybrid Fund: Tax rate depends on equity exposure. Verify manually." className="cursor-help text-yellow-500">
+                                                                    ⚠️
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400">{gain.asset_ticker}</span>
+                                                    </div>
+                                                    <div className="flex gap-1 mt-1">
+                                                        {gain.is_grandfathered && <span className="text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 px-1 rounded">GF</span>}
+                                                        {gain.corporate_action_adjusted && <span className="text-xs bg-orange-100 dark:bg-orange-800 text-orange-700 dark:text-orange-200 px-1 rounded">CA</span>}
+                                                    </div>
                                                 </td>
                                                 <td className="p-2 dark:text-gray-300">{gain.asset_type}</td>
                                                 <td className="p-2 text-right dark:text-gray-300">{formatQty(gain.quantity)}</td>

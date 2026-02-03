@@ -41,6 +41,8 @@ class GainEntry(BaseModel):
     # Metadata for warnings
     is_grandfathered: bool = False
     corporate_action_adjusted: bool = False # True if Demerger/Split involved
+    is_hybrid_warning: bool = False # Warn user about potential equity/debt ambiguity
+    note: Optional[str] = None # Information note (e.g. SGB premature redemption)
 
 
 class Schedule112AEntry(BaseModel):

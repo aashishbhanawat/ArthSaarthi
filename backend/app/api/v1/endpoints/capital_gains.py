@@ -16,6 +16,7 @@ router = APIRouter()
 def get_capital_gains(
     fy: str = Query(..., description="Financial Year (e.g., '2025-26')"),
     portfolio_id: Optional[str] = Query(None, description="Filter by Portfolio ID"),
+    slab_rate: float = Query(30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"),
     db: Session = Depends(get_db),
 ):
     """
@@ -28,7 +29,9 @@ def get_capital_gains(
     - Detailed list of all realized gains
     """
     service = CapitalGainsService(db)
-    return service.calculate_capital_gains(portfolio_id=portfolio_id, fy_year=fy)
+    return service.calculate_capital_gains(
+        portfolio_id=portfolio_id, fy_year=fy, slab_rate=slab_rate
+    )
 
 
 @router.get("/export")
@@ -36,13 +39,16 @@ def export_capital_gains_csv(
     fy: str = Query(..., description="Financial Year (e.g., '2025-26')"),
     report_type: str = Query("gains", description="Type of report: 'gains' or '112a'"),
     portfolio_id: Optional[str] = Query(None, description="Filter by Portfolio ID"),
+    slab_rate: float = Query(30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"),
     db: Session = Depends(get_db),
 ):
     """
     Export Capital Gains as a CSV file for download.
     """
     service = CapitalGainsService(db)
-    summary = service.calculate_capital_gains(portfolio_id=portfolio_id, fy_year=fy)
+    summary = service.calculate_capital_gains(
+        portfolio_id=portfolio_id, fy_year=fy, slab_rate=slab_rate
+    )
 
     # Build CSV content
     output = StringIO()
