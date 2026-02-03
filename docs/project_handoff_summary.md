@@ -1,11 +1,11 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-03
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Capital Gains Reporting, Foreign Asset Taxation, and SGB/Bond handling are complete. Automated tests (backend, frontend, E2E) are passing. The application is ready for release v1.2.0.
+*   **Summary:** Capital Gains Reporting, Foreign Asset Taxation, and SGB/Bond handling are complete. Automated tests (backend, frontend, E2E) are passing. Codebase is clean and lint-free. The application is ready for release v1.2.0.
 
 ## 2. Test Suite Status
 
@@ -18,7 +18,8 @@
 
 *   **Frontend Unit Tests:** Resolved all failures in the Jest test suite, primarily by aligning mock data in `TransactionFormModal.test.tsx` with the component's updated logic for handling FX rates.
 *   **E2E Test Coverage:** Enabled the previously skipped E2E test for asset-level XIRR (`analytics.spec.ts`) by implementing a robust mocking strategy for the holdings API response. The full suite of 31 tests now passes.
-*   **Code Quality:** Eliminated the final remaining `eslint` warnings in the frontend codebase and removed duplicated code from the backend.
+*   **Code Quality:** Resolved all critical lint errors (`E501`, `F821`, `F841`) and excluded build artifacts from lint checks.
+*   **Merge Status:** `feat/capital-gains` merged into `main`.
 
 ## 3. Implemented Functionality
 
