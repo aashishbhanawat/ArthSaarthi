@@ -102,7 +102,7 @@ platformdirs==4.3.8
     # via yfinance
 pluggy==1.6.0
     # via pytest
-protobuf==6.31.1
+protobuf==6.33.5
     # via yfinance
 psycopg2-binary==2.9.10
     # via -r backend/requirements.in
