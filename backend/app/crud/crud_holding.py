@@ -1,4 +1,5 @@
 import logging
+import math
 import time
 import uuid
 from collections import defaultdict
@@ -403,6 +404,10 @@ def _process_market_traded_assets(
             if holdings_state[ticker]["quantity"] > 0 and tx.price_per_unit > 0:
                 ratio = tx.quantity / tx.price_per_unit
                 holdings_state[ticker]["quantity"] *= ratio
+                if asset and asset.currency == "INR":
+                    holdings_state[ticker]["quantity"] = Decimal(
+                        math.floor(holdings_state[ticker]["quantity"])
+                    )
 
         elif tx.transaction_type == TransactionType.MERGER:
             # MERGER: Zero out old holdings - shares have been converted to new asset

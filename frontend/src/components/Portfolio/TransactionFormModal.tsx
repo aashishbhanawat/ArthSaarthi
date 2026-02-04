@@ -1503,9 +1503,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             <label className="form-label">Split Ratio</label>
                                             <div className="flex items-center space-x-2">
                                                 <span className='font-medium'>New</span>
-                                                <input aria-label="New shares" type="number" {...register('splitRatioNew', { required: true, valueAsNumber: true, min: 1 })} className="form-input w-20 text-center" />
+                                                <input aria-label="New shares" type="number" step="1" {...register('splitRatioNew', { required: true, valueAsNumber: true, min: 1, validate: v => Number.isInteger(v) || "Must be integer" })} className="form-input w-20 text-center" />
                                                 <span className='font-medium'>for every Old</span>
-                                                <input aria-label="Old shares" type="number" {...register('splitRatioOld', { required: true, valueAsNumber: true, min: 1 })} className="form-input w-20 text-center" />
+                                                <input aria-label="Old shares" type="number" step="1" {...register('splitRatioOld', { required: true, valueAsNumber: true, min: 1, validate: v => Number.isInteger(v) || "Must be integer" })} className="form-input w-20 text-center" />
                                                 <span>shares</span>
                                             </div>
                                         </div>
@@ -1524,9 +1524,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             <label className="form-label">Bonus Ratio</label>
                                             <div className="flex items-center space-x-2">
                                                 <span className='font-medium'>New</span>
-                                                <input aria-label="New bonus shares" type="number" {...register('bonusRatioNew', { required: true, valueAsNumber: true, min: 1 })} className="form-input w-20 text-center" />
+                                                <input aria-label="New bonus shares" type="number" step="1" {...register('bonusRatioNew', { required: true, valueAsNumber: true, min: 1, validate: v => Number.isInteger(v) || "Must be integer" })} className="form-input w-20 text-center" />
                                                 <span className='font-medium'>for every Old</span>
-                                                <input aria-label="Old held shares" type="number" {...register('bonusRatioOld', { required: true, valueAsNumber: true, min: 1 })} className="form-input w-20 text-center" />
+                                                <input aria-label="Old held shares" type="number" step="1" {...register('bonusRatioOld', { required: true, valueAsNumber: true, min: 1, validate: v => Number.isInteger(v) || "Must be integer" })} className="form-input w-20 text-center" />
                                                 <span>shares</span>
                                             </div>
                                         </div>
