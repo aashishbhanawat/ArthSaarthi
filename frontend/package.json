@@ -114,5 +114,8 @@
     "ts-jest": "^29.2.3",
     "typescript": "^5.2.2",
     "vite": "^7.3.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-musl": "4.45.0"
   }
 }
