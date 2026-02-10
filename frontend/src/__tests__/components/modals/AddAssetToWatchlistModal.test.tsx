@@ -4,13 +4,12 @@ import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AddAssetToWatchlistModal from '../../../components/modals/AddAssetToWatchlistModal';
 import * as useAssetsHooks from '../../../hooks/useAssets';
-import { Asset } from '../../../types/asset';
 import { lookupAsset } from '../../../services/portfolioApi';
 
 jest.mock('../../../hooks/useAssets');
 jest.mock('../../../hooks/useDebounce', () => ({
   __esModule: true,
-  useDebounce: (value: any) => value,
+  useDebounce: (value: unknown) => value,
 }));
 jest.mock('../../../services/portfolioApi', () => ({
   lookupAsset: jest.fn(),
@@ -101,6 +100,9 @@ describe('AddAssetToWatchlistModal', () => {
 
     await waitFor(() => {
       expect(lookupAsset).toHaveBeenCalledWith('MSFT', 'STOCK', true);
+    });
+
+    await waitFor(() => {
       expect(onAddAsset).toHaveBeenCalledWith('new-id-123');
     });
   });
