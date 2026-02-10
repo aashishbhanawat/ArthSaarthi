@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAssetSearch } from '../../hooks/useAssets';
-import { AssetSearchResult } from '../../services/portfolioApi';
+import { AssetSearchResult, lookupAsset } from '../../services/portfolioApi';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { useDebounce } from '../../hooks/useDebounce';
 
@@ -17,6 +17,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<AssetSearchResult | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const { data: searchResults, isLoading } = useAssetSearch(debouncedSearchTerm);
 
@@ -24,13 +25,35 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
     if (!isOpen) {
       setSearchTerm('');
       setSelectedAsset(null);
+      setIsAdding(false);
     }
   }, [isOpen]);
 
-  const handleAdd = () => {
-    if (selectedAsset && selectedAsset.id) {
+  const handleAdd = async () => {
+    if (!selectedAsset) return;
+
+    if (selectedAsset.id) {
       onAddAsset(selectedAsset.id);
       onClose();
+      return;
+    }
+
+    // Asset has no ID (external/foreign), create it first
+    setIsAdding(true);
+    try {
+      // Use lookupAsset to create the asset in the backend
+      // Passing forceExternal=true ensures we try to create it if not found locally (which is known since no ID)
+      const assets = await lookupAsset(selectedAsset.ticker_symbol, selectedAsset.asset_type, true);
+      if (assets && assets.length > 0) {
+        onAddAsset(assets[0].id);
+        onClose();
+      } else {
+        console.error('Failed to create asset: No asset returned from lookup');
+      }
+    } catch (error) {
+      console.error('Error creating asset:', error);
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -73,7 +96,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
               <ul className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-full mt-1">
                 {isLoading && <li><a>Loading...</a></li>}
                 {filteredResults.map((asset) => (
-                  <li key={asset.id}>
+                  <li key={asset.id || asset.ticker_symbol}>
                     <button
                       type="button"
                       onClick={() => {
@@ -103,6 +126,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
                   onClick={() => setSelectedAsset(null)}
                   className="btn btn-ghost btn-xs btn-circle"
                   aria-label="Clear selection"
+                  disabled={isAdding}
                 >
                   <XMarkIcon className="h-4 w-4" />
                 </button>
@@ -110,8 +134,14 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
             )}
           </div>
           <div className="flex-shrink-0 flex items-center gap-2">
-            <button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>
-            <button onClick={handleAdd} className="btn btn-primary" disabled={!selectedAsset}>Add Asset to Watchlist</button>
+            <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isAdding}>Cancel</button>
+            <button
+              onClick={handleAdd}
+              className="btn btn-primary"
+              disabled={!selectedAsset || isAdding}
+            >
+              {isAdding ? 'Adding...' : 'Add Asset to Watchlist'}
+            </button>
           </div>
         </div>
       </div>

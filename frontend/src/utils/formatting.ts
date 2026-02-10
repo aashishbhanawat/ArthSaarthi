@@ -2,16 +2,18 @@ import { usePrivacy } from '../context/PrivacyContext';
 
 export const formatCurrency = (value: number | string, currency?: string | null) => {
   const numericValue = Number(value);
-  if (isNaN(numericValue) || value === null) {
-    return '₹0.00';
-  }
+  const currencyCode = currency || 'INR';
+
   const formatter = new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: currency || 'INR',
+    currency: currencyCode,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  // Handle negative numbers correctly by replacing the default minus sign
+
+  if (isNaN(numericValue) || value === null) {
+    return formatter.format(0);
+  }
   return formatter.format(numericValue).replace('₹-', '-₹');
 };
 

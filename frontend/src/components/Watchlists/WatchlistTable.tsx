@@ -10,7 +10,7 @@ interface WatchlistTableProps {
   error: Error | null;
 }
 
-const PnlCell: React.FC<{ value: number | undefined }> = ({ value }) => {
+const PnlCell: React.FC<{ value: number | undefined; currency?: string | null }> = ({ value, currency }) => {
     if (value === undefined || value === null) {
         return <td className="p-2 text-right font-mono text-gray-500">N/A</td>;
     }
@@ -23,7 +23,7 @@ const PnlCell: React.FC<{ value: number | undefined }> = ({ value }) => {
 
     return (
         <td className={`p-2 text-right font-mono ${getPnlColor(value)}`}>
-            {formatCurrency(value)}
+            {formatCurrency(value, currency)}
         </td>
     );
 };
@@ -73,9 +73,9 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
                 <div className="text-sm text-gray-500 truncate">{item.asset.name}</div>
               </td>
               <td className="p-2 text-right font-mono">
-                {item.asset.current_price ? formatCurrency(item.asset.current_price) : <span className="text-gray-500">N/A</span>}
+                {item.asset.current_price ? formatCurrency(item.asset.current_price, item.asset.currency) : <span className="text-gray-500">N/A</span>}
               </td>
-              <PnlCell value={item.asset.day_change} />
+              <PnlCell value={item.asset.day_change} currency={item.asset.currency} />
               <td className="p-2 text-center">
                 <button
                   onClick={() => handleRemove(item.id)}
