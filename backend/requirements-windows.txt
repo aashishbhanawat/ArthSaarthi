@@ -33,7 +33,7 @@ click==8.2.1
     # via
     #   typer
     #   uvicorn
-cryptography==45.0.6
+cryptography==46.0.5
     # via python-jose
 curl-cffi==0.13.0
     # via yfinance
