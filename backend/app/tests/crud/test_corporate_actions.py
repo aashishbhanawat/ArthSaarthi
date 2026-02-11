@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy.orm import Session
@@ -784,7 +784,9 @@ def test_handle_bonus_issue_fractional_inr(db: Session) -> None:
     """
     # GIVEN
     user, _ = create_random_user(db)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="Bonus Fractional Portfolio")
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Bonus Fractional"
+    )
     asset = create_test_asset(db, ticker_symbol="INFY")
 
     # Manually update currency to INR since helper defaults to USD
@@ -849,7 +851,9 @@ def test_handle_split_issue_fractional_inr(db: Session) -> None:
     """
     # GIVEN
     user, _ = create_random_user(db)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="Split Fractional Portfolio")
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Split Fractional"
+    )
     asset = create_test_asset(db, ticker_symbol="TATASTEEL")
 
     # Manually update currency to INR
