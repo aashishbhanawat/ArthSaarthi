@@ -71,7 +71,7 @@
     "@radix-ui/react-accordion": "^1.2.12",
     "@tanstack/react-query": "^5.83.0",
     "@types/lodash.groupby": "^4.6.9",
-    "axios": "^1.7.2",
+    "axios": "^1.13.5",
     "chart.js": "^4.4.3",
     "electron-is-dev": "^3.0.1",
     "lodash.groupby": "^4.6.0",
