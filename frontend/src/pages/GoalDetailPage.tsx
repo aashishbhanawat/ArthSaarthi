@@ -4,6 +4,8 @@ import { useGoal, useUpdateGoal } from '../hooks/useGoals';
 import GoalDetailView from '../components/Goals/GoalDetailView';
 import GoalFormModal from '../components/modals/GoalFormModal';
 import { GoalUpdate } from '../types/goal';
+import { usePrivacySensitiveCurrency } from '../utils/formatting';
+import { formatDate } from '../utils/formatting';
 import { PencilIcon } from '@heroicons/react/24/outline';
 
 const GoalDetailPage: React.FC = () => {
@@ -11,6 +13,7 @@ const GoalDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: goal, isLoading, isError, error } = useGoal(goalId!);
   const updateGoal = useUpdateGoal();
+  const formatCurrency = usePrivacySensitiveCurrency();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -21,9 +24,9 @@ const GoalDetailPage: React.FC = () => {
 
   const handleUpdate = (goalData: GoalUpdate) => {
     updateGoal.mutate({ id: goalId, goal: goalData }, {
-        onSuccess: () => {
-            setIsEditModalOpen(false);
-        }
+      onSuccess: () => {
+        setIsEditModalOpen(false);
+      }
     });
   };
 
@@ -41,10 +44,10 @@ const GoalDetailPage: React.FC = () => {
 
       <div className="flex justify-between items-start mb-6">
         <div>
-            <h1 className="text-3xl font-bold">{goal.name}</h1>
-            <p className="text-gray-500 mt-1">
-                Target: ${goal.target_amount.toLocaleString()} by {new Date(goal.target_date).toLocaleDateString()}
-            </p>
+          <h1 className="text-3xl font-bold">{goal.name}</h1>
+          <p className="text-gray-500 mt-1">
+            Target: {formatCurrency(goal.target_amount)} by {formatDate(goal.target_date)}
+          </p>
         </div>
         <div className="flex space-x-2">
           <button onClick={() => setIsEditModalOpen(true)} className="btn btn-secondary">
