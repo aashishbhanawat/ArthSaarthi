@@ -110,7 +110,7 @@ pyarrow==21.0.0
     # via -r backend/requirements.in
 pdfplumber==0.11.4
     # via -r backend/requirements.in
-pdfminer.six==20231228
+pdfminer.six==20260107
     # via pdfplumber
 pillow>=9.1.0
     # via pdfplumber
