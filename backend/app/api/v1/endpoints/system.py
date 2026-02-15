@@ -259,21 +259,20 @@ def check_for_updates():
 
     Used by both desktop and server modes to show update notifications.
     """
-    import json
-    import urllib.request
+    import requests
 
     try:
         url = "https://api.github.com/repos/aashishbhanawat/ArthSaarthi/releases/latest"
-        req = urllib.request.Request(
+        response = requests.get(
             url,
             headers={
                 "User-Agent": "ArthSaarthi-Server",
                 "Accept": "application/vnd.github.v3+json",
-            }
+            },
+            timeout=10,
         )
-
-        with urllib.request.urlopen(req, timeout=10) as response:
-            data = json.loads(response.read().decode())
+        response.raise_for_status()
+        data = response.json()
 
         latest_version = (data.get("tag_name") or "").lstrip("v")
 

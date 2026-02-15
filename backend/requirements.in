@@ -27,7 +27,12 @@ requests
 openpyxl
 xlrd
 lxml
+pdfplumber
 
 # Security fixes for transitive dependencies
-urllib3>=2.6.0  # CVE-2025-66418, CVE-2025-66471 - compression handling
-starlette>=0.49.1  # CVE-2024-47874 - Range header DoS
+urllib3>=2.6.3  # CVE-2026-21441
+starlette>=0.49.1  # CVE-2024-47874
+diskcache>=5.6.3  # GHSA-w8v5-vhqr-4h9v (Check if newer exists)
+python-multipart>=0.0.22  # CVE-2026-24486
+pyasn1>=0.6.2  # CVE-2026-23490
+pdfminer.six>=20251230  # CVE-2025-70559

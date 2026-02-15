@@ -94,7 +94,7 @@ class FMV2018Seeder:
         }
 
         response = requests.get(
-            BSE_BHAVCOPY_URL, headers=headers, timeout=60, verify=False
+            BSE_BHAVCOPY_URL, headers=headers, timeout=60, verify=False  # nosec B501
         )
         response.raise_for_status()
 
@@ -136,7 +136,7 @@ class FMV2018Seeder:
         }
 
         response = requests.get(
-            AMFI_NAV_URL, headers=headers, timeout=60, verify=False
+            AMFI_NAV_URL, headers=headers, timeout=60, verify=False  # nosec B501
         )
         response.raise_for_status()
 
