@@ -42,7 +42,7 @@
 -   **Dashboard:** High-level summary, historical chart, asset allocation, and top movers.
 -   **Consolidated Holdings View:** Grouped by asset class with sorting and drill-down for transaction history.
 -   **Advanced Analytics:** Portfolio and Asset-level XIRR calculation.
--   **Automated Data Import:** Support for Zerodha, ICICI Direct, and generic CSV files with on-the-fly asset alias mapping.
+-   **Automated Data Import:** Support for Zerodha, ICICI Direct, and generic CSV files with on-the-fly **asset alias mapping** for unrecognized ticker symbols. Aliases are manageable (CRUD) from the Admin section.
 -   **Watchlists:** Create and manage custom watchlists.
 -   **Goal Planning:** Define financial goals and link assets to track progress.
 -   **Mutual Fund Dividends:** Track both cash and reinvested dividends for mutual funds.

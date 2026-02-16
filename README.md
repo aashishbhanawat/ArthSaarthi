@@ -36,7 +36,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.
 *   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV/Excel files.
     *   Includes pre-built parsers for Zerodha, ICICI Direct, MFCentral CAS, CAMS Statement, Zerodha Coin MF, KFintech PDF, and a generic format.
-    *   Features an advanced UI for on-the-fly **asset alias mapping** for unrecognized ticker symbols.
+    *   Features an advanced UI for on-the-fly **asset alias mapping** for unrecognized ticker symbols, with admin management (view, edit, delete) of all aliases.
 *   **Tax Compliance & Reporting:**
     *   **Schedule FA (Foreign Assets):** Generate reports compliant with Calendar Year rules, including Peak Value analysis (daily balance check) and specific field exports.
     *   **Capital Gains:** Comprehensive reports for Short-Term (STCG) and Long-Term (LTCG) capital gains.

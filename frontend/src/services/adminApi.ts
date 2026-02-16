@@ -68,3 +68,48 @@ export const syncAssets = async (): Promise<AssetSyncResponse> => {
   });
   return response.data;
 };
+
+// --- Symbol Alias Management (Admin) ---
+export interface AssetAliasWithAsset {
+  id: string;
+  alias_symbol: string;
+  source: string;
+  asset_id: string;
+  asset_name: string;
+  asset_ticker: string;
+}
+
+export interface AssetAliasCreate {
+  alias_symbol: string;
+  source: string;
+  asset_id: string;
+}
+
+export interface AssetAliasUpdate {
+  alias_symbol?: string;
+  source?: string;
+  asset_id?: string;
+}
+
+export const getAliases = async (): Promise<AssetAliasWithAsset[]> => {
+  const response = await apiClient.get('/api/v1/admin/aliases/');
+  return response.data;
+};
+
+export const createAlias = async (data: AssetAliasCreate): Promise<AssetAliasWithAsset> => {
+  const response = await apiClient.post('/api/v1/admin/aliases/', data);
+  return response.data;
+};
+
+export const updateAlias = async (
+  aliasId: string,
+  data: AssetAliasUpdate
+): Promise<AssetAliasWithAsset> => {
+  const response = await apiClient.put(`/api/v1/admin/aliases/${aliasId}`, data);
+  return response.data;
+};
+
+export const deleteAlias = async (aliasId: string): Promise<{ msg: string }> => {
+  const response = await apiClient.delete(`/api/v1/admin/aliases/${aliasId}`);
+  return response.data;
+};

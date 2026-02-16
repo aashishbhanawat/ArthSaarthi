@@ -146,6 +146,10 @@ const NavBar: React.FC = () => {
                             <ScaleIcon className="h-5 w-5" />
                             <span>FMV Management</span>
                         </NavLink>
+                        <NavLink to="/admin/aliases" className={({ isActive }) => linkClass(isActive)}>
+                            <ListBulletIcon className="h-5 w-5" />
+                            <span>Symbol Aliases</span>
+                        </NavLink>
                     </>
                 )}
             </nav>

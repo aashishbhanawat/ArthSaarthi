@@ -14,7 +14,12 @@ from .asset import (
     AssetUpdate,
     PpfAccountCreate,
 )
-from .asset_alias import AssetAlias, AssetAliasCreate
+from .asset_alias import (
+    AssetAlias,
+    AssetAliasCreate,
+    AssetAliasUpdate,
+    AssetAliasWithAsset,
+)
 from .bond import (
     BondCreate,
     BondUpdate,
@@ -106,6 +111,8 @@ __all__ = [
     "FixedDepositDetails",
     "FixedDepositUpdate",
     "AssetAliasCreate",
+    "AssetAliasUpdate",
+    "AssetAliasWithAsset",
     "AssetAllocation",
     "AssetAllocationResponse",
     "AssetCreate",

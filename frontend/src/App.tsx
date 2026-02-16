@@ -8,6 +8,7 @@ import AdminRoute from './components/auth/AdminRoute';
 import UserManagementPage from './pages/Admin/UserManagementPage';
 import SystemMaintenancePage from './pages/Admin/SystemMaintenancePage';
 import AdminFMVPage from './pages/Admin/AdminFMVPage';
+import AdminAliasesPage from './pages/Admin/AdminAliasesPage';
 import PortfolioPage from './pages/Portfolio/PortfolioPage';
 import PortfolioDetailPage from './pages/Portfolio/PortfolioDetailPage';
 import DataImportPage from './pages/Import/DataImportPage';
@@ -61,6 +62,7 @@ function AppRoutes() {
             <Route path="/admin/interest-rates" element={<InterestRateManagementPage />} />
             <Route path="/admin/maintenance" element={<SystemMaintenancePage />} />
             <Route path="/admin/fmv" element={<AdminFMVPage />} />
+            <Route path="/admin/aliases" element={<AdminAliasesPage />} />
           </Route>
         </Route>
       </Route>
