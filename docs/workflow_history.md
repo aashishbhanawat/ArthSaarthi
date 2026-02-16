@@ -1,3 +1,56 @@
+## 2026-02-15: Add Admin UI for Symbol Alias Management (#215)
+
+**Task:** Implement full CRUD (create, read, update, delete) for symbol aliases, accessible from the Admin section. Previously, aliases could only be created during import but never viewed, edited, or deleted.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Delivered a complete admin feature for managing symbol aliases:
+
+1.  **Backend API:**
+    -   Created new admin endpoint `admin_aliases.py` with 4 routes: `GET /`, `POST /`, `PUT /{id}`, `DELETE /{id}`.
+    -   Updated `CRUDAssetAlias` with `get_all_with_assets` (eager-loaded asset join).
+    -   Added `AssetAliasUpdate` and `AssetAliasWithAsset` schemas for partial updates and enriched responses.
+    -   Registered router at `/admin/aliases` in `api.py`.
+
+2.  **Frontend:**
+    -   Created `AdminAliasesPage.tsx` with table view, create/edit modal with live asset search, and delete confirmation.
+    -   Added alias CRUD functions to `adminApi.ts`.
+    -   Added route and nav link in `App.tsx` and `NavBar.tsx`.
+
+3.  **Testing:**
+    -   Added 6 API endpoint tests in `test_admin_aliases.py`: create, list (with asset info), update, delete, duplicate rejection, and non-admin access denial. All passed.
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/api/v1/endpoints/admin_aliases.py`
+*   **New:** `backend/app/tests/api/v1/test_admin_aliases.py`
+*   **Modified:** `backend/app/api/v1/api.py` - Registered admin_aliases router
+*   **Modified:** `backend/app/crud/crud_asset_alias.py` - Added `get_all_with_assets`, updated generic types
+*   **Modified:** `backend/app/schemas/asset_alias.py` - Added `AssetAliasUpdate`, `AssetAliasWithAsset`
+*   **Modified:** `backend/app/schemas/__init__.py` - Exported new schemas
+
+**Frontend:**
+*   **New:** `frontend/src/pages/Admin/AdminAliasesPage.tsx`
+*   **Modified:** `frontend/src/services/adminApi.ts` - Added alias CRUD functions
+*   **Modified:** `frontend/src/App.tsx` - Added `/admin/aliases` route
+*   **Modified:** `frontend/src/components/NavBar.tsx` - Added Symbol Aliases nav link
+
+### Verification
+
+*   **Backend Tests:** `test_admin_aliases.py` — 6 passed.
+*   **Frontend Build:** `tsc --noEmit` — Clean (no errors).
+*   **Backend Health:** Container healthy after import fix.
+
+### Outcome
+
+**Success.** Admins can now view, create, edit, and delete symbol aliases from the new "Symbol Aliases" page under the Admin section. Closes #215.
+
+---
+
 ## 2026-01-28: Implement Foreign Assets (Schedule FA) & Capital Gains Reporting
 
 **Task:** Implement detailed Foreign Assets reporting (Schedule FA) compliant with Calendar Year rules, and Capital Gains reporting (Schedule 112A) for Grandfathered Equity.
