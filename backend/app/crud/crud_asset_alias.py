@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -27,6 +27,39 @@ class CRUDAssetAlias(CRUDBase[AssetAlias, AssetAliasCreate, AssetAliasUpdate]):
             .order_by(self.model.alias_symbol)
             .all()
         )
+
+    def search_with_assets(
+        self,
+        db: Session,
+        *,
+        query: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> Tuple[List[AssetAlias], int]:
+        """Search aliases with pagination. Returns (items, total_count)."""
+        from app.models.asset import Asset
+
+        q = (
+            db.query(self.model)
+            .outerjoin(Asset, self.model.asset_id == Asset.id)
+            .options(joinedload(self.model.asset))
+        )
+        if query:
+            pattern = f"%{query}%"
+            q = q.filter(
+                self.model.alias_symbol.ilike(pattern)
+                | self.model.source.ilike(pattern)
+                | Asset.name.ilike(pattern)
+                | Asset.ticker_symbol.ilike(pattern)
+            )
+        total = q.count()
+        items = (
+            q.order_by(self.model.alias_symbol)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+        return items, total
 
 
 asset_alias = CRUDAssetAlias(AssetAlias)

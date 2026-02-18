@@ -62,10 +62,11 @@ def test_list_aliases(client: TestClient, db: Session) -> None:
     response = client.get(f"{API_PREFIX}/", headers=headers)
     assert response.status_code == 200
     content = response.json()
-    assert isinstance(content, list)
-    assert len(content) > 0
+    assert "items" in content
+    assert "total" in content
+    assert content["total"] > 0
     # Find our created alias
-    our_alias = [a for a in content if a["alias_symbol"] == "LISTALIAS"]
+    our_alias = [a for a in content["items"] if a["alias_symbol"] == "LISTALIAS"]
     assert len(our_alias) == 1
     assert our_alias[0]["asset_name"] == "List Test Asset"
     assert our_alias[0]["asset_ticker"] == "LISTTEST"
@@ -131,8 +132,43 @@ def test_delete_alias(client: TestClient, db: Session) -> None:
 
     # Verify it's gone from the list
     response = client.get(f"{API_PREFIX}/", headers=headers)
-    ids = [a["id"] for a in response.json()]
+    ids = [a["id"] for a in response.json()["items"]]
     assert alias_id not in ids
+
+
+def test_search_aliases(client: TestClient, db: Session) -> None:
+    """Test that search query filters aliases by alias_symbol."""
+    headers = _admin_headers(client, db)
+    asset = create_test_asset(
+        db, ticker_symbol="SRCHTEST", name="Search Test Asset"
+    )
+    db.commit()
+
+    client.post(
+        f"{API_PREFIX}/",
+        headers=headers,
+        json={
+            "alias_symbol": "XYZUNIQUE",
+            "source": "Test",
+            "asset_id": str(asset.id),
+        },
+    )
+
+    # Search should find it
+    response = client.get(
+        f"{API_PREFIX}/", headers=headers, params={"q": "XYZUNIQUE"}
+    )
+    assert response.status_code == 200
+    assert response.json()["total"] >= 1
+    syms = [a["alias_symbol"] for a in response.json()["items"]]
+    assert "XYZUNIQUE" in syms
+
+    # Search with non-matching query should return 0
+    response = client.get(
+        f"{API_PREFIX}/", headers=headers, params={"q": "ZZZNOMATCH"}
+    )
+    assert response.status_code == 200
+    assert response.json()["total"] == 0
 
 
 def test_create_duplicate_alias_rejected(client: TestClient, db: Session) -> None:

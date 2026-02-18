@@ -3,9 +3,9 @@ Admin endpoints for symbol alias management.
 """
 import logging
 import uuid
-from typing import List
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
@@ -17,24 +17,39 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/", response_model=List[schemas.AssetAliasWithAsset])
+@router.get("/")
 def list_aliases(
+    q: Optional[str] = Query(
+        None, description="Search aliases, tickers, names"
+    ),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_admin_user),
+    current_user: UserModel = Depends(
+        get_current_admin_user
+    ),
 ):
-    """List all symbol aliases with associated asset info."""
-    aliases = crud.asset_alias.get_all_with_assets(db)
+    """List symbol aliases with search and pagination."""
+    items, total = crud.asset_alias.search_with_assets(
+        db, query=q, skip=skip, limit=limit
+    )
     result = []
-    for alias in aliases:
+    for alias in items:
         result.append(schemas.AssetAliasWithAsset(
             id=alias.id,
             alias_symbol=alias.alias_symbol,
             source=alias.source,
             asset_id=alias.asset_id,
-            asset_name=alias.asset.name if alias.asset else "",
-            asset_ticker=alias.asset.ticker_symbol if alias.asset else "",
+            asset_name=(
+                alias.asset.name if alias.asset else ""
+            ),
+            asset_ticker=(
+                alias.asset.ticker_symbol
+                if alias.asset
+                else ""
+            ),
         ))
-    return result
+    return {"items": result, "total": total}
 
 
 @router.post("/", response_model=schemas.AssetAlias, status_code=201)

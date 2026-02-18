@@ -1,3 +1,35 @@
+## 2026-02-16: Auto-Create ICICI ShortName Aliases During Asset Seeding (#216)
+
+**Task:** Automatically map ICICI Direct's internal ShortName to the exchange ticker during asset seeding, so ICICI tradebook imports no longer require manual alias mapping.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+Modified the ICICI fallback seeder (`_process_fallback_row`) to read the `ShortName` column from the SecurityMaster CSV. When `ShortName` differs from the resolved ticker (ExchangeCode/ScripID), an `AssetAlias` is auto-created with source `"ICICI Direct Tradebook"`.
+
+Key changes:
+-   `_create_asset` → returns `Optional[Asset]` instead of `bool`.
+-   New `_create_alias` helper with deduplication logic.
+-   `alias_count` counter added to `AssetSeeder.__init__`.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/asset_seeder.py` — Core implementation
+*   **New:** `backend/app/tests/services/test_icici_alias_seeding.py` — 5 unit tests
+
+### Verification
+
+*   **Tests:** 5/5 passed (alias created, no alias when matching/missing/NaN, dedup on re-seed).
+
+### Outcome
+
+**Success.** ICICI tradebook imports will auto-resolve ShortName → Ticker via seeded aliases. Closes #216.
+
+---
+
 ## 2026-02-15: Add Admin UI for Symbol Alias Management (#215)
 
 **Task:** Implement full CRUD (create, read, update, delete) for symbol aliases, accessible from the Admin section. Previously, aliases could only be created during import but never viewed, edited, or deleted.
