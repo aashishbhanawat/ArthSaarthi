@@ -337,6 +337,51 @@ class LocalAssetResult(BaseModel):
     fmv_2018: float | None
 
 
+
+@router.get(
+    "/search-local",
+    response_model=list[LocalAssetResult],
+    status_code=status.HTTP_200_OK,
+    summary="Search Local Assets (General)",
+    description="Search local asset DB by ticker or name.",
+)
+def search_local_assets_general(
+    query: str = "",
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_admin_user),
+) -> Any:
+    """
+    Search assets in local database only.
+    Returns assets for alias mapping or general lookup.
+    """
+    from app.models import Asset
+
+    q = db.query(Asset)
+
+    if query and len(query) >= 2:
+        search_term = f"%{query.upper()}%"
+        q = q.filter(
+            (Asset.ticker_symbol.ilike(search_term)) |
+            (Asset.name.ilike(search_term))
+        )
+
+    assets = q.order_by(Asset.ticker_symbol).limit(limit).all()
+
+    return [
+        LocalAssetResult(
+            id=str(asset.id),
+            ticker_symbol=asset.ticker_symbol,
+            name=asset.name,
+            asset_type=asset.asset_type,
+            exchange=asset.exchange,
+            isin=asset.isin,
+            fmv_2018=float(asset.fmv_2018) if asset.fmv_2018 else None,
+        )
+        for asset in assets
+    ]
+
+
 @router.get(
     "/fmv-search",
     response_model=list[LocalAssetResult],

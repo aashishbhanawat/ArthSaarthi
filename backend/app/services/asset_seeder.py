@@ -27,6 +27,7 @@ class AssetSeeder:
         self.debug = debug
         self.created_count = 0
         self.skipped_count = 0
+        self.alias_count = 0
         self.skipped_series_counts = collections.Counter()
         self._pending_commits = 0  # Track pending assets since last commit
 
@@ -123,8 +124,13 @@ class AssetSeeder:
 
         return None
 
-    def _create_asset(self, data: dict) -> bool:
-        """Creates an asset and optionally a bond record."""
+    def _create_asset(
+        self, data: dict
+    ) -> Optional[models.Asset]:
+        """Creates an asset and optionally a bond record.
+
+        Returns the created Asset object, or None if skipped/failed.
+        """
         # Duplicate checks
         isin = data.get("isin")
         ticker = data.get("ticker_symbol")
@@ -132,16 +138,13 @@ class AssetSeeder:
         asset_type = data.get("asset_type")
 
         if isin and isin in self.existing_isins:
-            return False
+            return None
         if ticker and ticker in self.existing_tickers:
-            # Fallback: if ticker exists but ISIN is different,
-            # we might have a collision.
-            # But usually ticker uniqueness is strict.
-            return False
+            return None
 
         composite_key = (name, asset_type, "INR")
         if composite_key in self.existing_composite_keys:
-            return False
+            return None
 
         try:
             asset_in = schemas.AssetCreate(
@@ -152,17 +155,24 @@ class AssetSeeder:
                 currency="INR",
                 exchange=data.get("exchange", "N/A")
             )
-            asset = crud.asset.create(db=self.db, obj_in=asset_in)
+            asset = crud.asset.create(
+                db=self.db, obj_in=asset_in
+            )
 
             if asset_type == "BOND" and data.get("bond_type"):
                 bond_in = BondCreate(
                     asset_id=asset.id,
                     bond_type=data["bond_type"],
-                    maturity_date=data.get("maturity_date") or date(1970, 1, 1),
+                    maturity_date=(
+                        data.get("maturity_date")
+                        or date(1970, 1, 1)
+                    ),
                     isin=isin,
                     face_value=data.get("face_value"),
                     coupon_rate=data.get("coupon_rate"),
-                    payment_frequency=data.get("payment_frequency"),
+                    payment_frequency=(
+                        data.get("payment_frequency")
+                    ),
                 )
                 crud.bond.create(db=self.db, obj_in=bond_in)
 
@@ -174,22 +184,63 @@ class AssetSeeder:
             self.created_count += 1
             self._pending_commits += 1
 
-            # Commit periodically for live progress updates
-            if self._pending_commits >= self.COMMIT_BATCH_SIZE:
+            # Commit periodically for live progress
+            if (
+                self._pending_commits
+                >= self.COMMIT_BATCH_SIZE
+            ):
                 self.db.commit()
                 self._pending_commits = 0
                 if self.debug:
-                    print(f"[DEBUG] Committed batch, total: {self.created_count}")
+                    print(
+                        "[DEBUG] Committed batch, "
+                        f"total: {self.created_count}"
+                    )
 
-            return True
+            return asset
         except IntegrityError:
             self.db.rollback()
             self.skipped_count += 1
-            return False
+            return None
         except Exception as e:
             if self.debug:
-                print(f"[ERROR] Failed to create asset {name}: {e}")
+                print(
+                    f"[ERROR] Failed to create "
+                    f"asset {name}: {e}"
+                )
             self.skipped_count += 1
+            return None
+
+    def _create_alias(
+        self,
+        alias_symbol: str,
+        source: str,
+        asset_id,
+    ) -> bool:
+        """Create an alias if it doesn't already exist.
+
+        Returns True if a new alias was created.
+        """
+        existing = crud.asset_alias.get_by_alias(
+            self.db,
+            alias_symbol=alias_symbol,
+            source=source,
+        )
+        if existing:
+            return False
+        try:
+            alias_in = schemas.AssetAliasCreate(
+                alias_symbol=alias_symbol,
+                source=source,
+                asset_id=asset_id,
+            )
+            crud.asset_alias.create(
+                db=self.db, obj_in=alias_in
+            )
+            self.alias_count += 1
+            return True
+        except IntegrityError:
+            self.db.rollback()
             return False
 
     def flush_pending(self):
@@ -535,25 +586,41 @@ class AssetSeeder:
                         # Code in cli.py used csv.DictReader, implying comma.
                         # But user might have different format now?
                         # Let's assume standard CSV for now or check extension.
-                        df = pd.read_csv(f, on_bad_lines='skip')
+                        df = pd.read_csv(
+                            f, on_bad_lines='skip'
+                        )
+                        # NSEScripMaster uses ", " (comma-space)
+                        # delimiters, causing leading spaces in
+                        # column names. Strip them.
+                        df.columns = df.columns.str.strip()
+                        # Strip whitespace from string values
+                        str_cols = df.select_dtypes(
+                            include='object'
+                        ).columns
+                        df[str_cols] = df[str_cols].apply(
+                            lambda s: s.str.strip()
+                        )
                         for _, row in df.iterrows():
                              self._process_fallback_row(row)
         except Exception as e:
             print(f"Error processing Fallback Zip: {e}")
 
     def _process_fallback_row(self, row: pd.Series):
-        # Standardize column names based on old cli.py config if possible
         # NSE: ExchangeCode, CompanyName, ISINCode, Series
         # BSE: ScripID, ScripName, ISINCode, Series
 
         nse_code = row.get('ExchangeCode')
         bse_code = row.get('ScripID')
-        name = row.get('CompanyName') or row.get('ScripName')
+        short_name = row.get('ShortName')
+        name = (
+            row.get('CompanyName')
+            or row.get('ScripName')
+        )
         isin = row.get('ISINCode')
         series = row.get('Series', '')
 
         ticker = None
-        exchange = "BSE" # Default
+        exchange = "BSE"  # Default
 
         # Determine primary exchange and ticker
         if nse_code and not pd.isna(nse_code):
@@ -567,11 +634,19 @@ class AssetSeeder:
             return
 
         name = str(name).strip() if name else ""
-        isin = str(isin).strip() if isin and not pd.isna(isin) else None
+        isin = (
+            str(isin).strip()
+            if isin and not pd.isna(isin)
+            else None
+        )
         series = str(series).strip().upper()
 
         # Apply Heuristic Classification
-        asset_type, bond_type = self._classify_asset_heuristic(ticker, name, series)
+        asset_type, bond_type = (
+            self._classify_asset_heuristic(
+                ticker, name, series
+            )
+        )
 
         if not asset_type:
             asset_type = "STOCK"
@@ -582,9 +657,35 @@ class AssetSeeder:
             "name": name,
             "asset_type": asset_type,
             "bond_type": bond_type,
-            "exchange": exchange
+            "exchange": exchange,
         }
-        self._create_asset(data)
+        asset = self._create_asset(data)
+
+        # Auto-create ICICI ShortName alias (#216)
+        # If asset was already created by an earlier phase,
+        # look it up so we can still create the alias.
+        if not asset:
+            if isin and isin in self.existing_isins:
+                asset = self.db.query(models.Asset).filter(
+                    models.Asset.isin == isin
+                ).first()
+            if not asset and ticker in self.existing_tickers:
+                asset = crud.asset.get_by_ticker(
+                    self.db, ticker_symbol=ticker
+                )
+
+        if (
+            asset
+            and short_name
+            and not pd.isna(short_name)
+        ):
+            sn = str(short_name).strip()
+            if sn and sn.upper() != ticker.upper():
+                self._create_alias(
+                    alias_symbol=sn,
+                    source="ICICI Direct Tradebook",
+                    asset_id=asset.id,
+                )
 
     def _classify_asset_heuristic(
         self, ticker: str, name: str, series: str

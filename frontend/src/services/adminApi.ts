@@ -91,8 +91,17 @@ export interface AssetAliasUpdate {
   asset_id?: string;
 }
 
-export const getAliases = async (): Promise<AssetAliasWithAsset[]> => {
-  const response = await apiClient.get('/api/v1/admin/aliases/');
+export interface AliasPageResponse {
+  items: AssetAliasWithAsset[];
+  total: number;
+}
+
+export const getAliases = async (params?: {
+  q?: string;
+  skip?: number;
+  limit?: number;
+}): Promise<AliasPageResponse> => {
+  const response = await apiClient.get('/api/v1/admin/aliases/', { params });
   return response.data;
 };
 

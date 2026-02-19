@@ -13,7 +13,7 @@ import apiClient from '../../services/api';
 import { AxiosError } from 'axios';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 import { useToast } from '../../context/ToastContext';
-import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 interface LocalAsset {
     id: string;
@@ -22,14 +22,38 @@ interface LocalAsset {
     asset_type: string;
 }
 
+const PAGE_SIZE = 50;
+
 const AdminAliasesPage: React.FC = () => {
     const queryClient = useQueryClient();
     const { addToast } = useToast();
 
-    const { data: aliases = [], isLoading, isError } = useQuery({
-        queryKey: ['adminAliases'],
-        queryFn: getAliases,
+    // --- Search & Pagination ---
+    const [searchInput, setSearchInput] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [page, setPage] = useState(0);
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setSearchQuery(searchInput);
+            setPage(0); // Reset to first page on new search
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ['adminAliases', searchQuery, page],
+        queryFn: () => getAliases({
+            q: searchQuery || undefined,
+            skip: page * PAGE_SIZE,
+            limit: PAGE_SIZE,
+        }),
     });
+
+    const aliases = data?.items ?? [];
+    const totalCount = data?.total ?? 0;
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
     // --- Form Modal State ---
     const [isFormOpen, setFormOpen] = useState(false);
@@ -70,7 +94,7 @@ const AdminAliasesPage: React.FC = () => {
 
     // Mutations
     const createMutation = useMutation({
-        mutationFn: (data: AssetAliasCreate) => createAlias(data),
+        mutationFn: (d: AssetAliasCreate) => createAlias(d),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['adminAliases'] });
             addToast('Alias created successfully.', 'success');
@@ -82,7 +106,7 @@ const AdminAliasesPage: React.FC = () => {
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }: { id: string; data: AssetAliasUpdate }) => updateAlias(id, data),
+        mutationFn: ({ id, d }: { id: string; d: AssetAliasUpdate }) => updateAlias(id, d),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['adminAliases'] });
             addToast('Alias updated successfully.', 'success');
@@ -122,7 +146,12 @@ const AdminAliasesPage: React.FC = () => {
             source: alias.source,
             asset_id: alias.asset_id,
         });
-        setSelectedAsset({ id: alias.asset_id, ticker_symbol: alias.asset_ticker, name: alias.asset_name, asset_type: '' });
+        setSelectedAsset({
+            id: alias.asset_id,
+            ticker_symbol: alias.asset_ticker,
+            name: alias.asset_name,
+            asset_type: '',
+        });
         setAssetQuery(`${alias.asset_ticker} — ${alias.asset_name}`);
         setFormOpen(true);
     };
@@ -141,7 +170,7 @@ const AdminAliasesPage: React.FC = () => {
             return;
         }
         if (editingAlias) {
-            updateMutation.mutate({ id: editingAlias.id, data: formData });
+            updateMutation.mutate({ id: editingAlias.id, d: formData });
         } else {
             createMutation.mutate(formData);
         }
@@ -166,42 +195,90 @@ const AdminAliasesPage: React.FC = () => {
                 </button>
             </div>
 
+            {/* Search Bar */}
+            <div className="mb-4 relative">
+                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    className="input w-full pl-11"
+                    placeholder="Search by alias, source, ticker, or asset name..."
+                />
+                {totalCount > 0 && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                        {totalCount.toLocaleString()} result{totalCount !== 1 ? 's' : ''}
+                    </span>
+                )}
+            </div>
+
             {isLoading && <p>Loading aliases...</p>}
             {isError && <p className="text-red-500">Error fetching aliases.</p>}
             {!isLoading && !isError && (
                 <div className="card overflow-x-auto">
                     {aliases.length === 0 ? (
-                        <p className="text-gray-500 p-4 text-center">No symbol aliases found. Create one to map unrecognized tickers to known assets.</p>
+                        <p className="text-gray-500 p-4 text-center">
+                            {searchQuery
+                                ? `No aliases matching "${searchQuery}".`
+                                : 'No symbol aliases found. Create one to map unrecognized tickers to known assets.'}
+                        </p>
                     ) : (
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Alias Symbol</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Source</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maps To (Ticker)</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Name</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                {aliases.map((alias) => (
-                                    <tr key={alias.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">{alias.alias_symbol}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{alias.source}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-blue-600 dark:text-blue-400">{alias.asset_ticker}</td>
-                                        <td className="px-4 py-3 text-sm">{alias.asset_name}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-right">
-                                            <button onClick={() => openEditForm(alias)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Edit">
-                                                <PencilIcon className="h-4 w-4 inline" />
-                                            </button>
-                                            <button onClick={() => { setDeletingAlias(alias); setDeleteOpen(true); }} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Delete">
-                                                <TrashIcon className="h-4 w-4 inline" />
-                                            </button>
-                                        </td>
+                        <>
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Alias Symbol</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Source</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maps To (Ticker)</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Name</th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                    {aliases.map((alias) => (
+                                        <tr key={alias.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                            <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">{alias.alias_symbol}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{alias.source}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-blue-600 dark:text-blue-400">{alias.asset_ticker}</td>
+                                            <td className="px-4 py-3 text-sm">{alias.asset_name}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-right">
+                                                <button onClick={() => openEditForm(alias)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Edit">
+                                                    <PencilIcon className="h-4 w-4 inline" />
+                                                </button>
+                                                <button onClick={() => { setDeletingAlias(alias); setDeleteOpen(true); }} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Delete">
+                                                    <TrashIcon className="h-4 w-4 inline" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-between px-4 py-3 border-t dark:border-gray-700">
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                                        Page {page + 1} of {totalPages}
+                                    </span>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setPage(p => Math.max(0, p - 1))}
+                                            disabled={page === 0}
+                                            className="btn btn-secondary btn-sm disabled:opacity-50"
+                                        >
+                                            Previous
+                                        </button>
+                                        <button
+                                            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                                            disabled={page >= totalPages - 1}
+                                            className="btn btn-secondary btn-sm disabled:opacity-50"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             )}
