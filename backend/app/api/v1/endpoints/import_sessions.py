@@ -260,9 +260,21 @@ def get_import_session_preview(
 
         # 1. Asset Identification
         ticker_symbol = row["ticker_symbol"]
-        asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
-        if asset:
-            log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
+        asset = None
+
+        # Check ISIN first if available
+        if "isin" in row and row["isin"]:
+            isin_code = row["isin"]
+            asset = db.query(models.Asset).filter(
+                models.Asset.isin == isin_code
+            ).first()
+            if asset:
+                 log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
+
+        if not asset:
+            asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
+            if asset:
+                log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
 
         # If ticker looks like "ISIN:XXX", try to lookup by ISIN
         if not asset and ticker_symbol.startswith("ISIN:"):

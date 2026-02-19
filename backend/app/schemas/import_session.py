@@ -55,6 +55,7 @@ class ParsedTransaction(BaseModel):
     quantity: float
     price_per_unit: float
     fees: float
+    isin: str | None = None
 
 
 # New schema for the categorized preview response
