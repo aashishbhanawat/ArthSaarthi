@@ -176,6 +176,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Foreign Assets Reporting (Schedule FA):** Peak Value tracking and Calendar Year reporting. **✅ Complete**
 -   **Symbol Alias Management (#215):** Admin UI to view, create, edit, and delete symbol aliases used during data import. **✅ Complete**
 -   **ICICI ShortName Alias Seeding (#216):** Auto-create ICICI ShortName → Ticker aliases during asset seeding for seamless tradebook imports. **✅ Complete**
+-   **ICICI Portfolio Import (#217):** Support for importing ICICI Direct Portfolio Equity history files (TSV/XLS). **✅ Complete**
 -   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS).
 -   **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
 

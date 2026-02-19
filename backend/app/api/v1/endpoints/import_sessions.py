@@ -424,31 +424,48 @@ def commit_import_session(
         # 2. Commit the selected transactions.
         transactions_created = 0
         for parsed_tx in commit_payload.transactions_to_commit:
-            # Try to find asset by alias first, then by direct ticker, then by name
+            # Try to find asset: ISIN first, then alias, then ticker, then name
             asset = None
             ticker_symbol = parsed_tx.ticker_symbol
 
-            # 1. Try alias lookup
-            asset_alias = crud.asset_alias.get_by_alias(
-                db,
-                alias_symbol=ticker_symbol,
-                source=import_session.source,
-            )
-            if asset_alias:
-                asset = asset_alias.asset
+            # 1. Try ISIN lookup first (most reliable)
+            if parsed_tx.isin:
+                asset = db.query(models.Asset).filter(
+                    models.Asset.isin == parsed_tx.isin
+                ).first()
 
-            # 2. Try ticker lookup
+            # 2. Try alias lookup (with source)
             if not asset:
-                asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
+                asset_alias = crud.asset_alias.get_by_alias(
+                    db,
+                    alias_symbol=ticker_symbol,
+                    source=import_session.source,
+                )
+                if asset_alias:
+                    asset = asset_alias.asset
 
-            # 3. Try ISIN lookup (if ticker is ISIN:XXX format)
+            # 3. Try alias lookup (any source)
+            if not asset:
+                asset_alias = db.query(models.AssetAlias).filter(
+                    models.AssetAlias.alias_symbol == ticker_symbol
+                ).first()
+                if asset_alias:
+                    asset = asset_alias.asset
+
+            # 4. Try ticker lookup
+            if not asset:
+                asset = crud.asset.get_by_ticker(
+                    db, ticker_symbol=ticker_symbol
+                )
+
+            # 5. Try ISIN: prefix format
             if not asset and ticker_symbol.startswith("ISIN:"):
                 isin_code = ticker_symbol.replace("ISIN:", "")
                 asset = db.query(models.Asset).filter(
                     models.Asset.isin == isin_code
                 ).first()
 
-            # 4. Try name lookup (for display-modified transactions)
+            # 6. Try name lookup
             if not asset:
                 asset = db.query(models.Asset).filter(
                     models.Asset.name == ticker_symbol

@@ -1,21 +1,22 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-19
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Capital Gains Reporting, Foreign Asset Taxation, and SGB/Bond handling are complete. Automated tests (backend, frontend, E2E) are passing. The application is ready for release v1.2.0.
+*   **Summary:** ICICI Portfolio Import, Capital Gains Reporting, Foreign Asset Taxation, and SGB/Bond handling are complete. Automated tests (backend, frontend, E2E) are passing. The application is ready for release v1.2.0.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **165/165 Passing**
+*   **Backend Unit/Integration Tests:** ✅ **213/213 Passing**
 *   **Frontend Unit/Integration Tests:** ✅ **174/174 Passing**
 *   **End-to-End (E2E) Tests:** ✅ **31/31 Passing**
 *   **Linters (Code Quality):** ✅ **Passing**
 
 ### Recent Stabilization Efforts
 
+*   **ICICI Portfolio Import:** Implemented parsing for ICICI Portfolio Equity files (pseudo-XLS TSV) and fixed asset lookup logic during commit to prioritize ISIN and handle aliases correctly.
 *   **Frontend Unit Tests:** Resolved all failures in the Jest test suite, primarily by aligning mock data in `TransactionFormModal.test.tsx` with the component's updated logic for handling FX rates.
 *   **E2E Test Coverage:** Enabled the previously skipped E2E test for asset-level XIRR (`analytics.spec.ts`) by implementing a robust mocking strategy for the holdings API response. The full suite of 31 tests now passes.
 *   **Code Quality:** Eliminated the final remaining `eslint` warnings in the frontend codebase and removed duplicated code from the backend.
@@ -42,7 +43,7 @@
 -   **Dashboard:** High-level summary, historical chart, asset allocation, and top movers.
 -   **Consolidated Holdings View:** Grouped by asset class with sorting and drill-down for transaction history.
 -   **Advanced Analytics:** Portfolio and Asset-level XIRR calculation.
--   **Automated Data Import:** Support for Zerodha, ICICI Direct, and generic CSV files with on-the-fly **asset alias mapping** for unrecognized ticker symbols. Aliases are manageable (CRUD) from the Admin section.
+-   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), and generic CSV files with on-the-fly **asset alias mapping** for unrecognized ticker symbols. Aliases are manageable (CRUD) from the Admin section.
 -   **Watchlists:** Create and manage custom watchlists.
 -   **Goal Planning:** Define financial goals and link assets to track progress.
 -   **Mutual Fund Dividends:** Track both cash and reinvested dividends for mutual funds.
