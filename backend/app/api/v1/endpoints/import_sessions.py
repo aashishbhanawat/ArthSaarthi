@@ -135,9 +135,17 @@ async def create_import_session(
                 # Normalize column names to lowercase for consistency
                 df.columns = df.columns.str.lower().str.replace(' ', '_')
                 parsed_transactions = parser.parse(df)
+            elif source_type == "ICICI Direct Portfolio Equity":
+                # ICICI Portfolio exports as .xls (old format)
+                engine = 'xlrd' if file_extension == '.xls' else None
+                df = pd.read_excel(
+                    temp_file_path, engine=engine
+                )
+                parsed_transactions = parser.parse(df)
             else:
                 # Generic Excel handling
-                df = pd.read_excel(temp_file_path)
+                engine = 'xlrd' if file_extension == '.xls' else None
+                df = pd.read_excel(temp_file_path, engine=engine)
                 # Parse the dataframe into a list of Pydantic models
                 parsed_transactions = parser.parse(df)
         else:
