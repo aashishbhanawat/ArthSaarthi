@@ -136,16 +136,34 @@ async def create_import_session(
                 df.columns = df.columns.str.lower().str.replace(' ', '_')
                 parsed_transactions = parser.parse(df)
             elif source_type == "ICICI Direct Portfolio Equity":
-                # ICICI Portfolio exports as .xls (old format)
-                engine = 'xlrd' if file_extension == '.xls' else None
-                df = pd.read_excel(
-                    temp_file_path, engine=engine
-                )
+                # ICICI exports TSV data with a fake .xls extension.
+                # Try real Excel first, fall back to TSV.
+                try:
+                    engine = (
+                        'xlrd' if file_extension == '.xls' else None
+                    )
+                    df = pd.read_excel(
+                        temp_file_path, engine=engine
+                    )
+                except Exception:
+                    # File is likely TSV/CSV with .xls extension
+                    df = pd.read_csv(
+                        temp_file_path, sep='\t'
+                    )
                 parsed_transactions = parser.parse(df)
             else:
-                # Generic Excel handling
-                engine = 'xlrd' if file_extension == '.xls' else None
-                df = pd.read_excel(temp_file_path, engine=engine)
+                # Generic Excel handling — also handles fake .xls
+                try:
+                    engine = (
+                        'xlrd' if file_extension == '.xls' else None
+                    )
+                    df = pd.read_excel(
+                        temp_file_path, engine=engine
+                    )
+                except Exception:
+                    df = pd.read_csv(
+                        temp_file_path, sep='\t'
+                    )
                 # Parse the dataframe into a list of Pydantic models
                 parsed_transactions = parser.parse(df)
         else:
