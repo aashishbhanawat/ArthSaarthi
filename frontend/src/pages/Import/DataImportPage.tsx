@@ -137,6 +137,7 @@ const DataImportPage: React.FC = () => {
                                 <option value="Generic CSV">Generic CSV</option>
                                 <option value="Zerodha Tradebook">Zerodha Tradebook (CSV)</option>
                                 <option value="ICICI Direct Tradebook">ICICI Direct Tradebook (CSV)</option>
+                                <option value="ICICI Direct Portfolio Equity">ICICI Direct Portfolio Equity (CSV/XLS)</option>
                                 <option value="MFCentral CAS">MFCentral CAS (XLSX) - Mutual Funds</option>
                                 <option value="CAMS Statement">CAMS Statement (XLSX) - Mutual Funds</option>
                                 <option value="Zerodha Coin">Zerodha Coin (CSV/XLSX) - Mutual Funds</option>
