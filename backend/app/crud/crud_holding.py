@@ -467,7 +467,15 @@ def _process_market_traded_assets(
                              )
 
                         if buy_tx:
-                            buy_price = buy_tx.price_per_unit
+                            # For RSU_VEST, cost basis is FMV, not price_per_unit ($0)
+                            if (
+                                buy_tx.transaction_type == "RSU_VEST"
+                                and buy_tx.details
+                                and "fmv" in buy_tx.details
+                            ):
+                                buy_price = Decimal(str(buy_tx.details["fmv"]))
+                            else:
+                                buy_price = buy_tx.price_per_unit
                             # Get buy transaction's FX rate to convert to INR
                             buy_fx_rate = (
                                 Decimal(str(buy_tx.details.get("fx_rate", 1)))

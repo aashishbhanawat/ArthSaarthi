@@ -283,3 +283,159 @@ def test_summary_with_mf_dividend(
     assert response.status_code == 200
     # Expected: Realized PNL should be the dividend amount (2500).
     assert Decimal(data["total_realized_pnl"]) == pytest.approx(Decimal("2500.0"))
+
+
+def test_rsu_vest_with_sell_to_cover_holdings(
+    client: TestClient, db: Session, get_auth_headers, mocker
+) -> None:
+    """
+    Test that RSU_VEST with sell-to-cover correctly calculates average buy
+    price and unrealized P&L using FMV as cost basis (not $0 price_per_unit).
+
+    Regression test for Issue #249.
+    """
+    from datetime import datetime
+
+    from app.tests.utils.asset import create_test_asset
+
+    # 1. Setup
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="RSU Holdings Test")
+    asset = create_test_asset(db, ticker_symbol="CSCO")
+
+    # 2. Create RSU_VEST: 100 shares, FMV=$70, FX rate=85.0, sell-to-cover 40@70
+    rsu_payload = {
+        "asset_id": str(asset.id),
+        "transaction_type": "RSU_VEST",
+        "quantity": 100,
+        "price_per_unit": 0,
+        "transaction_date": datetime(2025, 1, 1).isoformat(),
+        "details": {
+            "fmv": 70.0,
+            "fx_rate": 85.0,
+            "sell_to_cover": {
+                "quantity": 40,
+                "price_per_unit": 70.0,
+            },
+        },
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
+        headers=headers,
+        json=rsu_payload,
+    )
+    assert response.status_code == 201, response.text
+
+    # 3. Mock current price: $78/share
+    mock_prices = {
+        "CSCO": {"current_price": Decimal("78.0"), "previous_close": Decimal("77.0")},
+    }
+    mocker.patch.object(
+        financial_data_service, "get_current_prices", return_value=mock_prices
+    )
+
+    # 4. Get holdings
+    holdings_response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/holdings", headers=headers
+    )
+    assert holdings_response.status_code == 200
+    holdings_data = holdings_response.json()["holdings"]
+
+    csco_holding = next(
+        (h for h in holdings_data if h["ticker_symbol"] == "CSCO"), None
+    )
+    assert csco_holding is not None
+
+    # 5. Assertions
+    # Remaining shares: 100 - 40 = 60
+    assert Decimal(csco_holding["quantity"]) == Decimal("60")
+
+    # Average buy price should be FMV * FX_rate = 70 * 85 = 5950 INR
+    avg_price = Decimal(csco_holding["average_buy_price"])
+    assert avg_price == pytest.approx(Decimal("5950.0"), abs=Decimal("1.0")), (
+        f"Avg buy price should be ~5950 (FMV*FX), got {avg_price}"
+    )
+
+    # Total invested for 60 shares = 60 * 70 * 85 = 357000
+    total_invested = Decimal(csco_holding["total_invested"])
+    assert total_invested == pytest.approx(Decimal("357000.0"), abs=Decimal("1.0"))
+
+    # Current value = 60 * 78 * 85 = 397800 (using same FX for simplicity)
+    # Unrealized P&L should be POSITIVE (78 > 70)
+    unrealized_pnl = Decimal(csco_holding["unrealized_pnl"])
+    assert unrealized_pnl > 0, (
+        f"Unrealized P&L should be positive (current $78 > FMV $70), got {unrealized_pnl}"
+    )
+
+
+def test_rsu_vest_plain_holdings(
+    client: TestClient, db: Session, get_auth_headers, mocker
+) -> None:
+    """
+    Test that a plain RSU_VEST (without sell-to-cover) correctly uses FMV
+    as cost basis in holdings calculations.
+    """
+    from datetime import datetime
+
+    from app.tests.utils.asset import create_test_asset
+
+    # 1. Setup
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="RSU Plain Test")
+    asset = create_test_asset(db, ticker_symbol="MSFT")
+
+    # 2. Create RSU_VEST: 50 shares, FMV=$100, FX rate=83.5, no sell-to-cover
+    rsu_payload = {
+        "asset_id": str(asset.id),
+        "transaction_type": "RSU_VEST",
+        "quantity": 50,
+        "price_per_unit": 0,
+        "transaction_date": datetime(2025, 1, 1).isoformat(),
+        "details": {
+            "fmv": 100.0,
+            "fx_rate": 83.5,
+        },
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
+        headers=headers,
+        json=rsu_payload,
+    )
+    assert response.status_code == 201, response.text
+
+    # 3. Mock current price: $110/share
+    mock_prices = {
+        "MSFT": {"current_price": Decimal("110.0"), "previous_close": Decimal("108.0")},
+    }
+    mocker.patch.object(
+        financial_data_service, "get_current_prices", return_value=mock_prices
+    )
+
+    # 4. Get holdings
+    holdings_response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/holdings", headers=headers
+    )
+    assert holdings_response.status_code == 200
+    holdings_data = holdings_response.json()["holdings"]
+
+    msft_holding = next(
+        (h for h in holdings_data if h["ticker_symbol"] == "MSFT"), None
+    )
+    assert msft_holding is not None
+
+    # 5. Assertions
+    assert Decimal(msft_holding["quantity"]) == Decimal("50")
+
+    # Average buy price = FMV * FX = 100 * 83.5 = 8350
+    avg_price = Decimal(msft_holding["average_buy_price"])
+    assert avg_price == pytest.approx(Decimal("8350.0"), abs=Decimal("1.0")), (
+        f"Avg buy price should be ~8350 (FMV*FX), got {avg_price}"
+    )
+
+    # Unrealized P&L should be positive (110 > 100)
+    unrealized_pnl = Decimal(msft_holding["unrealized_pnl"])
+    assert unrealized_pnl > 0, (
+        f"Unrealized P&L should be positive (current $110 > FMV $100), got {unrealized_pnl}"
+    )
