@@ -762,11 +762,14 @@ class CRUDAnalytics:
         )
         equity_total = Decimal("0")  # Track equity-only total for Sector/Industry/Cap
 
+        # Optimized: Bulk fetch all assets for the holdings to avoid N+1 queries
+        asset_ids = {h.asset_id for h in holdings}
+        assets = db.query(models.Asset).filter(models.Asset.id.in_(asset_ids)).all()
+        asset_map = {asset.id: asset for asset in assets}
+
         for h in holdings:
-            # Get asset details for sector/country
-            asset = db.query(models.Asset).filter(
-                models.Asset.id == h.asset_id
-            ).first()
+            # Get asset details from the pre-fetched map
+            asset = asset_map.get(h.asset_id)
             if not asset:
                 continue
 
