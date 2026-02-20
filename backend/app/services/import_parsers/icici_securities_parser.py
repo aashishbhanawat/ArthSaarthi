@@ -54,6 +54,10 @@ class ICICISecuritiesParser(BaseParser):
         r'^(\d{1,2}-[A-Za-z]{3}-\d{4})\s+(\d+)\s+(\w+)'
     )
 
+    # Number pattern: match numbers with optional commas and decimals
+    # Handle negative numbers
+    NUMBER_PATTERN = re.compile(r'-?[\d,]+\.?\d*')
+
     def parse(
         self, file_path: str, password: Optional[str] = None
     ) -> List[ParsedTransaction]:
@@ -257,8 +261,7 @@ class ICICISecuritiesParser(BaseParser):
         """Extract numeric values from text."""
         # Match numbers with optional commas and decimals
         # Handle negative numbers and remove commas
-        number_pattern = re.compile(r'-?[\d,]+\.?\d*')
-        matches = number_pattern.findall(text)
+        matches = self.NUMBER_PATTERN.findall(text)
 
         numbers = []
         for match in matches:
