@@ -28,6 +28,9 @@ class IciciDematDividendParser(BaseParser):
     # ISIN pattern (12 characters starting with INE)
     ISIN_PATTERN = re.compile(r'(INE[A-Z0-9]{9})')
 
+    # Numeric values with optional decimals, not preceded by a capital letter
+    NUMBER_PATTERN = re.compile(r'(?<![A-Z])(\d+(?:\.\d+)?)')
+
     def parse(
         self, file_path: str, password: Optional[str] = None
     ) -> List[ParsedTransaction]:
@@ -187,8 +190,7 @@ class IciciDematDividendParser(BaseParser):
     def _extract_numbers(self, text: str) -> List[float]:
         """Extract numeric values from text."""
         # Match numbers with optional decimals
-        number_pattern = re.compile(r'(?<![A-Z])(\d+(?:\.\d+)?)')
-        matches = number_pattern.findall(text)
+        matches = self.NUMBER_PATTERN.findall(text)
 
         numbers = []
         for match in matches:
