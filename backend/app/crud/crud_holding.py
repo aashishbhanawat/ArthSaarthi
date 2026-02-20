@@ -349,6 +349,13 @@ def _process_market_traded_assets(
     )
     asset_map = {asset.id: asset for asset in portfolio_assets}
 
+    # Optimization: Create a map for quick ticker lookup to avoid O(N) scans
+    ticker_map = {
+        asset.ticker_symbol: asset
+        for asset in portfolio_assets
+        if asset.ticker_symbol
+    }
+
     # Sort transactions by date to ensure chronological processing
     transactions.sort(key=lambda tx: tx.transaction_date)
 
@@ -523,21 +530,14 @@ def _process_market_traded_assets(
         ticker for ticker, data in holdings_state.items() if data["quantity"] > 0
     ]
 
-    assets_to_price = [
-        {
+    assets_to_price = []
+    for ticker in current_holdings_tickers:
+        asset = ticker_map.get(ticker)
+        assets_to_price.append({
             "ticker_symbol": ticker,
-            "exchange": next((
-                a.exchange for a in asset_map.values()
-                if a.ticker_symbol == ticker
-            ), None),
-            "asset_type": next((
-                a.asset_type
-                for a in asset_map.values()
-                if a.ticker_symbol == ticker
-            ), None),
-        }
-        for ticker in current_holdings_tickers
-    ]
+            "exchange": asset.exchange if asset else None,
+            "asset_type": asset.asset_type if asset else None,
+        })
 
     price_details = (
         financial_data_service.get_current_prices(assets_to_price)
@@ -549,9 +549,7 @@ def _process_market_traded_assets(
     # This enriches sector/industry/country when fetching portfolio
     needs_commit = False
     for ticker in current_holdings_tickers:
-        asset = next(
-            (a for a in asset_map.values() if a.ticker_symbol == ticker), None
-        )
+        asset = ticker_map.get(ticker)
         if asset and asset.sector is None:
             asset_type_upper = (asset.asset_type or "").upper()
             if asset_type_upper in ["STOCK", "ETF"]:
@@ -593,17 +591,14 @@ def _process_market_traded_assets(
             logger.warning(f"Failed to commit enrichment data: {e}")
             # Expire modified objects to reload from DB
             for ticker in current_holdings_tickers:
-                asset = next(
-                    (a for a in asset_map.values() if a.ticker_symbol == ticker),
-                    None
-                )
+                asset = ticker_map.get(ticker)
                 if asset:
                     db.expire(asset)
 
     # --- Pre-fetch FX rates for foreign assets ---
     currencies_needed = set()
     for ticker in current_holdings_tickers:
-        asset = next((a for a in asset_map.values() if a.ticker_symbol == ticker), None)
+        asset = ticker_map.get(ticker)
         if asset and asset.currency and asset.currency != "INR":
             currencies_needed.add(asset.currency)
 
@@ -627,7 +622,7 @@ def _process_market_traded_assets(
                 fx_rates[currency] = Decimal(1)
 
     for ticker in current_holdings_tickers:
-        asset = next((a for a in asset_map.values() if a.ticker_symbol == ticker), None)
+        asset = ticker_map.get(ticker)
         data = holdings_state[ticker]
         price_info = price_details.get(
             ticker, {"current_price": Decimal(0), "previous_close": Decimal(0)}
