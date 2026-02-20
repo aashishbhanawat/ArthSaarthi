@@ -1,12 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import TransactionHistoryTable from '../../../components/Transactions/TransactionHistoryTable';
 import { Transaction } from '../../../types/portfolio';
+import { TransactionType } from '../../../types/enums';
 import { PrivacyProvider } from '../../../context/PrivacyContext';
-import { formatDate } from '../../../utils/formatting';
 
 // Mock TransactionDetailsModal avoiding JSX scope issues
 jest.mock('../../../components/Transactions/TransactionDetailsModal', () => {
-  return function MockTransactionDetailsModal({ transaction, onClose }: { transaction: any, onClose: any }) {
+  return function MockTransactionDetailsModal({ transaction, onClose }: { transaction: Transaction, onClose: () => void }) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const React = require('react');
     return React.createElement('div', { 'data-testid': 'transaction-details-modal' },
       React.createElement('button', { onClick: onClose }, 'Close'),
@@ -20,17 +21,20 @@ const mockTransactions: Transaction[] = [
     id: 'tx-1',
     portfolio_id: 'p-1',
     asset_id: 'asset-1',
-    transaction_type: 'BUY',
-    quantity: 10,
-    price_per_unit: 100,
+    transaction_type: TransactionType.BUY,
+    quantity: '10',
+    price_per_unit: '100',
     transaction_date: '2023-01-01T00:00:00Z',
-    fees: 0,
+    fees: '0',
+    is_reinvested: false,
     asset: {
       id: 'asset-1',
       ticker_symbol: 'AAPL',
       name: 'Apple Inc.',
       asset_type: 'EQUITY',
       currency: 'USD',
+      isin: null,
+      exchange: 'NASDAQ',
     },
     details: {
       fx_rate: 80,
@@ -40,17 +44,20 @@ const mockTransactions: Transaction[] = [
     id: 'tx-2',
     portfolio_id: 'p-1',
     asset_id: 'asset-2',
-    transaction_type: 'SELL',
-    quantity: 5,
-    price_per_unit: 150,
+    transaction_type: TransactionType.SELL,
+    quantity: '5',
+    price_per_unit: '150',
     transaction_date: '2023-01-02T00:00:00Z',
-    fees: 0,
+    fees: '0',
+    is_reinvested: false,
     asset: {
       id: 'asset-2',
       ticker_symbol: 'GOOGL',
       name: 'Alphabet Inc.',
       asset_type: 'EQUITY',
       currency: 'USD',
+      isin: null,
+      exchange: 'NASDAQ',
     },
     // No details, so no info button
   },
