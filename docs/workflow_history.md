@@ -1,3 +1,49 @@
+## 2026-02-19: ICICI Portfolio Data Import & Asset Lookup Fixes (#217)
+
+**Task:** Implement a parser for ICICI Direct's "Portfolio Equity" export files (which are TSV files with a `.xls` extension) and ensure reliable asset resolution during import.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented a comprehensive solution for importing ICICI Direct Portfolio Equity transaction history:
+
+1.  **Robust Parsing Strategy:**
+    -   Created `IciciPortfolioParser` to handle the specific column format (`Stock Symbol`, `ISIN Code`, `Action`, `Quantity`, `Price`, etc.).
+    -   **Format Detection:** The parser intelligently handles ICICI's "fake" `.xls` files (which are actually Tab-Separated Values) by attempting standard Excel parsing first and falling back to CSV/TSV parsing on failure. This prevents "Excel file format cannot be determined" errors.
+
+2.  **Asset Resolution Improvements:**
+    -   **Issue:** The commit phase was failing to find assets even when the preview phase succeeded, because it wasn't using the ISIN field and was strictly filtering aliases by source.
+    -   **Fix:** Updated `import_sessions.py` commit logic to prioritize **ISIN lookup** (using the `isin` field captured by the parser).
+    -   **Fallback:** Added a secondary alias lookup that ignores the `source` field, ensuring that aliases seeded from other sources (e.g., `NSEScripMaster`) are correctly used to resolve tickers like `ABAOFF` to `ABAN-EQ`.
+
+3.  **Frontend Integration:**
+    -   Added "ICICI Direct Portfolio Equity (CSV/XLS)" to the import source dropdown.
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/import_parsers/icici_portfolio_parser.py` — Core parser logic.
+*   **New:** `backend/app/tests/services/import_parsers/test_icici_portfolio_parser.py` — Unit tests.
+*   **Modified:** `backend/app/services/import_parsers/parser_factory.py` — Registered new parser.
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Fixed validation logic for `.xls` fallback and improved asset lookup in `commit_import_session`.
+*   **Modified:** `backend/app/schemas/import_session.py` — Added `isin` to `ParsedTransaction`.
+
+**Frontend:**
+*   **Modified:** `frontend/src/pages/Import/DataImportPage.tsx` — Added dropdown option.
+
+### Verification
+
+*   **Unit Tests:** New tests for `IciciPortfolioParser` passed, covering fee calculations, date parsing, and ISIN extraction.
+*   **Manual Verification:** Verified import of `.xls` files (TSV format). Confirmed that assets with short names (e.g., `ABAOFF`, `TULITS`) are correctly resolved to their master assets during the commit phase via ISIN/Alias matching.
+
+### Outcome
+
+**Success.** Users can now import their historical transaction data from ICICI Direct Portfolio exports without manual format conversion or asset mapping errors. Closes #217.
+
+---
+
 ## 2026-02-16: Auto-Create ICICI ShortName Aliases During Asset Seeding (#216)
 
 **Task:** Automatically map ICICI Direct's internal ShortName to the exchange ticker during asset seeding, so ICICI tradebook imports no longer require manual alias mapping.

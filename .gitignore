@@ -74,3 +74,14 @@ backend/extract_pdf_text.py
 frontend/*.AppImage
 frontend/*.deb
 frontend/*.rpm
+
+# Local config/setup files (restored but not tracked)
+backend/vercel.json
+create_issues.sh
+image copy.png
+image.png
+render.yaml
+roadmap.md
+setup.txt
+todo.txt
+abc.txt

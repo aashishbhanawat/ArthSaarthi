@@ -3,6 +3,7 @@ from .cams_parser import CamsParser
 from .generic_parser import GenericCsvParser
 from .icici_demat_dividend_parser import IciciDematDividendParser
 from .icici_parser import IciciParser
+from .icici_portfolio_parser import IciciPortfolioParser
 from .icici_securities_parser import ICICISecuritiesParser
 from .kfintech_parser import KFintechParser
 from .kfintech_xls_parser import KFintechXlsParser
@@ -17,6 +18,8 @@ def get_parser(source_type: str) -> BaseParser:
         return ZerodhaParser()
     elif source_type == "ICICI Direct Tradebook":
         return IciciParser()
+    elif source_type == "ICICI Direct Portfolio Equity":
+        return IciciPortfolioParser()
     elif source_type == "MFCentral CAS":
         return MfCentralParser()
     elif source_type == "CAMS Statement":
