@@ -231,7 +231,9 @@ def create_transaction(
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating transaction: {e}", exc_info=True)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(
+            status_code=400, detail="An error occurred while creating the transaction."
+        )
 
     # Commit all changes at once to ensure transactional integrity
     db.commit()
