@@ -3,6 +3,9 @@
 .vscode/
 .DS_Store
 
+# AI agent scratch directories
+jules-scratch/
+
 # Editor files
 *.swp
 *~
