@@ -365,7 +365,7 @@ def test_rsu_vest_with_sell_to_cover_holdings(
     # Unrealized P&L should be POSITIVE (78 > 70)
     unrealized_pnl = Decimal(csco_holding["unrealized_pnl"])
     assert unrealized_pnl > 0, (
-        f"Unrealized P&L should be positive (current $78 > FMV $70), got {unrealized_pnl}"
+        f"Unrealized P&L should be positive, got {unrealized_pnl}"
     )
 
 
@@ -437,5 +437,5 @@ def test_rsu_vest_plain_holdings(
     # Unrealized P&L should be positive (110 > 100)
     unrealized_pnl = Decimal(msft_holding["unrealized_pnl"])
     assert unrealized_pnl > 0, (
-        f"Unrealized P&L should be positive (current $110 > FMV $100), got {unrealized_pnl}"
+        f"Unrealized P&L should be positive, got {unrealized_pnl}"
     )
