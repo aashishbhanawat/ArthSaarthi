@@ -11,7 +11,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Asset, Transaction
 from app.schemas.enums import TransactionType
@@ -146,6 +146,7 @@ class ScheduleFAService:
         query = (
             self.db.query(Transaction)
             .join(Asset)
+            .options(joinedload(Transaction.sell_links))
             .filter(
                 Transaction.user_id == user_id,
                 Asset.currency != "INR",
