@@ -1,5 +1,6 @@
 import logging
 import uuid
+from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Union
@@ -450,6 +451,25 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             t.transaction_date, get_type_priority(t.transaction_type)
         ))
 
+        # --- Pre-fetch Transaction Links (Avoid N+1 Queries) ---
+        # Identify all relevant SELL transactions to batch-fetch their links.
+        sell_tx_ids = [
+            tx.id
+            for tx in transactions
+            if tx.transaction_type == "SELL"
+            and (not exclude_sell_id or tx.id != exclude_sell_id)
+        ]
+
+        links_map = defaultdict(list)
+        if sell_tx_ids:
+            all_links = (
+                db.query(TransactionLink)
+                .filter(TransactionLink.sell_transaction_id.in_(sell_tx_ids))
+                .all()
+            )
+            for link in all_links:
+                links_map[link.sell_transaction_id].append(link)
+
         lots = []  # List of buys: {tx, available_quantity}
 
         for tx in transactions:
@@ -468,13 +488,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 sell_qty = tx.quantity
 
                 # 1. Process Specific Links
-                # We need to query links manually since we might not have eager
-                # loaded them and we need to be careful with session state.
-                links = (
-                    db.query(TransactionLink)
-                    .filter(TransactionLink.sell_transaction_id == tx.id)
-                    .all()
-                )
+                # Use pre-fetched links from map
+                links = links_map.get(tx.id, [])
+
                 linked_buy_ids = {}
                 for link in links:
                     linked_buy_ids[link.buy_transaction_id] = link.quantity
