@@ -301,10 +301,12 @@ def test_rsu_vest_with_sell_to_cover_holdings(
     # 1. Setup
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="RSU Holdings Test")
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="RSU Holdings Test"
+    )
     asset = create_test_asset(db, ticker_symbol="CSCO")
 
-    # 2. Create RSU_VEST: 100 shares, FMV=$70, FX rate=85.0, sell-to-cover 40@70
+    # 2. Create RSU_VEST: 100 shares, FMV=$70, FX=85, sell-to-cover 40@70
     rsu_payload = {
         "asset_id": str(asset.id),
         "transaction_type": "RSU_VEST",
@@ -321,52 +323,64 @@ def test_rsu_vest_with_sell_to_cover_holdings(
         },
     }
     response = client.post(
-        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
+        f"{settings.API_V1_STR}/transactions/"
+        f"?portfolio_id={portfolio.id}",
         headers=headers,
         json=rsu_payload,
     )
     assert response.status_code == 201, response.text
 
-    # 3. Mock current price: $78/share
-    mock_prices = {
-        "CSCO": {"current_price": Decimal("78.0"), "previous_close": Decimal("77.0")},
+    # 3. Mock: stock prices (call 1), FX rates (call 2)
+    stock_prices = {
+        "CSCO": {
+            "current_price": Decimal("78.0"),
+            "previous_close": Decimal("77.0"),
+        },
+    }
+    fx_prices = {
+        "USDINR=X": {
+            "current_price": Decimal("85.0"),
+            "previous_close": Decimal("85.0"),
+        },
     }
     mocker.patch.object(
-        financial_data_service, "get_current_prices", return_value=mock_prices
+        financial_data_service,
+        "get_current_prices",
+        side_effect=[stock_prices, fx_prices],
     )
 
     # 4. Get holdings
     holdings_response = client.get(
-        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/holdings", headers=headers
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/holdings",
+        headers=headers,
     )
     assert holdings_response.status_code == 200
     holdings_data = holdings_response.json()["holdings"]
 
-    csco_holding = next(
-        (h for h in holdings_data if h["ticker_symbol"] == "CSCO"), None
+    csco = next(
+        (h for h in holdings_data if h["ticker_symbol"] == "CSCO"),
+        None,
     )
-    assert csco_holding is not None
+    assert csco is not None
 
     # 5. Assertions
-    # Remaining shares: 100 - 40 = 60
-    assert Decimal(csco_holding["quantity"]) == Decimal("60")
+    # Remaining: 100 - 40 = 60
+    assert Decimal(csco["quantity"]) == Decimal("60")
 
-    # Average buy price should be FMV * FX_rate = 70 * 85 = 5950 INR
-    avg_price = Decimal(csco_holding["average_buy_price"])
-    assert avg_price == pytest.approx(Decimal("5950.0"), abs=Decimal("1.0")), (
-        f"Avg buy price should be ~5950 (FMV*FX), got {avg_price}"
+    # avg_buy_price = FMV * FX = 70 * 85 = 5950 INR
+    avg = Decimal(csco["average_buy_price"])
+    assert avg == pytest.approx(Decimal("5950.0"), abs=Decimal("1"))
+
+    # total_invested = 60 * 70 * 85 = 357,000
+    invested = Decimal(csco["total_invested_amount"])
+    assert invested == pytest.approx(
+        Decimal("357000.0"), abs=Decimal("1")
     )
 
-    # Total invested for 60 shares = 60 * 70 * 85 = 357000
-    total_invested = Decimal(csco_holding["total_invested"])
-    assert total_invested == pytest.approx(Decimal("357000.0"), abs=Decimal("1.0"))
-
-    # Current value = 60 * 78 * 85 = 397800 (using same FX for simplicity)
-    # Unrealized P&L should be POSITIVE (78 > 70)
-    unrealized_pnl = Decimal(csco_holding["unrealized_pnl"])
-    assert unrealized_pnl > 0, (
-        f"Unrealized P&L should be positive, got {unrealized_pnl}"
-    )
+    # current_value = 60 * 78 * 85 = 397,800
+    # unrealized = 397800 - 357000 = 40,800 (positive)
+    pnl = Decimal(csco["unrealized_pnl"])
+    assert pnl > 0, f"Unrealized P&L should be positive, got {pnl}"
 
 
 def test_rsu_vest_plain_holdings(
@@ -383,10 +397,12 @@ def test_rsu_vest_plain_holdings(
     # 1. Setup
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(db, user_id=user.id, name="RSU Plain Test")
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="RSU Plain Test"
+    )
     asset = create_test_asset(db, ticker_symbol="MSFT")
 
-    # 2. Create RSU_VEST: 50 shares, FMV=$100, FX rate=83.5, no sell-to-cover
+    # 2. RSU_VEST: 50 shares, FMV=$100, FX=83.5, no sell-to-cover
     rsu_payload = {
         "asset_id": str(asset.id),
         "transaction_type": "RSU_VEST",
@@ -399,43 +415,55 @@ def test_rsu_vest_plain_holdings(
         },
     }
     response = client.post(
-        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
+        f"{settings.API_V1_STR}/transactions/"
+        f"?portfolio_id={portfolio.id}",
         headers=headers,
         json=rsu_payload,
     )
     assert response.status_code == 201, response.text
 
-    # 3. Mock current price: $110/share
-    mock_prices = {
-        "MSFT": {"current_price": Decimal("110.0"), "previous_close": Decimal("108.0")},
+    # 3. Mock: stock prices (call 1), FX rates (call 2)
+    stock_prices = {
+        "MSFT": {
+            "current_price": Decimal("110.0"),
+            "previous_close": Decimal("108.0"),
+        },
+    }
+    fx_prices = {
+        "USDINR=X": {
+            "current_price": Decimal("83.5"),
+            "previous_close": Decimal("83.5"),
+        },
     }
     mocker.patch.object(
-        financial_data_service, "get_current_prices", return_value=mock_prices
+        financial_data_service,
+        "get_current_prices",
+        side_effect=[stock_prices, fx_prices],
     )
 
     # 4. Get holdings
     holdings_response = client.get(
-        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/holdings", headers=headers
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/holdings",
+        headers=headers,
     )
     assert holdings_response.status_code == 200
     holdings_data = holdings_response.json()["holdings"]
 
-    msft_holding = next(
-        (h for h in holdings_data if h["ticker_symbol"] == "MSFT"), None
+    msft = next(
+        (h for h in holdings_data if h["ticker_symbol"] == "MSFT"),
+        None,
     )
-    assert msft_holding is not None
+    assert msft is not None
 
     # 5. Assertions
-    assert Decimal(msft_holding["quantity"]) == Decimal("50")
+    assert Decimal(msft["quantity"]) == Decimal("50")
 
-    # Average buy price = FMV * FX = 100 * 83.5 = 8350
-    avg_price = Decimal(msft_holding["average_buy_price"])
-    assert avg_price == pytest.approx(Decimal("8350.0"), abs=Decimal("1.0")), (
-        f"Avg buy price should be ~8350 (FMV*FX), got {avg_price}"
-    )
+    # avg = FMV * FX = 100 * 83.5 = 8350
+    avg = Decimal(msft["average_buy_price"])
+    assert avg == pytest.approx(Decimal("8350.0"), abs=Decimal("1"))
 
-    # Unrealized P&L should be positive (110 > 100)
-    unrealized_pnl = Decimal(msft_holding["unrealized_pnl"])
-    assert unrealized_pnl > 0, (
-        f"Unrealized P&L should be positive, got {unrealized_pnl}"
-    )
+    # current_value = 50 * 110 * 83.5 = 458,250
+    # total_invested = 50 * 100 * 83.5 = 417,500
+    # unrealized = 458250 - 417500 = 40,750 (positive)
+    pnl = Decimal(msft["unrealized_pnl"])
+    assert pnl > 0, f"Unrealized P&L should be positive, got {pnl}"
