@@ -7,6 +7,7 @@ Uses CALENDAR YEAR (Jan 1 - Dec 31 of AY-2) not Financial Year.
 Example: For AY 2025-26, report assets held Jan 1, 2024 to Dec 31, 2024.
 """
 import logging
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
@@ -167,6 +168,8 @@ class ScheduleFAService:
         # 'buy_tx': tx, 'initial_qty': qty, 'current_qty': qty, 'disposals': [(d,q)]
         # }}
         lots_map = {}
+        # Optimization: Map asset_id to list of lots for faster lookup
+        lots_by_asset = defaultdict(list)
 
         for tx in all_txs:
             # Use IST adjustment for dates
@@ -176,7 +179,7 @@ class ScheduleFAService:
                 TransactionType.BUY, TransactionType.RSU_VEST,
                 TransactionType.ESPP_PURCHASE, TransactionType.BONUS
             ]:
-                lots_map[tx.id] = {
+                lot = {
                     "asset": tx.asset,
                     "buy_transaction": tx,
                     "initial_qty": tx.quantity,
@@ -184,6 +187,8 @@ class ScheduleFAService:
                     "disposals": [],
                     "gross_proceeds": Decimal(0)
                 }
+                lots_map[tx.id] = lot
+                lots_by_asset[tx.asset_id].append(lot)
 
             elif tx.transaction_type == TransactionType.SELL:
                 qty_to_sell = tx.quantity
@@ -210,11 +215,12 @@ class ScheduleFAService:
                 # 2. FIFO Fallback for remaining unlinked quantity
                 if qty_to_sell > 0.000001:
                     # Sort active lots by buy date
+                    # Optimization: Use pre-grouped lots by asset
+                    asset_lots = lots_by_asset.get(tx.asset_id, [])
                     active_lots = sorted(
                         [
-                            lot for lot in lots_map.values()
+                            lot for lot in asset_lots
                             if lot["current_qty"] > 0
-                            and lot["asset"].id == tx.asset_id
                         ],
                         key=lambda x: x["buy_transaction"].transaction_date
                     )
