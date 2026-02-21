@@ -201,4 +201,6 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
     );
 };
 
-export default HoldingsTable;
+// Memoized to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+// but holdings data remains the same.
+export default React.memo(HoldingsTable);
