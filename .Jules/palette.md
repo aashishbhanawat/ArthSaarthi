@@ -8,3 +8,7 @@
 1. Navigate using hash routes (e.g., `/#/my-route`).
 2. Clear `localStorage` to prevent auto-login attempts that trigger errors.
 3. Use `text=` locators carefully when elements contain icons/buttons (like "×").
+
+## 2024-05-22 - PR Superseded
+**Learning:** PR #253 introduced comprehensive Toast improvements, superseding this PR.
+**Action:** Close this PR. The stacking fix (removing `fixed`, adding `mb-3 w-80`) may be reused in a future PR on top of #253.
