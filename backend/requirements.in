@@ -22,11 +22,9 @@ cryptography
 pyxirr
 numpy
 pyarrow
-pyinstaller
 requests
 openpyxl
 xlrd
-lxml
 pdfplumber
 
 # Security fixes for transitive dependencies
