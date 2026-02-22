@@ -28,8 +28,8 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
       <span className="text-sm text-gray-600">
         Page {currentPage + 1} of {pageCount}
       </span>
-      <button onClick={handlePrevious} disabled={currentPage === 0} className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
-      <button onClick={handleNext} disabled={currentPage >= pageCount - 1} className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+      <button onClick={handlePrevious} disabled={currentPage === 0} className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Go to previous page">Previous</button>
+      <button onClick={handleNext} disabled={currentPage >= pageCount - 1} className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Go to next page">Next</button>
     </div>
   );
 };
