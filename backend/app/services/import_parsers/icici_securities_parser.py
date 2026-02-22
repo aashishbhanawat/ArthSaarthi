@@ -8,10 +8,6 @@ import re
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-import pdfplumber
-from pdfminer.pdfdocument import PDFPasswordIncorrect
-from pdfminer.pdfparser import PDFSyntaxError
-
 from app.schemas.import_session import ParsedTransaction
 
 from .base_parser import BaseParser
@@ -73,6 +69,10 @@ class ICICISecuritiesParser(BaseParser):
         """
         transactions = []
         current_scheme = None
+
+        import pdfplumber
+        from pdfminer.pdfdocument import PDFPasswordIncorrect
+        from pdfminer.pdfparser import PDFSyntaxError
 
         try:
             with pdfplumber.open(file_path, password=password) as pdf:

@@ -9,25 +9,11 @@ import re
 from datetime import datetime
 from typing import List, Optional
 
-import pdfplumber
-from pdfminer.pdfdocument import PDFPasswordIncorrect
-
-# pdfplumber.utils.exceptions may not be bundled correctly by PyInstaller
-# Use a fallback exception class if the module is unavailable
-try:
-    from pdfplumber.utils.exceptions import PdfminerException
-except ImportError:
-    # Fallback: catch generic Exception in the parse method
-    PdfminerException = Exception
-
 from app.schemas.import_session import ParsedTransaction
 
 from .base_parser import BaseParser
 
 logger = logging.getLogger(__name__)
-
-# Silence pdfminer's extremely verbose debug logging
-logging.getLogger("pdfminer").setLevel(logging.WARNING)
 
 
 class KFintechParser(BaseParser):
@@ -173,6 +159,20 @@ class KFintechParser(BaseParser):
             ValueError: If password is required but not provided
         """
         transactions = []
+
+        import pdfplumber
+        from pdfminer.pdfdocument import PDFPasswordIncorrect
+
+        # Silence pdfminer's extremely verbose debug logging
+        logging.getLogger("pdfminer").setLevel(logging.WARNING)
+
+        # pdfplumber.utils.exceptions may not be bundled correctly by PyInstaller
+        # Use a fallback exception class if the module is unavailable
+        try:
+            from pdfplumber.utils.exceptions import PdfminerException
+        except ImportError:
+            # Fallback: catch generic Exception in the parse method
+            PdfminerException = Exception
 
         try:
             with pdfplumber.open(file_path, password=password or "") as pdf:
