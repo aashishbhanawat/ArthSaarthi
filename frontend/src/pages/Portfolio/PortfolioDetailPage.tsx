@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePortfolio, usePortfolioAnalytics, usePortfolioSummary, usePortfolioHoldings, useDeleteTransaction, useDeleteBond } from '../../hooks/usePortfolios';
 import { useDeleteFixedDeposit } from '../../hooks/useFixedDeposits';
@@ -57,13 +57,14 @@ const PortfolioDetailPage: React.FC = () => {
         }
     }, [holdings, selectedHolding]);
 
+    // Memoize the handler to prevent re-rendering HoldingsTable when other state changes
+    const handleHoldingClick = useCallback((holding: Holding) => {
+        setSelectedHolding(holding);
+    }, []);
+
     if (isLoading) return <div className="text-center p-8">Loading portfolio details...</div>;
     if (isError) return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
     if (!portfolio) return <div className="text-center p-8">Portfolio not found.</div>;
-
-    const handleHoldingClick = (holding: Holding) => {
-        setSelectedHolding(holding);
-    };
 
     const handleCloseDetailModal = () => {
         setSelectedHolding(null);
