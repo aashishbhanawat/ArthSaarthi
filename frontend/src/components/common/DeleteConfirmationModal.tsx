@@ -1,4 +1,5 @@
 import React from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -24,7 +25,9 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
       <div className="modal-content max-w-md">
         <div className="modal-header">
           <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" disabled={isDeleting}>&times;</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" disabled={isDeleting} aria-label="Close">
+            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+          </button>
         </div>
         <div className="p-6">
           <div className="text-gray-700 dark:text-gray-300 mb-4">{message}</div>
