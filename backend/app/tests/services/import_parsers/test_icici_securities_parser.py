@@ -1,5 +1,7 @@
 import pytest
+
 from app.services.import_parsers.icici_securities_parser import ICICISecuritiesParser
+
 
 @pytest.fixture
 def parser():
