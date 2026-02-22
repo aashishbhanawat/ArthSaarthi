@@ -1,4 +1,5 @@
 """Provider for fetching data from AMFI (Association of Mutual Funds in India)."""
+import asyncio
 from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal
@@ -158,30 +159,63 @@ class AmfiIndiaProvider(FinancialDataProvider):
                 )
         return results[:50]  # Limit results
 
-    def get_historical_prices(
+    async def _fetch_single_asset_history(
+        self,
+        client: httpx.AsyncClient,
+        scheme_code: str,
+        start_date: date,
+        end_date: date,
+        historical_data: Dict[str, Dict[date, Decimal]],
+    ) -> None:
+        """Helper to fetch history for a single asset asynchronously."""
+        try:
+            response = await client.get(
+                f"https://api.mfapi.in/mf/{scheme_code}", timeout=10.0
+            )
+            response.raise_for_status()
+            mf_data = response.json()
+
+            if mf_data.get("status", "").lower() == "fail":
+                return
+
+            for nav_point in mf_data.get("data", []):
+                try:
+                    nav_date = datetime.strptime(
+                        nav_point["date"], "%d-%m-%Y"
+                    ).date()
+                    if start_date <= nav_date <= end_date:
+                        historical_data[scheme_code][nav_date] = Decimal(
+                            nav_point["nav"]
+                        )
+                except (ValueError, KeyError):
+                    continue
+        except (httpx.RequestError, httpx.HTTPStatusError, KeyError, ValueError):
+            return
+
+    async def _fetch_historical_prices_async(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
-        """Fetches historical NAV for a list of mutual fund assets from mfapi.in."""
+        """Asynchronously fetches historical NAV for a list of assets."""
         historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
-        if not self.cache_client:
-            pass
 
-        mf_tickers_str = ",".join(sorted([a["ticker_symbol"] for a in assets]))
-        cache_key = (
-            f"mf_history:{mf_tickers_str}:{start_date.isoformat()}:"
-            f"{end_date.isoformat()}"
-        )
+        async with httpx.AsyncClient() as client:
+            tasks = []
+            for asset in assets:
+                scheme_code = asset["ticker_symbol"]
+                tasks.append(
+                    self._fetch_single_asset_history(
+                        client, scheme_code, start_date, end_date, historical_data
+                    )
+                )
+            await asyncio.gather(*tasks)
 
-        if self.cache_client:
-            cached_data = self.cache_client.get_json(cache_key)
-            if cached_data:
-                for ticker, date_prices in cached_data.items():
-                    for date_str, price_str in date_prices.items():
-                        historical_data[ticker][
-                            datetime.fromisoformat(date_str).date()
-                        ] = Decimal(price_str)
-                return historical_data
+        return historical_data
 
+    def _fetch_historical_prices_sync(
+        self, assets: List[Dict[str, Any]], start_date: date, end_date: date
+    ) -> Dict[str, Dict[date, Decimal]]:
+        """Synchronously fetches historical NAV for a list of assets (Fallback)."""
+        historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
         with httpx.Client() as client:
             for asset in assets:
                 scheme_code = asset["ticker_symbol"]
@@ -209,6 +243,45 @@ class AmfiIndiaProvider(FinancialDataProvider):
                 except (httpx.RequestError, httpx.HTTPStatusError, KeyError,
                         ValueError):
                     continue
+        return historical_data
+
+    def get_historical_prices(
+        self, assets: List[Dict[str, Any]], start_date: date, end_date: date
+    ) -> Dict[str, Dict[date, Decimal]]:
+        """Fetches historical NAV for a list of mutual fund assets from mfapi.in."""
+        historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
+        if not self.cache_client:
+            pass
+
+        mf_tickers_str = ",".join(sorted([a["ticker_symbol"] for a in assets]))
+        cache_key = (
+            f"mf_history:{mf_tickers_str}:{start_date.isoformat()}:"
+            f"{end_date.isoformat()}"
+        )
+
+        if self.cache_client:
+            cached_data = self.cache_client.get_json(cache_key)
+            if cached_data:
+                for ticker, date_prices in cached_data.items():
+                    for date_str, price_str in date_prices.items():
+                        historical_data[ticker][
+                            datetime.fromisoformat(date_str).date()
+                        ] = Decimal(price_str)
+                return historical_data
+
+        try:
+            # Check if an event loop is already running
+            asyncio.get_running_loop()
+            # If so, fallback to synchronous execution to avoid
+            # "asyncio.run() cannot be called from a running event loop"
+            historical_data = self._fetch_historical_prices_sync(
+                assets, start_date, end_date
+            )
+        except RuntimeError:
+            # No event loop is running, so we can safely use asyncio.run
+            historical_data = asyncio.run(
+                self._fetch_historical_prices_async(assets, start_date, end_date)
+            )
 
         if self.cache_client and historical_data:
             serializable_data = {
