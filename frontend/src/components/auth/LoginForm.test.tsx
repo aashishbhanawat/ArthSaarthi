@@ -38,7 +38,7 @@ describe('LoginForm', () => {
   it('renders the login form correctly', () => {
     renderWithContext();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Password', { selector: 'input' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
@@ -47,7 +47,7 @@ describe('LoginForm', () => {
     const user = userEvent.setup();
 
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText('Password', { selector: 'input' });
 
     await user.type(emailInput, 'test@example.com');
     await user.type(passwordInput, 'password123');
@@ -63,7 +63,7 @@ describe('LoginForm', () => {
     const user = userEvent.setup();
 
     await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.type(screen.getByLabelText('Password', { selector: 'input' }), 'password123');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
@@ -79,7 +79,7 @@ describe('LoginForm', () => {
     const user = userEvent.setup();
 
     await user.type(screen.getByLabelText(/email/i), 'wrong@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
+    await user.type(screen.getByLabelText('Password', { selector: 'input' }), 'wrongpassword');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
