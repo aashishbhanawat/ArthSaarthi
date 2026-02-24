@@ -1,3 +1,33 @@
+## 2026-02-25: Implement Daily Portfolio Snapshots (#162)
+
+**Task:** Implement daily historical price caching to freeze EOD portfolio values.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented a `DailyPortfolioSnapshot` model to capture EOD valuations for each user's portfolio and speed up historical chart rendering.
+1. **Cron & Desktop Scheduler:** Created `take_daily_snapshots.py` for server crons, and hooked `_desktop_snapshot_loop` in `main.py` for Desktop deployment.
+2. **Dashboard Integration:** Updated `crud_dashboard.py` to retrieve the historical portfolio value directly from snapshots, falling back to live calculation only for the current day or missing dates.
+3. **Database Compat:** Wrote a dynamic `sqlite_insert` fallback inside the Snapshot Service to gracefully intercept Postgres `ON CONFLICT DO UPDATE` commands when tests run on SQLite.
+4. **Desktop Mode Mock:** Safely patched `is_key_loaded` and `master_key` decorators on `KeyManager` using `PropertyMock` to bypass PII errors in Docker `test-desktop` targets.
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/models/portfolio_snapshot.py`, `backend/alembic/versions/54cdf6ea7779_add_dailyportfoliosnapshot.py`
+*   **New:** `backend/app/services/snapshot_service.py`, `backend/app/scripts/take_daily_snapshots.py`, `backend/app/tests/services/test_snapshot_service.py`
+*   **Modified:** `backend/app/db/base.py`, `backend/app/main.py`, `backend/app/crud/crud_dashboard.py`, `backend/app/tests/api/v1/test_dashboard.py`
+
+### Verification
+
+*   **Tests:** Passed (284 server backend, 274 desktop backend).
+
+### Outcome
+
+**Success.** Portfolio history loads faster and correctly tracks historical assets that are no longer supported. Closes #162.
+
 ## 2026-02-19: ICICI Portfolio Data Import & Asset Lookup Fixes (#217)
 
 **Task:** Implement a parser for ICICI Direct's "Portfolio Equity" export files (which are TSV files with a `.xls` extension) and ensure reliable asset resolution during import.
