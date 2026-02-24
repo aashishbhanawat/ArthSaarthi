@@ -28,6 +28,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers[
             "Referrer-Policy"
         ] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://fastapi.tiangolo.com;"
+        )
 
         # Only enable HSTS in production (requires HTTPS)
         if settings.ENVIRONMENT == "production":
