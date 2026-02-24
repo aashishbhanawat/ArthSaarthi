@@ -122,7 +122,10 @@ def _get_portfolio_history(
         portfolio_id: Optional. If provided, calculate history for only this
                       portfolio. If None, calculate for all user portfolios.
     """
-    from app import crud  # Local import to break circular dependency
+    from sqlalchemy import func
+
+    from app import crud, models  # Local import to break circular dependency
+    from app.models.portfolio_snapshot import DailyPortfolioSnapshot
 
     end_date = date.today()
     if range_str == "7d":
@@ -145,6 +148,23 @@ def _get_portfolio_history(
         start_date = (
             first_transaction.transaction_date.date() if first_transaction else end_date
         )
+
+    # Fetch snapshots
+    snapshot_query = db.query(
+        DailyPortfolioSnapshot.snapshot_date,
+        func.sum(DailyPortfolioSnapshot.total_value).label('total_value')
+    ).join(models.Portfolio).filter(
+        models.Portfolio.user_id == user.id,
+        DailyPortfolioSnapshot.snapshot_date >= start_date,
+        DailyPortfolioSnapshot.snapshot_date <= end_date
+    )
+    if portfolio_id:
+        snapshot_query = snapshot_query.filter(models.Portfolio.id == portfolio_id)
+
+    snapshot_query = snapshot_query.group_by(DailyPortfolioSnapshot.snapshot_date)
+
+    snapshot_data = {row.snapshot_date: row.total_value for row in snapshot_query.all()}
+
 
     # Build asset query with optional portfolio filter
     asset_query = (
@@ -293,26 +313,35 @@ def _get_portfolio_history(
                     current_day
                 ]
 
-        day_total_value = Decimal("0.0")
-        for ticker, quantity in daily_holdings.items():
-            if quantity > 0:
-                if (
-                    ticker in historical_prices
-                    and current_day in historical_prices[ticker]
-                ):
-                    last_known_prices[ticker] = historical_prices[ticker][current_day]
+        # Ignore snapshots for today, as the market may still be open.
+        # Live calculation preferred.
+        if current_day in snapshot_data and current_day != end_date:
+            day_total_value = snapshot_data[current_day]
+            # Update last_known_prices for potential future days without snapshots
+            for ticker, quantity in daily_holdings.items():
+                if quantity > 0:
+                    hist_prices = historical_prices.get(ticker)
+                    if hist_prices and current_day in hist_prices:
+                        last_known_prices[ticker] = hist_prices[current_day]
+        else:
+            day_total_value = Decimal("0.0")
+            for ticker, quantity in daily_holdings.items():
+                if quantity > 0:
+                    hist_prices = historical_prices.get(ticker)
+                    if hist_prices and current_day in hist_prices:
+                        last_known_prices[ticker] = hist_prices[current_day]
 
-                if ticker in last_known_prices:
-                    price = last_known_prices[ticker]
+                    if ticker in last_known_prices:
+                        price = last_known_prices[ticker]
 
-                    # Convert to INR if foreign asset
-                    asset = asset_map.get(ticker)
-                    if asset and asset.currency and asset.currency.upper() != "INR":
-                        fx_ticker = f"{asset.currency}INR=X"
-                        fx_rate = last_known_fx_rates.get(fx_ticker, Decimal(1))
-                        price = price * fx_rate
+                        # Convert to INR if foreign asset
+                        asset = asset_map.get(ticker)
+                        if asset and asset.currency and asset.currency.upper() != "INR":
+                            fx_ticker = f"{asset.currency}INR=X"
+                            fx_rate = last_known_fx_rates.get(fx_ticker, Decimal(1))
+                            price = price * fx_rate
 
-                    day_total_value += quantity * price
+                        day_total_value += quantity * price
 
         history_points.append({"date": current_day, "value": day_total_value})
         current_day += timedelta(days=1)
