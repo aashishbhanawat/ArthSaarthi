@@ -41,6 +41,7 @@
 
 ### Key Features
 -   **Dashboard:** High-level summary, historical chart, asset allocation, and top movers.
+-   **Daily Portfolio Snapshots:** Background cache of daily valuations to optimize history chart loading, including Desktop-mode scheduler support.
 -   **Consolidated Holdings View:** Grouped by asset class with sorting and drill-down for transaction history.
 -   **Advanced Analytics:** Portfolio and Asset-level XIRR calculation.
 -   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), and generic CSV files with on-the-fly **asset alias mapping** for unrecognized ticker symbols. Aliases are manageable (CRUD) from the Admin section.

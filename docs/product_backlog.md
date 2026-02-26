@@ -177,6 +177,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Symbol Alias Management (#215):** Admin UI to view, create, edit, and delete symbol aliases used during data import. **✅ Complete**
 -   **ICICI ShortName Alias Seeding (#216):** Auto-create ICICI ShortName → Ticker aliases during asset seeding for seamless tradebook imports. **✅ Complete**
 -   **ICICI Portfolio Import (#217):** Support for importing ICICI Direct Portfolio Equity history files (TSV/XLS). **✅ Complete**
+-   **Daily Portfolio Snapshots (#162):** Cache daily valuations for history chart. **✅ Complete**
 -   **Test Coverage Audit (#250):** Review all backend integration tests to identify gaps in coverage, particularly for RSU/ESPP/foreign asset holdings calculations, linked transaction sell paths, and edge cases in analytics (XIRR, P&L). Prompted by Issue #249 where missing test coverage allowed a bug in RSU avg price calculation to go undetected.
 -   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS).
 -   **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.

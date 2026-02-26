@@ -264,6 +264,15 @@ def test_get_portfolio_history_success(
         return_value={"NVDA": mock_history},
     )
 
+    mocker.patch.object(
+        financial_data_service,
+        "get_current_prices",
+        return_value={
+            "NVDA": {"current_price": Decimal("500.0")},
+            "USDINR=X": {"current_price": Decimal("1.0")}
+        }
+    )
+
     response = client.get(
         f"{settings.API_V1_STR}/dashboard/history?range=7d", headers=auth_headers
     )
@@ -352,3 +361,78 @@ def test_portfolio_xirr_with_dividend(
     # The correct XIRR, including the dividend, should be ~21.7%.
     # After implementation, the correct XIRR for this cash flow is ~21.0%.
     assert data["xirr"] == pytest.approx(0.210, abs=0.001)
+
+def test_get_portfolio_history_with_snapshots(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
+    from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+    user, password = create_random_user(db)
+    auth_headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Snapshot History")
+
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+    snapshot = DailyPortfolioSnapshot(
+        portfolio_id=portfolio.id,
+        snapshot_date=yesterday,
+        total_value=Decimal("9999.99"),
+        equity_value=Decimal("9999.99")
+    )
+    db.add(snapshot)
+    db.commit()
+
+    # We also need a transaction so that the history endpoint even bothers retrieving
+    # assets
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="NVDA",
+        quantity=1,
+        asset_type="Stock",
+        transaction_date=today - timedelta(days=2),
+    )
+
+    mocker.patch.object(
+        financial_data_service,
+        "get_historical_prices",
+        return_value={
+            "NVDA": {
+                today: Decimal("100.0"),
+                today - timedelta(days=1): Decimal("100.0"),
+            }
+        },
+    )
+
+    mocker.patch.object(
+        financial_data_service,
+        "get_current_prices",
+        return_value={
+            "NVDA": {"current_price": Decimal("100.0")},
+            "USDINR=X": {"current_price": Decimal("1.0")}
+        }
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/dashboard/history?range=7d", headers=auth_headers
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "history" in data
+
+    # Yesterday's history entry should use the 9999.99 snapshot value
+    yesterday_entry = next(
+        (i for i in data["history"] if i["date"] == yesterday.isoformat()), None
+    )
+    assert yesterday_entry is not None
+    assert Decimal(yesterday_entry["value"]).quantize(Decimal("0.01")) == Decimal(
+        "9999.99"
+    )
+
+    # Today's history entry should use live calculation (100.0)
+    today_entry = next(
+        (i for i in data["history"] if i["date"] == today.isoformat()), None
+    )
+    assert today_entry is not None
+    assert Decimal(today_entry["value"]).quantize(Decimal("0.01")) == Decimal("100.00")
+

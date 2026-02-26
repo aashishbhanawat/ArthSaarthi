@@ -28,3 +28,8 @@ class Portfolio(Base):
     recurring_deposits = relationship(
         "RecurringDeposit", back_populates="portfolio", cascade="all, delete-orphan"
     )
+    snapshots = relationship(
+        "DailyPortfolioSnapshot",
+        back_populates="portfolio",
+        cascade="all, delete-orphan",
+    )
