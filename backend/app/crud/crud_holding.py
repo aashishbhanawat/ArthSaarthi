@@ -325,16 +325,15 @@ def _process_market_traded_assets(
 
     # This query is the key fix. It was missing. We need to find all unique
     # assets that have had any kind of transaction to be considered for holdings.
-    unique_asset_ids_query = (
-        db.query(models.Transaction.asset_id)
-        .filter(models.Transaction.portfolio_id == portfolio_id)
-        .filter(models.Transaction.transaction_type.in_([
-            "BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT",
-            "BONUS", "MERGER", "RENAME", "DEMERGER"
-        ]))
-        .distinct()
-    )
-    unique_asset_ids = [row[0] for row in unique_asset_ids_query.all()]
+    # Optimization: Use the already fetched transactions list instead of a new DB query.
+    relevant_types = {
+        "BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT",
+        "BONUS", "MERGER", "RENAME", "DEMERGER"
+    }
+    unique_asset_ids = {
+        tx.asset_id for tx in transactions
+        if tx.transaction_type in relevant_types
+    }
 
     holdings_state = defaultdict(
         lambda: {
