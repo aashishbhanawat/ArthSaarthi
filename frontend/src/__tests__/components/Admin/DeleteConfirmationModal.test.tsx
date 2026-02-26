@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DeleteConfirmationModal } from '../../../components/common/DeleteConfirmationModal';
 import { User } from '../../../types/user';
@@ -49,5 +49,33 @@ describe('DeleteConfirmationModal', () => {
     renderComponent();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  test('focuses the Cancel button when opened', async () => {
+    renderComponent();
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    await waitFor(() => {
+        expect(cancelButton).toHaveFocus();
+    });
+  });
+
+  test('has correct ARIA attributes', () => {
+    renderComponent();
+    const modal = screen.getByRole('dialog');
+    const title = screen.getByRole('heading', { name: 'Delete User' });
+
+    // Check aria-labelledby points to the title
+    expect(modal).toHaveAttribute('aria-labelledby');
+    expect(title).toHaveAttribute('id', modal.getAttribute('aria-labelledby'));
+
+    // Check aria-describedby points to the message container
+    expect(modal).toHaveAttribute('aria-describedby');
+    // Note: The message is inside a div with the id that aria-describedby points to
+    // We can verify the element with that ID exists and contains the text
+    const descriptionId = modal.getAttribute('aria-describedby');
+    // eslint-disable-next-line testing-library/no-node-access
+    const descriptionElement = document.getElementById(descriptionId!);
+    expect(descriptionElement).toBeInTheDocument();
+    expect(descriptionElement).toHaveTextContent(/Are you sure you want to delete the user/);
   });
 });
