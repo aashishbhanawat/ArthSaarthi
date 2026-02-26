@@ -7,6 +7,9 @@ from passlib.context import CryptContext
 from .config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# A dummy hash for non-existent users to prevent timing attacks
+# This is a valid bcrypt hash for "dummy"
+DUMMY_PASSWORD_HASH = "$2b$12$3wB8MupBLSOJaE60qQmJQOgJ4E8rliHKju0jgKQ.nU37nEHExHIWa"
 
 
 def decode_access_token(token: str) -> dict:
