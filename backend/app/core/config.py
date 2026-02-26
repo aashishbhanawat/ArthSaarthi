@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # CORS_ORIGINS: str = "http://localhost:3000"
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost,http://127.0.0.1:3000"
     DEBUG: bool = False
+    LOG_LEVEL: str = "INFO"
 
     # For desktop encryption
     ENCRYPTION_KEY_PATH: str = "master.key"

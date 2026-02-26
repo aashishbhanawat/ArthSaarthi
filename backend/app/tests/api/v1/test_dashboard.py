@@ -264,6 +264,15 @@ def test_get_portfolio_history_success(
         return_value={"NVDA": mock_history},
     )
 
+    mocker.patch.object(
+        financial_data_service,
+        "get_current_prices",
+        return_value={
+            "NVDA": {"current_price": Decimal("500.0")},
+            "USDINR=X": {"current_price": Decimal("1.0")}
+        }
+    )
+
     response = client.get(
         f"{settings.API_V1_STR}/dashboard/history?range=7d", headers=auth_headers
     )
@@ -392,6 +401,15 @@ def test_get_portfolio_history_with_snapshots(
                 today - timedelta(days=1): Decimal("100.0"),
             }
         },
+    )
+
+    mocker.patch.object(
+        financial_data_service,
+        "get_current_prices",
+        return_value={
+            "NVDA": {"current_price": Decimal("100.0")},
+            "USDINR=X": {"current_price": Decimal("1.0")}
+        }
     )
 
     response = client.get(

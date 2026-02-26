@@ -149,6 +149,59 @@ def _get_portfolio_history(
             first_transaction.transaction_date.date() if first_transaction else end_date
         )
 
+    # --- Pre-fetch Non-Market Assets for Historical Calculation ---
+    from app.crud.crud_holding import (
+        _calculate_fd_current_value,
+        _calculate_rd_value_at_date,
+    )
+    from app.models.asset import Asset
+    from app.models.fixed_deposit import FixedDeposit
+    from app.models.recurring_deposit import RecurringDeposit
+
+    fd_query = db.query(FixedDeposit)
+    rd_query = db.query(RecurringDeposit)
+    # Finding PPF assets to use with process_ppf_holding later if needed
+    ppf_asset_query = db.query(Asset).filter(Asset.asset_type.in_(["PPF"]))
+
+    if portfolio_id:
+        fd_query = fd_query.filter(FixedDeposit.portfolio_id == portfolio_id)
+        rd_query = rd_query.filter(RecurringDeposit.portfolio_id == portfolio_id)
+        ppf_asset_query = ppf_asset_query.join(models.Transaction).filter(
+            models.Transaction.portfolio_id == portfolio_id
+        )
+    else:
+        # If 'all' portfolios, we still need to filter by user_id
+        portfolios = (
+            db.query(models.Portfolio)
+            .filter(models.Portfolio.user_id == user.id)
+            .all()
+        )
+        portfolio_ids = [p.id for p in portfolios]
+        if portfolio_ids:
+            fd_query = fd_query.filter(FixedDeposit.portfolio_id.in_(portfolio_ids))
+            rd_query = rd_query.filter(RecurringDeposit.portfolio_id.in_(portfolio_ids))
+            ppf_asset_query = ppf_asset_query.join(models.Transaction).filter(
+                models.Transaction.user_id == user.id
+            )
+
+    all_fds = fd_query.all()
+    all_rds = rd_query.all()
+    ppf_assets = ppf_asset_query.distinct().all()
+
+    # Pre-fetch PPF transactions if we have PPF assets
+    ppf_transactions = []
+    if ppf_assets:
+        ppf_asset_ids = [a.id for a in ppf_assets]
+        ppf_tx_query = db.query(models.Transaction).filter(
+            models.Transaction.asset_id.in_(ppf_asset_ids),
+            models.Transaction.transaction_date <= end_date
+        )
+        if portfolio_id:
+            ppf_tx_query = ppf_tx_query.filter(
+                models.Transaction.portfolio_id == portfolio_id
+            )
+        ppf_transactions = ppf_tx_query.all()
+
     # Fetch snapshots
     snapshot_query = db.query(
         DailyPortfolioSnapshot.snapshot_date,
@@ -325,23 +378,169 @@ def _get_portfolio_history(
                         last_known_prices[ticker] = hist_prices[current_day]
         else:
             day_total_value = Decimal("0.0")
-            for ticker, quantity in daily_holdings.items():
-                if quantity > 0:
-                    hist_prices = historical_prices.get(ticker)
-                    if hist_prices and current_day in hist_prices:
-                        last_known_prices[ticker] = hist_prices[current_day]
 
-                    if ticker in last_known_prices:
-                        price = last_known_prices[ticker]
+            # For the current day (end_date), we want absolute precision including
+            # all fixed-income assets (FDs, PPF, Bonds) which aren't in
+            # historical_prices.
+            # We fetch the live holdings summary to get the exact true current value.
+            if current_day == end_date:
+                try:
+                    portfolio_data = crud.holding.get_portfolio_holdings_and_summary(
+                        db, portfolio_id=portfolio_id
+                    ) if portfolio_id else None
 
-                        # Convert to INR if foreign asset
-                        asset = asset_map.get(ticker)
-                        if asset and asset.currency and asset.currency.upper() != "INR":
-                            fx_ticker = f"{asset.currency}INR=X"
-                            fx_rate = last_known_fx_rates.get(fx_ticker, Decimal(1))
-                            price = price * fx_rate
+                    if portfolio_data:
+                        day_total_value = portfolio_data.summary.total_value
+                    else:
+                        # If calculating for 'all' portfolios, we have to sum them up
+                        portfolios = crud.portfolio.get_multi_by_owner(
+                            db=db, user_id=user.id
+                        )
+                        for p in portfolios:
+                            p_data = crud.holding.get_portfolio_holdings_and_summary(
+                                db, portfolio_id=p.id
+                            )
+                            day_total_value += p_data.summary.total_value
+                except Exception as e:
+                    logger.error(f"Error calculating live holdings for today: {e}")
+                    # Fallback to the manual sum below if the live summary fails
+                    pass
 
-                        day_total_value += quantity * price
+            # If it's not the end_date, OR if the live calculation failed/returned 0,
+            # calculate historical value using the manual ticker * price loop
+            # + Fixed Income math.
+            if day_total_value == Decimal("0.0"):
+                # 1. Market-Traded Assets
+                for ticker, quantity in daily_holdings.items():
+                    if quantity > 0:
+                        hist_prices = historical_prices.get(ticker)
+                        if hist_prices and current_day in hist_prices:
+                            last_known_prices[ticker] = hist_prices[current_day]
+
+                        if ticker in last_known_prices:
+                            price = last_known_prices[ticker]
+
+                            # Convert to INR if foreign asset
+                            asset = asset_map.get(ticker)
+                            if (
+                                asset
+                                and asset.currency
+                                and asset.currency.upper() != "INR"
+                            ):
+                                fx_ticker = f"{asset.currency}INR=X"
+                                fx_rate = last_known_fx_rates.get(fx_ticker, Decimal(1))
+                                price = price * fx_rate
+
+                            day_total_value += quantity * price
+
+                # 2. Fixed Deposits (Simulated for this historical day)
+                for fd in all_fds:
+                    # Ignore if the FD hasn't started yet on this historical date
+                    if fd.start_date > current_day:
+                        continue
+
+                    # If matured before this historical date, value is fixed at maturity
+                    calc_date = (
+                        current_day
+                        if current_day <= fd.maturity_date
+                        else fd.maturity_date
+                    )
+
+                    fd_val = _calculate_fd_current_value(
+                        fd.principal_amount,
+                        fd.interest_rate,
+                        fd.start_date,
+                        calc_date,
+                        fd.compounding_frequency,
+                        fd.interest_payout,
+                    )
+
+                    # If it's a payout FD, it stays at principal. We don't add paid
+                    # interest to portfolio value unless it was reinvested (which would
+                    # be separate transactions).
+                    # If it matured and paid out, it theoretically "leaves" the
+                    # portfolio unless we track cash.
+                    # Since we don't track cash yet, we zero out matured payout FDs
+                    # and matured Cumulative FDs to match how we handle sold stocks.
+                    if current_day > fd.maturity_date:
+                        # Matured. Ensure we only add it if it's considered "active"
+                        # or we decide to keep matured investments as permanent
+                        # fixtures (which is unrealistic).
+                        # Let's align with get_portfolio_holdings_and_summary: matured
+                        # FDs are returned, but their maturity value is just the
+                        # principal (for payout) or maturity_value (for cumulative).
+                        day_total_value += fd_val
+                    else:
+                        day_total_value += fd_val
+
+                # 3. Recurring Deposits (Simulated for this historical day)
+                from dateutil.relativedelta import relativedelta
+                for rd in all_rds:
+                    if rd.start_date > current_day:
+                        continue
+
+                    rd_maturity_date = rd.start_date + relativedelta(
+                        months=rd.tenure_months
+                    )
+                    calc_date = (
+                        current_day
+                        if current_day <= rd_maturity_date
+                        else rd_maturity_date
+                    )
+
+                    rd_val = _calculate_rd_value_at_date(
+                        rd.monthly_installment,
+                        rd.interest_rate,
+                        rd.start_date,
+                        rd.tenure_months,
+                        calc_date,
+                    )
+
+                    # If simulating a date during the RD, we ensure we only count
+                    # the installments paid up to that date.
+                    # _calculate_rd_value_at_date inherently handles this correctly
+                    # using `calculation_date`.
+                    # However, if it hasn't matured yet, we also must ensure
+                    # total_invested logic acts dynamically.
+                    installments_to_date = 0
+                    temp_date = rd.start_date
+                    while (
+                        temp_date <= current_day
+                        and installments_to_date < rd.tenure_months
+                    ):
+                        installments_to_date += 1
+                        temp_date += relativedelta(months=1)
+
+                    if installments_to_date > 0:
+                        day_total_value += rd_val
+
+                # 4. PPF (Simulated for this historical day)
+                from app.crud.crud_ppf import process_ppf_holding
+                if ppf_assets:
+                    # Filter PPF transactions up to the current historical day
+                    day_ppf_txns = [
+                        tx for tx in ppf_transactions
+                        if tx.transaction_date.date() <= current_day
+                    ]
+
+                    for asset in ppf_assets:
+                        asset_txns = [
+                            tx for tx in day_ppf_txns if tx.asset_id == asset.id
+                        ]
+                        if not asset_txns:
+                            continue
+
+                        # process_ppf_holding requires a calculation date for interest
+                        try:
+                            ppf_holding = process_ppf_holding(
+                                asset, asset_txns, calculation_date=current_day
+                            )
+                            day_total_value += ppf_holding.current_value
+                        except Exception as e:
+                            logger.error(
+                                f"Error calculating historical PPF for "
+                                f"{current_day}: {e}"
+                            )
 
         history_points.append({"date": current_day, "value": day_total_value})
         current_day += timedelta(days=1)
