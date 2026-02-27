@@ -66,6 +66,7 @@ const GoalList: React.FC<GoalListProps> = ({ goals }) => {
                     onClick={() => handleDeleteClick(goal)}
                     className="btn btn-sm btn-ghost text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                     disabled={deleteGoalMutation.isPending && goalToDelete?.id === goal.id}
+                    aria-label={`Delete ${goal.name}`}
                   >
                     <TrashIcon className="h-5 w-5" />
                   </button>
