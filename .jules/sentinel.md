@@ -1,0 +1,4 @@
+## 2024-05-24 - [Timing Attack Vulnerability in Authentication]
+**Vulnerability:** User Enumeration via Timing Attack
+**Learning:** `crud.user.authenticate` exited early if a user was not found or inactive, causing a ~0.34s difference in response time compared to an incorrect password for an existing user due to bcrypt hashing duration. This allowed attackers to enumerate existing email addresses.
+**Prevention:** Always compute a dummy bcrypt hash using a pre-calculated `DUMMY_PASSWORD_HASH` when a user lookup fails or the user is inactive before returning `None`. This ensures the time taken to authenticate remains roughly constant regardless of user existence.
