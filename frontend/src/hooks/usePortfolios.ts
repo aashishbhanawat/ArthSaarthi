@@ -273,10 +273,16 @@ export const useAssetSearch = (query: string) => {
     });
 };
 
-export const useBenchmarkComparison = (portfolioId: string, benchmarkTicker: string) => {
+export const useBenchmarkComparison = (
+    portfolioId: string,
+    benchmarkTicker: string,
+    benchmarkMode: string = "single",
+    hybridPreset: string | null = null,
+    riskFreeRate: number = 7.0
+) => {
     return useQuery({
-        queryKey: ['benchmarkComparison', portfolioId, benchmarkTicker],
-        queryFn: () => portfolioApi.getBenchmarkComparison(portfolioId, benchmarkTicker),
+        queryKey: ['benchmarkComparison', portfolioId, benchmarkTicker, benchmarkMode, hybridPreset, riskFreeRate],
+        queryFn: () => portfolioApi.getBenchmarkComparison(portfolioId, benchmarkTicker, benchmarkMode, hybridPreset, riskFreeRate),
         enabled: !!portfolioId,
     });
 };

@@ -250,6 +250,9 @@ def get_benchmark_comparison(
     db: Session = Depends(dependencies.get_db),
     portfolio_id: uuid.UUID,
     benchmark_ticker: str = "^NSEI",
+    benchmark_mode: str = "single",
+    hybrid_preset: str = None,
+    risk_free_rate: float = 7.0,
     current_user: models.User = Depends(dependencies.get_current_user),
     benchmark_service: BenchmarkService = Depends(get_benchmark_service),
 ) -> Any:
@@ -263,5 +266,9 @@ def get_benchmark_comparison(
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     return benchmark_service.calculate_benchmark_performance(
-        portfolio_id=portfolio_id, benchmark_ticker=benchmark_ticker
+        portfolio_id=str(portfolio_id),
+        benchmark_ticker=benchmark_ticker,
+        benchmark_mode=benchmark_mode,
+        hybrid_preset=hybrid_preset,
+        risk_free_rate=risk_free_rate
     )
