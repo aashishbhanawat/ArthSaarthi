@@ -2,6 +2,7 @@ import uuid
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -72,8 +73,19 @@ def delete_portfolio(
         raise HTTPException(status_code=404, detail="Portfolio not found")
     if portfolio.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    crud.portfolio.remove(db=db, id=portfolio_id)
-    db.commit()
+    try:
+        crud.portfolio.remove(db=db, id=portfolio_id)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Cannot delete this portfolio because it is "
+                "linked to one or more goals. Please unlink "
+                "the portfolio from all goals first."
+            ),
+        )
     return {"msg": "Portfolio deleted successfully"}
 
 
