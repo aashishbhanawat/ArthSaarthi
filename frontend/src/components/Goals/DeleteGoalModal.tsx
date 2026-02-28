@@ -16,7 +16,7 @@ const DeleteGoalModal: React.FC<DeleteGoalModalProps> = ({ isOpen, onClose, onCo
             <div className="modal-content max-w-md">
                 <div className="modal-header">
                     <h2 className="text-2xl font-bold">Delete Goal</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+                    <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600">&times;</button>
                 </div>
                 <div className="p-6">
                     <p className="text-gray-600 mb-4">

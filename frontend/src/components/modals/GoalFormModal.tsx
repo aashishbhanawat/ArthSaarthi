@@ -54,7 +54,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
           <h2 className="text-2xl font-bold">
             {isEditMode ? 'Edit Goal' : 'Create New Goal'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+          <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600">&times;</button>
         </div>
         <div className="p-6">
           <form onSubmit={handleSubmit}>

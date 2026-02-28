@@ -18,7 +18,7 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ isOpe
     return (
         <div className="modal-overlay z-40" onClick={onClose}>
             <div className="modal-content w-11/12 max-w-lg p-6 relative" onClick={e => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute right-4 top-4 text-gray-500 hover:text-gray-700">
+                <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 text-gray-500 hover:text-gray-700">
                     &times;
                 </button>
                 <h2 className="text-xl font-bold mb-4">Transaction Details</h2>
