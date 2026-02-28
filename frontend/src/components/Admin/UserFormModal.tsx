@@ -93,7 +93,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       <div role="dialog" aria-modal="true" aria-labelledby="user-form-modal-title" className="modal-content max-w-md">
         <div className="modal-header">
           <h2 id="user-form-modal-title" className="text-2xl font-bold">{isEditing ? 'Edit User' : 'Create New User'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+          <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600">&times;</button>
         </div>
         <div className="p-6">
           <form onSubmit={handleSubmit}>

@@ -36,7 +36,7 @@ const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ isOpen, onC
             <div className="modal-content max-w-md">
                 <div className="modal-header">
                     <h2 className="text-2xl font-bold">Create New Portfolio</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+                    <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600">&times;</button>
                 </div>
                 <div className="p-6">
                     <form onSubmit={handleSubmit}>
