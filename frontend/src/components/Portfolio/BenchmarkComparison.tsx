@@ -140,6 +140,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
     // --- Determine which data source to use based on mode ---
     let currentData: BenchmarkComparisonResponse = data;
     let benchmarkLabel = benchmarkTicker === '^NSEI' ? 'Nifty 50' : 'Sensex';
+    let noDataForCategory = false;
 
     if (benchmarkMode === 'hybrid') {
         benchmarkLabel = hybridPreset === 'CRISIL_HYBRID_35_65' ? 'CRISIL Hybrid 35+65' : 'Balanced 50/50';
@@ -153,7 +154,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
             currentData = data.category_data.debt;
             benchmarkLabel = data.category_data.debt.benchmark_label;
         } else {
-            return <div className="p-4 text-center text-gray-500">No data available for the selected category.</div>;
+            noDataForCategory = true;
         }
     }
 
@@ -251,39 +252,47 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                 </div>
             )}
 
-            <div className={`grid grid-cols-1 ${showRiskFree ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 mb-8`}>
-                <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
-                    <p className="text-sm font-medium text-gray-500 text-center">Portfolio XIRR</p>
-                    <div className={`text-3xl font-bold mt-2 text-center ${currentData.portfolio_xirr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatPercent(currentData.portfolio_xirr)}
-                    </div>
+            {noDataForCategory ? (
+                <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg">
+                    No {categoryTab} transactions found in this portfolio.
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
-                    <p className="text-sm font-medium text-gray-500 text-center break-words leading-tight">{benchmarkLabel} XIRR</p>
-                    <div className={`text-3xl font-bold mt-2 text-center ${currentData.benchmark_xirr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatPercent(currentData.benchmark_xirr)}
-                    </div>
-                </div>
-                {showRiskFree && (
-                    <div className="bg-green-50 rounded-lg p-4 shadow-sm border border-green-100">
-                        <p className="text-sm font-medium text-green-700 text-center">Risk-Free XIRR</p>
-                        <div className="text-3xl font-bold mt-2 text-center text-green-700">
-                            {formatPercent(data.risk_free_xirr || riskFreeRate)}
+            ) : (
+                <>
+                    <div className={`grid grid-cols-1 ${showRiskFree ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 mb-8`}>
+                        <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
+                            <p className="text-sm font-medium text-gray-500 text-center">Portfolio XIRR</p>
+                            <div className={`text-3xl font-bold mt-2 text-center ${currentData.portfolio_xirr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatPercent(currentData.portfolio_xirr)}
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
+                            <p className="text-sm font-medium text-gray-500 text-center break-words leading-tight">{benchmarkLabel} XIRR</p>
+                            <div className={`text-3xl font-bold mt-2 text-center ${currentData.benchmark_xirr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatPercent(currentData.benchmark_xirr)}
+                            </div>
+                        </div>
+                        {showRiskFree && (
+                            <div className="bg-green-50 rounded-lg p-4 shadow-sm border border-green-100">
+                                <p className="text-sm font-medium text-green-700 text-center">Risk-Free XIRR</p>
+                                <div className="text-3xl font-bold mt-2 text-center text-green-700">
+                                    {formatPercent(data.risk_free_xirr || riskFreeRate)}
+                                </div>
+                            </div>
+                        )}
+                        <div className={`${xirrDiff >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'} rounded-lg p-4 shadow-sm border`}>
+                            <p className="text-sm font-medium text-gray-500 text-center">Alpha vs {benchmarkLabel.split(' ')[0]}</p>
+                            <div className={`flex items-center justify-center text-3xl font-bold mt-2 ${xirrDiff >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                {xirrDiff >= 0 ? <ArrowTrendingUpIcon className="h-8 w-8 mr-1" /> : <ArrowTrendingDownIcon className="h-8 w-8 mr-1" />}
+                                {formatPercent(xirrDiff)}
+                            </div>
                         </div>
                     </div>
-                )}
-                <div className={`${xirrDiff >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'} rounded-lg p-4 shadow-sm border`}>
-                    <p className="text-sm font-medium text-gray-500 text-center">Alpha vs {benchmarkLabel.split(' ')[0]}</p>
-                    <div className={`flex items-center justify-center text-3xl font-bold mt-2 ${xirrDiff >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                        {xirrDiff >= 0 ? <ArrowTrendingUpIcon className="h-8 w-8 mr-1" /> : <ArrowTrendingDownIcon className="h-8 w-8 mr-1" />}
-                        {formatPercent(xirrDiff)}
-                    </div>
-                </div>
-            </div>
 
-            <div className="h-96 w-full">
-                {renderChart(currentData.chart_data, benchmarkLabel)}
-            </div>
+                    <div className="h-96 w-full">
+                        {renderChart(currentData.chart_data, benchmarkLabel)}
+                    </div>
+                </>
+            )}
         </div>
     );
 };
