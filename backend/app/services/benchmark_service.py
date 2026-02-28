@@ -162,6 +162,37 @@ class BenchmarkService:
             f"Asset types: {dict(asset_map)}"
         )
 
+        # Get current market values per category
+        equity_value = 0.0
+        debt_value = 0.0
+        try:
+            holdings_data = (
+                crud.holding
+                .get_portfolio_holdings_and_summary(
+                    self.db, portfolio_id=portfolio_id
+                )
+            )
+            for h in holdings_data.holdings:
+                h_type = str(
+                    getattr(h, 'asset_type', '')
+                ).upper().replace("_", " ")
+                cv = float(
+                    getattr(h, 'current_value', 0) or 0
+                )
+                if h_type in equity_types:
+                    equity_value += cv
+                else:
+                    debt_value += cv
+            logger.debug(
+                f"Category values: equity={equity_value}, "
+                f"debt={debt_value}"
+            )
+        except Exception as e:
+            logger.warning(
+                f"Could not get holdings for "
+                f"category values: {e}"
+            )
+
         results = {}
 
         if equity_txns:
@@ -172,8 +203,11 @@ class BenchmarkService:
                 benchmark_mode="single",
                 hybrid_preset=None,
                 risk_free_rate=risk_free_rate,
+                subset_current_value=equity_value,
             )
-            results["equity"]["benchmark_label"] = "Nifty 50"
+            results["equity"]["benchmark_label"] = (
+                "Nifty 50"
+            )
 
         if debt_txns:
             results["debt"] = self._run_simulation(
@@ -183,15 +217,18 @@ class BenchmarkService:
                 benchmark_mode="single",
                 hybrid_preset=None,
                 risk_free_rate=risk_free_rate,
+                subset_current_value=debt_value,
             )
             debt_xirr = results["debt"]["benchmark_xirr"]
             is_rf = debt_xirr == risk_free_rate / 100
             results["debt"]["benchmark_label"] = (
-                "Risk-Free (7%)" if is_rf else "Bond Index"
+                "Risk-Free (7%)" if is_rf
+                else "Bond Index"
             )
 
         logger.debug(
-            f"Category results keys: {list(results.keys())}"
+            f"Category results keys: "
+            f"{list(results.keys())}"
         )
 
         return results
@@ -247,6 +284,7 @@ class BenchmarkService:
         benchmark_mode: str = "single",
         hybrid_preset: str = None,
         risk_free_rate: float = 7.0,
+        subset_current_value: float = None,
     ) -> Dict:
         # 1. Fetch all portfolio transactions if not provided
         if not transactions:
@@ -335,7 +373,8 @@ class BenchmarkService:
         else:
             # Calculate XIRR from transaction subset
             portfolio_xirr = self._calc_subset_xirr(
-                transactions, end_date
+                transactions, end_date,
+                subset_current_value,
             )
 
         # 3. Pre-process transactions
@@ -409,7 +448,8 @@ class BenchmarkService:
         }
 
     def _calc_subset_xirr(
-        self, transactions, end_date
+        self, transactions, end_date,
+        current_value: float = None,
     ) -> float:
         """Calculate XIRR from a transaction subset."""
         try:
@@ -446,9 +486,16 @@ class BenchmarkService:
                     )
                     current_invested -= amount
 
-            if current_invested > 0 and pf_cashflows:
+            # Use actual current value if provided,
+            # otherwise fall back to net invested
+            terminal_value = (
+                current_value
+                if current_value and current_value > 0
+                else current_invested
+            )
+            if terminal_value > 0 and pf_cashflows:
                 pf_cashflows.append(
-                    (end_date, current_invested)
+                    (end_date, terminal_value)
                 )
                 pf_dates = [d for d, v in pf_cashflows]
                 pf_values = [v for d, v in pf_cashflows]
