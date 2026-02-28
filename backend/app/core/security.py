@@ -8,6 +8,9 @@ from .config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Dummy hash for mitigating timing attacks (hash for "dummy")
+DUMMY_PASSWORD_HASH = "$2b$12$0.FIrLKyqNHoMsIA5hL.UuirASX3NA/XMQ/Tkp.5bEM1XiBaDxMFW"
+
 
 def decode_access_token(token: str) -> dict:
     return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])

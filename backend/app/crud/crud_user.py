@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Union
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.security import get_password_hash, verify_password
+from app.core.security import DUMMY_PASSWORD_HASH, get_password_hash, verify_password
 from app.crud.base import CRUDBase
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserUpdateMe
@@ -56,8 +56,12 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
         user = self.get_by_email(db, email=email)
         if not user:
+            # Perform a dummy password verification to mitigate timing attacks
+            verify_password(password, DUMMY_PASSWORD_HASH)
             return None
         if not user.is_active:
+            # Even if inactive, we verify password or dummy to equalize timing
+            verify_password(password, DUMMY_PASSWORD_HASH)
             return None
         if not verify_password(password, user.hashed_password):
             return None
