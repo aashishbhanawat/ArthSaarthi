@@ -1,0 +1,4 @@
+## 2024-05-18 - [Fix timing attack in user authentication]
+**Vulnerability:** A timing attack in the `authenticate` function in `backend/app/crud/crud_user.py` allowed user enumeration by observing response times, as bcrypt verification is intentionally slow.
+**Learning:** Early returns in authentication logic, even when handling non-existent or inactive users, create observable timing differences if the computationally expensive password verification is skipped.
+**Prevention:** Always perform a dummy password verification using a pre-calculated hash (e.g., `DUMMY_PASSWORD_HASH`) when returning early due to invalid users, ensuring consistent execution time across all authentication attempts.
