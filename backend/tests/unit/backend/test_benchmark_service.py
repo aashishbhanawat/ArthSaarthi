@@ -254,7 +254,7 @@ def test_category_benchmark_splits_correctly(
 
     mock_asset_eq = MagicMock()
     mock_asset_eq.id = "asset_eq"
-    mock_asset_eq.asset_type = "STOCK"
+    mock_asset_eq.asset_type = "Mutual Fund"
 
     mock_asset_debt = MagicMock()
     mock_asset_debt.id = "asset_debt"

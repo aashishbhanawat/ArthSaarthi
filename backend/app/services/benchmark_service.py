@@ -130,8 +130,10 @@ class BenchmarkService:
         equity_txns = []
         debt_txns = []
 
+        # Normalize: DB stores mixed formats like
+        # "Mutual Fund", "MUTUAL_FUND", "STOCK", etc.
         equity_types = [
-            "STOCK", "MUTUAL_FUND", "ETF", "ESPP", "RSU",
+            "STOCK", "MUTUAL FUND", "ETF", "ESPP", "RSU",
         ]
 
         assets = crud.asset.get_multi_by_portfolio(
@@ -143,11 +145,22 @@ class BenchmarkService:
             a_type = asset_map.get(txn.asset_id, "STOCK")
             if hasattr(a_type, 'value'):
                 a_type = a_type.value
+            # Normalize to upper with spaces
+            a_type_norm = str(a_type).upper().replace(
+                "_", " "
+            )
 
-            if a_type in equity_types:
+            if a_type_norm in equity_types:
                 equity_txns.append(txn)
             else:
                 debt_txns.append(txn)
+
+        logger.debug(
+            f"Category split: {len(equity_txns)} equity, "
+            f"{len(debt_txns)} debt from "
+            f"{len(txns)} total txns. "
+            f"Asset types: {dict(asset_map)}"
+        )
 
         results = {}
 
@@ -177,6 +190,10 @@ class BenchmarkService:
                 "Risk-Free (7%)" if is_rf else "Bond Index"
             )
 
+        logger.debug(
+            f"Category results keys: {list(results.keys())}"
+        )
+
         return results
 
     def calculate_benchmark_performance(
@@ -205,6 +222,15 @@ class BenchmarkService:
                 None, risk_free_rate,
             )
             base_result["category_data"] = category_data
+            logger.debug(
+                f"Category response: "
+                f"category_data keys="
+                f"{list(category_data.keys())}, "
+                f"has equity="
+                f"{'equity' in category_data}, "
+                f"has debt="
+                f"{'debt' in category_data}"
+            )
             return base_result
 
         return self._run_simulation(
