@@ -1,25 +1,28 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-03-01
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** ICICI Portfolio Import, Capital Gains Reporting, Foreign Asset Taxation, and SGB/Bond handling are complete. Automated tests (backend, frontend, E2E) are passing. The application is ready for release v1.2.0.
+*   **Summary:** Advanced Benchmarking (FR6.3), portfolio deletion error handling, and historical chart accuracy for non-market assets (FD, RD, PPF, Bonds) are complete. All automated backend tests pass (281/281). The application is on the `feature/fr6.3-advanced-benchmarking` branch, with a PR (#278) open for merge.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **213/213 Passing**
-*   **Frontend Unit/Integration Tests:** ✅ **174/174 Passing**
-*   **End-to-End (E2E) Tests:** ✅ **31/31 Passing**
+*   **Backend Unit/Integration Tests:** ✅ **281/281 Passing**
+*   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing**
 
 ### Recent Stabilization Efforts
 
-*   **ICICI Portfolio Import:** Implemented parsing for ICICI Portfolio Equity files (pseudo-XLS TSV) and fixed asset lookup logic during commit to prioritize ISIN and handle aliases correctly.
-*   **Frontend Unit Tests:** Resolved all failures in the Jest test suite, primarily by aligning mock data in `TransactionFormModal.test.tsx` with the component's updated logic for handling FX rates.
-*   **E2E Test Coverage:** Enabled the previously skipped E2E test for asset-level XIRR (`analytics.spec.ts`) by implementing a robust mocking strategy for the holdings API response. The full suite of 31 tests now passes.
-*   **Code Quality:** Eliminated the final remaining `eslint` warnings in the frontend codebase and removed duplicated code from the backend.
+*   **Advanced Benchmarking (FR6.3):** Implemented hybrid benchmarks (35/65, 50/50 equity/debt blends), risk-free rate overlay, and category-level (equity vs debt) XIRR comparison. Fixed XIRR calculation for category subsets to use actual current market value.
+*   **Portfolio Delete Error Handling:** Catching FK constraint violations when deleting a portfolio linked to goals — returns a 409 Conflict with a user-friendly message instead of a 500. Frontend now displays this error via alert.
+*   **Non-Market Asset Historical Chart:** Fixed multiple bugs where FDs, RDs, PPF, and Bonds showed `0` value on historical dates:
+    *   Added `BOND` to `supported_types` for historical price fetching.
+    *   Fixed PPF `process_ppf_holding` to support historical simulation without DB side-effects.
+    *   Fixed early-return bug where FD/RD-only portfolios returned empty history.
+    *   Fixed `Holding` schema crash for FDs/RDs missing an `account_number`.
+*   **UI "No Data" Fix:** Category comparison no longer hides the entire component when a category has no transactions — keeps navigation elements visible.
 
 ## 3. Implemented Functionality
 
@@ -38,13 +41,18 @@
     -   Public Provident Fund (PPF).
     -   Bonds (Corporate, Government, SGBs, T-Bills) with manual coupon tracking.
 
-
 ### Key Features
 -   **Dashboard:** High-level summary, historical chart, asset allocation, and top movers.
 -   **Daily Portfolio Snapshots:** Background cache of daily valuations to optimize history chart loading, including Desktop-mode scheduler support.
+-   **Historical Chart Accuracy:** Fallback engine in `_get_portfolio_history` calculates values for non-market assets (FDs, RDs, PPF) on dates without snapshots, and treats Bonds as market-traded assets with historical prices.
 -   **Consolidated Holdings View:** Grouped by asset class with sorting and drill-down for transaction history.
 -   **Advanced Analytics:** Portfolio and Asset-level XIRR calculation.
--   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), and generic CSV files with on-the-fly **asset alias mapping** for unrecognized ticker symbols. Aliases are manageable (CRUD) from the Admin section.
+-   **Advanced Benchmarking (FR6.3):**
+    -   **Single Index:** Compare portfolio against Nifty 50 or Sensex.
+    -   **Hybrid Benchmarks:** CRISIL Hybrid 35/65 and Balanced 50/50 blends.
+    -   **Risk-Free Rate Overlay:** Dashed green line on chart showing compound risk-free growth.
+    -   **Category Comparison:** Equity vs Nifty 50, Debt vs bond yield — with accurate XIRR using actual market values.
+-   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS, KFintech, Zerodha Coin, and generic CSV files with **asset alias mapping**. Aliases are manageable (CRUD) from the Admin section.
 -   **Watchlists:** Create and manage custom watchlists.
 -   **Goal Planning:** Define financial goals and link assets to track progress.
 -   **Mutual Fund Dividends:** Track both cash and reinvested dividends for mutual funds.
@@ -59,7 +67,8 @@
 -   **UX Enhancements:**
     -   Privacy Mode to obscure sensitive values.
     -   Context-sensitive help links.
--   **Capital Gains Reporting (New):**
+    -   Dark theme with user preference persistence.
+-   **Capital Gains Reporting:**
     -   Comprehensive Capital Gains reports for Schedule 112A (Grandfathered Equity) and Schedule FA (Foreign Assets).
     -   Support for Tax Lot Accounting (Specific Identification) vs FIFO.
     -   Accurate taxation rules for Bond ETFs, International ETFs, and SGBs.
@@ -69,10 +78,16 @@
 -   **Pluggable Financial Data Service (NFR12):** The `FinancialDataService` has been refactored into a provider-based architecture (Strategy Pattern), making it easy to add new data sources. It currently supports AMFI (Mutual Funds), NSE Bhavcopy (Indian Equities/Bonds), and yfinance (fallback/international).
 -   **Pluggable Caching Layer (NFR9):** The application supports both Redis and a file-based `DiskCache` for improved performance and deployment flexibility.
 -   **Analytics Caching (NFR9.2):** Expensive analytics and holdings calculations are cached to improve UI responsiveness and reduce server load.
+-   **Cache Invalidation:** `invalidate_caches_for_portfolio` deletes both Redis keys AND stale `DailyPortfolioSnapshot` DB records to force live recalculation after data changes.
 
-## 5. Next Steps & Priorities
+## 5. Known Issues & Active Bugs
+
+-   **Historical Chart for Non-Market Assets:** Despite recent fixes, there may still be edge cases where FD/PPF/Bond values aren't fully accurate on historical chart dates. This is under investigation and will be addressed in a follow-up task.
+
+## 6. Next Steps & Priorities
 
 Based on the `product_backlog.md`, the next features to consider are:
 
-1.  **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to simplify Mutual Fund onboarding.
-2.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
+1.  **Historical Chart Non-Market Asset Bug (follow-up):** Continue investigating and resolving any remaining edge cases for FD/PPF/Bond historical values.
+2.  **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to simplify Mutual Fund onboarding.
+3.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
