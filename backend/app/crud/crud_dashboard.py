@@ -231,12 +231,13 @@ def _get_portfolio_history(
         )
     all_user_assets = asset_query.distinct().all()
 
-    if not all_user_assets:
+    if not all_user_assets and not all_fds and not all_rds:
         return []
 
-    # Filter for assets that are likely to have market data from yfinance
     # Filter for assets that are likely to have market data from yfinance/amfi
-    supported_types = ["STOCK", "ETF", "MUTUAL_FUND", "MUTUAL FUND"]
+    supported_types = [
+        "STOCK", "ETF", "MUTUAL_FUND", "MUTUAL FUND", "BOND",
+    ]
     market_traded_assets = [
         asset for asset in all_user_assets
         if str(asset.asset_type).upper().replace("_", " ") in supported_types
@@ -533,7 +534,11 @@ def _get_portfolio_history(
                         # process_ppf_holding requires a calculation date for interest
                         try:
                             ppf_holding = process_ppf_holding(
-                                asset, asset_txns, calculation_date=current_day
+                                db=db,
+                                ppf_asset=asset,
+                                portfolio_id=portfolio_id,
+                                calculation_date=current_day,
+                                simulate_only=True,
                             )
                             day_total_value += ppf_holding.current_value
                         except Exception as e:

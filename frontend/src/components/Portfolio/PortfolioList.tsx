@@ -23,6 +23,13 @@ const PortfolioList: React.FC<PortfolioListProps> = ({ portfolios }) => {
         if (portfolioToDelete) {
             deletePortfolioMutation.mutate(portfolioToDelete.id, {
                 onSuccess: () => setModalOpen(false),
+                onError: (error: unknown) => {
+                    setModalOpen(false);
+                    const axiosErr = error as { response?: { data?: { detail?: string } } };
+                    const message = axiosErr?.response?.data?.detail
+                        || 'Failed to delete portfolio. Please try again.';
+                    alert(message);
+                },
             });
         }
     };

@@ -1,3 +1,107 @@
+## 2026-03-01: Fix Non-Market Asset Historical Portfolio Values
+
+**Task:** Fix portfolio history chart showing `0` for FDs, RDs, PPF, and Bonds on historical dates.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Fixed multiple edge-case bugs preventing non-market assets from contributing to historical portfolio chart values:
+
+1. **Bond Classification:** `BOND` was missing from `supported_types` in `_get_portfolio_history`. Gold Bonds and other traded bonds were excluded from historical price fetches. Added `BOND` to the list.
+2. **PPF Historical Simulation:** `process_ppf_holding` in `crud_ppf.py` crashed during historical simulation because it tried to insert DB records for past financial years. Added `calculation_date` and `simulate_only` parameters.
+3. **FD/RD-Only Portfolio Short-Circuit:** `_get_portfolio_history` returned `[]` if a portfolio contained only FDs/RDs (no market assets), due to `if not all_user_assets: return []`. Extended the check to also consider `all_fds` and `all_rds`.
+4. **Holding Schema Crash:** FDs/RDs without an `account_number` passed `None` to the `ticker_symbol` field, violating the strict `Holding` Pydantic schema. Added fallback `fd.account_number or ""`.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/crud/crud_dashboard.py` — Added `BOND` to `supported_types`, fixed early-return condition, fixed PPF call args.
+*   **Modified:** `backend/app/crud/crud_ppf.py` — Added `calculation_date`, `simulate_only` params and transaction date filtering.
+*   **Modified:** `backend/app/crud/crud_holding.py` — Fallback for `None` ticker_symbol on FD/RD holdings.
+
+### Verification
+
+*   **Tests:** 281/281 backend tests passed. Debug script verified FD values correctly appear on historical dates (e.g., 107k+ for a 100k FD at 7.5% over 1 year).
+
+### Outcome
+
+**Success.** Non-market assets now correctly contribute to historical portfolio values on all dates. Known issue: there may be additional edge cases requiring follow-up.
+
+---
+
+## 2026-02-28: Portfolio Delete FK Constraint Error Handling & Frontend Alert
+
+**Task:** Fix 500 Internal Server Error when deleting a portfolio linked to goals. Show the error to the user.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend:** Wrapped `crud.portfolio.remove` in a try/except for `IntegrityError`. On FK violation (e.g., `goal_links`), rolls back the session and raises `HTTPException(409)` with a message: "Cannot delete this portfolio because it is linked to one or more goals."
+2. **Frontend:** Added `onError` handler to `deletePortfolioMutation.mutate()` in `PortfolioList.tsx` to extract the `detail` message from the 409 response and display it via `alert()`.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/api/v1/endpoints/portfolios.py` — Added `IntegrityError` import and catch block.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/Portfolio/PortfolioList.tsx` — Added `onError` handler.
+
+### Verification
+
+*   **TypeScript:** `npx tsc --noEmit` — zero errors.
+*   **Tests:** All backend tests pass.
+
+### Outcome
+
+**Success.** Users now see a clear error message when attempting to delete a portfolio linked to goals, instead of a raw 500 error.
+
+---
+
+## 2026-02-27: Implement Advanced Benchmarking (FR6.3)
+
+**Task:** Implement hybrid benchmarks, risk-free rate overlay, and category-level XIRR for portfolio benchmarking.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Extended the existing benchmark comparison module with three new modes:
+
+1. **Hybrid Benchmarks:** CRISIL Hybrid 35/65 (35% equity, 65% debt) and Balanced 50/50 presets. Fetches both equity (Nifty) and debt index histories and blends by weight.
+2. **Risk-Free Rate Overlay:** Computes daily compounding values at a configurable annual rate, rendered as a dashed green line on the chart.
+3. **Category Comparison:** Splits portfolio transactions into equity vs debt by asset type. Runs independent simulations for each category against its natural benchmark (Nifty 50 for equity, 10Y bond yield for debt).
+4. **XIRR Fix:** Category XIRR was returning 0% because it used net invested amount as terminal value. Fixed to use actual current market value from holdings data.
+5. **UI "No Data" Fix:** Empty category tabs no longer hide the entire component — shows a message while keeping controls visible.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/benchmark_service.py` — Added `HYBRID_PRESETS`, `_calculate_risk_free_values()`, `_run_simulation()`, `_calculate_category_benchmark()`. Fixed `_calc_subset_xirr` to use actual market value.
+*   **Modified:** `backend/app/api/v1/endpoints/portfolios.py` — Added `benchmark_mode`, `hybrid_preset`, `risk_free_rate` query params.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/Portfolio/BenchmarkComparison.tsx` — Grouped dropdown, risk-free toggle, category tabs, "no data" handling.
+*   **Modified:** `frontend/src/services/portfolioApi.ts` — Extended response types and API params.
+*   **Modified:** `frontend/src/hooks/usePortfolios.ts` — Updated query hook.
+
+### Verification
+
+*   **Backend Tests:** 7/7 benchmark unit tests passing (`test_benchmark_service.py`).
+*   **Frontend:** TypeScript compilation — zero errors.
+*   **E2E:** `analytics.spec.ts` updated for strict mode fix.
+
+### Outcome
+
+**Success.** Users can now compare their portfolio against hybrid indices, view a risk-free rate baseline, and drill down into equity vs debt performance. PR #278 created.
+
+---
+
 ## 2026-02-25: Implement Daily Portfolio Snapshots (#162)
 
 **Task:** Implement daily historical price caching to freeze EOD portfolio values.

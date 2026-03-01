@@ -236,4 +236,72 @@ test.describe.serial('Advanced Analytics E2E Flow', () => {
     expect(xirrValue).toBeGreaterThanOrEqual(29.9);
     expect(xirrValue).toBeLessThanOrEqual(30.1);
   });
+
+  test('should display advanced benchmark comparison with hybrid and category options', async ({ page }) => {
+    const portfolioName = `Benchmark Test Portfolio ${Date.now()}`;
+    const assetName = 'MSFT';
+
+    // 1. Create portfolio with a transaction
+    await page.getByRole('link', { name: 'Portfolios' }).click();
+    await page.getByRole('button', { name: 'Create New Portfolio' }).click();
+    await page.getByLabel('Name').fill(portfolioName);
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('heading', { name: portfolioName })).toBeVisible();
+
+    const url = page.url();
+    const portfolioId = url.split('/').pop()!;
+
+    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByLabel('Transaction Type').selectOption('BUY');
+    await page.getByRole('textbox', { name: 'Asset' }).pressSequentially(assetName);
+    await page.waitForResponse(response => response.url().includes('/api/v1/assets/search-stocks'));
+    const listItem = page.locator(`li:has-text("${assetName}")`);
+    await expect(listItem).toBeVisible();
+    await listItem.click();
+    await page.getByLabel('Quantity').fill('10');
+    await page.getByLabel('Price per Unit').fill('200');
+    await page.getByLabel('Date').fill('2023-01-01');
+
+    const holdingsResponsePromise = page.waitForResponse(resp =>
+      resp.url().includes(`/api/v1/portfolios/${portfolioId}/holdings`) && resp.status() === 200
+    );
+    await page.getByRole('button', { name: 'Save Transaction' }).click();
+    await holdingsResponsePromise;
+
+    // 2. Verify Benchmark Comparison section loads
+    const benchmarkSection = page.locator('div', { hasText: 'Benchmark Comparison' }).first();
+    await expect(benchmarkSection).toBeVisible();
+
+    // 3. Verify the dropdown has the new option groups
+    const benchmarkSelector = benchmarkSection.locator('select');
+    await expect(benchmarkSelector).toBeVisible();
+
+    // Select Balanced 50/50 hybrid preset
+    await benchmarkSelector.selectOption('BALANCED_50_50');
+    await page.waitForResponse(resp =>
+      resp.url().includes('benchmark-comparison') && resp.url().includes('benchmark_mode=hybrid') && resp.status() === 200
+    );
+
+    // 4. Verify the risk-free toggle exists
+    const riskFreeToggle = page.locator('#riskFreeToggle');
+    await expect(riskFreeToggle).toBeVisible();
+    await riskFreeToggle.check();
+
+    // 5. Select Category Comparison
+    await benchmarkSelector.selectOption('CATEGORY');
+    await page.waitForResponse(resp =>
+      resp.url().includes('benchmark-comparison') && resp.url().includes('benchmark_mode=category') && resp.status() === 200
+    );
+
+    // Verify the Equity/Debt tabs appear
+    const equityTab = page.getByRole('button', { name: 'Equity' });
+    const debtTab = page.getByRole('button', { name: 'Debt' });
+    await expect(equityTab).toBeVisible();
+    await expect(debtTab).toBeVisible();
+
+    // Click on Debt tab
+    await debtTab.click();
+    // Verify something rendered (either data or the "no data" message)
+    await expect(page.locator('text=No data available').or(page.locator('text=XIRR')).first()).toBeVisible();
+  });
 });

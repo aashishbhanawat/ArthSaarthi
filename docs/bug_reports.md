@@ -26,6 +26,77 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-03-01-01
+**Title:** Portfolio delete returns 500 when linked to goals (FK violation).
+**Module:** Portfolio Management (Backend)
+**Reported By:** User
+**Date Reported:** 2026-02-28
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Deleting a portfolio that is linked to one or more goals via the `goal_links` table causes a `psycopg2.errors.ForeignKeyViolation`, which surfaces as an unhandled 500 Internal Server Error.
+**Steps to Reproduce:**
+1. Link a portfolio to a goal.
+2. Attempt to delete the portfolio.
+**Expected Behavior:** A user-friendly error message explaining the portfolio must be unlinked from goals first.
+**Actual Behavior:** 500 Internal Server Error with raw database traceback.
+**Resolution:** Added `IntegrityError` catch in `portfolios.py` that rolls back and returns a 409 Conflict. Frontend `PortfolioList.tsx` now shows the error via `alert()`.
+
+---
+
+**Bug ID:** 2026-03-01-02
+**Title:** Category XIRR returns 0% for equity/debt subsets.
+**Module:** Analytics/Benchmarking (Backend)
+**Reported By:** Developer
+**Date Reported:** 2026-02-27
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** The `_calc_subset_xirr` function used the net invested amount as the terminal cashflow instead of the actual current market value, resulting in XIRR always being 0%.
+**Steps to Reproduce:**
+1. Navigate to a portfolio's benchmark comparison.
+2. Select "Category Comparison" mode.
+3. Observe XIRR is 0.0% for both equity and debt.
+**Expected Behavior:** XIRR should reflect actual returns based on current market value.
+**Actual Behavior:** XIRR is 0.0%.
+**Resolution:** Modified `_calc_subset_xirr` to accept `current_value` parameter and use it as the terminal cashflow. `_calculate_category_benchmark` now fetches holdings data to compute per-category market values.
+
+---
+
+**Bug ID:** 2026-03-01-03
+**Title:** Bonds (Gold Bonds) show `0` value on historical portfolio chart dates.
+**Module:** Dashboard/Analytics (Backend)
+**Reported By:** User
+**Date Reported:** 2026-02-28
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** `BOND` was missing from the `supported_types` list in `_get_portfolio_history`. Gold Bonds and other traded bonds were excluded from historical price fetches, causing their value to be 0 on all dates without a snapshot.
+**Steps to Reproduce:**
+1. Add Gold Bond transactions to a portfolio.
+2. View the portfolio history chart.
+3. Observe that only today's value is correct; all prior dates show 0.
+**Expected Behavior:** Bond values should appear on all historical dates based on market prices.
+**Actual Behavior:** Bond values are 0 on all non-snapshot dates.
+**Resolution:** Added `BOND` to `supported_types` in `_get_portfolio_history`.
+
+---
+
+**Bug ID:** 2026-03-01-04
+**Title:** PPF, FD, RD values missing from historical portfolio chart.
+**Module:** Dashboard/Analytics (Backend)
+**Reported By:** User
+**Date Reported:** 2026-02-28
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Multiple edge-case bugs prevented non-market assets from contributing to historical portfolio values: (1) PPF `process_ppf_holding` crashed during historical simulation, (2) FD/RD-only portfolios returned empty history due to early-return, (3) FDs without account numbers crashed the Holding schema.
+**Steps to Reproduce:**
+1. Create a portfolio with only FDs or PPF.
+2. View the historical chart.
+3. Observe empty/zero values.
+**Expected Behavior:** FD/RD/PPF values should appear on all historical dates.
+**Actual Behavior:** Values are 0 or chart is empty.
+**Resolution:** (1) Added `calculation_date` and `simulate_only` to `process_ppf_holding`. (2) Extended early-return check to include `all_fds` and `all_rds`. (3) Added `fd.account_number or ""` fallback.
+
+---
+
 **Bug ID:** 2025-07-17-01 
 **Title:** Frontend tests fail due to missing @tanstack/react-query dependency. 
 **Module:** Core Frontend, Dependencies 
