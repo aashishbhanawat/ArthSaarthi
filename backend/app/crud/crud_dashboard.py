@@ -231,7 +231,7 @@ def _get_portfolio_history(
         )
     all_user_assets = asset_query.distinct().all()
 
-    if not all_user_assets:
+    if not all_user_assets and not all_fds and not all_rds:
         return []
 
     # Filter for assets that are likely to have market data from yfinance/amfi
