@@ -534,7 +534,11 @@ def _get_portfolio_history(
                         # process_ppf_holding requires a calculation date for interest
                         try:
                             ppf_holding = process_ppf_holding(
-                                asset, asset_txns, calculation_date=current_day
+                                db=db,
+                                ppf_asset=asset,
+                                portfolio_id=portfolio_id,
+                                calculation_date=current_day,
+                                simulate_only=True,
                             )
                             day_total_value += ppf_holding.current_value
                         except Exception as e:
