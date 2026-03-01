@@ -46,15 +46,18 @@ def get_available_lots_for_backfill(
     )
 
     lots = []
+    lots_map = {}  # O(1) lookup map from buy_transaction_id to lot dict
 
     for tx in transactions:
         if tx.transaction_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST", "BONUS"]:
-            lots.append({
+            lot = {
                 "id": tx.id,
                 "available_quantity": tx.quantity,
                 "date": tx.transaction_date,
                 "price_per_unit": tx.price_per_unit,
-            })
+            }
+            lots.append(lot)
+            lots_map[tx.id] = lot
         elif tx.transaction_type == "SELL":
             sell_qty = tx.quantity
 
@@ -66,10 +69,11 @@ def get_available_lots_for_backfill(
             )
             for link in links:
                 sell_qty -= link.quantity
-                for lot in lots:
-                    if lot["id"] == link.buy_transaction_id:
-                        lot["available_quantity"] -= link.quantity
-                        break
+                # Deduct from the specific lot using O(1) lookup
+                if link.buy_transaction_id in lots_map:
+                    lots_map[link.buy_transaction_id][
+                        "available_quantity"
+                    ] -= link.quantity
 
             # 2. Process unlinked quantity via FIFO
             if sell_qty > 0:
