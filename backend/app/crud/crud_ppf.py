@@ -226,7 +226,8 @@ def process_ppf_holding(
                         )
                         existing_credit = db.query(Transaction).filter(
                             Transaction.asset_id == ppf_asset.id,
-                            Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
+                            Transaction.transaction_type
+                            == TransactionType.INTEREST_CREDIT,
                             Transaction.transaction_date >= fy_end,
                             Transaction.transaction_date < fy_end + timedelta(days=1),
                         ).first()
