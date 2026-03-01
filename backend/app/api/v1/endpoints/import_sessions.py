@@ -198,14 +198,14 @@ async def create_import_session(
         # Re-raise HTTP exceptions (like PASSWORD_REQUIRED) without wrapping
         raise
     except Exception as e:
-        log.error(f"Error parsing file {temp_file_path}: {e}")
+        log.error(f"Error parsing file {temp_file_path}: {e}", exc_info=True)
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={"status": "FAILED", "error_message": str(e)},
         )
         raise HTTPException(
-            status_code=400, detail=f"An error occurred during file parsing: {e}"
+            status_code=400, detail="An error occurred during file parsing."
         )
 
     # 4. Save the list of Pydantic models to a Parquet file
@@ -268,7 +268,8 @@ def get_import_session_preview(
     try:
         df = pd.read_parquet(import_session.parsed_file_path)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not read parsed data: {e}")
+        log.error(f"Could not read parsed data: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Could not read parsed data.")
 
     valid_new: list[schemas.ParsedTransaction] = []
     duplicates: list[schemas.ParsedTransaction] = []
@@ -510,7 +511,7 @@ def commit_import_session(
 
     except Exception as e:
         db.rollback()
-        log.error(f"Failed to commit import session {session_id}: {e}")
+        log.error(f"Failed to commit import session {session_id}: {e}", exc_info=True)
         crud.import_session.update(
             db,
             db_obj=import_session,
@@ -523,5 +524,5 @@ def commit_import_session(
         )
         db.commit()
         raise HTTPException(
-            status_code=500, detail=f"Could not commit transactions: {e}"
+            status_code=500, detail="Could not commit transactions."
         )
