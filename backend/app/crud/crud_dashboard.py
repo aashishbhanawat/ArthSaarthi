@@ -234,9 +234,10 @@ def _get_portfolio_history(
     if not all_user_assets:
         return []
 
-    # Filter for assets that are likely to have market data from yfinance
     # Filter for assets that are likely to have market data from yfinance/amfi
-    supported_types = ["STOCK", "ETF", "MUTUAL_FUND", "MUTUAL FUND"]
+    supported_types = [
+        "STOCK", "ETF", "MUTUAL_FUND", "MUTUAL FUND", "BOND",
+    ]
     market_traded_assets = [
         asset for asset in all_user_assets
         if str(asset.asset_type).upper().replace("_", " ") in supported_types
