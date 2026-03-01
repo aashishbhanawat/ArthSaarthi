@@ -4,6 +4,29 @@ This document captures key architectural decisions, learnings, and process impro
 
 ---
 
+## 2026-03-01: Non-Market Asset History & Category Benchmarking Stabilization
+
+### 1. What Happened?
+
+We stabilized the historical portfolio chart for non-market assets (FD, RD, PPF, Bonds) and fixed the XIRR calculation for category-level benchmarking (Equity vs Debt).
+
+### 2. Key Learnings & Improvements
+
+*   **Historical Simulation vs. Point-in-Time Calculation:**
+    *   **Problem:** PPF interest calculation was designed for the *current* balance but failed when called for a *historical* date during a chart range scan.
+    *   **Learning:** Financial simulation functions should always accept an optional `calculation_date` and a `simulate_only` flag. This separates "live update" logic from "historical playback" logic, preventing unintended database commits for past years.
+*   **XIRR Terminal Value Logic:**
+    *   **Problem:** Category-specific XIRR was returning 0.0% because it only considered cashflows (buys/sells) but not the *terminal value* of the remaining holdings in that category.
+    *   **Learning:** XIRR calculation for a subset of a portfolio requires an accurate "snapshot" of the current market value for those specific assets to act as the final positive cashflow. Without it, the math treats the investment as a total loss (or net zero if just looking at inflows/outflows).
+*   **Schema Strictness as a Safety Net:**
+    *   **Problem:** FDs/RDs without account numbers passed `None` to the `Holding` schema's `ticker_symbol` field, which was marked as a non-optional `str`. This crashed the entire holdings list.
+    *   **Learning:** While strict Pydantic schemas are good for data integrity, fallback values (e.g., `ticker_symbol or ""`) should be used in mapper functions to prevent a single missing data point from taking down the entire UI.
+*   **Edge Case Early-Returns:**
+    *   **Problem:** `_get_portfolio_history` immediately returned `[]` if no "market assets" (STOCK/MF) were found, even if the portfolio was rich with FDs/RDs.
+    *   **Learning:** Guard clauses should be as narrow as possible. Checking only for "assets" while ignoring "fixed deposits" leads to "ghost data" where the dashboard shows a balance but the chart remains empty.
+
+---
+
 ## 2025-07-19: UI Refactor Postmortem & Mitigation Plan
 
 ### 1. What Happened?

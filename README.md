@@ -1,7 +1,7 @@
 # ArthSaarthi - Personal Portfolio Management System
 
 [![CI/CD Status](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml/badge.svg)](https://github.com/aashishbhanawat/ArthSaarthi/actions/workflows/ci.yml)
-[![Backend Tests](https://img.shields.io/badge/Backend_Tests-208/208-brightgreen)](#)
+[![Backend Tests](https://img.shields.io/badge/Backend_Tests-281/281-brightgreen)](#)
 [![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-174/174-brightgreen)](#)
 [![E2E Tests](https://img.shields.io/badge/E2E_Tests-31/31-brightgreen)](#)
 

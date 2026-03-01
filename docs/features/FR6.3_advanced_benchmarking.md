@@ -2,7 +2,7 @@
 
 **Feature ID:** FR6.3  
 **Title:** Advanced Benchmarking — Hybrid Indices, Risk-Free Rate Overlay & Category Benchmarking  
-**Status:** 🔲 In Progress  
+**Status:** ✅ Done  
 **Priority:** P3  
 **Version:** v1.2.0  
 
