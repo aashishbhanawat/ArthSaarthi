@@ -127,6 +127,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
                         <button
                           className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                           title="Edit Transaction"
+                          aria-label="Edit Transaction"
                           onClick={() => onEdit(tx)}
                         >
                           <PencilSquareIcon className="h-5 w-5" />
@@ -134,6 +135,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
                         <button
                           className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                           title="Delete Transaction"
+                          aria-label="Delete Transaction"
                           onClick={() => onDelete(tx)}
                         >
                           <TrashIcon className="h-5 w-5" />
