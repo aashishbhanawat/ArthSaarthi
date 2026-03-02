@@ -64,8 +64,8 @@ async def create_import_session(
     try:
         with temp_file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-    except Exception as e:
-        log.error(f"Failed to save uploaded file: {e}")
+    except Exception:
+        log.error("Failed to save uploaded file", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not save uploaded file.")
     finally:
         file.file.close()
@@ -197,15 +197,18 @@ async def create_import_session(
     except HTTPException:
         # Re-raise HTTP exceptions (like PASSWORD_REQUIRED) without wrapping
         raise
-    except Exception as e:
-        log.error(f"Error parsing file {temp_file_path}: {e}")
+    except Exception:
+        log.error(f"Error parsing file {temp_file_path}", exc_info=True)
         crud.import_session.update(
             db,
             db_obj=import_session,
-            obj_in={"status": "FAILED", "error_message": str(e)},
+            obj_in={
+                "status": "FAILED",
+                "error_message": "An error occurred during file parsing."
+            },
         )
         raise HTTPException(
-            status_code=400, detail=f"An error occurred during file parsing: {e}"
+            status_code=400, detail="An error occurred during file parsing."
         )
 
     # 4. Save the list of Pydantic models to a Parquet file
@@ -267,8 +270,9 @@ def get_import_session_preview(
 
     try:
         df = pd.read_parquet(import_session.parsed_file_path)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not read parsed data: {e}")
+    except Exception:
+        log.error(f"Could not read parsed data for session {session_id}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Could not read parsed data.")
 
     valid_new: list[schemas.ParsedTransaction] = []
     duplicates: list[schemas.ParsedTransaction] = []
@@ -508,20 +512,20 @@ def commit_import_session(
 
         return {"msg": f"Successfully committed {transactions_created} transactions."}
 
-    except Exception as e:
+    except Exception:
         db.rollback()
-        log.error(f"Failed to commit import session {session_id}: {e}")
+        log.error(f"Failed to commit import session {session_id}", exc_info=True)
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
                 "error_message": (
-                    f"An unexpected error occurred during commit: {str(e)}"
+                    "An unexpected error occurred during commit."
                 ),
             },
         )
         db.commit()
         raise HTTPException(
-            status_code=500, detail=f"Could not commit transactions: {e}"
+            status_code=500, detail="Could not commit transactions."
         )
