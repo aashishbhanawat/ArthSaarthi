@@ -79,7 +79,7 @@ test.describe.serial('User Guide Screenshots', () => {
         // Login
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
         await page.waitForTimeout(1000); // Allow charts to render
@@ -89,7 +89,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('03 - Dashboard Privacy Mode', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
@@ -110,7 +110,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('04 - Portfolios List', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
@@ -123,7 +123,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('05 - Create Portfolio & Add Stock Transaction', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
@@ -161,7 +161,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('06 - Fund Transaction Modal', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -181,7 +181,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('07 - Bond Transaction Modal', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -196,7 +196,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('08 - Fixed Deposit Modal', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -211,7 +211,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('09 - Recurring Deposit Modal', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -226,7 +226,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('10 - PPF Account Modal', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -241,7 +241,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('11 - RSU/ESPP Award Modal', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -260,7 +260,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('12 - Transaction History Page', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Transactions' }).click();
@@ -271,7 +271,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('13 - Import Page', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Import' }).click();
@@ -282,7 +282,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('14 - Goals Page', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Goals' }).click();
@@ -293,7 +293,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('15 - Watchlists Page', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Watchlists' }).click();
@@ -304,7 +304,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('16 - Profile Page', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Profile' }).click();
@@ -315,7 +315,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('17 - Admin User Management', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'User Management' }).click();
@@ -326,7 +326,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('18 - Admin Interest Rates', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Interest Rates' }).click();
@@ -337,7 +337,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('19 - Admin System Maintenance', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'System Maintenance' }).click();
@@ -348,7 +348,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('20 - Holding Drill-down', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -367,7 +367,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('21 - Dark Theme Toggle', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
         await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
@@ -383,7 +383,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('22 - Benchmark Comparison', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
@@ -397,7 +397,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('23 - Diversification Analysis', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         // Dashboard shows allocation/diversification charts
@@ -409,7 +409,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('24 - Import Formats', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Import' }).click();
@@ -423,7 +423,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('25 - Transaction Filter Types', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Transactions' }).click();
@@ -438,7 +438,7 @@ test.describe.serial('User Guide Screenshots', () => {
     test('26 - Investment Style Classification', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password').fill(adminUser.password);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await page.getByRole('link', { name: 'Portfolios' }).click();
