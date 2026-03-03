@@ -279,8 +279,9 @@ def _get_portfolio_history(
     txn_query = (
         db.query(crud.transaction.model)
         # ⚡ Bolt Optimization: Eager load the associated Asset for each Transaction.
-        # This prevents an N+1 query problem during the loop below where `t.asset.ticker_symbol`
-        # is accessed for every single transaction, significantly reducing database round-trips.
+        # This prevents an N+1 query problem during the loop below where
+        # `t.asset.ticker_symbol` is accessed for every single transaction,
+        # significantly reducing database round-trips.
         .options(joinedload(crud.transaction.model.asset))
         .filter(
             crud.transaction.model.user_id == user.id,
