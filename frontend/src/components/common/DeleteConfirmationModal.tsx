@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -17,6 +17,17 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   message,
   isDeleting,
 }) => {
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        cancelButtonRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -30,7 +41,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           <div className="text-gray-700 dark:text-gray-300 mb-4">{message}</div>
           <p className="text-sm text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-md">This action is permanent and cannot be undone.</p>
           <div className="flex items-center justify-end pt-6">
-            <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={isDeleting}>Cancel</button>
+            <button type="button" ref={cancelButtonRef} onClick={onClose} className="btn btn-secondary mr-2" disabled={isDeleting}>Cancel</button>
             <button type="button" onClick={onConfirm} className="btn btn-danger" disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Confirm Delete'}</button>
           </div>
         </div>
