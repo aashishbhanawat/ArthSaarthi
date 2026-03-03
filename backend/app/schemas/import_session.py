@@ -72,3 +72,27 @@ class ImportSessionPreview(BaseModel):
 class ImportSessionCommit(BaseModel):
     transactions_to_commit: list[ParsedTransaction]
     aliases_to_create: list[AssetAliasCreate] = []
+
+
+# Schema for parsed FD data from bank statements
+class ParsedFixedDeposit(BaseModel):
+    bank: str
+    account_number: str | None = None
+    principal_amount: float
+    interest_rate: float
+    start_date: str
+    maturity_date: str
+    maturity_amount: float | None = None
+    interest_payout: str = "Cumulative"
+    compounding_frequency: str = "Quarterly"
+
+
+# Schema for FD import preview response
+class FDImportPreview(BaseModel):
+    parsed_fds: list[ParsedFixedDeposit]
+    duplicates: list[ParsedFixedDeposit]
+
+
+# Schema for FD import commit request body
+class FDImportCommit(BaseModel):
+    fds_to_commit: list[ParsedFixedDeposit]

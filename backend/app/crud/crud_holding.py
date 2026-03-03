@@ -166,7 +166,7 @@ def _process_fixed_deposits(
         holdings_list.append(
             schemas.Holding(
                 asset_id=fd.id,
-                ticker_symbol=fd.account_number,
+                ticker_symbol=fd.account_number or "",
                 asset_name=fd.name,
                 asset_type="FIXED_DEPOSIT",
                 currency="INR",
