@@ -3,9 +3,10 @@ from unittest.mock import MagicMock, patch
 
 from sqlalchemy.orm import Session
 
+from app.core.security import DUMMY_PASSWORD_HASH
 from app.crud.crud_user import user as crud_user
 from app.models.user import User
-from app.core.security import DUMMY_PASSWORD_HASH
+
 
 class TestAuthSecurity(unittest.TestCase):
     def test_authenticate_timing_attack_prevention(self):
@@ -17,14 +18,18 @@ class TestAuthSecurity(unittest.TestCase):
             # Case 1: User does not exist
             # Mock get_by_email to return None
             with patch.object(crud_user, "get_by_email", return_value=None):
-                result = crud_user.authenticate(db, email="nonexistent@example.com", password="password")
+                result = crud_user.authenticate(
+                    db, email="nonexistent@example.com", password="password"
+                )
 
                 # Should return None
                 self.assertIsNone(result)
 
                 # verify_password should be called with DUMMY_PASSWORD_HASH
-                # This confirms we are preventing timing attacks by doing work even when user is not found
-                mock_verify_password.assert_called_once_with("password", DUMMY_PASSWORD_HASH)
+                # Confirms we prevent timing attacks by doing work when user not found
+                mock_verify_password.assert_called_once_with(
+                    "password", DUMMY_PASSWORD_HASH
+                )
 
             mock_verify_password.reset_mock()
 
@@ -37,13 +42,17 @@ class TestAuthSecurity(unittest.TestCase):
             mock_verify_password.return_value = False
 
             with patch.object(crud_user, "get_by_email", return_value=user):
-                result = crud_user.authenticate(db, email="exists@example.com", password="wrong_password")
+                result = crud_user.authenticate(
+                    db, email="exists@example.com", password="wrong_password"
+                )
 
                 # Should return None
                 self.assertIsNone(result)
 
                 # verify_password should be called with user.hashed_password
-                mock_verify_password.assert_called_once_with("wrong_password", "real_hash")
+                mock_verify_password.assert_called_once_with(
+                    "wrong_password", "real_hash"
+                )
 
             mock_verify_password.reset_mock()
 
@@ -52,10 +61,14 @@ class TestAuthSecurity(unittest.TestCase):
             mock_verify_password.return_value = True
 
             with patch.object(crud_user, "get_by_email", return_value=user):
-                result = crud_user.authenticate(db, email="exists@example.com", password="correct_password")
+                result = crud_user.authenticate(
+                    db, email="exists@example.com", password="correct_password"
+                )
 
                 # Should return None because user is inactive
                 self.assertIsNone(result)
 
                 # verify_password should still be called
-                mock_verify_password.assert_called_once_with("correct_password", "real_hash")
+                mock_verify_password.assert_called_once_with(
+                    "correct_password", "real_hash"
+                )
