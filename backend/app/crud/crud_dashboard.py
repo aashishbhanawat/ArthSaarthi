@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.cache.utils import cache_analytics_data
 from app.models.user import User
@@ -202,9 +202,13 @@ def _get_portfolio_history(
         )
 
     # Build transactions query with optional portfolio filter
-    txn_query = db.query(crud.transaction.model).filter(
-        crud.transaction.model.user_id == user.id,
-        crud.transaction.model.transaction_date <= end_date,
+    txn_query = (
+        db.query(crud.transaction.model)
+        .options(joinedload(crud.transaction.model.asset))
+        .filter(
+            crud.transaction.model.user_id == user.id,
+            crud.transaction.model.transaction_date <= end_date,
+        )
     )
     if portfolio_id:
         txn_query = txn_query.filter(
