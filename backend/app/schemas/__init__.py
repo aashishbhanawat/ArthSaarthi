@@ -60,11 +60,14 @@ from .holding import (
     PortfolioSummary,
 )
 from .import_session import (
+    FDImportCommit,
+    FDImportPreview,
     ImportSession,
     ImportSessionCommit,
     ImportSessionCreate,
     ImportSessionPreview,
     ImportSessionUpdate,
+    ParsedFixedDeposit,
     ParsedTransaction,
 )
 from .msg import Msg
@@ -134,6 +137,9 @@ __all__ = [
     "ImportSessionUpdate",
     "Msg",
     "ParsedTransaction",
+    "ParsedFixedDeposit",
+    "FDImportPreview",
+    "FDImportCommit",
     "Portfolio",
     "PortfolioCreate",
     "PortfolioHistoryPoint",
