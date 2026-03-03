@@ -507,5 +507,5 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Restore failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Restore failed: {str(e)}")
+        logger.error(f"Restore failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Restore failed.")

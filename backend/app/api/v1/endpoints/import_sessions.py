@@ -267,8 +267,9 @@ def get_import_session_preview(
 
     try:
         df = pd.read_parquet(import_session.parsed_file_path)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not read parsed data: {e}")
+    except Exception:
+        log.error("Could not read parsed data", exc_info=True)
+        raise HTTPException(status_code=500, detail="Could not read parsed data")
 
     valid_new: list[schemas.ParsedTransaction] = []
     duplicates: list[schemas.ParsedTransaction] = []
@@ -510,20 +511,20 @@ def commit_import_session(
 
     except Exception as e:
         db.rollback()
-        log.error(f"Failed to commit import session {session_id}: {e}")
+        log.error(f"Failed to commit import session {session_id}: {e}", exc_info=True)
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
                 "error_message": (
-                    f"An unexpected error occurred during commit: {str(e)}"
+                    "An unexpected error occurred during commit."
                 ),
             },
         )
         db.commit()
         raise HTTPException(
-            status_code=500, detail=f"Could not commit transactions: {e}"
+            status_code=500, detail="Could not commit transactions."
         )
 
 
@@ -652,8 +653,9 @@ def get_fd_import_session_preview(
 
     try:
         df = pd.read_parquet(import_session.parsed_file_path)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not read parsed data: {e}")
+    except Exception:
+        log.error("Could not read parsed data", exc_info=True)
+        raise HTTPException(status_code=500, detail="Could not read parsed data")
 
     parsed_fds: List[schemas.ParsedFixedDeposit] = []
     duplicates: List[schemas.ParsedFixedDeposit] = []
@@ -741,14 +743,16 @@ def commit_fd_import_session(
 
     except Exception as e:
         db.rollback()
-        log.error(f"Failed to commit FD import session {session_id}: {e}")
+        log.error(
+            f"Failed to commit FD import session {session_id}: {e}", exc_info=True
+        )
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": f"An unexpected error occurred: {str(e)}",
+                "error_message": "An unexpected error occurred.",
             },
         )
         db.commit()
-        raise HTTPException(status_code=500, detail=f"Could not commit FDs: {e}")
+        raise HTTPException(status_code=500, detail="Could not commit FDs.")
