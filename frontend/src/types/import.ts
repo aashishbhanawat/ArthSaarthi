@@ -43,3 +43,24 @@ export interface ImportSessionCommit {
     transactions_to_commit: ParsedTransaction[];
     aliases_to_create: AssetAliasCreate[];
 }
+
+export interface ParsedFixedDeposit {
+    bank: string;
+    account_number: string;
+    principal_amount: number;
+    interest_rate: number;
+    start_date: string;
+    maturity_date: string;
+    maturity_amount: number;
+    interest_payout: 'Payout' | 'Cumulative';
+    compounding_frequency: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
+}
+
+export interface FDImportPreview {
+    parsed_fds: ParsedFixedDeposit[];
+    duplicates: ParsedFixedDeposit[];
+}
+
+export interface FDImportCommit {
+    fds_to_commit: ParsedFixedDeposit[];
+}
