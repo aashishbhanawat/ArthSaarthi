@@ -1,0 +1,33 @@
+# ==========================================
+# Antigravity AI Ignore List
+# Prevents the AI from reading heavy/useless files
+# ==========================================
+
+# 1. Virtual Environments & Dependencies (Massive token drains)
+venv/
+.venv/
+env/
+node_modules/
+
+# 2. Database & Local State
+*.sqlite3
+*.db
+*.vscdb
+.gemini/
+
+# 3. Portfolio Data Files (Crucial to ignore!)
+# Do not let the AI read raw historical data or trade exports
+*.csv
+*.xlsx
+*.json
+data/
+raw_data/
+exports/
+
+# 4. Caches and Build Artifacts
+__pycache__/
+.pytest_cache/
+.coverage
+dist/
+build/
+*.log

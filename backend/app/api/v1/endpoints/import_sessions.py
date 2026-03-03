@@ -525,3 +525,230 @@ def commit_import_session(
         raise HTTPException(
             status_code=500, detail=f"Could not commit transactions: {e}"
         )
+
+
+@router.post(
+    "/fd", response_model=schemas.ImportSession, status_code=status.HTTP_201_CREATED
+)
+async def create_fd_import_session(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user),
+    portfolio_id: uuid.UUID = Form(...),
+    source_type: str = Form(...),
+    file: UploadFile = File(...),
+    password: Optional[str] = Form(None),
+) -> Any:
+    """
+    Create new FD import session from bank statement.
+    """
+    # 0. Verify user has access to the portfolio
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Not enough permissions for this portfolio"
+        )
+
+    # 1. Securely save the uploaded file
+    upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
+    upload_dir.mkdir(exist_ok=True)
+    sanitized_filename = os.path.basename(file.filename)
+    temp_file_path = upload_dir / f"{uuid.uuid4()}_{sanitized_filename}"
+    try:
+        with temp_file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        log.error(f"Failed to save uploaded file: {e}")
+        raise HTTPException(status_code=500, detail="Could not save uploaded file.")
+    finally:
+        file.file.close()
+
+    # 2. Create the initial ImportSession record
+    import_session_in = schemas.ImportSessionCreate(
+        file_name=file.filename,
+        file_path=str(temp_file_path),
+        portfolio_id=portfolio_id,
+        source=source_type,
+        status="UPLOADED",
+    )
+    import_session = crud.import_session.create_with_owner(
+        db=db, obj_in=import_session_in, owner_id=current_user.id
+    )
+
+    # 3. Parse the FD statement
+    try:
+        parser = parser_factory.get_parser(source_type)
+        try:
+            parsed_fds = parser.parse(str(temp_file_path), password=password)
+        except ValueError as e:
+            if "PASSWORD_REQUIRED" in str(e):
+                raise HTTPException(status_code=422, detail="PASSWORD_REQUIRED")
+            raise
+
+        if not parsed_fds:
+            crud.import_session.update(
+                db,
+                db_obj=import_session,
+                obj_in={
+                    "status": "FAILED",
+                    "error_message": "No FD data found in file.",
+                },
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Failed to parse file. No valid FD details were found.",
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"Error parsing FD file {temp_file_path}: {e}")
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={"status": "FAILED", "error_message": str(e)},
+        )
+        raise HTTPException(
+            status_code=400, detail=f"An error occurred during file parsing: {e}"
+        )
+
+    # 4. Save the list of Pydantic models to a Parquet file
+    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_fds])
+    parsed_file_name = f"fd_{import_session.id}.parquet"
+    parsed_file_path = upload_dir / parsed_file_name
+    parsed_df.to_parquet(parsed_file_path)
+
+    # 5. Update the session
+    import_session_update = schemas.ImportSessionUpdate(
+        parsed_file_path=str(parsed_file_path), status="PARSED"
+    )
+    import_session = crud.import_session.update(
+        db, db_obj=import_session, obj_in=import_session_update
+    )
+
+    db.commit()
+    db.refresh(import_session)
+
+    return import_session
+
+
+@router.post("/{session_id}/fd-preview", response_model=schemas.FDImportPreview)
+def get_fd_import_session_preview(
+    session_id: uuid.UUID,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get preview of parsed FDs, flagging duplicates by account_number and start_date.
+    """
+    import_session = crud.import_session.get(db=db, id=session_id)
+    if not import_session:
+        raise HTTPException(status_code=404, detail="Import session not found")
+    if import_session.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    if not import_session.parsed_file_path:
+        raise HTTPException(status_code=400, detail="No parsed file for this session")
+
+    try:
+        df = pd.read_parquet(import_session.parsed_file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not read parsed data: {e}")
+
+    parsed_fds: List[schemas.ParsedFixedDeposit] = []
+    duplicates: List[schemas.ParsedFixedDeposit] = []
+
+    # Get existing FDs for the portfolio for duplicate detection
+    existing_fds = db.query(models.FixedDeposit).filter(
+        models.FixedDeposit.portfolio_id == import_session.portfolio_id
+    ).all()
+
+    # Create an lookup set for (account_number, start_date)
+    existing_lookup = {
+        (fd.account_number, fd.start_date.strftime("%Y-%m-%d"))
+        for fd in existing_fds if fd.account_number and fd.start_date
+    }
+
+    for _, row in df.iterrows():
+        fd_data = row.to_dict()
+        parsed_fd = schemas.ParsedFixedDeposit(**fd_data)
+
+        # Duplicate detection: match both account number AND start date
+        # Renewals (same account_number, diff start_date) are NOT duplicates.
+        if (parsed_fd.account_number, parsed_fd.start_date) in existing_lookup:
+            duplicates.append(parsed_fd)
+        else:
+            parsed_fds.append(parsed_fd)
+
+    return schemas.FDImportPreview(
+        parsed_fds=parsed_fds,
+        duplicates=duplicates,
+    )
+
+
+@router.post("/{session_id}/fd-commit", response_model=Msg)
+def commit_fd_import_session(
+    session_id: uuid.UUID,
+    commit_payload: schemas.FDImportCommit,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Commit selected FDs to the portfolio.
+    """
+    import_session = crud.import_session.get(db=db, id=session_id)
+    if not import_session:
+        raise HTTPException(status_code=404, detail="Import session not found")
+    if import_session.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    if import_session.status != "PARSED":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot commit session with status '{import_session.status}'",
+        )
+
+    try:
+        fds_created = 0
+        for parsed_fd in commit_payload.fds_to_commit:
+            fd_in = schemas.FixedDepositCreate(
+                name=f"{parsed_fd.bank} FD - {parsed_fd.account_number}",
+                account_number=parsed_fd.account_number,
+                principal_amount=Decimal(str(parsed_fd.principal_amount)),
+                interest_rate=Decimal(str(parsed_fd.interest_rate)),
+                start_date=parsed_fd.start_date,
+                maturity_date=parsed_fd.maturity_date,
+                compounding_frequency=parsed_fd.compounding_frequency,
+                interest_payout=parsed_fd.interest_payout,
+                portfolio_id=import_session.portfolio_id,
+            )
+
+            crud.fixed_deposit.create_with_portfolio(
+                db=db, obj_in=fd_in, user_id=current_user.id
+            )
+            fds_created += 1
+
+        # Update session status
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={"status": "COMPLETED", "error_message": None},
+        )
+
+        db.commit()
+        invalidate_caches_for_portfolio(db, portfolio_id=import_session.portfolio_id)
+
+        return {"msg": f"Successfully imported {fds_created} Fixed Deposits."}
+
+    except Exception as e:
+        db.rollback()
+        log.error(f"Failed to commit FD import session {session_id}: {e}")
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={
+                "status": "FAILED",
+                "error_message": f"An unexpected error occurred: {str(e)}",
+            },
+        )
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"Could not commit FDs: {e}")
