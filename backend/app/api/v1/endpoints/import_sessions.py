@@ -202,7 +202,10 @@ async def create_import_session(
         crud.import_session.update(
             db,
             db_obj=import_session,
-            obj_in={"status": "FAILED", "error_message": str(e)},
+            obj_in={
+                "status": "FAILED",
+                "error_message": "An error occurred during file parsing.",
+            },
         )
         raise HTTPException(
             status_code=400, detail="An error occurred during file parsing."
@@ -517,9 +520,7 @@ def commit_import_session(
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": (
-                    f"An unexpected error occurred during commit: {str(e)}"
-                ),
+                "error_message": "An unexpected error occurred during commit.",
             },
         )
         db.commit()
@@ -604,14 +605,17 @@ async def create_fd_import_session(
     except HTTPException:
         raise
     except Exception as e:
-        log.error(f"Error parsing FD file {temp_file_path}: {e}")
+        log.error(f"Error parsing FD file {temp_file_path}: {e}", exc_info=True)
         crud.import_session.update(
             db,
             db_obj=import_session,
-            obj_in={"status": "FAILED", "error_message": str(e)},
+            obj_in={
+                "status": "FAILED",
+                "error_message": "An error occurred during file parsing.",
+            },
         )
         raise HTTPException(
-            status_code=400, detail=f"An error occurred during file parsing: {e}"
+            status_code=400, detail="An error occurred during file parsing."
         )
 
     # 4. Save the list of Pydantic models to a Parquet file
@@ -654,7 +658,8 @@ def get_fd_import_session_preview(
     try:
         df = pd.read_parquet(import_session.parsed_file_path)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not read parsed data: {e}")
+        log.error(f"Could not read parsed data: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Could not read parsed data.")
 
     parsed_fds: List[schemas.ParsedFixedDeposit] = []
     duplicates: List[schemas.ParsedFixedDeposit] = []
@@ -742,14 +747,17 @@ def commit_fd_import_session(
 
     except Exception as e:
         db.rollback()
-        log.error(f"Failed to commit FD import session {session_id}: {e}")
+        log.error(
+            f"Failed to commit FD import session {session_id}: {e}",
+            exc_info=True,
+        )
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": f"An unexpected error occurred: {str(e)}",
+                "error_message": "An unexpected error occurred during commit.",
             },
         )
         db.commit()
-        raise HTTPException(status_code=500, detail=f"Could not commit FDs: {e}")
+        raise HTTPException(status_code=500, detail="Could not commit FDs.")
