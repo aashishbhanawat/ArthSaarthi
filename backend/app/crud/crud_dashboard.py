@@ -39,18 +39,17 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
     agg_total_realized_pnl = Decimal("0.0")
     agg_holdings = []
 
-    # Aggregate data from all portfolios
-    for portfolio in portfolios:
-        portfolio_data = crud.holding.get_portfolio_holdings_and_summary(
-            db, portfolio_id=portfolio.id
-        )
-        summary = portfolio_data.summary
+    # Aggregate data from all portfolios using the new bulk method
+    portfolio_data = crud.holding.get_all_portfolios_holdings_and_summary(
+        db, user_id=user.id
+    )
+    summary = portfolio_data.summary
 
-        agg_total_value += summary.total_value
-        agg_total_unrealized_pnl += summary.total_unrealized_pnl
-        agg_total_realized_pnl += summary.total_realized_pnl
+    agg_total_value = summary.total_value
+    agg_total_unrealized_pnl = summary.total_unrealized_pnl
+    agg_total_realized_pnl = summary.total_realized_pnl
 
-        agg_holdings.extend(portfolio_data.holdings)
+    agg_holdings = portfolio_data.holdings
 
     # Calculate top movers from aggregated holdings
     top_movers = []
@@ -393,15 +392,11 @@ def _get_portfolio_history(
                     if portfolio_data:
                         day_total_value = portfolio_data.summary.total_value
                     else:
-                        # If calculating for 'all' portfolios, we have to sum them up
-                        portfolios = crud.portfolio.get_multi_by_owner(
-                            db=db, user_id=user.id
+                        # If calculating for 'all' portfolios, use the bulk method
+                        p_data = crud.holding.get_all_portfolios_holdings_and_summary(
+                            db, user_id=user.id
                         )
-                        for p in portfolios:
-                            p_data = crud.holding.get_portfolio_holdings_and_summary(
-                                db, portfolio_id=p.id
-                            )
-                            day_total_value += p_data.summary.total_value
+                        day_total_value = p_data.summary.total_value
                 except Exception as e:
                     logger.error(f"Error calculating live holdings for today: {e}")
                     # Fallback to the manual sum below if the live summary fails
