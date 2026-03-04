@@ -105,12 +105,29 @@ def test_dashboard_history_with_foreign_asset(
 
     # 2. Get Dashboard History
     # We expect the value to be Quantity * USD Price * FX Rate
-    history = dashboard.get_history(db=db, user=user, range_str="7d")
+    # Since the new logic for `today` fetches live holdings, we must mock that
+    # specifically for the last day in the chart.
+    expected_value_inr = Decimal("10") * MOCK_USD_PRICE * MOCK_FX_RATE
+
+    with patch(
+        "app.crud.crud_holding.CRUDHolding.get_portfolio_holdings_and_summary"
+    ) as mock_holdings:
+        mock_holdings.return_value = schemas.PortfolioHoldingsAndSummary(
+            summary=schemas.PortfolioSummary(
+                total_value=expected_value_inr,
+                total_invested_amount=expected_value_inr,
+                days_pnl=Decimal("0"),
+                total_unrealized_pnl=Decimal("0"),
+                total_realized_pnl=Decimal("0"),
+            ),
+            holdings=[]
+        )
+
+        history = dashboard.get_history(db=db, user=user, range_str="7d")
 
     assert len(history) > 0
     latest_point = history[-1]
 
-    expected_value_inr = 10 * MOCK_USD_PRICE * MOCK_FX_RATE
     assert latest_point["value"] == expected_value_inr
 
 

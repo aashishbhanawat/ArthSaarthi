@@ -40,6 +40,15 @@ def get_parser(source_type: str) -> BaseParser:
     elif source_type == "ICICI DEMAT Dividend":
         from .icici_demat_dividend_parser import IciciDematDividendParser
         return IciciDematDividendParser()
+    elif source_type == "HDFC Bank FD Statement":
+        from .hdfc_fd_parser import HdfcFdParser
+        return HdfcFdParser()
+    elif source_type == "ICICI Bank FD Statement":
+        from .icici_fd_parser import IciciFdParser
+        return IciciFdParser()
+    elif source_type == "SBI FD Statement":
+        from .sbi_fd_parser import SbiFdParser
+        return SbiFdParser()
     # Add other parsers here in the future
     else:
         from .generic_parser import GenericCsvParser

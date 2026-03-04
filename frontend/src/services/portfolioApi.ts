@@ -271,20 +271,48 @@ export const getAssetAnalytics = async (portfolioId: string, assetId: string): P
 export interface BenchmarkComparisonResponse {
     portfolio_xirr: number;
     benchmark_xirr: number;
+    risk_free_xirr: number;
     chart_data: {
         date: string;
         portfolio_value?: number;
         benchmark_value: number;
         invested_amount: number;
+        risk_free_value: number;
     }[];
+    category_data?: {
+        equity?: {
+            portfolio_xirr: number;
+            benchmark_xirr: number;
+            benchmark_label: string;
+            chart_data: BenchmarkComparisonResponse['chart_data'];
+        };
+        debt?: {
+            portfolio_xirr: number;
+            benchmark_xirr: number;
+            benchmark_label: string;
+            chart_data: BenchmarkComparisonResponse['chart_data'];
+        };
+    };
 }
 
 export const getBenchmarkComparison = async (
     portfolioId: string,
-    benchmarkTicker: string = "^NSEI"
+    benchmarkTicker: string = "^NSEI",
+    benchmarkMode: string = "single",
+    hybridPreset: string | null = null,
+    riskFreeRate: number = 7.0
 ): Promise<BenchmarkComparisonResponse> => {
+    const params: Record<string, string | number> = {
+        benchmark_ticker: benchmarkTicker,
+        benchmark_mode: benchmarkMode,
+        risk_free_rate: riskFreeRate
+    };
+    if (hybridPreset) {
+        params.hybrid_preset = hybridPreset;
+    }
+
     const response = await apiClient.get(`/api/v1/portfolios/${portfolioId}/benchmark-comparison`, {
-        params: { benchmark_ticker: benchmarkTicker }
+        params
     });
     return response.data;
 };

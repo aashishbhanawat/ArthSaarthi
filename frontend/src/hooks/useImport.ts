@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as importApi from '../services/importApi';
-import { AssetAliasCreate, ImportSessionCommit } from '../types/import';
+import { AssetAliasCreate, FDImportCommit, ImportSessionCommit } from '../types/import';
 
 export const useCreateImportSession = () => {
     return useMutation({
@@ -15,6 +15,22 @@ export const useCreateImportSession = () => {
             file: File;
             password?: string;
         }) => importApi.createImportSession(portfolioId, source_type, file, password),
+    });
+};
+
+export const useCreateFDImportSession = () => {
+    return useMutation({
+        mutationFn: ({
+            portfolioId,
+            source_type,
+            file,
+            password,
+        }: {
+            portfolioId: string;
+            source_type: string;
+            file: File;
+            password?: string;
+        }) => importApi.createFDImportSession(portfolioId, source_type, file, password),
     });
 };
 
@@ -33,6 +49,16 @@ export const useImportSessionPreview = (
     return useQuery({
         queryKey: ['importSessionPreview', sessionId, aliasesToCreate],
         queryFn: () => importApi.getImportSessionPreview(sessionId, aliasesToCreate),
+        enabled: !!sessionId,
+    });
+};
+
+export const useFDImportSessionPreview = (
+    sessionId: string
+) => {
+    return useQuery({
+        queryKey: ['fdImportSessionPreview', sessionId],
+        queryFn: () => importApi.getFDImportSessionPreview(sessionId),
         enabled: !!sessionId,
     });
 };
@@ -59,6 +85,33 @@ export const useCommitImportSession = () => {
             queryClient.invalidateQueries({ queryKey: ['portfolioSummary', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['transactions', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+        },
+    });
+};
+
+export const useCommitFDImportSession = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            sessionId,
+            commitPayload,
+        }: {
+            sessionId: string;
+            commitPayload: FDImportCommit;
+            portfolioId: string; // Keep for invalidation
+        }) => importApi.commitFDImportSession(sessionId, commitPayload),
+        onSuccess: (_data, variables) => {
+            const { sessionId, portfolioId } = variables;
+            // Invalidate queries to refetch data after commit
+            queryClient.invalidateQueries({ queryKey: ['importSession', sessionId] });
+            queryClient.invalidateQueries({ queryKey: ['fdImportSessionPreview', sessionId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioSummary', portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioAnalytics', portfolioId] });
+            queryClient.invalidateQueries({ queryKey: ['fixedDeposits', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
         },
     });

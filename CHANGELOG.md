@@ -5,6 +5,19 @@ All notable changes to ArthSaarthi will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-27
+
+### Added
+
+#### Analytics
+- **Advanced Benchmarking** - Hybrid benchmark indices (CRISIL Hybrid 35+65, Balanced 50/50), risk-free rate overlay with configurable annual rate, and category benchmarking (Equity vs Nifty, Debt vs Bond Yields)
+
+### Fixed
+
+- Category benchmark portfolio XIRR now correctly calculated from subset cash flows
+- Dark mode visibility for risk-free rate input
+- Dropdown width for benchmark selector preventing text truncation
+
 ## [1.1.0] - 2026-01-15
 
 ### Added
