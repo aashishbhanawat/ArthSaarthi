@@ -97,10 +97,31 @@ def invalidate_caches_for_portfolio(db: Session, portfolio_id: uuid.UUID):
 
     user_id = portfolio.user_id
 
-    # Invalidate dashboard summary for the user
-    dashboard_key = f"analytics:dashboard_summary:{user_id}"
-    cache.delete(dashboard_key)
-    logger.info(f"Invalidated cache for key: {dashboard_key}")
+    # Invalidate dashboard summary and history for the user
+    dashboard_summary_key = f"analytics:dashboard_summary:{user_id}"
+    dashboard_history_key = f"analytics:dashboard_history:{user_id}"
+    cache.delete(dashboard_summary_key)
+    cache.delete(dashboard_history_key)
+    logger.info(f"Invalidated cache for key: {dashboard_summary_key}")
+    logger.info(f"Invalidated cache for key: {dashboard_history_key}")
+
+    # Delete all DB snapshots for this portfolio to force live recalculation
+    try:
+        from sqlalchemy import delete
+
+        from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+        stmt = delete(DailyPortfolioSnapshot).where(
+            DailyPortfolioSnapshot.portfolio_id == portfolio_id
+        )
+        db.execute(stmt)
+        db.commit()
+        logger.info(
+            f"Deleted all stale DailyPortfolioSnapshots for portfolio {portfolio_id}"
+        )
+    except Exception as e:
+        logger.error(
+            f"Failed to delete stale snapshots for portfolio {portfolio_id}: {e}"
+        )
 
     # Invalidate portfolio-level analytics and holdings summary
     keys_to_delete = [

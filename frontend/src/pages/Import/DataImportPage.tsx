@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePortfolios } from '../../hooks/usePortfolios';
-import { useCreateImportSession } from '../../hooks/useImport';
+import { useCreateImportSession, useCreateFDImportSession } from '../../hooks/useImport';
 import { ArrowUpTrayIcon, LockClosedIcon } from '@heroicons/react/24/solid';
 import { AxiosError } from 'axios';
 
@@ -16,25 +16,38 @@ const DataImportPage: React.FC = () => {
 
     const { data: portfolios, isLoading: isLoadingPortfolios } = usePortfolios();
     const createImportSessionMutation = useCreateImportSession();
+    const createFDImportSessionMutation = useCreateFDImportSession();
+
+    // Determine which mutation to use based on source type
+    const isFDSource = (source: string) => [
+        'HDFC Bank FD Statement',
+        'ICICI Bank FD Statement',
+        'SBI FD Statement'
+    ].includes(source);
+
+    const activeMutation = isFDSource(sourceType)
+        ? createFDImportSessionMutation
+        : createImportSessionMutation;
 
     useEffect(() => {
-        if (createImportSessionMutation.isSuccess && createImportSessionMutation.data) {
-            const sessionId = createImportSessionMutation.data.id;
-            navigate(`/import/${sessionId}/preview`);
+        if (activeMutation.isSuccess && activeMutation.data) {
+            const sessionId = activeMutation.data.id;
+            const path = isFDSource(sourceType) ? `/import/fd/${sessionId}/preview` : `/import/${sessionId}/preview`;
+            navigate(path);
         }
-    }, [createImportSessionMutation.isSuccess, createImportSessionMutation.data, navigate]);
+    }, [activeMutation.isSuccess, activeMutation.data, navigate, sourceType]);
 
     // Handle PASSWORD_REQUIRED error
     useEffect(() => {
-        if (createImportSessionMutation.isError) {
-            const error = createImportSessionMutation.error as AxiosError<{ detail: string }>;
+        if (activeMutation.isError) {
+            const error = activeMutation.error as AxiosError<{ detail: string }>;
             if (error.response?.status === 422 &&
                 error.response?.data?.detail === 'PASSWORD_REQUIRED') {
                 setShowPasswordModal(true);
                 setPasswordError('');
             }
         }
-    }, [createImportSessionMutation.isError, createImportSessionMutation.error]);
+    }, [activeMutation.isError, activeMutation.error]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
@@ -51,7 +64,7 @@ const DataImportPage: React.FC = () => {
             alert('Please select a portfolio, a source type, and a file.');
             return;
         }
-        createImportSessionMutation.mutate({
+        activeMutation.mutate({
             portfolioId: selectedPortfolio,
             source_type: sourceType,
             file: selectedFile,
@@ -67,7 +80,7 @@ const DataImportPage: React.FC = () => {
             return;
         }
         setPasswordError('');
-        createImportSessionMutation.mutate({
+        activeMutation.mutate({
             portfolioId: selectedPortfolio,
             source_type: sourceType,
             file: selectedFile,
@@ -79,12 +92,12 @@ const DataImportPage: React.FC = () => {
         setShowPasswordModal(false);
         setPassword('');
         setPasswordError('');
-        createImportSessionMutation.reset();
+        activeMutation.reset();
     };
 
     // Check if error is not PASSWORD_REQUIRED (to show normal error message)
-    const isNonPasswordError = createImportSessionMutation.isError &&
-        !((createImportSessionMutation.error as AxiosError<{ detail: string }>)
+    const isNonPasswordError = activeMutation.isError &&
+        !((activeMutation.error as AxiosError<{ detail: string }>)
             .response?.data?.detail === 'PASSWORD_REQUIRED');
 
     return (
@@ -107,7 +120,7 @@ const DataImportPage: React.FC = () => {
                                 value={selectedPortfolio}
                                 onChange={(e) => setSelectedPortfolio(e.target.value)}
                                 className="form-select"
-                                disabled={isLoadingPortfolios || createImportSessionMutation.isPending}
+                                disabled={isLoadingPortfolios || activeMutation.isPending}
                                 required
                             >
                                 <option value="" disabled>
@@ -131,7 +144,7 @@ const DataImportPage: React.FC = () => {
                                 value={sourceType}
                                 onChange={(e) => setSourceType(e.target.value)}
                                 className="form-select"
-                                disabled={createImportSessionMutation.isPending}
+                                disabled={activeMutation.isPending}
                                 required
                             >
                                 <option value="Generic CSV">Generic CSV</option>
@@ -146,6 +159,9 @@ const DataImportPage: React.FC = () => {
                                 <option value="ICICI Securities MF">ICICI Securities MF (PDF) - Mutual Funds</option>
                                 <option value="Zerodha Dividend">Zerodha Dividend (XLSX) - Equity</option>
                                 <option value="ICICI DEMAT Dividend">ICICI DEMAT Dividend (PDF) - Equity</option>
+                                <option value="HDFC Bank FD Statement">HDFC Bank FD Statement (PDF) - FD</option>
+                                <option value="ICICI Bank FD Statement">ICICI Bank FD Statement (PDF) - FD</option>
+                                <option value="SBI FD Statement">SBI FD Statement (PDF) - FD</option>
                             </select>
                         </div>
 
@@ -180,13 +196,13 @@ const DataImportPage: React.FC = () => {
 
                     {/* Submission and Status */}
                     <div className="mt-8">
-                        <button type="submit" className="btn btn-primary w-full" disabled={!selectedPortfolio || !selectedFile || !sourceType || createImportSessionMutation.isPending}>
-                            {createImportSessionMutation.isPending ? 'Uploading & Parsing...' : 'Upload and Preview'}
+                        <button type="submit" className="btn btn-primary w-full" disabled={!selectedPortfolio || !selectedFile || !sourceType || activeMutation.isPending}>
+                            {activeMutation.isPending ? 'Uploading & Parsing...' : 'Upload and Preview'}
                         </button>
 
                         {isNonPasswordError && (
                             <div className="alert alert-error mt-4">
-                                Error: {createImportSessionMutation.error.message}
+                                Error: {activeMutation.error.message}
                             </div>
                         )}
                     </div>
@@ -234,9 +250,9 @@ const DataImportPage: React.FC = () => {
                                 type="button"
                                 onClick={handlePasswordSubmit}
                                 className="btn btn-primary"
-                                disabled={createImportSessionMutation.isPending}
+                                disabled={activeMutation.isPending}
                             >
-                                {createImportSessionMutation.isPending ? 'Processing...' : 'Submit'}
+                                {activeMutation.isPending ? 'Processing...' : 'Submit'}
                             </button>
                         </div>
                     </div>
