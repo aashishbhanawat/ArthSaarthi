@@ -9,7 +9,7 @@ venv/
 env/
 node_modules/
 
-# 2. Database & Local State
+# 2. Database & Local State 
 *.sqlite3
 *.db
 *.vscdb

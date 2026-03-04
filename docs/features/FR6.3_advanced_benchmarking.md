@@ -1,10 +1,10 @@
 # Feature Requirement: Advanced Benchmarking
 
-**Feature ID:** FR6.3
-**Title:** Advanced Benchmarking — Hybrid Indices, Risk-Free Rate Overlay & Category Benchmarking
-**Status:** ✅ Done
-**Priority:** P3
-**Version:** v1.2.0
+**Feature ID:** FR6.3  
+**Title:** Advanced Benchmarking — Hybrid Indices, Risk-Free Rate Overlay & Category Benchmarking  
+**Status:** ✅ Done  
+**Priority:** P3  
+**Version:** v1.2.0  
 
 **User Story:** As an investor, I want to compare my portfolio's performance against hybrid (blended) benchmarks, see a risk-free rate growth overlay, and independently benchmark the equity and debt portions of my portfolio, so I can evaluate my returns with the right context.
 
