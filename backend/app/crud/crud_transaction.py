@@ -471,7 +471,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 links_map[link.sell_transaction_id].append(link)
 
         lots = []  # List of buys: {tx, available_quantity}
-        lots_map = {}  # Map for O(1) lookup of lots by transaction ID
+        lots_map = {}  # Map of transaction_id -> lot (for O(1) lookup)
 
         for tx in transactions:
             if tx.transaction_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
