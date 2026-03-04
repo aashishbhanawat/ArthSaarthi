@@ -499,7 +499,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
                     # Deduct from the specific lot
                     if link.buy_transaction_id in lots_map:
-                        lots_map[link.buy_transaction_id]["available_quantity"] -= link.quantity
+                        lots_map[link.buy_transaction_id][
+                            "available_quantity"
+                        ] -= link.quantity
 
                 # 2. Process Remaining Quantity (Unlinked) via FIFO
                 if sell_qty > 0:
