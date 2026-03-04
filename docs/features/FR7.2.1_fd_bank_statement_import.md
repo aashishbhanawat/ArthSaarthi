@@ -1,9 +1,9 @@
 # Feature Plan: FD Bank Statement Import (FR7.2.1)
 
-**Feature ID:** FR7.2.1  
-**Title:** Fixed Deposit Import from Bank Statements (HDFC, ICICI, SBI)  
-**Priority:** P2  
-**Parent FR:** FR7 (Automated Data Import)  
+**Feature ID:** FR7.2.1
+**Title:** Fixed Deposit Import from Bank Statements (HDFC, ICICI, SBI)
+**Priority:** P2
+**Parent FR:** FR7 (Automated Data Import)
 **User Story:** As a user, I want to import my Fixed Deposit details from combined bank statements (PDFs) so that I don't have to manually enter each FD.
 
 ---

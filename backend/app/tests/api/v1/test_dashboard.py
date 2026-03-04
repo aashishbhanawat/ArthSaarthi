@@ -435,4 +435,3 @@ def test_get_portfolio_history_with_snapshots(
     )
     assert today_entry is not None
     assert Decimal(today_entry["value"]).quantize(Decimal("0.01")) == Decimal("100.00")
-
