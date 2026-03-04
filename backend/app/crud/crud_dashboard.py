@@ -122,7 +122,6 @@ def _get_portfolio_history(
     from sqlalchemy import func
     from sqlalchemy.orm import joinedload
 
-    from sqlalchemy.orm import joinedload
     from app import crud, models  # Local import to break circular dependency
     from app.models.portfolio_snapshot import DailyPortfolioSnapshot
 
@@ -228,7 +227,11 @@ def _get_portfolio_history(
         asset_query = asset_query.filter(
             crud.transaction.model.portfolio_id == portfolio_id
         )
-    all_user_assets = asset_query.options(joinedload(crud.asset.model.bond)).distinct().all()
+    all_user_assets = (
+        asset_query.options(joinedload(crud.asset.model.bond))
+        .distinct()
+        .all()
+    )
 
     if not all_user_assets and not all_fds and not all_rds:
         return []
