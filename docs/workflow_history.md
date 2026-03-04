@@ -1,3 +1,178 @@
+## 2026-03-03: Implement Fixed Deposit Import from Bank Statements (FR7.2.1)
+
+**Task:** Automate the import of Fixed Deposits (FDs) from password-protected combined bank statement PDFs (HDFC, ICICI, SBI).
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented a new parallel import flow specifically for Fixed Deposits, allowing users to upload bank statement PDFs and extract FD details into an editable preview before committing to the portfolio.
+
+1. **Backend Infrastructure:** Created a distinct set of endpoints (`/import-sessions/fd`, `/fd-preview`, `/fd-commit`) specifically for non-market assets to bypass standard asset resolution logic. Added `ParsedFixedDeposit` extraction schemas.
+2. **Robust PDF Parsing:** Implemented specific parsers (`HdfcFdParser`, `IciciFdParser`, `SbiFdParser`) using `pdfplumber`, carefully handling password-protected PDFs (handling `pdfminer` empty error bugs for passwords), mapping multi-line rows, and identifying bank-specific tables.
+3. **Data Inference:** Added automatic interest type detection. FDs where Maturity Amount equals Principal Amount are classified as "Payout", otherwise "Cumulative."
+4. **Duplicate & Renewal Tracking:** Implemented check in the preview payload to detect duplicates (matching Account Number & Start Date) while correctly treating subsequent renewals (same Account Number, different Start Date) as new FDs for historical portfolio tracking continuity.
+5. **Frontend Preview:** Added `FDImportPreviewPage.tsx` with an inline editable table UI to review, correct, and commit parsed FDs to the database. Added dedicated import source dropdowns.
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/import_parsers/hdfc_fd_parser.py`, `icici_fd_parser.py`, `sbi_fd_parser.py`
+*   **New:** Unit tests for all three parsers inside `backend/app/tests/services/import_parsers/`
+*   **Modified:** `backend/app/schemas/import_session.py` - Added FD-specific schemas
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` - Added 3 new endpoints
+*   **Modified:** `backend/app/services/import_parsers/parser_factory.py` - Registered new formats
+
+**Frontend:**
+*   **New:** `frontend/src/pages/Import/FDImportPreviewPage.tsx`
+*   **Modified:** `frontend/src/types/import.ts`, `frontend/src/services/importApi.ts`, `frontend/src/hooks/useImport.ts`
+*   **Modified:** `frontend/src/pages/Import/DataImportPage.tsx` - Updated source dropdowns
+*   **Modified:** `frontend/src/App.tsx` - Route for preview page
+
+### Verification
+
+*   **Tests:** New unit tests added for extraction logic handling text stream permutations. Tests passing (Backend 284).
+*   **Manual Validation:** End-to-end verified with actual password-protected statement PDFs from all 3 banks ensuring exact field mapping. Frontend state perfectly synchronizes API updates to the DB.
+
+### Outcome
+
+**Success.** Users can now automate the ingestion of their Fixed Deposit portfolio from statements instead of massive manual data entry.
+
+---
+
+## 2026-03-01: Fix Non-Market Asset Historical Portfolio Values**Task:** Fix portfolio history chart showing `0` for FDs, RDs, PPF, and Bonds on historical dates.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Fixed multiple edge-case bugs preventing non-market assets from contributing to historical portfolio chart values:
+
+1. **Bond Classification:** `BOND` was missing from `supported_types` in `_get_portfolio_history`. Gold Bonds and other traded bonds were excluded from historical price fetches. Added `BOND` to the list.
+2. **PPF Historical Simulation:** `process_ppf_holding` in `crud_ppf.py` crashed during historical simulation because it tried to insert DB records for past financial years. Added `calculation_date` and `simulate_only` parameters.
+3. **FD/RD-Only Portfolio Short-Circuit:** `_get_portfolio_history` returned `[]` if a portfolio contained only FDs/RDs (no market assets), due to `if not all_user_assets: return []`. Extended the check to also consider `all_fds` and `all_rds`.
+4. **Holding Schema Crash:** FDs/RDs without an `account_number` passed `None` to the `ticker_symbol` field, violating the strict `Holding` Pydantic schema. Added fallback `fd.account_number or ""`.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/crud/crud_dashboard.py` — Added `BOND` to `supported_types`, fixed early-return condition, fixed PPF call args.
+*   **Modified:** `backend/app/crud/crud_ppf.py` — Added `calculation_date`, `simulate_only` params and transaction date filtering.
+*   **Modified:** `backend/app/crud/crud_holding.py` — Fallback for `None` ticker_symbol on FD/RD holdings.
+
+### Verification
+
+*   **Tests:** 281/281 backend tests passed. Debug script verified FD values correctly appear on historical dates (e.g., 107k+ for a 100k FD at 7.5% over 1 year).
+
+### Outcome
+
+**Success.** Non-market assets now correctly contribute to historical portfolio values on all dates. Known issue: there may be additional edge cases requiring follow-up.
+
+---
+
+## 2026-02-28: Portfolio Delete FK Constraint Error Handling & Frontend Alert
+
+**Task:** Fix 500 Internal Server Error when deleting a portfolio linked to goals. Show the error to the user.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend:** Wrapped `crud.portfolio.remove` in a try/except for `IntegrityError`. On FK violation (e.g., `goal_links`), rolls back the session and raises `HTTPException(409)` with a message: "Cannot delete this portfolio because it is linked to one or more goals."
+2. **Frontend:** Added `onError` handler to `deletePortfolioMutation.mutate()` in `PortfolioList.tsx` to extract the `detail` message from the 409 response and display it via `alert()`.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/api/v1/endpoints/portfolios.py` — Added `IntegrityError` import and catch block.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/Portfolio/PortfolioList.tsx` — Added `onError` handler.
+
+### Verification
+
+*   **TypeScript:** `npx tsc --noEmit` — zero errors.
+*   **Tests:** All backend tests pass.
+
+### Outcome
+
+**Success.** Users now see a clear error message when attempting to delete a portfolio linked to goals, instead of a raw 500 error.
+
+---
+
+## 2026-02-27: Implement Advanced Benchmarking (FR6.3)
+
+**Task:** Implement hybrid benchmarks, risk-free rate overlay, and category-level XIRR for portfolio benchmarking.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Extended the existing benchmark comparison module with three new modes:
+
+1. **Hybrid Benchmarks:** CRISIL Hybrid 35/65 (35% equity, 65% debt) and Balanced 50/50 presets. Fetches both equity (Nifty) and debt index histories and blends by weight.
+2. **Risk-Free Rate Overlay:** Computes daily compounding values at a configurable annual rate, rendered as a dashed green line on the chart.
+3. **Category Comparison:** Splits portfolio transactions into equity vs debt by asset type. Runs independent simulations for each category against its natural benchmark (Nifty 50 for equity, 10Y bond yield for debt).
+4. **XIRR Fix:** Category XIRR was returning 0% because it used net invested amount as terminal value. Fixed to use actual current market value from holdings data.
+5. **UI "No Data" Fix:** Empty category tabs no longer hide the entire component — shows a message while keeping controls visible.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/benchmark_service.py` — Added `HYBRID_PRESETS`, `_calculate_risk_free_values()`, `_run_simulation()`, `_calculate_category_benchmark()`. Fixed `_calc_subset_xirr` to use actual market value.
+*   **Modified:** `backend/app/api/v1/endpoints/portfolios.py` — Added `benchmark_mode`, `hybrid_preset`, `risk_free_rate` query params.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/Portfolio/BenchmarkComparison.tsx` — Grouped dropdown, risk-free toggle, category tabs, "no data" handling.
+*   **Modified:** `frontend/src/services/portfolioApi.ts` — Extended response types and API params.
+*   **Modified:** `frontend/src/hooks/usePortfolios.ts` — Updated query hook.
+
+### Verification
+
+*   **Backend Tests:** 7/7 benchmark unit tests passing (`test_benchmark_service.py`).
+*   **Frontend:** TypeScript compilation — zero errors.
+*   **E2E:** `analytics.spec.ts` updated for strict mode fix.
+
+### Outcome
+
+**Success.** Users can now compare their portfolio against hybrid indices, view a risk-free rate baseline, and drill down into equity vs debt performance. PR #278 created.
+
+---
+
+## 2026-02-25: Implement Daily Portfolio Snapshots (#162)
+
+**Task:** Implement daily historical price caching to freeze EOD portfolio values.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented a `DailyPortfolioSnapshot` model to capture EOD valuations for each user's portfolio and speed up historical chart rendering.
+1. **Cron & Desktop Scheduler:** Created `take_daily_snapshots.py` for server crons, and hooked `_desktop_snapshot_loop` in `main.py` for Desktop deployment.
+2. **Dashboard Integration:** Updated `crud_dashboard.py` to retrieve the historical portfolio value directly from snapshots, falling back to live calculation only for the current day or missing dates.
+3. **Database Compat:** Wrote a dynamic `sqlite_insert` fallback inside the Snapshot Service to gracefully intercept Postgres `ON CONFLICT DO UPDATE` commands when tests run on SQLite.
+4. **Desktop Mode Mock:** Safely patched `is_key_loaded` and `master_key` decorators on `KeyManager` using `PropertyMock` to bypass PII errors in Docker `test-desktop` targets.
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/models/portfolio_snapshot.py`, `backend/alembic/versions/54cdf6ea7779_add_dailyportfoliosnapshot.py`
+*   **New:** `backend/app/services/snapshot_service.py`, `backend/app/scripts/take_daily_snapshots.py`, `backend/app/tests/services/test_snapshot_service.py`
+*   **Modified:** `backend/app/db/base.py`, `backend/app/main.py`, `backend/app/crud/crud_dashboard.py`, `backend/app/tests/api/v1/test_dashboard.py`
+
+### Verification
+
+*   **Tests:** Passed (284 server backend, 274 desktop backend).
+
+### Outcome
+
+**Success.** Portfolio history loads faster and correctly tracks historical assets that are no longer supported. Closes #162.
+
 ## 2026-02-19: ICICI Portfolio Data Import & Asset Lookup Fixes (#217)
 
 **Task:** Implement a parser for ICICI Direct's "Portfolio Equity" export files (which are TSV files with a `.xls` extension) and ensure reliable asset resolution during import.

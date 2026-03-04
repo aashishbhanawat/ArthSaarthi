@@ -13,6 +13,7 @@ import PortfolioPage from './pages/Portfolio/PortfolioPage';
 import PortfolioDetailPage from './pages/Portfolio/PortfolioDetailPage';
 import DataImportPage from './pages/Import/DataImportPage';
 import ImportPreviewPage from './pages/Import/ImportPreviewPage';
+import FDImportPreviewPage from './pages/Import/FDImportPreviewPage';
 import TransactionsPage from './pages/TransactionsPage';
 import WatchlistsPage from './pages/WatchlistsPage';
 import GoalsPage from './pages/GoalsPage';
@@ -52,6 +53,7 @@ function AppRoutes() {
           <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
           <Route path="/import" element={<DataImportPage />} />
           <Route path="/import/:sessionId/preview" element={<ImportPreviewPage />} />
+          <Route path="/import/fd/:sessionId/preview" element={<FDImportPreviewPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/capital-gains" element={<CapitalGainsPage />} />
           <Route path="/watchlists" element={<WatchlistsPage />} />
