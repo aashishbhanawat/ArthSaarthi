@@ -802,11 +802,17 @@ class CRUDHolding:
         ]
         logger.info(f"Found {len(ppf_assets)} PPF assets to process.")
         # --- PPF Holdings ---
+
+        if ppf_assets:
+            # Lock all PPF asset rows at once before processing to prevent race
+            # conditions on the interest calculation logic, which has a write
+            # side-effect. This is only supported by PostgreSQL.
+            ppf_asset_ids = [asset.id for asset in ppf_assets]
+            db.query(models.Asset).filter(
+                models.Asset.id.in_(ppf_asset_ids)
+            ).with_for_update().all()
+
         for ppf_asset in ppf_assets:
-            # Lock the asset row before processing to prevent race conditions
-            # on the interest calculation logic, which has a write side-effect.
-            # This is only supported by PostgreSQL.
-            db.query(models.Asset).filter_by(id=ppf_asset.id).with_for_update().first()
             logger.info(f"Processing PPF asset {ppf_asset.id}...")
             ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id)
             if ppf_holding:
