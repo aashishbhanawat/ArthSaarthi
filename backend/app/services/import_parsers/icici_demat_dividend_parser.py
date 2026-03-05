@@ -8,10 +8,6 @@ import re
 from datetime import datetime
 from typing import List, Optional
 
-import pdfplumber
-from pdfminer.pdfdocument import PDFPasswordIncorrect
-from pdfminer.pdfparser import PDFSyntaxError
-
 from app.schemas.import_session import ParsedTransaction
 
 from .base_parser import BaseParser
@@ -44,6 +40,10 @@ class IciciDematDividendParser(BaseParser):
         Returns:
             List of ParsedTransaction objects (DIVIDEND type)
         """
+        import pdfplumber
+        from pdfminer.pdfdocument import PDFPasswordIncorrect
+        from pdfminer.pdfparser import PDFSyntaxError
+
         transactions = []
 
         try:

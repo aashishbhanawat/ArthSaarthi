@@ -7,11 +7,12 @@ Uses CALENDAR YEAR (Jan 1 - Dec 31 of AY-2) not Financial Year.
 Example: For AY 2025-26, report assets held Jan 1, 2024 to Dec 31, 2024.
 """
 import logging
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Asset, Transaction
 from app.schemas.enums import TransactionType
@@ -107,7 +108,7 @@ class ScheduleFAService:
                 lot, end_date, asset_prices
             )
             gross_proceeds = lot["gross_proceeds"]  # Calculated during lot extraction
-            gross_received = lot["dividends"]  # Placeholder until dividend tracking
+            gross_received = lot["dividends"]
 
             # Country info
             country_code, country_name = self._get_country_info(asset)
@@ -146,6 +147,7 @@ class ScheduleFAService:
         query = (
             self.db.query(Transaction)
             .join(Asset)
+            .options(joinedload(Transaction.sell_links))
             .filter(
                 Transaction.user_id == user_id,
                 Asset.currency != "INR",
@@ -153,7 +155,8 @@ class ScheduleFAService:
                 Transaction.transaction_type.in_([
                     TransactionType.BUY, TransactionType.RSU_VEST,
                     TransactionType.ESPP_PURCHASE, TransactionType.BONUS,
-                    TransactionType.SELL
+                    TransactionType.SELL, TransactionType.DIVIDEND,
+                    TransactionType.INTEREST_CREDIT, TransactionType.COUPON
                 ])
             )
         )
@@ -166,6 +169,8 @@ class ScheduleFAService:
         # 'buy_tx': tx, 'initial_qty': qty, 'current_qty': qty, 'disposals': [(d,q)]
         # }}
         lots_map = {}
+        # Optimization: Map asset_id to list of lots for faster lookup
+        lots_by_asset = defaultdict(list)
 
         for tx in all_txs:
             # Use IST adjustment for dates
@@ -175,14 +180,17 @@ class ScheduleFAService:
                 TransactionType.BUY, TransactionType.RSU_VEST,
                 TransactionType.ESPP_PURCHASE, TransactionType.BONUS
             ]:
-                lots_map[tx.id] = {
+                lot = {
                     "asset": tx.asset,
                     "buy_transaction": tx,
                     "initial_qty": tx.quantity,
                     "current_qty": tx.quantity,
                     "disposals": [],
-                    "gross_proceeds": Decimal(0)
+                    "gross_proceeds": Decimal(0),
+                    "dividends": Decimal(0)
                 }
+                lots_map[tx.id] = lot
+                lots_by_asset[tx.asset_id].append(lot)
 
             elif tx.transaction_type == TransactionType.SELL:
                 qty_to_sell = tx.quantity
@@ -209,11 +217,12 @@ class ScheduleFAService:
                 # 2. FIFO Fallback for remaining unlinked quantity
                 if qty_to_sell > 0.000001:
                     # Sort active lots by buy date
+                    # Optimization: Use pre-grouped lots by asset
+                    asset_lots = lots_by_asset.get(tx.asset_id, [])
                     active_lots = sorted(
                         [
-                            lot for lot in lots_map.values()
+                            lot for lot in asset_lots
                             if lot["current_qty"] > 0
-                            and lot["asset"].id == tx.asset_id
                         ],
                         key=lambda x: x["buy_transaction"].transaction_date
                     )
@@ -229,6 +238,36 @@ class ScheduleFAService:
 
                         if start_date <= tx_date_ist <= end_date:
                             lot["gross_proceeds"] += take * tx.price_per_unit
+
+            elif tx.transaction_type in [
+                TransactionType.DIVIDEND,
+                TransactionType.INTEREST_CREDIT,
+                TransactionType.COUPON
+            ]:
+                if start_date <= tx_date_ist <= end_date:
+                    # Div/Int transactions might have price * quantity as amount
+                    dividend_amount = tx.quantity * tx.price_per_unit
+
+                    # Distribute proportionately or add to the latest lot?
+                    # Schedule FA requires per-investment reporting.
+                    # We will add it to the active lots
+                    # proportionately based on current_qty,
+                    # or if no active lots, the most recently bought lot.
+                    asset_lots = lots_by_asset.get(tx.asset_id, [])
+                    active_lots = [lot for lot in asset_lots if lot["current_qty"] > 0]
+
+                    if active_lots:
+                        total_qty = sum(lot["current_qty"] for lot in active_lots)
+                        for lot in active_lots:
+                            portion = (lot["current_qty"] / total_qty) * dividend_amount
+                            lot["dividends"] += portion
+                    elif asset_lots:
+                        # Fallback to the latest lot if no active lots
+                        latest_lot = max(
+                            asset_lots,
+                            key=lambda x: x["buy_transaction"].transaction_date,
+                        )
+                        latest_lot["dividends"] += dividend_amount
 
         # Filter Lots valid for this period
         # Valid if: (Held at start) OR (Acquired during period)
@@ -275,7 +314,7 @@ class ScheduleFAService:
                      "quantity_remaining": qty_at_end, # "Closing Balance"
                      "gross_proceeds": lot["gross_proceeds"],
                      "disposals": lot["disposals"], # needed for Peak Value
-                     "dividends": Decimal(0)
+                     "dividends": lot["dividends"]
                  })
 
         return final_lots
@@ -728,8 +767,16 @@ class ScheduleFAService:
         self, holding: dict, start_date: datetime, end_date: datetime
     ) -> Decimal:
         """Dividends/interest received during the calendar year"""
-        # TODO: Integrate with dividend tracking when implemented
-        return Decimal(0)
+        total = Decimal(0)
+        for tx in holding["transactions"]:
+            if start_date <= tx.transaction_date <= end_date:
+                if tx.transaction_type in [
+                    TransactionType.DIVIDEND,
+                    TransactionType.INTEREST_CREDIT,
+                    TransactionType.COUPON
+                ]:
+                    total += tx.quantity * tx.price_per_unit
+        return total
 
     def _get_country_info(self, asset: Asset) -> tuple:
         """Get country code and name from asset or currency"""

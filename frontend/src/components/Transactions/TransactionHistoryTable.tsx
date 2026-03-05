@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
 import TransactionDetailsModal from './TransactionDetailsModal';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 
 interface TransactionHistoryTableProps {
   transactions: Transaction[];
@@ -56,11 +57,12 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
                         {tx.transaction_type}
                         {tx.details && (
                             <button
-                                className="ml-1 text-blue-500 hover:text-blue-700"
+                                className="ml-1 text-blue-500 hover:text-blue-700 align-middle focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
                                 onClick={() => setSelectedTransaction(tx)}
                                 title="View Details"
+                                aria-label="View details"
                             >
-                                (i)
+                                <InformationCircleIcon className="h-5 w-5" />
                             </button>
                         )}
                     </td>
@@ -70,7 +72,7 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
                         Number(tx.price_per_unit) * Number(tx.quantity) * (Number(tx.details?.fx_rate) || 1),
                         'INR'
                     )}</td>
-                    <td className="p-3 text-center"><div className="flex justify-center space-x-2"><button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm">Edit</button><button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm">Delete</button></div></td>
+                    <td className="p-3 text-center"><div className="flex justify-center space-x-2"><button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm" aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Edit</button><button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm" aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Delete</button></div></td>
                 </tr>
             ))}
             </tbody>

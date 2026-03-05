@@ -1,5 +1,12 @@
 import apiClient from './api';
-import { ImportSession, ImportSessionPreview, ImportSessionCommit, AssetAliasCreate } from '../types/import';
+import {
+    ImportSession,
+    ImportSessionPreview,
+    ImportSessionCommit,
+    AssetAliasCreate,
+    FDImportPreview,
+    FDImportCommit
+} from '../types/import';
 import { Msg } from '../types/msg';
 
 export const createImportSession = async (
@@ -26,6 +33,30 @@ export const createImportSession = async (
     return response.data;
 };
 
+export const createFDImportSession = async (
+    portfolioId: string,
+    source_type: string,
+    file: File,
+    password?: string
+): Promise<ImportSession> => {
+    const formData = new FormData();
+    formData.append('portfolio_id', portfolioId);
+    formData.append('source_type', source_type);
+    formData.append('file', file);
+    if (password) {
+        formData.append('password', password);
+    }
+
+    const response = await apiClient.post(
+        `/api/v1/import-sessions/fd`,
+        formData,
+        {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }
+    );
+    return response.data;
+};
+
 export const getImportSession = async (sessionId: string): Promise<ImportSession> => {
     const response = await apiClient.get(`/api/v1/import-sessions/${sessionId}`);
     return response.data;
@@ -40,12 +71,30 @@ export const getImportSessionPreview = async (
     return response.data;
 };
 
+export const getFDImportSessionPreview = async (
+    sessionId: string
+): Promise<FDImportPreview> => {
+    const response = await apiClient.post(`/api/v1/import-sessions/${sessionId}/fd-preview`);
+    return response.data;
+};
+
 export const commitImportSession = async (
     sessionId: string,
     commitPayload: ImportSessionCommit
 ): Promise<Msg> => {
     const response = await apiClient.post(
         `/api/v1/import-sessions/${sessionId}/commit`,
+        commitPayload
+    );
+    return response.data;
+};
+
+export const commitFDImportSession = async (
+    sessionId: string,
+    commitPayload: FDImportCommit
+): Promise<Msg> => {
+    const response = await apiClient.post(
+        `/api/v1/import-sessions/${sessionId}/fd-commit`,
         commitPayload
     );
     return response.data;

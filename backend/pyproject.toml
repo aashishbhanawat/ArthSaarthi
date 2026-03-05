@@ -5,6 +5,7 @@ exclude = [
     "dist",
     "build",
     ".venv",
+    "venv",
 ]
 
 [tool.ruff.lint]

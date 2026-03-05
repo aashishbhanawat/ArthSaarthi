@@ -57,6 +57,6 @@ def reset_db(
         except Exception as e:
             logger.error(f"E2E: Alembic command failed: {e}", exc_info=True)
             # Re-raise as an HTTPException to provide feedback to the test runner
-            raise HTTPException(status_code=500, detail=f"Alembic command failed: {e}")
+            raise HTTPException(status_code=500, detail="Alembic command failed.")
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
