@@ -123,7 +123,7 @@ def test_dashboard_history_with_foreign_asset(
             holdings=[]
         )
 
-        history = dashboard.get_history(db=db, user=user, range_str="7d")
+        history = dashboard.get_history(db=db, user_id=user.id, range_str="7d")
 
     assert len(history) > 0
     latest_point = history[-1]

@@ -569,11 +569,14 @@ class CRUDDashboard:
         return _calculate_dashboard_summary(db=db, user=user)
 
     @cache_analytics_data(
-        prefix="analytics:dashboard_history", arg_names=["user", "range_str"]
+        prefix="analytics:dashboard_history", arg_names=["user_id", "range_str"]
     )
     def get_history(
-        self, db: Session, *, user: User, range_str: str
+        self, db: Session, *, user_id: uuid.UUID, range_str: str
     ) -> List[Dict[str, Any]]:
+        user = db.get(User, user_id)
+        if not user:
+            return []
         return _get_portfolio_history(db=db, user=user, range_str=range_str)
 
     def get_allocation(
