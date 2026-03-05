@@ -249,7 +249,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
             <div role="dialog" className="modal-content w-11/12 md:w-3/4 lg:max-w-2xl p-6 overflow-visible" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-bold">{isEditMode ? 'Edit' : 'Add'} ESPP/RSU Award</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
