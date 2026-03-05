@@ -1,6 +1,47 @@
-## 2026-03-01: Fix Non-Market Asset Historical Portfolio Values
+## 2026-03-03: Implement Fixed Deposit Import from Bank Statements (FR7.2.1)
 
-**Task:** Fix portfolio history chart showing `0` for FDs, RDs, PPF, and Bonds on historical dates.
+**Task:** Automate the import of Fixed Deposits (FDs) from password-protected combined bank statement PDFs (HDFC, ICICI, SBI).
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Implemented a new parallel import flow specifically for Fixed Deposits, allowing users to upload bank statement PDFs and extract FD details into an editable preview before committing to the portfolio.
+
+1. **Backend Infrastructure:** Created a distinct set of endpoints (`/import-sessions/fd`, `/fd-preview`, `/fd-commit`) specifically for non-market assets to bypass standard asset resolution logic. Added `ParsedFixedDeposit` extraction schemas.
+2. **Robust PDF Parsing:** Implemented specific parsers (`HdfcFdParser`, `IciciFdParser`, `SbiFdParser`) using `pdfplumber`, carefully handling password-protected PDFs (handling `pdfminer` empty error bugs for passwords), mapping multi-line rows, and identifying bank-specific tables.
+3. **Data Inference:** Added automatic interest type detection. FDs where Maturity Amount equals Principal Amount are classified as "Payout", otherwise "Cumulative."
+4. **Duplicate & Renewal Tracking:** Implemented check in the preview payload to detect duplicates (matching Account Number & Start Date) while correctly treating subsequent renewals (same Account Number, different Start Date) as new FDs for historical portfolio tracking continuity.
+5. **Frontend Preview:** Added `FDImportPreviewPage.tsx` with an inline editable table UI to review, correct, and commit parsed FDs to the database. Added dedicated import source dropdowns.
+
+### File Changes
+
+**Backend:**
+*   **New:** `backend/app/services/import_parsers/hdfc_fd_parser.py`, `icici_fd_parser.py`, `sbi_fd_parser.py`
+*   **New:** Unit tests for all three parsers inside `backend/app/tests/services/import_parsers/`
+*   **Modified:** `backend/app/schemas/import_session.py` - Added FD-specific schemas
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` - Added 3 new endpoints
+*   **Modified:** `backend/app/services/import_parsers/parser_factory.py` - Registered new formats
+
+**Frontend:**
+*   **New:** `frontend/src/pages/Import/FDImportPreviewPage.tsx`
+*   **Modified:** `frontend/src/types/import.ts`, `frontend/src/services/importApi.ts`, `frontend/src/hooks/useImport.ts`
+*   **Modified:** `frontend/src/pages/Import/DataImportPage.tsx` - Updated source dropdowns
+*   **Modified:** `frontend/src/App.tsx` - Route for preview page
+
+### Verification
+
+*   **Tests:** New unit tests added for extraction logic handling text stream permutations. Tests passing (Backend 284).
+*   **Manual Validation:** End-to-end verified with actual password-protected statement PDFs from all 3 banks ensuring exact field mapping. Frontend state perfectly synchronizes API updates to the DB.
+
+### Outcome
+
+**Success.** Users can now automate the ingestion of their Fixed Deposit portfolio from statements instead of massive manual data entry.
+
+---
+
+## 2026-03-01: Fix Non-Market Asset Historical Portfolio Values**Task:** Fix portfolio history chart showing `0` for FDs, RDs, PPF, and Bonds on historical dates.
 
 **AI Assistant:** Antigravity
 **Role:** Full-Stack Developer

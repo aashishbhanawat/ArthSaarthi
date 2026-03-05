@@ -52,7 +52,7 @@
     -   **Hybrid Benchmarks:** CRISIL Hybrid 35/65 and Balanced 50/50 blends.
     -   **Risk-Free Rate Overlay:** Dashed green line on chart showing compound risk-free growth.
     -   **Category Comparison:** Equity vs Nifty 50, Debt vs bond yield — with accurate XIRR using actual market values.
--   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS, KFintech, Zerodha Coin, and generic CSV files with **asset alias mapping**. Aliases are manageable (CRUD) from the Admin section.
+-   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS, KFintech, Zerodha Coin, and generic CSV files. Also includes **Fixed Deposit (FD) PDF imports** (HDFC, ICICI, SBI) with password protection support. Supports **asset alias mapping** with admin management (view, edit, delete) of all aliases.
 -   **Watchlists:** Create and manage custom watchlists.
 -   **Goal Planning:** Define financial goals and link assets to track progress.
 -   **Mutual Fund Dividends:** Track both cash and reinvested dividends for mutual funds.

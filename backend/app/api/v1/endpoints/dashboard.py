@@ -44,7 +44,7 @@ def get_portfolio_history(
     Retrieve historical portfolio value data for a specified time range.
     """
     history = crud.dashboard.get_history(
-        db=db, user=current_user, range_str=range.value
+        db=db, user_id=current_user.id, range_str=range.value
     )
     return {"history": history}
 
