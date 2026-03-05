@@ -289,8 +289,9 @@ def _get_realized_and_unrealized_cash_flows(
                     fifo_index += 1
 
     unrealized_cash_flows = []
-    for buy_tx in buys:
-        if buy_tx.quantity > 0:
+    for lot in buys:
+        if lot["available_quantity"] > 0:
+            buy_tx = lot["transaction"]
             if (
                 buy_tx.transaction_type == "RSU_VEST"
                 and buy_tx.details
@@ -314,7 +315,7 @@ def _get_realized_and_unrealized_cash_flows(
             unrealized_cash_flows.append(
                 (
                     buy_tx.transaction_date.date(),
-                    float(-buy_tx.quantity * buy_price * buy_fx_rate)
+                    float(-lot["available_quantity"] * buy_price * buy_fx_rate)
                 )
             )
 
