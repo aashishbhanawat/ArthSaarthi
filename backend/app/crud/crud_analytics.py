@@ -121,6 +121,9 @@ def _get_realized_and_unrealized_cash_flows(
 
     sells = [t for t in sorted_txs if t.transaction_type == "SELL"]
 
+    # Optimization: Track the first available buy lot to avoid O(N*M) scans
+    fifo_index = 0
+
     # Separate income from contributions
     income_flows = [
         t for t in sorted_txs
@@ -224,54 +227,55 @@ def _get_realized_and_unrealized_cash_flows(
 
         # --- Priority 2: FIFO for remaining quantity ---
         if sell_quantity_to_match > 0:
-            for buy_copy in buys:
-                if sell_quantity_to_match == 0:
-                    break
+            while fifo_index < len(buys) and sell_quantity_to_match > 0:
+                buy_copy = buys[fifo_index]
+                if buy_copy.quantity <= 0:
+                    fifo_index += 1
+                    continue
 
-                if buy_copy.quantity > 0:
-                    match_quantity = min(sell_quantity_to_match, buy_copy.quantity)
+                match_quantity = min(sell_quantity_to_match, buy_copy.quantity)
 
-                    # --- Price & P&L Calculation logic (Shared) ---
-                    if (
-                        buy_copy.transaction_type == "RSU_VEST"
-                        and buy_copy.details
-                        and "fmv" in buy_copy.details
-                    ):
-                        buy_price = Decimal(str(buy_copy.details["fmv"]))
-                    else:
-                        buy_price = (
-                            buy_copy.price_per_unit
-                            if buy_copy.price_per_unit is not None
-                            else Decimal("0.0")
-                        )
-
-                    buy_fx_rate = (
-                        Decimal(str(buy_copy.details.get("fx_rate", 1)))
-                        if buy_copy.details
-                        else Decimal(1)
+                # --- Price & P&L Calculation logic (Shared) ---
+                if (
+                    buy_copy.transaction_type == "RSU_VEST"
+                    and buy_copy.details
+                    and "fmv" in buy_copy.details
+                ):
+                    buy_price = Decimal(str(buy_copy.details["fmv"]))
+                else:
+                    buy_price = (
+                        buy_copy.price_per_unit
+                        if buy_copy.price_per_unit is not None
+                        else Decimal("0.0")
                     )
 
-                    buy_cost_for_match = match_quantity * buy_price * buy_fx_rate
-                    sell_proceeds_for_match = match_quantity * sell_price * sell_fx_rate
+                buy_fx_rate = (
+                    Decimal(str(buy_copy.details.get("fx_rate", 1)))
+                    if buy_copy.details
+                    else Decimal(1)
+                )
 
-                    # P&L
-                    pnl = sell_proceeds_for_match - buy_cost_for_match
-                    realized_pnl += pnl
+                buy_cost_for_match = match_quantity * buy_price * buy_fx_rate
+                sell_proceeds_for_match = match_quantity * sell_price * sell_fx_rate
 
-                    # Cashflows
-                    realized_cash_flows.append(
-                        (buy_copy.transaction_date.date(), float(-buy_cost_for_match))
+                # P&L
+                pnl = sell_proceeds_for_match - buy_cost_for_match
+                realized_pnl += pnl
+
+                # Cashflows
+                realized_cash_flows.append(
+                    (buy_copy.transaction_date.date(), float(-buy_cost_for_match))
+                )
+                realized_cash_flows.append(
+                    (
+                        sell_tx.transaction_date.date(),
+                        float(sell_proceeds_for_match),
                     )
-                    realized_cash_flows.append(
-                        (
-                            sell_tx.transaction_date.date(),
-                            float(sell_proceeds_for_match),
-                        )
-                    )
+                )
 
-                    # Update state
-                    buy_copy.quantity -= match_quantity
-                    sell_quantity_to_match -= match_quantity
+                # Update state
+                buy_copy.quantity -= match_quantity
+                sell_quantity_to_match -= match_quantity
 
     unrealized_cash_flows = []
     for buy_tx in buys:
