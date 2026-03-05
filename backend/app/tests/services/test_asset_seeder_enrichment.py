@@ -1,8 +1,10 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from sqlalchemy.orm import Session
-from app.services.asset_seeder import AssetSeeder
+
 from app.models.asset import Asset
+from app.services.asset_seeder import AssetSeeder
 
 
 @pytest.fixture
