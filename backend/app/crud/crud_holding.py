@@ -9,6 +9,7 @@ from decimal import Decimal
 from typing import List
 
 from dateutil.relativedelta import relativedelta
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -835,12 +836,16 @@ class CRUDHolding:
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
         total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
-        all_portfolio_assets = crud.asset.get_multi_by_portfolio(
-            db, portfolio_id=portfolio_id
+        ppf_assets = (
+            db.query(models.Asset)
+            .join(models.Transaction)
+            .filter(
+                models.Transaction.portfolio_id == portfolio_id,
+                func.upper(models.Asset.asset_type) == "PPF"
+            )
+            .distinct()
+            .all()
         )
-        ppf_assets = [
-            asset for asset in all_portfolio_assets if asset.asset_type.upper() == "PPF"
-        ]
         logger.info(f"Found {len(ppf_assets)} PPF assets to process.")
         # --- PPF Holdings ---
 
@@ -992,19 +997,16 @@ class CRUDHolding:
         holdings_list.extend(rd_holdings)
         total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
 
-        # Get all assets connected to this user via transactions
-        user_asset_ids = db.query(models.Transaction.asset_id).filter(
-            models.Transaction.user_id == user_id
-        ).distinct().all()
-        user_asset_ids = [row[0] for row in user_asset_ids]
-
-        all_user_assets = (
-            db.query(models.Asset).filter(models.Asset.id.in_(user_asset_ids)).all()
+        ppf_assets = (
+            db.query(models.Asset)
+            .join(models.Transaction)
+            .filter(
+                models.Transaction.user_id == user_id,
+                func.upper(models.Asset.asset_type) == "PPF"
+            )
+            .distinct()
+            .all()
         )
-
-        ppf_assets = [
-            asset for asset in all_user_assets if asset.asset_type.upper() == "PPF"
-        ]
         logger.info(f"Found {len(ppf_assets)} PPF assets to process.")
 
         # --- PPF Holdings ---

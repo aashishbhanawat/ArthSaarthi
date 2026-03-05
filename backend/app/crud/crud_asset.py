@@ -64,25 +64,17 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         Retrieves all assets that have at least one transaction in the
         specified portfolio.
          """
-        # Get distinct asset_ids from transactions for the given portfolio
         query = (
-            db.query(models.Transaction.asset_id)
+            db.query(self.model)
+            .join(models.Transaction)
             .filter(models.Transaction.portfolio_id == portfolio_id)
-            .distinct()
         )
 
         # Join with Asset to filter by asset_type if provided
         if asset_type:
-            query = query.join(self.model, self.model.id == models.Transaction.asset_id)
             query = query.filter(self.model.asset_type == asset_type)
 
-        asset_ids = [item[0] for item in query.all()]
-
-        if not asset_ids:
-            return []
-
-        # Fetch the Asset objects corresponding to these IDs
-        return db.query(self.model).filter(self.model.id.in_(asset_ids)).all()
+        return query.distinct().all()
 
     def create_ppf_and_first_contribution(
         self, db: Session, *, portfolio_id: uuid.UUID, ppf_in: schemas.PpfAccountCreate
