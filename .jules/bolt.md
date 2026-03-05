@@ -5,3 +5,7 @@
 ## 2025-02-18 - [Parallel vs Serial API Calls in Loops]
 **Learning:** The application was performing serial synchronous network calls (yfinance) and repeated large data deserialization (AMFI) inside a holding calculation loop. This led to O(N) latency where N is the number of unenriched assets.
 **Action:** Always identify loop-independent operations (like fetching a full dataset) and hoist them out. For item-dependent IO operations, use `concurrent.futures.ThreadPoolExecutor` to parallelize them if async is not available.
+
+## $(date +%Y-%m-%d) - [O(N*M) FIFO Loop Optimization]
+**Learning:** During FIFO lot matching, iterating through the list of buys starting from the beginning `for lot in buys:` for every sell transaction creates O(N*M) complexity since earlier lots are repeatedly checked and skipped once exhausted.
+**Action:** Use a persistent `fifo_index` initialized before the sell loop. Inside the sell loop, use `while fifo_index < len(buys):` and advance `fifo_index` whenever a lot is fully consumed. This ensures each lot is checked at most once, resulting in amortized O(1) time per sell.

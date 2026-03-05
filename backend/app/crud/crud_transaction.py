@@ -472,6 +472,8 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
         lots = []  # List of buys: {tx, available_quantity}
         lots_map = {}  # Map of transaction_id -> lot (for O(1) lookup)
+        # Optimization: track the first available lot to avoid O(N*M) scans
+        fifo_index = 0
 
         for tx in transactions:
             if tx.transaction_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
@@ -504,13 +506,18 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
                 # 2. Process Remaining Quantity (Unlinked) via FIFO
                 if sell_qty > 0:
-                    for lot in lots:
-                        if lot["available_quantity"] > 0:
-                            take = min(lot["available_quantity"], sell_qty)
-                            lot["available_quantity"] -= take
-                            sell_qty -= take
-                            if sell_qty <= 0:
-                                break
+                    while fifo_index < len(lots) and sell_qty > 0:
+                        lot = lots[fifo_index]
+                        if lot["available_quantity"] <= 0:
+                            fifo_index += 1
+                            continue
+
+                        take = min(lot["available_quantity"], sell_qty)
+                        lot["available_quantity"] -= take
+                        sell_qty -= take
+
+                        if lot["available_quantity"] <= 0:
+                            fifo_index += 1
 
         # Filter out fully consumed lots
         available_lots = [
