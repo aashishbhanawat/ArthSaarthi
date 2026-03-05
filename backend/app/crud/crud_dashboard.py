@@ -119,7 +119,6 @@ def _get_portfolio_history(
                       portfolio. If None, calculate for all user portfolios.
     """
     from sqlalchemy import func
-    from sqlalchemy.orm import joinedload
 
     from app import crud, models  # Local import to break circular dependency
     from app.models.portfolio_snapshot import DailyPortfolioSnapshot
