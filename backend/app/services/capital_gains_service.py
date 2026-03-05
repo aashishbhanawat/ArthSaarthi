@@ -207,8 +207,20 @@ class CapitalGainsService:
 
         sell_price = sell_tx.price_per_unit
 
-        total_buy_value = buy_price * quantity
-        total_sell_value = sell_price * quantity
+        # Proportional Fees
+        prop_buy_fees = (
+            (buy_tx.fees / buy_tx.quantity) * quantity
+            if buy_tx.quantity > 0
+            else Decimal(0)
+        )
+        prop_sell_fees = (
+            (sell_tx.fees / sell_tx.quantity) * quantity
+            if sell_tx.quantity > 0
+            else Decimal(0)
+        )
+
+        total_buy_value = (buy_price * quantity) + prop_buy_fees
+        total_sell_value = (sell_price * quantity) - prop_sell_fees
         gain = total_sell_value - total_buy_value
 
         # Holding period for foreign assets: 24 months (unlisted)
@@ -288,7 +300,19 @@ class CapitalGainsService:
 
         sell_price = sell_tx.price_per_unit
 
-        cost_of_acquisition = buy_price * quantity
+        # Proportional Fees
+        prop_buy_fees = (
+            (buy_tx.fees / buy_tx.quantity) * quantity
+            if buy_tx.quantity > 0
+            else Decimal(0)
+        )
+        prop_sell_fees = (
+            (sell_tx.fees / sell_tx.quantity) * quantity
+            if sell_tx.quantity > 0
+            else Decimal(0)
+        )
+
+        cost_of_acquisition = (buy_price * quantity) + prop_buy_fees
         full_value_consideration = sell_price * quantity
 
         # Classification
@@ -322,17 +346,19 @@ class CapitalGainsService:
         # Grandfathering Logic
         fmv_2018 = None
         is_grandfathered = False
+        actual_cost_total = cost_of_acquisition # Initial cost including buy fees
+
         if is_ltcg and asset_category == "EQUITY_LISTED" and buy_date < DATE_2018_01_31:
             is_grandfathered = True
             fmv_2018 = self._get_grandfathering_price(asset)
             if fmv_2018:
                 # Formula: Cost = Max(Actual Cost, Min(FMV, SalePrice))
-                # All per unit
-                lower_of_fmv_sale = min(fmv_2018, sell_price)
-                new_cost_per_unit = max(buy_price, lower_of_fmv_sale)
-                cost_of_acquisition = new_cost_per_unit * quantity
+                # Note: For S112A, cost of acquisition is calculated at total level
+                lower_of_fmv_sale = min(fmv_2018 * quantity, full_value_consideration)
+                cost_of_acquisition = max(actual_cost_total, lower_of_fmv_sale)
 
-        gain = full_value_consideration - cost_of_acquisition
+        net_sell_value = full_value_consideration - prop_sell_fees
+        gain = net_sell_value - cost_of_acquisition
 
         # Gain Entry
         entry = GainEntry(
@@ -346,7 +372,7 @@ class CapitalGainsService:
             buy_price=buy_price, # showing original buy price for reference
             sell_price=sell_price,
             total_buy_value=cost_of_acquisition,
-            total_sell_value=full_value_consideration,
+            total_sell_value=net_sell_value,
             gain=gain,
             gain_type=gain_type,
             holding_days=holding_days,
@@ -365,13 +391,13 @@ class CapitalGainsService:
                 quantity=quantity,
                 sale_price=sell_price,
                 full_value_consideration=full_value_consideration,
-                cost_of_acquisition_orig=buy_price * quantity,
+                cost_of_acquisition_orig=actual_cost_total,
                 fmv_31jan2018=fmv_2018,
                 total_fmv=(fmv_2018 * quantity) if fmv_2018 else None,
                 cost_of_acquisition_final=cost_of_acquisition,
-                expenditure=Decimal(0), # TODO: Add fees
-                total_deductions=cost_of_acquisition,
-                balance=gain,
+                expenditure=prop_sell_fees,
+                total_deductions=cost_of_acquisition + prop_sell_fees,
+                balance=full_value_consideration - (cost_of_acquisition + prop_sell_fees),
                 acquired_date=buy_date,
                 transfer_date=sell_date
              )
