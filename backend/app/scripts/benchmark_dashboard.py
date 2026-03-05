@@ -2,25 +2,21 @@ import os
 import sys
 import time
 import uuid
-from decimal import Decimal
 from datetime import date, timedelta
+from decimal import Decimal
 
 # Add backend to PYTHONPATH
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
+
 from app.db.base_class import Base
-from app.models.user import User
-from app.models.portfolio import Portfolio
 from app.models.asset import Asset
+from app.models.portfolio import Portfolio
 from app.models.transaction import Transaction
-from app.models.transaction_link import TransactionLink
-from app.models.recurring_deposit import RecurringDeposit
-from app.models.fixed_deposit import FixedDeposit
-from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+from app.models.user import User
 from app.schemas.enums import TransactionType
-from sqlalchemy import event
 
 # Set a dummy SECRET_KEY for config
 os.environ["SECRET_KEY"] = "dummy"
@@ -30,7 +26,6 @@ engine = create_engine("sqlite:///:memory:", echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Import all models to ensure they are registered with Base
-from app import models
 Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
@@ -39,7 +34,9 @@ db = SessionLocal()
 query_count = 0
 
 @event.listens_for(engine, "before_cursor_execute")
-def receive_before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+def receive_before_cursor_execute(
+    conn, cursor, statement, parameters, context, executemany
+):
     global query_count
     query_count += 1
 
@@ -110,11 +107,14 @@ def run_benchmark():
     # but we will patch them for the test
 
     from unittest.mock import patch
-    with patch('app.services.financial_data_service.financial_data_service.get_current_prices', return_value={}):
+    with patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value={},
+    ):
         dashboard.get_summary(db=db, user_id=user.id)
 
     end = time.time()
-    print(f"--- Dashboard Summary ---")
+    print("--- Dashboard Summary ---")
     print(f"Time: {end - start:.4f} seconds")
     print(f"Queries: {query_count}")
 
@@ -122,13 +122,18 @@ def run_benchmark():
     query_count = 0
     start = time.time()
 
-    with patch('app.services.financial_data_service.financial_data_service.get_historical_prices', return_value={}), \
-         patch('app.services.financial_data_service.financial_data_service.get_current_prices', return_value={}):
+    with patch(
+        "app.services.financial_data_service.financial_data_service.get_historical_prices",
+        return_value={},
+    ), patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value={},
+    ):
         # "all" range will trigger the `if current_day == end_date:` block
         dashboard.get_history(db=db, user=user, range_str="all")
 
     end = time.time()
-    print(f"\n--- Dashboard History ('all') ---")
+    print("\n--- Dashboard History ('all') ---")
     print(f"Time: {end - start:.4f} seconds")
     print(f"Queries: {query_count}")
 

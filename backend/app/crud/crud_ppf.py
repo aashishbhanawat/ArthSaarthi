@@ -236,10 +236,15 @@ def process_ppf_holding(
                             logger.info(
                                 f"[PPF] FY {fy_end}: INSERTING new transaction"
                             )
-                            # When calculating for all portfolios, portfolio_id is None, so we shouldn't attempt to create missing interest credits here.
+                            # When calculating for all portfolios, portfolio_id is None,
+                            # so we shouldn't attempt to create missing interest
+                            # credits here.
                             # We can just simulate them.
                             if portfolio_id is None:
-                                logger.info(f"[PPF] FY {fy_end}: Cannot create transaction because portfolio_id is None. Simulating instead.")
+                                logger.info(
+                                    f"[PPF] FY {fy_end}: Cannot create transaction "
+                                    f"because portfolio_id is None. Simulating instead."
+                                )
                                 pass
                             else:
                                 try:

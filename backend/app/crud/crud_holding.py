@@ -916,7 +916,7 @@ class CRUDHolding:
     def get_all_portfolios_holdings_and_summary(
         self, db: Session, *, user_id: uuid.UUID
     ) -> schemas.PortfolioHoldingsAndSummary:
-        """Calculates the consolidated holdings and a summary for all portfolios of a user."""
+        """Calculates consolidated holdings and summary for all user portfolios."""
         start_time = time.time()
         logger.info(
             f"Starting holdings calculation for all portfolios of user_id: {user_id}"
@@ -938,7 +938,11 @@ class CRUDHolding:
         portfolio_ids = [p.id for p in portfolios]
 
         # Get all transactions, FDs, and RDs for the user
-        transactions = db.query(models.Transaction).filter(models.Transaction.user_id == user_id).all()
+        transactions = (
+            db.query(models.Transaction)
+            .filter(models.Transaction.user_id == user_id)
+            .all()
+        )
 
         all_fixed_deposits = db.query(models.FixedDeposit).filter(
             models.FixedDeposit.portfolio_id.in_(portfolio_ids)
@@ -950,7 +954,11 @@ class CRUDHolding:
 
         # --- Process Market-Traded Assets First ---
         market_traded_holdings, total_realized_pnl = _process_market_traded_assets(
-            db, portfolio_id=None, user_id=user_id, transactions=transactions, initial_realized_pnl=Decimal("0.0")
+            db,
+            portfolio_id=None,
+            user_id=user_id,
+            transactions=transactions,
+            initial_realized_pnl=Decimal("0.0"),
         )
         logger.info(
             f"Processed {len(market_traded_holdings)} market-traded assets. "
@@ -981,7 +989,9 @@ class CRUDHolding:
         ).distinct().all()
         user_asset_ids = [row[0] for row in user_asset_ids]
 
-        all_user_assets = db.query(models.Asset).filter(models.Asset.id.in_(user_asset_ids)).all()
+        all_user_assets = (
+            db.query(models.Asset).filter(models.Asset.id.in_(user_asset_ids)).all()
+        )
 
         ppf_assets = [
             asset for asset in all_user_assets if asset.asset_type.upper() == "PPF"
@@ -990,20 +1000,27 @@ class CRUDHolding:
 
         # --- PPF Holdings ---
         for ppf_asset in ppf_assets:
-            # We don't have a single portfolio id for PPF since we're processing for the whole user.
-            # process_ppf_holding needs a portfolio_id (it checks for transactions for that portfolio).
-            # We will run process_ppf_holding for each portfolio that has this asset and combine them,
-            # or better, process_ppf_holding can take portfolio_id=None which in current code isn't directly supported.
-            # Looking at `process_ppf_holding` in crud_ppf, if portfolio_id=None, it uses user_id if passed,
-            # Wait, `process_ppf_holding` takes `portfolio_id: uuid.UUID | None = None`. If None, it processes all transactions for the asset across all portfolios.
+            # We don't have a single portfolio id for PPF since we're
+            # processing for the whole user.
+            # process_ppf_holding needs a portfolio_id (it checks for
+            # transactions for that portfolio).
+            # We will run process_ppf_holding for each portfolio that has
+            # this asset and combine them, or better, process_ppf_holding
+            # can take portfolio_id=None which isn't directly supported.
+            # Looking at `process_ppf_holding` in crud_ppf, if
+            # portfolio_id=None, it uses user_id if passed.
+            # `process_ppf_holding` takes `portfolio_id: uuid.UUID | None = None`.
+            # If None, it processes all transactions for the asset
+            # across all portfolios.
 
             # Lock the asset row before processing
             db.query(models.Asset).filter_by(id=ppf_asset.id).with_for_update().first()
             logger.info(f"Processing PPF asset {ppf_asset.id}...")
 
-            # Call process_ppf_holding with portfolio_id=None to aggregate across all portfolios
-            # NOTE: We may need to pass user_id to ensure it only grabs for this user if the asset is shared,
-            # but usually PPF asset is per user.
+            # Call process_ppf_holding with portfolio_id=None to aggregate
+            # across all portfolios
+            # NOTE: We may need to pass user_id to ensure it only grabs for this
+            # user if the asset is shared, but usually PPF asset is per user.
             ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id=None)
             if ppf_holding:
                 holdings_list.append(ppf_holding)
