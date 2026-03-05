@@ -307,10 +307,10 @@ def sync_assets(
         return AssetSyncResult(status="success", data=result)
 
     except Exception as e:
-        logger.error(f"Asset sync failed: {str(e)}")
+        logger.error(f"Asset sync failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Asset sync failed: {str(e)}",
+            detail="Asset sync failed.",
         )
 
 
@@ -618,8 +618,8 @@ def bulk_seed_fmv_2018(
             message=f"Updated {result['updated']} assets from BSE/AMFI data",
         )
     except Exception as e:
-        logger.error(f"Bulk seed failed: {e}")
+        logger.error(f"Bulk seed failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Bulk seed failed: {str(e)}",
+            detail="Bulk seed failed.",
         )

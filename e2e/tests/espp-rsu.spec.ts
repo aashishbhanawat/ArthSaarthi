@@ -30,7 +30,7 @@ test.describe.serial('ESPP and RSU Flow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.getByLabel('Email address').fill(standardUser.email);
-    await page.getByLabel('Password').fill(standardUser.password);
+    await page.getByLabel('Password', { exact: true }).fill(standardUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });

@@ -471,16 +471,17 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 links_map[link.sell_transaction_id].append(link)
 
         lots = []  # List of buys: {tx, available_quantity}
+        lots_map = {}  # Map of transaction_id -> lot (for O(1) lookup)
 
         for tx in transactions:
             if tx.transaction_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
-                lots.append(
-                    {
-                        "transaction": tx,
-                        "available_quantity": tx.quantity,
-                        "date": tx.transaction_date,
-                    }
-                )
+                lot = {
+                    "transaction": tx,
+                    "available_quantity": tx.quantity,
+                    "date": tx.transaction_date,
+                }
+                lots.append(lot)
+                lots_map[tx.id] = lot
             elif tx.transaction_type == "SELL":
                 # Skip the excluded sell (used during auto-linking)
                 if exclude_sell_id and tx.id == exclude_sell_id:
@@ -497,10 +498,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                     sell_qty -= link.quantity
 
                     # Deduct from the specific lot
-                    for lot in lots:
-                        if lot["transaction"].id == link.buy_transaction_id:
-                            lot["available_quantity"] -= link.quantity
-                            break
+                    if link.buy_transaction_id in lots_map:
+                        lot = lots_map[link.buy_transaction_id]
+                        lot["available_quantity"] -= link.quantity
 
                 # 2. Process Remaining Quantity (Unlinked) via FIFO
                 if sell_qty > 0:
