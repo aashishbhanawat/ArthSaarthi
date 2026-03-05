@@ -2,8 +2,9 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import MagicMock
 
-from app.services.capital_gains_service import CapitalGainsService
 from app.models import Asset, Transaction, TransactionLink
+from app.services.capital_gains_service import CapitalGainsService
+
 
 def test_process_single_link_with_fees():
     service = CapitalGainsService(db=MagicMock())
@@ -126,6 +127,7 @@ def test_process_foreign_link_with_fees():
     asset.name = "Apple Inc"
     asset.asset_type = "STOCK"
     asset.currency = "USD"
+    asset.country = None
 
     # Setup Buy Transaction
     buy_tx = MagicMock(spec=Transaction)

@@ -397,7 +397,8 @@ class CapitalGainsService:
                 cost_of_acquisition_final=cost_of_acquisition,
                 expenditure=prop_sell_fees,
                 total_deductions=cost_of_acquisition + prop_sell_fees,
-                balance=full_value_consideration - (cost_of_acquisition + prop_sell_fees),
+                balance=full_value_consideration
+                - (cost_of_acquisition + prop_sell_fees),
                 acquired_date=buy_date,
                 transfer_date=sell_date
              )
