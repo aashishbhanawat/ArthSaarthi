@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.cache.utils import cache_analytics_data
 from app.models.user import User
@@ -119,7 +119,6 @@ def _get_portfolio_history(
                       portfolio. If None, calculate for all user portfolios.
     """
     from sqlalchemy import func
-    from sqlalchemy.orm import joinedload
 
     from app import crud, models  # Local import to break circular dependency
     from app.models.portfolio_snapshot import DailyPortfolioSnapshot
