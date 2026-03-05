@@ -360,16 +360,30 @@ def _process_market_traded_assets(
 
     # --- Pre-fetch Transaction Links ---
     transaction_ids = [tx.id for tx in transactions]
-    links = db.query(TransactionLink).filter(
+    all_links = db.query(TransactionLink).filter(
         TransactionLink.sell_transaction_id.in_(transaction_ids)
     ).all()
 
     sell_links_map = defaultdict(list)
-    for link in links:
+    for link in all_links:
         sell_links_map[link.sell_transaction_id].append(link)
 
     # Map transaction ID to object for quick lookup of Buy price
     tx_map = {tx.id: tx for tx in transactions}
+
+    # Optimization: Pre-fetch any linked buy transactions not in tx_map
+    # (e.g. from other portfolios)
+    missing_buy_ids = {
+        link.buy_transaction_id for link in all_links
+        if link.buy_transaction_id not in tx_map
+    }
+    if missing_buy_ids:
+        logger.debug(f"Pre-fetching {len(missing_buy_ids)} linked buy transactions.")
+        missing_txs = db.query(models.Transaction).filter(
+            models.Transaction.id.in_(missing_buy_ids)
+        ).all()
+        for m_tx in missing_txs:
+            tx_map[m_tx.id] = m_tx
 
     for tx in transactions:
         asset = asset_map.get(tx.asset_id)
@@ -466,11 +480,6 @@ def _process_market_traded_assets(
                 if links:
                     for link in links:
                         buy_tx = tx_map.get(link.buy_transaction_id)
-                        # Fallback for buy_tx finding (safe-guard)
-                        if not buy_tx:
-                             buy_tx = db.query(models.Transaction).get(
-                                 link.buy_transaction_id
-                             )
 
                         if buy_tx:
                             # For RSU_VEST, cost basis is FMV, not price_per_unit ($0)
