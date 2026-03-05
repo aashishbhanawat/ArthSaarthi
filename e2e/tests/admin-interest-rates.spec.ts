@@ -10,7 +10,7 @@ test.describe.serial('Admin Interest Rate Management', () => {
     // Login as admin before each test
     await page.goto('/');
     await page.getByLabel('Email address').fill(adminUser.email);
-    await page.getByLabel('Password').fill(adminUser.password);
+    await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });

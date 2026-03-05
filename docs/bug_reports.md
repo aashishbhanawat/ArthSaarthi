@@ -7071,3 +7071,11 @@ The system creates two transactions for a bonus issue: a `BONUS` type (audit rec
 **Description:**
 The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (Unrealized 1200), but the system implements FIFO (Unrealized 1150).
 **Resolution:** Updated test assertions to match correct FIFO logic.
+
+## [2026-03-03] PDF Password Handling & Parser bounds in FD Import
+**Issue**: PDF parsers raised empty error messages for password-protected files resulting in 500 errors. Also ICICI/HDFC parsers had wrong index bounds for maturity/principal amounts.
+**Fix**: Standardized empty string check in ValueError exceptions across HDFC, ICICI, SBI parsers to trigger UI password modals. Corrected column index scans in ICICI/HDFC to accurately fetch amounts.
+
+## [2026-03-03] PDF Password Handling in FD Import parsers
+**Issue**: PDF parsers raised empty error messages for password-protected files resulting in 500 errors.
+**Fix**: Standardized empty string check in ValueError exceptions across `HdfcFdParser`, `IciciFdParser`, `SbiFdParser` to trigger UI password modals.

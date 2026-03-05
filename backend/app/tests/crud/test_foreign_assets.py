@@ -110,7 +110,7 @@ def test_dashboard_history_with_foreign_asset(
     expected_value_inr = Decimal("10") * MOCK_USD_PRICE * MOCK_FX_RATE
 
     with patch(
-        "app.crud.crud_holding.CRUDHolding.get_portfolio_holdings_and_summary"
+        "app.crud.crud_holding.CRUDHolding.get_all_portfolios_holdings_and_summary"
     ) as mock_holdings:
         mock_holdings.return_value = schemas.PortfolioHoldingsAndSummary(
             summary=schemas.PortfolioSummary(
@@ -123,7 +123,7 @@ def test_dashboard_history_with_foreign_asset(
             holdings=[]
         )
 
-        history = dashboard.get_history(db=db, user=user, range_str="7d")
+        history = dashboard.get_history(db=db, user_id=user.id, range_str="7d")
 
     assert len(history) > 0
     latest_point = history[-1]

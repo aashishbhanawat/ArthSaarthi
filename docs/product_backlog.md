@@ -181,6 +181,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Advanced Benchmarking (FR6.3):** Hybrid benchmarks, risk-free rate overlay, and category-level (equity/debt) XIRR comparison. **✅ Complete**
 -   **Portfolio Delete FK Error Handling:** 409 Conflict response for portfolios linked to goals, with frontend error display. **✅ Complete**
 -   **Non-Market Asset Historical Chart Accuracy:** Fixed FD/RD/PPF/Bond historical values in portfolio chart. **✅ Complete (edge cases may remain)**
+-   **Fixed Deposit Import from Bank Statements (FR7.2.1):** Import FDs from HDFC, ICICI, and SBI combined PDFs. **✅ Complete**
 -   **Test Coverage Audit (#250):** Review all backend integration tests to identify gaps in coverage, particularly for RSU/ESPP/foreign asset holdings calculations, linked transaction sell paths, and edge cases in analytics (XIRR, P&L). Prompted by Issue #249 where missing test coverage allowed a bug in RSU avg price calculation to go undetected.
 -   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS).
 -   **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.

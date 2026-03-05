@@ -1,0 +1,290 @@
+--- PAGE 0 ---
+Page 1 of 7
+Aashish Bhanawat
+Customer ID : 23518343
+No 8 2nd Floor Kodi Krupa 5th Cross
+Air View Colony Hal Airport Area A
+RM Name : Kavitha M
+Step Above Pre School RM Contact No : --040-68430212
+Bangalore RM Email ID : Kavitha.M@Hdfc.Bank.In
+Karnataka
+India
+560017
+Statement as on : 31/01/2026
+Customer Email : JOY.KARAN@GMAIL.COM
+Account Relationship Summary
+CR Limit Sweep in FD Amt# Hold Total Withdrawable**
+Ccy Account Type Balance
+DR Amount Balance
+INR SAVINGS ACCOUNTS 1947595.96 CR 0.00 2193359.82 0.00 4140955.78
+INR TERM DEPOSITS 4553444.56 CR
+** Total Withdrawable Balance does not include Hold Amount and Unclear Amount.
+Total Withdrawable Balance=Balance+Limit+Sweep in FD Amt-Hold Amount.
+# Sweep In FD may have linkages to multiple accounts.
+----------------
+--- PAGE 1 ---
+Page 2 of 7
+Aashish Bhanawat
+Customer ID : 23518343 Account Branch : 76
+Account Number : 00761050328019 M G Road
+Joint Holders 1 : Not Applicable Hdfc Bank Ltd
+144 And 144,1
+Joint Holders 2 : Not Applicable
+Shubharam Complex, Mg Road
+Account Type : SAVINGS - RESIDENTS (105)
+Bengaluru
+Statement From : 01/01/2026 To 31/01/2026 Karnataka
+Currency : INR 560001
+Nomination : Registered RTGS/NEFT IFSC : HDFC0000076 MICR: 560240007
+Savings Account Details
+Opening Balance : 20,46,745.18 Limit : 0.00
+Txn Date Narration Withdrawals Deposits Closing Balance
+01/01/2026 50100655557915 NET BANKING SI -Child 10,000.00 0.00 20,36,745.18
+Education Value Dt 01/01/2026
+01/01/2026 ACH D- INDIAN CLEARING 10,000.00 0.00 20,26,745.18
+CORP-0000LX6ZOUAUValue Dt
+01/01/2026 Ref 003715745852
+01/01/2026 ACH D- INDIAN CLEARING 20,000.00 0.00 20,06,745.18
+CORP-00004KT9Q33IValue Dt 01/01/2026
+Ref 003715747513
+01/01/2026 ACH D- ZERODHA BROKING 15,000.00 0.00 19,91,745.18
+LTD-ERRRWNJJH49ANValue Dt
+01/01/2026 Ref 003716792477
+01/01/2026 ACH D- ZERODHA BROKING 25,000.00 0.00 19,66,745.18
+LTD-526TFZU2QA7X5Value Dt 01/01/2026
+Ref 003716827433
+01/01/2026 ACH D- INDIAN CLEARING 20,000.00 0.00 19,46,745.18
+CORP-00003BQTEQN6Value Dt
+01/01/2026 Ref 003715656655
+02/01/2026 UPI-PZ HDFC CC 11,998.00 0.00 19,34,747.18
+BILLPAY-pzhdfcccbillpay.75104155@
+hdfcbank-HDFC0MERUPI-032347571539-e
+mpty note Value Dt 02/01/2026 Ref
+032347571539
+02/01/2026 NEFT Dr-SBIN0004926-Nagendra V 24,000.00 0.00 19,10,747.18
+J-NETBANK,
+MUM-HDFCH00709403318-Rent Jan2026
+Value Dt 02/01/2026 Ref
+HDFCH00709403318
+03/01/2026 NEFT Cr-YESB0000001-ZERODHA 0.00 1,00,780.75 20,11,527.93
+BROKING LTD-DSCNB A/C-AASHISH
+BHANAWAT-YESF360037115346 Value Dt
+03/01/2026 Ref YESF360037115346
+04/01/2026 ATW-416021XXXXXX4954-S1ANNV38-UD 15,000.00 0.00 19,96,527.93
+AIPUR Value Dt 04/01/2026 Ref 2345
+04/01/2026 UPI-SUNIL KUMAR 130.00 0.00 19,96,397.93
+AUDICHYA-sunilaudichya1@okhdfcbank-U
+BIN0805858-637006886226-Paidvia CRED
+Value Dt 04/01/2026 Ref 637006886226
+----------------
+--- PAGE 2 ---
+Page 3 of 7
+Aashish Bhanawat
+Customer ID : 23518343 Account Branch : 76
+Account Number : 00761050328019 M G Road
+Joint Holders 1 : Not Applicable Hdfc Bank Ltd
+144 And 144,1
+Joint Holders 2 : Not Applicable
+Shubharam Complex, Mg Road
+Account Type : SAVINGS - RESIDENTS (105)
+Bengaluru
+Statement From : 01/01/2026 To 31/01/2026 Karnataka
+Currency : INR 560001
+Nomination : Registered RTGS/NEFT IFSC : HDFC0000076 MICR: 560240007
+Savings Account Details
+Opening Balance : 20,46,745.18 Limit : 0.00
+Txn Date Narration Withdrawals Deposits Closing Balance
+05/01/2026 UPI-ZERODHA BROKING 1,00,000.00 0.00 18,96,397.93
+LIMI-zerodhabroking.brk@
+validhdfc-HDFC0MERUPI-116703834844-7
+121703411851384 Z Value Dt 05/01/2026
+Ref 116703834844
+05/01/2026 UPI-GOOGLE INDIA 0.00 2.00 18,96,399.93
+DIGITAL-goog-payments@
+axisbank-UTIB0000553-943455420056-UPI
+Value Dt 05/01/2026 Ref 943455420056
+06/01/2026 UPI-LOKESH KUMAR 550.00 0.00 18,95,849.93
+VADERA-chhayapargi7@
+oksbi-SBIN0011405-637207209876-Paid
+via CRED Value Dt 06/01/2026 Ref
+637207209876
+07/01/2026 UPI-R CHITRA-paytmqr64cghp@ 112.00 0.00 18,95,737.93
+ptys-YESB0PTMUPI-637312218899-Paid
+via CRED Value Dt 07/01/2026 Ref
+637312218899
+09/01/2026 UPI-KANIKA RAJ A-8279718991@ 134.00 0.00 18,95,603.93
+kotak811-KKBK0000432-637520720965-Pai
+d via CRED Value Dt 09/01/2026 Ref
+637520720965
+09/01/2026 UPI-JAMEEL TAJ-8123550710-2@ 157.00 0.00 18,95,446.93
+axl-UBIN0811408-637504349673-UPI Value
+Dt 09/01/2026 Ref 637504349673
+10/01/2026 UPI-PARTHI K-7795368462@ 10.00 0.00 18,95,436.93
+axl-SBIN0000862-637608847128-Paid via
+CRED Value Dt 10/01/2026 Ref
+637608847128
+10/01/2026 UPI-V SINDIA-7204215210@ 40.00 0.00 18,95,396.93
+ybl-IOBA0001600-637614840034-Paid via
+CRED Value Dt 10/01/2026 Ref
+637614840034
+10/01/2026 UPI-KARADIHALLI MARALA 40.00 0.00 18,95,356.93
+S-paytmqr6lpac1@
+ptys-YESB0PTMUPI-637639813931-Paid
+via SuperMone Value Dt 10/01/2026 Ref
+637639813931
+----------------
+--- PAGE 3 ---
+Page 4 of 7
+Aashish Bhanawat
+Customer ID : 23518343 Account Branch : 76
+Account Number : 00761050328019 M G Road
+Joint Holders 1 : Not Applicable Hdfc Bank Ltd
+144 And 144,1
+Joint Holders 2 : Not Applicable
+Shubharam Complex, Mg Road
+Account Type : SAVINGS - RESIDENTS (105)
+Bengaluru
+Statement From : 01/01/2026 To 31/01/2026 Karnataka
+Currency : INR 560001
+Nomination : Registered RTGS/NEFT IFSC : HDFC0000076 MICR: 560240007
+Savings Account Details
+Opening Balance : 20,46,745.18 Limit : 0.00
+Txn Date Narration Withdrawals Deposits Closing Balance
+10/01/2026 UPI-HARA 50.00 0.00 18,95,306.93
+TRADERS-vyapar.170724806462@
+hdfcbank-HDFC0MERUPI-637639971084-P
+aid via SuperMone Value Dt 10/01/2026 Ref
+637639971084
+10/01/2026 UPI-INDIAN 240.00 0.00 18,95,066.93
+ENTERPRISES-paytm.s1gb57a@
+pty-YESB0MCHUPI-637607840553-Paid
+via CRED Value Dt 10/01/2026 Ref
+637607840553
+14/01/2026 UPI-LAVINA 5,000.00 0.00 18,90,066.93
+CHOUDHARY-choudhary.lavina@
+okicici-HDFC0000075-638002984777-UPI
+Value Dt 14/01/2026 Ref 638002984777
+14/01/2026 UPI-CRED Club-cred.club@ 17,252.79 0.00 18,72,814.14
+axisb-UTIB0000114-117185073477-paymen
+t on CRED Value Dt 14/01/2026 Ref
+117185073477
+15/01/2026 ACH D- ZERODHA BROKING 5,000.00 0.00 18,67,814.14
+LTD-4UL51WKZJN34ZValue Dt 15/01/2026
+Ref 003848655288
+15/01/2026 ACH D- INDIAN CLEARING 5,000.00 0.00 18,62,814.14
+CORP-0000ZDX7ZJQFValue Dt 15/01/2026
+Ref 003847926586
+17/01/2026 UPI-MAHESH S-paytmqr6w1bnl@ 130.00 0.00 18,62,684.14
+ptys-YESB0PTMUPI-638303871218-Paid
+via SuperMone Value Dt 17/01/2026 Ref
+638303871218
+17/01/2026 UPI-SHASHIKALA C W O 90.00 0.00 18,62,594.14
+NAR-q367815382@
+ybl-YESB0YBLUPI-638320921449-Paid via
+CRED Value Dt 17/01/2026 Ref
+638320921449
+20/01/2026 UPI-OIS CV RAMAN 1,500.00 0.00 18,61,094.14
+NAGAR-oiscvramannagar1.rzp@
+hdfcbank-HDFC0MERUPI-102507628798-S
+68epn0ooNfOCR Value Dt 20/01/2026 Ref
+102507628798
+----------------
+--- PAGE 4 ---
+Page 5 of 7
+Aashish Bhanawat
+Customer ID : 23518343 Account Branch : 76
+Account Number : 00761050328019 M G Road
+Joint Holders 1 : Not Applicable Hdfc Bank Ltd
+144 And 144,1
+Joint Holders 2 : Not Applicable
+Shubharam Complex, Mg Road
+Account Type : SAVINGS - RESIDENTS (105)
+Bengaluru
+Statement From : 01/01/2026 To 31/01/2026 Karnataka
+Currency : INR 560001
+Nomination : Registered RTGS/NEFT IFSC : HDFC0000076 MICR: 560240007
+Savings Account Details
+Opening Balance : 20,46,745.18 Limit : 0.00
+Txn Date Narration Withdrawals Deposits Closing Balance
+23/01/2026 NEFT Cr-CHAS0INBX01-Salary for JAN 0.00 1,85,321.00 20,46,415.14
+2026 CISCO SYSTEMS (INDIA) PRIVATE
+-Aashish Bhanawat-CHASH00010406844
+Value Dt 23/01/2026 Ref
+CHASH00010406844
+25/01/2026 UPI-GOOGLE INDIA 0.00 2.00 20,46,417.14
+DIGITAL-goog-payments@
+axisbank-UTIB0000553-104461050256-UPI
+Value Dt 25/01/2026 Ref 104461050256
+29/01/2026 UPI-ZERODHA BROKING 1,00,000.00 0.00 19,46,417.14
+LIMI-zerodhabroking.brk@
+validhdfc-HDFC0MERUPI-117843896276-2
+198282469824281 Z Value Dt 29/01/2026
+Ref 117843896276
+30/01/2026 NEFT Cr-CHAS0INBX01-CISCO SYSTEMS 0.00 1,178.82 19,47,595.96
+(INDIA) PRIVATE LIMITED-Aashish
+Bhanawat-CHASH00010641737 Value Dt
+30/01/2026 Ref CHASH00010641737
+SUMMARY
+Opening Balance Debit Amount Credit Amount Closing Balance
+20,46,745.18 3,86,433.79 2,87,284.57 19,47,595.96
+Debit Count Credit Count
+28 5
+Total Withdrawal Balance*** : 41,40,955.78
+Total Sweep In FD Linked** : 21,93,359.82
+**FD may be linked to other Accounts as well
+*** Total withdrawable Balance=Available Balance+Limit+Sweep In FD Amount-Hold Amount
+----------------
+--- PAGE 5 ---
+Page 6 of 7
+Aashish Bhanawat
+Customer ID : 23518343
+Statement as on : 31/01/2026
+FD DETAILS :- FOR CURRENT FINANCIAL YEAR
+FD Number FD Original Open/Last Rate Of Lien Maturity Amount Nomination
+CCY Principal Renew Date Interest Amount (Revised) Registered
+Current FD Amount # Maturity Available
+Date ** Withdrawable***
+50300049402823 INR 20,000.00 12/07/2025 6.25 0.00 41,585.82 YES
+40,123.12 13/07/2026 39,078.82
+50300059413360 INR 1,00,000.00 24/09/2025 6.25 0.00 2,05,765.82 YES
+1,96,071.52 25/09/2026 1,93,359.82
+50300111907221 INR 1,00,000.00 29/09/2025 6.25 0.00 1,89,523.22 YES
+1,80,625.62 29/09/2026 1,78,127.22
+50300885648697 INR 10,55,475.00 17/02/2025 7.10 0.00 12,47,678.70 YES
+11,98,390.70 18/05/2026 11,42,878.70
+50301073043210 INR 10,00,000.00 26/11/2024 7.25 0.00 11,13,451.00 YES
+10,66,859.60 26/05/2026 10,00,000.00
+50301110212250 INR 10,00,000.00 06/02/2025 7.25 0.00 11,13,472.00 YES
+10,49,604.00 06/08/2026 10,00,000.00
+50301208142294 INR 10,00,000.00 29/08/2025 6.60 0.00 11,03,473.00 YES
+10,14,972.40 01/03/2027 10,00,000.00
+# Current Principal is net of Withdrawals
+** Maturity Amount is subjected to TDS, if applicable and also partial withdrawal done if any.
+*** Available Withdrawable Balance=Current Principal - Lien Amount
+----------------
+--- PAGE 6 ---
+Page 7 of 7
+Aashish Bhanawat
+Customer ID : 23518343
+Statement as on : 31/01/2026
+Details of TD Interest in current Financial Year
+Interest Paid/ Tax
+Interest Accrued
+FD Number FD CCY Compounded (In INR) Deducted
+(In INR) (In INR)
+50300049402823 INR 1,947.00 137.41 194.70
+50300059413360 INR 9,036.00 1,309.38 903.60
+50300086806981 INR 81.00 0.00 8.10
+50300109926206 INR 5,204.00 0.00 520.40
+50300111907221 INR 8,480.00 1,051.59 848.00
+50300885648697 INR 52,120.00 17,716.48 5,212.00
+50301073043210 INR 49,170.00 14,198.00 4,917.00
+50301110212250 INR 44,399.00 18,138.02 4,439.90
+50301208142294 INR 16,636.00 11,745.87 1,663.60
+Disclaimer: While TDS across your Fixed deposits may be recovered from a linked operative account (if opted for) or Fixed deposit interest as the
+case may be; for a ease of understanding we have apportioned this uniformly across all your Fixed deposits. For details of the exact recovery of
+TDS pertaining to specific deposits, pls contact your branch.
+Your Combined statement generation frequency is monthly and the next statement will be generated on next month end. Contents of
+this statement will be considered correct if no error is reported within 30 days of receipt of statement.
+*** End of Statement ***
+----------------

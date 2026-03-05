@@ -148,10 +148,10 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
 
     if (benchmarkMode === 'category' && data.category_data) {
         if (categoryTab === 'equity' && data.category_data.equity) {
-            currentData = data.category_data.equity;
+            currentData = { ...data.category_data.equity, risk_free_xirr: data.risk_free_xirr };
             benchmarkLabel = data.category_data.equity.benchmark_label;
         } else if (categoryTab === 'debt' && data.category_data.debt) {
-            currentData = data.category_data.debt;
+            currentData = { ...data.category_data.debt, risk_free_xirr: data.risk_free_xirr };
             benchmarkLabel = data.category_data.debt.benchmark_label;
         } else {
             noDataForCategory = true;

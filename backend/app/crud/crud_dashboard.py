@@ -39,18 +39,17 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
     agg_total_realized_pnl = Decimal("0.0")
     agg_holdings = []
 
-    # Aggregate data from all portfolios
-    for portfolio in portfolios:
-        portfolio_data = crud.holding.get_portfolio_holdings_and_summary(
-            db, portfolio_id=portfolio.id
-        )
-        summary = portfolio_data.summary
+    # Aggregate data from all portfolios using the new bulk method
+    portfolio_data = crud.holding.get_all_portfolios_holdings_and_summary(
+        db, user_id=user.id
+    )
+    summary = portfolio_data.summary
 
-        agg_total_value += summary.total_value
-        agg_total_unrealized_pnl += summary.total_unrealized_pnl
-        agg_total_realized_pnl += summary.total_realized_pnl
+    agg_total_value = summary.total_value
+    agg_total_unrealized_pnl = summary.total_unrealized_pnl
+    agg_total_realized_pnl = summary.total_realized_pnl
 
-        agg_holdings.extend(portfolio_data.holdings)
+    agg_holdings = portfolio_data.holdings
 
     # Calculate top movers from aggregated holdings
     top_movers = []
@@ -63,10 +62,7 @@ def _calculate_dashboard_summary(db: Session, *, user: User) -> Dict[str, Any]:
             # The holding schema now contains the asset's currency.
             # We need to pass this to the frontend so it can display the correct
             # currency symbol for the `current_price`.
-            asset_currency = "INR" # Default
-            asset = crud.asset.get(db, id=h.asset_id)
-            if asset:
-                asset_currency = asset.currency
+            asset_currency = h.currency
 
             top_movers.append(
                 {
@@ -123,6 +119,7 @@ def _get_portfolio_history(
                       portfolio. If None, calculate for all user portfolios.
     """
     from sqlalchemy import func
+    from sqlalchemy.orm import joinedload
 
     from app import crud, models  # Local import to break circular dependency
     from app.models.portfolio_snapshot import DailyPortfolioSnapshot
@@ -229,7 +226,11 @@ def _get_portfolio_history(
         asset_query = asset_query.filter(
             crud.transaction.model.portfolio_id == portfolio_id
         )
-    all_user_assets = asset_query.distinct().all()
+    all_user_assets = (
+        asset_query.options(joinedload(crud.asset.model.bond))
+        .distinct()
+        .all()
+    )
 
     if not all_user_assets and not all_fds and not all_rds:
         return []
@@ -276,9 +277,13 @@ def _get_portfolio_history(
         )
 
     # Build transactions query with optional portfolio filter
-    txn_query = db.query(crud.transaction.model).filter(
-        crud.transaction.model.user_id == user.id,
-        crud.transaction.model.transaction_date <= end_date,
+    txn_query = (
+        db.query(crud.transaction.model)
+        .options(joinedload(crud.transaction.model.asset))
+        .filter(
+            crud.transaction.model.user_id == user.id,
+            crud.transaction.model.transaction_date <= end_date,
+        )
     )
     if portfolio_id:
         txn_query = txn_query.filter(
@@ -393,15 +398,11 @@ def _get_portfolio_history(
                     if portfolio_data:
                         day_total_value = portfolio_data.summary.total_value
                     else:
-                        # If calculating for 'all' portfolios, we have to sum them up
-                        portfolios = crud.portfolio.get_multi_by_owner(
-                            db=db, user_id=user.id
+                        # If calculating for 'all' portfolios, use the bulk method
+                        p_data = crud.holding.get_all_portfolios_holdings_and_summary(
+                            db, user_id=user.id
                         )
-                        for p in portfolios:
-                            p_data = crud.holding.get_portfolio_holdings_and_summary(
-                                db, portfolio_id=p.id
-                            )
-                            day_total_value += p_data.summary.total_value
+                        day_total_value = p_data.summary.total_value
                 except Exception as e:
                     logger.error(f"Error calculating live holdings for today: {e}")
                     # Fallback to the manual sum below if the live summary fails
@@ -563,11 +564,14 @@ class CRUDDashboard:
         return _calculate_dashboard_summary(db=db, user=user)
 
     @cache_analytics_data(
-        prefix="analytics:dashboard_history", arg_names=["user", "range_str"]
+        prefix="analytics:dashboard_history", arg_names=["user_id", "range_str"]
     )
     def get_history(
-        self, db: Session, *, user: User, range_str: str
+        self, db: Session, *, user_id: uuid.UUID, range_str: str
     ) -> List[Dict[str, Any]]:
+        user = db.get(User, user_id)
+        if not user:
+            return []
         return _get_portfolio_history(db=db, user=user, range_str=range_str)
 
     def get_allocation(

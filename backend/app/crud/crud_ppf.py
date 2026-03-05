@@ -126,7 +126,7 @@ def _cleanup_duplicate_interest_credits(db: Session, asset_id: uuid.UUID) -> Non
         db.commit()
 
 def process_ppf_holding(
-    db: Session, ppf_asset: Asset, portfolio_id: uuid.UUID,
+    db: Session, ppf_asset: Asset, portfolio_id: uuid.UUID | None,
     calculation_date: date = None, simulate_only: bool = False,
 ) -> schemas.Holding:
     """Processes a single PPF asset to calculate its current value and generate interest transactions."""  # noqa: E501
@@ -236,44 +236,55 @@ def process_ppf_holding(
                             logger.info(
                                 f"[PPF] FY {fy_end}: INSERTING new transaction"
                             )
-                            try:
-                                crud.transaction.create_with_portfolio(
-                                    db,
-                                    portfolio_id=portfolio_id,
-                                    obj_in=schemas.TransactionCreate(
-                                        asset_id=ppf_asset.id,
-                                        transaction_type=TransactionType.INTEREST_CREDIT,
-                                        quantity=interest_for_fy,
-                                        price_per_unit=1,
-                                        transaction_date=fy_end.isoformat(),
-                                    ),
-                                )
-                                # Commit to prevent duplicates
-                                db.commit()
+                            # When calculating for all portfolios, portfolio_id is None,
+                            # so we shouldn't attempt to create missing interest
+                            # credits here.
+                            # We can just simulate them.
+                            if portfolio_id is None:
                                 logger.info(
-                                    f"[PPF] FY {fy_end}: Committed transaction"
+                                    f"[PPF] FY {fy_end}: Cannot create transaction "
+                                    f"because portfolio_id is None. Simulating instead."
                                 )
-                            except Exception as e:
-                                # Another call may have inserted
-                                logger.warning(
-                                    f"[PPF] FY {fy_end}: Insert failed ({e})"
-                                )
-                                db.rollback()
-                                # Re-check after rollback
-                                existing_credit = db.query(Transaction).filter(
-                                    Transaction.asset_id == ppf_asset.id,
-                                    Transaction.transaction_type
-                                    == TransactionType.INTEREST_CREDIT,
-                                    Transaction.transaction_date >= fy_end,
-                                    Transaction.transaction_date
-                                    < fy_end + timedelta(days=1),
-                                ).first()
-                                if existing_credit:
-                                    interest_for_fy = existing_credit.quantity
-                                    logger.info(
-                                        f"[PPF] FY {fy_end}: Found = "
-                                        f"{interest_for_fy}"
+                                pass
+                            else:
+                                try:
+                                    crud.transaction.create_with_portfolio(
+                                        db,
+                                        portfolio_id=portfolio_id,
+                                        obj_in=schemas.TransactionCreate(
+                                            asset_id=ppf_asset.id,
+                                            transaction_type=TransactionType.INTEREST_CREDIT,
+                                            quantity=interest_for_fy,
+                                            price_per_unit=1,
+                                            transaction_date=fy_end.isoformat(),
+                                        ),
                                     )
+                                    # Commit to prevent duplicates
+                                    db.commit()
+                                    logger.info(
+                                        f"[PPF] FY {fy_end}: Committed transaction"
+                                    )
+                                except Exception as e:
+                                    # Another call may have inserted
+                                    logger.warning(
+                                        f"[PPF] FY {fy_end}: Insert failed ({e})"
+                                    )
+                                    db.rollback()
+                                    # Re-check after rollback
+                                    existing_credit = db.query(Transaction).filter(
+                                        Transaction.asset_id == ppf_asset.id,
+                                        Transaction.transaction_type
+                                        == TransactionType.INTEREST_CREDIT,
+                                        Transaction.transaction_date >= fy_end,
+                                        Transaction.transaction_date
+                                        < fy_end + timedelta(days=1),
+                                    ).first()
+                                    if existing_credit:
+                                        interest_for_fy = existing_credit.quantity
+                                        logger.info(
+                                            f"[PPF] FY {fy_end}: Found = "
+                                            f"{interest_for_fy}"
+                                        )
                         else:
                             # Another call already created it
                             logger.info(

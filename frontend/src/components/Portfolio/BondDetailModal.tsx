@@ -42,7 +42,7 @@ const BondDetailModal: React.FC<BondDetailModalProps> = ({
                         <h2 className="text-2xl font-bold dark:text-gray-100">{holding.asset_name}</h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{holding.isin}</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
+                    <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>
@@ -104,8 +104,8 @@ const BondDetailModal: React.FC<BondDetailModalProps> = ({
                                         <td className="p-2 text-right font-mono dark:text-gray-200">{formatCurrency(Number(tx.quantity) * Number(tx.price_per_unit))}</td>
                                         <td className="p-2 text-center">
                                             <div className="flex items-center justify-center space-x-3">
-                                                <button onClick={() => onEditTransaction(tx)} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Edit Transaction"><PencilSquareIcon className="h-5 w-5" /></button>
-                                                <button onClick={() => onDeleteTransaction(tx)} className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Delete Transaction"><TrashIcon className="h-5 w-5" /></button>
+                                                <button aria-label={`Edit transaction for ${holding.asset_name}`} onClick={() => onEditTransaction(tx)} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Edit Transaction"><PencilSquareIcon className="h-5 w-5" /></button>
+                                                <button aria-label={`Delete transaction for ${holding.asset_name}`} onClick={() => onDeleteTransaction(tx)} className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Delete Transaction"><TrashIcon className="h-5 w-5" /></button>
                                             </div>
                                         </td>
                                     </tr>

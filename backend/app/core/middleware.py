@@ -16,6 +16,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - X-Frame-Options: Prevents clickjacking
     - X-XSS-Protection: Legacy XSS filter (still useful for older browsers)
     - Referrer-Policy: Controls referrer information leakage
+    - Content-Security-Policy: Mitigates XSS and data injection attacks
     - Strict-Transport-Security: HSTS (production only)
     """
 
@@ -28,6 +29,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers[
             "Referrer-Policy"
         ] = "strict-origin-when-cross-origin"
+
+        # Content Security Policy (CSP)
+        # Allows 'self', data: (for images), and specific CDNs for Swagger UI support
+        # 'unsafe-inline' and 'unsafe-eval' are required for Swagger UI functionality
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://fastapi.tiangolo.com;"
+        )
 
         # Only enable HSTS in production (requires HTTPS)
         if settings.ENVIRONMENT == "production":
