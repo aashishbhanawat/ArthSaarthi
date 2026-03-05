@@ -60,20 +60,20 @@ const InterestRateFormModal: React.FC<InterestRateFormModalProps> = ({ isOpen, o
       <div role="dialog" aria-modal="true" aria-labelledby="rate-form-modal-title" className="modal-content max-w-md">
         <div className="modal-header">
           <h2 id="rate-form-modal-title" className="text-2xl font-bold">{isEditing ? 'Edit Interest Rate' : 'Add New Interest Rate'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+          <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
         </div>
         <div className="p-6">
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="form-group">
               <label htmlFor="scheme_name" className="form-label">Scheme Name</label>
-              <input id="scheme_name" type="text" {...register('scheme_name', { required: 'Scheme name is required' })} className="form-input" required disabled={isPending} />
-              {errors.scheme_name && <p className="form-error">{errors.scheme_name.message}</p>}
+              <input id="scheme_name" type="text" {...register('scheme_name', { required: 'Scheme name is required' })} className="form-input" required disabled={isPending} aria-invalid={!!errors.scheme_name} aria-describedby={errors.scheme_name ? "scheme_name_error" : undefined} />
+              {errors.scheme_name && <p id="scheme_name_error" className="text-red-500 text-xs italic mt-1" role="alert">{errors.scheme_name.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="form-group">
                 <label htmlFor="start_date" className="form-label">Start Date</label>
-                <input id="start_date" type="date" {...register('start_date', { required: 'Start date is required' })} className="form-input" required disabled={isPending} />
-                {errors.start_date && <p className="form-error">{errors.start_date.message}</p>}
+                <input id="start_date" type="date" {...register('start_date', { required: 'Start date is required' })} className="form-input" required disabled={isPending} aria-invalid={!!errors.start_date} aria-describedby={errors.start_date ? "start_date_error" : undefined} />
+                {errors.start_date && <p id="start_date_error" className="text-red-500 text-xs italic mt-1" role="alert">{errors.start_date.message}</p>}
               </div>
               <div className="form-group">
                 <label htmlFor="end_date" className="form-label">End Date (optional)</label>
@@ -82,8 +82,8 @@ const InterestRateFormModal: React.FC<InterestRateFormModalProps> = ({ isOpen, o
             </div>
             <div className="form-group">
               <label htmlFor="rate" className="form-label">Interest Rate (%)</label>
-              <input id="rate" type="number" step="0.01" {...register('rate', { required: 'Rate is required', valueAsNumber: true })} className="form-input" required disabled={isPending} />
-              {errors.rate && <p className="form-error">{errors.rate.message}</p>}
+              <input id="rate" type="number" step="0.01" {...register('rate', { required: 'Rate is required', valueAsNumber: true })} className="form-input" required disabled={isPending} aria-invalid={!!errors.rate} aria-describedby={errors.rate ? "rate_error" : undefined} />
+              {errors.rate && <p id="rate_error" className="text-red-500 text-xs italic mt-1" role="alert">{errors.rate.message}</p>}
             </div>
 
             {apiError && (

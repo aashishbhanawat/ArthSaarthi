@@ -179,7 +179,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Current Holdings Breakdown</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
+                    <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>

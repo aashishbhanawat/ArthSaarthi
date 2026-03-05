@@ -102,7 +102,7 @@ test.describe.serial('Transaction History Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.getByLabel('Email address').fill(testUser.email);
-    await page.getByLabel('Password').fill(testUser.password);
+    await page.getByLabel('Password', { exact: true }).fill(testUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });

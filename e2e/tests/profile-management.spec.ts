@@ -41,7 +41,7 @@ test.describe('User Profile Management', () => {
     // 1. Login with the created user
     await page.goto('/login');
     await page.getByLabel('Email address').fill(testUser.email);
-    await page.getByLabel('Password').fill(testUser.password);
+    await page.getByLabel('Password', { exact: true }).fill(testUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page).toHaveURL(/.*\/dashboard/);
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
@@ -80,7 +80,7 @@ test.describe('User Profile Management', () => {
 
     // 6. Login with the new password
     await page.getByLabel('Email address').fill(testUser.email);
-    await page.getByLabel('Password').fill(newPassword);
+    await page.getByLabel('Password', { exact: true }).fill(newPassword);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page).toHaveURL(/.*\/dashboard/);
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
