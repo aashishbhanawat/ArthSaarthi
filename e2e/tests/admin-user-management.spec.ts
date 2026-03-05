@@ -10,7 +10,7 @@ test.describe.serial('Admin User Management Flow', () => {
     // Login as admin before each test
     await page.goto('/');
     await page.getByLabel('Email address').fill(adminUser.email);
-    await page.getByLabel('Password').fill(adminUser.password);
+    await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
@@ -33,7 +33,7 @@ test.describe.serial('Admin User Management Flow', () => {
     await expect(createModal.getByRole('heading', { name: 'Create New User' })).toBeVisible();
     await createModal.getByLabel('Full Name').fill(testUser.fullName);
     await createModal.getByLabel('Email', { exact: true }).fill(testUser.email);
-    await createModal.getByLabel('Password').fill(testUser.password);
+    await createModal.getByLabel('Password', { exact: true }).fill(testUser.password);
     await createModal.getByRole('button', { name: 'Create User' }).click();
 
     // Verify creation

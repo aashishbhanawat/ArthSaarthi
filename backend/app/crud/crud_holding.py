@@ -1,3 +1,4 @@
+import concurrent.futures
 import logging
 import math
 import time
@@ -324,21 +325,15 @@ def _process_market_traded_assets(
     holdings_list = []
     total_realized_pnl = initial_realized_pnl
 
-    # This query is the key fix. It was missing. We need to find all unique
-    # assets that have had any kind of transaction to be considered for holdings.
-    unique_asset_ids_query = db.query(models.Transaction.asset_id)
-    if portfolio_id:
-        unique_asset_ids_query = unique_asset_ids_query.filter(models.Transaction.portfolio_id == portfolio_id)
-    elif user_id:
-        unique_asset_ids_query = unique_asset_ids_query.filter(models.Transaction.user_id == user_id)
-
-    unique_asset_ids_query = unique_asset_ids_query.filter(
-        models.Transaction.transaction_type.in_([
-            "BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT",
-            "BONUS", "MERGER", "RENAME", "DEMERGER"
-        ])
-    ).distinct()
-    unique_asset_ids = [row[0] for row in unique_asset_ids_query.all()]
+    # Optimization: Use the already fetched transactions list instead of a new DB query.
+    relevant_types = {
+        "BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT",
+        "BONUS", "MERGER", "RENAME", "DEMERGER"
+    }
+    unique_asset_ids = {
+        tx.asset_id for tx in transactions
+        if tx.transaction_type in relevant_types
+    }
 
     holdings_state = defaultdict(
         lambda: {
@@ -560,29 +555,27 @@ def _process_market_traded_assets(
     # --- On-demand enrichment for assets with NULL sector ---
     # This enriches sector/industry/country when fetching portfolio
     needs_commit = False
+
+    # Identify assets needing enrichment
+    equities_to_enrich = []
+    mfs_to_enrich = []
+
     for ticker in current_holdings_tickers:
         asset = ticker_map.get(ticker)
         if asset and asset.sector is None:
             asset_type_upper = (asset.asset_type or "").upper()
             if asset_type_upper in ["STOCK", "ETF"]:
-                # Equities: enrich via yfinance
-                enrichment = (
-                    financial_data_service.yfinance_provider.get_enrichment_data(
-                        ticker, asset.exchange
-                    )
-                )
-                if enrichment:
-                    asset.sector = enrichment.get("sector")
-                    asset.industry = enrichment.get("industry")
-                    asset.country = enrichment.get("country")
-                    asset.market_cap = enrichment.get("market_cap")
-                    asset.investment_style = enrichment.get("investment_style")
-                    db.add(asset)
-                    needs_commit = True
+                equities_to_enrich.append(asset)
             elif asset.asset_type in ["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"]:
-                # Mutual Funds: enrich via AMFI
-                nav_data = financial_data_service.amfi_provider.get_all_nav_data()
-                fund_data = nav_data.get(ticker, {})
+                mfs_to_enrich.append(asset)
+
+    # 1. Optimize AMFI Enrichment: Batch Fetch
+    if mfs_to_enrich:
+        logger.info(f"Enriching {len(mfs_to_enrich)} Mutual Funds via AMFI...")
+        try:
+            nav_data = financial_data_service.amfi_provider.get_all_nav_data()
+            for asset in mfs_to_enrich:
+                fund_data = nav_data.get(asset.ticker_symbol, {})
                 mf_category = fund_data.get("mf_category")
                 mf_sub_category = fund_data.get("mf_sub_category")
                 if mf_category:
@@ -595,6 +588,41 @@ def _process_market_traded_assets(
                         asset.country = "India"
                     db.add(asset)
                     needs_commit = True
+        except Exception as e:
+            logger.error(f"Failed during AMFI enrichment: {e}")
+
+    # 2. Optimize yfinance Enrichment: Parallelize Requests
+    if equities_to_enrich:
+        logger.info(
+            f"Enriching {len(equities_to_enrich)} Equities via yfinance (Parallel)..."
+        )
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Map future to asset
+            future_to_asset = {
+                executor.submit(
+                    financial_data_service.yfinance_provider.get_enrichment_data,
+                    asset.ticker_symbol,
+                    asset.exchange,
+                ): asset
+                for asset in equities_to_enrich
+            }
+
+            for future in concurrent.futures.as_completed(future_to_asset):
+                asset = future_to_asset[future]
+                try:
+                    enrichment = future.result()
+                    if enrichment:
+                        asset.sector = enrichment.get("sector")
+                        asset.industry = enrichment.get("industry")
+                        asset.country = enrichment.get("country")
+                        asset.market_cap = enrichment.get("market_cap")
+                        asset.investment_style = enrichment.get("investment_style")
+                        db.add(asset)
+                        needs_commit = True
+                except Exception as exc:
+                    logger.warning(
+                        f"Enrichment failed for {asset.ticker_symbol}: {exc}"
+                    )
     if needs_commit:
         try:
             db.commit()
@@ -806,11 +834,17 @@ class CRUDHolding:
         ]
         logger.info(f"Found {len(ppf_assets)} PPF assets to process.")
         # --- PPF Holdings ---
+
+        if ppf_assets:
+            # Lock all PPF asset rows at once before processing to prevent race
+            # conditions on the interest calculation logic, which has a write
+            # side-effect. This is only supported by PostgreSQL.
+            ppf_asset_ids = [asset.id for asset in ppf_assets]
+            db.query(models.Asset).filter(
+                models.Asset.id.in_(ppf_asset_ids)
+            ).with_for_update().all()
+
         for ppf_asset in ppf_assets:
-            # Lock the asset row before processing to prevent race conditions
-            # on the interest calculation logic, which has a write side-effect.
-            # This is only supported by PostgreSQL.
-            db.query(models.Asset).filter_by(id=ppf_asset.id).with_for_update().first()
             logger.info(f"Processing PPF asset {ppf_asset.id}...")
             ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id)
             if ppf_holding:

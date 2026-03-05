@@ -203,7 +203,7 @@ def test_create_import_session_empty_file(
         headers=auth_headers,
     )
     assert response.status_code == 400
-    assert "No columns to parse from file" in response.json()["detail"]
+    assert "An error occurred during file parsing." in response.json()["detail"]
 
 
 def test_get_import_session_preview(
