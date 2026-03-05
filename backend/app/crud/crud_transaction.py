@@ -516,6 +516,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                         lot["available_quantity"] -= take
                         sell_qty -= take
 
+                        if lot["available_quantity"] <= 0:
+                            fifo_index += 1
+
         # Filter out fully consumed lots
         available_lots = [
             {
