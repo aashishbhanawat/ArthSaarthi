@@ -250,7 +250,8 @@ class ScheduleFAService:
 
                     # Distribute proportionately or add to the latest lot?
                     # Schedule FA requires per-investment reporting.
-                    # We will add it to the active lots proportionately based on current_qty,
+                    # We will add it to the active lots
+                    # proportionately based on current_qty,
                     # or if no active lots, the most recently bought lot.
                     asset_lots = lots_by_asset.get(tx.asset_id, [])
                     active_lots = [lot for lot in asset_lots if lot["current_qty"] > 0]
@@ -262,7 +263,10 @@ class ScheduleFAService:
                             lot["dividends"] += portion
                     elif asset_lots:
                         # Fallback to the latest lot if no active lots
-                        latest_lot = max(asset_lots, key=lambda x: x["buy_transaction"].transaction_date)
+                        latest_lot = max(
+                            asset_lots,
+                            key=lambda x: x["buy_transaction"].transaction_date,
+                        )
                         latest_lot["dividends"] += dividend_amount
 
         # Filter Lots valid for this period
