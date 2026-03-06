@@ -91,3 +91,8 @@ Based on the `product_backlog.md`, the next features to consider are:
 1.  **Historical Chart Non-Market Asset Bug (follow-up):** Continue investigating and resolving any remaining edge cases for FD/PPF/Bond historical values.
 2.  **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS) to simplify Mutual Fund onboarding.
 3.  **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
+## 7. E2E Test Stability Fix (2026-03-06)
+
+-   **Issue #312:** Fixed `ppf-modal-verification.spec.ts` flaky failures (60% fail rate) caused by race conditions after PR #278 added analytics components to portfolio detail page.
+-   **Key lesson:** Avoid `waitForLoadState('networkidle')` on pages with continuous API activity. Use targeted element assertions instead.
+-   **Test-results debugging:** Added `test-results` volume mount to `docker-compose.e2e.yml` so `error-context.md` files persist on the host for analysis.

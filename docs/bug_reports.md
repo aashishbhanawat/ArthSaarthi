@@ -7079,3 +7079,7 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 ## [2026-03-03] PDF Password Handling in FD Import parsers
 **Issue**: PDF parsers raised empty error messages for password-protected files resulting in 500 errors.
 **Fix**: Standardized empty string check in ValueError exceptions across `HdfcFdParser`, `IciciFdParser`, `SbiFdParser` to trigger UI password modals.
+
+## [2026-03-06] Flaky PPF Modal Verification E2E Tests (Issue #312)
+**Issue**: `ppf-modal-verification.spec.ts` failed ~60% of the time in CI after PR #278 (advanced benchmarking) merged. Five race conditions: stale auth in serial tests, Dashboard heading async load, `networkidle` timeout from continuous analytics API calls, PPF asset loading race, and unreliable cache invalidation for holdings.
+**Fix**: Rewrote E2E test with proper wait strategies — `localStorage.clear()` + `page.reload()`, sidebar nav assertion, targeted element waits, PPF loading state check. Added `expect.timeout: 10s` to Playwright config.

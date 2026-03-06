@@ -8,9 +8,12 @@ export default defineConfig({
   /* Run tests in files in parallel */
   fullyParallel: false, // Tests within a file can run in parallel, but files will not.
   workers: 1, // Opt out of parallel execution by setting workers to 1
+  expect: {
+    timeout: 10 * 1000, // 10 seconds for assertions
+  },
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://frontend:3000',
     trace: 'on',
   },
-  timeout: 30 * 1000, // 120 seconds
+  timeout: 30 * 1000, // 30 seconds per test
 });
