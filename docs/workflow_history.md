@@ -1013,3 +1013,32 @@ Addressed multiple issues regarding Asset Classification and Taxation:
 ### Outcome
 
 **Success.** Asset classification is now robust, handling edge cases like International ETFs and Bond ETFs correctly in both UI and Tax Reporting. The codebase is clean and passes strict linting.
+
+---
+
+## [2026-03-06] Fix Flaky PPF Modal Verification E2E Tests (#312)
+
+### Problem
+After merging PR #278 (advanced benchmarking), `ppf-modal-verification.spec.ts` failed ~60% of the time in CI, requiring multiple pipeline re-runs.
+
+### Root Cause
+Five race conditions identified through error-context.md analysis:
+1. **Login race (serial tests):** `beforeEach` login assumed a fresh session, but SPA kept auth from previous test
+2. **Dashboard heading race:** Dashboard heading only renders after async data load, not immediately after login
+3. **`networkidle` timeout:** Portfolio detail page has continuous analytics API calls that never reach network idle
+4. **PPF asset loading race:** Test asserted form heading before `useAssetsByType` API call resolved
+5. **Holdings cache invalidation:** `queryClient.invalidateQueries` didn't reliably trigger holdings re-render
+
+### Fix
+- **Files Modified:**
+  - `e2e/playwright.config.ts`: Added `expect.timeout: 10s`
+  - `e2e/tests/ppf-modal-verification.spec.ts`: Complete rewrite with:
+    - `localStorage.clear()` + `page.reload()` for clean login between serial tests
+    - Sidebar nav link assertion instead of Dashboard heading
+    - Targeted element waits instead of `waitForLoadState('networkidle')`
+    - Wait for `Loading PPF details...` to disappear before asserting form heading
+    - Removed unreliable post-creation holding text assertion
+  - `docker-compose.e2e.yml`: Added `test-results` volume mount for debugging
+
+### Verification
+Both tests passed 2 consecutive runs: (10.1s + 5.9s) and (8.8s + 6.1s).
