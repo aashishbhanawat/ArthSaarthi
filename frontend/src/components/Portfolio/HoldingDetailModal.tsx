@@ -78,10 +78,10 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPri
             </td>
             <td className="p-2 text-right">
                 <div className="flex items-center justify-end space-x-3">
-                    <button onClick={() => onEdit(transaction)} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Edit Transaction">
+                    <button onClick={() => onEdit(transaction)} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Edit Transaction" aria-label="Edit transaction">
                         <PencilSquareIcon className="h-5 w-5" />
                     </button>
-                    <button onClick={() => onDelete(transaction)} className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Delete Transaction">
+                    <button onClick={() => onDelete(transaction)} className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Delete Transaction" aria-label="Delete transaction">
                         <TrashIcon className="h-5 w-5" />
                     </button>
                 </div>
