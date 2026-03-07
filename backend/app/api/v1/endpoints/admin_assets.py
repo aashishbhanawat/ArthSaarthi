@@ -563,12 +563,12 @@ def lookup_fmv_2018(
         )
 
     except Exception as e:
-        logger.error(f"Failed to fetch FMV 2018 for {ticker}: {e}")
+        logger.error(f"Failed to fetch FMV 2018 for {ticker}: {e}", exc_info=True)
         return FMV2018LookupResponse(
             ticker_symbol=ticker,
             fmv_2018=None,
             source="yfinance",
-            message=f"Lookup failed: {str(e)}",
+            message="Lookup failed due to an internal error.",
         )
 
 
