@@ -5,10 +5,6 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase
-from app.crud.crud_analytics import (
-    _get_asset_current_value,
-    _get_portfolio_current_value,
-)
 from app.models import transaction
 from app.models.goal import Goal, GoalLink
 from app.schemas.goal import (
@@ -47,9 +43,22 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
         """
         current_amount = Decimal("0.0")
 
+        # Optimization: Cache portfolio data to avoid recalculating the same
+        # portfolio multiple times if a goal has multiple links to the same
+        # portfolio or assets within it.
+        portfolio_cache = {}
+
+        from app import crud
+
         for link in goal.links:
             if link.portfolio_id:
-                current_amount += _get_portfolio_current_value(db, link.portfolio_id)
+                if link.portfolio_id not in portfolio_cache:
+                    portfolio_cache[link.portfolio_id] = (
+                        crud.holding.get_portfolio_holdings_and_summary(
+                            db, portfolio_id=link.portfolio_id
+                        )
+                    )
+                current_amount += portfolio_cache[link.portfolio_id].summary.total_value
             elif link.asset_id:
                 # To get an asset's value, we need to know which portfolio it
                 # belongs to. Since a goal can be linked to a standalone asset,
@@ -66,9 +75,18 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                 )
                 if transactions:
                     portfolio_id = transactions[0].portfolio_id
-                    current_amount += _get_asset_current_value(
-                        db, portfolio_id, link.asset_id
-                    )
+                    if portfolio_id not in portfolio_cache:
+                        portfolio_cache[portfolio_id] = (
+                            crud.holding.get_portfolio_holdings_and_summary(
+                                db, portfolio_id=portfolio_id
+                            )
+                        )
+
+                    # Find the asset in the cached holdings
+                    for holding in portfolio_cache[portfolio_id].holdings:
+                        if holding.asset_id == link.asset_id:
+                            current_amount += holding.current_value
+                            break
 
         progress = (
             (current_amount / goal.target_amount) * 100
