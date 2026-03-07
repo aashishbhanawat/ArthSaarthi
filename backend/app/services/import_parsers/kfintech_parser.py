@@ -86,8 +86,6 @@ class KFintechParser(BaseParser):
         r"^Registrar",
         r"^ISIN:",
         r"^Advisor:",
-        r"^Switch.*Merger",  # TODO: Handle Switch In/Out - Merger later
-        r"^S\s*witch.*Merger",  # S witch Out - Merger
         r"^C\*\*",  # Corrupted text like "C**I*T SINT2T2"
         r"^\s*$",  # Empty lines
     ]
