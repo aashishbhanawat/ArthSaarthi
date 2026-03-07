@@ -1,11 +1,14 @@
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from app.models.transaction import Transaction
 from app.schemas.enums import TransactionType
+
 
 def _calculate_demerger_ratios(
     db: Session,
@@ -38,8 +41,6 @@ def _calculate_demerger_ratios(
     if not demergers_by_asset:
         return {}
 
-    asset_ids = list(demergers_by_asset.keys())
-
     # 2. To compute remaining_ratio we need original cost
     # We fetch BUYs before the earliest demerger for each asset
 
@@ -71,7 +72,9 @@ def _calculate_demerger_ratios(
         for d_tx in d_txs:
             cost_allocated = Decimal(str(d_tx.details["total_cost_allocated"]))
             if current_pre_demerger_cost > 0 and cost_allocated > 0:
-                remaining_ratio = (current_pre_demerger_cost - cost_allocated) / current_pre_demerger_cost
+                remaining_ratio = (
+                    current_pre_demerger_cost - cost_allocated
+                ) / current_pre_demerger_cost
             else:
                 remaining_ratio = Decimal("1.0")
 
