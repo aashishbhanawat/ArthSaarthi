@@ -6,6 +6,7 @@ import {
   useDeleteWatchlist,
 } from '../../hooks/useWatchlists';
 import WatchlistFormModal from '../modals/WatchlistFormModal';
+import { DeleteConfirmationModal } from '../common/DeleteConfirmationModal';
 import { Watchlist } from '../../types/watchlist';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 
@@ -25,6 +26,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingWatchlist, setEditingWatchlist] = useState<Watchlist | null>(null);
+  const [watchlistToDelete, setWatchlistToDelete] = useState<Watchlist | null>(null);
 
   const handleCreate = () => {
     setEditingWatchlist(null);
@@ -36,13 +38,18 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
     setIsFormModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this watchlist?')) {
-      deleteWatchlist.mutate(id, {
+  const handleDelete = (watchlist: Watchlist) => {
+    setWatchlistToDelete(watchlist);
+  };
+
+  const confirmDelete = () => {
+    if (watchlistToDelete) {
+      deleteWatchlist.mutate(watchlistToDelete.id, {
         onSuccess: () => {
-          if (selectedWatchlistId === id) {
+          if (selectedWatchlistId === watchlistToDelete.id) {
             onSelectWatchlist(null);
           }
+          setWatchlistToDelete(null);
         },
       });
     }
@@ -93,7 +100,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
                   className="btn btn-ghost btn-xs"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(watchlist.id);
+                    handleDelete(watchlist);
                   }}
                   aria-label={`Delete ${watchlist.name}`}
                 >
@@ -109,6 +116,18 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
         onClose={() => setIsFormModalOpen(false)}
         onSubmit={handleFormSubmit}
         watchlist={editingWatchlist}
+      />
+      <DeleteConfirmationModal
+        isOpen={!!watchlistToDelete}
+        onClose={() => setWatchlistToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Watchlist"
+        message={
+          <>
+            Are you sure you want to delete the watchlist "<strong>{watchlistToDelete?.name}</strong>"?
+          </>
+        }
+        isDeleting={deleteWatchlist.isPending}
       />
     </div>
   );
