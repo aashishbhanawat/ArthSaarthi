@@ -268,7 +268,7 @@ class CapitalGainsService:
         asset: Asset,
         sell_tx: Transaction,
         buy_tx: Transaction,
-        demerger_ratios: Dict[str, List[Tuple[date, Decimal]]]
+        demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None
     ) -> ForeignGainEntry:
         """
         Process a foreign asset gain entry.
@@ -290,7 +290,7 @@ class CapitalGainsService:
 
         # --- Corporate Action Adjustment (Demerger) ---
         asset_id_str = str(asset.id)
-        if asset_id_str in demerger_ratios:
+        if demerger_ratios and asset_id_str in demerger_ratios:
             for d_date, ratio in demerger_ratios[asset_id_str]:
                 if buy_date < d_date <= sell_date:
                     buy_price *= ratio
@@ -349,7 +349,7 @@ class CapitalGainsService:
         asset: Asset,
         sell_tx: Transaction,
         buy_tx: Transaction,
-        demerger_ratios: Dict[str, List[Tuple[date, Decimal]]]
+        demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None
     ) -> Tuple[GainEntry, Optional[Schedule112AEntry]]:
 
         buy_date = buy_tx.transaction_date.date()
@@ -371,7 +371,7 @@ class CapitalGainsService:
 
         # --- Corporate Action Adjustment (Demerger) ---
         asset_id_str = str(asset.id)
-        if asset_id_str in demerger_ratios:
+        if demerger_ratios and asset_id_str in demerger_ratios:
             for d_date, ratio in demerger_ratios[asset_id_str]:
                 # If the buy happened before the demerger,
                 # and we sold on or after the demerger
