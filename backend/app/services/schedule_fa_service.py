@@ -171,6 +171,9 @@ class ScheduleFAService:
         lots_map = {}
         # Optimization: Map asset_id to list of lots for faster lookup
         lots_by_asset = defaultdict(list)
+        # Optimization: Track the persistent FIFO index pointer for each asset
+        # to achieve amortized O(1) lot lookup instead of O(N) filtering per sell.
+        fifo_indices = defaultdict(int)
 
         for tx in all_txs:
             # Use IST adjustment for dates
@@ -216,20 +219,17 @@ class ScheduleFAService:
 
                 # 2. FIFO Fallback for remaining unlinked quantity
                 if qty_to_sell > 0.000001:
-                    # Sort active lots by buy date
-                    # Optimization: Use pre-grouped lots by asset
                     asset_lots = lots_by_asset.get(tx.asset_id, [])
-                    active_lots = sorted(
-                        [
-                            lot for lot in asset_lots
-                            if lot["current_qty"] > 0
-                        ],
-                        key=lambda x: x["buy_transaction"].transaction_date
-                    )
-
-                    for lot in active_lots:
-                        if qty_to_sell <= 0.000001:
-                            break
+                    # Optimization: Use persistent fifo_index to avoid O(N)
+                    # iteration over already exhausted lots for every sell
+                    while (
+                        fifo_indices[tx.asset_id] < len(asset_lots)
+                        and qty_to_sell > 0.000001
+                    ):
+                        lot = asset_lots[fifo_indices[tx.asset_id]]
+                        if lot["current_qty"] <= 0.000001:
+                            fifo_indices[tx.asset_id] += 1
+                            continue
 
                         take = min(lot["current_qty"], qty_to_sell)
                         lot["current_qty"] -= take
@@ -238,6 +238,9 @@ class ScheduleFAService:
 
                         if start_date <= tx_date_ist <= end_date:
                             lot["gross_proceeds"] += take * tx.price_per_unit
+
+                        if lot["current_qty"] <= 0.000001:
+                            fifo_indices[tx.asset_id] += 1
 
             elif tx.transaction_type in [
                 TransactionType.DIVIDEND,
