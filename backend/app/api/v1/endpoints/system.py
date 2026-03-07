@@ -77,14 +77,14 @@ def _run_seeding_subprocess():
             logger.info("Asset seeding completed successfully.")
         else:
             _seeding_state["status"] = SeedingStatus.FAILED
-            _seeding_state["error"] = result.stderr or "Seeding failed"
+            _seeding_state["error"] = "Seeding failed due to an internal error."
             _seeding_state["message"] = "Seeding failed"
             logger.error(f"Asset seeding failed: {result.stderr}")
 
     except Exception as e:
-        logger.error(f"Seeding subprocess error: {e}")
+        logger.error(f"Seeding subprocess error: {e}", exc_info=True)
         _seeding_state["status"] = SeedingStatus.FAILED
-        _seeding_state["error"] = str(e)
+        _seeding_state["error"] = "An internal error occurred during seeding."
         _seeding_state["message"] = "Seeding failed"
 
 
@@ -287,8 +287,10 @@ def check_for_updates():
         return UpdateCheckResponse(available=False)
 
     except Exception as e:
-        logger.warning(f"Update check failed: {e}")
-        return UpdateCheckResponse(available=False, error=str(e))
+        logger.warning(f"Update check failed: {e}", exc_info=True)
+        return UpdateCheckResponse(
+            available=False, error="Failed to check for updates."
+        )
 
 
 def _is_newer_version(v1: str, v2: str) -> bool:
