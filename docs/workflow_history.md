@@ -1,4 +1,38 @@
-## 2026-03-08: Fix Backend Health Check Timeout (#330)
+## 2026-03-08: Fix Portfolio FD Analytics, Desktop Crash, and Build Issues (#332, #333, #334)
+
+**Task:** Fix 4 issues: (1) Diversification and Benchmark showing "No data" for FD-only portfolios, (2) extreme negative XIRR with matured FDs, (3) MacOS desktop crash due to missing SECRET_KEY, (4) Windows build dependency conflict.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Fixed all four reported issues spanning backend analytics, desktop configuration, and build dependencies.
+
+1. **Issue 1 – Diversification & Benchmark:** The `get_diversification` method skipped FD/RD holdings because they don't have entries in the `Asset` table (`if not asset: continue`). Removed the skip and used `asset_type` from the `Holding` schema as fallback. Updated `BenchmarkService._calculate_category_benchmark` to detect FD/RD holdings and generate a simplified risk-free debt benchmark.
+2. **Issue 2 – XIRR Calculation:** `_get_portfolio_cash_flows` only recorded the initial FD outflow but not the maturity inflow for matured FDs, making XIRR think the money was never returned. Added maturity value inflows for matured cumulative FDs, principal return for matured payout FDs, and maturity value for matured RDs.
+3. **Issue 3 – MacOS Desktop Crash:** `SECRET_KEY` was a required field with no default. Added `secrets.token_urlsafe(32)` as a default value, which is safe for desktop mode.
+4. **Issue 4 – Windows Build:** `bcrypt==3.2.0` in `requirements-windows.txt` conflicted with `cryptography==46.0.5` via `cffi`. Updated to `bcrypt==4.1.3` (matching `requirements.in`) which uses Rust instead of cffi.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/core/config.py` – Added default `SECRET_KEY` using `secrets.token_urlsafe(32)`.
+* **Modified:** `backend/app/crud/crud_analytics.py` – Removed `continue` guard in `get_diversification` for holdings without Asset entries; added maturity inflows for FDs/RDs in `_get_portfolio_cash_flows`.
+* **Modified:** `backend/app/services/benchmark_service.py` – Updated `_calculate_category_benchmark` to handle FD/RD-only portfolios; added portfolio XIRR override in `calculate_benchmark_performance`.
+* **Modified:** `backend/requirements-windows.txt` – Updated `bcrypt` from 3.2.0 to 4.1.3.
+
+### Verification
+
+* **Backend Tests:** 298/298 passing (no regressions).
+
+### Outcome
+
+**Success.** All four issues resolved with full test coverage passing.
+
+---
+
+
 
 **Task:** Fix "Container pms-backend Error dependency backend failed to start" caused by long-running asset seeding.
 

@@ -452,12 +452,13 @@ def _get_portfolio_cash_flows(
         cash_flows.append((tx.transaction_date.date(), amount * cash_flow_direction))
 
     # 2. Cashflows from Fixed Deposits
+    today = date.today()
     for fd in all_fixed_deposits:
         # Initial investment is an outflow
         cash_flows.append((fd.start_date, -fd.principal_amount))
 
-        # For non-cumulative FDs, interest payments are inflows
         if (fd.interest_payout or "").upper() != "CUMULATIVE":
+            # For non-cumulative FDs, interest payments are inflows
             payout_frequency_map = {
                 "MONTHLY": 1, "QUARTERLY": 3, "HALF_YEARLY": 6,
                 "SEMI-ANNUALLY": 6, "ANNUALLY": 12
@@ -470,18 +471,46 @@ def _get_portfolio_cash_flows(
                 interest_per_payout = fd.principal_amount * payout_rate
 
                 payout_date = fd.start_date + relativedelta(months=months_interval)
-                while payout_date <= date.today() and payout_date <= fd.maturity_date:
+                while payout_date <= today and payout_date <= fd.maturity_date:
                     cash_flows.append((payout_date, interest_per_payout))
                     payout_date += relativedelta(months=months_interval)
 
+            # For matured payout FDs, principal is returned at maturity
+            if today >= fd.maturity_date:
+                cash_flows.append((fd.maturity_date, fd.principal_amount))
+        else:
+            # For matured cumulative FDs, the full maturity value is an inflow
+            if today >= fd.maturity_date:
+                maturity_value = _calculate_fd_current_value(
+                    principal=fd.principal_amount,
+                    interest_rate=fd.interest_rate,
+                    start_date=fd.start_date,
+                    end_date=fd.maturity_date,
+                    compounding_frequency=fd.compounding_frequency,
+                    interest_payout=fd.interest_payout,
+                )
+                cash_flows.append((fd.maturity_date, maturity_value))
+
     # 3. Cashflows from Recurring Deposits
     for rd in all_recurring_deposits:
+        maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
         # Each installment is an outflow
         for i in range(rd.tenure_months):
             installment_date = rd.start_date + relativedelta(months=i)
-            if installment_date > date.today():
+            if installment_date > today:
                 break
             cash_flows.append((installment_date, -rd.monthly_installment))
+
+        # For matured RDs, the full maturity value is an inflow
+        if today >= maturity_date:
+            maturity_value = _calculate_rd_value_at_date(
+                monthly_installment=rd.monthly_installment,
+                interest_rate=rd.interest_rate,
+                start_date=rd.start_date,
+                tenure_months=rd.tenure_months,
+                calculation_date=maturity_date,
+            )
+            cash_flows.append((maturity_date, maturity_value))
 
     # Sort by date to ensure correct XIRR calculation
     cash_flows.sort(key=lambda x: x[0])
@@ -788,15 +817,17 @@ class CRUDAnalytics:
         for h in holdings:
             # Get asset details from the pre-fetched map
             asset = asset_map.get(h.asset_id)
-            if not asset:
-                continue
 
             value = h.current_value or Decimal("0")
-            asset_type = (asset.asset_type or "").upper()
+            # Use asset_type from Asset if available, otherwise from the Holding schema
+            asset_type = (
+                (asset.asset_type or "").upper() if asset
+                else (h.asset_type or "").upper()
+            )
 
             # By Country (all assets)
             # Default country to India for Indian instruments
-            if asset.country:
+            if asset and asset.country:
                 country = asset.country
             elif asset_type in ["FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF", "BOND"]:
                 country = "India"

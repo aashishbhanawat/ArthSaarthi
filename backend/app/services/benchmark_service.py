@@ -124,8 +124,6 @@ class BenchmarkService:
         txns = crud.transaction.get_multi_by_portfolio(
             self.db, portfolio_id=portfolio_id
         )
-        if not txns:
-            return {"equity": None, "debt": None}
 
         equity_txns = []
         debt_txns = []
@@ -136,35 +134,36 @@ class BenchmarkService:
             "STOCK", "MUTUAL FUND", "ETF", "ESPP", "RSU",
         ]
 
-        assets = crud.asset.get_multi_by_portfolio(
-            self.db, portfolio_id=portfolio_id
-        )
-        asset_map = {a.id: a.asset_type for a in assets}
-
-        for txn in txns:
-            a_type = asset_map.get(txn.asset_id, "STOCK")
-            if hasattr(a_type, 'value'):
-                a_type = a_type.value
-            # Normalize to upper with spaces
-            a_type_norm = str(a_type).upper().replace(
-                "_", " "
+        if txns:
+            assets = crud.asset.get_multi_by_portfolio(
+                self.db, portfolio_id=portfolio_id
             )
+            asset_map = {a.id: a.asset_type for a in assets}
 
-            if a_type_norm in equity_types:
-                equity_txns.append(txn)
-            else:
-                debt_txns.append(txn)
+            for txn in txns:
+                a_type = asset_map.get(txn.asset_id, "STOCK")
+                if hasattr(a_type, 'value'):
+                    a_type = a_type.value
+                # Normalize to upper with spaces
+                a_type_norm = str(a_type).upper().replace(
+                    "_", " "
+                )
+
+                if a_type_norm in equity_types:
+                    equity_txns.append(txn)
+                else:
+                    debt_txns.append(txn)
 
         logger.debug(
             f"Category split: {len(equity_txns)} equity, "
             f"{len(debt_txns)} debt from "
-            f"{len(txns)} total txns. "
-            f"Asset types: {dict(asset_map)}"
+            f"{len(txns)} total txns."
         )
 
         # Get current market values per category
         equity_value = 0.0
         debt_value = 0.0
+        has_fd_or_rd = False
         try:
             holdings_data = (
                 crud.holding
@@ -183,15 +182,25 @@ class BenchmarkService:
                     equity_value += cv
                 else:
                     debt_value += cv
+                    # Track if we have FD/RD holdings
+                    if h_type in [
+                        "FIXED DEPOSIT", "RECURRING DEPOSIT"
+                    ]:
+                        has_fd_or_rd = True
             logger.debug(
                 f"Category values: equity={equity_value}, "
-                f"debt={debt_value}"
+                f"debt={debt_value}, has_fd_or_rd={has_fd_or_rd}"
             )
         except Exception as e:
             logger.warning(
                 f"Could not get holdings for "
                 f"category values: {e}"
             )
+
+        # If there are no transactions AND no FD/RD holdings,
+        # there is truly nothing to benchmark.
+        if not txns and not has_fd_or_rd:
+            return {"equity": None, "debt": None}
 
         results = {}
 
@@ -225,6 +234,32 @@ class BenchmarkService:
                 "Risk-Free (7%)" if is_rf
                 else "Bond Index"
             )
+        elif has_fd_or_rd and debt_value > 0:
+            # FDs/RDs don't have Transaction entries, so
+            # we generate a simplified debt benchmark
+            # comparing against risk-free rate.
+            pf_analytics = (
+                crud.analytics.get_portfolio_analytics(
+                    self.db, portfolio_id=portfolio_id
+                )
+            )
+            portfolio_xirr = 0.0
+            if pf_analytics:
+                if isinstance(pf_analytics, dict):
+                    portfolio_xirr = pf_analytics.get(
+                        "xirr", 0.0
+                    )
+                else:
+                    portfolio_xirr = getattr(
+                        pf_analytics, "xirr", 0.0
+                    )
+            results["debt"] = {
+                "portfolio_xirr": portfolio_xirr,
+                "benchmark_xirr": risk_free_rate / 100,
+                "benchmark_label": f"Risk-Free ({risk_free_rate:.0f}%)",
+                "risk_free_xirr": risk_free_rate / 100,
+                "chart_data": [],
+            }
 
         logger.debug(
             f"Category results keys: "
@@ -259,6 +294,29 @@ class BenchmarkService:
                 None, risk_free_rate,
             )
             base_result["category_data"] = category_data
+
+            # For FD/RD-only portfolios, _run_simulation
+            # returns portfolio_xirr=0 because there are no
+            # transactions. Override with the real analytics.
+            if (
+                base_result.get("portfolio_xirr", 0) == 0
+                and portfolio_id
+            ):
+                pf_analytics = (
+                    crud.analytics.get_portfolio_analytics(
+                        self.db, portfolio_id=portfolio_id
+                    )
+                )
+                if pf_analytics:
+                    if isinstance(pf_analytics, dict):
+                        base_result["portfolio_xirr"] = (
+                            pf_analytics.get("xirr", 0.0)
+                        )
+                    else:
+                        base_result["portfolio_xirr"] = (
+                            getattr(pf_analytics, "xirr", 0.0)
+                        )
+
             logger.debug(
                 f"Category response: "
                 f"category_data keys="
