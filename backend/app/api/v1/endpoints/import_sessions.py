@@ -25,6 +25,7 @@ from app.core import dependencies as deps
 from app.core.config import settings
 from app.schemas.msg import Msg
 from app.services.import_parsers import parser_factory
+from app.utils.filename import secure_filename
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ async def create_import_session(
     # 1. Securely save the uploaded file
     upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
     upload_dir.mkdir(exist_ok=True)
-    sanitized_filename = os.path.basename(file.filename)
+    sanitized_filename = secure_filename(file.filename)
     temp_file_path = upload_dir / f"{uuid.uuid4()}_{sanitized_filename}"
     try:
         with temp_file_path.open("wb") as buffer:
@@ -556,7 +557,7 @@ async def create_fd_import_session(
     # 1. Securely save the uploaded file
     upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
     upload_dir.mkdir(exist_ok=True)
-    sanitized_filename = os.path.basename(file.filename)
+    sanitized_filename = secure_filename(file.filename)
     temp_file_path = upload_dir / f"{uuid.uuid4()}_{sanitized_filename}"
     try:
         with temp_file_path.open("wb") as buffer:
