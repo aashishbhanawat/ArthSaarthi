@@ -1,4 +1,36 @@
+## 2026-03-08: Fix Backend Health Check Timeout (#330)
+
+**Task:** Fix "Container pms-backend Error dependency backend failed to start" caused by long-running asset seeding.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+Fixed the backend startup failure where the initial asset seeding (downloading and processing ~40k records) exceeded the Docker health check's `start_period`.
+
+1. **Root Cause Analysis:** Identified that the backend was actually healthy and running, but Docker's 300s `start_period` was too short for the first-time data download, causing a dependency failure for the frontend.
+2. **Configuration Update:** Increased `start_period` to 1200s (20 minutes) and adjusted `interval` and `retries` to be more resilient during heavy IO operations.
+3. **Documentation:** Created [FR_startup_resilience.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/FR_startup_resilience.md) to formalize this requirement.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `docker-compose.yml` - Increased health check `start_period` and adjusted retry logic.
+* **New:** `docs/FR_startup_resilience.md` - New functional requirement for startup resilience.
+
+### Verification
+
+* **Manual Validation:** The user verified that the app starts successfully with the updated configuration. The backend now has sufficient time to complete seeding before being marked unhealthy.
+
+### Outcome
+
+**Success.** The application now starts reliably even on initial deployments with clean volumes.
+
+---
+
 ## 2026-03-03: Implement Fixed Deposit Import from Bank Statements (FR7.2.1)
+
 
 **Task:** Automate the import of Fixed Deposits (FDs) from password-protected combined bank statement PDFs (HDFC, ICICI, SBI).
 
