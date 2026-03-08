@@ -5,6 +5,12 @@ from pydantic import Field, validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _is_local_mode(values: dict) -> bool:
+    """Check if running in a local/embedded mode (desktop or android)."""
+    return values.get("DEPLOYMENT_MODE") in ("desktop", "android") or \
+           values.get("DATABASE_TYPE") == "sqlite"
+
+
 class Settings(BaseSettings):
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     ALGORITHM: str = "HS256"
@@ -28,7 +34,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_URL: Optional[str] = None
     CACHE_TYPE: Literal["redis", "disk"] = "redis"
-    DEPLOYMENT_MODE: Literal["server", "desktop"] = "server"
+    DEPLOYMENT_MODE: Literal["server", "desktop", "android"] = "server"
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "uploads"
 
@@ -46,8 +52,11 @@ class Settings(BaseSettings):
 
     @validator("DATABASE_URL", pre=True, always=True)
     def assemble_db_connection(cls, v, values):
-        if (values.get("DEPLOYMENT_MODE") == "desktop" or
-                values.get("DATABASE_TYPE") == "sqlite"):
+        if _is_local_mode(values):
+            # If a DATABASE_URL is already provided (e.g., by Android launcher),
+            # use it as-is
+            if isinstance(v, str) and v.startswith("sqlite"):
+                return v
             from pathlib import Path
             # Use a stable directory in the user's home for the database
             app_dir = Path.home() / ".arthsaarthi"
@@ -65,15 +74,13 @@ class Settings(BaseSettings):
 
     @validator("CACHE_TYPE", pre=True, always=True)
     def set_cache_type_for_desktop(cls, v, values):
-        if (values.get("DEPLOYMENT_MODE") == "desktop" or
-                values.get("DATABASE_TYPE") == "sqlite"):
+        if _is_local_mode(values):
             return "disk"
         return v
 
-
     @validator("IMPORT_UPLOAD_DIR", pre=True, always=True)
     def set_upload_dir_for_desktop(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") == "desktop":
+        if values.get("DEPLOYMENT_MODE") in ("desktop", "android"):
             from pathlib import Path
             # Use a stable directory in the user's home for uploads
             upload_dir = Path.home() / ".arthsaarthi" / "uploads"
