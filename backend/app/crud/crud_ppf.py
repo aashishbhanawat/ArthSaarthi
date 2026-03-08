@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.models import Asset, Transaction
+from app.models.historical_interest_rate import HistoricalInterestRate
 from app.schemas.asset import AssetType
 from app.schemas.transaction import TransactionType
 
@@ -33,6 +34,7 @@ def _calculate_ppf_interest_for_fy(
     fy_end: date,
     opening_balance: Decimal,
     transactions_in_fy: List[Transaction],
+    ppf_rates: List[HistoricalInterestRate] = None,
 ) -> Decimal:
     """Calculates PPF interest for a single financial year using the monthly minimum balance method."""  # noqa: E501
     logger.debug(
@@ -66,9 +68,19 @@ def _calculate_ppf_interest_for_fy(
                 balance_for_interest_calc += t.quantity
 
         # Get interest rate for the month
-        rate_obj = crud.historical_interest_rate.get_rate_for_date(
-            db=db, scheme_name="PPF", a_date=current_month_start
-        )
+        if ppf_rates is not None:
+            rate_obj = next(
+                (
+                    r for r in ppf_rates
+                    if r.start_date <= current_month_start and
+                    (r.end_date is None or r.end_date >= current_month_start)
+                ),
+                None
+            )
+        else:
+            rate_obj = crud.historical_interest_rate.get_rate_for_date(
+                db=db, scheme_name="PPF", a_date=current_month_start
+            )
         if rate_obj:
             monthly_interest_rate = (
                 Decimal(rate_obj.rate) / Decimal("100") / Decimal("12")
@@ -171,6 +183,11 @@ def process_ppf_holding(
             opening_date=opening_date,
         )
 
+    # Pre-fetch all PPF rates once to avoid N+1 queries in the month loop
+    all_ppf_rates = db.query(HistoricalInterestRate).filter(
+        HistoricalInterestRate.scheme_name == "PPF"
+    ).all()
+
     # Separate transactions by type
     contributions = [
         t for t in transactions if t.transaction_type == TransactionType.CONTRIBUTION
@@ -209,7 +226,8 @@ def process_ppf_holding(
                     f"[PPF] FY {fy_end}: No existing credit, calculating..."
                 )
                 interest_for_fy = _calculate_ppf_interest_for_fy(
-                    db, fy_start, fy_end, balance, transactions_in_fy
+                    db, fy_start, fy_end, balance, transactions_in_fy,
+                    ppf_rates=all_ppf_rates
                 )
                 logger.info(
                     f"[PPF] FY {fy_end}: Calculated interest = {interest_for_fy}"
@@ -303,7 +321,8 @@ def process_ppf_holding(
             )
         else:  # Current, ongoing financial year
             on_the_fly_interest = _calculate_ppf_interest_for_fy(
-                db, fy_start, fy_end, balance, transactions_in_fy
+                db, fy_start, fy_end, balance, transactions_in_fy,
+                ppf_rates=all_ppf_rates
             )
             balance += (
                 sum(
@@ -327,9 +346,19 @@ def process_ppf_holding(
         if total_investment > 0
         else Decimal(0)
     )
-    current_rate_obj = crud.historical_interest_rate.get_rate_for_date(
-        db, scheme_name="PPF", a_date=date.today()
-    )
+    if all_ppf_rates is not None:
+        current_rate_obj = next(
+            (
+                r for r in all_ppf_rates
+                if r.start_date <= date.today() and
+                (r.end_date is None or r.end_date >= date.today())
+            ),
+            None
+        )
+    else:
+        current_rate_obj = crud.historical_interest_rate.get_rate_for_date(
+            db, scheme_name="PPF", a_date=date.today()
+        )
     current_interest_rate = current_rate_obj.rate if current_rate_obj else None
 
     return schemas.Holding(
