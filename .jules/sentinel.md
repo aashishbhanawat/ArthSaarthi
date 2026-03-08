@@ -1,0 +1,9 @@
+## 2024-05-18 - Prevented exception details leakage in API responses
+**Vulnerability:** The application was exposing internal application details via FastAPI `HTTPException` responses. In endpoints like `/api/v1/import-sessions/` and `/api/v1/admin/assets/`, generic exception `str(e)` traces were being appended to response strings (e.g., `raise HTTPException(status_code=500, detail=f"Could not read parsed data: {e}")`).
+**Learning:** Returning unsanitized exception details to API consumers breaks the principle of failing securely and could potentially disclose sensitive environment paths, database details, or parsing logic directly to an attacker.
+**Prevention:** All unhandled or broad exception responses (especially those related to file I/O or internal state changes) should return a fixed, generic message. Internal diagnostics must be securely handled using server-side logging with `logger.error(..., exc_info=True)` to preserve stack trace information without compromising the application boundary.
+
+## 2024-05-24 - [MEDIUM] Fix sensitive information leakage in backup restore
+**Vulnerability:** The `restore_backup` endpoint in `backend/app/services/backup_service.py` exposed sensitive internal application error details by returning `str(e)` in the `HTTPException` message when an exception occurred during the data restoration process.
+**Learning:** Returning raw exception strings directly to users through the API can expose stack traces, database schema details, or other internal application state, making it a vector for information disclosure attacks.
+**Prevention:** Always log the full exception securely using `logger.error("Message", exc_info=True)` and return a generic, user-friendly error message in the API response (e.g., "An error occurred during restore"). When catching exceptions only to log them, use `except Exception:` instead of `except Exception as e:` to comply with F841 rules.

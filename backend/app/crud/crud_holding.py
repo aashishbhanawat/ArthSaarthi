@@ -1,3 +1,4 @@
+import concurrent.futures
 import logging
 import math
 import time
@@ -5,9 +6,10 @@ import uuid
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-from typing import Dict, List
+from typing import List
 
 from dateutil.relativedelta import relativedelta
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -315,26 +317,24 @@ def _calculate_summary(
 
 def _process_market_traded_assets(
     db: Session,
-    portfolio_id: uuid.UUID,
+    portfolio_id: uuid.UUID | None,
     transactions: List[models.Transaction],
     initial_realized_pnl: Decimal,
+    user_id: uuid.UUID | None = None,
 ) -> tuple[List[schemas.Holding], Decimal]:
     """Processes all market-traded assets like Stocks, MFs, ETFs, and Bonds."""
     holdings_list = []
     total_realized_pnl = initial_realized_pnl
 
-    # This query is the key fix. It was missing. We need to find all unique
-    # assets that have had any kind of transaction to be considered for holdings.
-    unique_asset_ids_query = (
-        db.query(models.Transaction.asset_id)
-        .filter(models.Transaction.portfolio_id == portfolio_id)
-        .filter(models.Transaction.transaction_type.in_([
-            "BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT",
-            "BONUS", "MERGER", "RENAME", "DEMERGER"
-        ]))
-        .distinct()
-    )
-    unique_asset_ids = [row[0] for row in unique_asset_ids_query.all()]
+    # Optimization: Use the already fetched transactions list instead of a new DB query.
+    relevant_types = {
+        "BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT",
+        "BONUS", "MERGER", "RENAME", "DEMERGER"
+    }
+    unique_asset_ids = {
+        tx.asset_id for tx in transactions
+        if tx.transaction_type in relevant_types
+    }
 
     holdings_state = defaultdict(
         lambda: {
@@ -361,16 +361,30 @@ def _process_market_traded_assets(
 
     # --- Pre-fetch Transaction Links ---
     transaction_ids = [tx.id for tx in transactions]
-    links = db.query(TransactionLink).filter(
+    all_links = db.query(TransactionLink).filter(
         TransactionLink.sell_transaction_id.in_(transaction_ids)
     ).all()
 
     sell_links_map = defaultdict(list)
-    for link in links:
+    for link in all_links:
         sell_links_map[link.sell_transaction_id].append(link)
 
     # Map transaction ID to object for quick lookup of Buy price
     tx_map = {tx.id: tx for tx in transactions}
+
+    # Optimization: Pre-fetch any linked buy transactions not in tx_map
+    # (e.g. from other portfolios)
+    missing_buy_ids = {
+        link.buy_transaction_id for link in all_links
+        if link.buy_transaction_id not in tx_map
+    }
+    if missing_buy_ids:
+        logger.debug(f"Pre-fetching {len(missing_buy_ids)} linked buy transactions.")
+        missing_txs = db.query(models.Transaction).filter(
+            models.Transaction.id.in_(missing_buy_ids)
+        ).all()
+        for m_tx in missing_txs:
+            tx_map[m_tx.id] = m_tx
 
     for tx in transactions:
         asset = asset_map.get(tx.asset_id)
@@ -467,11 +481,6 @@ def _process_market_traded_assets(
                 if links:
                     for link in links:
                         buy_tx = tx_map.get(link.buy_transaction_id)
-                        # Fallback for buy_tx finding (safe-guard)
-                        if not buy_tx:
-                             buy_tx = db.query(models.Transaction).get(
-                                 link.buy_transaction_id
-                             )
 
                         if buy_tx:
                             # For RSU_VEST, cost basis is FMV, not price_per_unit ($0)
@@ -556,29 +565,27 @@ def _process_market_traded_assets(
     # --- On-demand enrichment for assets with NULL sector ---
     # This enriches sector/industry/country when fetching portfolio
     needs_commit = False
+
+    # Identify assets needing enrichment
+    equities_to_enrich = []
+    mfs_to_enrich = []
+
     for ticker in current_holdings_tickers:
         asset = ticker_map.get(ticker)
         if asset and asset.sector is None:
             asset_type_upper = (asset.asset_type or "").upper()
             if asset_type_upper in ["STOCK", "ETF"]:
-                # Equities: enrich via yfinance
-                enrichment = (
-                    financial_data_service.yfinance_provider.get_enrichment_data(
-                        ticker, asset.exchange
-                    )
-                )
-                if enrichment:
-                    asset.sector = enrichment.get("sector")
-                    asset.industry = enrichment.get("industry")
-                    asset.country = enrichment.get("country")
-                    asset.market_cap = enrichment.get("market_cap")
-                    asset.investment_style = enrichment.get("investment_style")
-                    db.add(asset)
-                    needs_commit = True
+                equities_to_enrich.append(asset)
             elif asset.asset_type in ["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"]:
-                # Mutual Funds: enrich via AMFI
-                nav_data = financial_data_service.amfi_provider.get_all_nav_data()
-                fund_data = nav_data.get(ticker, {})
+                mfs_to_enrich.append(asset)
+
+    # 1. Optimize AMFI Enrichment: Batch Fetch
+    if mfs_to_enrich:
+        logger.info(f"Enriching {len(mfs_to_enrich)} Mutual Funds via AMFI...")
+        try:
+            nav_data = financial_data_service.amfi_provider.get_all_nav_data()
+            for asset in mfs_to_enrich:
+                fund_data = nav_data.get(asset.ticker_symbol, {})
                 mf_category = fund_data.get("mf_category")
                 mf_sub_category = fund_data.get("mf_sub_category")
                 if mf_category:
@@ -591,6 +598,41 @@ def _process_market_traded_assets(
                         asset.country = "India"
                     db.add(asset)
                     needs_commit = True
+        except Exception as e:
+            logger.error(f"Failed during AMFI enrichment: {e}")
+
+    # 2. Optimize yfinance Enrichment: Parallelize Requests
+    if equities_to_enrich:
+        logger.info(
+            f"Enriching {len(equities_to_enrich)} Equities via yfinance (Parallel)..."
+        )
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Map future to asset
+            future_to_asset = {
+                executor.submit(
+                    financial_data_service.yfinance_provider.get_enrichment_data,
+                    asset.ticker_symbol,
+                    asset.exchange,
+                ): asset
+                for asset in equities_to_enrich
+            }
+
+            for future in concurrent.futures.as_completed(future_to_asset):
+                asset = future_to_asset[future]
+                try:
+                    enrichment = future.result()
+                    if enrichment:
+                        asset.sector = enrichment.get("sector")
+                        asset.industry = enrichment.get("industry")
+                        asset.country = enrichment.get("country")
+                        asset.market_cap = enrichment.get("market_cap")
+                        asset.investment_style = enrichment.get("investment_style")
+                        db.add(asset)
+                        needs_commit = True
+                except Exception as exc:
+                    logger.warning(
+                        f"Enrichment failed for {asset.ticker_symbol}: {exc}"
+                    )
     if needs_commit:
         try:
             db.commit()
@@ -750,19 +792,22 @@ class CRUDHolding:
         arg_names=["portfolio_id"],
         response_model=schemas.PortfolioHoldingsAndSummary,
     )
-
-    def _calculate_holdings_and_summary_from_data(
-        self,
-        db: Session,
-        portfolio_id: uuid.UUID,
-        transactions: List[models.Transaction],
-        all_fixed_deposits: List[models.FixedDeposit],
-        all_recurring_deposits: List[models.RecurringDeposit],
-        all_portfolio_assets: List[models.Asset]
+    def get_portfolio_holdings_and_summary(
+        self, db: Session, *, portfolio_id: uuid.UUID
     ) -> schemas.PortfolioHoldingsAndSummary:
+        """Calculates the consolidated holdings and a summary for a given portfolio."""
         start_time = time.time()
         logger.info(
-            f"Starting holdings calculation for portfolio_id: {portfolio_id} from data"
+            f"Starting holdings calculation for portfolio_id: {portfolio_id}"
+        )
+        transactions = crud.transaction.get_multi_by_portfolio(
+            db=db, portfolio_id=portfolio_id
+        )
+        all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
+            db, portfolio_id=portfolio_id
+        )
+        all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
+            db=db, portfolio_id=portfolio_id
         )
 
         # --- Process Market-Traded Assets First ---
@@ -791,17 +836,29 @@ class CRUDHolding:
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
         total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
-
-        ppf_assets = [
-            asset for asset in all_portfolio_assets if asset.asset_type.upper() == "PPF"
-        ]
+        ppf_assets = (
+            db.query(models.Asset)
+            .join(models.Transaction)
+            .filter(
+                models.Transaction.portfolio_id == portfolio_id,
+                func.upper(models.Asset.asset_type) == "PPF"
+            )
+            .distinct()
+            .all()
+        )
         logger.info(f"Found {len(ppf_assets)} PPF assets to process.")
         # --- PPF Holdings ---
+
+        if ppf_assets:
+            # Lock all PPF asset rows at once before processing to prevent race
+            # conditions on the interest calculation logic, which has a write
+            # side-effect. This is only supported by PostgreSQL.
+            ppf_asset_ids = [asset.id for asset in ppf_assets]
+            db.query(models.Asset).filter(
+                models.Asset.id.in_(ppf_asset_ids)
+            ).with_for_update().all()
+
         for ppf_asset in ppf_assets:
-            # Lock the asset row before processing to prevent race conditions
-            # on the interest calculation logic, which has a write side-effect.
-            # This is only supported by PostgreSQL.
-            db.query(models.Asset).filter_by(id=ppf_asset.id).with_for_update().first()
             logger.info(f"Processing PPF asset {ppf_asset.id}...")
             ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id)
             if ppf_holding:
@@ -853,7 +910,7 @@ class CRUDHolding:
             f"Calculation complete. Total portfolio value: {summary.total_value}"
         )
         logger.debug(
-            "[...from_data] Final summary object: %s", summary
+            "[_get_portfolio_holdings_and_summary] Final summary object: %s", summary
         )
         end_time = time.time()
         logger.info(
@@ -866,84 +923,170 @@ class CRUDHolding:
         )
 
     @cache_analytics_data(
-        prefix="analytics:portfolio_holdings_and_summary",
-        arg_names=["portfolio_id"],
+        prefix="analytics:all_portfolios_holdings_and_summary",
+        arg_names=["user_id"],
         response_model=schemas.PortfolioHoldingsAndSummary,
     )
-    def get_portfolio_holdings_and_summary(
-        self, db: Session, *, portfolio_id: uuid.UUID
+    def get_all_portfolios_holdings_and_summary(
+        self, db: Session, *, user_id: uuid.UUID
     ) -> schemas.PortfolioHoldingsAndSummary:
-        """Calculates the consolidated holdings and a summary for a given portfolio."""
-        transactions = crud.transaction.get_multi_by_portfolio(
-            db=db, portfolio_id=portfolio_id
-        )
-        all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
-            db, portfolio_id=portfolio_id
-        )
-        all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
-            db=db, portfolio_id=portfolio_id
-        )
-        all_portfolio_assets = crud.asset.get_multi_by_portfolio(
-            db, portfolio_id=portfolio_id
+        """Calculates consolidated holdings and summary for all user portfolios."""
+        start_time = time.time()
+        logger.info(
+            f"Starting holdings calculation for all portfolios of user_id: {user_id}"
         )
 
-        return self._calculate_holdings_and_summary_from_data(
-            db=db,
-            portfolio_id=portfolio_id,
-            transactions=transactions,
-            all_fixed_deposits=all_fixed_deposits,
-            all_recurring_deposits=all_recurring_deposits,
-            all_portfolio_assets=all_portfolio_assets
-        )
-
-    def get_multiple_portfolios_holdings_and_summary(
-        self, db: Session, *, portfolio_ids: List[uuid.UUID]
-    ) -> Dict[uuid.UUID, schemas.PortfolioHoldingsAndSummary]:
-        if not portfolio_ids:
-            return {}
-
-        all_transactions = crud.transaction.get_multi_by_portfolios(
-            db=db, portfolio_ids=portfolio_ids
-        )
-        all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolios(
-            db=db, portfolio_ids=portfolio_ids
-        )
-        all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolios(
-            db=db, portfolio_ids=portfolio_ids
-        )
-        all_portfolio_assets = crud.asset.get_multi_by_portfolios(
-            db=db, portfolio_ids=portfolio_ids
-        )
-
-        from collections import defaultdict
-
-        txs_by_port = defaultdict(list)
-        for tx in all_transactions:
-            txs_by_port[tx.portfolio_id].append(tx)
-
-        fds_by_port = defaultdict(list)
-        for fd in all_fixed_deposits:
-            fds_by_port[fd.portfolio_id].append(fd)
-
-        rds_by_port = defaultdict(list)
-        for rd in all_recurring_deposits:
-            rds_by_port[rd.portfolio_id].append(rd)
-
-        results = {}
-        for p_id in portfolio_ids:
-            p_asset_ids = {tx.asset_id for tx in txs_by_port[p_id]}
-            p_assets = [a for a in all_portfolio_assets if a.id in p_asset_ids]
-
-            results[p_id] = self._calculate_holdings_and_summary_from_data(
-                db=db,
-                portfolio_id=p_id,
-                transactions=txs_by_port[p_id],
-                all_fixed_deposits=fds_by_port[p_id],
-                all_recurring_deposits=rds_by_port[p_id],
-                all_portfolio_assets=p_assets
+        # Get all portfolios for the user
+        portfolios = crud.portfolio.get_multi_by_owner(db=db, user_id=user_id)
+        if not portfolios:
+            # Return empty summary if user has no portfolios
+            summary = schemas.PortfolioSummary(
+                total_value=Decimal("0.0"),
+                total_invested_amount=Decimal("0.0"),
+                days_pnl=Decimal("0.0"),
+                total_unrealized_pnl=Decimal("0.0"),
+                total_realized_pnl=Decimal("0.0"),
             )
+            return schemas.PortfolioHoldingsAndSummary(summary=summary, holdings=[])
 
-        return results
+        portfolio_ids = [p.id for p in portfolios]
+
+        # Get all transactions, FDs, and RDs for the user
+        transactions = (
+            db.query(models.Transaction)
+            .filter(models.Transaction.user_id == user_id)
+            .all()
+        )
+
+        all_fixed_deposits = db.query(models.FixedDeposit).filter(
+            models.FixedDeposit.portfolio_id.in_(portfolio_ids)
+        ).all()
+
+        all_recurring_deposits = db.query(models.RecurringDeposit).filter(
+            models.RecurringDeposit.portfolio_id.in_(portfolio_ids)
+        ).all()
+
+        # --- Process Market-Traded Assets First ---
+        market_traded_holdings, total_realized_pnl = _process_market_traded_assets(
+            db,
+            portfolio_id=None,
+            user_id=user_id,
+            transactions=transactions,
+            initial_realized_pnl=Decimal("0.0"),
+        )
+        logger.info(
+            f"Processed {len(market_traded_holdings)} market-traded assets. "
+            f"Realized PNL from sales: {total_realized_pnl}"
+        )
+        holdings_list: List[schemas.Holding] = market_traded_holdings
+
+        # --- Process Non-Market-Traded Assets (FDs, RDs, PPF) ---
+        fd_holdings, pnl_from_matured_fds = _process_fixed_deposits(all_fixed_deposits)
+        rd_holdings, pnl_from_matured_rds = _process_recurring_deposits(
+            all_recurring_deposits
+        )
+        logger.info(
+            "Processed FDs (%s), RDs (%s).", len(fd_holdings), len(rd_holdings)
+        )
+        logger.info(
+            "Realized PNL from matured FDs: %s, RDs: %s",
+            pnl_from_matured_fds,
+            pnl_from_matured_rds,
+        )
+        holdings_list.extend(fd_holdings)
+        holdings_list.extend(rd_holdings)
+        total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
+
+        ppf_assets = (
+            db.query(models.Asset)
+            .join(models.Transaction)
+            .filter(
+                models.Transaction.user_id == user_id,
+                func.upper(models.Asset.asset_type) == "PPF"
+            )
+            .distinct()
+            .all()
+        )
+        logger.info(f"Found {len(ppf_assets)} PPF assets to process.")
+
+        # --- PPF Holdings ---
+        for ppf_asset in ppf_assets:
+            # We don't have a single portfolio id for PPF since we're
+            # processing for the whole user.
+            # process_ppf_holding needs a portfolio_id (it checks for
+            # transactions for that portfolio).
+            # We will run process_ppf_holding for each portfolio that has
+            # this asset and combine them, or better, process_ppf_holding
+            # can take portfolio_id=None which isn't directly supported.
+            # Looking at `process_ppf_holding` in crud_ppf, if
+            # portfolio_id=None, it uses user_id if passed.
+            # `process_ppf_holding` takes `portfolio_id: uuid.UUID | None = None`.
+            # If None, it processes all transactions for the asset
+            # across all portfolios.
+
+            # Lock the asset row before processing
+            db.query(models.Asset).filter_by(id=ppf_asset.id).with_for_update().first()
+            logger.info(f"Processing PPF asset {ppf_asset.id}...")
+
+            # Call process_ppf_holding with portfolio_id=None to aggregate
+            # across all portfolios
+            # NOTE: We may need to pass user_id to ensure it only grabs for this
+            # user if the asset is shared, but usually PPF asset is per user.
+            ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id=None)
+            if ppf_holding:
+                holdings_list.append(ppf_holding)
+                if ppf_holding.realized_pnl:
+                    logger.debug(
+                        "  - PPF Holding Realized PNL: %s", ppf_holding.realized_pnl
+                    )
+
+        logger.info("Finished processing all PPF assets.")
+
+        # --- Final Grouping and Summary Calculation ---
+        logger.info(
+            f"Starting final summary. Total holdings in list: {len(holdings_list)}"
+        )
+        for holding_item in holdings_list:
+            group_map = {
+                "STOCK": "EQUITIES",
+                "Mutual Fund": "EQUITIES",
+                "MUTUAL_FUND": "EQUITIES",
+                "ETF": "EQUITIES",
+                "FIXED_DEPOSIT": "DEPOSITS",
+                "RECURRING_DEPOSIT": "DEPOSITS",
+                "BOND": "BONDS",
+                "PPF": "GOVERNMENT_SCHEMES",
+            }
+            group_map_upper = {k.upper(): v for k, v in group_map.items()}
+            holding_item.group = group_map_upper.get(
+                str(holding_item.asset_type).upper(), "MISCELLANEOUS")
+
+        # --- Calculate Unrealized P&L for all holdings ---
+        for holding in holdings_list:
+            if holding.asset_type not in ["FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF"]:
+                unrealized_pnl = holding.current_value - holding.total_invested_amount
+            else:
+                unrealized_pnl = holding.unrealized_pnl
+
+            holding.unrealized_pnl = unrealized_pnl
+            if holding.total_invested_amount > 0:
+                holding.unrealized_pnl_percentage = float(
+                    unrealized_pnl / holding.total_invested_amount
+                )
+
+        summary = _calculate_summary(holdings_list, total_realized_pnl, transactions)
+        logger.info(
+            f"Calculation complete. Total user portfolios value: {summary.total_value}"
+        )
+        end_time = time.time()
+        logger.info(
+            f"Holdings calculation for all portfolios of user {user_id} "
+            f"took {end_time - start_time:.4f} seconds."
+        )
+
+        return schemas.PortfolioHoldingsAndSummary(
+            summary=summary, holdings=holdings_list
+        )
 
 
 holding = CRUDHolding()

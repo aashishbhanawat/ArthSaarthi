@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -74,6 +74,9 @@ class CapitalGainsService:
 
         links = self.db.scalars(query).all()
 
+        # 1.5. Pre-fetch and pre-calculate Demerger Cost Reductions
+        demerger_ratios = self._calculate_demerger_ratios(portfolio_id, end_date)
+
         gains: List[GainEntry] = []
         foreign_gains: List[ForeignGainEntry] = []
         schedule_112a_entries: List[Schedule112AEntry] = []
@@ -101,12 +104,14 @@ class CapitalGainsService:
 
             if is_foreign:
                 # Process as foreign gain (no INR conversion)
-                foreign_entry = self._process_foreign_link(link, asset, sell_tx, buy_tx)
+                foreign_entry = self._process_foreign_link(
+                    link, asset, sell_tx, buy_tx, demerger_ratios
+                )
                 foreign_gains.append(foreign_entry)
             else:
                 # 2. Calculate Gain for this specific lot (domestic)
                 entry, s112a_entry = self._process_single_link(
-                    link, asset, sell_tx, buy_tx
+                    link, asset, sell_tx, buy_tx, demerger_ratios
                 )
                 gains.append(entry)
 
@@ -180,12 +185,90 @@ class CapitalGainsService:
         end_date = datetime(start_year + 1, 3, 31, 23, 59, 59)
         return start_date, end_date
 
+    def _calculate_demerger_ratios(
+        self,
+        portfolio_id: Optional[str],
+        end_date: datetime
+    ) -> Dict[str, List[Tuple[date, Decimal]]]:
+        """
+        Calculates remaining cost basis ratios for assets that underwent demergers.
+        Returns: { asset_id_str: [(demerger_date, remaining_ratio), ...] }
+        """
+        # 1. Fetch all DEMERGER transactions before end_date
+        query = select(Transaction).where(
+            Transaction.transaction_type == TransactionType.DEMERGER,
+            Transaction.transaction_date <= end_date
+        )
+        if portfolio_id:
+            query = query.where(Transaction.portfolio_id == portfolio_id)
+
+        demerger_txs = self.db.scalars(query).all()
+        if not demerger_txs:
+            return {}
+
+        # Group demergers by asset_id
+        demergers_by_asset: Dict[str, List[Transaction]] = defaultdict(list)
+        for tx in demerger_txs:
+            if tx.details and "total_cost_allocated" in tx.details:
+                demergers_by_asset[str(tx.asset_id)].append(tx)
+
+        if not demergers_by_asset:
+            return {}
+
+        result: Dict[str, List[Tuple[date, Decimal]]] = defaultdict(list)
+
+        # 2. For each asset, fetch relevant BUYs before its earliest demerger
+        for asset_id_str, d_txs in demergers_by_asset.items():
+            # Sort demergers by date
+            d_txs.sort(key=lambda x: x.transaction_date)
+            earliest_demerger_date = d_txs[0].transaction_date
+
+            # Fetch relevant BUYs for this asset before earliest demerger
+            buy_query = select(Transaction).where(
+                Transaction.asset_id == asset_id_str,
+                Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
+                Transaction.transaction_date < earliest_demerger_date
+            )
+            if portfolio_id:
+                buy_query = buy_query.where(Transaction.portfolio_id == portfolio_id)
+
+            buys = self.db.scalars(buy_query).all()
+
+            pre_demerger_cost = Decimal("0.0")
+            for buy in buys:
+                price = buy.price_per_unit if buy.price_per_unit else Decimal("0")
+                pre_demerger_cost += buy.quantity * price
+
+            current_pre_demerger_cost = pre_demerger_cost
+
+            for d_tx in d_txs:
+                cost_allocated = Decimal(str(d_tx.details["total_cost_allocated"]))
+                if current_pre_demerger_cost > 0 and cost_allocated > 0:
+                    remaining_ratio = (
+                        current_pre_demerger_cost - cost_allocated
+                    ) / current_pre_demerger_cost
+                else:
+                    remaining_ratio = Decimal("1.0")
+
+                result[asset_id_str].append(
+                    (d_tx.transaction_date.date(), remaining_ratio)
+                )
+
+                # For subsequent demergers on the same asset, the cost basis is reduced.
+                # `total_cost_allocated` from `crud_corporate_action.py` is
+                # calculated based on the remaining cost basis at the time of
+                # the demerger.
+                current_pre_demerger_cost -= cost_allocated
+
+        return result
+
     def _process_foreign_link(
         self,
         link: TransactionLink,
         asset: Asset,
         sell_tx: Transaction,
-        buy_tx: Transaction
+        buy_tx: Transaction,
+        demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None
     ) -> ForeignGainEntry:
         """
         Process a foreign asset gain entry.
@@ -205,10 +288,33 @@ class CapitalGainsService:
         ] and buy_tx.details and "fmv" in buy_tx.details):
             buy_price = Decimal(str(buy_tx.details["fmv"]))
 
+        # --- Corporate Action Adjustment (Demerger) ---
+        asset_id_str = str(asset.id)
+        if demerger_ratios and asset_id_str in demerger_ratios:
+            for d_date, ratio in demerger_ratios[asset_id_str]:
+                if buy_date < d_date <= sell_date:
+                    buy_price *= ratio
+                    logger.debug(
+                        f"Applied demerger ratio {ratio} for foreign "
+                        f"{asset.ticker_symbol}. New price: {buy_price}"
+                    )
+
         sell_price = sell_tx.price_per_unit
 
-        total_buy_value = buy_price * quantity
-        total_sell_value = sell_price * quantity
+        # Proportional Fees
+        prop_buy_fees = (
+            (buy_tx.fees / buy_tx.quantity) * quantity
+            if buy_tx.quantity > 0
+            else Decimal(0)
+        )
+        prop_sell_fees = (
+            (sell_tx.fees / sell_tx.quantity) * quantity
+            if sell_tx.quantity > 0
+            else Decimal(0)
+        )
+
+        total_buy_value = (buy_price * quantity) + prop_buy_fees
+        total_sell_value = (sell_price * quantity) - prop_sell_fees
         gain = total_sell_value - total_buy_value
 
         # Holding period for foreign assets: 24 months (unlisted)
@@ -254,23 +360,14 @@ class CapitalGainsService:
         link: TransactionLink,
         asset: Asset,
         sell_tx: Transaction,
-        buy_tx: Transaction
+        buy_tx: Transaction,
+        demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None
     ) -> Tuple[GainEntry, Optional[Schedule112AEntry]]:
 
         buy_date = buy_tx.transaction_date.date()
         sell_date = sell_tx.transaction_date.date()
         quantity = link.quantity
 
-        # --- Corporate Action Adjustment (Demerger) ---
-        # Check if Buy Tx has Demerger adjustments
-        # Logic: If Buy is Pre-Demerger, and we have demerger info, reduce Cost.
-        # Note: This is complex. For now, we assume `buy_tx.price_per_unit`
-        # is the raw price. We need to check if ANY demerger happened
-        # for this asset between Buy and today.
-        # Ideally, `crud_analytics` handles this logic of 'adjusted price'.
-        # For v1.0, we will check `buy_tx.details` to see if it was explicitly updated?
-        # No, the `HoldingDetailModal` computes it on fly.
-        # We need a helper to get `adjusted_buy_price`.
         buy_price = buy_tx.price_per_unit
 
         # --- ESPP Cost Basis Adjustment ---
@@ -284,11 +381,34 @@ class CapitalGainsService:
                 f"Using ESPP FMV {buy_price} as cost basis for {asset.ticker_symbol}"
             )
 
-        # TODO: Implement demerger cost reduction lookup
+        # --- Corporate Action Adjustment (Demerger) ---
+        asset_id_str = str(asset.id)
+        if demerger_ratios and asset_id_str in demerger_ratios:
+            for d_date, ratio in demerger_ratios[asset_id_str]:
+                # If the buy happened before the demerger,
+                # and we sold on or after the demerger
+                if buy_date < d_date <= sell_date:
+                    buy_price *= ratio
+                    logger.debug(
+                        f"Applied demerger ratio {ratio} for "
+                        f"{asset.ticker_symbol}. New price: {buy_price}"
+                    )
 
         sell_price = sell_tx.price_per_unit
 
-        cost_of_acquisition = buy_price * quantity
+        # Proportional Fees
+        prop_buy_fees = (
+            (buy_tx.fees / buy_tx.quantity) * quantity
+            if buy_tx.quantity > 0
+            else Decimal(0)
+        )
+        prop_sell_fees = (
+            (sell_tx.fees / sell_tx.quantity) * quantity
+            if sell_tx.quantity > 0
+            else Decimal(0)
+        )
+
+        cost_of_acquisition = (buy_price * quantity) + prop_buy_fees
         full_value_consideration = sell_price * quantity
 
         # Classification
@@ -322,17 +442,19 @@ class CapitalGainsService:
         # Grandfathering Logic
         fmv_2018 = None
         is_grandfathered = False
+        actual_cost_total = cost_of_acquisition # Initial cost including buy fees
+
         if is_ltcg and asset_category == "EQUITY_LISTED" and buy_date < DATE_2018_01_31:
             is_grandfathered = True
             fmv_2018 = self._get_grandfathering_price(asset)
             if fmv_2018:
                 # Formula: Cost = Max(Actual Cost, Min(FMV, SalePrice))
-                # All per unit
-                lower_of_fmv_sale = min(fmv_2018, sell_price)
-                new_cost_per_unit = max(buy_price, lower_of_fmv_sale)
-                cost_of_acquisition = new_cost_per_unit * quantity
+                # Note: For S112A, cost of acquisition is calculated at total level
+                lower_of_fmv_sale = min(fmv_2018 * quantity, full_value_consideration)
+                cost_of_acquisition = max(actual_cost_total, lower_of_fmv_sale)
 
-        gain = full_value_consideration - cost_of_acquisition
+        net_sell_value = full_value_consideration - prop_sell_fees
+        gain = net_sell_value - cost_of_acquisition
 
         # Gain Entry
         entry = GainEntry(
@@ -346,7 +468,7 @@ class CapitalGainsService:
             buy_price=buy_price, # showing original buy price for reference
             sell_price=sell_price,
             total_buy_value=cost_of_acquisition,
-            total_sell_value=full_value_consideration,
+            total_sell_value=net_sell_value,
             gain=gain,
             gain_type=gain_type,
             holding_days=holding_days,
@@ -365,13 +487,14 @@ class CapitalGainsService:
                 quantity=quantity,
                 sale_price=sell_price,
                 full_value_consideration=full_value_consideration,
-                cost_of_acquisition_orig=buy_price * quantity,
+                cost_of_acquisition_orig=actual_cost_total,
                 fmv_31jan2018=fmv_2018,
                 total_fmv=(fmv_2018 * quantity) if fmv_2018 else None,
                 cost_of_acquisition_final=cost_of_acquisition,
-                expenditure=Decimal(0), # TODO: Add fees
-                total_deductions=cost_of_acquisition,
-                balance=gain,
+                expenditure=prop_sell_fees,
+                total_deductions=cost_of_acquisition + prop_sell_fees,
+                balance=full_value_consideration
+                - (cost_of_acquisition + prop_sell_fees),
                 acquired_date=buy_date,
                 transfer_date=sell_date
              )

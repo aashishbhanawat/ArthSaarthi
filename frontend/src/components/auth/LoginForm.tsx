@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import * as api from '../../services/api';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 const LoginForm: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -52,17 +54,31 @@ const LoginForm: React.FC = () => {
                     <label htmlFor="password" className="form-label">
                         Password
                     </label>
-                    <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        autoComplete="current-password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="form-input"
-                        disabled={isLoading}
-                    />
+                    <div className="relative">
+                        <input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            autoComplete="current-password"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="form-input pr-10"
+                            disabled={isLoading}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-md"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                            {showPassword ? (
+                                <EyeSlashIcon className="h-5 w-5" aria-hidden="true" />
+                            ) : (
+                                <EyeIcon className="h-5 w-5" aria-hidden="true" />
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 {error && (

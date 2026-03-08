@@ -321,14 +321,6 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         )
         return transactions, total
 
-
-    def get_multi_by_portfolios(
-        self, db: Session, *, portfolio_ids: List[uuid.UUID]
-    ) -> List[Transaction]:
-        return (
-            db.query(self.model).filter(self.model.portfolio_id.in_(portfolio_ids)).all()
-        )
-
     def get_multi_by_portfolio(
         self, db: Session, *, portfolio_id: uuid.UUID
     ) -> List[Transaction]:
@@ -342,7 +334,6 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         """Retrieves all transactions for a specific asset."""
         return db.query(self.model).filter(self.model.asset_id == asset_id).all()
 
-
     def get_multi_by_portfolio_and_asset(
         self, db: Session, *, portfolio_id: uuid.UUID, asset_id: uuid.UUID
     ) -> List[Transaction]:
@@ -355,7 +346,6 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             .order_by(Transaction.transaction_date)
             .all()
         )
-
 
     def get_multi_by_portfolio_and_asset_before_date(
         self,
@@ -481,16 +471,19 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 links_map[link.sell_transaction_id].append(link)
 
         lots = []  # List of buys: {tx, available_quantity}
+        lots_map = {}  # Map of transaction_id -> lot (for O(1) lookup)
+        # Optimization: track the first available lot to avoid O(N*M) scans
+        fifo_index = 0
 
         for tx in transactions:
             if tx.transaction_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
-                lots.append(
-                    {
-                        "transaction": tx,
-                        "available_quantity": tx.quantity,
-                        "date": tx.transaction_date,
-                    }
-                )
+                lot = {
+                    "transaction": tx,
+                    "available_quantity": tx.quantity,
+                    "date": tx.transaction_date,
+                }
+                lots.append(lot)
+                lots_map[tx.id] = lot
             elif tx.transaction_type == "SELL":
                 # Skip the excluded sell (used during auto-linking)
                 if exclude_sell_id and tx.id == exclude_sell_id:
@@ -507,20 +500,24 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                     sell_qty -= link.quantity
 
                     # Deduct from the specific lot
-                    for lot in lots:
-                        if lot["transaction"].id == link.buy_transaction_id:
-                            lot["available_quantity"] -= link.quantity
-                            break
+                    if link.buy_transaction_id in lots_map:
+                        lot = lots_map[link.buy_transaction_id]
+                        lot["available_quantity"] -= link.quantity
 
                 # 2. Process Remaining Quantity (Unlinked) via FIFO
                 if sell_qty > 0:
-                    for lot in lots:
-                        if lot["available_quantity"] > 0:
-                            take = min(lot["available_quantity"], sell_qty)
-                            lot["available_quantity"] -= take
-                            sell_qty -= take
-                            if sell_qty <= 0:
-                                break
+                    while fifo_index < len(lots) and sell_qty > 0:
+                        lot = lots[fifo_index]
+                        if lot["available_quantity"] <= 0:
+                            fifo_index += 1
+                            continue
+
+                        take = min(lot["available_quantity"], sell_qty)
+                        lot["available_quantity"] -= take
+                        sell_qty -= take
+
+                        if lot["available_quantity"] <= 0:
+                            fifo_index += 1
 
         # Filter out fully consumed lots
         available_lots = [

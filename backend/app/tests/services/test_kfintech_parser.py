@@ -27,12 +27,15 @@ class TestKFintechParser:
         assert parser._classify_transaction("Purchase") == "BUY"
         assert parser._classify_transaction("SIP Purchase") == "BUY"
         assert parser._classify_transaction("Switch In") == "BUY"
+        assert parser._classify_transaction("Switch In - Merger") == "BUY"
         assert parser._classify_transaction("Systematic Investment") == "BUY"
 
     def test_classify_transaction_sell(self, parser):
         """Test SELL transaction classification."""
         assert parser._classify_transaction("Redemption") == "SELL"
         assert parser._classify_transaction("Switch Out") == "SELL"
+        assert parser._classify_transaction("Switch Out - Merger") == "SELL"
+        assert parser._classify_transaction("S witch Out - Merger") == "SELL"
 
     def test_classify_transaction_dividend(self, parser):
         """Test dividend transaction classification."""
@@ -64,15 +67,13 @@ class TestKFintechParser:
         assert parser._should_skip("KYC : OK")
         assert parser._should_skip("Nominee 1 : Test")
 
-    def test_should_skip_merger(self, parser):
-        """Test merger transactions are skipped."""
-        assert parser._should_skip("Switch In - Merger")
-        assert parser._should_skip("Switch Out - Merger")
-
     def test_should_not_skip_transaction(self, parser):
         """Test transaction lines are not skipped."""
         assert not parser._should_skip("29-Nov-2021 Purchase 50000")
         assert not parser._should_skip("15-Jan-2022 SIP Purchase 2000")
+        assert not parser._should_skip("15-Jan-2022 Switch In - Merger 1000")
+        assert not parser._should_skip("15-Jan-2022 Switch Out - Merger 1000")
+        assert not parser._should_skip("15-Jan-2022 S witch Out - Merger 1000")
 
     def test_parse_number(self, parser):
         """Test number parsing with commas."""

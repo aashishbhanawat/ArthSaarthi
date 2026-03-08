@@ -116,10 +116,20 @@ def _get_realized_and_unrealized_cash_flows(
                     and earliest_demerger_date
                     and t.transaction_date.date() < earliest_demerger_date):
                 buy_copy.price_per_unit = buy_copy.price_per_unit * remaining_ratio
-            buys.append(buy_copy)
-            buy_id_to_copy_map[buy_copy.id] = buy_copy
+
+            # Use a dict to track quantity to avoid mutating the original model.
+            # Ensures we don't accidentally modify SQLAlchemy instances.
+            lot = {
+                "transaction": buy_copy,
+                "available_quantity": buy_copy.quantity
+            }
+            buys.append(lot)
+            buy_id_to_copy_map[buy_copy.id] = lot
 
     sells = [t for t in sorted_txs if t.transaction_type == "SELL"]
+
+    # Optimization: Track the first available buy lot to avoid O(N*M) scans
+    fifo_index = 0
 
     # Separate income from contributions
     income_flows = [
@@ -154,13 +164,15 @@ def _get_realized_and_unrealized_cash_flows(
                 if sell_quantity_to_match <= 0:
                     break
 
-                buy_copy = buy_id_to_copy_map.get(link.buy_transaction_id)
-                if not buy_copy:
+                lot = buy_id_to_copy_map.get(link.buy_transaction_id)
+                if not lot:
                     logger.warning(
                         f"Linked Buy ID {link.buy_transaction_id} "
                         f"not found in transactions."
                     )
                     continue
+
+                buy_tx = lot["transaction"]
 
                 # Determine quantity to use from this link
                 # (capped by what's left in sell)
@@ -171,32 +183,32 @@ def _get_realized_and_unrealized_cash_flows(
                     continue
 
                 # Safety check: available buy quantity
-                if buy_copy.quantity < match_quantity:
+                if lot["available_quantity"] < match_quantity:
                     logger.warning(
-                        f"Buy ID {buy_copy.id} has insufficient quantity "
-                        f"({buy_copy.quantity}) for link ({match_quantity}). "
+                        f"Buy ID {buy_tx.id} has insufficient quantity "
+                        f"({lot['available_quantity']}) for link ({match_quantity}). "
                         f"Using available."
                     )
-                    match_quantity = buy_copy.quantity
+                    match_quantity = lot["available_quantity"]
 
                 if match_quantity > 0:
                      # --- Price & P&L Calculation logic (Shared) ---
                     if (
-                        buy_copy.transaction_type == "RSU_VEST"
-                        and buy_copy.details
-                        and "fmv" in buy_copy.details
+                        buy_tx.transaction_type == "RSU_VEST"
+                        and buy_tx.details
+                        and "fmv" in buy_tx.details
                     ):
-                        buy_price = Decimal(str(buy_copy.details["fmv"]))
+                        buy_price = Decimal(str(buy_tx.details["fmv"]))
                     else:
                         buy_price = (
-                            buy_copy.price_per_unit
-                            if buy_copy.price_per_unit is not None
+                            buy_tx.price_per_unit
+                            if buy_tx.price_per_unit is not None
                             else Decimal("0.0")
                         )
 
                     buy_fx_rate = (
-                        Decimal(str(buy_copy.details.get("fx_rate", 1)))
-                        if buy_copy.details
+                        Decimal(str(buy_tx.details.get("fx_rate", 1)))
+                        if buy_tx.details
                         else Decimal(1)
                     )
 
@@ -209,7 +221,7 @@ def _get_realized_and_unrealized_cash_flows(
 
                     # Cashflows
                     realized_cash_flows.append(
-                        (buy_copy.transaction_date.date(), float(-buy_cost_for_match))
+                        (buy_tx.transaction_date.date(), float(-buy_cost_for_match))
                     )
                     realized_cash_flows.append(
                         (
@@ -219,63 +231,69 @@ def _get_realized_and_unrealized_cash_flows(
                     )
 
                     # Update state
-                    buy_copy.quantity -= match_quantity
+                    lot["available_quantity"] -= match_quantity
                     sell_quantity_to_match -= match_quantity
 
         # --- Priority 2: FIFO for remaining quantity ---
         if sell_quantity_to_match > 0:
-            for buy_copy in buys:
-                if sell_quantity_to_match == 0:
-                    break
+            while fifo_index < len(buys) and sell_quantity_to_match > 0:
+                lot = buys[fifo_index]
+                if lot["available_quantity"] <= 0:
+                    fifo_index += 1
+                    continue
 
-                if buy_copy.quantity > 0:
-                    match_quantity = min(sell_quantity_to_match, buy_copy.quantity)
+                buy_tx = lot["transaction"]
+                match_quantity = min(sell_quantity_to_match, lot["available_quantity"])
 
-                    # --- Price & P&L Calculation logic (Shared) ---
-                    if (
-                        buy_copy.transaction_type == "RSU_VEST"
-                        and buy_copy.details
-                        and "fmv" in buy_copy.details
-                    ):
-                        buy_price = Decimal(str(buy_copy.details["fmv"]))
-                    else:
-                        buy_price = (
-                            buy_copy.price_per_unit
-                            if buy_copy.price_per_unit is not None
-                            else Decimal("0.0")
-                        )
-
-                    buy_fx_rate = (
-                        Decimal(str(buy_copy.details.get("fx_rate", 1)))
-                        if buy_copy.details
-                        else Decimal(1)
+                # --- Price & P&L Calculation logic (Shared) ---
+                if (
+                    buy_tx.transaction_type == "RSU_VEST"
+                    and buy_tx.details
+                    and "fmv" in buy_tx.details
+                ):
+                    buy_price = Decimal(str(buy_tx.details["fmv"]))
+                else:
+                    buy_price = (
+                        buy_tx.price_per_unit
+                        if buy_tx.price_per_unit is not None
+                        else Decimal("0.0")
                     )
 
-                    buy_cost_for_match = match_quantity * buy_price * buy_fx_rate
-                    sell_proceeds_for_match = match_quantity * sell_price * sell_fx_rate
+                buy_fx_rate = (
+                    Decimal(str(buy_tx.details.get("fx_rate", 1)))
+                    if buy_tx.details
+                    else Decimal(1)
+                )
 
-                    # P&L
-                    pnl = sell_proceeds_for_match - buy_cost_for_match
-                    realized_pnl += pnl
+                buy_cost_for_match = match_quantity * buy_price * buy_fx_rate
+                sell_proceeds_for_match = match_quantity * sell_price * sell_fx_rate
 
-                    # Cashflows
-                    realized_cash_flows.append(
-                        (buy_copy.transaction_date.date(), float(-buy_cost_for_match))
+                # P&L
+                pnl = sell_proceeds_for_match - buy_cost_for_match
+                realized_pnl += pnl
+
+                # Cashflows
+                realized_cash_flows.append(
+                    (buy_tx.transaction_date.date(), float(-buy_cost_for_match))
+                )
+                realized_cash_flows.append(
+                    (
+                        sell_tx.transaction_date.date(),
+                        float(sell_proceeds_for_match),
                     )
-                    realized_cash_flows.append(
-                        (
-                            sell_tx.transaction_date.date(),
-                            float(sell_proceeds_for_match),
-                        )
-                    )
+                )
 
-                    # Update state
-                    buy_copy.quantity -= match_quantity
-                    sell_quantity_to_match -= match_quantity
+                # Update state
+                lot["available_quantity"] -= match_quantity
+                sell_quantity_to_match -= match_quantity
+
+                if lot["available_quantity"] <= 0:
+                    fifo_index += 1
 
     unrealized_cash_flows = []
-    for buy_tx in buys:
-        if buy_tx.quantity > 0:
+    for lot in buys:
+        if lot["available_quantity"] > 0:
+            buy_tx = lot["transaction"]
             if (
                 buy_tx.transaction_type == "RSU_VEST"
                 and buy_tx.details
@@ -299,7 +317,7 @@ def _get_realized_and_unrealized_cash_flows(
             unrealized_cash_flows.append(
                 (
                     buy_tx.transaction_date.date(),
-                    float(-buy_tx.quantity * buy_price * buy_fx_rate)
+                    float(-lot["available_quantity"] * buy_price * buy_fx_rate)
                 )
             )
 

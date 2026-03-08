@@ -505,7 +505,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
         cache.delete(dashboard_key)
         logger.info(f"Invalidated dashboard cache for user {user_id}")
 
-    except Exception as e:
+    except Exception:
         db.rollback()
-        logger.error(f"Restore failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Restore failed: {str(e)}")
+        logger.error("Restore failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Restore failed.")

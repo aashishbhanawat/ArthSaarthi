@@ -29,13 +29,6 @@ class CRUDRD(
         db.refresh(db_obj)
         return db_obj
 
-    def get_multi_by_portfolios(
-        self, db: Session, *, portfolio_ids: List[uuid.UUID]
-    ) -> List[RecurringDeposit]:
-        return (
-            db.query(self.model).filter(RecurringDeposit.portfolio_id.in_(portfolio_ids)).all()
-        )
-
     def get_multi_by_portfolio(
         self, db: Session, *, portfolio_id: uuid.UUID, skip: int = 0, limit: int = 100
     ) -> List[RecurringDeposit]:

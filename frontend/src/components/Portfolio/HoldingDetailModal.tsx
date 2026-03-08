@@ -78,10 +78,10 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, currentPri
             </td>
             <td className="p-2 text-right">
                 <div className="flex items-center justify-end space-x-3">
-                    <button onClick={() => onEdit(transaction)} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Edit Transaction">
+                    <button onClick={() => onEdit(transaction)} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Edit Transaction" aria-label="Edit transaction">
                         <PencilSquareIcon className="h-5 w-5" />
                     </button>
-                    <button onClick={() => onDelete(transaction)} className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Delete Transaction">
+                    <button onClick={() => onDelete(transaction)} className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Delete Transaction" aria-label="Delete transaction">
                         <TrashIcon className="h-5 w-5" />
                     </button>
                 </div>
@@ -179,7 +179,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Current Holdings Breakdown</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
+                    <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>

@@ -76,7 +76,14 @@ describe('WatchlistSelector', () => {
     renderComponent();
     const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
     fireEvent.click(deleteButtons[1]);
-    expect(window.confirm).toHaveBeenCalled();
+
+    // Check that the modal opened
+    expect(screen.getByText('Delete Watchlist')).toBeInTheDocument();
+
+    // Click confirm
+    const confirmButton = screen.getByRole('button', { name: /confirm delete/i });
+    fireEvent.click(confirmButton);
+
     expect(mockDeleteMutate).toHaveBeenCalledWith('2', expect.any(Object));
   });
 

@@ -307,10 +307,10 @@ def sync_assets(
         return AssetSyncResult(status="success", data=result)
 
     except Exception as e:
-        logger.error(f"Asset sync failed: {str(e)}")
+        logger.error(f"Asset sync failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Asset sync failed: {str(e)}",
+            detail="Asset sync failed.",
         )
 
 
@@ -563,12 +563,12 @@ def lookup_fmv_2018(
         )
 
     except Exception as e:
-        logger.error(f"Failed to fetch FMV 2018 for {ticker}: {e}")
+        logger.error(f"Failed to fetch FMV 2018 for {ticker}: {e}", exc_info=True)
         return FMV2018LookupResponse(
             ticker_symbol=ticker,
             fmv_2018=None,
             source="yfinance",
-            message=f"Lookup failed: {str(e)}",
+            message="Lookup failed due to an internal error.",
         )
 
 
@@ -618,8 +618,8 @@ def bulk_seed_fmv_2018(
             message=f"Updated {result['updated']} assets from BSE/AMFI data",
         )
     except Exception as e:
-        logger.error(f"Bulk seed failed: {e}")
+        logger.error(f"Bulk seed failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Bulk seed failed: {str(e)}",
+            detail="Bulk seed failed.",
         )

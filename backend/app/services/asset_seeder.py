@@ -843,15 +843,39 @@ class AssetSeeder:
                 ticker_map[yf_ticker] = asset
 
             try:
+                import concurrent.futures
+
                 yf_tickers_str = " ".join(ticker_map.keys())
                 yf_data = yf.Tickers(yf_tickers_str)
 
-                for yf_symbol, ticker_obj in yf_data.tickers.items():
-                    asset = ticker_map.get(yf_symbol)
-                    if not asset:
-                        continue
+                # Helper for concurrent execution
+                def fetch_info(symbol, ticker_obj):
                     try:
-                        info = ticker_obj.info
+                        return symbol, ticker_obj.info, None
+                    except Exception as e:
+                        return symbol, None, e
+
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=min(10, len(equities))
+                ) as executor:
+                    futures = {
+                        executor.submit(fetch_info, s, t): s
+                        for s, t in yf_data.tickers.items()
+                    }
+
+                    for future in concurrent.futures.as_completed(futures):
+                        yf_symbol, info, error = future.result()
+                        asset = ticker_map.get(yf_symbol)
+
+                        if not asset:
+                            continue
+
+                        if error:
+                            if self.debug:
+                                print(f"  Error for {yf_symbol}: {error}")
+                            stats["errors"] += 1
+                            continue
+
                         if info:
                             asset.sector = info.get("sector")
                             asset.industry = info.get("industry")
@@ -863,10 +887,7 @@ class AssetSeeder:
                                     f"  {asset.ticker_symbol}: "
                                     f"sector={asset.sector}"
                                 )
-                    except Exception as e:
-                        if self.debug:
-                            print(f"  Error for {yf_symbol}: {e}")
-                        stats["errors"] += 1
+
             except Exception as e:
                 print(f"Error fetching yfinance batch: {e}")
                 stats["errors"] += len(equities)
