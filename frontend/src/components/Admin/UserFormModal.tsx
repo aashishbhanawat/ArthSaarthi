@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserUpdate } from '../../types/user';
 import { useCreateUser, useUpdateUser } from '../../hooks/useUsers';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -152,7 +153,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
               <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={isPending}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" disabled={isPending}>
+              <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={isPending}>
+                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
                 {isPending ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create User')}
               </button>
             </div>
