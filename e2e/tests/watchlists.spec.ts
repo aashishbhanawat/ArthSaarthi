@@ -41,8 +41,11 @@ test.describe('Watchlists Feature', () => {
     await expect(page.getByText(renamedWatchlistName)).toBeVisible();
 
     // Delete
-    page.on('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: `Delete ${renamedWatchlistName}` }).click();
+    await expect(page.getByRole('heading', { name: 'Delete Watchlist' })).toBeVisible();
+    await page.getByRole('button', { name: 'Confirm Delete' }).click();
+    // Wait for modal to close to ensure deletion is complete
+    await expect(page.getByRole('heading', { name: 'Delete Watchlist' })).not.toBeVisible();
     await expect(page.getByText(renamedWatchlistName)).not.toBeVisible();
   });
 
@@ -94,8 +97,13 @@ test.describe('Watchlists Feature', () => {
     await expect(page.getByText('AAPL')).not.toBeVisible();
 
     // Cleanup
-    page.on('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: `Delete ${watchlistName}` }).click();
+    await expect(page.getByRole('heading', { name: 'Delete Watchlist' })).toBeVisible();
+    await page.getByRole('button', { name: 'Confirm Delete' }).click();
+
+    // Wait for modal to close to ensure deletion is complete
+    await expect(page.getByRole('heading', { name: 'Delete Watchlist' })).not.toBeVisible();
+
     // After deletion, the detail view should disappear, and the main heading should be visible again.
     await expect(page.getByRole('heading', { name: watchlistName })).not.toBeVisible();
     await expect(page.getByRole('heading', { name: 'My Watchlists' })).toBeVisible();
