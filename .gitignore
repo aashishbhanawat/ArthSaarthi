@@ -92,3 +92,14 @@ abc.txt
 
 .gemini/
 gha-creds-*.json
+
+# Android build artifacts
+frontend/android/app/build/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/app/src/main/python/app/
+frontend/android/app/src/main/python/alembic/
+frontend/android/app/src/main/python/alembic.ini
+frontend/android/local.properties
+*.apk
+*.aab
