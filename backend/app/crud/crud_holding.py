@@ -5,7 +5,7 @@ import uuid
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-from typing import List
+from typing import Dict, List
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
@@ -750,22 +750,19 @@ class CRUDHolding:
         arg_names=["portfolio_id"],
         response_model=schemas.PortfolioHoldingsAndSummary,
     )
-    def get_portfolio_holdings_and_summary(
-        self, db: Session, *, portfolio_id: uuid.UUID
+
+    def _calculate_holdings_and_summary_from_data(
+        self,
+        db: Session,
+        portfolio_id: uuid.UUID,
+        transactions: List[models.Transaction],
+        all_fixed_deposits: List[models.FixedDeposit],
+        all_recurring_deposits: List[models.RecurringDeposit],
+        all_portfolio_assets: List[models.Asset]
     ) -> schemas.PortfolioHoldingsAndSummary:
-        """Calculates the consolidated holdings and a summary for a given portfolio."""
         start_time = time.time()
         logger.info(
-            f"Starting holdings calculation for portfolio_id: {portfolio_id}"
-        )
-        transactions = crud.transaction.get_multi_by_portfolio(
-            db=db, portfolio_id=portfolio_id
-        )
-        all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
-            db, portfolio_id=portfolio_id
-        )
-        all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
-            db=db, portfolio_id=portfolio_id
+            f"Starting holdings calculation for portfolio_id: {portfolio_id} from data"
         )
 
         # --- Process Market-Traded Assets First ---
@@ -794,9 +791,7 @@ class CRUDHolding:
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
         total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
-        all_portfolio_assets = crud.asset.get_multi_by_portfolio(
-            db, portfolio_id=portfolio_id
-        )
+
         ppf_assets = [
             asset for asset in all_portfolio_assets if asset.asset_type.upper() == "PPF"
         ]
@@ -858,7 +853,7 @@ class CRUDHolding:
             f"Calculation complete. Total portfolio value: {summary.total_value}"
         )
         logger.debug(
-            "[_get_portfolio_holdings_and_summary] Final summary object: %s", summary
+            "[...from_data] Final summary object: %s", summary
         )
         end_time = time.time()
         logger.info(
@@ -869,6 +864,86 @@ class CRUDHolding:
         return schemas.PortfolioHoldingsAndSummary(
             summary=summary, holdings=holdings_list
         )
+
+    @cache_analytics_data(
+        prefix="analytics:portfolio_holdings_and_summary",
+        arg_names=["portfolio_id"],
+        response_model=schemas.PortfolioHoldingsAndSummary,
+    )
+    def get_portfolio_holdings_and_summary(
+        self, db: Session, *, portfolio_id: uuid.UUID
+    ) -> schemas.PortfolioHoldingsAndSummary:
+        """Calculates the consolidated holdings and a summary for a given portfolio."""
+        transactions = crud.transaction.get_multi_by_portfolio(
+            db=db, portfolio_id=portfolio_id
+        )
+        all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
+            db, portfolio_id=portfolio_id
+        )
+        all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
+            db=db, portfolio_id=portfolio_id
+        )
+        all_portfolio_assets = crud.asset.get_multi_by_portfolio(
+            db, portfolio_id=portfolio_id
+        )
+
+        return self._calculate_holdings_and_summary_from_data(
+            db=db,
+            portfolio_id=portfolio_id,
+            transactions=transactions,
+            all_fixed_deposits=all_fixed_deposits,
+            all_recurring_deposits=all_recurring_deposits,
+            all_portfolio_assets=all_portfolio_assets
+        )
+
+    def get_multiple_portfolios_holdings_and_summary(
+        self, db: Session, *, portfolio_ids: List[uuid.UUID]
+    ) -> Dict[uuid.UUID, schemas.PortfolioHoldingsAndSummary]:
+        if not portfolio_ids:
+            return {}
+
+        all_transactions = crud.transaction.get_multi_by_portfolios(
+            db=db, portfolio_ids=portfolio_ids
+        )
+        all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolios(
+            db=db, portfolio_ids=portfolio_ids
+        )
+        all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolios(
+            db=db, portfolio_ids=portfolio_ids
+        )
+        all_portfolio_assets = crud.asset.get_multi_by_portfolios(
+            db=db, portfolio_ids=portfolio_ids
+        )
+
+        from collections import defaultdict
+
+        txs_by_port = defaultdict(list)
+        for tx in all_transactions:
+            txs_by_port[tx.portfolio_id].append(tx)
+
+        fds_by_port = defaultdict(list)
+        for fd in all_fixed_deposits:
+            fds_by_port[fd.portfolio_id].append(fd)
+
+        rds_by_port = defaultdict(list)
+        for rd in all_recurring_deposits:
+            rds_by_port[rd.portfolio_id].append(rd)
+
+        results = {}
+        for p_id in portfolio_ids:
+            p_asset_ids = {tx.asset_id for tx in txs_by_port[p_id]}
+            p_assets = [a for a in all_portfolio_assets if a.id in p_asset_ids]
+
+            results[p_id] = self._calculate_holdings_and_summary_from_data(
+                db=db,
+                portfolio_id=p_id,
+                transactions=txs_by_port[p_id],
+                all_fixed_deposits=fds_by_port[p_id],
+                all_recurring_deposits=rds_by_port[p_id],
+                all_portfolio_assets=p_assets
+            )
+
+        return results
 
 
 holding = CRUDHolding()

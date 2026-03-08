@@ -58,8 +58,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         )
 
     def get_multi_by_portfolios(
-        self, db: Session, *, portfolio_ids: List[uuid.UUID],
-        asset_type: Optional[str] = None
+        self, db: Session, *, portfolio_ids: List[uuid.UUID], asset_type: Optional[str] = None
     ) -> List[Asset]:
         query = (
             db.query(models.Transaction.asset_id)
