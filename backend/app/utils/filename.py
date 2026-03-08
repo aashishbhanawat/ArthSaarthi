@@ -1,9 +1,11 @@
-import re
 import os
+import re
+
 
 def secure_filename(filename: str) -> str:
     """
-    Sanitize a filename to prevent path traversal and remove potentially unsafe characters.
+    Sanitize a filename to prevent path traversal and remove potentially unsafe
+    characters.
 
     This function:
     1. Extracts only the basename of the file (handling both Windows and POSIX paths).
