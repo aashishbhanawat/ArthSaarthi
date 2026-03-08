@@ -1056,7 +1056,7 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 **Frontend:**
 * Ran `npm update tar minimatch rollup --depth 99` to successfully update the `package-lock.json` with securely patched versions for the 14 vulnerable transitive dependencies.
 * Audited frontend `npm audit` and it now shows exactly 1 unrelated moderate vulnerability (`ajv`).
-
+  
 **Backend:**
 * Attempted to run `pip-compile requirements.in` with upgrades to `diskcache` and `ecdsa`.
 * Found that the `ecdsa` package and `diskcache>=5.6.4` specifically lacked matching distributions that resolve alongside PyPI's dependency tree for ArthSaarthi.

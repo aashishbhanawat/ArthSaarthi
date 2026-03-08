@@ -20,9 +20,9 @@ for pr in filtered_prs:
     num = pr["number"]
     title = pr["title"]
     mergeable = pr.get("mergeable")
-
+    
     print(f"\n--- Checking PR #{num}: {title} ---")
-
+    
     if mergeable == "CONFLICTING":
         print(f"-> Skipping PR #{num} due to merge conflicts.")
         run(["gh", "pr", "comment", str(num), "-b", "Hi Jules! This PR has merge conflicts. Could you please rebase on main and resolve them?"])
@@ -31,7 +31,7 @@ for pr in filtered_prs:
     # Determine CI checks status
     checks_res = run(["gh", "pr", "checks", str(num)])
     checks_passed = (checks_res.returncode == 0)
-
+    
     if not checks_passed:
         print(f"-> Skipping PR #{num} due to failing/pending CI checks.")
         # If it's failing, notify Jules.
@@ -42,7 +42,7 @@ for pr in filtered_prs:
     # Because of branch protection (behind base branch), we use --auto.
     print(f"-> Target is MERGEABLE/UNKNOWN and CI passed. Attempting to merge PR #{num} with --auto...")
     merge_res = run(["gh", "pr", "merge", str(num), "--merge", "--auto"])
-
+    
     if merge_res.returncode != 0:
         err = merge_res.stderr.strip()
         print(f"-> Failed to merge PR #{num}. Reason: {err}")

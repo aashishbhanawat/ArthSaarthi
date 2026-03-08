@@ -19,7 +19,7 @@ To prevent `429` (Rate Limit) and `503` (Capacity) server exhaustion, tasks MUST
 ### Bug Fixes
 1. **Create Issue:** File a Git issue with the bug details.
 2. **Create Branch:** Create a new branch for the feature/bug. no fix or commit should be done directly on main branch.
-3. **Triage:** Search `docs/bug_report_temp.md` for existing issues.
+3. **Triage:** Search `docs/bug_report_temp.md` for existing issues. 
 4. **Fix & Test:** Analyze the full stack trace snippet provided by the user. Do not guess. Fix and verify.
 
 ## 3. Docker Command Cheat Sheet
@@ -81,3 +81,4 @@ docker compose -f docker-compose.yml -f docker-compose.e2e.yml run --build --rm 
 * [ ] **`docs/workflow_history.md`**: Add a detailed entry for the completed task.
 * [ ] **`docs/bug_reports.md`**: Consolidate any temporary bugs.
 * [ ] **`docs/project_handoff_summary.md`**: **CRITICAL.** Update this with the completed feature so future AI chat sessions retain the project's current state.
+

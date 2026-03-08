@@ -1,6 +1,6 @@
 # ArthSaarthi: AI Development Workflow (Token-Safe SOP)
 
-This document outlines the strict, step-by-step lifecycle for developing features or fixing bugs using the Antigravity AI Agent.
+This document outlines the strict, step-by-step lifecycle for developing features or fixing bugs using the Antigravity AI Agent. 
 
 **GOAL:** Prevent API exhaustion (429/503 errors), prevent context bloat, and maintain a clean project state.
 
@@ -16,7 +16,7 @@ This document outlines the strict, step-by-step lifecycle for developing feature
 *Never ask for code in this phase. Demand a comprehensive plan first.*
 1. **Model:** `Claude Opus` (For complex logic) or `Gemini 3.1 Pro`.
 2. **Action:** Define the feature or bug. Ask the AI to act as the Solution Architect/Backend Dev.
-3. **Prompt to AI:** > "We are working on [Feature/Bug Name]. Read the relevant section in `docs/requirements.md` (or the bug report).
+3. **Prompt to AI:** > "We are working on [Feature/Bug Name]. Read the relevant section in `docs/requirements.md` (or the bug report). 
    > **OUTPUT REQUIREMENT:** Before writing any code, you MUST provide a detailed 'Implementation Plan'. This plan must include:
    > - Architectural approach & reasoning.
    > - New or updated API endpoints.
@@ -42,7 +42,7 @@ This document outlines the strict, step-by-step lifecycle for developing feature
 *Provide a high-level summary of what was built before closing the context.*
 1. **Model:** `Gemini Flash` or `Gemini 3.1 Pro`.
 2. **Action:** Once the feature/fix works and tests pass, instruct the AI to explain what it did and update the documentation.
-3. **Prompt to AI:** > "The task is complete and tests are passing.
+3. **Prompt to AI:** > "The task is complete and tests are passing. 
    > **OUTPUT REQUIREMENT 1:** Provide a brief 'Feature Walkthrough' explaining how the new code flows together end-to-end for my understanding.
    > **OUTPUT REQUIREMENT 2:** > 1. Update `docs/workflow_history.md`.
    > 2. Update `docs/project_handoff_summary.md` with the new state.
