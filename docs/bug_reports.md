@@ -7083,3 +7083,20 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 ## [2026-03-06] Flaky PPF Modal Verification E2E Tests (Issue #312)
 **Issue**: `ppf-modal-verification.spec.ts` failed ~60% of the time in CI after PR #278 (advanced benchmarking) merged. Five race conditions: stale auth in serial tests, Dashboard heading async load, `networkidle` timeout from continuous analytics API calls, PPF asset loading race, and unreliable cache invalidation for holdings.
 **Fix**: Rewrote E2E test with proper wait strategies — `localStorage.clear()` + `page.reload()`, sidebar nav assertion, targeted element waits, PPF loading state check. Added `expect.timeout: 10s` to Playwright config.
+
+## [2026-03-08] Portfolio FD Analytics & Benchmark Issues (Issue #332)
+**Issue**: When a portfolio contains only FDs/RDs, the Diversification Analysis and Benchmark Comparison show "No data available" or 0 XIRR.
+**Fix**: Updated `get_diversification` to handle holdings without `Asset` table entries. Updated `BenchmarkService` to recognize FD/RD as debt holdings and generate risk-free benchmarks for them.
+
+## [2026-03-08] XIRR Calculation for Matured FDs (Issue #332)
+**Issue**: Adding backdated/matured FDs resulted in extreme negative XIRR (~-70%).
+**Fix**: Updated `_get_portfolio_cash_flows` in `crud_analytics.py` to correctly include the maturity value as a final inflow for matured FDs and RDs.
+
+## [2026-03-08] MacOS Desktop App Crash (Issue #333)
+**Issue**: Application crashed on MacOS because `SECRET_KEY` was missing and had no default value.
+**Fix**: Added a default `SECRET_KEY` using `secrets.token_urlsafe(32)` in `app/core/config.py`.
+
+## [2026-03-08] Windows Build Dependency Conflict (Issue #334)
+**Issue**: Windows build failed due to `cffi` version conflict between `bcrypt` and `cryptography`.
+**Fix**: Updated `bcrypt` to version `4.1.3` in `requirements-windows.txt` to eliminate the `cffi` dependency conflict.
+
