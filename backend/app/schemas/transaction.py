@@ -22,6 +22,22 @@ class TransactionBase(BaseModel):
     fees: Decimal = Decimal("0.0")
     details: Optional[Dict[str, Any]] = None
 
+    @model_validator(mode="after")
+    def check_future_date(self) -> "TransactionBase":
+        from datetime import datetime, timezone
+
+        if self.transaction_date:
+            now = datetime.now(timezone.utc)
+            target_date = self.transaction_date
+
+            # Ensure we're comparing aware datetimes
+            if target_date.tzinfo is None:
+                target_date = target_date.replace(tzinfo=timezone.utc)
+
+            if target_date > now:
+                raise ValueError("Transaction date cannot be in the future")
+        return self
+
 
 class TransactionLinkCreate(BaseModel):
     buy_transaction_id: uuid.UUID

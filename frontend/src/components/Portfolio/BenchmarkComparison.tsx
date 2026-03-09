@@ -15,6 +15,7 @@ import type { ChartDataset } from 'chart.js';
 import { useBenchmarkComparison } from '../../hooks/usePortfolios';
 import { BenchmarkComparisonResponse } from '../../services/portfolioApi';
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/solid';
+import { formatPercentage } from '../../utils/formatting';
 
 ChartJS.register(
     CategoryScale,
@@ -47,7 +48,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
     );
 
     const formatPercent = (value: number) => {
-        return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+        return formatPercentage(value);
     };
 
     if (isLoading) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
@@ -159,6 +160,8 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
     }
 
     const xirrDiff = currentData.portfolio_xirr - currentData.benchmark_xirr;
+    const isAnnualized = (currentData.days_duration || 0) < 365;
+    const annualizedLabel = isAnnualized ? " (Annualized)" : "";
 
     const handleSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const val = e.target.value;
@@ -260,13 +263,13 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                 <>
                     <div className={`grid grid-cols-1 ${showRiskFree ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 mb-8`}>
                         <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
-                            <p className="text-sm font-medium text-gray-500 text-center">Portfolio XIRR</p>
+                            <p className="text-sm font-medium text-gray-500 text-center">Portfolio XIRR{annualizedLabel}</p>
                             <div className={`text-3xl font-bold mt-2 text-center ${currentData.portfolio_xirr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {formatPercent(currentData.portfolio_xirr)}
                             </div>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
-                            <p className="text-sm font-medium text-gray-500 text-center break-words leading-tight">{benchmarkLabel} XIRR</p>
+                            <p className="text-sm font-medium text-gray-500 text-center break-words leading-tight">{benchmarkLabel} XIRR{annualizedLabel}</p>
                             <div className={`text-3xl font-bold mt-2 text-center ${currentData.benchmark_xirr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {formatPercent(currentData.benchmark_xirr)}
                             </div>

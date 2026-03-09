@@ -1,15 +1,15 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-03-09
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Advanced Benchmarking (FR6.3), portfolio deletion error handling, and historical chart accuracy for non-market assets (FD, RD, PPF, Bonds) are complete. All automated backend tests pass (281/281). The application is on the `feature/fr6.3-advanced-benchmarking` branch, with a PR (#278) open for merge.
+*   **Summary:** Fixed portfolio analytics for FD-only portfolios, resolutions for misleading XIRR scaling and short-term annualization labels, robust timezone-aware date validation, backend health check timeouts (Issue #330), MacOS desktop crashes (Issue #333), and Windows build dependency conflicts (Issue #334).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **281/281 Passing**
+*   **Backend Unit/Integration Tests:** ✅ **298/298 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing**
 

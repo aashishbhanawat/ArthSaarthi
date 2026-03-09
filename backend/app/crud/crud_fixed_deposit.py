@@ -16,6 +16,27 @@ class CRUDFixedDeposit(CRUDBase[FixedDeposit, FixedDepositCreate, FixedDepositUp
         obj_in: FixedDepositCreate,
         user_id: uuid.UUID,
     ) -> FixedDeposit:
+        # Check for duplicate FD in the same portfolio
+        from fastapi import HTTPException
+        existing = (
+            db.query(self.model)
+            .filter(
+                self.model.portfolio_id == obj_in.portfolio_id,
+                self.model.name == obj_in.name,
+                self.model.account_number == obj_in.account_number,
+                self.model.start_date == obj_in.start_date,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "A fixed deposit with the same name, account number, and start "
+                    "date already exists in this portfolio."
+                ),
+            )
+
         db_obj = self.model(
             **obj_in.model_dump(), user_id=user_id
         )

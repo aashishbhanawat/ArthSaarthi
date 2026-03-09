@@ -1,13 +1,18 @@
 import logging
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 from pyxirr import xirr
 from sqlalchemy.orm import Session
 
 from app import crud
+from app.crud.crud_holding import (
+    _calculate_fd_current_value,
+    _calculate_rd_value_at_date,
+)
 from app.services.financial_data_service import FinancialDataService
 
 logger = logging.getLogger(__name__)
@@ -44,6 +49,129 @@ class BenchmarkService:
     ):
         self.db = db
         self.financial_service = financial_service
+
+    def _generate_synthetic_transactions(
+        self, portfolio_id: str
+    ) -> list:
+        """Generate synthetic transactions for FDs and RDs."""
+        synthetic_txns = []
+
+        # 1. Fetch FDs
+        fds = crud.fixed_deposit.get_multi_by_portfolio(
+            self.db, portfolio_id=portfolio_id
+        )
+        for fd in fds:
+            # Initial Investment (BUY)
+            synthetic_txns.append(
+                self._create_mock_txn(
+                    fd.start_date, fd.principal_amount, "BUY"
+                )
+            )
+
+            # Interest Payouts
+            if (fd.interest_payout or "").upper() == "PAYOUT":
+                interval_map = {
+                    "MONTHLY": relativedelta(months=1),
+                    "QUARTERLY": relativedelta(months=3),
+                    "HALF_YEARLY": relativedelta(months=6),
+                    "ANNUALLY": relativedelta(years=1),
+                }
+                interval = interval_map.get(
+                    (fd.compounding or "").upper()
+                )
+                if interval:
+                    # Simplified payout calculation
+                    period_payout = (
+                        fd.principal_amount *
+                        (Decimal(str(fd.interest_rate)) / 100) /
+                        (12 / interval.months if interval.months else 1)
+                    )
+                    curr_date = fd.start_date + interval
+                    while curr_date <= fd.maturity_date:
+                        synthetic_txns.append(
+                            self._create_mock_txn(
+                                curr_date, period_payout, "DIVIDEND"
+                            )
+                        )
+                        curr_date += interval
+
+            # Maturity (SELL)
+            if fd.maturity_date <= date.today():
+                maturity_value = _calculate_fd_current_value(
+                    principal=fd.principal_amount,
+                    interest_rate=fd.interest_rate,
+                    start_date=fd.start_date,
+                    end_date=fd.maturity_date,
+                    compounding_frequency=fd.compounding_frequency,
+                    interest_payout=fd.interest_payout
+                )
+                synthetic_txns.append(
+                    self._create_mock_txn(
+                        fd.maturity_date, maturity_value, "SELL"
+                    )
+                )
+
+        # 2. Fetch RDs
+        rds = crud.recurring_deposit.get_multi_by_portfolio(
+            self.db, portfolio_id=portfolio_id
+        )
+        for rd in rds:
+            # Monthly Deposits (BUY)
+            curr_date = rd.start_date
+            maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
+            for _ in range(rd.tenure_months):
+                if curr_date > date.today():
+                    break
+                synthetic_txns.append(
+                    self._create_mock_txn(
+                        curr_date, rd.monthly_installment, "BUY"
+                    )
+                )
+                curr_date += relativedelta(months=1)
+
+            # Maturity (SELL)
+            if maturity_date <= date.today():
+                maturity_value = _calculate_rd_value_at_date(
+                    monthly_installment=rd.monthly_installment,
+                    interest_rate=rd.interest_rate,
+                    start_date=rd.start_date,
+                    tenure_months=rd.tenure_months,
+                    calculation_date=maturity_date
+                )
+                synthetic_txns.append(
+                    self._create_mock_txn(
+                        maturity_date, maturity_value, "SELL"
+                    )
+                )
+
+        return synthetic_txns
+
+    def _create_mock_txn(
+        self, t_date: date, amount: Decimal, t_type: str
+    ) -> Any:
+        """Create a mock transaction object for simulation."""
+        import uuid
+        from datetime import datetime
+
+        from app.schemas.asset import Asset
+        from app.schemas.transaction import Transaction
+
+        mock_id = uuid.uuid4()
+        return Transaction(
+            id=mock_id,
+            portfolio_id=mock_id,
+            transaction_date=datetime.combine(t_date, datetime.min.time()),
+            transaction_type=t_type,
+            quantity=Decimal("1"),
+            price_per_unit=amount,
+            asset=Asset(
+                id=mock_id,
+                ticker_symbol="FD-RD-MOCK",
+                name="FD/RD Synthetic",
+                asset_type="DEBT"
+            ),
+            details={}
+        )
 
     def _calculate_risk_free_values(
         self,
@@ -124,8 +252,6 @@ class BenchmarkService:
         txns = crud.transaction.get_multi_by_portfolio(
             self.db, portfolio_id=portfolio_id
         )
-        if not txns:
-            return {"equity": None, "debt": None}
 
         equity_txns = []
         debt_txns = []
@@ -136,35 +262,36 @@ class BenchmarkService:
             "STOCK", "MUTUAL FUND", "ETF", "ESPP", "RSU",
         ]
 
-        assets = crud.asset.get_multi_by_portfolio(
-            self.db, portfolio_id=portfolio_id
-        )
-        asset_map = {a.id: a.asset_type for a in assets}
-
-        for txn in txns:
-            a_type = asset_map.get(txn.asset_id, "STOCK")
-            if hasattr(a_type, 'value'):
-                a_type = a_type.value
-            # Normalize to upper with spaces
-            a_type_norm = str(a_type).upper().replace(
-                "_", " "
+        if txns:
+            assets = crud.asset.get_multi_by_portfolio(
+                self.db, portfolio_id=portfolio_id
             )
+            asset_map = {a.id: a.asset_type for a in assets}
 
-            if a_type_norm in equity_types:
-                equity_txns.append(txn)
-            else:
-                debt_txns.append(txn)
+            for txn in txns:
+                a_type = asset_map.get(txn.asset_id, "STOCK")
+                if hasattr(a_type, 'value'):
+                    a_type = a_type.value
+                # Normalize to upper with spaces
+                a_type_norm = str(a_type).upper().replace(
+                    "_", " "
+                )
+
+                if a_type_norm in equity_types:
+                    equity_txns.append(txn)
+                else:
+                    debt_txns.append(txn)
 
         logger.debug(
             f"Category split: {len(equity_txns)} equity, "
             f"{len(debt_txns)} debt from "
-            f"{len(txns)} total txns. "
-            f"Asset types: {dict(asset_map)}"
+            f"{len(txns)} total txns."
         )
 
         # Get current market values per category
         equity_value = 0.0
         debt_value = 0.0
+        has_fd_or_rd = False
         try:
             holdings_data = (
                 crud.holding
@@ -183,15 +310,25 @@ class BenchmarkService:
                     equity_value += cv
                 else:
                     debt_value += cv
+                    # Track if we have FD/RD holdings
+                    if h_type in [
+                        "FIXED DEPOSIT", "RECURRING DEPOSIT"
+                    ]:
+                        has_fd_or_rd = True
             logger.debug(
                 f"Category values: equity={equity_value}, "
-                f"debt={debt_value}"
+                f"debt={debt_value}, has_fd_or_rd={has_fd_or_rd}"
             )
         except Exception as e:
             logger.warning(
                 f"Could not get holdings for "
                 f"category values: {e}"
             )
+
+        # If there are no transactions AND no FD/RD holdings,
+        # there is truly nothing to benchmark.
+        if not txns and not has_fd_or_rd:
+            return {"equity": None, "debt": None}
 
         results = {}
 
@@ -225,6 +362,44 @@ class BenchmarkService:
                 "Risk-Free (7%)" if is_rf
                 else "Bond Index"
             )
+        elif has_fd_or_rd and debt_value > 0:
+            # FDs/RDs don't have Transaction entries, so
+            # we generate a simplified debt benchmark
+            # comparing against risk-free rate.
+            pf_analytics = (
+                crud.analytics.get_portfolio_analytics(
+                    self.db, portfolio_id=portfolio_id
+                )
+            )
+            if pf_analytics:
+                if isinstance(pf_analytics, dict):
+                    portfolio_xirr = pf_analytics.get(
+                        "xirr", 0.0
+                    )
+                else:
+                    portfolio_xirr = getattr(
+                        pf_analytics, "xirr", 0.0
+                    )
+
+            # Fetch first transaction date for duration
+            first_txn = (
+                self.db.query(crud.transaction.model)
+                .filter(crud.transaction.model.portfolio_id == portfolio_id)
+                .order_by(crud.transaction.model.transaction_date.asc())
+                .first()
+            )
+            start_date = (
+                first_txn.transaction_date.date() if first_txn else date.today()
+            )
+
+            results["debt"] = {
+                "portfolio_xirr": portfolio_xirr,
+                "benchmark_xirr": risk_free_rate / 100,
+                "benchmark_label": f"Risk-Free ({risk_free_rate:.0f}%)",
+                "risk_free_xirr": risk_free_rate / 100,
+                "days_duration": (date.today() - start_date).days,
+                "chart_data": [],
+            }
 
         logger.debug(
             f"Category results keys: "
@@ -259,6 +434,38 @@ class BenchmarkService:
                 None, risk_free_rate,
             )
             base_result["category_data"] = category_data
+
+            # For FD/RD-only portfolios, _run_simulation
+            # returns portfolio_xirr=0 because there are no
+            # transactions. Override with the real analytics.
+            if (
+                base_result.get("portfolio_xirr", 0) == 0
+                and portfolio_id
+            ):
+                pf_analytics = (
+                    crud.analytics.get_portfolio_analytics(
+                        self.db, portfolio_id=portfolio_id
+                    )
+                )
+                if pf_analytics:
+                    if isinstance(pf_analytics, dict):
+                        base_result["portfolio_xirr"] = (
+                            pf_analytics.get("xirr", 0.0)
+                        )
+                    else:
+                        base_result["portfolio_xirr"] = (
+                            getattr(pf_analytics, "xirr", 0.0)
+                        )
+
+                # Add duration for category base results (they are summarized from
+                # full data)
+                # We can't easily get 'start_date' here without transactions,
+                # but these are placeholders mostly.
+                if "equity" in category_data:
+                    category_data["equity"]["days_duration"] = 0
+                if "debt" in category_data:
+                    category_data["debt"]["days_duration"] = 0
+
             logger.debug(
                 f"Category response: "
                 f"category_data keys="
@@ -294,11 +501,23 @@ class BenchmarkService:
                 )
             )
 
+        # Include synthetic transactions for FDs and RDs if it's a full portfolio
+        synthetic_txns = []
+        if portfolio_id:
+            # Check if we should add FDs/RDs (always for full portfolio benchmark)
+            # or if we have no other transactions
+            if not transactions or (not subset_current_value):
+                synthetic_txns = self._generate_synthetic_transactions(
+                    portfolio_id
+                )
+                transactions = transactions + synthetic_txns
+
         if not transactions:
             return {
                 "portfolio_xirr": 0.0,
                 "benchmark_xirr": 0.0,
                 "risk_free_xirr": 0.0,
+                "days_duration": 0,
                 "chart_data": [],
             }
 
@@ -346,13 +565,15 @@ class BenchmarkService:
         portfolio_xirr = 0.0
         is_full_portfolio = False
         if portfolio_id:
-            all_txns = (
+            all_real_txns = (
                 crud.transaction.get_multi_by_portfolio(
                     self.db, portfolio_id=portfolio_id
                 )
             )
+            # If we used synthetic txns, we are by definition
+            # doing a "full" portfolio benchmarking of what we have.
             is_full_portfolio = (
-                len(transactions) == len(all_txns)
+                len(transactions) == (len(all_real_txns) + len(synthetic_txns))
             )
 
         if is_full_portfolio:
@@ -403,6 +624,7 @@ class BenchmarkService:
                 "portfolio_xirr": portfolio_xirr,
                 "benchmark_xirr": 0.0,
                 "risk_free_xirr": risk_free_xirr,
+                "days_duration": (end_date - start_date).days,
                 "chart_data": [
                     {
                         "date": d.date().isoformat(),
@@ -444,6 +666,7 @@ class BenchmarkService:
             "portfolio_xirr": portfolio_xirr,
             "benchmark_xirr": bench_xirr,
             "risk_free_xirr": risk_free_xirr,
+            "days_duration": (end_date - start_date).days,
             "chart_data": chart_data,
         }
 
@@ -479,12 +702,13 @@ class BenchmarkService:
                          -amount)
                     )
                     current_invested += amount
-                elif tx_type in ["SELL", "WITHDRAWAL"]:
+                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND"]:
                     pf_cashflows.append(
                         (txn.transaction_date.date(),
                          amount)
                     )
-                    current_invested -= amount
+                    if tx_type != "DIVIDEND":
+                        current_invested -= amount
 
             # Use actual current value if provided,
             # otherwise fall back to net invested
@@ -582,10 +806,11 @@ class BenchmarkService:
                                     comp_amt / price
                                 )
 
-                elif tx_type in ["SELL", "WITHDRAWAL"]:
-                    invested_amount -= Decimal(
-                        str(amount_inr)
-                    )
+                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND"]:
+                    if tx_type != "DIVIDEND":
+                        invested_amount -= Decimal(
+                            str(amount_inr)
+                        )
                     total_val = 0
                     for c in components:
                         t = c["ticker"]

@@ -131,8 +131,8 @@ def _process_fixed_deposits(
     total_realized_pnl = Decimal("0.0")
     today = date.today()
 
-    active_fds = [fd for fd in all_fixed_deposits if fd.maturity_date >= today]
-    matured_fds = [fd for fd in all_fixed_deposits if fd.maturity_date < today]
+    active_fds = [fd for fd in all_fixed_deposits if fd.maturity_date > today]
+    matured_fds = [fd for fd in all_fixed_deposits if fd.maturity_date <= today]
 
     for fd in matured_fds:
         if fd.interest_payout != "Cumulative":
@@ -202,12 +202,12 @@ def _process_recurring_deposits(
     active_rds = [
         rd
         for rd in all_recurring_deposits
-        if (rd.start_date + relativedelta(months=rd.tenure_months)) >= today
+        if (rd.start_date + relativedelta(months=rd.tenure_months)) > today
     ]
     matured_rds = [
         rd
         for rd in all_recurring_deposits
-        if (rd.start_date + relativedelta(months=rd.tenure_months)) < today
+        if (rd.start_date + relativedelta(months=rd.tenure_months)) <= today
     ]
 
     for rd in matured_rds:
