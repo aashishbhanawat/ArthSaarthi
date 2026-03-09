@@ -1,8 +1,8 @@
 import uuid
 from datetime import date
 from decimal import Decimal
-from pydantic import BaseModel
-from pydantic import model_validator
+
+from pydantic import BaseModel, model_validator
 
 
 class FixedDepositBase(BaseModel):
