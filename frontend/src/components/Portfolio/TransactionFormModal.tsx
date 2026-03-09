@@ -100,7 +100,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     const createBondMutation = useCreateBond();
     const createPpfAccountMutation = useCreatePpfAccount();
     const [apiError, setApiError] = useState<string | null>(null);
-    const todayStr = new Date().toISOString().split('T')[0];
 
     // Stock search state
     const [inputValue, setInputValue] = useState('');

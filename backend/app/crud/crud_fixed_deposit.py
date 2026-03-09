@@ -31,7 +31,10 @@ class CRUDFixedDeposit(CRUDBase[FixedDeposit, FixedDepositCreate, FixedDepositUp
         if existing:
             raise HTTPException(
                 status_code=409,
-                detail="A fixed deposit with the same name, account number, and start date already exists in this portfolio.",
+                detail=(
+                    "A fixed deposit with the same name, account number, and start "
+                    "date already exists in this portfolio."
+                ),
             )
 
         db_obj = self.model(

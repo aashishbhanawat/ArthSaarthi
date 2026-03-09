@@ -1,10 +1,10 @@
 import logging
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Dict, Tuple, Any
-from dateutil.relativedelta import relativedelta
+from typing import Any, Dict, Tuple
 
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 from pyxirr import xirr
 from sqlalchemy.orm import Session
 
@@ -150,10 +150,11 @@ class BenchmarkService:
         self, t_date: date, amount: Decimal, t_type: str
     ) -> Any:
         """Create a mock transaction object for simulation."""
-        from app.schemas.transaction import Transaction
-        from app.schemas.asset import Asset
-        from datetime import datetime
         import uuid
+        from datetime import datetime
+
+        from app.schemas.asset import Asset
+        from app.schemas.transaction import Transaction
 
         mock_id = uuid.uuid4()
         return Transaction(
@@ -370,30 +371,35 @@ class BenchmarkService:
                     self.db, portfolio_id=portfolio_id
                 )
             )
-                if pf_analytics:
-                    if isinstance(pf_analytics, dict):
-                        portfolio_xirr = pf_analytics.get(
-                            "xirr", 0.0
-                        )
-                    else:
-                        portfolio_xirr = getattr(
-                            pf_analytics, "xirr", 0.0
-                        )
-                
-                # Fetch first transaction date for duration
-                first_txn = self.db.query(crud.transaction.model).filter(
-                    crud.transaction.model.portfolio_id == portfolio_id
-                ).order_by(crud.transaction.model.transaction_date.asc()).first()
-                start_date = first_txn.transaction_date.date() if first_txn else date.today()
-                
-                results["debt"] = {
-                    "portfolio_xirr": portfolio_xirr,
-                    "benchmark_xirr": risk_free_rate / 100,
-                    "benchmark_label": f"Risk-Free ({risk_free_rate:.0f}%)",
-                    "risk_free_xirr": risk_free_rate / 100,
-                    "days_duration": (date.today() - start_date).days,
-                    "chart_data": [],
-                }
+            if pf_analytics:
+                if isinstance(pf_analytics, dict):
+                    portfolio_xirr = pf_analytics.get(
+                        "xirr", 0.0
+                    )
+                else:
+                    portfolio_xirr = getattr(
+                        pf_analytics, "xirr", 0.0
+                    )
+
+            # Fetch first transaction date for duration
+            first_txn = (
+                self.db.query(crud.transaction.model)
+                .filter(crud.transaction.model.portfolio_id == portfolio_id)
+                .order_by(crud.transaction.model.transaction_date.asc())
+                .first()
+            )
+            start_date = (
+                first_txn.transaction_date.date() if first_txn else date.today()
+            )
+
+            results["debt"] = {
+                "portfolio_xirr": portfolio_xirr,
+                "benchmark_xirr": risk_free_rate / 100,
+                "benchmark_label": f"Risk-Free ({risk_free_rate:.0f}%)",
+                "risk_free_xirr": risk_free_rate / 100,
+                "days_duration": (date.today() - start_date).days,
+                "chart_data": [],
+            }
 
         logger.debug(
             f"Category results keys: "
@@ -450,9 +456,10 @@ class BenchmarkService:
                         base_result["portfolio_xirr"] = (
                             getattr(pf_analytics, "xirr", 0.0)
                         )
-                
-                # Add duration for category base results (they are summarized from full data)
-                # We can't easily get 'start_date' here without transactions, 
+
+                # Add duration for category base results (they are summarized from
+                # full data)
+                # We can't easily get 'start_date' here without transactions,
                 # but these are placeholders mostly.
                 if "equity" in category_data:
                     category_data["equity"]["days_duration"] = 0
