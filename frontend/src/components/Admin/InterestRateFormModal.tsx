@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { HistoricalInterestRate, HistoricalInterestRateCreate, HistoricalInterestRateUpdate } from '../../types/interestRate';
 import { useCreateInterestRate, useUpdateInterestRate } from '../../hooks/useInterestRates';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface InterestRateFormModalProps {
   isOpen: boolean;
@@ -96,7 +97,8 @@ const InterestRateFormModal: React.FC<InterestRateFormModalProps> = ({ isOpen, o
               <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={isPending}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" disabled={isPending}>
+              <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={isPending}>
+                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
                 {isPending ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Rate')}
               </button>
             </div>
