@@ -97,6 +97,56 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-03-09-01
+**Title:** Benchmark Comparison Portfolio XIRR 0.00% for FD-only portfolios.
+**Module:** Analytics/Benchmarking (Backend)
+**Reported By:** User
+**Date Reported:** 2026-03-08
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Portfolios containing only Fixed Deposits or Recurring Deposits showed 0.00% Portfolio XIRR in the Benchmark Comparison because the simulation relied on market transactions which were missing for debt instruments.
+**Steps to Reproduce:**
+1. Create a portfolio with only FDs.
+2. View Benchmark Comparison.
+3. Observe Portfolio XIRR is 0.00%.
+**Expected Behavior:** Portfolio XIRR should reflect FD returns.
+**Actual Behavior:** 0.00% Portfolio XIRR.
+**Resolution:** Implemented `_generate_synthetic_transactions` in `BenchmarkService` to inject BUY/DIVIDEND/SELL flows for debt instruments during simulation.
+
+---
+
+**Bug ID:** 2026-03-09-02
+**Title:** XIRR scaling standardisation in Benchmark Comparison.
+**Module:** Portfolio Management (Frontend)
+**Reported By:** User
+**Date Reported:** 2026-03-08
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:** XIRR values in the Benchmark Comparison were inconsistent with the main Portfolio Summary, sometimes showing 0.06% instead of 6.13% due to incorrect percentage scaling.
+**Steps to Reproduce:**
+1. Compare Portfolio Summary XIRR with Benchmark Comparison XIRR.
+**Expected Behavior:** Values should be identical and correctly formatted (e.g., 6.13%).
+**Actual Behavior:** Values were mismatched in scaling.
+**Resolution:** Standardized display using the shared `formatPercentage` utility in `BenchmarkComparison.tsx`.
+
+---
+
+**Bug ID:** 2026-03-09-03
+**Title:** TypeError in future date validation (naive vs aware datetime).
+**Module:** Data Validation (Backend)
+**Reported By:** Developer
+**Date Reported:** 2026-03-09
+**Classification:** Implementation (Backend)
+**Severity:** Low
+**Description:** `model_validator` for future dates failed with `TypeError` when comparing naive datetime (from DB/Schema) with aware datetime (from `utc_now`).
+**Steps to Reproduce:**
+1. Attempt to create a transaction.
+**Expected Behavior:** Successful validation against future dates.
+**Actual Behavior:** Traceback to `TypeError` in validator.
+**Resolution:** Updated `TransactionBase` and `FixedDepositBase` to ensure timezone-aware comparisons.
+
+---
+
 **Bug ID:** 2025-07-17-01 
 **Title:** Frontend tests fail due to missing @tanstack/react-query dependency. 
 **Module:** Core Frontend, Dependencies 
@@ -7086,7 +7136,7 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 
 ## [2026-03-08] Portfolio FD Analytics & Benchmark Issues (Issue #332)
 **Issue**: When a portfolio contains only FDs/RDs, the Diversification Analysis and Benchmark Comparison show "No data available" or 0 XIRR.
-**Fix**: Updated `get_diversification` to handle holdings without `Asset` table entries. Updated `BenchmarkService` to recognize FD/RD as debt holdings and generate risk-free benchmarks for them.
+**Fix**: Updated `get_diversification` to handle holdings without `Asset` entries. Updated `BenchmarkService` to generate synthetic transactions for FDs and RDs, ensuring they drive the benchmark simulation even when real transactions are missing.
 
 ## [2026-03-08] XIRR Calculation for Matured FDs (Issue #332)
 **Issue**: Adding backdated/matured FDs resulted in extreme negative XIRR (~-70%).

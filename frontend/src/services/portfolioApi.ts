@@ -272,6 +272,7 @@ export interface BenchmarkComparisonResponse {
     portfolio_xirr: number;
     benchmark_xirr: number;
     risk_free_xirr: number;
+    days_duration: number;
     chart_data: {
         date: string;
         portfolio_value?: number;
@@ -284,12 +285,14 @@ export interface BenchmarkComparisonResponse {
             portfolio_xirr: number;
             benchmark_xirr: number;
             benchmark_label: string;
+            days_duration: number;
             chart_data: BenchmarkComparisonResponse['chart_data'];
         };
         debt?: {
             portfolio_xirr: number;
             benchmark_xirr: number;
             benchmark_label: string;
+            days_duration: number;
             chart_data: BenchmarkComparisonResponse['chart_data'];
         };
     };

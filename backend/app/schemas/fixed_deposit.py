@@ -1,8 +1,7 @@
 import uuid
 from datetime import date
 from decimal import Decimal
-
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class FixedDepositBase(BaseModel):
@@ -14,6 +13,14 @@ class FixedDepositBase(BaseModel):
     maturity_date: date
     compounding_frequency: str
     interest_payout: str
+
+    @model_validator(mode="after")
+    def check_dates(self) -> "FixedDepositBase":
+        if self.start_date > date.today():
+            raise ValueError("Start date cannot be in the future")
+        if self.maturity_date <= self.start_date:
+            raise ValueError("Maturity date must be after start date")
+        return self
 
 
 class FixedDepositCreate(FixedDepositBase):
