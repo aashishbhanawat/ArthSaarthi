@@ -43,6 +43,24 @@ Copy and paste the template below to file a new bug report.
 **Resolution:** Added `("assets", "fmv_2018", "REAL")` to the `migrations` list in `backend/run_cli.py` to ensure it is added during the desktop app startup.
 
 ---
+
+**Bug ID:** 2026-03-10-02
+**Title:** AttributeError in Benchmark Calculation for Fixed Deposits
+**Module:** Analytics/Benchmarking (Backend)
+**Reported By:** User
+**Date Reported:** 2026-03-10
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** The `BenchmarkService._generate_synthetic_transactions` method crashed with `AttributeError: 'FixedDeposit' object has no attribute 'compounding'` when calculating interest payouts for Fixed Deposits. This occurred because the code incorrectly referenced the attribute name as `compounding` instead of `compounding_frequency`.
+**Steps to Reproduce:**
+1. Create a portfolio with a Fixed Deposit that has interest payout set to "Payout".
+2. View the Benchmark Comparison widget.
+3. Observe backend traceback or frontend error.
+**Expected Behavior:** Synthetic transactions should be generated successfully using the correct model attributes.
+**Actual Behavior:** `AttributeError: 'FixedDeposit' object has no attribute 'compounding'`.
+**Resolution:** Replaced `fd.compounding` with `fd.compounding_frequency` in `backend/app/services/benchmark_service.py`.
+
+---
 **Bug ID:** 2026-03-01-01
 **Title:** Portfolio delete returns 500 when linked to goals (FK violation).
 **Module:** Portfolio Management (Backend)

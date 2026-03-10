@@ -1,16 +1,26 @@
-feat(portfolio): Implement holdings drill-down view
+feat(analytics): Fix FD Benchmark XIRR, Annualization Labels, and Date Validation (#330, #332, #333, #334)
 
-This commit implements the "Holdings Drill-Down View" (FR4.7.3), allowing users to click on any holding to see a detailed breakdown of its constituent transactions. This completes a key part of the portfolio page redesign.
+This PR resolves multiple issues related to portfolio analytics, backend stability, and data validation:
 
-### Backend Changes:
-- **New Endpoint:** Created `GET /portfolios/{portfolio_id}/assets/{asset_id}/transactions` to fetch all transactions for a specific asset within a portfolio.
-- **New CRUD Method:** Added `get_multi_by_portfolio_and_asset` to `crud_transaction.py` to support the new endpoint.
+1. **Benchmark XIRR for FD-only Portfolios (#332)**:
+   - Implemented synthetic transactions (BUY, DIVIDEND, SELL) for Fixed/Recurring Deposits to drive benchmark simulations.
+   - Fixed maturity value inflows in portfolio cash flows to ensure correct terminal wealth calculation for matured FDs.
+   - Standardized XIRR display scaling using a shared `formatPercentage` utility.
 
-### Frontend Changes:
-- **New Component (`HoldingDetailModal.tsx`):** A new modal that displays a summary of the selected holding and a detailed list of its transactions.
-- **FIFO Logic:** Implemented First-In, First-Out (FIFO) logic in the modal to accurately display only the "open" buy transactions that make up the current holding.
-- **CAGR Calculation:** Added a "CAGR %" column to the transaction list for quick, on-the-fly performance analysis of each buy lot.
-- **UI/UX Polish:** Iteratively fixed multiple UI defects in the modal, including spacing, borders, and button visibility, based on manual E2E testing feedback.
-- **Data Layer:** Added the `useAssetTransactions` hook and `getAssetTransactions` API service function.
-- **Page Integration:** Updated `PortfolioDetailPage.tsx` to manage the state and rendering of the new drill-down modal.
-- **Test Suite:** Added a comprehensive unit test suite for `HoldingDetailModal.tsx`, including tests for the FIFO logic and UI states. Stabilized existing tests to align with the new functionality.
+2. **XIRR Annualization Labels (#332)**:
+   - Added "(Annualized)" labels to XIRR values in the Benchmark Comparison widget for periods shorter than one year to clarify returns.
+   - Backend now calculates and returns `days_duration` to facilitate this labeling.
+
+3. **Data Validation & Integrity (#332)**:
+   - Implemented timezone-aware future date validation for Transactions and FDs.
+   - Added duplicate detection for Fixed Deposits.
+   - Enforced max date constraints on frontend date pickers.
+
+4. **Reliability & Build Fixes (#330, #333, #334)**:
+   - Increased Docker health check `start_period` (1200s) to accommodate long-running asset seeding.
+   - Added default `SECRET_KEY` in `config.py` to prevent MacOS desktop crashes.
+   - Updated `bcrypt` to 4.1.3 to resolve Windows build dependency conflicts.
+
+5. **Misc**:
+   - Added PPF Interest Rate for Apr-Jun 2026.
+   - Adjusted FD maturity counting logic to prevent double-counting of matured instruments in analytics.

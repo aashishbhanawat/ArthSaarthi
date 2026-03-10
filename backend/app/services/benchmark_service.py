@@ -77,7 +77,7 @@ class BenchmarkService:
                     "ANNUALLY": relativedelta(years=1),
                 }
                 interval = interval_map.get(
-                    (fd.compounding or "").upper()
+                    (fd.compounding_frequency or "").upper()
                 )
                 if interval:
                     # Simplified payout calculation

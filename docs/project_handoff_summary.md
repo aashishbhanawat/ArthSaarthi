@@ -1,11 +1,11 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-09
+**Last Updated:** 2026-03-10
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Fixed portfolio analytics for FD-only portfolios, resolutions for misleading XIRR scaling and short-term annualization labels, robust timezone-aware date validation, backend health check timeouts (Issue #330), MacOS desktop crashes (Issue #333), and Windows build dependency conflicts (Issue #334).
+*   **Summary:** Fixed critical desktop app stability issues including missing SQLite columns (`fmv_2018`) and tables on upgrade. Resolved `AttributeError` in Fixed Deposit benchmark simulations. Also includes previously addressed portfolio analytics fixes for FD-only portfolios, XIRR scaling standardisation, timezone-aware date validation, and MacOS/Windows build stability.
 
 ## 2. Test Suite Status
 

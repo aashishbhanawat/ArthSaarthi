@@ -1,25 +1,28 @@
-## 2026-03-10: Desktop App Database Migration Fix
+## 2026-03-10: Desktop App Stability & Benchmark Fixes
 
-**Task:** Fix the desktop app startup issue caused by the `fmv_2018` column not being applied to existing local SQLite databases.
+**Task:** Fix the desktop app startup issue (`fmv_2018` column), missing tables on upgrade, and `AttributeError` in benchmark calculations for Fixed Deposits.
 
 **AI Assistant:** Antigravity
 **Role:** Full-Stack Developer
 
 ### Summary
 
-Fixed a critical startup failure for the desktop app which surfaced after PR#339. The `assets` table schema was not getting upgraded with the new `fmv_2018` column.
+Fixed critical stability and analytical issues for the desktop application.
 
-1. **Root Cause Analysis:** The desktop entry point `run_cli.py` does not use Alembic automatically for upgrading existing databases. Instead, it uses a hardcoded `run_sqlite_migrations` fallback function containing `ALTER TABLE ADD COLUMN` statements.
-2. **Schema Upgrade Fix:** Added `("assets", "fmv_2018", "REAL")` to the migration list in `backend/run_cli.py` to ensure local desktop databases correctly inherit the column.
+1. **Desktop App Migration Fix:**
+    - **Schema Upgrade:** Added `fmv_2018` to the manual schema migration script in `backend/run_cli.py` to prevent startup crashes (`OperationalError: no such column: assets.fmv_2018`) when upgrading existing desktop databases.
+    - **Missing Tables:** Integrated `Base.metadata.create_all()` into the desktop upgrade path in `run_cli.py`. This ensures that new tables introduced in recent versions (like `daily_portfolio_snapshots` and `transaction_links`) are automatically created for existing users.
+2. **Benchmark Attribute Fix:** Resolved an `AttributeError: 'FixedDeposit' object has no attribute 'compounding'` in `BenchmarkService._generate_synthetic_transactions`. The code was corrected to use the proper model attribute `compounding_frequency`.
 
 ### File Changes
 
 **Backend:**
-* **Modified:** `backend/run_cli.py` – Added `fmv_2018` to `migrations`.
+* **Modified:** `backend/run_cli.py` – Added `fmv_2018` to migrations and integrated `Base.metadata.create_all()`.
+* **Modified:** `backend/app/services/benchmark_service.py` – Fixed attribute name from `compounding` to `compounding_frequency`.
 
 ### Outcome
 
-**Success.** Local desktop installations upgrading to PR#339 will now correctly add the `fmv_2018` column on startup and properly boot up without 500 exceptions during asset seeding.
+**Success.** Desktop installations can now upgrade seamlessly without schema-related crashes, and the Benchmark Comparison widget now correctly simulates Fixed Deposit flows.
 
 ---
 
