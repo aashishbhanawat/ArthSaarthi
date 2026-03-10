@@ -153,6 +153,7 @@ def _get_portfolio_history(
     from app.models.asset import Asset
     from app.models.fixed_deposit import FixedDeposit
     from app.models.recurring_deposit import RecurringDeposit
+    from app.models.historical_interest_rate import HistoricalInterestRate
 
     fd_query = db.query(FixedDeposit)
     rd_query = db.query(RecurringDeposit)
@@ -183,6 +184,12 @@ def _get_portfolio_history(
     all_fds = fd_query.all()
     all_rds = rd_query.all()
     ppf_assets = ppf_asset_query.distinct().all()
+
+    all_ppf_rates = []
+    if ppf_assets:
+        all_ppf_rates = db.query(HistoricalInterestRate).filter(
+            HistoricalInterestRate.scheme_name == "PPF"
+        ).all()
 
     # Pre-fetch PPF transactions if we have PPF assets
     ppf_transactions = []
@@ -539,6 +546,8 @@ def _get_portfolio_history(
                                 portfolio_id=portfolio_id,
                                 calculation_date=current_day,
                                 simulate_only=True,
+                                transactions=asset_txns,
+                                ppf_rates=all_ppf_rates,
                             )
                             day_total_value += ppf_holding.current_value
                         except Exception as e:
