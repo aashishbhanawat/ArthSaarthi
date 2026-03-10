@@ -31,23 +31,33 @@ const SessionTimeoutModal = ({ isOpen, onClose, onLogout, countdownSeconds = 120
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-xl">
-        <h2 className="text-2xl font-bold mb-4 dark:text-gray-100">Session Timeout</h2>
-        <p className="mb-4 dark:text-gray-300">You will be logged out in {countdown} seconds due to inactivity.</p>
-        <div className="flex justify-end space-x-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
-          >
-            Stay Logged In
-          </button>
-          <button
-            onClick={onLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Logout
-          </button>
+    <div className="modal-overlay z-50">
+      <div
+        className="modal-content max-w-md"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-timeout-title"
+        aria-describedby="session-timeout-desc"
+      >
+        <div className="modal-header">
+          <h2 id="session-timeout-title" className="text-2xl font-bold dark:text-gray-100">Session Timeout</h2>
+        </div>
+        <div className="p-6">
+          <p id="session-timeout-desc" className="mb-4 text-gray-700 dark:text-gray-300">You will be logged out in {countdown} seconds due to inactivity.</p>
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={onClose}
+              className="btn btn-secondary"
+            >
+              Stay Logged In
+            </button>
+            <button
+              onClick={onLogout}
+              className="btn btn-danger"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </div>
