@@ -26,6 +26,23 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-03-10-01
+**Title:** Desktop App Startup Fails Due to Missing `fmv_2018` Column
+**Module:** Core Backend, Desktop App
+**Reported By:** User
+**Date Reported:** 2026-03-10
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** The desktop app failed to start or seed assets due to a missing `fmv_2018` column in the SQLite `assets` table. The desktop entry point `run_cli.py` uses a hardcoded list of schema migrations for older local databases, which was not updated when the new column was added to the SQLAlchemy models and Alembic migrations.
+**Steps to Reproduce:**
+1. Upgrade an existing local desktop app database using a build from PR#339.
+2. Observe backend failure with `sqlite3.OperationalError: no such column: assets.fmv_2018`.
+3. Try starting up and check logs.
+**Expected Behavior:** The local SQLite database should be upgraded with the `fmv_2018` column automatically.
+**Actual Behavior:** 500 exceptions and migration failure due to the missing column.
+**Resolution:** Added `("assets", "fmv_2018", "REAL")` to the `migrations` list in `backend/run_cli.py` to ensure it is added during the desktop app startup.
+
+---
 **Bug ID:** 2026-03-01-01
 **Title:** Portfolio delete returns 500 when linked to goals (FK violation).
 **Module:** Portfolio Management (Backend)

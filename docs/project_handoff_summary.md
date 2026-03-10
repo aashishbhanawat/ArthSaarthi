@@ -23,6 +23,7 @@
     *   Fixed early-return bug where FD/RD-only portfolios returned empty history.
     *   Fixed `Holding` schema crash for FDs/RDs missing an `account_number`.
 *   **UI "No Data" Fix:** Category comparison no longer hides the entire component when a category has no transactions — keeps navigation elements visible.
+*   **Desktop App Migration Fix:** Added `fmv_2018` to the manual schema migration script in `run_cli.py` to prevent startup crashes when upgrading the desktop app version.
 
 ## 3. Implemented Functionality
 

@@ -1,3 +1,28 @@
+## 2026-03-10: Desktop App Database Migration Fix
+
+**Task:** Fix the desktop app startup issue caused by the `fmv_2018` column not being applied to existing local SQLite databases.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Fixed a critical startup failure for the desktop app which surfaced after PR#339. The `assets` table schema was not getting upgraded with the new `fmv_2018` column.
+
+1. **Root Cause Analysis:** The desktop entry point `run_cli.py` does not use Alembic automatically for upgrading existing databases. Instead, it uses a hardcoded `run_sqlite_migrations` fallback function containing `ALTER TABLE ADD COLUMN` statements.
+2. **Schema Upgrade Fix:** Added `("assets", "fmv_2018", "REAL")` to the migration list in `backend/run_cli.py` to ensure local desktop databases correctly inherit the column.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/run_cli.py` – Added `fmv_2018` to `migrations`.
+
+### Outcome
+
+**Success.** Local desktop installations upgrading to PR#339 will now correctly add the `fmv_2018` column on startup and properly boot up without 500 exceptions during asset seeding.
+
+---
+
 ## 2026-03-09: Portfolio Analytics & Validation Refinements (#332)
 
 **Task:** Refine portfolio analytics display and data validation for improved accuracy and clarity.
