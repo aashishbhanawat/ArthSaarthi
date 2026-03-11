@@ -28,7 +28,8 @@ const ImportPreviewPage: React.FC = () => {
     // When data loads, pre-select all valid new transactions
     useEffect(() => {
         if (previewData?.valid_new) {
-            const initialSelection = new Set(previewData.valid_new.map((_, index) => index));
+            // Performance: Using .keys() to create a Set of indices avoids intermediate array creation overhead
+            const initialSelection = new Set(previewData.valid_new.keys());
             setSelectedTransactionIndices(initialSelection);
         }
     }, [previewData?.valid_new]);
@@ -64,7 +65,8 @@ const ImportPreviewPage: React.FC = () => {
         if (selectedTransactionIndices.size === allSelectableTransactions.length) {
             setSelectedTransactionIndices(new Set()); // Deselect all
         } else {
-            const allIndices = new Set(allSelectableTransactions.map((_, index) => index));
+            // Performance: Using .keys() is faster and uses less memory than .map() for extracting array indices
+            const allIndices = new Set(allSelectableTransactions.keys());
             setSelectedTransactionIndices(allIndices); // Select all
         }
     };
