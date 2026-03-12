@@ -5,7 +5,7 @@
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Fixed critical desktop app stability issues including missing SQLite columns (`fmv_2018`) and tables on upgrade. Resolved `AttributeError` in Fixed Deposit benchmark simulations. Also includes previously addressed portfolio analytics fixes for FD-only portfolios, XIRR scaling standardisation, timezone-aware date validation, and MacOS/Windows build stability.
+*   **Summary:** Fixed critical desktop app stability issues including missing SQLite columns (`fmv_2018`) and tables on upgrade. Resolved `AttributeError` and `TypeError` in Fixed Deposit benchmark simulations. Also includes previously addressed portfolio analytics fixes for FD-only portfolios, XIRR scaling standardisation, timezone-aware date validation, and MacOS/Windows build stability.
 
 ## 2. Test Suite Status
 
