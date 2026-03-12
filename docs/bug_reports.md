@@ -61,6 +61,19 @@ Copy and paste the template below to file a new bug report.
 **Resolution:** Replaced `fd.compounding` with `fd.compounding_frequency` in `backend/app/services/benchmark_service.py`.
 
 ---
+**Bug ID:** 2026-03-12-01
+**Title:** TypeError in Benchmark Calculation for Fixed Deposits
+**Module:** Analytics/Benchmarking (Backend)
+**Reported By:** User
+**Date Reported:** 2026-03-12
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** A `TypeError: unsupported operand type(s) for /: 'decimal.Decimal' and 'float'` occurred in the `BenchmarkService._generate_synthetic_transactions` method when calculating `period_payout` for Fixed Deposits. This was caused by Python's standard division operator `/` returning a float when dividing integers, which cannot be mixed with `Decimal` operands that derive from `fd.principal_amount` and `fd.interest_rate`.
+**Expected Behavior:** The payout calculation should compute without mathematical type errors.
+**Actual Behavior:** 500 exceptions with `TypeError` blocking benchmark requests.
+**Resolution:** Explicitly wrapped the division operands (`12` and `interval.months`) in `Decimal` before deriving the `divisor` to maintain strict Decimal math.
+
+---
 **Bug ID:** 2026-03-01-01
 **Title:** Portfolio delete returns 500 when linked to goals (FK violation).
 **Module:** Portfolio Management (Backend)

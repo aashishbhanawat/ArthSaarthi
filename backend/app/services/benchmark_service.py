@@ -81,10 +81,11 @@ class BenchmarkService:
                 )
                 if interval:
                     # Simplified payout calculation
+                    divisor = Decimal(12) / Decimal(interval.months) if interval.months else Decimal(1)
                     period_payout = (
                         fd.principal_amount *
                         (Decimal(str(fd.interest_rate)) / 100) /
-                        (12 / interval.months if interval.months else 1)
+                        divisor
                     )
                     curr_date = fd.start_date + interval
                     while curr_date <= fd.maturity_date:

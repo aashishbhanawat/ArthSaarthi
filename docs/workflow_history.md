@@ -1,3 +1,27 @@
+## 2026-03-12: Desktop App FD Benchmark TypeError Fix
+
+**Task:** Fix the `TypeError` occurring in the `BenchmarkService` when calculating period payouts for Fixed Deposits.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Resolved a critical bug in the Benchmark Comparison engine that was causing a backend crash when processing Fixed Deposits.
+
+1. **Benchmark Attribute Fix:** Resolved an `TypeError: unsupported operand type(s) for /: 'decimal.Decimal' and 'float'` in `BenchmarkService._generate_synthetic_transactions`. This occurred because the `period_payout` calculation divided a `Decimal` by a `float` (originating from standard Python division `/`). Wrapped the operands in `Decimal` to enforce consistent type math.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/services/benchmark_service.py` – Updated the division logic to explicitly construct a `Decimal` divisor for interest compounding.
+
+### Outcome
+
+**Success.** The Benchmark Comparison widget successfully interpolates FD interest payouts without raising a 500 `TypeError`, enabling seamless benchmarking against user portfolios.
+
+---
+
 ## 2026-03-10: Desktop App Stability & Benchmark Fixes
 
 **Task:** Fix the desktop app startup issue (`fmv_2018` column), missing tables on upgrade, and `AttributeError` in benchmark calculations for Fixed Deposits.
