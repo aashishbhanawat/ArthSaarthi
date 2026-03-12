@@ -152,8 +152,8 @@ def _get_portfolio_history(
     )
     from app.models.asset import Asset
     from app.models.fixed_deposit import FixedDeposit
-    from app.models.recurring_deposit import RecurringDeposit
     from app.models.historical_interest_rate import HistoricalInterestRate
+    from app.models.recurring_deposit import RecurringDeposit
 
     fd_query = db.query(FixedDeposit)
     rd_query = db.query(RecurringDeposit)

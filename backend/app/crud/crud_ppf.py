@@ -140,7 +140,8 @@ def _cleanup_duplicate_interest_credits(db: Session, asset_id: uuid.UUID) -> Non
 def process_ppf_holding(
     db: Session, ppf_asset: Asset, portfolio_id: uuid.UUID | None,
     calculation_date: date = None, simulate_only: bool = False,
-    transactions: List[Transaction] = None, ppf_rates: List[HistoricalInterestRate] = None,
+    transactions: List[Transaction] = None,
+    ppf_rates: List[HistoricalInterestRate] = None,
 ) -> schemas.Holding:
     """Processes a single PPF asset to calculate its current value and generate interest transactions."""  # noqa: E501
     if transactions is None:
@@ -186,9 +187,12 @@ def process_ppf_holding(
         )
 
     # Pre-fetch all PPF rates once to avoid N+1 queries in the month loop
-    all_ppf_rates = ppf_rates if ppf_rates is not None else db.query(HistoricalInterestRate).filter(
-        HistoricalInterestRate.scheme_name == "PPF"
-    ).all()
+    if ppf_rates is not None:
+        all_ppf_rates = ppf_rates
+    else:
+        all_ppf_rates = db.query(HistoricalInterestRate).filter(
+            HistoricalInterestRate.scheme_name == "PPF"
+        ).all()
 
     # Separate transactions by type
     contributions = [
