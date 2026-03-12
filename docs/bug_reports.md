@@ -26,6 +26,54 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-03-10-01
+**Title:** Desktop App Startup Fails Due to Missing `fmv_2018` Column
+**Module:** Core Backend, Desktop App
+**Reported By:** User
+**Date Reported:** 2026-03-10
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** The desktop app failed to start or seed assets due to a missing `fmv_2018` column in the SQLite `assets` table. The desktop entry point `run_cli.py` uses a hardcoded list of schema migrations for older local databases, which was not updated when the new column was added to the SQLAlchemy models and Alembic migrations.
+**Steps to Reproduce:**
+1. Upgrade an existing local desktop app database using a build from PR#339.
+2. Observe backend failure with `sqlite3.OperationalError: no such column: assets.fmv_2018`.
+3. Try starting up and check logs.
+**Expected Behavior:** The local SQLite database should be upgraded with the `fmv_2018` column automatically.
+**Actual Behavior:** 500 exceptions and migration failure due to the missing column.
+**Resolution:** Added `("assets", "fmv_2018", "REAL")` to the `migrations` list in `backend/run_cli.py` to ensure it is added during the desktop app startup.
+
+---
+
+**Bug ID:** 2026-03-10-02
+**Title:** AttributeError in Benchmark Calculation for Fixed Deposits
+**Module:** Analytics/Benchmarking (Backend)
+**Reported By:** User
+**Date Reported:** 2026-03-10
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** The `BenchmarkService._generate_synthetic_transactions` method crashed with `AttributeError: 'FixedDeposit' object has no attribute 'compounding'` when calculating interest payouts for Fixed Deposits. This occurred because the code incorrectly referenced the attribute name as `compounding` instead of `compounding_frequency`.
+**Steps to Reproduce:**
+1. Create a portfolio with a Fixed Deposit that has interest payout set to "Payout".
+2. View the Benchmark Comparison widget.
+3. Observe backend traceback or frontend error.
+**Expected Behavior:** Synthetic transactions should be generated successfully using the correct model attributes.
+**Actual Behavior:** `AttributeError: 'FixedDeposit' object has no attribute 'compounding'`.
+**Resolution:** Replaced `fd.compounding` with `fd.compounding_frequency` in `backend/app/services/benchmark_service.py`.
+
+---
+**Bug ID:** 2026-03-12-01
+**Title:** TypeError in Benchmark Calculation for Fixed Deposits
+**Module:** Analytics/Benchmarking (Backend)
+**Reported By:** User
+**Date Reported:** 2026-03-12
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** A `TypeError: unsupported operand type(s) for /: 'decimal.Decimal' and 'float'` occurred in the `BenchmarkService._generate_synthetic_transactions` method when calculating `period_payout` for Fixed Deposits. This was caused by Python's standard division operator `/` returning a float when dividing integers, which cannot be mixed with `Decimal` operands that derive from `fd.principal_amount` and `fd.interest_rate`.
+**Expected Behavior:** The payout calculation should compute without mathematical type errors.
+**Actual Behavior:** 500 exceptions with `TypeError` blocking benchmark requests.
+**Resolution:** Explicitly wrapped the division operands (`12` and `interval.months`) in `Decimal` before deriving the `divisor` to maintain strict Decimal math.
+
+---
 **Bug ID:** 2026-03-01-01
 **Title:** Portfolio delete returns 500 when linked to goals (FK violation).
 **Module:** Portfolio Management (Backend)

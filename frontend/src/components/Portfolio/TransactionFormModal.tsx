@@ -504,12 +504,20 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             },
             onError: (error: ApiError) => {
                 if (error.response?.status === 409) {
-                    setApiError(error.response.data?.detail || 'A duplicate record with the same details already exists.');
+                    const detail = error.response.data?.detail;
+                    const errorMessage = Array.isArray(detail)
+                        ? detail.map((d: { msg: string }) => d.msg).join(', ')
+                        : (detail || 'A duplicate record with the same details already exists.');
+                    setApiError(errorMessage);
                 } else {
                     const defaultMessage = isEditMode
                         ? 'An unexpected error occurred while updating the transaction'
                         : 'An unexpected error occurred while adding the transaction';
-                    setApiError(getErrorMessage(error) || defaultMessage);
+                    const rawError = getErrorMessage(error);
+                    const errorMessage = Array.isArray(rawError)
+                        ? rawError.map((e: { msg: string }) => e.msg).join(', ')
+                        : (rawError || defaultMessage);
+                    setApiError(errorMessage);
                 }
             }
         };

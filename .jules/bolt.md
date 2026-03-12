@@ -1,3 +1,6 @@
-## 2024-03-10 - Fix N+1 queries in dashboard history for PPF assets
-**Learning:** In historical portfolio calculations, looping over days and dynamically calculating complex assets like PPF triggers O(N*M) database queries (M days * N assets) for underlying dependencies like transaction history and historical interest rates.
-**Action:** When a calculation function (`process_ppf_holding`) is used both for single-point-in-time calculation and inside historical simulation loops, design it to accept optional pre-fetched dependencies (like `transactions` and `ppf_rates`). Fetch these dependencies once outside the historical loop and pass them in to eliminate the N+1 query bottleneck.
+## YYYY-MM-DD - [Optimize PPF Interest Calculation N+1 Queries]
+**Learning:** In `backend/app/crud/crud_ppf.py`, calculating PPF interest across financial years executed a new database query per month to find historical interest rates (`12` queries per simulated year, `180` queries for 15 years), resulting in massive query amplification during dashboard load.
+**Action:** When performing time-series calculations that rely on historical rates (like PPF interest), always pre-fetch the rates at the beginning of the top-level method (e.g., `process_ppf_holding`) and pass the pre-fetched list to the inner loop functions (e.g., `_calculate_ppf_interest_for_fy`) to do in-memory filtering.
+## 2024-05-18 - [Optimize PPF Asset Batch Locking]
+**Learning:** In `backend/app/crud/crud_holding.py` within `get_all_portfolios_holdings_and_summary`, locking PPF assets individually inside a loop with `.with_for_update().first()` introduces an N+1 database round-trip performance bottleneck, similar to what was previously fixed in `get_portfolio_holdings_and_summary`.
+**Action:** Always batch-lock assets prior to looping over them using an `.in_()` clause when processing multiple entities, avoiding any database queries inside iteration blocks.

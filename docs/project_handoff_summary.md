@@ -1,11 +1,11 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-09
+**Last Updated:** 2026-03-10
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Fixed portfolio analytics for FD-only portfolios, resolutions for misleading XIRR scaling and short-term annualization labels, robust timezone-aware date validation, backend health check timeouts (Issue #330), MacOS desktop crashes (Issue #333), and Windows build dependency conflicts (Issue #334).
+*   **Summary:** Fixed critical desktop app stability issues including missing SQLite columns (`fmv_2018`) and tables on upgrade. Resolved `AttributeError` and `TypeError` in Fixed Deposit benchmark simulations. Also includes previously addressed portfolio analytics fixes for FD-only portfolios, XIRR scaling standardisation, timezone-aware date validation, and MacOS/Windows build stability.
 
 ## 2. Test Suite Status
 
@@ -23,6 +23,7 @@
     *   Fixed early-return bug where FD/RD-only portfolios returned empty history.
     *   Fixed `Holding` schema crash for FDs/RDs missing an `account_number`.
 *   **UI "No Data" Fix:** Category comparison no longer hides the entire component when a category has no transactions — keeps navigation elements visible.
+*   **Desktop App Migration Fix:** Added `fmv_2018` to the manual schema migration script in `run_cli.py` to prevent startup crashes when upgrading the desktop app version.
 
 ## 3. Implemented Functionality
 

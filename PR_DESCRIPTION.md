@@ -1,28 +1,34 @@
 # PR Description
 
-## feat(backend): Implement Tax Lot Accounting (Specific Lot Identification)
+## feat(analytics): Fix Portfolio FD Analytics, Backend Health Check, and Desktop Stability (#330, #332, #333, #334)
 
 ### Summary
-Implements "Specific Lot Identification" for sales, allowing users to optimize tax liability (e.g., specific lot selling vs average cost). This change introduces a `TransactionLink` table to link SELL transactions to specific BUY lots and updates the P&L calculation logic to respect these links.
+This PR addresses several critical issues identified in version 4.0:
+1. **Benchmark Simulation for Debt-only Portfolios**: Fixed a bug where FD/RD-only portfolios showed 0% XIRR by implementing synthetic transactions for benchmark simulations.
+2. **XIRR UX Improvements**: Added "(Annualized)" labels to Benchmark Comparison for periods < 1 year and standardized percentage scaling.
+3. **Backend Reliability**: Increased health check `start_period` for long-running startup seeding and added default `SECRET_KEY` for MacOS stability.
+4. **Data Integrity**: Implemented timezone-aware future date validation and duplicate FD detection.
+5. **Build Resolution**: Fixed `bcrypt` dependency conflict on Windows.
 
 ### Changes
-*   **feat(backend):** Added `TransactionLink` model and `TransactionLinkCreate` schema.
-*   **feat(backend):** Updated `crud_transaction.py` to implement `get_available_lots` (FIFO fallback) and handle link creation.
-*   **feat(backend):** Updated `crud_holding.py` to calculate Realized P&L using specific linked costs.
-*   **fix(backend):** Refactored Corporate Action handling (Splits/Bonuses) to use event-sourcing, fixing a double-counting bug.
-*   **feat(frontend):** Updated `TransactionFormModal.tsx` to include "Specify Lots" UI with FIFO/LIFO/Highest Cost helpers.
-*   **test(e2e):** Added `tax-lot-selection.spec.ts` to verify the UI flow.
-*   **test(backend):** Added `test_tax_lot_pnl.py` to verify specific lot P&L calculation.
+*   **feat(backend)**: Implemented `_generate_synthetic_transactions` in `BenchmarkService`.
+*   **feat(backend)**: Added `days_duration` to benchmark response and fixed maturity inflow logic in `_get_portfolio_cash_flows`.
+*   **feat(backend)**: Added duplicate FD check in `crud_fixed_deposit`.
+*   **feat(backend)**: Implemented timezone-aware `model_validator` in `TransactionBase` and `FixedDepositBase`.
+*   **fix(backend)**: Added default `SECRET_KEY` using `secrets.token_urlsafe(32)`.
+*   **fix(build)**: Increased Docker health check `start_period` to 1200s and updated `bcrypt` to 4.1.3.
+*   **feat(frontend)**: Updated `BenchmarkComparison.tsx` with "(Annualized)" labels and standardized formatting.
+*   **feat(frontend)**: Updated `TransactionFormModal.tsx` and FD forms with `max` date constraints to prevent future date logging.
+*   **feat(frontend)**: Updated `portfolioApi.ts` types to support `days_duration`.
 
 ### Verification
-*   **Backend Reviews:** All lint checks passed (`ruff`).
-*   **Backend Tests:** All 166 tests passed (including new integration tests).
-*   **Frontend Tests:** All 174 tests passed.
-*   **E2E Tests:** All 31 tests passed (Route mocking fixed for tax-lot-selection).
-
-### Breaking Changes
-*   None. Unlinked transactions fall back to Average Cost (P&L) and FIFO (Availability), preserving behavior for existing data.
+*   **Manual Verification**: Confirmed FD-only portfolios show correct XIRR in Benchmark Comparison.
+*   **Validation Testing**: Verified future date and duplicate FD rejection via UI and unit tests.
+*   **Build Verification**: Confirmed successful backend startup on initial seeding.
+*   **Test Suite**: 298/298 backend tests passing.
 
 ### Related Issues
-*   Implements FR4.4.3
-*   Fixes Bug 2025-12-14-01 (Corporate Action Double Counting)
+*   Fixes #330 (Backend Startup Timeout)
+*   Fixes #332 (FD Analytics, Future Date Validation, Duplicate FDs)
+*   Fixes #333 (MacOS Desktop Crash)
+*   Fixes #334 (Windows Build bcrypt conflict)

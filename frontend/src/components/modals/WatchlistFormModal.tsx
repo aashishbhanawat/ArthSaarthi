@@ -34,9 +34,14 @@ const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
+    <div
+      className="modal modal-open"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="watchlist-modal-title"
+    >
       <div className="modal-box">
-        <h3 className="font-bold text-lg">
+        <h3 id="watchlist-modal-title" className="font-bold text-lg">
           {isEditMode ? 'Rename Watchlist' : 'Create New Watchlist'}
         </h3>
         <form onSubmit={handleSubmit}>

@@ -77,14 +77,19 @@ class BenchmarkService:
                     "ANNUALLY": relativedelta(years=1),
                 }
                 interval = interval_map.get(
-                    (fd.compounding or "").upper()
+                    (fd.compounding_frequency or "").upper()
                 )
                 if interval:
                     # Simplified payout calculation
+                    if interval.months:
+                        divisor = Decimal(12) / Decimal(interval.months)
+                    else:
+                        divisor = Decimal(1)
+
                     period_payout = (
                         fd.principal_amount *
                         (Decimal(str(fd.interest_rate)) / 100) /
-                        (12 / interval.months if interval.months else 1)
+                        divisor
                     )
                     curr_date = fd.start_date + interval
                     while curr_date <= fd.maturity_date:
