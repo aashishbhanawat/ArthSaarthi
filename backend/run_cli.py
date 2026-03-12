@@ -30,6 +30,7 @@ def run_sqlite_migrations(db_path: str) -> None:
         ("assets", "country", "TEXT"),
         ("assets", "market_cap", "REAL"),
         ("assets", "investment_style", "TEXT"),
+        ("assets", "fmv_2018", "REAL"),
     ]
 
     try:
@@ -96,8 +97,16 @@ def run_dev_server(
             # Note: Asset seeding is now triggered by the splash screen
             # via the /api/v1/system/trigger-seeding endpoint
         else:
-            # For existing databases, run any necessary schema migrations
-            # This handles the upgrade path for adding new columns
+            print(f"Upgrading existing database at {db_path_str}...")
+            # 1. Create any missing tables that were introduced in newer releases
+            from app.db.base import Base
+            from app.db.session import engine
+            print("Creating any newly added tables...")
+            Base.metadata.create_all(bind=engine)
+
+            # 2. Run manual schema migrations for adding new columns to existing tables
+            # This handles the upgrade path for existing Desktop installations
+            print("Running manual schema migrations...")
             run_sqlite_migrations(db_path_str)
 
     uvicorn.run(fastapi_app, host=host, port=port)

@@ -1,3 +1,55 @@
+## 2026-03-12: Desktop App FD Benchmark TypeError Fix
+
+**Task:** Fix the `TypeError` occurring in the `BenchmarkService` when calculating period payouts for Fixed Deposits.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Resolved a critical bug in the Benchmark Comparison engine that was causing a backend crash when processing Fixed Deposits.
+
+1. **Benchmark Attribute Fix:** Resolved an `TypeError: unsupported operand type(s) for /: 'decimal.Decimal' and 'float'` in `BenchmarkService._generate_synthetic_transactions`. This occurred because the `period_payout` calculation divided a `Decimal` by a `float` (originating from standard Python division `/`). Wrapped the operands in `Decimal` to enforce consistent type math.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/services/benchmark_service.py` – Updated the division logic to explicitly construct a `Decimal` divisor for interest compounding.
+
+### Outcome
+
+**Success.** The Benchmark Comparison widget successfully interpolates FD interest payouts without raising a 500 `TypeError`, enabling seamless benchmarking against user portfolios.
+
+---
+
+## 2026-03-10: Desktop App Stability & Benchmark Fixes
+
+**Task:** Fix the desktop app startup issue (`fmv_2018` column), missing tables on upgrade, and `AttributeError` in benchmark calculations for Fixed Deposits.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Fixed critical stability and analytical issues for the desktop application.
+
+1. **Desktop App Migration Fix:**
+    - **Schema Upgrade:** Added `fmv_2018` to the manual schema migration script in `backend/run_cli.py` to prevent startup crashes (`OperationalError: no such column: assets.fmv_2018`) when upgrading existing desktop databases.
+    - **Missing Tables:** Integrated `Base.metadata.create_all()` into the desktop upgrade path in `run_cli.py`. This ensures that new tables introduced in recent versions (like `daily_portfolio_snapshots` and `transaction_links`) are automatically created for existing users.
+2. **Benchmark Attribute Fix:** Resolved an `AttributeError: 'FixedDeposit' object has no attribute 'compounding'` in `BenchmarkService._generate_synthetic_transactions`. The code was corrected to use the proper model attribute `compounding_frequency`.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/run_cli.py` – Added `fmv_2018` to migrations and integrated `Base.metadata.create_all()`.
+* **Modified:** `backend/app/services/benchmark_service.py` – Fixed attribute name from `compounding` to `compounding_frequency`.
+
+### Outcome
+
+**Success.** Desktop installations can now upgrade seamlessly without schema-related crashes, and the Benchmark Comparison widget now correctly simulates Fixed Deposit flows.
+
+---
+
 ## 2026-03-09: Portfolio Analytics & Validation Refinements (#332)
 
 **Task:** Refine portfolio analytics display and data validation for improved accuracy and clarity.
