@@ -81,7 +81,11 @@ class BenchmarkService:
                 )
                 if interval:
                     # Simplified payout calculation
-                    divisor = Decimal(12) / Decimal(interval.months) if interval.months else Decimal(1)
+                    if interval.months:
+                        divisor = Decimal(12) / Decimal(interval.months)
+                    else:
+                        divisor = Decimal(1)
+
                     period_payout = (
                         fd.principal_amount *
                         (Decimal(str(fd.interest_rate)) / 100) /
