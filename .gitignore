@@ -35,6 +35,7 @@ venv/
 .tox/
 *.pyc
 *.pyo
+.jules/*
 
 # Python build artifacts
 build/

@@ -1,6 +1,0 @@
-## YYYY-MM-DD - [Optimize PPF Interest Calculation N+1 Queries]
-**Learning:** In `backend/app/crud/crud_ppf.py`, calculating PPF interest across financial years executed a new database query per month to find historical interest rates (`12` queries per simulated year, `180` queries for 15 years), resulting in massive query amplification during dashboard load.
-**Action:** When performing time-series calculations that rely on historical rates (like PPF interest), always pre-fetch the rates at the beginning of the top-level method (e.g., `process_ppf_holding`) and pass the pre-fetched list to the inner loop functions (e.g., `_calculate_ppf_interest_for_fy`) to do in-memory filtering.
-## 2024-05-18 - [Optimize PPF Asset Batch Locking]
-**Learning:** In `backend/app/crud/crud_holding.py` within `get_all_portfolios_holdings_and_summary`, locking PPF assets individually inside a loop with `.with_for_update().first()` introduces an N+1 database round-trip performance bottleneck, similar to what was previously fixed in `get_portfolio_holdings_and_summary`.
-**Action:** Always batch-lock assets prior to looping over them using an `.in_()` clause when processing multiple entities, avoiding any database queries inside iteration blocks.
