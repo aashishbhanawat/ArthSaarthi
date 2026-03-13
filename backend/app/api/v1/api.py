@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     auth,
     capital_gains,
     dashboard,
+    dividends,
     fixed_deposits,
     fx,
     goals,
@@ -86,6 +87,11 @@ api_router.include_router(system.router, prefix="/system", tags=["system"])
 # Capital Gains Tax Reports (FR6.5)
 api_router.include_router(
     capital_gains.router, prefix="/capital-gains", tags=["capital-gains"]
+)
+
+# Dividend Tax Reports (FR6.6)
+api_router.include_router(
+    dividends.router, prefix="/dividends", tags=["dividends"]
 )
 
 # Schedule FA - Foreign Assets (Calendar Year)

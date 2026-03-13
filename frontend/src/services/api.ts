@@ -117,3 +117,31 @@ export const getCurrentUser = async () => {
   const response = await apiClient.get("/api/v1/users/me");
   return response.data;
 };
+
+/**
+ * Helper to download CSVs using the authenticated API client. 
+ */
+export const downloadCsv = async (url: string, filename: string) => {
+  try {
+    const response = await apiClient.get(url, {
+      responseType: 'blob', // Important for file downloads
+    });
+
+    // Create blob link to download
+    const urlBlob = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = urlBlob;
+    link.setAttribute('download', filename);
+    /* eslint-disable testing-library/no-node-access */
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    if (link.parentNode) {
+      link.parentNode.removeChild(link);
+    }
+    /* eslint-enable testing-library/no-node-access */
+  } catch (error) {
+    console.error(`Failed to download CSV from ${url}`, error);
+  }
+};

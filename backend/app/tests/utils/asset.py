@@ -7,7 +7,11 @@ from app.models.asset import Asset
 
 
 def create_test_asset(
-    db: Session, *, ticker_symbol: str, name: Optional[str] = None
+    db: Session,
+    *,
+    ticker_symbol: str,
+    name: Optional[str] = None,
+    currency: str = "USD",
 ) -> Asset:
     """
     Test utility to create an asset.
@@ -17,7 +21,7 @@ def create_test_asset(
         name=asset_name,
         ticker_symbol=ticker_symbol,
         asset_type="STOCK",
-        currency="USD",
+        currency=currency,
         exchange="NASDAQ",
     )
     return crud.asset.create(db=db, obj_in=asset_in)

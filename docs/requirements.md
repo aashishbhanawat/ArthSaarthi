@@ -89,10 +89,12 @@ This document outlines the functional and non-functional requirements for the Ar
     -   **FR6.3.2: Risk-Free Rate.** Overlay "Risk-Free" growth line (e.g., 6-7% p.a.) on comparison charts. `✅ Done`
     -   **FR6.3.3: Category Benchmarking.** Compare Equity portion vs Nifty, Debt vs Bond Yields independently. `✅ Done`
 -   **FR6.4: Diversification Analysis.** Provide visual breakdowns of the portfolio by: Asset Class, Industry/Sector, Geography, Currency, Market Cap, and Investment Style (Growth vs. Value). `✅ Done`
--   **FR6.5: Capital Gains Reporting.** `📝 Planned`
+-   **FR6.5:** Capital Gains Reporting.
     -   **FR6.5.1:** Generate reports for realized long-term, short-term, and intra-day capital gains in ITR (Income Tax Return) format. `📝 Planned`
     -   **FR6.5.2:** Reports must account for provisions like LTCG Grandfathering and Indexation. `📝 Planned`
     -   **FR6.5.3:** Users must be able to view unrealised capital gains to estimate tax liability. `📝 Planned`
+-   **FR6.6:** Dividend Reporting. `📝 Planned`
+    -   **FR6.6.1:** Users must be able to export a CSV report of all dividends received within a specific Financial Year (FY) for tax filing purposes. `📝 Planned`
 -   **FR6.6: Customizable Reports.** `📝 Planned`
     -   **FR6.6.1:** Users must be able to generate and export reports in PDF/CSV format. `📝 Planned`
     -   **FR6.6.2:** Available reports include: Income, Due Dates, Transactions, Holding Period, and Asset Allocation. `📝 Planned`

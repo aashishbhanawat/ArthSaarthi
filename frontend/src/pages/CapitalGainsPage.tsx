@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useCapitalGains, GainEntry, ForeignGainEntry, ITRRow } from '../hooks/useCapitalGains';
 import { useScheduleFA, ScheduleFAEntry } from '../hooks/useScheduleFA';
+import { useDividends, DividendEntry } from '../hooks/useDividends';
 import { formatCurrency } from '../utils/formatting';
+import { downloadCsv } from '../services/api';
 
 // Helper to get current FY
 const getCurrentFY = (): string => {
@@ -49,7 +51,7 @@ const formatCurrency2 = (val: number | string, prefix?: string): string => {
     return prefix ? `${prefix} ${formatted}` : formatted;
 };
 
-type TabType = 'capital-gains' | 'schedule-fa';
+type TabType = 'capital-gains' | 'schedule-fa' | 'dividends';
 
 const CapitalGainsPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('capital-gains');
@@ -61,6 +63,7 @@ const CapitalGainsPage: React.FC = () => {
 
     const { data, isLoading, isError, error } = useCapitalGains({ fy: selectedFY, slab_rate: slabRate });
     const { data: faData, isLoading: faLoading, isError: faError, error: faErrorObj } = useScheduleFA({ calendar_year: selectedCalendarYear });
+    const { data: dividendData, isLoading: divLoading, isError: divError, error: divErrorObj } = useDividends({ fy: selectedFY });
 
     const periodLabels = ['Upto 15/6', '16/6 - 15/9', '16/9 - 15/12', '16/12 - 15/3', '16/3 - 31/3'];
 
@@ -87,6 +90,15 @@ const CapitalGainsPage: React.FC = () => {
                         }`}
                 >
                     Schedule FA (Foreign Assets)
+                </button>
+                <button
+                    onClick={() => setActiveTab('dividends')}
+                    className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${activeTab === 'dividends'
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                        }`}
+                >
+                    Dividend Report
                 </button>
             </div>
 
@@ -126,9 +138,9 @@ const CapitalGainsPage: React.FC = () => {
 
                         <button
                             onClick={() => {
-                                window.open(
+                                downloadCsv(
                                     `/api/v1/capital-gains/export?fy=${selectedFY}&slab_rate=${slabRate}`,
-                                    '_blank'
+                                    `capital_gains_${selectedFY.replace('-', '_')}.csv`
                                 );
                             }}
                             className="btn btn-secondary flex items-center gap-2"
@@ -280,9 +292,9 @@ const CapitalGainsPage: React.FC = () => {
                                         <h2 className="text-xl font-semibold dark:text-white">Schedule 112A (Grandfathered Equity LTCG)</h2>
                                         <button
                                             onClick={() => {
-                                                window.open(
+                                                downloadCsv(
                                                     `/api/v1/capital-gains/export?fy=${selectedFY}&report_type=112a`,
-                                                    '_blank'
+                                                    `schedule_112a_${selectedFY.replace('-', '_')}.csv`
                                                 );
                                             }}
                                             className="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-gray-300 flex items-center gap-2"
@@ -545,6 +557,126 @@ const CapitalGainsPage: React.FC = () => {
                                                     </td>
                                                     <td className="p-2 text-right dark:text-gray-300">
                                                         {formatCurrency2(entry.gross_proceeds_from_sale, entry.currency)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </>
+            )}
+
+            {/* Dividend Report Tab */}
+            {activeTab === 'dividends' && (
+                <>
+                    {/* FY and Slab Rate Selector */}
+                    <div className="mb-6 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <label htmlFor="div-fy-select" className="font-medium dark:text-gray-200">Financial Year:</label>
+                            <select
+                                id="div-fy-select"
+                                value={selectedFY}
+                                onChange={(e) => setSelectedFY(e.target.value)}
+                                className="form-input w-36"
+                            >
+                                {fyOptions.map((fy) => (
+                                    <option key={fy} value={fy}>FY {fy}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <button
+                            onClick={() => {
+                                downloadCsv(
+                                    `/api/v1/dividends/export?fy=${selectedFY}`,
+                                    `dividends_${selectedFY.replace('-', '_')}.csv`
+                                );
+                            }}
+                            className="btn btn-secondary flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                            Export CSV
+                        </button>
+                    </div>
+
+                    {divLoading && <div className="text-center p-8 dark:text-gray-300">Loading dividend report...</div>}
+                    {divError && <div className="text-center p-8 text-red-500">Error: {(divErrorObj as Error).message}</div>}
+
+                    {dividendData && (
+                        <>
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 border-green-500">
+                                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400">Total Dividends</h3>
+                                    <p className="text-xl font-bold text-green-600">
+                                        {formatCurrency(dividendData.total_amount_inr, 'INR')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Advance Tax Breakdown Matrix */}
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8 overflow-x-auto">
+                                <h2 className="text-xl font-semibold mb-4 dark:text-white">Dividend Advance Tax Breakdown</h2>
+                                <table className="min-w-full text-sm mt-4">
+                                    <thead>
+                                        <tr className="bg-gray-100 dark:bg-gray-700">
+                                            {periodLabels.map((label) => (
+                                                <th key={label} className="p-2 text-right dark:text-gray-200">{label}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="border-b dark:border-gray-600">
+                                            {periodLabels.map((period) => (
+                                                <td key={period} className="p-2 text-right dark:text-gray-300 font-medium">
+                                                    {formatCurrency(dividendData.bucket_totals[period] || 0, 'INR')}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Detailed Dividends Table */}
+                            {dividendData.entries.length === 0 ? (
+                                <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+                                    No dividends found for FY {selectedFY}.
+                                </div>
+                            ) : (
+                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 overflow-x-auto">
+                                    <h2 className="text-xl font-semibold mb-4 dark:text-white">Dividend Entries ({dividendData.entries.length} items)</h2>
+                                    <table className="min-w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-gray-100 dark:bg-gray-700">
+                                                <th className="p-2 text-left dark:text-gray-200">Asset</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Date</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Quantity</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Amount (Native)</th>
+                                                <th className="p-2 text-right dark:text-gray-200">TTBR Date</th>
+                                                <th className="p-2 text-right dark:text-gray-200">TTBR Rate</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Amount (INR)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {dividendData.entries.map((entry: DividendEntry) => (
+                                                <tr key={entry.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                    <td className="p-2 dark:text-gray-200">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{entry.asset_name || entry.asset_ticker}</span>
+                                                            <span className="text-xs text-gray-500 dark:text-gray-400">{entry.asset_ticker}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{new Date(entry.date).toLocaleDateString('en-IN')}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatQty(entry.quantity)}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency2(entry.amount_native, entry.currency)}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{entry.ttbr_date ? new Date(entry.ttbr_date).toLocaleDateString('en-IN') : '-'}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{entry.ttbr_rate ? formatQty(entry.ttbr_rate) : '-'}</td>
+                                                    <td className="p-2 text-right font-medium text-green-600">
+                                                        {formatCurrency(entry.amount_inr, 'INR')}
                                                     </td>
                                                 </tr>
                                             ))}
