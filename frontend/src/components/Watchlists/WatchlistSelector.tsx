@@ -116,6 +116,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
         onClose={() => setIsFormModalOpen(false)}
         onSubmit={handleFormSubmit}
         watchlist={editingWatchlist}
+        isPending={createWatchlist.isPending || updateWatchlist.isPending}
       />
       <DeleteConfirmationModal
         isOpen={!!watchlistToDelete}
