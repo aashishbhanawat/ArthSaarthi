@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Watchlist } from '../../types/watchlist';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface WatchlistFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (name: string) => void;
   watchlist?: Watchlist | null; // Provide for editing
+  isPending?: boolean;
 }
 
 const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({
@@ -13,6 +15,7 @@ const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({
   onClose,
   onSubmit,
   watchlist,
+  isPending = false,
 }) => {
   const [name, setName] = useState('');
   const isEditMode = !!watchlist;
@@ -27,7 +30,6 @@ const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({
     e.preventDefault();
     if (name.trim()) {
       onSubmit(name);
-      onClose();
     }
   };
 
@@ -60,11 +62,16 @@ const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({
             />
           </div>
           <div className="modal-action">
-            <button type="button" onClick={onClose} className="btn btn-ghost">
+            <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isPending}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={!name.trim()}>
-              Save
+            <button
+              type="submit"
+              className="btn btn-primary flex items-center gap-2"
+              disabled={isPending || !name.trim()}
+            >
+              {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
+              {isPending ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>

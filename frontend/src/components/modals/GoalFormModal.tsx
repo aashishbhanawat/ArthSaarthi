@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Goal, GoalCreate, GoalUpdate } from '../../types/goal';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface GoalFormModalProps {
   isOpen: boolean;
@@ -41,17 +42,21 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
         target_date: targetDate,
       };
       onSubmit(goalData);
-      onClose(); // Add this back
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
+    <div
+      className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="goal-modal-title"
+    >
       <div className="modal-content max-w-md">
         <div className="modal-header">
-          <h2 className="text-2xl font-bold">
+          <h2 id="goal-modal-title" className="text-2xl font-bold">
             {isEditMode ? 'Edit Goal' : 'Create New Goal'}
           </h2>
           <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
@@ -112,7 +117,12 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
               <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={isPending}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" disabled={isPending || !name.trim() || !targetAmount || !targetDate}>
+              <button
+                type="submit"
+                className="btn btn-primary flex items-center gap-2"
+                disabled={isPending || !name.trim() || !targetAmount || !targetDate}
+              >
+                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
                 {isPending ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Goal')}
               </button>
             </div>

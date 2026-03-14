@@ -57,9 +57,13 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
 
   const handleFormSubmit = (name: string) => {
     if (editingWatchlist) {
-      updateWatchlist.mutate({ id: editingWatchlist.id, name });
+      updateWatchlist.mutate({ id: editingWatchlist.id, name }, {
+        onSuccess: () => setIsFormModalOpen(false)
+      });
     } else {
-      createWatchlist.mutate(name);
+      createWatchlist.mutate(name, {
+        onSuccess: () => setIsFormModalOpen(false)
+      });
     }
   };
 
@@ -116,6 +120,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
         onClose={() => setIsFormModalOpen(false)}
         onSubmit={handleFormSubmit}
         watchlist={editingWatchlist}
+        isPending={createWatchlist.isPending || updateWatchlist.isPending}
       />
       <DeleteConfirmationModal
         isOpen={!!watchlistToDelete}
