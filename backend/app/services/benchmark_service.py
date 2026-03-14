@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Dict, Tuple
@@ -428,6 +429,7 @@ class BenchmarkService:
         plus risk-free overlay.
         """
         if benchmark_mode == "category":
+            start_time = time.time()
             category_data = (
                 self._calculate_category_benchmark(
                     portfolio_id, risk_free_rate
@@ -480,13 +482,25 @@ class BenchmarkService:
                 f"has debt="
                 f"{'debt' in category_data}"
             )
+            logger.info(
+                "Benchmark calculation (category) for portfolio %s "
+                "took %.4f seconds.",
+                portfolio_id, time.time() - start_time,
+            )
             return base_result
 
-        return self._run_simulation(
+        start_time = time.time()
+        result = self._run_simulation(
             None, portfolio_id,
             benchmark_ticker, benchmark_mode,
             hybrid_preset, risk_free_rate,
         )
+        logger.info(
+            "Benchmark calculation (%s) for portfolio %s "
+            "took %.4f seconds.",
+            benchmark_mode, portfolio_id, time.time() - start_time,
+        )
+        return result
 
     def _run_simulation(
         self,
@@ -816,6 +830,11 @@ class BenchmarkService:
                         invested_amount -= Decimal(
                             str(amount_inr)
                         )
+                        # Clamp to zero: matured FD/RD SELL proceeds
+                        # may exceed the original BUY amount, which
+                        # would otherwise make invested_amount negative.
+                        if invested_amount < 0:
+                            invested_amount = Decimal("0")
                     total_val = 0
                     for c in components:
                         t = c["ticker"]

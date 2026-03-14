@@ -1,4 +1,38 @@
-## 2026-03-14: Dividend Tax Buckets & Export Formatting (FR 6.6)
+## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
+
+**Task:** Fix 7 reported issues: cache invalidation for dashboard history, benchmark invested amount going negative after FD maturity, matured FDs/RDs in portfolio history, incomplete cache invalidation on restore, PPF log spam, and missing timing instrumentation.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1. **Cache Invalidation (Issues 1 & 5):** Dashboard history cache key is `analytics:dashboard_history:{user_id}:{range_str}` (e.g., `:7d`, `:30d`), but `invalidate_caches_for_portfolio` was only deleting the base key without the range suffix — effectively a no-op. Fixed to delete all 4 range-specific keys. Also added `all_portfolios_holdings_and_summary` to the invalidation list. Restore function was only invalidating `dashboard_summary`; now does comprehensive cache flush. **Refactored snapshot deletion in `restore_backup` to use a single bulk delete operation per PR review feedback.**
+2. **Benchmark Invested Amount (Issue 2):** After matured FD SELL, `invested_amount` went negative because maturity value (principal + interest) exceeds the BUY principal. Clamped `invested_amount` to zero after SELL.
+3. **Portfolio History Matured FDs/RDs (Issue 4):** Matured FDs/RDs were counted at maturity value for all historical dates after maturity. Now they are skipped after maturity date, matching the live holdings calculation behavior.
+4. **PPF Log Spam (Issue 6):** Changed "Found existing credit" from `logger.info` to `logger.debug`.
+5. **Timing Instrumentation (Issue 7):** Added `time.time()` instrumentation to `_get_portfolio_history`, `calculate_benchmark_performance`, and `get_portfolio_analytics`.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/cache/utils.py` — Delete all 4 range-specific dashboard history keys; added `all_portfolios_holdings_and_summary` to invalidation.
+* **Modified:** `backend/app/services/backup_service.py` — Comprehensive cache invalidation after restore.
+* **Modified:** `backend/app/crud/crud_dashboard.py` — Skip matured FDs/RDs in portfolio history; added timing to `_get_portfolio_history`.
+* **Modified:** `backend/app/services/benchmark_service.py` — Clamp `invested_amount` to zero after SELL; added timing to `calculate_benchmark_performance`.
+* **Modified:** `backend/app/crud/crud_ppf.py` — Changed log level from INFO to DEBUG.
+* **Modified:** `backend/app/crud/crud_analytics.py` — Added timing to `get_portfolio_analytics`.
+
+### Verification
+
+* **Backend Tests:** 18/18 passing (dashboard, benchmark, backup/restore tests).
+
+### Outcome
+
+**Success.** Cache invalidation now correctly clears all range-specific dashboard history keys. Portfolio history no longer includes matured FDs/RDs. Benchmark invested amount stays non-negative after FD maturity. Restore properly flushes all caches.
+
+---
+
 
 **Task:** Categorize dividends into Advance Tax quarterly buckets (Upto 15/6, 16/6 - 15/9, etc.) and format the UI and CSV exports to mirror ITR-2 Schedule CG.
 

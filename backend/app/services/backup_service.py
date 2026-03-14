@@ -498,12 +498,54 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
 
         db.commit()
 
-        # Invalidate dashboard summary cache
+        # Comprehensive cache invalidation after restore
         from app.cache.factory import get_cache_client
         cache = get_cache_client()
-        dashboard_key = f"analytics:dashboard_summary:{user_id}"
-        cache.delete(dashboard_key)
-        logger.info(f"Invalidated dashboard cache for user {user_id}")
+
+        # 1. Dashboard caches
+        cache.delete(f"analytics:dashboard_summary:{user_id}")
+        for range_str in ["7d", "30d", "1y", "all"]:
+            cache.delete(f"analytics:dashboard_history:{user_id}:{range_str}")
+
+        # 2. Cross-portfolio aggregation cache
+        cache.delete(f"analytics:all_portfolios_holdings_and_summary:{user_id}")
+
+        # 3. Portfolio-level caches for all restored portfolios
+        for p_name, p_id in portfolio_map.items():
+            cache.delete(f"analytics:portfolio_holdings_and_summary:{p_id}")
+            cache.delete(f"analytics:portfolio_analytics:{p_id}")
+
+            # Asset-level analytics for this portfolio
+            portfolio_assets = crud.asset.get_multi_by_portfolio(
+                db, portfolio_id=p_id
+            )
+            for asset in portfolio_assets:
+                cache.delete(f"analytics:asset_analytics:{asset.id}")
+
+        # 4. Bulk delete snapshots for all restored portfolios
+        if portfolio_map:
+            try:
+                from sqlalchemy import delete as sql_delete
+
+                from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+                portfolio_ids = list(portfolio_map.values())
+                stmt = sql_delete(DailyPortfolioSnapshot).where(
+                    DailyPortfolioSnapshot.portfolio_id.in_(portfolio_ids)
+                )
+                result = db.execute(stmt)
+                db.commit()
+                logger.info(
+                    f"Deleted {result.rowcount} snapshots for "
+                    f"{len(portfolio_ids)} restored portfolios."
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to delete snapshots for restored portfolios: {e}"
+                )
+
+        logger.info(
+            f"Invalidated all caches for user {user_id} after restore"
+        )
 
     except Exception:
         db.rollback()

@@ -1,4 +1,5 @@
 import logging
+import time
 import uuid
 from collections import defaultdict
 from datetime import date
@@ -689,6 +690,7 @@ class CRUDAnalytics:
         self, db: Session, *, portfolio_id: uuid.UUID
     ) -> schemas.PortfolioAnalytics:
         """Calculates analytics for a whole portfolio."""
+        start_time = time.time()
         # First, call the holdings summary to ensure any missing PPF interest
         # transactions are created for the current session. This is the key
         # to making the subsequent cash flow calculation correct.
@@ -724,6 +726,12 @@ class CRUDAnalytics:
 
         sharpe_ratio_value = self._calculate_sharpe_ratio(db, portfolio_id)
         xirr_value = _calculate_xirr(dates, values)
+
+        end_time = time.time()
+        logger.info(
+            "Portfolio analytics for portfolio %s took %.4f seconds.",
+            portfolio_id, end_time - start_time,
+        )
 
         return schemas.PortfolioAnalytics(
             xirr=xirr_value, sharpe_ratio=sharpe_ratio_value
