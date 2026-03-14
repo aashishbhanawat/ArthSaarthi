@@ -106,19 +106,39 @@ def _calculate_rd_value_at_date(
     # M = P * [((1 + r/n)^(n*t) - 1) / (1 - (1+r/n)^(-1/3))]
     # where n=4 for quarterly. This iterative approach is equivalent and clearer.
     total_value = Decimal("0.0")
-    quarterly_rate = interest_rate / Decimal("400.0")  # r/n where n=4, and r is in %
 
-    num_installments = min(
-        tenure_months,
-        (calculation_date.year - start_date.year) * 12
-        + (calculation_date.month - start_date.month)
-        + 1,
-    )
+    num_installments = 0
+    curr_installment_date = start_date
+    r = interest_rate / Decimal("100.0")
+    n = Decimal("4.0")  # Quarterly compounding
 
-    for i in range(num_installments):
-        _ = start_date + relativedelta(months=i)
-        num_quarters = Decimal(num_installments - i) / 3
-        total_value += monthly_installment * (1 + quarterly_rate) ** num_quarters
+    while (
+        curr_installment_date <= calculation_date
+        and num_installments < tenure_months
+    ):
+        # Calculate full months using relativedelta for standard boundaries
+        delta = relativedelta(calculation_date, curr_installment_date)
+        full_months = delta.years * 12 + delta.months
+
+        # Calculate exact days for the remaining partial month
+        after_full_months = curr_installment_date + relativedelta(
+            months=full_months
+        )
+        remaining_days = (calculation_date - after_full_months).days
+
+        # t = full_months / 12 + remaining_days / 365.25
+        t = Decimal(full_months) / 12 + Decimal(remaining_days) / Decimal(
+            "365.25"
+        )
+
+        # Compound interest formula matching FD: P * (1 + r/n)^(n*t)
+        installment_value = monthly_installment * (
+            (1 + r / n) ** (n * t)
+        )
+        total_value += installment_value
+
+        num_installments += 1
+        curr_installment_date = start_date + relativedelta(months=num_installments)
 
     return total_value.quantize(Decimal("0.01"))
 
