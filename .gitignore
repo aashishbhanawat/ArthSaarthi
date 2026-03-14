@@ -89,3 +89,6 @@ roadmap.md
 setup.txt
 todo.txt
 abc.txt
+
+.gemini/
+gha-creds-*.json
