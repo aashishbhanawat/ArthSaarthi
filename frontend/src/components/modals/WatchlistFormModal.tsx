@@ -30,7 +30,6 @@ const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({
     e.preventDefault();
     if (name.trim()) {
       onSubmit(name);
-      onClose();
     }
   };
 

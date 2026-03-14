@@ -98,7 +98,7 @@ describe('WatchlistSelector', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(mockCreateMutate).toHaveBeenCalledWith('New Stocks');
+      expect(mockCreateMutate).toHaveBeenCalledWith('New Stocks', expect.any(Object));
     });
   });
 });

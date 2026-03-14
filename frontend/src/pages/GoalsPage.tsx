@@ -36,6 +36,7 @@ const GoalsPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmit}
+        isPending={createGoal.isPending}
       />
     </div>
   );

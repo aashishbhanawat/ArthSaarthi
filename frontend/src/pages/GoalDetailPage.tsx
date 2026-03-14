@@ -65,6 +65,7 @@ const GoalDetailPage: React.FC = () => {
           onClose={() => setIsEditModalOpen(false)}
           onSubmit={handleUpdate}
           goal={goal}
+          isPending={updateGoal.isPending}
         />
       )}
     </div>

@@ -42,7 +42,6 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
         target_date: targetDate,
       };
       onSubmit(goalData);
-      onClose(); // Add this back
     }
   };
 

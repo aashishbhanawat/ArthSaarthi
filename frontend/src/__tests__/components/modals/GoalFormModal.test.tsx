@@ -48,7 +48,7 @@ describe('GoalFormModal', () => {
           target_date: '2026-01-01',
         });
       });
-      expect(onClose).toHaveBeenCalled();
+      // onClose is no longer called in handleSubmit, so we don't expect it here.
     });
   });
 
@@ -73,7 +73,7 @@ describe('GoalFormModal', () => {
           target_date: mockGoal.target_date,
         });
       });
-      expect(onClose).toHaveBeenCalled();
+      // onClose is no longer called in handleSubmit
     });
   });
 
