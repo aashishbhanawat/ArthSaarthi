@@ -515,27 +515,33 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
             cache.delete(f"analytics:portfolio_holdings_and_summary:{p_id}")
             cache.delete(f"analytics:portfolio_analytics:{p_id}")
 
-            # Delete snapshots for restored portfolios
-            try:
-                from sqlalchemy import delete as sql_delete
-
-                from app.models.portfolio_snapshot import DailyPortfolioSnapshot
-                stmt = sql_delete(DailyPortfolioSnapshot).where(
-                    DailyPortfolioSnapshot.portfolio_id == p_id
-                )
-                db.execute(stmt)
-                db.commit()
-            except Exception as e:
-                logger.warning(
-                    f"Failed to delete snapshots for portfolio {p_id}: {e}"
-                )
-
             # Asset-level analytics for this portfolio
             portfolio_assets = crud.asset.get_multi_by_portfolio(
                 db, portfolio_id=p_id
             )
             for asset in portfolio_assets:
                 cache.delete(f"analytics:asset_analytics:{asset.id}")
+
+        # 4. Bulk delete snapshots for all restored portfolios
+        if portfolio_map:
+            try:
+                from sqlalchemy import delete as sql_delete
+
+                from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+                portfolio_ids = list(portfolio_map.values())
+                stmt = sql_delete(DailyPortfolioSnapshot).where(
+                    DailyPortfolioSnapshot.portfolio_id.in_(portfolio_ids)
+                )
+                result = db.execute(stmt)
+                db.commit()
+                logger.info(
+                    f"Deleted {result.rowcount} snapshots for "
+                    f"{len(portfolio_ids)} restored portfolios."
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to delete snapshots for restored portfolios: {e}"
+                )
 
         logger.info(
             f"Invalidated all caches for user {user_id} after restore"
