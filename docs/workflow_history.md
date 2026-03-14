@@ -7,7 +7,7 @@
 
 ### Summary
 
-1. **Cache Invalidation (Issues 1 & 5):** Dashboard history cache key is `analytics:dashboard_history:{user_id}:{range_str}` (e.g., `:7d`, `:30d`), but `invalidate_caches_for_portfolio` was only deleting the base key without the range suffix — effectively a no-op. Fixed to delete all 4 range-specific keys. Also added `all_portfolios_holdings_and_summary` to the invalidation list. Restore function was only invalidating `dashboard_summary`; now does comprehensive cache flush including all history ranges, portfolio holdings, analytics, snapshots, and asset-level analytics.
+1. **Cache Invalidation (Issues 1 & 5):** Dashboard history cache key is `analytics:dashboard_history:{user_id}:{range_str}` (e.g., `:7d`, `:30d`), but `invalidate_caches_for_portfolio` was only deleting the base key without the range suffix — effectively a no-op. Fixed to delete all 4 range-specific keys. Also added `all_portfolios_holdings_and_summary` to the invalidation list. Restore function was only invalidating `dashboard_summary`; now does comprehensive cache flush. **Refactored snapshot deletion in `restore_backup` to use a single bulk delete operation per PR review feedback.**
 2. **Benchmark Invested Amount (Issue 2):** After matured FD SELL, `invested_amount` went negative because maturity value (principal + interest) exceeds the BUY principal. Clamped `invested_amount` to zero after SELL.
 3. **Portfolio History Matured FDs/RDs (Issue 4):** Matured FDs/RDs were counted at maturity value for all historical dates after maturity. Now they are skipped after maturity date, matching the live holdings calculation behavior.
 4. **PPF Log Spam (Issue 6):** Changed "Found existing credit" from `logger.info` to `logger.debug`.
