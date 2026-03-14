@@ -97,13 +97,15 @@ def invalidate_caches_for_portfolio(db: Session, portfolio_id: uuid.UUID):
 
     user_id = portfolio.user_id
 
-    # Invalidate dashboard summary and history for the user
+    # Invalidate dashboard summary and all range-specific history keys for the user
+    # The history cache key format is: analytics:dashboard_history:{user_id}:{range_str}
     dashboard_summary_key = f"analytics:dashboard_summary:{user_id}"
-    dashboard_history_key = f"analytics:dashboard_history:{user_id}"
     cache.delete(dashboard_summary_key)
-    cache.delete(dashboard_history_key)
     logger.info(f"Invalidated cache for key: {dashboard_summary_key}")
-    logger.info(f"Invalidated cache for key: {dashboard_history_key}")
+    for range_str in ["7d", "30d", "1y", "all"]:
+        history_key = f"analytics:dashboard_history:{user_id}:{range_str}"
+        cache.delete(history_key)
+        logger.info(f"Invalidated cache for key: {history_key}")
 
     # Delete all DB snapshots for this portfolio to force live recalculation
     try:
@@ -127,6 +129,7 @@ def invalidate_caches_for_portfolio(db: Session, portfolio_id: uuid.UUID):
     keys_to_delete = [
         f"analytics:portfolio_holdings_and_summary:{portfolio_id}",
         f"analytics:portfolio_analytics:{portfolio_id}",
+        f"analytics:all_portfolios_holdings_and_summary:{user_id}",
     ]
 
     # Invalidate all asset-level analytics for this portfolio

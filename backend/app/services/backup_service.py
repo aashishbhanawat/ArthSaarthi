@@ -498,12 +498,47 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
 
         db.commit()
 
-        # Invalidate dashboard summary cache
+        # Comprehensive cache invalidation after restore
         from app.cache.factory import get_cache_client
         cache = get_cache_client()
-        dashboard_key = f"analytics:dashboard_summary:{user_id}"
-        cache.delete(dashboard_key)
-        logger.info(f"Invalidated dashboard cache for user {user_id}")
+
+        # 1. Dashboard caches
+        cache.delete(f"analytics:dashboard_summary:{user_id}")
+        for range_str in ["7d", "30d", "1y", "all"]:
+            cache.delete(f"analytics:dashboard_history:{user_id}:{range_str}")
+
+        # 2. Cross-portfolio aggregation cache
+        cache.delete(f"analytics:all_portfolios_holdings_and_summary:{user_id}")
+
+        # 3. Portfolio-level caches for all restored portfolios
+        for p_name, p_id in portfolio_map.items():
+            cache.delete(f"analytics:portfolio_holdings_and_summary:{p_id}")
+            cache.delete(f"analytics:portfolio_analytics:{p_id}")
+
+            # Delete snapshots for restored portfolios
+            try:
+                from sqlalchemy import delete as sql_delete
+                from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+                stmt = sql_delete(DailyPortfolioSnapshot).where(
+                    DailyPortfolioSnapshot.portfolio_id == p_id
+                )
+                db.execute(stmt)
+                db.commit()
+            except Exception as e:
+                logger.warning(
+                    f"Failed to delete snapshots for portfolio {p_id}: {e}"
+                )
+
+            # Asset-level analytics for this portfolio
+            portfolio_assets = crud.asset.get_multi_by_portfolio(
+                db, portfolio_id=p_id
+            )
+            for asset in portfolio_assets:
+                cache.delete(f"analytics:asset_analytics:{asset.id}")
+
+        logger.info(
+            f"Invalidated all caches for user {user_id} after restore"
+        )
 
     except Exception:
         db.rollback()

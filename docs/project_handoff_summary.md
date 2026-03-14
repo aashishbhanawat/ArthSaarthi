@@ -1,11 +1,11 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-03-14
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Implemented the Dividend Report (FR 6.6) with Quarterly Advance Tax Buckets and CSV export layout matching ITR-2 Schedule CG. Fixed SQLite-specific test flakiness related to dynamic currency exchange rates. Previously fixed desktop app stability issues including missing SQLite columns (`fmv_2018`) and benchmark simulation errors.
+*   **Summary:** Fixed 6 dashboard/portfolio issues: cache invalidation for range-specific history keys, benchmark invested amount going negative after FD maturity, matured FDs/RDs appearing in portfolio history, incomplete cache invalidation on restore, PPF log spam, and added timing instrumentation. Previously implemented Dividend Report (FR 6.6) with Quarterly Advance Tax Buckets.
 
 ## 2. Test Suite Status
 
@@ -81,7 +81,7 @@
 -   **Pluggable Financial Data Service (NFR12):** The `FinancialDataService` has been refactored into a provider-based architecture (Strategy Pattern), making it easy to add new data sources. It currently supports AMFI (Mutual Funds), NSE Bhavcopy (Indian Equities/Bonds), and yfinance (fallback/international).
 -   **Pluggable Caching Layer (NFR9):** The application supports both Redis and a file-based `DiskCache` for improved performance and deployment flexibility.
 -   **Analytics Caching (NFR9.2):** Expensive analytics and holdings calculations are cached to improve UI responsiveness and reduce server load.
--   **Cache Invalidation:** `invalidate_caches_for_portfolio` deletes both Redis keys AND stale `DailyPortfolioSnapshot` DB records to force live recalculation after data changes.
+-   **Cache Invalidation:** `invalidate_caches_for_portfolio` deletes all range-specific dashboard history keys, portfolio analytics, holdings, and stale `DailyPortfolioSnapshot` DB records. Restore does comprehensive cache flush across all user data.
 
 ## 5. Known Issues & Active Bugs
 

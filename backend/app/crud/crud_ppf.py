@@ -223,7 +223,7 @@ def process_ppf_holding(
         if fy_end < today:  # Completed financial year
             if fy_end in interest_credits:
                 interest_for_fy = interest_credits[fy_end]
-                logger.info(
+                logger.debug(
                     f"[PPF] FY {fy_end}: Found existing credit = {interest_for_fy}"
                 )
             else:

@@ -118,6 +118,7 @@ def _get_portfolio_history(
         portfolio_id: Optional. If provided, calculate history for only this
                       portfolio. If None, calculate for all user portfolios.
     """
+    start_time = time.time()
     from sqlalchemy import func
 
     from app import crud, models  # Local import to break circular dependency
@@ -447,39 +448,22 @@ def _get_portfolio_history(
                     if fd.start_date > current_day:
                         continue
 
-                    # If matured before this historical date, value is fixed at maturity
-                    calc_date = (
-                        current_day
-                        if current_day <= fd.maturity_date
-                        else fd.maturity_date
-                    )
+                    # If matured before this historical date, the FD has been
+                    # "withdrawn" from the portfolio. Skip it to match live
+                    # holdings calculation which excludes matured FDs.
+                    if current_day > fd.maturity_date:
+                        continue
 
                     fd_val = _calculate_fd_current_value(
                         fd.principal_amount,
                         fd.interest_rate,
                         fd.start_date,
-                        calc_date,
+                        current_day,
                         fd.compounding_frequency,
                         fd.interest_payout,
                     )
 
-                    # If it's a payout FD, it stays at principal. We don't add paid
-                    # interest to portfolio value unless it was reinvested (which would
-                    # be separate transactions).
-                    # If it matured and paid out, it theoretically "leaves" the
-                    # portfolio unless we track cash.
-                    # Since we don't track cash yet, we zero out matured payout FDs
-                    # and matured Cumulative FDs to match how we handle sold stocks.
-                    if current_day > fd.maturity_date:
-                        # Matured. Ensure we only add it if it's considered "active"
-                        # or we decide to keep matured investments as permanent
-                        # fixtures (which is unrealistic).
-                        # Let's align with get_portfolio_holdings_and_summary: matured
-                        # FDs are returned, but their maturity value is just the
-                        # principal (for payout) or maturity_value (for cumulative).
-                        day_total_value += fd_val
-                    else:
-                        day_total_value += fd_val
+                    day_total_value += fd_val
 
                 # 3. Recurring Deposits (Simulated for this historical day)
                 from dateutil.relativedelta import relativedelta
@@ -490,26 +474,20 @@ def _get_portfolio_history(
                     rd_maturity_date = rd.start_date + relativedelta(
                         months=rd.tenure_months
                     )
-                    calc_date = (
-                        current_day
-                        if current_day <= rd_maturity_date
-                        else rd_maturity_date
-                    )
+
+                    # If matured before this historical date, the RD has been
+                    # "withdrawn" from the portfolio. Skip it.
+                    if current_day > rd_maturity_date:
+                        continue
 
                     rd_val = _calculate_rd_value_at_date(
                         rd.monthly_installment,
                         rd.interest_rate,
                         rd.start_date,
                         rd.tenure_months,
-                        calc_date,
+                        current_day,
                     )
 
-                    # If simulating a date during the RD, we ensure we only count
-                    # the installments paid up to that date.
-                    # _calculate_rd_value_at_date inherently handles this correctly
-                    # using `calculation_date`.
-                    # However, if it hasn't matured yet, we also must ensure
-                    # total_invested logic acts dynamically.
                     installments_to_date = 0
                     temp_date = rd.start_date
                     while (
@@ -559,6 +537,11 @@ def _get_portfolio_history(
         history_points.append({"date": current_day, "value": day_total_value})
         current_day += timedelta(days=1)
 
+    end_time = time.time()
+    logger.info(
+        "Portfolio history (%s) for user %s took %.4f seconds. %d data points.",
+        range_str, user.id, end_time - start_time, len(history_points),
+    )
     return history_points
 
 
