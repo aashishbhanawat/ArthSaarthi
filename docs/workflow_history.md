@@ -1,3 +1,73 @@
+## 2026-03-14: Dividend Tax Buckets & Export Formatting (FR 6.6)
+
+**Task:** Categorize dividends into Advance Tax quarterly buckets (Upto 15/6, 16/6 - 15/9, etc.) and format the UI and CSV exports to mirror ITR-2 Schedule CG.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend API:** Updated `dividend_service.py` to calculate the Advance Tax Bucket string for every dividend based on its `transaction_date` within the financial year.
+2. **Frontend UI:** Updated `CapitalGainsPage.tsx` to display the bracket totals in a horizontal table matrix mimicking the official ITR-2 Schedule CG format.
+3. **CSV Export:** Injected a summary table at the top of the exported CSV and appended the specific bucket to each detailed transaction row.
+4. **Test Fixes:** Fixed test assertion flakiness on SQLite by calculating the expected INR conversion dynamically using the yfinance proxy rate returned by the endpoint, instead of a hardcoded value.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/services/dividend_service.py` - Advance tax bucket logic.
+* **Modified:** `backend/app/schemas/dividends.py` - Added `period` and `bucket_totals`.
+* **Modified:** `backend/app/api/v1/endpoints/dividends.py` - Reformatted CSV export.
+* **Modified:** `backend/app/tests/api/v1/test_dividends.py` - Fixed row indices and dynamic rate assertions.
+
+**Frontend:**
+* **Modified:** `frontend/src/hooks/useDividends.ts` - Expanded schemas.
+* **Modified:** `frontend/src/pages/CapitalGainsPage.tsx` - Replaced standard grid cards with a horizontal summary matrix.
+
+### Verification
+
+* **Backend Tests:** Passing completely on both PostgreSQL and SQLite backends.
+
+### Outcome
+
+**Success.** Users can instantly view and export their dividend income directly mapped to the tax deadlines required for Schedule CG Advance Tax installments.
+
+---
+## 2026-03-13: Implement Dividend Report (FR 6.5)
+**Task:** Export dividend report for tax purposes including foreign asset processing.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Successfully implemented the Dividend Report following Income Tax Rule 115 specifications for foreign dividends. 
+
+1. **Backend API:** Updated `dividend_service.py` to calculate dividend values using quantity and price, handle TTBR currency conversions specifically for the date preceding declaration, and fix assertion typing issues in the API. Corrected import logic and transaction parsing logic.
+2. **Frontend Views:** Created `useDividends` hook. Extended `CapitalGainsPage.tsx` to include an isolated "Dividend Report" tab. This page aggregates the report displaying both native and INR conversions for TTBR tracking.
+3. **Exports:** Bound the backend generic CSV `/api/v1/dividends/export` API with `api.ts`'s Auth `downloadCsv` interceptor ensuring CSV exports download safely with bearer tokens.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/services/dividend_service.py` - Quantity math and datetime imports.
+* **Modified:** `backend/app/tests/api/v1/test_dividends.py` - Test assertions and precision corrections.
+
+**Frontend:**
+* **New:** `frontend/src/hooks/useDividends.ts` - React query for dividend API.
+* **Modified:** `frontend/src/pages/CapitalGainsPage.tsx` - Dividend UI and Tables with Export buttons.
+* **Modified:** `frontend/src/services/api.ts` - `downloadCsv` token adapter helper.
+
+### Verification
+
+* **Backend Tests:** Passing completely with TTBR mock overrides in assertions.
+* **Frontend Tests:** Passing completely with UI layout syntax resolution.
+
+### Outcome
+
+**Success.** Users can now browse and export financial year dividend histories compliant with multi-currency tracking and Income Tax reporting rules.
+
+---
 ## 2026-03-12: Desktop App FD Benchmark TypeError Fix
 
 **Task:** Fix the `TypeError` occurring in the `BenchmarkService` when calculating period payouts for Fixed Deposits.

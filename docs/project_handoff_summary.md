@@ -1,15 +1,15 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-10
+**Last Updated:** 2026-03-13
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Fixed critical desktop app stability issues including missing SQLite columns (`fmv_2018`) and tables on upgrade. Resolved `AttributeError` and `TypeError` in Fixed Deposit benchmark simulations. Also includes previously addressed portfolio analytics fixes for FD-only portfolios, XIRR scaling standardisation, timezone-aware date validation, and MacOS/Windows build stability.
+*   **Summary:** Implemented the Dividend Report (FR 6.6) with Quarterly Advance Tax Buckets and CSV export layout matching ITR-2 Schedule CG. Fixed SQLite-specific test flakiness related to dynamic currency exchange rates. Previously fixed desktop app stability issues including missing SQLite columns (`fmv_2018`) and benchmark simulation errors.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **298/298 Passing**
+*   **Backend Unit/Integration Tests:** ✅ **300/300 Passing** (Includes Dividend API tests)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing**
 
@@ -69,10 +69,12 @@
     -   Privacy Mode to obscure sensitive values.
     -   Context-sensitive help links.
     -   Dark theme with user preference persistence.
--   **Capital Gains Reporting:**
+-   **Capital Gains & Dividend Reporting:**
     -   Comprehensive Capital Gains reports for Schedule 112A (Grandfathered Equity) and Schedule FA (Foreign Assets).
+    -   **Dividend Report (FR 6.5):** Dedicated tracking for dividends, including Rule 115 compliant TTBR FX conversion for foreign assets (ESPP/RSU).
     -   Support for Tax Lot Accounting (Specific Identification) vs FIFO.
     -   Accurate taxation rules for Bond ETFs, International ETFs, and SGBs.
+    -   **Authenticated Exports:** Universal `downloadCsv` utility to ensure CSV downloads via `window.open` alternative carry Auth tokens.
 
 ## 4. Architectural Improvements
 
