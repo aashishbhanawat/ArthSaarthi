@@ -518,6 +518,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
             # Delete snapshots for restored portfolios
             try:
                 from sqlalchemy import delete as sql_delete
+
                 from app.models.portfolio_snapshot import DailyPortfolioSnapshot
                 stmt = sql_delete(DailyPortfolioSnapshot).where(
                     DailyPortfolioSnapshot.portfolio_id == p_id
