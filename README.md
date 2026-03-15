@@ -77,7 +77,7 @@ To learn how to use the application's features, refer to the **[User Guide](./do
 
 This project was built with a strong emphasis on developer experience and maintainability. If you're interested in the technical details or want to contribute, please check out the following resources:
 
-*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (Docker, Native, Desktop), running tests, and understanding the local development workflow.
+*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (Docker, Native, Desktop, Android), running tests, and understanding the local development workflow.
 *   **[CONTRIBUTING.md](./CONTRIBUTING.md):** Our guide for contributing to the project, including our AI-assisted development process.
 *   **[Architecture & UML Design](./docs/uml_design.md):** The single source of truth for the system's structural design, including the Component Architecture, Entity-Relationship Diagram (ERD), and core Class logic.
 *   **[Code Flow Guide](./docs/code_flow_guide.md):** Detailed walkthroughs (with Sequence Diagrams) of how a request moves from the React frontend to the SQLAlchemy backend.
