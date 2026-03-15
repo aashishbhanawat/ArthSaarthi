@@ -73,9 +73,28 @@ def delete_portfolio(
         raise HTTPException(status_code=404, detail="Portfolio not found")
     if portfolio.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    user_id = current_user.id
+
     try:
         crud.portfolio.remove(db=db, id=portfolio_id)
         db.commit()
+
+        # Invalidate caches after successful deletion
+        cache = get_cache_client()
+        if cache:
+            # 1. Dashboard caches
+            cache.delete(f"analytics:dashboard_summary:{user_id}")
+            for range_str in ["7d", "30d", "1y", "all"]:
+                cache.delete(f"analytics:dashboard_history:{user_id}:{range_str}")
+
+            # 2. Cross-portfolio aggregation cache
+            cache.delete(f"analytics:all_portfolios_holdings_and_summary:{user_id}")
+
+            # 3. Portfolio-level caches
+            cache.delete(f"analytics:portfolio_holdings_and_summary:{portfolio_id}")
+            cache.delete(f"analytics:portfolio_analytics:{portfolio_id}")
+
     except IntegrityError:
         db.rollback()
         raise HTTPException(

@@ -369,42 +369,81 @@ class BenchmarkService:
                 else "Bond Index"
             )
         elif has_fd_or_rd and debt_value > 0:
-            # FDs/RDs don't have Transaction entries, so
-            # we generate a simplified debt benchmark
-            # comparing against risk-free rate.
-            pf_analytics = (
-                crud.analytics.get_portfolio_analytics(
-                    self.db, portfolio_id=portfolio_id
-                )
+            # FDs/RDs don't have Transaction entries. We generate synthetic
+            # transactions and run a risk-free simulation for the benchmark chart.
+            synthetic_txns = self._generate_synthetic_transactions(portfolio_id)
+
+            pf_analytics = crud.analytics.get_portfolio_analytics(
+                self.db, portfolio_id=portfolio_id
             )
+            portfolio_xirr = 0.0
             if pf_analytics:
                 if isinstance(pf_analytics, dict):
-                    portfolio_xirr = pf_analytics.get(
-                        "xirr", 0.0
-                    )
+                    portfolio_xirr = pf_analytics.get("xirr", 0.0)
                 else:
-                    portfolio_xirr = getattr(
-                        pf_analytics, "xirr", 0.0
-                    )
+                    portfolio_xirr = getattr(pf_analytics, "xirr", 0.0)
 
-            # Fetch first transaction date for duration
-            first_txn = (
-                self.db.query(crud.transaction.model)
-                .filter(crud.transaction.model.portfolio_id == portfolio_id)
-                .order_by(crud.transaction.model.transaction_date.asc())
-                .first()
+            if not synthetic_txns:
+                # Still return basic info if there are no synthetic txns for some reason
+                # but we know there's debt value.
+                results["debt"] = {
+                    "portfolio_xirr": portfolio_xirr,
+                    "benchmark_xirr": risk_free_rate / 100,
+                    "benchmark_label": f"Risk-Free ({risk_free_rate:.0f}%)",
+                    "risk_free_xirr": risk_free_rate / 100,
+                    "days_duration": 0,
+                    "chart_data": [],
+                }
+                return results
+
+            synthetic_txns.sort(key=lambda x: x.transaction_date)
+            start_date = synthetic_txns[0].transaction_date.date()
+            end_date = date.today()
+
+            if start_date > end_date: # Handle case where FD is in the future
+                results["debt"] = {
+                    "portfolio_xirr": portfolio_xirr,
+                    "benchmark_xirr": 0.0,
+                    "benchmark_label": f"Risk-Free ({risk_free_rate:.0f}%)",
+                    "risk_free_xirr": 0.0,
+                    "days_duration": 0,
+                    "chart_data": [],
+                }
+                return results
+
+            date_range = pd.date_range(start=start_date, end=end_date)
+
+            txns_by_date = {}
+            for txn in synthetic_txns:
+                d_str = txn.transaction_date.date().isoformat()
+                if d_str not in txns_by_date:
+                    txns_by_date[d_str] = []
+                txns_by_date[d_str].append(txn)
+
+            rf_vals, risk_free_xirr = self._calculate_risk_free_values(
+                date_range, txns_by_date, start_date, end_date, risk_free_rate
             )
-            start_date = (
-                first_txn.transaction_date.date() if first_txn else date.today()
+
+            chart_data = self._simulate_daily(
+                date_range,
+                txns_by_date,
+                histories={},
+                components=[{"ticker": "RISK_FREE", "weight": 1.0}],
+                risk_free_rate=risk_free_rate,
+                rf_daily_values=rf_vals,
+            )
+
+            bench_xirr = self._calc_bench_xirr(
+                chart_data, end_date, date_range, txns_by_date, {}
             )
 
             results["debt"] = {
                 "portfolio_xirr": portfolio_xirr,
-                "benchmark_xirr": risk_free_rate / 100,
+                "benchmark_xirr": bench_xirr,
                 "benchmark_label": f"Risk-Free ({risk_free_rate:.0f}%)",
-                "risk_free_xirr": risk_free_rate / 100,
-                "days_duration": (date.today() - start_date).days,
-                "chart_data": [],
+                "risk_free_xirr": risk_free_xirr,
+                "days_duration": (end_date - start_date).days,
+                "chart_data": chart_data,
             }
 
         logger.debug(

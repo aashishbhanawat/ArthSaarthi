@@ -304,6 +304,7 @@ def _get_portfolio_history(
     current_day = start_date
     transaction_idx = 0
     daily_holdings = defaultdict(Decimal)
+    daily_invested_capital = defaultdict(Decimal)
     last_known_prices = {}
     last_known_fx_rates = {}
 
@@ -311,15 +312,17 @@ def _get_portfolio_history(
     initial_transactions = [
         t for t in transactions if t.transaction_date.date() < start_date
     ]
+    initial_transactions.sort(key=lambda t: t.transaction_date)
+
     for t in initial_transactions:
         ticker = t.asset.ticker_symbol
-        if (
-            t.transaction_type.lower() == "buy"
-            or t.transaction_type == "RSU_VEST"
-            or t.transaction_type == "ESPP_PURCHASE"
-        ):
+        if t.transaction_type.lower() in ("buy", "rsu_vest", "espp_purchase"):
             daily_holdings[ticker] += t.quantity
+            daily_invested_capital[ticker] += t.quantity * t.price_per_unit
         elif t.transaction_type.lower() == "sell":
+            if daily_holdings[ticker] > 0:
+                proportion = t.quantity / daily_holdings[ticker]
+                daily_invested_capital[ticker] *= (1 - proportion)
             daily_holdings[ticker] -= t.quantity
 
     # Pre-fill last known prices for the day before the window starts
@@ -358,13 +361,13 @@ def _get_portfolio_history(
         ):
             t = transactions[transaction_idx]
             ticker = t.asset.ticker_symbol
-            if (
-                t.transaction_type.lower() == "buy"
-                or t.transaction_type == "RSU_VEST"
-                or t.transaction_type == "ESPP_PURCHASE"
-            ):
+            if t.transaction_type.lower() in ("buy", "rsu_vest", "espp_purchase"):
                 daily_holdings[ticker] += t.quantity
+                daily_invested_capital[ticker] += t.quantity * t.price_per_unit
             elif t.transaction_type.lower() == "sell":
+                if daily_holdings[ticker] > 0:
+                    proportion = t.quantity / daily_holdings[ticker]
+                    daily_invested_capital[ticker] *= (1 - proportion)
                 daily_holdings[ticker] -= t.quantity
             transaction_idx += 1
 
@@ -441,6 +444,11 @@ def _get_portfolio_history(
                                 price = price * fx_rate
 
                             day_total_value += quantity * price
+                        else:
+                            # If price is not available, use invested capital
+                            day_total_value += daily_invested_capital.get(
+                                ticker, Decimal("0.0")
+                            )
 
                 # 2. Fixed Deposits (Simulated for this historical day)
                 for fd in all_fds:
