@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Any, List
 
@@ -8,12 +9,14 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.cache.factory import get_cache_client
 from app.core import dependencies
+from app.core.constants import DASHBOARD_HISTORY_RANGES
 from app.services.benchmark_service import BenchmarkService
 from app.services.financial_data_service import FinancialDataService
 
 from . import bonds as bonds_router
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=List[schemas.Portfolio])
@@ -80,20 +83,29 @@ def delete_portfolio(
         crud.portfolio.remove(db=db, id=portfolio_id)
         db.commit()
 
-        # Invalidate caches after successful deletion
-        cache = get_cache_client()
-        if cache:
-            # 1. Dashboard caches
-            cache.delete(f"analytics:dashboard_summary:{user_id}")
-            for range_str in ["7d", "30d", "1y", "all"]:
-                cache.delete(f"analytics:dashboard_history:{user_id}:{range_str}")
+        try:
+            # Invalidate caches after successful deletion
+            cache = get_cache_client()
+            if cache:
+                # 1. Dashboard caches
+                cache.delete(f"analytics:dashboard_summary:{user_id}")
+                for range_str in DASHBOARD_HISTORY_RANGES:
+                    cache.delete(f"analytics:dashboard_history:{user_id}:{range_str}")
 
-            # 2. Cross-portfolio aggregation cache
-            cache.delete(f"analytics:all_portfolios_holdings_and_summary:{user_id}")
+                # 2. Cross-portfolio aggregation cache
+                cache.delete(f"analytics:all_portfolios_holdings_and_summary:{user_id}")
 
-            # 3. Portfolio-level caches
-            cache.delete(f"analytics:portfolio_holdings_and_summary:{portfolio_id}")
-            cache.delete(f"analytics:portfolio_analytics:{portfolio_id}")
+                # 3. Portfolio-level caches
+                cache.delete(f"analytics:portfolio_holdings_and_summary:{portfolio_id}")
+                cache.delete(f"analytics:portfolio_analytics:{portfolio_id}")
+        except Exception as e:
+            # It's better to log this error and not fail the request.
+            # The portfolio has been deleted, but cache invalidation failed.
+            # This should be monitored.
+            logger.error(
+                f"Failed to invalidate cache for user {user_id} "
+                f"after deleting portfolio {portfolio_id}: {e}"
+            )
 
     except IntegrityError:
         db.rollback()
@@ -216,7 +228,7 @@ def read_asset_transactions(
 @router.get(
     "/{portfolio_id}/assets/{asset_id}/analytics", response_model=schemas.AssetAnalytics
 )
-def get_asset_analytics(
+def get_asset_ analytics(
     *,
     db: Session = Depends(dependencies.get_db),
     portfolio_id: uuid.UUID,

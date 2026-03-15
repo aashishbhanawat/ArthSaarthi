@@ -308,13 +308,7 @@ def _get_portfolio_history(
     last_known_prices = {}
     last_known_fx_rates = {}
 
-    # Calculate initial holdings up to the start_date
-    initial_transactions = [
-        t for t in transactions if t.transaction_date.date() < start_date
-    ]
-    initial_transactions.sort(key=lambda t: t.transaction_date)
-
-    for t in initial_transactions:
+    def _process_transaction(t, daily_holdings, daily_invested_capital):
         ticker = t.asset.ticker_symbol
         if t.transaction_type.lower() in ("buy", "rsu_vest", "espp_purchase"):
             daily_holdings[ticker] += t.quantity
@@ -324,6 +318,15 @@ def _get_portfolio_history(
                 proportion = t.quantity / daily_holdings[ticker]
                 daily_invested_capital[ticker] *= (1 - proportion)
             daily_holdings[ticker] -= t.quantity
+
+    # Calculate initial holdings up to the start_date
+    initial_transactions = [
+        t for t in transactions if t.transaction_date.date() < start_date
+    ]
+    initial_transactions.sort(key=lambda t: t.transaction_date)
+
+    for t in initial_transactions:
+        _process_transaction(t, daily_holdings, daily_invested_capital)
 
     # Pre-fill last known prices for the day before the window starts
     day_before_start = start_date - timedelta(days=1)
@@ -360,15 +363,7 @@ def _get_portfolio_history(
             and transactions[transaction_idx].transaction_date.date() == current_day
         ):
             t = transactions[transaction_idx]
-            ticker = t.asset.ticker_symbol
-            if t.transaction_type.lower() in ("buy", "rsu_vest", "espp_purchase"):
-                daily_holdings[ticker] += t.quantity
-                daily_invested_capital[ticker] += t.quantity * t.price_per_unit
-            elif t.transaction_type.lower() == "sell":
-                if daily_holdings[ticker] > 0:
-                    proportion = t.quantity / daily_holdings[ticker]
-                    daily_invested_capital[ticker] *= (1 - proportion)
-                daily_holdings[ticker] -= t.quantity
+            _process_transaction(t, daily_holdings, daily_invested_capital)
             transaction_idx += 1
 
         # Update FX rates for today if available
