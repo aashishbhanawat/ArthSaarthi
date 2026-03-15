@@ -119,11 +119,15 @@ def test_get_portfolio_analytics_calculation(
     )
 
     # Mock historical prices for Sharpe Ratio calculation
+    # Generate daily fluctuating prices so it doesn't trigger the "step-function"
+    # (PPF/FD) zero-volatility threshold in _calculate_sharpe_ratio
     mock_history = {
-        fixed_today - timedelta(days=2): Decimal("95.0"),
-        fixed_today - timedelta(days=1): Decimal("105.0"),
-        fixed_today: Decimal("110.0"),
+        fixed_today - timedelta(days=i): Decimal("100.0") + Decimal(str(i % 5))
+        for i in range(366)
     }
+    mock_history[fixed_today - timedelta(days=2)] = Decimal("95.0")
+    mock_history[fixed_today - timedelta(days=1)] = Decimal("105.0")
+    mock_history[fixed_today] = Decimal("110.0")
     mocker.patch.object(
         financial_data_service,
         "get_historical_prices",
@@ -416,3 +420,56 @@ def test_asset_xirr_with_dividend(
     # For this asset, current and historical are the same as no shares were sold.
     assert data["xirr_current"] == pytest.approx(0.210, abs=0.001)
     assert data["xirr_historical"] == pytest.approx(0.210, abs=0.001)
+
+
+def test_get_ppf_asset_analytics_sharpe_ratio(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+    mocker,
+) -> None:
+    """
+    Tests that the Sharpe Ratio for a PPF asset is 0.0, addressing bug #352.
+    """
+    from app.tests.api.v1.test_ppf_holdings import seed_ppf_interest_rates
+
+    # 1. Setup user, portfolio, and interest rates
+    user, password = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="PPF Sharpe Portfolio")
+    headers = get_auth_headers(user.email, password)
+    seed_ppf_interest_rates(db)
+
+    # 2. Mock date.today() to a predictable future date
+    class MockDate(date):
+        @classmethod
+        def today(cls):
+            return date(2025, 1, 1)
+
+    mocker.patch("app.crud.crud_ppf.date", MockDate)
+    mocker.patch("app.crud.crud_analytics.date", MockDate)
+
+    # 3. Create a PPF account with one contribution
+    ppf_creation_data = {
+        "institution_name": "Sharpe Test Bank",
+        "portfolio_id": str(portfolio.id),
+        "opening_date": "2024-01-01",
+        "amount": 100000,
+        "contribution_date": "2024-01-01",
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/ppf-accounts/", headers=headers, json=ppf_creation_data
+    )
+    assert response.status_code == 201
+
+    # 4. Call the portfolio analytics endpoint (Sharpe ratio is at the portfolio level)
+    response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/analytics",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    analytics_data = response.json()
+
+    # 5. Verification
+    # The Sharpe Ratio for a portfolio with only a risk-free asset like PPF should be 0.
+    assert "sharpe_ratio" in analytics_data
+    assert analytics_data["sharpe_ratio"] == 0.0
