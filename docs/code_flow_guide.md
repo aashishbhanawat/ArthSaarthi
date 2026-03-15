@@ -2,7 +2,55 @@
 
 This document provides a deep dive into the application's code structure and data flow. It's designed to help new contributors understand how the frontend and backend work together to deliver a feature.
 
+### Deployment Architecture Context
+
+ArthSaarthi is designed with a fundamentally decoupled architecture allowing it to run in three vastly different environments using the exact same core API code:
+
+1.  **Docker Server (Multi-Tenant)**: The React frontend proxy routes API requests to the FastAPI backend running in a separate container, communicating via HTTP. Data is stored in PostgreSQL.
+2.  **Electron Desktop (Standalone)**: The React frontend makes REST API calls to `localhost:8000`, which is served by a hidden PyInstaller-bundled executable of the FastAPI backend running native Python on the user's OS. Data is stored in a local SQLite file.
+3.  **Android Mobile (Embedded)**: The React frontend runs in a Capacitor.js WebView and makes API calls to `localhost:<port>`, which is served by a Chaquopy-embedded instance of the FastAPI backend running entirely within the mobile app's background process. No internet connection is needed.
+
+Regardless of *where* the code is running, the fundamental data flow described below remains identical.
+
+---
 We will trace a key user story: **Adding a new transaction to a portfolio.**
+
+### Sequence Diagram: Adding a Transaction
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as React Frontend
+    participant ReactQuery as React Query / API Client
+    participant Router as FastAPI Router
+    participant CRUD as SQLAlchemy CRUD
+    participant DB as PostgreSQL/SQLite
+
+    User->>Frontend: Clicks "Add Transaction"
+    Frontend->>Frontend: Opens Modal, validates input
+    User->>Frontend: Submits Form
+    Frontend->>ReactQuery: mutate(portfolioId, transactionData)
+    ReactQuery->>Router: POST /api/v1/portfolios/{id}/transactions/
+    
+    activate Router
+    Router->>Router: Pydantic Validation (TransactionCreate)
+    Router->>CRUD: create_with_portfolio(db, obj_in, user_id)
+    
+    activate CRUD
+    CRUD->>CRUD: Validate user owns portfolio
+    CRUD->>DB: INSERT INTO transactions ...
+    DB-->>CRUD: Return new row data
+    CRUD-->>Router: Return Transaction Model
+    deactivate CRUD
+    
+    Router-->>ReactQuery: 201 Created (JSON Response)
+    deactivate Router
+    
+    ReactQuery->>Frontend: onSuccess trigger
+    Frontend->>ReactQuery: Invalidate ['portfolios'] cache
+    ReactQuery->>Router: GET /api/v1/portfolios (Refetch data)
+    Frontend->>User: Close modal, show updated UI
+```
 
 ---
 
@@ -126,6 +174,46 @@ This end-to-end flow demonstrates the separation of concerns and the clear path 
 
 This trace follows the user journey for viewing advanced analytics (XIRR, Sharpe Ratio) on the `PortfolioDetailPage`.
 
+### Sequence Diagram: Analytics Calculation
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as React Frontend
+    participant ReactQuery as React Query
+    participant Router as FastAPI Router
+    participant CRUD as SQLAlchemy CRUD
+    participant DB as Postgres/SQLite
+
+    User->>Frontend: Opens Portfolio Details
+    Frontend->>ReactQuery: usePortfolioAnalytics(id)
+    ReactQuery->>Router: GET /api/v1/portfolios/{id}/analytics
+    
+    activate Router
+    Router->>Router: Validate path param & user
+    Router->>CRUD: get_portfolio_analytics(db, id)
+    
+    activate CRUD
+    CRUD->>CRUD: _calculate_xirr()
+    CRUD->>DB: Fetch transactions & current value
+    DB-->>CRUD: Return data
+    CRUD->>CRUD: pyxirr calculation
+    
+    CRUD->>CRUD: _calculate_sharpe_ratio()
+    CRUD->>DB: Fetch daily value history
+    DB-->>CRUD: Return history
+    CRUD->>CRUD: Numpy math
+    
+    CRUD-->>Router: AnalyticsResponse Model
+    deactivate CRUD
+    
+    Router-->>ReactQuery: 200 OK (JSON)
+    deactivate Router
+    
+    ReactQuery-->>Frontend: Returns data
+    Frontend->>User: Renders AnalyticsCard
+```
+
 ### Step 1: The View & Data Hook (`PortfolioDetailPage.tsx`)
 
 The page uses the `usePortfolioAnalytics` custom React Query hook to fetch the analytics data. The hook's state (`analytics`, `isAnalyticsLoading`, `analyticsError`) is passed directly to the `AnalyticsCard` component for rendering.
@@ -191,6 +279,50 @@ The calculated values are packaged into an `AnalyticsResponse` Pydantic model. F
 
 This trace follows the user journey for importing a CSV of transactions.
 
+### Sequence Diagram: Data Import Pipeline
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as React Frontend
+    participant Parser as File Parsers (Python)
+    participant Staging as Local File System (.parquet)
+    participant DB as Database (PostgreSQL)
+
+    %% Step 1: Upload & Parsing
+    User->>Frontend: Uploads CSV & Submits
+    Frontend->>Parser: POST /api/v1/import-sessions/ (Multipart Form)
+    activate Parser
+    Parser->>Parser: Validate File, Select Parser Engine
+    Parser->>Parser: Parse Raw Data into Pydantic Models
+    Parser->>Staging: Save intermediate data as .parquet file
+    Parser->>DB: Create ImportSession record in database
+    Parser-->>Frontend: 200 OK (Return session ID)
+    deactivate Parser
+    
+    %% Step 2: Preview
+    Frontend->>Frontend: Redirect to /preview/{sessionId}
+    Frontend->>Parser: GET /api/v1/import-sessions/{id}/preview
+    activate Parser
+    Parser->>Staging: Read .parquet file
+    Parser->>DB: Compare rows (Detect Duplicates)
+    Parser-->>Frontend: Return grouped UI data (Valid, Duplicate)
+    deactivate Parser
+    
+    %% Step 3: Commit
+    User->>Frontend: Selects rows & Clicks "Commit"
+    Frontend->>DB: POST /api/v1/import-sessions/{id}/commit
+    activate DB
+    DB->>DB: BEGIN TRANSACTION
+    DB->>DB: INSERT all selected Transactions
+    DB->>DB: Update ImportSession status = 'COMPLETED'
+    DB->>DB: COMMIT (Atomic)
+    DB-->>Frontend: 200 OK
+    deactivate DB
+    
+    Frontend->>Frontend: Invalidate Caches & Route to Dashboard
+```
+
 ### Step 1: Frontend - Upload (`DataImportPage.tsx` & `useImport.ts`)
 
 1.  The user selects a portfolio, a statement type (e.g., "Zerodha Tradebook"), and a CSV file from their computer.
@@ -228,6 +360,34 @@ The `POST /api/v1/import-sessions/` endpoint orchestrates the first half of the 
 ## 5. Cross-Cutting Concern: Audit Logging
 
 The Audit Logging Engine is a cross-cutting concern that is invoked from various parts of the application. It provides a centralized way to record security-sensitive events.
+
+### Sequence Diagram: Audit Event Flow
+
+```mermaid
+sequenceDiagram
+    participant Endpoint as Any FastAPI Endpoint
+    participant Logger as Audit Logger Service
+    participant CRUD as CRUDAuditLog
+    participant DB as Postgres/SQLite
+
+    Endpoint->>Endpoint: Security event occurs (e.g. login failed)
+    Endpoint->>Logger: log_event(db, user_id, event_type, details)
+    
+    activate Logger
+    Logger->>Logger: Package into AuditLogCreate schema
+    Logger->>Logger: Sanitize complex types (UUID -> Str)
+    Logger->>CRUD: create(db, obj_in)
+    
+    activate CRUD
+    CRUD->>DB: INSERT INTO audit_logs ...
+    DB-->>CRUD: Return new row
+    CRUD->>CRUD: db.flush()
+    CRUD-->>Logger: Return AuditLog Model
+    deactivate CRUD
+    
+    Logger-->>Endpoint: Return
+    deactivate Logger
+```
 
 ### Step 1: Event Trigger (e.g., `endpoints/auth.py`)
 
@@ -279,6 +439,28 @@ class CRUDAuditLog(CRUDBase[AuditLog, AuditLogCreate, AuditLogUpdate]):
 
 Privacy Mode is a global, client-side feature that allows users to obscure sensitive data. It demonstrates a simple but effective use of React Context for global state management.
 
+### Sequence Diagram: Toggling Privacy
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Toggle as Eye Icon (Dashboard)
+    participant Context as PrivacyContext
+    participant Storage as LocalStorage
+    participant Hook as usePrivacySensitiveCurrency
+    participant UI as Any Price Component
+
+    User->>Toggle: Clicks Privacy Toggle
+    Toggle->>Context: togglePrivacyMode()
+    Context->>Context: isPrivacyMode = !isPrivacyMode
+    Context->>Storage: Save to browser storage
+    Context-->>Hook: State change event
+    
+    Hook->>Hook: Check isPrivacyMode
+    Hook-->>UI: Return placeholder "₹**,***.**" (if true)
+    UI->>User: Re-renders with hidden values
+```
+
 ### Step 1: State Management (`context/PrivacyContext.tsx`)
 
 1.  **Context Creation:** A `PrivacyContext` is created to hold the global state, which is a simple boolean `isPrivacyMode`.
@@ -311,6 +493,39 @@ To avoid applying privacy to all monetary values, a specific hook was created.
 ## 7. Cross-Cutting Concern: Analytics Caching
 
 The Analytics Caching engine is a cross-cutting concern designed to improve application performance by storing the results of expensive calculations.
+
+### Sequence Diagram: Cache Evaluation
+
+```mermaid
+sequenceDiagram
+    participant Caller as FastAPI Endpoint
+    participant Decorator as @cache_analytics_data
+    participant Redis as Redis / DiskCache
+    participant Function as Original Python Function
+
+    Caller->>Decorator: Calls decorated function
+    activate Decorator
+    
+    Decorator->>Decorator: Generate unique cache key
+    Decorator->>Redis: GET key
+    
+    alt Cache Hit
+        Redis-->>Decorator: Return serialized JSON
+        Decorator->>Decorator: Deserialize to Pydantic Model
+        Decorator-->>Caller: Return Model (Fast Path)
+    else Cache Miss
+        Redis-->>Decorator: None
+        Decorator->>Function: Execute original function
+        activate Function
+        Function-->>Decorator: Return result
+        deactivate Function
+        
+        Decorator->>Decorator: Serialize result to JSON
+        Decorator->>Redis: SET key (with TTL)
+        Decorator-->>Caller: Return Model (Slow Path)
+    end
+    deactivate Decorator
+```
 
 ### Step 1: The Cache Decorator (`cache/utils.py`)
 
@@ -351,3 +566,176 @@ def create_bond(...):
 ```
 
 This function is called from any API endpoint that creates, updates, or deletes data for a portfolio (e.g., creating a transaction, importing a file, adding a bond). It constructs and deletes all cache keys associated with that `portfolio_id` and its `user_id`, ensuring that the next request will trigger a fresh calculation.
+
+---
+
+## 8. Feature Flow: Capital Gains Calculation
+
+The Capital Gains engine calculates realized gains based on Specific Lot Identification (Tax Lots) or FIFO.
+
+### Sequence Diagram: Capital Gains
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as React Frontend
+    participant Router as FastAPI Router
+    participant CRUD as SQLAlchemy CRUD
+    participant Engine as Tax Engine
+    participant DB as Postgres/SQLite
+
+    User->>Frontend: Opens Capital Gains Report
+    Frontend->>Router: GET /api/v1/portfolios/{id}/capital-gains?fy=2023-2024
+    
+    activate Router
+    Router->>CRUD: get_realized_gains(db, portfolio_id, fy)
+    
+    activate CRUD
+    CRUD->>DB: Fetch all SELL transactions in FY
+    DB-->>CRUD: Return SELLs
+    
+    loop For each SELL transaction
+        CRUD->>DB: Fetch linked BUY transactions (Tax Lots)
+        DB-->>CRUD: Return matched BUYs
+        CRUD->>Engine: calculate_gain(sell, buys)
+        Engine->>Engine: Apply STCG/LTCG rules (Asset type, Holding period)
+        Engine->>Engine: Apply Grandfathering (if eligible equity)
+        Engine-->>CRUD: Return Gain Details
+    end
+    
+    CRUD->>CRUD: Aggregate into summary report
+    CRUD-->>Router: CapitalGainsResponse Model
+    deactivate CRUD
+    
+    Router-->>Frontend: 200 OK (JSON)
+    deactivate Router
+    Frontend->>User: Renders Report Table
+```
+
+---
+
+## 9. Feature Flow: Watchlist Management
+
+Watchlists allow users to track assets without owning them in a portfolio.
+
+### Sequence Diagram: Adding to Watchlist
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as React Frontend
+    participant Router as FastAPI Router
+    participant CRUD as SQLAlchemy CRUD
+    participant DB as Postgres/SQLite
+
+    User->>Frontend: Clicks "Add to Watchlist" on Asset
+    Frontend->>Router: POST /api/v1/watchlists/{id}/items
+    
+    activate Router
+    Router->>Router: Pydantic Validation
+    Router->>CRUD: add_asset_to_watchlist(db, watchlist_id, asset_id)
+    
+    activate CRUD
+    CRUD->>DB: Check if asset already in watchlist
+    DB-->>CRUD: Return status
+    CRUD->>DB: INSERT INTO watchlist_items
+    DB-->>CRUD: Return success
+    CRUD-->>Router: WatchlistItem Model
+    deactivate CRUD
+    
+    Router-->>Frontend: 201 Created
+    deactivate Router
+    Frontend->>User: Shows Success Toast
+```
+
+---
+
+## 10. Feature Flow: Goal Planning
+
+Goal Planning allows users to create financial targets and link portfolios/assets to them.
+
+### Sequence Diagram: Calculating Goal Progress
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as React Frontend
+    participant Router as FastAPI Router
+    participant CRUD as SQLAlchemy CRUD
+    participant DB as Postgres/SQLite
+
+    User->>Frontend: Views Goals Dashboard
+    Frontend->>Router: GET /api/v1/goals/
+    
+    activate Router
+    Router->>CRUD: get_all_goals_with_progress(db, user_id)
+    
+    activate CRUD
+    CRUD->>DB: Fetch user goals
+    CRUD->>DB: Fetch linked portfolios & assets
+    DB-->>CRUD: Return goals and links
+    
+    loop For each goal
+        CRUD->>CRUD: Calculate current value of linked portfolios
+        CRUD->>CRUD: Calculate current value of linked single assets
+        CRUD->>CRUD: Sum values -> current_progress
+        CRUD->>CRUD: Calculate percentage (current_progress / target_amount)
+    end
+    
+    CRUD-->>Router: List[GoalProgressModel]
+    deactivate CRUD
+    
+    Router-->>Frontend: 200 OK (JSON)
+    deactivate Router
+    Frontend->>User: Renders Goal Progress Bars
+```
+
+---
+
+## 11. Background Task: Daily Portfolio Snapshot
+
+To ensure the Dashboard's historical chart loads instantly without recalculating years of history on every request, the system pre-computes the portfolio value at the end of each day. 
+
+Because the Desktop and Android apps do not run continuously on a server 24/7, a traditional cron job is not used. Instead, a lightweight `asyncio` background task is spawned when the FastAPI app starts up in Desktop mode.
+
+### Sequence Diagram: Desktop Snapshot Loop
+
+```mermaid
+sequenceDiagram
+    participant App as FastAPI App (main.py)
+    participant Loop as _desktop_snapshot_loop
+    participant Executor as ThreadPoolExecutor
+    participant Service as take_daily_snapshots_for_all
+    participant DB as Postgres/SQLite
+
+    App->>Loop: asyncio.create_task() on Startup
+    activate Loop
+    Loop->>Loop: asyncio.sleep(10) (Wait for init)
+    
+    loop Every 6 Hours (21600s)
+        Loop->>Executor: run_in_executor(take_daily_snapshots_for_all)
+        activate Executor
+        
+        Executor->>Service: Call holding & valuation logic
+        activate Service
+        
+        Service->>DB: Fetch active portfolios
+        
+        loop For each Portfolio
+            Service->>Service: Calculate missing snapshot days (Catch-up)
+            Service->>DB: Fetch transactions & reconstruct holdings
+            Service->>Service: Get closing prices (yfinance) or evaluate formulas (FDs)
+            Service->>DB: UPSERT INTO daily_portfolio_snapshots
+        end
+        
+        Service-->>Executor: Return count of updated snapshots
+        deactivate Service
+        
+        Executor-->>Loop: Complete
+        deactivate Executor
+        Loop->>Loop: asyncio.sleep(21600)
+    end
+```
+
+### Catch-up Logic
+When the application starts, it checks the database for the last generated snapshot. If the user hasn't opened the application in several days, the `take_daily_snapshots_for_all` service acts as a "catch-up" mechanism, generating snapshots for all the missed days sequentially. This ensures seamless historical charts regardless of how infrequently the app is launched.

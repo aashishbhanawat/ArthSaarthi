@@ -33,8 +33,63 @@
 
 ---
 
+## 2026-03-14: Advance Tax Dividend Categorization (ITR-2 Schedule CG)
 
 **Task:** Categorize dividends into Advance Tax quarterly buckets (Upto 15/6, 16/6 - 15/9, etc.) and format the UI and CSV exports to mirror ITR-2 Schedule CG.
+
+---
+
+## 2026-03-11: v1.2.0 Developer Documentation Overhaul
+
+**Task:** Audit and completely overhaul all developer-facing documentation (README, guides, architecture, design docs) to prepare for the v1.2.0 release.
+
+**AI Assistant:** Antigravity
+**Role:** Technical Writer / System Architect
+
+### Summary
+
+Successfully brought all documentation up-to-date with the current state of the codebase, ensuring new contributors have accurate reference material.
+1. Updated `README.md`, `CONTRIBUTING.md`, and `developer_guide.md` to feature the new Native Desktop and Android compile flows, and legally mandated AI SDLC rules (`GEMINI.md`).
+2. Synced the advanced Mermaid Component Diagram from `uml_design.md` directly into `docs/architecture.md`.
+3. Renamed the outdated `mvp_database_schema.md` to `docs/database_schema.md` and completely rewrote the table constraints to reflect the exact active SQL schema (including Tax Lots, Bonds, Watches).
+4. Added comprehensive Mermaid Sequence Diagrams into `docs/code_flow_guide.md` for all standard API request lifecycle traces (Transactions, Import, Analytics, Audit Logging, Privacy, Caching, Capital Gains, Watchlists, Goals, Daily Snapshots).
+5. Added Ascii wireframes to `docs/ui_ux_design.md` to visually document the new Consolidated Holdings Table layout and the Import Wizard staging interface.
+
+### File Changes
+
+*   **Modified:** `README.md`, `CONTRIBUTING.md`, `developer_guide.md`, `docs/architecture.md`, `docs/code_flow_guide.md`, `docs/ui_ux_design.md`
+*   **Renamed & Rewritten:** `docs/mvp_database_schema.md` -> `docs/database_schema.md`
+
+### Outcome
+
+**Success.** The documentation is perfectly synced with the v1.2.0 features, closing out the technical debt of outdated design diagrams.
+
+---
+
+## 2026-03-11: Create Interview Prep Guide
+
+**Task:** Create an interview preparation document outlining how an Embedded C developer built a Full-Stack Python/React app.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer / Career Mentor
+
+### Summary
+
+Generated `docs/interview_prep.md` to help the user prepare for technical interviews. The document translates hardware/C concepts (like struct memory mapping, interrupt-driven sequential code, and low-level arrays) into Web/Cloud concepts (SQL ORMs, React Virtual DOM, and Python dicts/generators). It provides STAR-method answers for architectural decisions like the FastAPI+React decoupled monolith, SQLite vs Postgres, Redis caching, and JSON B-Trees.
+
+### File Changes
+
+*   **New:** `docs/interview_prep.md` - Interview prep guide.
+
+### Outcome
+
+**Success.** The user has a targeted study guide mapping their existing Embedded systems knowledge directly to the specific design patterns used in ArthSaarthi.
+
+---
+
+## 2026-03-10: Generate UML Design Document
+
+**Task:** Go through code and write UML design document.
 
 **AI Assistant:** Antigravity
 **Role:** Full-Stack Developer
@@ -252,6 +307,18 @@ Fixed the backend startup failure where the initial asset seeding (downloading a
 ### Outcome
 
 **Success.** The application now starts reliably even on initial deployments with clean volumes.
+Analyzed the backend database models and the overall system architecture. Created a comprehensive UML design document containing:
+1. **System Architecture Diagram**: A Component Diagram detailing the Client Tier, Application Tier, Data Tier, and external service integrations.
+2. **Entity-Relationship Diagram (ERD)**: Documenting the relationships between Users, Portfolios, Transactions, Assets, Goals, etc.
+3. **Class Diagram**: Highlighting the core domain logic for key models.
+
+### File Changes
+
+*   **New:** `docs/uml_design.md` - Generated UML documentation with Mermaid diagrams.
+
+### Outcome
+
+**Success.** The codebase architecture and data models have been visually documented, aiding future development and onboarding.
 
 ---
 

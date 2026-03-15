@@ -4,37 +4,57 @@ This document outlines the high-level architecture for the Personal Portfolio Ma
 
 ## 1. Architecture Diagram
 
-The following diagram illustrates the components of the system and the flow of information.
+The following diagram illustrates the components of the system and the flow of information. For the complete ERD and core class diagrams, please refer to the unified `[uml_design.md](./uml_design.md)`.
 
 ```mermaid
 graph TD
-    subgraph "Deployment Host (e.g., Local Machine / Server)"
-        subgraph "Docker Environment"
-            direction LR
-            subgraph "User Interaction"
-                direction TB
-                User_Browser["User's Browser (React SPA)"]
-            end
-            subgraph "Application Services"
-                direction TB
-                Frontend["Frontend (React + Vite)"]
-                Backend["Backend (FastAPI)"]
-                Database["Database (PostgreSQL)"]
-                Redis["Redis (Cache)"]
-            end
-            subgraph "External Services"
-                direction TB
-                yfinance["External APIs (yfinance)"]
-            end
-            User_Browser -- HTTPS --> Frontend
-            Frontend -- "API Requests (Vite Proxy to /api/*)" --> Backend
-            Backend -- "DB Queries (SQLAlchemy) & Alembic Migrations" --> Database
-            Backend -- "Cache R/W" --> Redis
-            Backend -- "Cache Miss" --> yfinance
-        end
-    end
-```
+    classDef frontend fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff;
+    classDef backend fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff;
+    classDef database fill:#f1c40f,stroke:#f39c12,stroke-width:2px,color:#000;
+    classDef external fill:#95a5a6,stroke:#7f8c8d,stroke-width:2px,color:#fff;
 
+    subgraph "Client Tier"
+        direction TB
+        Browser["User Browser (React SPA)"]:::frontend
+        Desktop["Desktop App (Electron + React)"]:::frontend
+        Mobile["Mobile App (Android / Capacitor.js)"]:::frontend
+    end
+
+    subgraph "Application Tier (Python / FastAPI)"
+        direction TB
+        API["FastAPI REST Router"]:::backend
+        AuthService["Authentication & Security"]:::backend
+        AnalyticsService["Portfolio Analytics (XIRR, Benchmarks)"]:::backend
+        DataImportService["Data Import (File Parsers)"]:::backend
+
+        API --> AuthService
+        API --> AnalyticsService
+        API --> DataImportService
+    end
+
+    subgraph "Data Tier"
+        direction TB
+        PostgreSQL[("PostgreSQL (Server) / SQLite (Desktop/Mobile)")]:::database
+        Redis[("Redis (Server) / DiskCache (Desktop/Mobile)")]:::database
+    end
+
+    subgraph "External Integrations"
+        direction TB
+        YFinance["yfinance API"]:::external
+        ExchangeData["NSE / BSE / AMFI Master Data"]:::external
+    end
+
+    %% Connections
+    Browser -- "HTTPS / REST API" --> API
+    Desktop -- "Localhost API (PyInstaller binary)" --> API
+    Mobile -- "Localhost API (Chaquopy embedded CPython)" --> API
+
+    API -- "SQLAlchemy / Alembic" --> PostgreSQL
+    API -- "Cache R/W" --> Redis
+    
+    AnalyticsService -- "Market Data Fetch" --> YFinance
+    DataImportService -- "Security Master Fetch" --> ExchangeData
+```
 
 ## 2. Architectural Decisions
 

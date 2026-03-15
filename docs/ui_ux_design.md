@@ -80,10 +80,35 @@ The "Privacy Mode" is a global toggle that allows users to obscure sensitive fin
 |       |  | [1D][1W][1M][1Y][ALL]     | |                        | |
 |       |  +---------------------------+ +------------------------+ |
 |       |                                                           |
-|       |  Top Holdings (Consolidated)                              |
-|       |  [ Asset Name | Value | P/L% ]                           |
-|       |  [------------|-------|------]                           |
-|       |  [ GOOGL      | ...   | ...  ]                           |
+|       |  [1D][1W][1M][1Y][ALL]     | |                        | |
+|       |  +---------------------------+ +------------------------+ |
+|       |                                                           |
+|       |  Top Holdings Overview                                    |
+|       |  [ Asset Name | Value | P/L% ]                            |
+|       |  [------------|-------|------]                            |
+|       |  [ GOOGL      | ...   | ...  ]                            |
++-------------------------------------------------------------------+
+```
+
+### 2.2. Sectioned Consolidated Holdings Table (v1.2.0)
+
+A major feature of v1.2.0 is replacing flat transaction lists with a consolidated, groupable table.
+
+*   **Grouping:** Assets are grouped by type (e.g., `Equity`, `Mutual Funds`, `Fixed Deposits`). Each section acts as a collapsible accordion.
+*   **Sorting:** Each column (Name, Qty, Avg Cost, Current Price, Value, PNL, XIRR) is sortable within its section.
+*   **Drill-Down Modal:** Clicking on any row opens the **Tax Lot Details Modal** (see Section 3.1).
+
+```
++-------------------------------------------------------------------+
+|  [ ▼ ] EQUITY (Total Value: $500,000)                             |
+|-------------------------------------------------------------------|
+|  Asset Name | Qty  | Avg Price | Current | Total Value | PNL      |
+|  GOOGL      | 10   | $100      | $150    | $1,500      | +$500    |
+|  AAPL       | 5    | ...       | ...     | ...         | ...      |
+|-------------------------------------------------------------------|
+|  [ ▶ ] MUTUAL FUNDS (Total Value: $100,000)                       |
+|-------------------------------------------------------------------|
+|  [ ▶ ] FIXED DEPOSITS (Total Value: $50,000)                      |
 +-------------------------------------------------------------------+
 ```
 
@@ -113,6 +138,14 @@ This is a multi-step process to handle complexity gracefully.
         *   Fields: Grant ID, Grant Date, Shares Granted, Vesting Schedule.
 
 This guided flow makes adding complex assets intuitive.
+
+### 3.1. Tax Lot Drill-Down & Sell Link Modal (v1.2.0)
+
+When a user clicks on a holding in the Consolidated Table or attempts to SELL an asset, they are presented with the **Tax Lot Modal**.
+
+*   This modal lists every `BUY` transaction that makes up the total quantity of the holding.
+*   It shows the `Original Qty`, `Remaining Qty` (after previous sells), and `Purchase Date` for each lot.
+*   If the user is selling, checkboxes appear next to each lot, allowing them to perform **Specific Lot Identification** (e.g., selling the highest-cost lots first to minimize capital gains tax).
 
 ## 4. Risk Profile Page (FR12)
 
@@ -163,6 +196,30 @@ The user navigates to the "Goals" page. They see a summary of all their financia
 |       |  | House Down Payment            Target: $150,000     | |
 |       |  | [||||||||||40%||..............]  Off Track          | |
 |       |  | Increase contributions by $250/mo. [Details ->]    | |
-|       |  +----------------------------------------------------+ |
++-------------------------------------------------------------------+
+```
+
+## 6. Automated Data Import Wizard (v1.2.0)
+
+### User Flow
+The user navigates to "Import Data". They upload a file, the system parses it, and then presents a "Staging Preview" where they can review, edit, or reject the parsed transactions before committing them to the permanent database.
+
+### 6.1. Staging Preview Wireframe
+
+The preview differentiates between new, valid transactions, duplicates (already identical hashes in DB), and invalid/unrecognized rows.
+
+```
++-------------------------------------------------------------------+
+|  Import Session Preview: zerodha_tradebook.csv                    |
+|-------------------------------------------------------------------|
+|  [ ▼ ] Valid Transactions (150 Ready to Import)                   |
+|-------------------------------------------------------------------|
+|  [x] Date       | Ticker  | Action | Qty | Price                  |
+|  [x] 2024-01-01 | RELIANCE| BUY    | 10  | ₹2500                  |
+|  [ ] 2024-01-02 | UNKNOWN | BUY    | 5   | ₹100    [Map Alias ✏️] |
+|-------------------------------------------------------------------|
+|  [ ▶ ] Ignored Duplicates (5 Already in DB)                       |
+|-------------------------------------------------------------------|
+|                                    [ Discard ]   [ Commit Data ]  |
 +-------------------------------------------------------------------+
 ```
