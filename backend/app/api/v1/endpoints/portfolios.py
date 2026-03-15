@@ -228,7 +228,7 @@ def read_asset_transactions(
 @router.get(
     "/{portfolio_id}/assets/{asset_id}/analytics", response_model=schemas.AssetAnalytics
 )
-def get_asset_ analytics(
+def get_asset_analytics(
     *,
     db: Session = Depends(dependencies.get_db),
     portfolio_id: uuid.UUID,
