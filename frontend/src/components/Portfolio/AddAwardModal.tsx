@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCreateTransaction, useUpdateTransaction } from '../../hooks/usePortfolios';
 import { useCreateAsset } from '../../hooks/useAssets';
 import { lookupAsset, getFxRate } from '../../services/portfolioApi';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Asset } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
@@ -52,6 +53,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // Asset Search State
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
     const [searchResults, setSearchResults] = useState<Asset[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
     const [isSearching, setIsSearching] = useState(false);
@@ -67,6 +69,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // FX Rate
     const [isLoadingFx, setIsLoadingFx] = useState(false);
+    const debouncedDate = useDebounce(date, 500);
 
     useEffect(() => {
         if (isEditMode && transactionToEdit) {
@@ -94,19 +97,16 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // Search Logic
     useEffect(() => {
-        const handler = setTimeout(() => {
-            if (searchTerm.length >= 2 && !selectedAsset) {
-                setIsSearching(true);
-                lookupAsset(searchTerm, 'STOCK')
-                    .then(data => setSearchResults(data))
-                    .catch(() => setSearchResults([]))
-                    .finally(() => setIsSearching(false));
-            } else {
-                setSearchResults([]);
-            }
-        }, 300);
-        return () => clearTimeout(handler);
-    }, [searchTerm, selectedAsset]);
+        if (debouncedSearchTerm.length >= 2 && !selectedAsset) {
+            setIsSearching(true);
+            lookupAsset(debouncedSearchTerm, 'STOCK')
+                .then(data => setSearchResults(data))
+                .catch(() => setSearchResults([]))
+                .finally(() => setIsSearching(false));
+        } else {
+            setSearchResults([]);
+        }
+    }, [debouncedSearchTerm, selectedAsset]);
 
     const handleSelectAsset = (asset: Asset) => {
         // If the asset doesn't have an ID, it's a search result from an external
@@ -165,20 +165,16 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // FX Rate Logic
     useEffect(() => {
-        const handler = setTimeout(() => {
-            // Check if the date is a valid YYYY-MM-DD format
-            if (selectedAsset && date && /^\d{4}-\d{2}-\d{2}$/.test(date) && selectedAsset.currency && selectedAsset.currency !== 'INR') {
-                setIsLoadingFx(true);
-                setValue('fxRate', 1); // Reset while fetching
-                getFxRate(selectedAsset.currency, 'INR', date)
-                    .then(rate => setValue('fxRate', Number(rate))) // The getFxRate function returns the rate directly
-                    .catch(() => setValue('fxRate', 1)) // On error, default to 1 and allow manual entry
-                    .finally(() => setIsLoadingFx(false));
-            }
-        }, 500); // Debounce for 500ms
-
-        return () => clearTimeout(handler);
-    }, [selectedAsset, date, setValue]);
+        // Check if the date is a valid YYYY-MM-DD format
+        if (selectedAsset && debouncedDate && /^\d{4}-\d{2}-\d{2}$/.test(debouncedDate) && selectedAsset.currency && selectedAsset.currency !== 'INR') {
+            setIsLoadingFx(true);
+            setValue('fxRate', 1); // Reset while fetching
+            getFxRate(selectedAsset.currency, 'INR', debouncedDate)
+                .then(rate => setValue('fxRate', Number(rate))) // The getFxRate function returns the rate directly
+                .catch(() => setValue('fxRate', 1)) // On error, default to 1 and allow manual entry
+                .finally(() => setIsLoadingFx(false));
+        }
+    }, [selectedAsset, debouncedDate, setValue]);
 
     // Defaults
     useEffect(() => {

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { usePortfolios } from '../../hooks/usePortfolios';
 import { useAssetSearch } from '../../hooks/useAssets';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Goal } from '../../types/goal';
 import { Portfolio } from '../../types/portfolio';
 import { AssetSearchResult } from '../../types/asset';
@@ -14,20 +15,9 @@ interface AssetLinkModalProps {
 
 const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink, goal }) => {
     const [inputValue, setInputValue] = useState('');
-    const [searchTerm, setSearchTerm] = useState(''); // Debounced
+    const searchTerm = useDebounce(inputValue, 300);
     const { data: portfolios, isLoading: isLoadingPortfolios } = usePortfolios();
     const { data: assets, isLoading: isLoadingAssets } = useAssetSearch(searchTerm);
-
-    // Debounce search term
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setSearchTerm(inputValue);
-        }, 300);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [inputValue]);
 
     const handleLink = (link: { portfolio_id?: string; asset_id?: string }) => {
         onLink(link);

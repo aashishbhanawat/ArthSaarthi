@@ -4,20 +4,7 @@ import { useAssetSearch } from '../../hooks/usePortfolio';
 import { searchMutualFunds } from '../../services/assetApi';
 import { createAsset, lookupAsset, AssetCreationPayload } from '../../services/portfolioApi';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
-
-// A simple debounce hook
-const useDebounce = (value: string, delay: number) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
-    return debouncedValue;
-};
+import { useDebounce } from '../../hooks/useDebounce';
 
 // Hook for MF search
 const useMfSearch = (query: string) => {
