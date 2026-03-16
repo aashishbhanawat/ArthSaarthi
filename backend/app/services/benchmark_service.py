@@ -180,6 +180,13 @@ class BenchmarkService:
             details={}
         )
 
+    def _get_transaction_amount(self, txn: Any, tx_type: str) -> float:
+        """Helper to compute txn amount, handling special cases like RSU_VEST."""
+        if tx_type == "RSU_VEST" and txn.details:
+            fmv = Decimal(str(txn.details.get("fmv", 0)))
+            return float(txn.quantity * fmv)
+        return float(txn.quantity * txn.price_per_unit)
+
     def _calculate_risk_free_values(
         self,
         date_range: pd.DatetimeIndex,
@@ -211,11 +218,7 @@ class BenchmarkService:
                 if hasattr(txn.transaction_type, 'value'):
                     tx_type = txn.transaction_type.value
 
-                if tx_type == "RSU_VEST" and txn.details:
-                    fmv = Decimal(str(txn.details.get("fmv", 0)))
-                    amount = float(txn.quantity * fmv)
-                else:
-                    amount = float(txn.quantity * txn.price_per_unit)
+                amount = self._get_transaction_amount(txn, tx_type)
 
                 # Convert foreign currency if needed
                 if txn.details and isinstance(
@@ -747,11 +750,7 @@ class BenchmarkService:
                 ):
                     tx_type = txn.transaction_type.value
 
-                if tx_type == "RSU_VEST" and txn.details:
-                    fmv = Decimal(str(txn.details.get("fmv", 0)))
-                    amount = float(txn.quantity * fmv)
-                else:
-                    amount = float(txn.quantity * txn.price_per_unit)
+                amount = self._get_transaction_amount(txn, tx_type)
 
                 if (
                     txn.details
@@ -840,11 +839,7 @@ class BenchmarkService:
                 ):
                     tx_type = txn.transaction_type.value
 
-                if tx_type == "RSU_VEST" and txn.details:
-                    fmv = Decimal(str(txn.details.get("fmv", 0)))
-                    amount = float(txn.quantity * fmv)
-                else:
-                    amount = float(txn.quantity * txn.price_per_unit)
+                amount = self._get_transaction_amount(txn, tx_type)
 
                 amount_inr = amount
                 if (
@@ -954,11 +949,7 @@ class BenchmarkService:
                 ):
                     tx_type = txn.transaction_type.value
 
-                if tx_type == "RSU_VEST" and txn.details:
-                    fmv = Decimal(str(txn.details.get("fmv", 0)))
-                    amount = float(txn.quantity * fmv)
-                else:
-                    amount = float(txn.quantity * txn.price_per_unit)
+                amount = self._get_transaction_amount(txn, tx_type)
 
                 amount_inr = amount
                 if (
