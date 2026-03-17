@@ -25,6 +25,8 @@ class AmfiIndiaProvider(FinancialDataProvider):
 
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
+        self._nav_data_cache: Dict[str, Dict[str, Any]] = {}
+        self._isin_map: Dict[str, str] = {}
 
     def _parse_category_header(self, line: str) -> tuple[str | None, str | None]:
         """
@@ -111,21 +113,40 @@ class AmfiIndiaProvider(FinancialDataProvider):
         return data
 
     def get_all_nav_data(self) -> Dict[str, Dict[str, Any]]:
-        """Retrieves all NAV data, using a cache if available."""
+        """Retrieves all NAV data, using an in-memory and external cache."""
+        if self._nav_data_cache:
+            return self._nav_data_cache
+
         if not self.cache_client:
-            return self._fetch_and_parse_amfi_data()
+            self._nav_data_cache = self._fetch_and_parse_amfi_data()
+            return self._nav_data_cache
 
         cache_key = "amfi_nav_data"
         cached_data = self.cache_client.get_json(cache_key)
         if cached_data:
-            return cached_data
+            self._nav_data_cache = cached_data
+            return self._nav_data_cache
 
         fresh_data = self._fetch_and_parse_amfi_data()
         if fresh_data:
             self.cache_client.set_json(
                 cache_key, fresh_data, expire=CACHE_TTL_AMFI_DATA
             )
-        return fresh_data
+            self._nav_data_cache = fresh_data
+        return self._nav_data_cache
+
+    def _get_isin_map(self) -> Dict[str, str]:
+        """Builds a mapping from ISIN/ISIN2 to scheme code."""
+        if self._isin_map:
+            return self._isin_map
+
+        all_data = self.get_all_nav_data()
+        for scheme_code, details in all_data.items():
+            if details.get("isin"):
+                self._isin_map[details["isin"]] = scheme_code
+            if details.get("isin2"):
+                self._isin_map[details["isin2"]] = scheme_code
+        return self._isin_map
 
     def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
         """Gets the details for a given MF scheme code."""
@@ -144,18 +165,24 @@ class AmfiIndiaProvider(FinancialDataProvider):
 
     def get_scheme_by_isin(self, isin_code: str) -> Optional[Dict[str, Any]]:
         """Finds a fund's details by looking up its ISIN or ISIN2."""
+        isin_map = self._get_isin_map()
+        scheme_code = isin_map.get(isin_code)
+        if not scheme_code:
+            return None
+
         all_data = self.get_all_nav_data()
-        for scheme_code, details in all_data.items():
-            if details.get("isin") == isin_code or details.get("isin2") == isin_code:
-                return {
-                    "ticker_symbol": scheme_code,
-                    "name": details.get("scheme_name"),
-                    "asset_type": "Mutual Fund",
-                    "exchange": "AMFI",
-                    "currency": "INR",
-                    "isin": details.get("isin"),
-                }
-        return None
+        details = all_data.get(scheme_code)
+        if not details:
+            return None
+
+        return {
+            "ticker_symbol": scheme_code,
+            "name": details.get("scheme_name"),
+            "asset_type": "Mutual Fund",
+            "exchange": "AMFI",
+            "currency": "INR",
+            "isin": details.get("isin"),
+        }
 
     def search(self, query: str) -> List[Dict[str, Any]]:
         """Searches for funds by name or scheme code."""
