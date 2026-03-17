@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Transaction types that represent inflows
 BUY_TYPES = [
     "BUY", "DEPOSIT", "RSU_VEST",
-    "ESPP_PURCHASE", "BONUS",
+    "ESPP_PURCHASE", "CONTRIBUTION",
 ]
 
 HYBRID_PRESETS = {
@@ -75,6 +75,7 @@ class BenchmarkService:
                     "MONTHLY": relativedelta(months=1),
                     "QUARTERLY": relativedelta(months=3),
                     "HALF_YEARLY": relativedelta(months=6),
+                    "SEMI-ANNUALLY": relativedelta(months=6),
                     "ANNUALLY": relativedelta(years=1),
                 }
                 interval = interval_map.get(
@@ -179,6 +180,13 @@ class BenchmarkService:
             details={}
         )
 
+    def _get_transaction_amount(self, txn: Any, tx_type: str) -> float:
+        """Helper to compute txn amount, handling special cases like RSU_VEST."""
+        if tx_type == "RSU_VEST" and txn.details:
+            fmv = Decimal(str(txn.details.get("fmv", 0)))
+            return float(txn.quantity * fmv)
+        return float(txn.quantity * txn.price_per_unit)
+
     def _calculate_risk_free_values(
         self,
         date_range: pd.DatetimeIndex,
@@ -206,12 +214,11 @@ class BenchmarkService:
             daily_flow_xirr = 0.0
 
             for txn in daily_txns:
-                amount = float(
-                    txn.quantity * txn.price_per_unit
-                )
                 tx_type = str(txn.transaction_type)
                 if hasattr(txn.transaction_type, 'value'):
                     tx_type = txn.transaction_type.value
+
+                amount = self._get_transaction_amount(txn, tx_type)
 
                 # Convert foreign currency if needed
                 if txn.details and isinstance(
@@ -224,7 +231,7 @@ class BenchmarkService:
                 if tx_type in BUY_TYPES:
                     current_value += amount
                     daily_flow_xirr -= amount
-                elif tx_type in ["SELL", "WITHDRAWAL"]:
+                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND", "COUPON"]:
                     current_value -= amount
                     daily_flow_xirr += amount
 
@@ -737,14 +744,13 @@ class BenchmarkService:
             pf_cashflows = []
             current_invested = 0.0
             for txn in transactions:
-                amount = float(
-                    txn.quantity * txn.price_per_unit
-                )
                 tx_type = str(txn.transaction_type)
                 if hasattr(
                     txn.transaction_type, 'value'
                 ):
                     tx_type = txn.transaction_type.value
+
+                amount = self._get_transaction_amount(txn, tx_type)
 
                 if (
                     txn.details
@@ -760,12 +766,12 @@ class BenchmarkService:
                          -amount)
                     )
                     current_invested += amount
-                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND"]:
+                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND", "COUPON"]:
                     pf_cashflows.append(
                         (txn.transaction_date.date(),
                          amount)
                     )
-                    if tx_type != "DIVIDEND":
+                    if tx_type not in ["DIVIDEND", "COUPON"]:
                         current_invested -= amount
 
             # Use actual current value if provided,
@@ -827,14 +833,13 @@ class BenchmarkService:
             daily_txns = txns_by_date.get(d_str, [])
 
             for txn in daily_txns:
-                amount = float(
-                    txn.quantity * txn.price_per_unit
-                )
                 tx_type = str(txn.transaction_type)
                 if hasattr(
                     txn.transaction_type, 'value'
                 ):
                     tx_type = txn.transaction_type.value
+
+                amount = self._get_transaction_amount(txn, tx_type)
 
                 amount_inr = amount
                 if (
@@ -864,8 +869,8 @@ class BenchmarkService:
                                     comp_amt / price
                                 )
 
-                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND"]:
-                    if tx_type != "DIVIDEND":
+                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND", "COUPON"]:
+                    if tx_type not in ["DIVIDEND", "COUPON"]:
                         invested_amount -= Decimal(
                             str(amount_inr)
                         )
@@ -938,14 +943,13 @@ class BenchmarkService:
             daily_txns = txns_by_date.get(d_str, [])
             daily_flow = 0.0
             for txn in daily_txns:
-                amount = float(
-                    txn.quantity * txn.price_per_unit
-                )
                 tx_type = str(txn.transaction_type)
                 if hasattr(
                     txn.transaction_type, 'value'
                 ):
                     tx_type = txn.transaction_type.value
+
+                amount = self._get_transaction_amount(txn, tx_type)
 
                 amount_inr = amount
                 if (
@@ -958,7 +962,7 @@ class BenchmarkService:
 
                 if tx_type in BUY_TYPES:
                     daily_flow -= amount_inr
-                elif tx_type in ["SELL", "WITHDRAWAL"]:
+                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND", "COUPON"]:
                     daily_flow += amount_inr
 
             if daily_flow != 0:

@@ -26,6 +26,11 @@ from app.models.transaction_link import TransactionLink
 
 logger = logging.getLogger(__name__)
 
+SHARPE_ANNUALIZATION_FACTOR = 252
+SHARPE_STEP_FUNCTION_THRESHOLD = 0.8
+SHARPE_ZERO_RETURN_TOLERANCE = 1e-6
+SHARPE_LOW_VOLATILITY_THRESHOLD = 0.01
+
 
 def _calculate_xirr(dates: List[date], values: List[Decimal]) -> float:
     """Helper function to safely calculate XIRR and return as a rate."""
@@ -772,7 +777,36 @@ class CRUDAnalytics:
             )
             return 0.0
 
-        sharpe_ratio = (np.mean(daily_returns) / np.std(daily_returns)) * np.sqrt(252)
+        # Option 2: Threshold check for non-market (step-function) portfolios like PPF.
+        # If the vast majority of days (>80%) have zero price movement,
+        # it indicates an illiquid/fixed-income asset rather than a traded market asset.
+        zero_return_days = np.sum(
+            np.isclose(daily_returns, 0, atol=SHARPE_ZERO_RETURN_TOLERANCE)
+        )
+        if len(daily_returns) > 0 and (
+            (zero_return_days / len(daily_returns))
+            > SHARPE_STEP_FUNCTION_THRESHOLD
+        ):
+            logger.debug(
+                f"Sharpe ratio: Detected step-function portfolio "
+                f"({zero_return_days}/{len(daily_returns)} flat days). Returning 0.0."
+            )
+            return 0.0
+
+        # Check for extremely low market volatility (< 1% annualized)
+        std_dev = np.std(daily_returns)
+        annual_volatility = std_dev * np.sqrt(SHARPE_ANNUALIZATION_FACTOR)
+        if annual_volatility < SHARPE_LOW_VOLATILITY_THRESHOLD:
+            logger.debug(
+                f"Sharpe ratio: Volatility extremely low "
+                f"({annual_volatility:.4f} annualized). "
+                f"Returning 0.0."
+            )
+            return 0.0
+
+        sharpe_ratio = (np.mean(daily_returns) / std_dev) * np.sqrt(
+            SHARPE_ANNUALIZATION_FACTOR
+        )
         logger.debug(
             f"Sharpe ratio: Calculated value is {sharpe_ratio}. "
             f"Mean return: {np.mean(daily_returns)}"
