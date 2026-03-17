@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { isAxiosError } from 'axios';
 import * as api from '../../services/api';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import LoadingButton from '../common/LoadingButton';
 
 interface SetupFormProps {
     onSuccess: () => void;
@@ -82,10 +82,14 @@ const SetupForm: React.FC<SetupFormProps> = ({ onSuccess }) => {
                 )}
 
                 <div>
-                    <button type="submit" className="w-full flex justify-center items-center gap-2 btn btn-primary" disabled={isLoading}>
-                        {isLoading && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
-                        {isLoading ? 'Creating Account...' : 'Create Admin Account'}
-                    </button>
+                    <LoadingButton
+                        type="submit"
+                        className="w-full btn btn-primary"
+                        isLoading={isLoading}
+                        loadingText="Creating Account..."
+                    >
+                        Create Admin Account
+                    </LoadingButton>
                 </div>
             </form>
         </div>

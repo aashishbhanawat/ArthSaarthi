@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import * as api from '../../services/api';
-import { EyeIcon, EyeSlashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import LoadingButton from '../common/LoadingButton';
 
 const LoginForm: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -88,10 +89,14 @@ const LoginForm: React.FC = () => {
                 )}
 
                 <div>
-                    <button type="submit" className="w-full flex justify-center items-center gap-2 btn btn-primary" disabled={isLoading} >
-                        {isLoading && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
-                        {isLoading ? 'Signing in...' : 'Sign in'}
-                    </button>
+                    <LoadingButton
+                        type="submit"
+                        className="w-full btn btn-primary"
+                        isLoading={isLoading}
+                        loadingText="Signing in..."
+                    >
+                        Sign in
+                    </LoadingButton>
                 </div>
             </form>
         </div>
