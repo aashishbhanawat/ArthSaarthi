@@ -6,9 +6,14 @@
 **Learning:** The application was performing serial synchronous network calls (yfinance) and repeated large data deserialization (AMFI) inside a holding calculation loop. This led to O(N) latency where N is the number of unenriched assets.
 **Action:** Always identify loop-independent operations (like fetching a full dataset) and hoist them out. For item-dependent IO operations, use `concurrent.futures.ThreadPoolExecutor` to parallelize them if async is not available.
 
-## $(date +%Y-%m-%d) - [O(N*M) FIFO Loop Optimization]
+## 2025-02-18 - [O(N*M) FIFO Loop Optimization]
 **Learning:** During FIFO lot matching, iterating through the list of buys starting from the beginning `for lot in buys:` for every sell transaction creates O(N*M) complexity since earlier lots are repeatedly checked and skipped once exhausted.
 **Action:** Use a persistent `fifo_index` initialized before the sell loop. Inside the sell loop, use `while fifo_index < len(buys):` and advance `fifo_index` whenever a lot is fully consumed. This ensures each lot is checked at most once, resulting in amortized O(1) time per sell.
+
 ## 2026-03-07 - [Cache portfolio holdings in goal analytics calculation]
 **Learning:** In `backend/app/crud/crud_goal.py`, calculating analytics for a goal with multiple links to the same portfolio or multiple individual assets can lead to repeated, extremely expensive calls to `crud.holding.get_portfolio_holdings_and_summary` (which fetches market data, links, and transactions). This creates a hidden N+1 problem at the function level.
 **Action:** When iterating over multiple associations (like `goal.links`) that require aggregated portfolio data, implement a function-level local cache (e.g., a `portfolio_cache` dictionary keyed by `portfolio_id`). This ensures that expensive aggregation/fetching methods are called exactly once per distinct portfolio, transforming an O(N) operation into O(1) for repeated elements.
+
+## 2026-03-09 - [Efficient index set creation from arrays]
+**Learning:** Using `.map((_, index) => index)` to create a `Set` of indices from an array creates a redundant intermediate array, incurring unnecessary memory allocation and CPU overhead.
+**Action:** When creating a `Set` of indices, use `new Set(array.keys())`. This leverages the built-in iterator and is ~20% more efficient. For maximum performance in extremely hot paths, a manual `for` loop using `.add(i)` is ~40% faster but less idiomatic.

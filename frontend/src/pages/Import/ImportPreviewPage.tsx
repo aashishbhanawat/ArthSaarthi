@@ -28,7 +28,7 @@ const ImportPreviewPage: React.FC = () => {
     // When data loads, pre-select all valid new transactions
     useEffect(() => {
         if (previewData?.valid_new) {
-            const initialSelection = new Set(previewData.valid_new.map((_, index) => index));
+            const initialSelection = new Set(previewData.valid_new.keys());
             setSelectedTransactionIndices(initialSelection);
         }
     }, [previewData?.valid_new]);
@@ -64,7 +64,7 @@ const ImportPreviewPage: React.FC = () => {
         if (selectedTransactionIndices.size === allSelectableTransactions.length) {
             setSelectedTransactionIndices(new Set()); // Deselect all
         } else {
-            const allIndices = new Set(allSelectableTransactions.map((_, index) => index));
+            const allIndices = new Set(allSelectableTransactions.keys());
             setSelectedTransactionIndices(allIndices); // Select all
         }
     };
