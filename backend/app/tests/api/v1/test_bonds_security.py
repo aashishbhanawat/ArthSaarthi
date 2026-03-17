@@ -55,11 +55,12 @@ def test_bond_authorization(
         "face_value": 2000,
         "coupon_rate": 6,
         "maturity_date": "2031-01-01",
+        "asset_id": str(asset.id),  # Added this for validation
     }
 
     # User B tries to update a bond in User A's portfolio
     response = client.put(
-        f"{settings.API_V1_STR}/bonds/{bond.id}",
+        f"{settings.API_V1_STR}/portfolios/{portfolio_a.id}/bonds/{bond.id}",
         headers=headers_b,
         json=data,
     )
