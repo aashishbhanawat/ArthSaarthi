@@ -206,6 +206,18 @@ def test_read_bond(
     )
     asset = crud.asset.create(db, obj_in=asset_in)
     bond = create_random_bond(db, asset_id=asset.id)
+    # Create a transaction to link the bond to the portfolio for authorization
+    crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            quantity=10,
+            price_per_unit=1000,
+            transaction_date=date.today().isoformat(),
+            transaction_type="BUY",
+        ),
+        portfolio_id=portfolio.id,
+    )
     response = client.get(
         f"{settings.API_V1_STR}/portfolios/{portfolio.id}/bonds/{bond.id}",
         headers=normal_user_token_headers,
