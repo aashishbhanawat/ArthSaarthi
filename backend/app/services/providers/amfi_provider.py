@@ -128,9 +128,19 @@ class AmfiIndiaProvider(FinancialDataProvider):
         return fresh_data
 
     def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
-        """Gets the details for a given MF scheme code."""
+        """Gets the details for a given MF scheme code or ISIN."""
         all_data = self.get_all_nav_data()
+
+        # 1. Try direct lookup by scheme code
         fund_data = all_data.get(ticker_symbol)
+
+        # 2. If not found, try lookup by ISIN
+        if not fund_data:
+            isin_map = self._get_isin_map(all_data)
+            scheme_code = isin_map.get(ticker_symbol.upper())
+            if scheme_code:
+                fund_data = all_data.get(scheme_code)
+
         if not fund_data:
             return None
 
@@ -140,13 +150,41 @@ class AmfiIndiaProvider(FinancialDataProvider):
             "exchange": "AMFI",
             "currency": "INR",
             "isin": fund_data.get("isin"),
+            "ticker_symbol": fund_data.get("scheme_code"),
         }
 
+    def _get_isin_map(self, all_data: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
+        """Builds and caches an ISIN-to-scheme-code mapping."""
+        # We use id(all_data) to check if the underlying data has changed.
+        # This is efficient if get_all_nav_data returns the same object from local cache.
+        if not hasattr(self, "_isin_map") or getattr(self, "_isin_map_data_id", None) != id(all_data):
+            isin_map = {}
+            for scheme_code, details in all_data.items():
+                if isin := details.get("isin"):
+                    isin_map[isin.upper()] = scheme_code
+                if isin2 := details.get("isin2"):
+                    isin_map[isin2.upper()] = scheme_code
+            self._isin_map = isin_map
+            self._isin_map_data_id = id(all_data)
+        return self._isin_map
+
     def search(self, query: str) -> List[Dict[str, Any]]:
-        """Searches for funds by name or scheme code."""
+        """Searches for funds by name, scheme code, or ISIN."""
         query = query.lower()
         all_data = self.get_all_nav_data()
 
+        # 1. Quick check for exact ISIN match
+        isin_map = self._get_isin_map(all_data)
+        if scheme_code := isin_map.get(query.upper()):
+            details = all_data.get(scheme_code)
+            if details:
+                return [{
+                    "ticker_symbol": scheme_code,
+                    "name": details["scheme_name"],
+                    "asset_type": "Mutual Fund",
+                }]
+
+        # 2. Fallback to O(N) scan for partial matches
         results = []
         for scheme_code, details in all_data.items():
             if query in scheme_code or query in details["scheme_name"].lower():
