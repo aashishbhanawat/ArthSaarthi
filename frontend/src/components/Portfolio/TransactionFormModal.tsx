@@ -5,6 +5,7 @@ import { useCreateTransaction, useUpdateTransaction, useCreateFixedDeposit, useC
 import { useCreateRecurringDeposit, useUpdateRecurringDeposit } from '../../hooks/useRecurringDeposits';
 import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
+import { useDebounce } from '../../hooks/useDebounce';
 import { lookupAsset, searchStocks, AssetSearchResult, getFxRate, getAvailableLots, AvailableLot } from '../../services/portfolioApi';
 import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
@@ -103,14 +104,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
     // Stock search state
     const [inputValue, setInputValue] = useState('');
-    const [searchTerm, setSearchTerm] = useState(''); // Debounced value
+    const searchTerm = useDebounce(inputValue, 300);
     const [searchResults, setSearchResults] = useState<Asset[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
     const [isSearching, setIsSearching] = useState(false);
 
     // New asset search state for corporate actions (merger/demerger/rename)
     const [newAssetInput, setNewAssetInput] = useState('');
-    const [newAssetSearchTerm, setNewAssetSearchTerm] = useState('');
+    const newAssetSearchTerm = useDebounce(newAssetInput, 300);
     const [newAssetResults, setNewAssetResults] = useState<Asset[]>([]);
     const [selectedNewAsset, setSelectedNewAsset] = useState<Asset | null>(null);
     const [isSearchingNewAsset, setIsSearchingNewAsset] = useState(false);
@@ -253,17 +254,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         }
     }, [isEditMode, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit, reset]);
 
-    // Debounce search term
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setSearchTerm(inputValue);
-        }, 300);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [inputValue]);
-
     useEffect(() => {
         if (searchTerm.length < 2 || selectedAsset) { // Use debounced term
             setSearchResults([]);
@@ -327,13 +317,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     };
 
     // --- New Asset Search for Corporate Actions ---
-    // Debounce new asset input
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setNewAssetSearchTerm(newAssetInput);
-        }, 300);
-        return () => clearTimeout(handler);
-    }, [newAssetInput]);
 
     // Search for new asset
     useEffect(() => {
