@@ -149,7 +149,8 @@ def test_bond_no_transactions_authorization(
 
     # User B tries to read a bond that has no transactions
     response = client.get(
-        f"{settings.API_V1_STR}/portfolios/{user_a.id}/bonds/{bond.id}", # Just dummy portfolio ID
+        f"{settings.API_V1_STR}/portfolios/{user_a.id}/bonds/{bond.id}",
+        # Just dummy portfolio ID
         headers=headers_b,
     )
     assert response.status_code == 403
