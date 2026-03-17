@@ -11,8 +11,9 @@ from app.models.bond import Bond
 from app.schemas.enums import BondType
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.portfolio import create_test_portfolio
-from app.tests.utils.user import create_random_user
 from app.tests.utils.transaction import create_test_transaction
+from app.tests.utils.user import create_random_user
+
 
 @pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_bond_authorization(
@@ -26,7 +27,12 @@ def test_bond_authorization(
     asset = create_test_asset(db, ticker_symbol="TEST-BOND-A")
     asset.asset_type = "BOND"
     db.commit()
-    create_test_transaction(db, portfolio_id=portfolio_a.id, ticker=asset.ticker_symbol, asset_id=str(asset.id))
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio_a.id,
+        ticker=asset.ticker_symbol,
+        asset_id=str(asset.id)
+    )
 
     bond = Bond(
         asset_id=asset.id,
