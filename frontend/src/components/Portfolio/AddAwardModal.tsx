@@ -52,8 +52,8 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
     const createAssetMutation = useCreateAsset();
 
     // Asset Search State
-    const [searchTerm, setSearchTerm] = useState('');
-    const debouncedSearchTerm = useDebounce(searchTerm, 300);
+    const [inputValue, setInputValue] = useState('');
+    const searchTerm = useDebounce(inputValue, 300);
     const [searchResults, setSearchResults] = useState<Asset[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
     const [isSearching, setIsSearching] = useState(false);
@@ -97,16 +97,16 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // Search Logic
     useEffect(() => {
-        if (debouncedSearchTerm.length >= 2 && !selectedAsset) {
+        if (searchTerm.length >= 2 && !selectedAsset) {
             setIsSearching(true);
-            lookupAsset(debouncedSearchTerm, 'STOCK')
+            lookupAsset(searchTerm, 'STOCK')
                 .then(data => setSearchResults(data))
                 .catch(() => setSearchResults([]))
                 .finally(() => setIsSearching(false));
         } else {
             setSearchResults([]);
         }
-    }, [debouncedSearchTerm, selectedAsset]);
+    }, [searchTerm, selectedAsset]);
 
     const handleSelectAsset = (asset: Asset) => {
         // If the asset doesn't have an ID, it's a search result from an external
@@ -123,7 +123,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                     onSuccess: (newlyCreatedAsset) => {
                         setSelectedAsset(newlyCreatedAsset);
                         setValue('assetName', newlyCreatedAsset.name);
-                        setSearchTerm('');
+                        setInputValue('');
                         setSearchResults([]);
                     },
                     onError: () => setApiError(`Failed to save asset "${asset.name}" locally.`)
@@ -133,7 +133,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
             // This is an asset that already exists in our DB (from a local search)
             setSelectedAsset(asset);
             setValue('assetName', asset.name);
-            setSearchTerm('');
+            setInputValue('');
             setSearchResults([]);
         }
     };
@@ -141,15 +141,15 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
     const handleClearAsset = () => {
         setSelectedAsset(null);
         setValue('assetName', '');
-        setSearchTerm('');
+        setInputValue('');
     };
 
     const handleCreateAsset = () => {
-        if (searchTerm) {
+        if (inputValue) {
             createAssetMutation.mutate(
                 {
-                    ticker_symbol: searchTerm.toUpperCase(),
-                    name: searchTerm,
+                    ticker_symbol: inputValue.toUpperCase(),
+                    name: inputValue,
                     asset_type: 'STOCK',
                     currency: 'USD', // Default to USD for awards usually? Or INR?
                     // Ideally we ask user or default to USD if it looks like US ticker.
@@ -157,7 +157,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                 },
                 {
                     onSuccess: (newAsset) => handleSelectAsset(newAsset),
-                    onError: () => setApiError(`Failed to create asset "${searchTerm}".`)
+                    onError: () => setApiError(`Failed to create asset "${inputValue}".`)
                 }
             );
         }
@@ -282,10 +282,10 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                 type="text"
                                 className="form-input"
                                 placeholder="Search ticker (e.g. GOOGL)..."
-                                value={selectedAsset ? `${selectedAsset.name} (${selectedAsset.ticker_symbol})` : searchTerm}
+                                value={selectedAsset ? `${selectedAsset.name} (${selectedAsset.ticker_symbol})` : inputValue}
                                 onChange={(e) => {
                                     if (selectedAsset && !isEditMode) handleClearAsset();
-                                    setSearchTerm(e.target.value);
+                                    setInputValue(e.target.value);
                                 }}
                                 disabled={!!selectedAsset || isEditMode}
                             />
@@ -313,7 +313,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                 ))}
                             </ul>
                         )}
-                        {!selectedAsset && !isSearching && searchTerm.length >= 2 && searchResults.length === 0 && (
+                        {!selectedAsset && !isSearching && inputValue.length >= 2 && searchResults.length === 0 && (
                             <div className="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg">
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No asset found.</p>
                                 <button
@@ -322,7 +322,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                     className="btn btn-secondary btn-sm w-full"
                                     disabled={createAssetMutation.isPending}
                                 >
-                                    {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${searchTerm}"`}
+                                    {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${inputValue}"`}
                                 </button>
                             </div>
                         )}
