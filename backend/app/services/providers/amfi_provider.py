@@ -142,6 +142,21 @@ class AmfiIndiaProvider(FinancialDataProvider):
             "isin": fund_data.get("isin"),
         }
 
+    def get_scheme_by_isin(self, isin_code: str) -> Optional[Dict[str, Any]]:
+        """Finds a fund's details by looking up its ISIN or ISIN2."""
+        all_data = self.get_all_nav_data()
+        for scheme_code, details in all_data.items():
+            if details.get("isin") == isin_code or details.get("isin2") == isin_code:
+                return {
+                    "ticker_symbol": scheme_code,
+                    "name": details.get("scheme_name"),
+                    "asset_type": "Mutual Fund",
+                    "exchange": "AMFI",
+                    "currency": "INR",
+                    "isin": details.get("isin"),
+                }
+        return None
+
     def search(self, query: str) -> List[Dict[str, Any]]:
         """Searches for funds by name or scheme code."""
         query = query.lower()
