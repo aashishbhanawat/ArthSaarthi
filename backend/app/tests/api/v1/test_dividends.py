@@ -128,7 +128,8 @@ def test_export_dividend_report_csv_with_data(
     # Extract the dynamic rate instead of hardcoding, as
     # yfinance could return diff values
     amount_native = float(rows[10][4])
-    rate = float(rows[10][7])
+    rate_str = rows[10][7]
+    rate = float(rate_str) if rate_str != "N/A" else 1.0
     expected_inr = amount_native * rate
 
     # Verify summary section

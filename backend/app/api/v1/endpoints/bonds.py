@@ -12,6 +12,20 @@ from app.schemas.msg import Msg
 
 router = APIRouter()
 
+def _check_bond_ownership(db: Session, bond: models.Bond, user_id: uuid.UUID) -> None:
+    if not bond.asset.transactions:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
+        )
+    for transaction in bond.asset.transactions:
+        portfolio = crud.portfolio.get(db=db, id=transaction.portfolio_id)
+        if portfolio and portfolio.user_id == user_id:
+            return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
+    )
+
+
 
 @router.post("/", response_model=Bond, status_code=status.HTTP_201_CREATED)
 def create_bond(
@@ -24,6 +38,11 @@ def create_bond(
     """
     Create new bond details for an existing asset.
     """
+    portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     asset = crud.asset.get(db, id=bond_and_tx_in.transaction_data.asset_id)
     if not asset:
         raise HTTPException(
@@ -85,6 +104,7 @@ def update_bond_by_asset_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bond details for this asset not found",
         )
+    _check_bond_ownership(db, bond, current_user.id)
     bond = crud.bond.update(db=db, db_obj=bond, obj_in=bond_in)
     db.commit()
     db.refresh(bond)
@@ -105,7 +125,7 @@ def read_bond(
     if not bond:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found")
-    # Add ownership check if necessary in the future
+    _check_bond_ownership(db, bond, current_user.id)
     return bond
 
 
@@ -124,7 +144,7 @@ def update_bond(
     if not bond:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Bond not found")
-    # Add ownership check if necessary
+    _check_bond_ownership(db, bond, current_user.id)
     bond = crud.bond.update(db=db, db_obj=bond, obj_in=bond_in)
     db.commit()
     db.refresh(bond)
@@ -145,7 +165,7 @@ def delete_bond(
     if not bond:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Bond not found")
-     # Add ownership check if necessary
+    _check_bond_ownership(db, bond, current_user.id)
     crud.bond.remove(db=db, id=bond_id)
     db.commit()
     return {"msg": "Bond deleted successfully"}

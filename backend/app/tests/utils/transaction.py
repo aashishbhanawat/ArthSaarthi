@@ -13,8 +13,9 @@ def create_test_transaction(
     db: Session,
     *,
     portfolio_id: int,
-    ticker: str,
-    quantity: float,
+    ticker: Optional[str] = None,
+    asset_id: Optional[str] = None,
+    quantity: float = 10,
     price_per_unit: float = 100.0,
     asset_type: str = "Stock",
     transaction_type: str = "buy",
@@ -23,17 +24,21 @@ def create_test_transaction(
 ) -> Transaction:
     """
     Test utility to create a transaction.
-    It will create the associated asset if it doesn't exist.
+    It will create the associated asset if it doesn't exist and ticker is provided.
     """
     final_date = transaction_date or date.today()
     final_datetime = datetime.combine(final_date, datetime.min.time())
 
-    asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
-    if not asset:
-        asset = create_test_asset(db, ticker_symbol=ticker)
+    if asset_id is None:
+        if ticker is None:
+            ticker = "TEST-TICKER"
+        asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
+        if not asset:
+            asset = create_test_asset(db, ticker_symbol=ticker)
+        asset_id = asset.id
 
     transaction_in = schemas.TransactionCreate(
-        asset_id=asset.id,
+        asset_id=asset_id,
         quantity=Decimal(str(quantity)),
         price_per_unit=Decimal(str(price_per_unit)),
         transaction_date=final_datetime,
