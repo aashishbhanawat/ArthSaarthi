@@ -1,5 +1,6 @@
 """Provider for fetching data from AMFI (Association of Mutual Funds in India)."""
 import asyncio
+import time
 from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal
@@ -25,6 +26,10 @@ class AmfiIndiaProvider(FinancialDataProvider):
 
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
+        self._local_nav_data = None
+        self._local_nav_data_time = 0
+        self._isin_map = {}
+        self._isin_map_data_id = None
 
     def _parse_category_header(self, line: str) -> tuple[str | None, str | None]:
         """
@@ -112,12 +117,21 @@ class AmfiIndiaProvider(FinancialDataProvider):
 
     def get_all_nav_data(self) -> Dict[str, Dict[str, Any]]:
         """Retrieves all NAV data, using a cache if available."""
+        now = time.time()
+        # Local memory cache for 5 minutes to stabilize object ID
+        if self._local_nav_data and (now - self._local_nav_data_time) < 300:
+            return self._local_nav_data
+
         if not self.cache_client:
-            return self._fetch_and_parse_amfi_data()
+            self._local_nav_data = self._fetch_and_parse_amfi_data()
+            self._local_nav_data_time = now
+            return self._local_nav_data
 
         cache_key = "amfi_nav_data"
         cached_data = self.cache_client.get_json(cache_key)
         if cached_data:
+            self._local_nav_data = cached_data
+            self._local_nav_data_time = now
             return cached_data
 
         fresh_data = self._fetch_and_parse_amfi_data()
@@ -125,12 +139,24 @@ class AmfiIndiaProvider(FinancialDataProvider):
             self.cache_client.set_json(
                 cache_key, fresh_data, expire=CACHE_TTL_AMFI_DATA
             )
+            self._local_nav_data = fresh_data
+            self._local_nav_data_time = now
         return fresh_data
 
     def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
-        """Gets the details for a given MF scheme code."""
+        """Gets the details for a given MF scheme code or ISIN."""
         all_data = self.get_all_nav_data()
+
+        # 1. Try direct lookup by scheme code
         fund_data = all_data.get(ticker_symbol)
+
+        # 2. If not found, try lookup by ISIN
+        if not fund_data:
+            isin_map = self._get_isin_map(all_data)
+            scheme_code = isin_map.get(ticker_symbol.upper())
+            if scheme_code:
+                fund_data = all_data.get(scheme_code)
+
         if not fund_data:
             return None
 
@@ -140,13 +166,41 @@ class AmfiIndiaProvider(FinancialDataProvider):
             "exchange": "AMFI",
             "currency": "INR",
             "isin": fund_data.get("isin"),
+            "ticker_symbol": fund_data.get("scheme_code"),
         }
 
+    def _get_isin_map(self, all_data: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
+        """Builds and caches an ISIN-to-scheme-code mapping."""
+        # We use id(all_data) to check if the underlying data has changed.
+        # This is efficient if fresh data is returned from the cache.
+        if self._isin_map_data_id != id(all_data):
+            isin_map = {}
+            for scheme_code, details in all_data.items():
+                if isin := details.get("isin"):
+                    isin_map[isin.upper()] = scheme_code
+                if isin2 := details.get("isin2"):
+                    isin_map[isin2.upper()] = scheme_code
+            self._isin_map = isin_map
+            self._isin_map_data_id = id(all_data)
+        return self._isin_map
+
     def search(self, query: str) -> List[Dict[str, Any]]:
-        """Searches for funds by name or scheme code."""
+        """Searches for funds by name, scheme code, or ISIN."""
         query = query.lower()
         all_data = self.get_all_nav_data()
 
+        # 1. Quick check for exact ISIN match
+        isin_map = self._get_isin_map(all_data)
+        if scheme_code := isin_map.get(query.upper()):
+            details = all_data.get(scheme_code)
+            if details:
+                return [{
+                    "ticker_symbol": scheme_code,
+                    "name": details["scheme_name"],
+                    "asset_type": "Mutual Fund",
+                }]
+
+        # 2. Fallback to O(N) scan for partial matches
         results = []
         for scheme_code, details in all_data.items():
             if query in scheme_code or query in details["scheme_name"].lower():

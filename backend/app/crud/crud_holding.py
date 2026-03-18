@@ -604,6 +604,7 @@ def _process_market_traded_assets(
         logger.info(f"Enriching {len(mfs_to_enrich)} Mutual Funds via AMFI...")
         try:
             nav_data = financial_data_service.amfi_provider.get_all_nav_data()
+            enriched_mfs = []
             for asset in mfs_to_enrich:
                 fund_data = nav_data.get(asset.ticker_symbol, {})
                 mf_category = fund_data.get("mf_category")
@@ -616,8 +617,10 @@ def _process_market_traded_assets(
                         asset.country = "International"
                     else:
                         asset.country = "India"
-                    db.add(asset)
+                    enriched_mfs.append(asset)
                     needs_commit = True
+            if enriched_mfs:
+                db.add_all(enriched_mfs)
         except Exception as e:
             logger.error(f"Failed during AMFI enrichment: {e}")
 
@@ -637,6 +640,7 @@ def _process_market_traded_assets(
                 for asset in equities_to_enrich
             }
 
+            enriched_equities = []
             for future in concurrent.futures.as_completed(future_to_asset):
                 asset = future_to_asset[future]
                 try:
@@ -647,12 +651,14 @@ def _process_market_traded_assets(
                         asset.country = enrichment.get("country")
                         asset.market_cap = enrichment.get("market_cap")
                         asset.investment_style = enrichment.get("investment_style")
-                        db.add(asset)
+                        enriched_equities.append(asset)
                         needs_commit = True
                 except Exception as exc:
                     logger.warning(
                         f"Enrichment failed for {asset.ticker_symbol}: {exc}"
                     )
+            if enriched_equities:
+                db.add_all(enriched_equities)
     if needs_commit:
         try:
             db.commit()
