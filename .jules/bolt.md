@@ -13,3 +13,5 @@ The application currently exhibits several systemic performance patterns:
 | High | Algorithmic Waste | `backend/app/crud/crud_dashboard.py` | Redundant daily recalculation of PPF interest in `_get_portfolio_history`. |
 | Medium | Database Fatigue | `backend/app/crud/crud_holding.py` | Sequential `db.add()` in loops during asset enrichment instead of batch `db.add_all()`. |
 | Medium | List Inefficiency | `frontend/src/components/Portfolio/HoldingsTable.tsx` | Missing virtualization for potentially long holdings lists. |
+| Medium | List Inefficiency | `frontend/src/components/Transactions/TransactionHistoryTable.tsx` | Missing virtualization for potentially long transaction histories. |
+| Low | Event Flooding | `frontend/src/components/Transactions/TransactionFilterBar.tsx` | Missing debounce on manual date input filters triggering excessive API calls. |

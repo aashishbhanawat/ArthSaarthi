@@ -71,3 +71,41 @@ Difficulty: Hard
 Manual Test: Create a portfolio with a PPF asset and backdate transactions by 10-15 years. View the Dashboard and track backend latency.
 Automated Test: Monitor API tests for `/api/v1/dashboard/history` in `backend/app/tests/api/v1/test_dashboard.py` (ensure historical duration covers multiple years for load testing).
 Metric: Monitor the execution time of `_get_portfolio_history` (target <200ms for a 10-year history).
+
+---
+
+Title: ⚡ [Performance] - Missing Virtualization in Transaction History Table (List Inefficiency)
+
+Body:
+📊 The Bottleneck
+Location: frontend/src/components/Transactions/TransactionHistoryTable.tsx:51
+Observed Pattern: The `TransactionHistoryTable` iterates over the `transactions.map((tx) => ...)` array synchronously, rendering every transaction row into the DOM simultaneously.
+Impact: Rendering the entire history of transactions (which can scale to thousands of items for active users) blocks the main thread, causing significant jank, increased Total Blocking Time (TBT), and browser memory bloat, especially on lower-tier mobile devices.
+
+⚡ Proposed Optimization
+Action: Integrate list virtualization (e.g., using `react-window` or `@tanstack/react-virtual`) to render only the transaction rows currently visible in the scroll viewport.
+Difficulty: Medium
+
+🔬 Verification Plan
+Manual Test: Seed the database with a user account containing 2,000+ transactions. Navigate to the global Transactions view and measure the time it takes for the UI to become fully interactive.
+Automated Test: Monitor frontend render tests (`frontend/src/components/Transactions/__tests__/TransactionHistoryTable.test.tsx`) asserting that only the visible subset of mocked rows are present in the DOM.
+Metric: Measure Time to Interactive (TTI) and Main Thread blocking time in Chrome DevTools Performance tab.
+
+---
+
+Title: ⚡ [Performance] - Missing Debounce on Date Filters in Transaction History (Event Flooding)
+
+Body:
+📊 The Bottleneck
+Location: frontend/src/components/Transactions/TransactionFilterBar.tsx:112
+Observed Pattern: The "Start Date" and "End Date" native HTML5 date inputs trigger `handleFilterChange('start_date', e.target.value)` directly on every keystroke (`onChange`).
+Impact: On browsers that allow manual typing in date inputs, every single keystroke instantly triggers a state update and subsequent API re-fetch of the entire transaction list. This causes unnecessary network flooding and frontend thrashing before the user has finished typing a valid date string.
+
+⚡ Proposed Optimization
+Action: Wrap the `handleFilterChange` invocation for the text-based date inputs in a debouncer (e.g., `useDebounce` from `hooks/useDebounce`) or throttle the API query fetching logic so that intermediate keystrokes don't trigger simultaneous redundant backend requests.
+Difficulty: Easy
+
+🔬 Verification Plan
+Manual Test: Open the global Transactions page on Desktop Chrome. Manually type a new date quickly into the "Start Date" field (e.g., `12-05-2023`). Monitor the Network tab to ensure only one final API call is made.
+Automated Test: Frontend component test in `frontend/src/components/Transactions/__tests__/TransactionFilterBar.test.tsx` checking that typing multiple characters in sequence triggers the callback only once after a delay.
+Metric: Measure the count of `/api/v1/transactions` fetch requests in the browser Network tab during a rapid 5-character input sequence.
