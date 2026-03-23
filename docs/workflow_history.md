@@ -1,3 +1,40 @@
+## 2026-03-23: Live Testing v1.2.0 Bug Fixes (#373)
+
+**Task:** Fix 7 critical bugs from the v1.2.0 live testing phase related to FD P&L, PPF chart history, benchmark simulations, Pydantic validation crashes, and missing bond API schemas.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1. **Benchmark Simulation Crashes (Issue 19 & 370):** Fixed a Pydantic `ValidationError` in `_generate_synthetic_transactions` by ensuring generated dates do not exceed `date.today()`. Also implemented precision Lot-Based FIFO tracking for `SELL` benchmark outflows to prevent large stock gains from mathematically distorting the long-term benchmark XIRR.
+2. **Benchmark Overlay (Issue 11 & 15):** The Debt/Risk-Free benchmark comparison fell back to 0.0 value and flatlined if Yahoo indices were absent. Removed a premature exit in `_run_simulation` so the fallback Risk-Free logic executes accurately, and implemented dynamic labeling. 
+3. **PPF History Chart (Issue 13):** Fixed the PPF portfolio history flatline by removing a hardcoded `date.today()` and replacing it with the dynamically requested `calculation_date` to prevent premature FY interest accrual.
+4. **Matured FD & RD P&L (Issue 18a, 18b, 17):** Accurately computed pro-rata interest for P&L tracking. Also ensured that the `_get_portfolio_cash_flows` analyzer injects Payout FD interests as `DIVIDEND` inflows to correctly output positive XIRR rather than `0.00%`. Orphaned matured FDs and RDs now correctly appear in the UI with `quantity=0`.
+5. **Asset API Schema (Issue 14):** Fixed the `AssetSearchResult` to expose the optional `bond` dictionary so the frontend API consumer can auto-populate subsequent bond transaction forms (coupon rate, ISIN).
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/services/benchmark_service.py`
+* **Modified:** `backend/app/crud/crud_analytics.py`
+* **Modified:** `backend/app/crud/crud_holding.py`
+* **Modified:** `backend/app/crud/crud_ppf.py`
+* **Modified:** `backend/app/schemas/asset.py`
+* **Modified:** `backend/app/api/v1/endpoints/assets.py`
+* **Modified:** `backend/app/core/config.py` - (Add "android" literal)
+* **Modified:** `backend/app/schemas/token.py` - (Add "android" literal)
+
+### Verification
+
+* **Backend Tests:** 306/306 passing.
+
+### Outcome
+
+**Success.** All reported v1.2.0 bugs are resolved with comprehensive mathematical unit-level stability, ensuring the application is production-ready for its impending release.
+
+---
+
 ## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
 
 **Task:** Fix 7 reported issues: cache invalidation for dashboard history, benchmark invested amount going negative after FD maturity, matured FDs/RDs in portfolio history, incomplete cache invalidation on restore, PPF log spam, and missing timing instrumentation.

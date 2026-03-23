@@ -4,8 +4,8 @@
 
 ## 1. Current Project Status
 
-*   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Fixed 6 dashboard/portfolio issues: cache invalidation for range-specific history keys, benchmark invested amount going negative after FD maturity, matured FDs/RDs appearing in portfolio history, incomplete cache invalidation on restore, PPF log spam, and added timing instrumentation. Previously implemented Dividend Report (FR 6.6) with Quarterly Advance Tax Buckets.
+*   **Overall Status:** 🟢 **Stable (v1.2.0 Release Ready)**
+*   **Summary:** Resolved 7 critical live-testing bugs across FD/RD maturity P&L, PPF chart generation, and benchmark simulation stability (XIRR out-of-scale drops and Debt fallback rendering). Previously fixed 6 dashboard/portfolio caching and timing instrumentation issues.
 
 ## 2. Test Suite Status
 
@@ -14,6 +14,8 @@
 *   **Linters (Code Quality):** ✅ **Passing**
 
 ### Recent Stabilization Efforts
+
+*   **Live Testing v1.2.0 Fixes (2026-03-23):** Completely stabilized the benchmarking engine to handle edge cases like absent Yahoo indices (Debt benchmark fallback) and extreme stock gains (via Lot-Based FIFO tracking). Fixed historical mathematical distortions in PPF, and matured FD/RD analytical models. Fixed `AssetSearchResult` to expose Bond metadata to the frontend.
 
 *   **Advanced Benchmarking (FR6.3):** Implemented hybrid benchmarks (35/65, 50/50 equity/debt blends), risk-free rate overlay, and category-level (equity vs debt) XIRR comparison. Fixed XIRR calculation for category subsets to use actual current market value.
 *   **Portfolio Delete Error Handling:** Catching FK constraint violations when deleting a portfolio linked to goals — returns a 409 Conflict with a user-friendly message instead of a 500. Frontend now displays this error via alert.

@@ -84,10 +84,19 @@ def _calculate_total_interest_paid(fd: models.FixedDeposit, end_date: date) -> D
     interest_per_payout = fd.principal_amount * payout_rate
 
     total_interest = Decimal(0)
+    last_payout_date = fd.start_date
     payout_date = fd.start_date + relativedelta(months=months_interval)
     while payout_date <= end_date:
         total_interest += interest_per_payout
+        last_payout_date = payout_date
         payout_date += relativedelta(months=months_interval)
+        
+    if last_payout_date < end_date:
+        remaining_days = (end_date - last_payout_date).days
+        daily_rate = (fd.interest_rate / Decimal("100.0")) / Decimal("365.25")
+        pro_rata_interest = fd.principal_amount * daily_rate * Decimal(remaining_days)
+        total_interest += pro_rata_interest
+        
     return total_interest
 
 
@@ -156,7 +165,8 @@ def _process_fixed_deposits(
 
     for fd in matured_fds:
         if fd.interest_payout != "Cumulative":
-            total_realized_pnl += _calculate_total_interest_paid(fd, fd.maturity_date)
+            realized_pnl = _calculate_total_interest_paid(fd, fd.maturity_date)
+            total_realized_pnl += realized_pnl
         else:
             maturity_value = _calculate_fd_current_value(
                 fd.principal_amount,
@@ -166,7 +176,32 @@ def _process_fixed_deposits(
                 fd.compounding_frequency,
                 fd.interest_payout,
             )
-            total_realized_pnl += maturity_value - fd.principal_amount
+            realized_pnl = maturity_value - fd.principal_amount
+            total_realized_pnl += realized_pnl
+
+        holdings_list.append(
+            schemas.Holding(
+                asset_id=fd.id,
+                ticker_symbol=fd.account_number or "",
+                asset_name=fd.name,
+                asset_type="FIXED_DEPOSIT",
+                currency="INR",
+                group="DEPOSITS",
+                quantity=Decimal(0),
+                average_buy_price=Decimal(0),
+                total_invested_amount=Decimal(0),
+                current_price=Decimal(0),
+                current_value=Decimal(0),
+                days_pnl=Decimal(0),
+                days_pnl_percentage=0.0,
+                unrealized_pnl=Decimal(0),
+                unrealized_pnl_percentage=0.0,
+                realized_pnl=realized_pnl,
+                interest_rate=fd.interest_rate,
+                maturity_date=fd.maturity_date,
+                account_number=fd.account_number,
+            )
+        )
 
     for fd in active_fds:
         interest_paid_to_date = _calculate_total_interest_paid(fd, today)
@@ -240,7 +275,32 @@ def _process_recurring_deposits(
             maturity_date,
         )
         total_invested = rd.monthly_installment * rd.tenure_months
-        total_realized_pnl += maturity_value - total_invested
+        realized_pnl = maturity_value - total_invested
+        total_realized_pnl += realized_pnl
+
+        holdings_list.append(
+            schemas.Holding(
+                asset_id=rd.id,
+                ticker_symbol=rd.account_number or "",
+                asset_name=rd.name,
+                asset_type="RECURRING_DEPOSIT",
+                currency="INR",
+                group="DEPOSITS",
+                quantity=Decimal(0),
+                average_buy_price=Decimal(0),
+                total_invested_amount=Decimal(0),
+                current_price=Decimal(0),
+                current_value=Decimal(0),
+                days_pnl=Decimal(0),
+                days_pnl_percentage=0.0,
+                unrealized_pnl=Decimal(0),
+                unrealized_pnl_percentage=0.0,
+                realized_pnl=realized_pnl,
+                interest_rate=rd.interest_rate,
+                maturity_date=maturity_date,
+                account_number=rd.account_number,
+            )
+        )
 
     for rd in active_rds:
         current_value = _calculate_rd_value_at_date(

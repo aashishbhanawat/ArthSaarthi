@@ -612,17 +612,7 @@ class CRUDAnalytics:
 
         # Final value is an inflow
         if today >= fd.maturity_date:
-            # If matured, the inflow is the maturity value
-            maturity_value = _calculate_fd_current_value(
-                principal=fd.principal_amount,
-                interest_rate=fd.interest_rate,
-                start_date=fd.start_date,
-                end_date=fd.maturity_date,
-                compounding_frequency=fd.compounding_frequency,
-                interest_payout=fd.interest_payout,
-            )
-            dates.append(fd.maturity_date)
-            values.append(maturity_value)
+            # If matured, _get_portfolio_cash_flows already appended the maturity value
             unrealized_xirr = 0.0
             realized_xirr = _calculate_xirr(dates, values)
         else:
@@ -663,16 +653,7 @@ class CRUDAnalytics:
         values = list(values)
 
         if today >= maturity_date:
-            # If matured, the inflow is the maturity value
-            final_value = _calculate_rd_value_at_date(
-                monthly_installment=rd.monthly_installment,
-                interest_rate=rd.interest_rate,
-                start_date=rd.start_date,
-                tenure_months=rd.tenure_months,
-                calculation_date=maturity_date,
-            )
-            dates.append(maturity_date)
-            values.append(final_value)
+            pass # _get_portfolio_cash_flows already appended the maturity value
         else:
             # If active, the inflow is the current value
             final_value = _calculate_rd_value_at_date(
