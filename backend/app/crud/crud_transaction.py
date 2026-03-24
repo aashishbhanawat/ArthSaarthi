@@ -23,9 +23,15 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
     def get_holdings_on_date(
         self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID, on_date: datetime
     ) -> Decimal:
-        # Fetch all relevant transactions sorted by date
+        # Fetch only required fields of relevant transactions sorted by date
+        # Optimization: Reduces DB memory footprint and serialization overhead
+        # by only querying the specific columns needed for holding calculation
         transactions = (
-            db.query(Transaction)
+            db.query(
+                Transaction.transaction_type,
+                Transaction.quantity,
+                Transaction.price_per_unit,
+            )
             .filter(
                 Transaction.user_id == user_id,
                 Transaction.asset_id == asset_id,
