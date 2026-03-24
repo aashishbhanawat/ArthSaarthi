@@ -92,3 +92,5 @@ abc.txt
 
 .gemini/
 gha-creds-*.json
+clean.sh
+test_out.txt
