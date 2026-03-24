@@ -1,6 +1,7 @@
 import logging
 import uuid
-from datetime import date
+import uuid as uuid_module
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, List, Optional, Union
 
@@ -57,8 +58,6 @@ def read_transactions(
             db=db, user_id=current_user.id, portfolio_id=None, skip=skip, limit=limit
         )
     if portfolio_id and not asset_id and not transaction_type:
-        import uuid as uuid_module
-        from datetime import datetime
         all_fds = crud.fixed_deposit.get_multi_by_portfolio(
             db, portfolio_id=portfolio_id
         )

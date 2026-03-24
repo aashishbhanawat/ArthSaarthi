@@ -911,7 +911,7 @@ class BenchmarkService:
                         # Apply precise removal
                         for ticker, u in units_to_remove.items():
                             bench_units[ticker] -= u
-                            if bench_units[ticker] < 1e-6:
+                            if bench_units[ticker] < 1e-9:
                                 bench_units[ticker] = 0.0
 
                         if sum(units_to_remove.values()) == 0:
@@ -946,7 +946,7 @@ class BenchmarkService:
                                         bench_units[ticker]
                                         * ratio
                                     )
-                                if bench_units[ticker] < 1e-6:
+                                if bench_units[ticker] < 1e-9:
                                     bench_units[ticker] = 0.0
 
             bench_value = 0.0
