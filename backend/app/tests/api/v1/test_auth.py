@@ -285,7 +285,7 @@ def test_login_rate_limiting(
     """
     Test that the login endpoint enforces a rate limit after 5 failed attempts.
     """
-    from app.api.v1.endpoints.auth import MAX_LOGIN_ATTEMPTS, LOGIN_RATE_LIMIT_KEY_PREFIX
+    from app.api.v1.endpoints.auth import MAX_LOGIN_ATTEMPTS
 
     # Mock cache client
     mock_cache = mocker.Mock()
@@ -309,11 +309,13 @@ def test_login_rate_limiting(
     login_data = {"username": admin_user_data["email"], "password": "wrongpassword!1"}
 
     # Attempt to login with wrong password multiple times
-    for i in range(MAX_LOGIN_ATTEMPTS):
+    for _ in range(MAX_LOGIN_ATTEMPTS):
         response = client.post("/api/v1/auth/login", data=login_data)
         assert response.status_code == 401
 
     # The next attempt should return 429
     response = client.post("/api/v1/auth/login", data=login_data)
     assert response.status_code == 429
-    assert "Too many failed login attempts. Please try again later." in response.json()["detail"]
+    assert (
+        "Too many failed login attempts" in response.json()["detail"]
+    )

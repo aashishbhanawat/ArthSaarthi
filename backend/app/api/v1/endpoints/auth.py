@@ -157,7 +157,11 @@ def login_for_access_token(
             if not attempts:
                 cache.set(rate_limit_key, "1", expire=LOGIN_RATE_LIMIT_SECONDS)
             else:
-                cache.set(rate_limit_key, str(int(attempts) + 1), expire=LOGIN_RATE_LIMIT_SECONDS)
+                cache.set(
+                    rate_limit_key,
+                    str(int(attempts) + 1),
+                    expire=LOGIN_RATE_LIMIT_SECONDS,
+                )
 
         log_event(
             db,
