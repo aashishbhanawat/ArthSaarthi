@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Capacitor } from "@capacitor/core";
-import PythonBackend from "./plugins/PythonBackend";
+import PythonBackend from "../plugins/PythonBackend";
 
 const apiClient = axios.create({
   // Base URL is determined dynamically by an interceptor.
