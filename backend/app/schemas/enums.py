@@ -30,3 +30,5 @@ class TransactionType(str, Enum):
     MERGER = "MERGER"
     DEMERGER = "DEMERGER"
     RENAME = "RENAME"
+    FD_DEPOSIT = "FD_DEPOSIT"
+    FD_MATURITY = "FD_MATURITY"

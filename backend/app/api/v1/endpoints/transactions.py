@@ -1,6 +1,8 @@
 import logging
 import uuid
-from datetime import date
+import uuid as uuid_module
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -55,6 +57,76 @@ def read_transactions(
         transactions, total = crud.transaction.get_multi_by_user_with_filters(  # type: ignore
             db=db, user_id=current_user.id, portfolio_id=None, skip=skip, limit=limit
         )
+    if portfolio_id and not asset_id and not transaction_type:
+        all_fds = crud.fixed_deposit.get_multi_by_portfolio(
+            db, portfolio_id=portfolio_id
+        )
+
+        today = date.today()
+        for fd in all_fds:
+            # Build a lightweight synthetic asset so the row renders properly
+            dummy_asset = models.Asset(
+                id=fd.id,
+                ticker_symbol=fd.account_number or f"FD-{fd.id}",
+                name=fd.name,
+                asset_type="FIXED_DEPOSIT",
+                currency="INR",
+                exchange="N/A",
+            )
+
+            # Derive a stable distinct UUID for the deposit row
+            # (namespace off the fd id)
+            deposit_uuid = uuid_module.uuid5(fd.id, "deposit")
+            fd_id_str = str(fd.id)
+
+            # 1️⃣  FD_DEPOSIT entry – initial principal on start_date (all FDs, read-only)
+            start_dt = datetime.combine(fd.start_date, datetime.min.time())
+            buy_tx = models.Transaction(
+                id=deposit_uuid,
+                transaction_type="FD_DEPOSIT",
+                quantity=fd.principal_amount,
+                price_per_unit=Decimal("1.0"),
+                fees=Decimal("0.0"),
+                is_reinvested=False,
+                transaction_date=start_dt,
+                portfolio_id=fd.portfolio_id,
+                asset_id=fd.id,
+                user_id=current_user.id,
+                details={"_fd_id": fd_id_str},
+            )
+            buy_tx.asset = dummy_asset
+            transactions.append(buy_tx)
+            total += 1
+
+            # 2️⃣  FD_MATURITY entry – maturity payout
+            # (matured FDs only, deletable → deletes the FD record)
+            if fd.maturity_date <= today:
+                maturity_dt = datetime.combine(fd.maturity_date, datetime.min.time())
+                sell_tx = models.Transaction(
+                    id=fd.id,
+                    transaction_type="FD_MATURITY",
+                    quantity=fd.principal_amount,
+                    price_per_unit=Decimal("1.0"),
+                    fees=Decimal("0.0"),
+                    is_reinvested=False,
+                    transaction_date=maturity_dt,
+                    portfolio_id=fd.portfolio_id,
+                    asset_id=fd.id,
+                    user_id=current_user.id,
+                    details={"_fd_id": fd_id_str},
+                )
+                sell_tx.asset = dummy_asset
+                transactions.append(sell_tx)
+                total += 1
+
+        # Normalise tz-awareness before sorting
+        # (DB rows are naive; synthetic are naive too now)
+        transactions.sort(
+            key=lambda t: t.transaction_date.replace(tzinfo=None),
+            reverse=True,
+        )
+
+
     if config.settings.DEBUG:
         print("--- BACKEND DEBUG: Read Transactions Response ---")
         if transactions:

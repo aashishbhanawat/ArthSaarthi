@@ -1,19 +1,22 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-14
+**Last Updated:** 2026-03-24
 
 ## 1. Current Project Status
 
-*   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Fixed 6 dashboard/portfolio issues: cache invalidation for range-specific history keys, benchmark invested amount going negative after FD maturity, matured FDs/RDs appearing in portfolio history, incomplete cache invalidation on restore, PPF log spam, and added timing instrumentation. Previously implemented Dividend Report (FR 6.6) with Quarterly Advance Tax Buckets.
+*   **Overall Status:** 🟢 **Stable (v1.2.0 Release Ready)**
+*   **Summary:** Resolved critical end-to-end lifecycle issues for Matured FDs, including Transaction History injection, color-coded UI labels, and correct deletion logic. Fixed a systemic Portfolio Realized P&L calculation bug and improved Import Session error propagation (propagate 400 instead of 500). Relocated backend unit tests to the standard `app/tests` discovery path.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **300/300 Passing** (Includes Dividend API tests)
+*   **Backend Unit/Integration Tests:** ✅ **310/310 Passing** (Includes relocated security and benchmark tests)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
-*   **Linters (Code Quality):** ✅ **Passing**
+*   **Linters (Code Quality):** ✅ **Passing (Ruff E501 resolved project-wide)**
 
 ### Recent Stabilization Efforts
+
+*   **FD Lifecycle & Import Robustness (2026-03-24):** Stabilized the FD/RD lifecycle by redacting matured assets from Holdings while preserving their interest in the Portfolio Summary. Implemented synthetic transaction injection for the History tab with conditional Edit/Delete support. Fixed import session commit logic to re-raise `HTTPException` for clearer validation messaging.
+*   **Live Testing v1.2.0 Fixes (2026-03-23):** Completely stabilized the benchmarking engine to handle edge cases like absent Yahoo indices (Debt benchmark fallback) and extreme stock gains (via Lot-Based FIFO tracking). Fixed historical mathematical distortions in PPF, and matured FD/RD analytical models. Fixed `AssetSearchResult` to expose Bond metadata to the frontend.
 
 *   **Advanced Benchmarking (FR6.3):** Implemented hybrid benchmarks (35/65, 50/50 equity/debt blends), risk-free rate overlay, and category-level (equity vs debt) XIRR comparison. Fixed XIRR calculation for category subsets to use actual current market value.
 *   **Portfolio Delete Error Handling:** Catching FK constraint violations when deleting a portfolio linked to goals — returns a 409 Conflict with a user-friendly message instead of a 500. Frontend now displays this error via alert.

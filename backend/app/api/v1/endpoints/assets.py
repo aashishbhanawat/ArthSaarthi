@@ -98,6 +98,11 @@ def search_stocks(
             "currency": asset.currency,
             "source": "local",
             "fmv_2018": float(asset.fmv_2018) if asset.fmv_2018 else None,
+            "bond": (
+                schemas.Bond.model_validate(asset.bond)
+                if getattr(asset, "bond", None)
+                else None
+            ),
         })
 
     # 2. If few local results, also search Yahoo Finance
