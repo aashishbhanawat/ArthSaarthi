@@ -24,6 +24,11 @@ router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
+# Rate limiting constants for login
+LOGIN_RATE_LIMIT_KEY_PREFIX = "auth:login:attempts:"
+LOGIN_RATE_LIMIT_SECONDS = 900  # 15 minutes
+MAX_LOGIN_ATTEMPTS = 5
+
 
 class InitStatus(BaseModel):
     setup_needed: bool
@@ -90,6 +95,19 @@ def login_for_access_token(
     logger.info(f"Login attempt for user: {form_data.username}")
     ip_address = request.client.host
 
+    # Check rate limit
+    from app.cache.factory import get_cache_client
+    cache = get_cache_client()
+    rate_limit_key = f"{LOGIN_RATE_LIMIT_KEY_PREFIX}{ip_address}"
+    if cache:
+        attempts_str = cache.get(rate_limit_key)
+        if attempts_str and int(attempts_str) >= MAX_LOGIN_ATTEMPTS:
+            logger.warning(f"Login rate limit exceeded for IP: {ip_address}")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many failed login attempts. Please try again later.",
+            )
+
     try:
         if settings.DEPLOYMENT_MODE == "desktop":
             if not key_manager.unlock_master_key(password=form_data.password):
@@ -119,6 +137,10 @@ def login_for_access_token(
             ip_address=ip_address,
         )
 
+        # Reset rate limit counter on successful login
+        if cache:
+            cache.delete(rate_limit_key)
+
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = security.create_access_token(
             subject=user.email, expires_delta=access_token_expires
@@ -129,6 +151,14 @@ def login_for_access_token(
             "deployment_mode": settings.DEPLOYMENT_MODE,
         }
     except HTTPException as e:
+        if e.status_code == status.HTTP_401_UNAUTHORIZED and cache:
+            # Increment failed attempts counter
+            attempts = cache.get(rate_limit_key)
+            if not attempts:
+                cache.set(rate_limit_key, "1", expire=LOGIN_RATE_LIMIT_SECONDS)
+            else:
+                cache.set(rate_limit_key, str(int(attempts) + 1), expire=LOGIN_RATE_LIMIT_SECONDS)
+
         log_event(
             db,
             user_id=None,
@@ -136,7 +166,8 @@ def login_for_access_token(
             ip_address=ip_address,
             details={"email": form_data.username, "reason": e.detail},
         )
-        e.headers = {"WWW-Authenticate": "Bearer"}
+        if e.status_code == status.HTTP_401_UNAUTHORIZED:
+            e.headers = {"WWW-Authenticate": "Bearer"}
         raise e
 
 

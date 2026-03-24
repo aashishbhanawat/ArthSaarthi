@@ -278,3 +278,42 @@ def test_change_password_invalid_new_password(
 
     # 3. Assert
     assert response.status_code == 422
+
+def test_login_rate_limiting(
+    client: TestClient, db: Session, admin_user_data: dict, mocker
+):
+    """
+    Test that the login endpoint enforces a rate limit after 5 failed attempts.
+    """
+    from app.api.v1.endpoints.auth import MAX_LOGIN_ATTEMPTS, LOGIN_RATE_LIMIT_KEY_PREFIX
+
+    # Mock cache client
+    mock_cache = mocker.Mock()
+    # Store attempts in a dict to simulate redis
+    cache_store = {}
+
+    def mock_get(key):
+        return cache_store.get(key)
+
+    def mock_set(key, value, expire=None):
+        cache_store[key] = value
+
+    mock_cache.get.side_effect = mock_get
+    mock_cache.set.side_effect = mock_set
+
+    mocker.patch("app.cache.factory.get_cache_client", return_value=mock_cache)
+
+    # Create user
+    client.post("/api/v1/auth/setup", json=admin_user_data)
+
+    login_data = {"username": admin_user_data["email"], "password": "wrongpassword!1"}
+
+    # Attempt to login with wrong password multiple times
+    for i in range(MAX_LOGIN_ATTEMPTS):
+        response = client.post("/api/v1/auth/login", data=login_data)
+        assert response.status_code == 401
+
+    # The next attempt should return 429
+    response = client.post("/api/v1/auth/login", data=login_data)
+    assert response.status_code == 429
+    assert "Too many failed login attempts. Please try again later." in response.json()["detail"]
