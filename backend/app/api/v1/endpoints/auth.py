@@ -153,15 +153,7 @@ def login_for_access_token(
     except HTTPException as e:
         if e.status_code == status.HTTP_401_UNAUTHORIZED and cache:
             # Increment failed attempts counter
-            attempts = cache.get(rate_limit_key)
-            if not attempts:
-                cache.set(rate_limit_key, "1", expire=LOGIN_RATE_LIMIT_SECONDS)
-            else:
-                cache.set(
-                    rate_limit_key,
-                    str(int(attempts) + 1),
-                    expire=LOGIN_RATE_LIMIT_SECONDS,
-                )
+            cache.incr(rate_limit_key, expire=LOGIN_RATE_LIMIT_SECONDS)
 
         log_event(
             db,

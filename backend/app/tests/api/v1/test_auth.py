@@ -295,11 +295,13 @@ def test_login_rate_limiting(
     def mock_get(key):
         return cache_store.get(key)
 
-    def mock_set(key, value, expire=None):
-        cache_store[key] = value
+    def mock_incr(key, expire=None):
+        current = cache_store.get(key, 0)
+        cache_store[key] = int(current) + 1
+        return cache_store[key]
 
     mock_cache.get.side_effect = mock_get
-    mock_cache.set.side_effect = mock_set
+    mock_cache.incr.side_effect = mock_incr
 
     mocker.patch("app.cache.factory.get_cache_client", return_value=mock_cache)
 
