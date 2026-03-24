@@ -7,7 +7,7 @@ from typing import List, Optional, Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from app import crud, schemas
 from app.crud.base import CRUDBase
@@ -27,10 +27,13 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         # Optimization: Reduces DB memory footprint and serialization overhead
         # by only querying the specific columns needed for holding calculation
         transactions = (
-            db.query(
-                Transaction.transaction_type,
-                Transaction.quantity,
-                Transaction.price_per_unit,
+            db.query(Transaction)
+            .options(
+                load_only(
+                    Transaction.transaction_type,
+                    Transaction.quantity,
+                    Transaction.price_per_unit,
+                )
             )
             .filter(
                 Transaction.user_id == user_id,
