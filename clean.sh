@@ -42,7 +42,7 @@ rm -rf backend/temp_seed_data/
 find . -type f -name "npm-debug.log*" -exec rm -f {} +
 find . -type f -name "yarn-debug.log*" -exec rm -f {} +
 find . -type f -name "yarn-error.log*" -exec rm -f {} +
-rm -f log.txt
+#rm -f log.txt
 rm -f docs/bug_reports_temp.md
 
 echo "Project cleaned successfully."

@@ -1,3 +1,48 @@
+## 2026-03-24: Fixed Deposit Lifecycle, P&L Correction & Import Robustness (#374)
+
+**Task:** Fix the end-to-end lifecycle for Matured FDs in the Transaction History, correct portfolio Realized P&L calculations, improve Import Session error propagation, and fix misplaced unit test discovery.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **FD Transaction History Lifecycle (Issue 17, 40, 41):** 
+    - Implemented synthetic `FD_DEPOSIT` and `FD_MATURITY` transaction injection in `transactions.py`, scoped to specific portfolios and normalized to naive datetimes.
+    - Updated `TransactionHistoryTable.tsx` with custom labels, color coding (teal/amber), and conditional Edit/Delete visibility.
+    - Wired the `FD_MATURITY` delete action to `useDeleteFixedDeposit` in `TransactionsPage.tsx` to ensure the underlying record is removed.
+2. **Matured FD Redaction & P&L (Issue 17, 42):** 
+    - Redacted matured FDs/RDs from the Holdings UI list in `crud_holding.py` to prevent clutter.
+    - Fixed the missing P&L calculation for redacted assets, ensuring `total_realized_pnl` accurately reflects matured deposit interest in the portfolio summary.
+3. **Import Error Propagation (Issue 43):** Modified `import_sessions.py` to re-raise `HTTPException` during the commit phase, ensuring specific validation errors (e.g., "Insufficient holdings to sell") are displayed to the user instead of a generic 500.
+4. **Backend Test Discovery (Issue 44):** Relocated misplaced test files (`test_auth_security.py`, `test_benchmark_service.py`) from `backend/tests/unit/backend/` to `backend/app/tests/` to ensure they are correctly collected and executed by the standard test suite.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/api/v1/endpoints/transactions.py` — Synthetic FD injection.
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Error propagation fix.
+* **Modified:** `backend/app/crud/crud_holding.py` — Redaction and P&L accumulation.
+* **Modified:** `backend/app/schemas/enums.py` — Added new FD transaction types.
+* **Moved:** `backend/app/tests/crud/test_auth_security.py` (from `backend/tests/unit/backend/`)
+* **Moved:** `backend/app/tests/services/test_benchmark_service.py` (from `backend/tests/unit/backend/`)
+
+**Frontend:**
+* **Modified:** `frontend/src/pages/TransactionsPage.tsx` — Delete wiring.
+* **Modified:** `frontend/src/components/Transactions/TransactionHistoryTable.tsx` — UI labels/actions.
+* **Modified:** `frontend/src/types/enums.ts` — Enum synchronization.
+
+### Verification
+
+* **Backend Tests:** All tests passing after clearing pycache conflict.
+* **Manual Verification:** Verified FD delete-through-history, P&L accuracy, and import error visibility.
+
+### Outcome
+
+**Success.** The Fixed Deposit lifecycle is now mathematically and visually consistent across Holdings and Transaction History, with improved error handling for data imports.
+
+---
+
 ## 2026-03-23: Live Testing v1.2.0 Bug Fixes (#373)
 
 **Task:** Fix 7 critical bugs from the v1.2.0 live testing phase related to FD P&L, PPF chart history, benchmark simulations, Pydantic validation crashes, and missing bond API schemas.

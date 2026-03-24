@@ -476,10 +476,23 @@ def _get_portfolio_cash_flows(
                 payout_rate = fd.interest_rate / Decimal("100.0") / payouts_per_year
                 interest_per_payout = fd.principal_amount * payout_rate
 
+                last_payout_date = fd.start_date
                 payout_date = fd.start_date + relativedelta(months=months_interval)
                 while payout_date <= today and payout_date <= fd.maturity_date:
                     cash_flows.append((payout_date, interest_per_payout))
+                    last_payout_date = payout_date
                     payout_date += relativedelta(months=months_interval)
+
+                cutoff_date = min(today, fd.maturity_date)
+                if last_payout_date < cutoff_date:
+                    remaining_days = (cutoff_date - last_payout_date).days
+                    daily_rate = (
+                        (fd.interest_rate / Decimal("100.0")) / Decimal("365.25")
+                    )
+                    pro_rata_interest = (
+                        fd.principal_amount * daily_rate * Decimal(remaining_days)
+                    )
+                    cash_flows.append((cutoff_date, pro_rata_interest))
 
             # For matured payout FDs, principal is returned at maturity
             if today >= fd.maturity_date:

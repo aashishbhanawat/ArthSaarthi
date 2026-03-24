@@ -370,8 +370,9 @@ class BenchmarkService:
                 subset_current_value=debt_value,
             )
             debt_xirr = results["debt"]["benchmark_xirr"]
-            
-            # Since _simulate_daily uses risk_free_rate if index is absent, bench_xirr will closely match it
+
+            # Since _simulate_daily uses risk_free_rate if index is absent,
+            # bench_xirr will closely match it
             # We use a tolerance because floats might not exactly match
             is_rf = abs(debt_xirr - (risk_free_rate / 100)) < 0.001
             results["debt"]["benchmark_label"] = (
@@ -796,7 +797,7 @@ class BenchmarkService:
         daily_rf = (
             (1 + risk_free_rate / 100) ** (1 / 365) - 1
         )
-        
+
         # Track lots by asset_id to correctly withdraw benchmark units on SELL
         lots_by_asset = {}
 
@@ -840,14 +841,14 @@ class BenchmarkService:
                     invested_amount += Decimal(
                         str(amount_inr)
                     )
-                    
+
                     lot_units = {}
                     for comp in components:
                         ticker = comp["ticker"]
                         weight = comp["weight"]
                         comp_amt = amount_inr * weight
                         price = daily_prices[ticker]
-                        
+
                         added_units = 0.0
                         if price > 0:
                             if ticker not in histories:
@@ -856,11 +857,15 @@ class BenchmarkService:
                             else:
                                 added_units = comp_amt / price
                                 bench_units[ticker] += added_units
-                                
+
                         lot_units[ticker] = added_units
-                        
+
                     # Save the lot for FIFO removal
-                    asset_id = str(txn.asset_id) if hasattr(txn, 'asset_id') and txn.asset_id else "unknown"
+                    asset_id = (
+                        str(txn.asset_id)
+                        if hasattr(txn, "asset_id") and txn.asset_id
+                        else "unknown"
+                    )
                     if asset_id not in lots_by_asset:
                         lots_by_asset[asset_id] = []
                     lots_by_asset[asset_id].append({
@@ -870,18 +875,23 @@ class BenchmarkService:
 
                 elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND", "COUPON"]:
                     fallback_to_ratio = False
-                    
+
                     if tx_type not in ["DIVIDEND", "COUPON"]:
                         invested_amount -= Decimal(str(amount_inr))
                         if invested_amount < 0:
                             invested_amount = Decimal("0")
-                            
-                        # Use FIFO lot matching for SELL/WITHDRAWAL to safely remove units
-                        asset_id = str(txn.asset_id) if hasattr(txn, 'asset_id') and txn.asset_id else "unknown"
+
+                        # Use FIFO lot matching for SELL/WITHDRAWAL to safely
+                        # remove units
+                        asset_id = (
+                            str(txn.asset_id)
+                            if hasattr(txn, "asset_id") and txn.asset_id
+                            else "unknown"
+                        )
                         sell_qty = float(txn.quantity)
                         lots = lots_by_asset.get(asset_id, [])
                         units_to_remove = {c["ticker"]: 0.0 for c in components}
-                        
+
                         while sell_qty > 0 and lots:
                             lot = lots[0]
                             if lot['quantity'] <= sell_qty:
@@ -897,19 +907,19 @@ class BenchmarkService:
                                     units_to_remove[ticker] += removed_u
                                     lot['units'][ticker] -= removed_u
                                 sell_qty = 0
-                                
+
                         # Apply precise removal
                         for ticker, u in units_to_remove.items():
                             bench_units[ticker] -= u
                             if bench_units[ticker] < 1e-6:
                                 bench_units[ticker] = 0.0
-                                
+
                         if sum(units_to_remove.values()) == 0:
                             fallback_to_ratio = True
                     else:
                         # For dividends/coupons, simply use ratio logic
                         fallback_to_ratio = True
-                        
+
                     if fallback_to_ratio:
                         total_val = 0
                         for c in components:
@@ -921,7 +931,7 @@ class BenchmarkService:
                                 total_val += (
                                     bench_units[t] * p
                                 )
-    
+
                         if total_val > 0:
                             ratio = amount_inr / total_val
                             for comp in components:

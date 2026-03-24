@@ -39,7 +39,7 @@ def _calculate_ppf_interest_for_fy(
 ) -> Decimal:
     """Calculates PPF interest for a single financial year using the monthly minimum balance method."""  # noqa: E501
     today = calculation_date or date.today()
-    
+
     logger.debug(
         f"[_calculate_ppf_interest_for_fy] FY: {fy_start}-{fy_end}, "
         f"Opening Balance: {opening_balance}"
