@@ -103,3 +103,9 @@ frontend/android/app/src/main/python/alembic.ini
 frontend/android/local.properties
 *.apk
 *.aab
+
+frontend/android/app/libs/python-wheels/
+frontend/android/app/wheels/
+frontend/android/build-tools/
+frontend/android/app/src/main/assets/public/
+
