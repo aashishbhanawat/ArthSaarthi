@@ -55,15 +55,7 @@ chaquopy {
 
         // Backend Python dependencies
         pip {
-            // Install local pydantic-core wheel if it exists (for AArch64)
-            val wheelsDir = file("wheels")
-            val pydanticCoreWheel = wheelsDir.listFiles()?.find { it.name.startsWith("pydantic_core") }
-            if (pydanticCoreWheel != null) {
-                install(pydanticCoreWheel.absolutePath)
-            } else {
-                install("pydantic-core==2.23.4")
-            }
-
+            install("pydantic-core==2.23.4")
             install("fastapi==0.115.0")
             install("uvicorn==0.30.6")
             install("sqlalchemy==2.0.35")
