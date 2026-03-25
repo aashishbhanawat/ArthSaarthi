@@ -70,6 +70,23 @@ chaquopy {
             install("email-validator==2.0.0")
             install("diskcache==5.6.3")
             install("aiofiles==23.2.1")
+            
+            // Analytical & Data dependencies
+            install("numpy==1.26.4")
+            install("pandas==2.2.2")
+            install("pyxirr==0.10.3")
+            install("yfinance==0.2.40")
+            
+            // Database & Auth
+            install("alembic==1.13.1")
+            install("cryptography==42.0.5")
+            install("bcrypt==4.1.2")
+            
+            // Importers
+            install("openpyxl==3.1.2")
+            install("xlrd==2.0.1")
+            install("pdfplumber==0.11.0")
+            install("beautifulsoup4==4.12.3")
         }
     }
 }
