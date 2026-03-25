@@ -61,7 +61,7 @@ chaquopy {
             install("sqlalchemy==2.0.35")
             // pydantic v1 is pure Python - no pydantic-core required
             install("pydantic==1.10.13")
-            install("pydantic-settings==2.0.3")
+            // pydantic-settings is pydantic v2-only, excluded for Android
             install("python-jose==3.4.0")
             install("passlib==1.7.4")
             install("python-multipart==0.0.6")
