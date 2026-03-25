@@ -64,7 +64,9 @@ dump.rdb
 backend/temp_seed_data/
 
 # Crash dumps
+core.[0-9]*
 core
+!backend/app/core/
 
 # CI/CD logs
 log.txt

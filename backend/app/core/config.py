@@ -2,7 +2,13 @@ import secrets
 from typing import Literal, Optional
 
 from pydantic import Field, validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+try:
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+except ImportError:
+    # Fallback for pydantic v1 (used on Android)
+    from pydantic import BaseSettings
+    SettingsConfigDict = None
 
 
 def _is_local_mode(values: dict) -> bool:
@@ -94,7 +100,12 @@ class Settings(BaseSettings):
             return v
         return f"redis://{values.get('REDIS_HOST')}:{values.get('REDIS_PORT')}/0"
 
-    model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
+    if SettingsConfigDict:
+        model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
+    else:
+        class Config:
+            case_sensitive = True
+            env_file = ".env"
 
 
 settings = Settings()
