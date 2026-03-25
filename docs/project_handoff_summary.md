@@ -46,6 +46,7 @@
     -   Bonds (Corporate, Government, SGBs, T-Bills) with manual coupon tracking.
 
 ### Key Features
+-   **UML documentation:** Added `docs/uml_design.md` with System Architecture, ERD, and backend Class diagrams.
 -   **Dashboard:** High-level summary, historical chart, asset allocation, and top movers.
 -   **Daily Portfolio Snapshots:** Background cache of daily valuations to optimize history chart loading, including Desktop-mode scheduler support.
 -   **Historical Chart Accuracy:** Fallback engine in `_get_portfolio_history` calculates values for non-market assets (FDs, RDs, PPF) on dates without snapshots, and treats Bonds as market-traded assets with historical prices.
@@ -108,3 +109,12 @@ Based on the `product_backlog.md`, the next features to consider are:
 -   **Issue #324:** Fixed 16 security vulnerabilities opened by dependable last week (`tar`, `minimatch`, `rollup`, and `diskcache`).
 -   **Frontend:** Updated packages via `npm update tar minimatch rollup` to resolve the vulnerable transitive dependencies.
 -   **Backend:** Removed version constraints on `diskcache` and `ecdsa` as they raised `ResolutionImpossible` errors via `pip-compile` due to nonexistent PyPI distributions matching the GitHub Security Advisory versions exactly. Maintained backend testing parity for the fixed pip constraints.
+
+## 9. v1.2.0 Documentation Overhaul
+
+-   **Summary:** Completely audited and rewrote the `docs/` directory to prepare for the ArthSaarthi v1.2.0 release and onboarding of new developers.
+-   **Key Updates:** 
+    - `docs/database_schema.md` (formerly `mvp_database_schema.md`) was rewritten to reflect the exact v1.2.0 active PostgreSQL schema, including all new tables (Bonds, Tax Lots, Watchlists).
+    - `docs/ui_ux_design.md` was updated with ASCII wireframes for the new Consolidated Holdings Table and the multi-step Data Import Wizard.
+    - `docs/code_flow_guide.md` was updated with comprehensive Mermaid Sequence Diagrams for standardizing all documented request lifecycle traces (Add Transaction, Import Pipeline, Analytics, Audit Logging, Privacy Mode, Analytics Caching, Capital Gains, Watchlists, Goal Planning, and Daily Snapshots).
+    - `README.md`, `CONTRIBUTING.md`, and `developer_guide.md` were overhauled to strongly emphasize the mandatory AI developer rules (from `GEMINI.md`) and detail the new Desktop/Android build pipelines.
