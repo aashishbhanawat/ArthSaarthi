@@ -61,7 +61,7 @@ jobs:
           # Patch wheel metadata for Android compatibility
           ORIGINAL_WHEEL=$(ls "$WHEELS_DIR"/pydantic_core-2.23.4-cp313-cp313-manylinux*.whl | head -n 1)
           if [ -f "$ORIGINAL_WHEEL" ]; then
-            python3 scripts/patch_wheel.py "$ORIGINAL_WHEEL" "$WHEELS_DIR" android_21_aarch64
+            python3 scripts/patch_wheel.py "$ORIGINAL_WHEEL" "$WHEELS_DIR/pydantic_core-2.23.4-cp313-cp313-android_21_aarch64.whl" android_21_aarch64
           fi
 
       - name: Build APK with Gradle
