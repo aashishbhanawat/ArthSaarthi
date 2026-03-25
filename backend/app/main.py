@@ -57,7 +57,7 @@ root_logger.addHandler(console_handler)
 
 # File handler (desktop and android mode)
 if settings.DEPLOYMENT_MODE in ("desktop", "android"):
-    log_dir = Path.home() / ".arthsaarthi" / "logs"
+    log_dir = Path.home() / "arthsaarthi" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "arthsaarthi.log"
 

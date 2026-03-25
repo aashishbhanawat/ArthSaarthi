@@ -8,6 +8,13 @@ Android app's internal filesDir for SQLite database and cache storage.
 import os
 import sys
 import logging
+from typing import ForwardRef
+
+# Monkeypatch ForwardRef._evaluate for Python 3.13 / Pydantic v1 compatibility
+_original_evaluate = ForwardRef._evaluate
+def _patched_evaluate(self, globalns, localns, type_params=None, recursive_guard=frozenset()):
+    return _original_evaluate(self, globalns, localns, type_params=type_params, recursive_guard=recursive_guard)
+ForwardRef._evaluate = _patched_evaluate
 
 logger = logging.getLogger("arthsaarthi.android")
 
@@ -36,8 +43,11 @@ def start(port: int, data_dir: str):
     db_dir = os.path.join(data_dir, "arthsaarthi")
     os.makedirs(db_dir, exist_ok=True)
 
-    db_path = os.path.join(db_dir, "arthsaarthi.db")
-    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
+    # Also create the log directory that main.py expects
+    log_dir = os.path.join(db_dir, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    os.environ["HOME"] = data_dir
+    os.environ["DATABASE_URL"] = f"sqlite:///{os.path.join(db_dir, 'arthsaarthi.db')}"
 
     cache_dir = os.path.join(db_dir, "cache")
     os.makedirs(cache_dir, exist_ok=True)
