@@ -29,6 +29,11 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Install Rust (needed for pydantic-core compilation)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
       - name: Install Frontend Dependencies
         working-directory: ./frontend
         run: npm install
@@ -48,31 +53,12 @@ jobs:
           cp -r backend/alembic frontend/android/app/src/main/python/
           cp backend/alembic.ini frontend/android/app/src/main/python/
 
-      - name: Download and Patch Python Wheels
-        run: |
-          WHEELS_DIR="frontend/android/app/wheels"
-          mkdir -p "$WHEELS_DIR"
-          # Download pydantic-core (AArch64)
-          pip download pydantic-core==2.23.4 \
-            --only-binary :all: \
-            --platform manylinux_2_17_aarch64 \
-            --dest "$WHEELS_DIR"
-          
-          # Patch wheel metadata for Android compatibility
-          ORIGINAL_WHEEL=$(ls "$WHEELS_DIR"/pydantic_core-2.23.4-cp313-cp313-manylinux*.whl | head -n 1)
-          if [ -f "$ORIGINAL_WHEEL" ]; then
-            python3 scripts/patch_wheel.py "$ORIGINAL_WHEEL" "$WHEELS_DIR/pydantic_core-2.23.4-cp313-cp313-android_21_aarch64.whl" android_21_aarch64
-            # Remove original so Gradle only finds the patched Android wheel
-            rm "$ORIGINAL_WHEEL"
-          fi
-
       - name: Build APK with Gradle
         working-directory: ./frontend/android
         run: |
           chmod +x gradlew
           PYTHON_PATH=$(which python)
-          # Pass the wheels directory to Gradle via project property
-          ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH" -PextraPipArgs="--find-links=wheels"
+          ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
