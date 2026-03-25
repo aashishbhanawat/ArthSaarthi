@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCreateTransaction, useUpdateTransaction } from '../../hooks/usePortfolios';
 import { useCreateAsset } from '../../hooks/useAssets';
 import { lookupAsset, getFxRate } from '../../services/portfolioApi';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Asset } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
@@ -51,7 +52,8 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
     const createAssetMutation = useCreateAsset();
 
     // Asset Search State
-    const [searchTerm, setSearchTerm] = useState('');
+    const [inputValue, setInputValue] = useState('');
+    const searchTerm = useDebounce(inputValue, 300);
     const [searchResults, setSearchResults] = useState<Asset[]>([]);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
     const [isSearching, setIsSearching] = useState(false);
@@ -67,6 +69,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // FX Rate
     const [isLoadingFx, setIsLoadingFx] = useState(false);
+    const debouncedDate = useDebounce(date, 500);
 
     useEffect(() => {
         if (isEditMode && transactionToEdit) {
@@ -94,18 +97,15 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // Search Logic
     useEffect(() => {
-        const handler = setTimeout(() => {
-            if (searchTerm.length >= 2 && !selectedAsset) {
-                setIsSearching(true);
-                lookupAsset(searchTerm, 'STOCK')
-                    .then(data => setSearchResults(data))
-                    .catch(() => setSearchResults([]))
-                    .finally(() => setIsSearching(false));
-            } else {
-                setSearchResults([]);
-            }
-        }, 300);
-        return () => clearTimeout(handler);
+        if (searchTerm.length >= 2 && !selectedAsset) {
+            setIsSearching(true);
+            lookupAsset(searchTerm, 'STOCK')
+                .then(data => setSearchResults(data))
+                .catch(() => setSearchResults([]))
+                .finally(() => setIsSearching(false));
+        } else {
+            setSearchResults([]);
+        }
     }, [searchTerm, selectedAsset]);
 
     const handleSelectAsset = (asset: Asset) => {
@@ -123,7 +123,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                     onSuccess: (newlyCreatedAsset) => {
                         setSelectedAsset(newlyCreatedAsset);
                         setValue('assetName', newlyCreatedAsset.name);
-                        setSearchTerm('');
+                        setInputValue('');
                         setSearchResults([]);
                     },
                     onError: () => setApiError(`Failed to save asset "${asset.name}" locally.`)
@@ -133,7 +133,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
             // This is an asset that already exists in our DB (from a local search)
             setSelectedAsset(asset);
             setValue('assetName', asset.name);
-            setSearchTerm('');
+            setInputValue('');
             setSearchResults([]);
         }
     };
@@ -141,15 +141,15 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
     const handleClearAsset = () => {
         setSelectedAsset(null);
         setValue('assetName', '');
-        setSearchTerm('');
+        setInputValue('');
     };
 
     const handleCreateAsset = () => {
-        if (searchTerm) {
+        if (inputValue) {
             createAssetMutation.mutate(
                 {
-                    ticker_symbol: searchTerm.toUpperCase(),
-                    name: searchTerm,
+                    ticker_symbol: inputValue.toUpperCase(),
+                    name: inputValue,
                     asset_type: 'STOCK',
                     currency: 'USD', // Default to USD for awards usually? Or INR?
                     // Ideally we ask user or default to USD if it looks like US ticker.
@@ -157,7 +157,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                 },
                 {
                     onSuccess: (newAsset) => handleSelectAsset(newAsset),
-                    onError: () => setApiError(`Failed to create asset "${searchTerm}".`)
+                    onError: () => setApiError(`Failed to create asset "${inputValue}".`)
                 }
             );
         }
@@ -165,20 +165,16 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
     // FX Rate Logic
     useEffect(() => {
-        const handler = setTimeout(() => {
-            // Check if the date is a valid YYYY-MM-DD format
-            if (selectedAsset && date && /^\d{4}-\d{2}-\d{2}$/.test(date) && selectedAsset.currency && selectedAsset.currency !== 'INR') {
-                setIsLoadingFx(true);
-                setValue('fxRate', 1); // Reset while fetching
-                getFxRate(selectedAsset.currency, 'INR', date)
-                    .then(rate => setValue('fxRate', Number(rate))) // The getFxRate function returns the rate directly
-                    .catch(() => setValue('fxRate', 1)) // On error, default to 1 and allow manual entry
-                    .finally(() => setIsLoadingFx(false));
-            }
-        }, 500); // Debounce for 500ms
-
-        return () => clearTimeout(handler);
-    }, [selectedAsset, date, setValue]);
+        // Check if the date is a valid YYYY-MM-DD format
+        if (selectedAsset && debouncedDate && /^\d{4}-\d{2}-\d{2}$/.test(debouncedDate) && selectedAsset.currency && selectedAsset.currency !== 'INR') {
+            setIsLoadingFx(true);
+            setValue('fxRate', 1); // Reset while fetching
+            getFxRate(selectedAsset.currency, 'INR', debouncedDate)
+                .then(rate => setValue('fxRate', Number(rate))) // The getFxRate function returns the rate directly
+                .catch(() => setValue('fxRate', 1)) // On error, default to 1 and allow manual entry
+                .finally(() => setIsLoadingFx(false));
+        }
+    }, [selectedAsset, debouncedDate, setValue]);
 
     // Defaults
     useEffect(() => {
@@ -286,10 +282,10 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                 type="text"
                                 className="form-input"
                                 placeholder="Search ticker (e.g. GOOGL)..."
-                                value={selectedAsset ? `${selectedAsset.name} (${selectedAsset.ticker_symbol})` : searchTerm}
+                                value={selectedAsset ? `${selectedAsset.name} (${selectedAsset.ticker_symbol})` : inputValue}
                                 onChange={(e) => {
                                     if (selectedAsset && !isEditMode) handleClearAsset();
-                                    setSearchTerm(e.target.value);
+                                    setInputValue(e.target.value);
                                 }}
                                 disabled={!!selectedAsset || isEditMode}
                             />
@@ -317,7 +313,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                 ))}
                             </ul>
                         )}
-                        {!selectedAsset && !isSearching && searchTerm.length >= 2 && searchResults.length === 0 && (
+                        {!selectedAsset && !isSearching && inputValue.length >= 2 && searchResults.length === 0 && (
                             <div className="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg">
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No asset found.</p>
                                 <button
@@ -326,7 +322,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                                     className="btn btn-secondary btn-sm w-full"
                                     disabled={createAssetMutation.isPending}
                                 >
-                                    {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${searchTerm}"`}
+                                    {createAssetMutation.isPending ? 'Creating...' : `Create Asset "${inputValue}"`}
                                 </button>
                             </div>
                         )}

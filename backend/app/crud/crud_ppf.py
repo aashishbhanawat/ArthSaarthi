@@ -35,8 +35,11 @@ def _calculate_ppf_interest_for_fy(
     opening_balance: Decimal,
     transactions_in_fy: List[Transaction],
     ppf_rates: List[HistoricalInterestRate] = None,
+    calculation_date: date = None,
 ) -> Decimal:
     """Calculates PPF interest for a single financial year using the monthly minimum balance method."""  # noqa: E501
+    today = calculation_date or date.today()
+
     logger.debug(
         f"[_calculate_ppf_interest_for_fy] FY: {fy_start}-{fy_end}, "
         f"Opening Balance: {opening_balance}"
@@ -49,8 +52,8 @@ def _calculate_ppf_interest_for_fy(
         current_month_start = fy_start + relativedelta(months=month_offset)
         # For on-the-fly calculations, only calculate interest for months that
         # have fully passed. A month has passed if the start of the next month
-        # is less than or equal to today's date.
-        if (current_month_start + relativedelta(months=1)) > date.today():
+        # is less than or equal to the calculation date.
+        if (current_month_start + relativedelta(months=1)) > today:
             break
 
         current_month_end = current_month_start + relativedelta(months=1)
@@ -233,7 +236,8 @@ def process_ppf_holding(
                 )
                 interest_for_fy = _calculate_ppf_interest_for_fy(
                     db, fy_start, fy_end, balance, transactions_in_fy,
-                    ppf_rates=all_ppf_rates
+                    ppf_rates=all_ppf_rates,
+                    calculation_date=calculation_date
                 )
                 logger.info(
                     f"[PPF] FY {fy_end}: Calculated interest = {interest_for_fy}"
@@ -328,7 +332,8 @@ def process_ppf_holding(
         else:  # Current, ongoing financial year
             on_the_fly_interest = _calculate_ppf_interest_for_fy(
                 db, fy_start, fy_end, balance, transactions_in_fy,
-                ppf_rates=all_ppf_rates
+                ppf_rates=all_ppf_rates,
+                calculation_date=calculation_date
             )
             balance += (
                 sum(

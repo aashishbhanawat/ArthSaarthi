@@ -64,11 +64,18 @@ def test_get_all_nav_data_with_caching(mock_httpx_client, mock_cache_client):
     mock_httpx_client.return_value.__enter__.return_value.get.assert_called_once()
     mock_cache_client.set_json.assert_called_once()
 
-    # Second call: should get from cache
-    mock_cache_client.get_json.return_value = data # Simulate cache hit
+    # Second call (same instance): should get from in-memory cache
+    # External get_json should NOT be called again
     provider.get_all_nav_data()
-    # get_json is called again, but httpx.get is not
+    assert mock_cache_client.get_json.call_count == 1
+    mock_httpx_client.return_value.__enter__.return_value.get.assert_called_once()
+
+    # Third call (new instance): should get from external cache
+    new_provider = AmfiIndiaProvider(cache_client=mock_cache_client)
+    mock_cache_client.get_json.return_value = data # Simulate cache hit
+    new_provider.get_all_nav_data()
     assert mock_cache_client.get_json.call_count == 2
+    # httpx.get still called only once from the very first provider
     mock_httpx_client.return_value.__enter__.return_value.get.assert_called_once()
 
 def test_get_details_success(mock_httpx_client):
@@ -110,3 +117,21 @@ def test_search_funds(mock_httpx_client):
     # No results
     results_none = provider.search("nonexistentfund")
     assert len(results_none) == 0
+
+def test_get_scheme_by_isin(mock_httpx_client):
+    """Test getting scheme details by ISIN."""
+    provider = AmfiIndiaProvider(cache_client=None)
+
+    # Test by ISIN (payout)
+    res = provider.get_scheme_by_isin("INF204K01282")
+    assert res is not None
+    assert res["ticker_symbol"] == "119551"
+    assert res["name"] == "Aditya Birla Arbitrage Fund"
+
+    # Test by ISIN2 (reinvestment)
+    res2 = provider.get_scheme_by_isin("INF204K01290")
+    assert res2 is not None
+    assert res2["ticker_symbol"] == "119551"
+
+    # Test not found
+    assert provider.get_scheme_by_isin("INVALID") is None

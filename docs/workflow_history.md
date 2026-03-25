@@ -1,3 +1,85 @@
+## 2026-03-24: Fixed Deposit Lifecycle, P&L Correction & Import Robustness (#374)
+
+**Task:** Fix the end-to-end lifecycle for Matured FDs in the Transaction History, correct portfolio Realized P&L calculations, improve Import Session error propagation, and fix misplaced unit test discovery.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **FD Transaction History Lifecycle (Issue 17, 40, 41):** 
+    - Implemented synthetic `FD_DEPOSIT` and `FD_MATURITY` transaction injection in `transactions.py`, scoped to specific portfolios and normalized to naive datetimes.
+    - Updated `TransactionHistoryTable.tsx` with custom labels, color coding (teal/amber), and conditional Edit/Delete visibility.
+    - Wired the `FD_MATURITY` delete action to `useDeleteFixedDeposit` in `TransactionsPage.tsx` to ensure the underlying record is removed.
+2. **Matured FD Redaction & P&L (Issue 17, 42):** 
+    - Redacted matured FDs/RDs from the Holdings UI list in `crud_holding.py` to prevent clutter.
+    - Fixed the missing P&L calculation for redacted assets, ensuring `total_realized_pnl` accurately reflects matured deposit interest in the portfolio summary.
+3. **Import Error Propagation (Issue 43):** Modified `import_sessions.py` to re-raise `HTTPException` during the commit phase, ensuring specific validation errors (e.g., "Insufficient holdings to sell") are displayed to the user instead of a generic 500.
+4. **Backend Test Discovery (Issue 44):** Relocated misplaced test files (`test_auth_security.py`, `test_benchmark_service.py`) from `backend/tests/unit/backend/` to `backend/app/tests/` to ensure they are correctly collected and executed by the standard test suite.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/api/v1/endpoints/transactions.py` — Synthetic FD injection.
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Error propagation fix.
+* **Modified:** `backend/app/crud/crud_holding.py` — Redaction and P&L accumulation.
+* **Modified:** `backend/app/schemas/enums.py` — Added new FD transaction types.
+* **Moved:** `backend/app/tests/crud/test_auth_security.py` (from `backend/tests/unit/backend/`)
+* **Moved:** `backend/app/tests/services/test_benchmark_service.py` (from `backend/tests/unit/backend/`)
+
+**Frontend:**
+* **Modified:** `frontend/src/pages/TransactionsPage.tsx` — Delete wiring.
+* **Modified:** `frontend/src/components/Transactions/TransactionHistoryTable.tsx` — UI labels/actions.
+* **Modified:** `frontend/src/types/enums.ts` — Enum synchronization.
+
+### Verification
+
+* **Backend Tests:** All tests passing after clearing pycache conflict.
+* **Manual Verification:** Verified FD delete-through-history, P&L accuracy, and import error visibility.
+
+### Outcome
+
+**Success.** The Fixed Deposit lifecycle is now mathematically and visually consistent across Holdings and Transaction History, with improved error handling for data imports.
+
+---
+
+## 2026-03-23: Live Testing v1.2.0 Bug Fixes (#373)
+
+**Task:** Fix 7 critical bugs from the v1.2.0 live testing phase related to FD P&L, PPF chart history, benchmark simulations, Pydantic validation crashes, and missing bond API schemas.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1. **Benchmark Simulation Crashes (Issue 19 & 370):** Fixed a Pydantic `ValidationError` in `_generate_synthetic_transactions` by ensuring generated dates do not exceed `date.today()`. Also implemented precision Lot-Based FIFO tracking for `SELL` benchmark outflows to prevent large stock gains from mathematically distorting the long-term benchmark XIRR.
+2. **Benchmark Overlay (Issue 11 & 15):** The Debt/Risk-Free benchmark comparison fell back to 0.0 value and flatlined if Yahoo indices were absent. Removed a premature exit in `_run_simulation` so the fallback Risk-Free logic executes accurately, and implemented dynamic labeling. 
+3. **PPF History Chart (Issue 13):** Fixed the PPF portfolio history flatline by removing a hardcoded `date.today()` and replacing it with the dynamically requested `calculation_date` to prevent premature FY interest accrual.
+4. **Matured FD & RD P&L (Issue 18a, 18b, 17):** Accurately computed pro-rata interest for P&L tracking. Also ensured that the `_get_portfolio_cash_flows` analyzer injects Payout FD interests as `DIVIDEND` inflows to correctly output positive XIRR rather than `0.00%`. Orphaned matured FDs and RDs now correctly appear in the UI with `quantity=0`.
+5. **Asset API Schema (Issue 14):** Fixed the `AssetSearchResult` to expose the optional `bond` dictionary so the frontend API consumer can auto-populate subsequent bond transaction forms (coupon rate, ISIN).
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/services/benchmark_service.py`
+* **Modified:** `backend/app/crud/crud_analytics.py`
+* **Modified:** `backend/app/crud/crud_holding.py`
+* **Modified:** `backend/app/crud/crud_ppf.py`
+* **Modified:** `backend/app/schemas/asset.py`
+* **Modified:** `backend/app/api/v1/endpoints/assets.py`
+* **Modified:** `backend/app/core/config.py` - (Add "android" literal)
+* **Modified:** `backend/app/schemas/token.py` - (Add "android" literal)
+
+### Verification
+
+* **Backend Tests:** 306/306 passing.
+
+### Outcome
+
+**Success.** All reported v1.2.0 bugs are resolved with comprehensive mathematical unit-level stability, ensuring the application is production-ready for its impending release.
+
+---
+
 ## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
 
 **Task:** Fix 7 reported issues: cache invalidation for dashboard history, benchmark invested amount going negative after FD maturity, matured FDs/RDs in portfolio history, incomplete cache invalidation on restore, PPF log spam, and missing timing instrumentation.
@@ -952,34 +1034,6 @@ This phase focused on achieving a "green" build across all testing layers.
 ### File Changes
 
 *   **Modified:** `frontend/src/components/Portfolio/TransactionFormModal.tsx`, `frontend/src/__tests__/components/Portfolio/TransactionFormModal.test.tsx`, `frontend/src/components/Portfolio/AddAwardModal.tsx`, `e2e/tests/analytics.spec.ts`, `backend/app/api/v1/endpoints/assets.py`, `README.md`, `docs/project_handoff_summary.md`, `docs/workflow_history.md`
-
-### Outcome
-
-**Success.** The project has achieved a completely clean state with 100% passing tests (Backend: 165, Frontend: 174, E2E: 31) and no linter errors. The application is ready for backup and deployment.
-
-## 2025-12-11: Final Stabilization and Test Coverage
-
-**Task:** Resolve remaining test failures, ensure full test suite stability across all environments, and prepare for release backup.
-
-**AI Assistant:** Gemini Code Assist
-**Role:** Senior Software Engineer
-
-### Summary
-
-This phase focused on achieving a "green" build across all testing layers.
-
-1.  **Frontend Testing:** Fixed unit tests in `TransactionFormModal.test.tsx` by aligning the mock return values for `getFxRate` with the component's logic. Updated `TransactionFormModal.tsx` to robustly handle both object and primitive return types for FX rates.
-2.  **E2E Testing:** Verified and stabilized the E2E suite, ensuring the `corporate-actions.spec.ts` and `analytics.spec.ts` tests pass consistently.
-3.  **Backend Testing:** Confirmed 165 backend tests pass on PostgreSQL and 155 on SQLite.
-4.  **Linting:** Cleared residual linter warnings in `AddAwardModal.tsx`.
-5.  **Documentation:** Updated `README.md` with the latest test coverage statistics.
-
-### File Changes
-
-*   **Modified:** `frontend/src/components/Portfolio/TransactionFormModal.tsx`
-*   **Modified:** `frontend/src/__tests__/components/Portfolio/TransactionFormModal.test.tsx`
-*   **Modified:** `frontend/src/components/Portfolio/AddAwardModal.tsx`
-*   **Modified:** `README.md`
 
 ### Outcome
 

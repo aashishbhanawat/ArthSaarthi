@@ -295,47 +295,26 @@ def get_import_session_preview(
         # Check ISIN first if available
         if "isin" in row and row["isin"]:
             isin_code = row["isin"]
-            asset = db.query(models.Asset).filter(
-                models.Asset.isin == isin_code
-            ).first()
+            asset = crud.asset.get_by_isin(db, isin_code=isin_code)
             if asset:
                  log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
 
         if not asset:
+            # This also handles ticker_symbol with "ISIN:" prefix
             asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
             if asset:
                 log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
 
-        # If ticker looks like "ISIN:XXX", try to lookup by ISIN
-        if not asset and ticker_symbol.startswith("ISIN:"):
-            isin_code = ticker_symbol.replace("ISIN:", "")
-            log.debug(f"Looking up by ISIN: {isin_code}")
-            asset = db.query(models.Asset).filter(
-                models.Asset.isin == isin_code
-            ).first()
+        # If ticker looks like "ISIN:XXX", try to auto-create
+        if not asset and ticker_symbol.upper().startswith("ISIN:"):
+            asset = crud.asset.get_or_create_by_ticker(
+                db, ticker_symbol=ticker_symbol, asset_type="Mutual Fund"
+            )
             if asset:
-                log.info(f"Auto-matched by ISIN: {isin_code} -> {asset.name}")
-            else:
-                log.debug(f"No asset found with ISIN: {isin_code}")
-                # Try to auto-create by looking up ISIN in AMFI
-                # Check both isin (payout) and isin2 (reinvestment)
-                from app.services.providers.amfi_provider import amfi_provider
-                all_mf_data = amfi_provider.get_all_nav_data()
-                for scheme_code, mf_info in all_mf_data.items():
-                    isin_match = mf_info.get("isin") == isin_code
-                    isin2_match = mf_info.get("isin2") == isin_code
-                    if isin_match or isin2_match:
-                        # Found in AMFI - create the asset
-                        scheme = mf_info['scheme_name']
-                        log.info(f"Found in AMFI: {isin_code} -> {scheme}")
-                        asset = crud.asset.get_or_create_by_ticker(
-                            db, ticker_symbol=scheme_code, asset_type="Mutual Fund"
-                        )
-                        if asset:
-                            log.info(
-                                f"Auto-created: {asset.name} ISIN {isin_code}"
-                            )
-                        break
+                log.info(
+                    f"Auto-matched/created by ISIN: {ticker_symbol} "
+                    f"-> {asset.name}"
+                )
 
         if not asset:
             # Check pending aliases from the current session first
@@ -434,9 +413,7 @@ def commit_import_session(
 
             # 1. Try ISIN lookup first (most reliable)
             if parsed_tx.isin:
-                asset = db.query(models.Asset).filter(
-                    models.Asset.isin == parsed_tx.isin
-                ).first()
+                asset = crud.asset.get_by_isin(db, isin_code=parsed_tx.isin)
 
             # 2. Try alias lookup (with source)
             if not asset:
@@ -456,18 +433,11 @@ def commit_import_session(
                 if asset_alias:
                     asset = asset_alias.asset
 
-            # 4. Try ticker lookup
+            # 4. Try ticker lookup (also handles ISIN: prefix)
             if not asset:
                 asset = crud.asset.get_by_ticker(
                     db, ticker_symbol=ticker_symbol
                 )
-
-            # 5. Try ISIN: prefix format
-            if not asset and ticker_symbol.startswith("ISIN:"):
-                isin_code = ticker_symbol.replace("ISIN:", "")
-                asset = db.query(models.Asset).filter(
-                    models.Asset.isin == isin_code
-                ).first()
 
             # 6. Try name lookup
             if not asset:
@@ -512,6 +482,17 @@ def commit_import_session(
 
         return {"msg": f"Successfully committed {transactions_created} transactions."}
 
+    except HTTPException:
+        # Re-raise specific HTTP errors (e.g. insufficient holdings) so the
+        # client receives the correct status code and detail message.
+        db.rollback()
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={"status": "FAILED", "error_message": None},
+        )
+        db.commit()
+        raise
     except Exception as e:
         db.rollback()
         log.error(f"Failed to commit import session {session_id}: {e}", exc_info=True)
@@ -527,6 +508,7 @@ def commit_import_session(
         raise HTTPException(
             status_code=500, detail="Could not commit transactions."
         )
+
 
 
 @router.post(

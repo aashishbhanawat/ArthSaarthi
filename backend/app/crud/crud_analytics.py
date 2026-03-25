@@ -26,6 +26,11 @@ from app.models.transaction_link import TransactionLink
 
 logger = logging.getLogger(__name__)
 
+SHARPE_ANNUALIZATION_FACTOR = 252
+SHARPE_STEP_FUNCTION_THRESHOLD = 0.8
+SHARPE_ZERO_RETURN_TOLERANCE = 1e-6
+SHARPE_LOW_VOLATILITY_THRESHOLD = 0.01
+
 
 def _calculate_xirr(dates: List[date], values: List[Decimal]) -> float:
     """Helper function to safely calculate XIRR and return as a rate."""
@@ -471,10 +476,23 @@ def _get_portfolio_cash_flows(
                 payout_rate = fd.interest_rate / Decimal("100.0") / payouts_per_year
                 interest_per_payout = fd.principal_amount * payout_rate
 
+                last_payout_date = fd.start_date
                 payout_date = fd.start_date + relativedelta(months=months_interval)
                 while payout_date <= today and payout_date <= fd.maturity_date:
                     cash_flows.append((payout_date, interest_per_payout))
+                    last_payout_date = payout_date
                     payout_date += relativedelta(months=months_interval)
+
+                cutoff_date = min(today, fd.maturity_date)
+                if last_payout_date < cutoff_date:
+                    remaining_days = (cutoff_date - last_payout_date).days
+                    daily_rate = (
+                        (fd.interest_rate / Decimal("100.0")) / Decimal("365.25")
+                    )
+                    pro_rata_interest = (
+                        fd.principal_amount * daily_rate * Decimal(remaining_days)
+                    )
+                    cash_flows.append((cutoff_date, pro_rata_interest))
 
             # For matured payout FDs, principal is returned at maturity
             if today >= fd.maturity_date:
@@ -607,17 +625,7 @@ class CRUDAnalytics:
 
         # Final value is an inflow
         if today >= fd.maturity_date:
-            # If matured, the inflow is the maturity value
-            maturity_value = _calculate_fd_current_value(
-                principal=fd.principal_amount,
-                interest_rate=fd.interest_rate,
-                start_date=fd.start_date,
-                end_date=fd.maturity_date,
-                compounding_frequency=fd.compounding_frequency,
-                interest_payout=fd.interest_payout,
-            )
-            dates.append(fd.maturity_date)
-            values.append(maturity_value)
+            # If matured, _get_portfolio_cash_flows already appended the maturity value
             unrealized_xirr = 0.0
             realized_xirr = _calculate_xirr(dates, values)
         else:
@@ -658,16 +666,7 @@ class CRUDAnalytics:
         values = list(values)
 
         if today >= maturity_date:
-            # If matured, the inflow is the maturity value
-            final_value = _calculate_rd_value_at_date(
-                monthly_installment=rd.monthly_installment,
-                interest_rate=rd.interest_rate,
-                start_date=rd.start_date,
-                tenure_months=rd.tenure_months,
-                calculation_date=maturity_date,
-            )
-            dates.append(maturity_date)
-            values.append(final_value)
+            pass # _get_portfolio_cash_flows already appended the maturity value
         else:
             # If active, the inflow is the current value
             final_value = _calculate_rd_value_at_date(
@@ -772,7 +771,36 @@ class CRUDAnalytics:
             )
             return 0.0
 
-        sharpe_ratio = (np.mean(daily_returns) / np.std(daily_returns)) * np.sqrt(252)
+        # Option 2: Threshold check for non-market (step-function) portfolios like PPF.
+        # If the vast majority of days (>80%) have zero price movement,
+        # it indicates an illiquid/fixed-income asset rather than a traded market asset.
+        zero_return_days = np.sum(
+            np.isclose(daily_returns, 0, atol=SHARPE_ZERO_RETURN_TOLERANCE)
+        )
+        if len(daily_returns) > 0 and (
+            (zero_return_days / len(daily_returns))
+            > SHARPE_STEP_FUNCTION_THRESHOLD
+        ):
+            logger.debug(
+                f"Sharpe ratio: Detected step-function portfolio "
+                f"({zero_return_days}/{len(daily_returns)} flat days). Returning 0.0."
+            )
+            return 0.0
+
+        # Check for extremely low market volatility (< 1% annualized)
+        std_dev = np.std(daily_returns)
+        annual_volatility = std_dev * np.sqrt(SHARPE_ANNUALIZATION_FACTOR)
+        if annual_volatility < SHARPE_LOW_VOLATILITY_THRESHOLD:
+            logger.debug(
+                f"Sharpe ratio: Volatility extremely low "
+                f"({annual_volatility:.4f} annualized). "
+                f"Returning 0.0."
+            )
+            return 0.0
+
+        sharpe_ratio = (np.mean(daily_returns) / std_dev) * np.sqrt(
+            SHARPE_ANNUALIZATION_FACTOR
+        )
         logger.debug(
             f"Sharpe ratio: Calculated value is {sharpe_ratio}. "
             f"Mean return: {np.mean(daily_returns)}"

@@ -20,23 +20,31 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         asset_type: Optional[str] = None,
     ) -> Optional[Asset]:
         """
-        Gets an asset by ticker symbol. If it doesn't exist, it fetches details
-        from an external service and creates it.
+        Gets an asset by ticker symbol or ISIN: prefix. If it doesn't exist,
+        it fetches details from an external service and creates it.
         """
-        ticker_symbol = ticker_symbol.upper()
         db_asset = self.get_by_ticker(db, ticker_symbol=ticker_symbol)
         if db_asset:
             return db_asset
 
         # Asset not found locally, fetch details from the financial data service
+        # This service also handles the ISIN: prefix
         details = financial_data_service.get_asset_details(
             ticker_symbol, asset_type=asset_type
         )
         if not details:
             return None  # Could not find asset details externally
 
-        # Create the new asset
-        new_asset_data = AssetCreate(ticker_symbol=ticker_symbol, **details)
+        # Create the new asset.
+        # Use the canonical ticker from details if available (e.g. AMFI scheme code)
+        final_ticker = details.get("ticker_symbol") or ticker_symbol.upper()
+
+        # Double check if we already have this asset by its canonical ticker
+        db_asset = self.get_by_ticker(db, ticker_symbol=final_ticker)
+        if db_asset:
+            return db_asset
+
+        new_asset_data = AssetCreate(ticker_symbol=final_ticker, **details)
         return self.create(db=db, obj_in=new_asset_data)
 
     def get_all_by_type_and_portfolio(
@@ -108,10 +116,22 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         return new_transaction
 
     def get_by_ticker(self, db: Session, *, ticker_symbol: str) -> Asset | None:
+        # Handle ISIN: prefix
+        if ticker_symbol.upper().startswith("ISIN:"):
+            isin_code = ticker_symbol.split(":", 1)[1]
+            return self.get_by_isin(db, isin_code=isin_code)
+
         return (
             db.query(self.model)
-            .filter(self.model.ticker_symbol == ticker_symbol)
-               .first()
+            .filter(self.model.ticker_symbol == ticker_symbol.upper())
+            .first()
+        )
+
+    def get_by_isin(self, db: Session, *, isin_code: str) -> Asset | None:
+        return (
+            db.query(self.model)
+            .filter(self.model.isin == isin_code.upper())
+            .first()
         )
 
     def search_by_name_or_ticker(

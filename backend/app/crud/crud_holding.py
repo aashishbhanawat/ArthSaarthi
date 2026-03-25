@@ -84,10 +84,19 @@ def _calculate_total_interest_paid(fd: models.FixedDeposit, end_date: date) -> D
     interest_per_payout = fd.principal_amount * payout_rate
 
     total_interest = Decimal(0)
+    last_payout_date = fd.start_date
     payout_date = fd.start_date + relativedelta(months=months_interval)
     while payout_date <= end_date:
         total_interest += interest_per_payout
+        last_payout_date = payout_date
         payout_date += relativedelta(months=months_interval)
+
+    if last_payout_date < end_date:
+        remaining_days = (end_date - last_payout_date).days
+        daily_rate = (fd.interest_rate / Decimal("100.0")) / Decimal("365.25")
+        pro_rata_interest = fd.principal_amount * daily_rate * Decimal(remaining_days)
+        total_interest += pro_rata_interest
+
     return total_interest
 
 
@@ -156,7 +165,8 @@ def _process_fixed_deposits(
 
     for fd in matured_fds:
         if fd.interest_payout != "Cumulative":
-            total_realized_pnl += _calculate_total_interest_paid(fd, fd.maturity_date)
+            realized_pnl = _calculate_total_interest_paid(fd, fd.maturity_date)
+            total_realized_pnl += realized_pnl
         else:
             maturity_value = _calculate_fd_current_value(
                 fd.principal_amount,
@@ -166,7 +176,11 @@ def _process_fixed_deposits(
                 fd.compounding_frequency,
                 fd.interest_payout,
             )
-            total_realized_pnl += maturity_value - fd.principal_amount
+            realized_pnl = maturity_value - fd.principal_amount
+            total_realized_pnl += realized_pnl
+
+        # Matured FD: only accumulate realized P&L; do NOT add to holdings_list
+        # (it will appear in Transaction History instead)
 
     for fd in active_fds:
         interest_paid_to_date = _calculate_total_interest_paid(fd, today)
@@ -240,7 +254,11 @@ def _process_recurring_deposits(
             maturity_date,
         )
         total_invested = rd.monthly_installment * rd.tenure_months
-        total_realized_pnl += maturity_value - total_invested
+        realized_pnl = maturity_value - total_invested
+        total_realized_pnl += realized_pnl
+
+        # Matured RD: only accumulate realized P&L; do NOT add to holdings_list
+        # (it will appear in Transaction History instead)
 
     for rd in active_rds:
         current_value = _calculate_rd_value_at_date(
@@ -855,6 +873,7 @@ class CRUDHolding:
         )
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
+        # Accumulate realized P&L from matured FDs and RDs into the total
         total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
         ppf_assets = (
             db.query(models.Asset)
@@ -1015,7 +1034,7 @@ class CRUDHolding:
         )
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
-        total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
+        # Non-market PNL is aggregated inside _calculate_summary loop
 
         ppf_assets = (
             db.query(models.Asset)

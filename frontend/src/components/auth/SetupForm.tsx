@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { isAxiosError } from 'axios';
 import * as api from '../../services/api';
+import LoadingButton from '../common/LoadingButton';
 
 interface SetupFormProps {
     onSuccess: () => void;
@@ -81,9 +82,14 @@ const SetupForm: React.FC<SetupFormProps> = ({ onSuccess }) => {
                 )}
 
                 <div>
-                    <button type="submit" className="w-full flex justify-center btn btn-primary" disabled={isLoading}>
-                        {isLoading ? 'Creating Account...' : 'Create Admin Account'}
-                    </button>
+                    <LoadingButton
+                        type="submit"
+                        className="w-full btn btn-primary"
+                        isLoading={isLoading}
+                        loadingText="Creating Account..."
+                    >
+                        Create Admin Account
+                    </LoadingButton>
                 </div>
             </form>
         </div>

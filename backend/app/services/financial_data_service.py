@@ -149,7 +149,25 @@ class FinancialDataService:
         Fetches details for a single asset.
         If asset_type is 'Mutual Fund', it will only check AMFI.
         Otherwise, it will check yfinance.
+
+        Supports ISIN: prefix for ticker_symbol to lookup by ISIN.
         """
+        # Handle ISIN: prefix
+        if ticker_symbol.upper().startswith("ISIN:"):
+            isin_code = ticker_symbol.split(":", 1)[1]
+            # 1. Try AMFI first for Mutual Funds
+            mf_details = self.amfi_provider.get_scheme_by_isin(isin_code)
+            if mf_details:
+                return mf_details
+            # 2. Try yfinance search for other assets
+            search_results = self.yfinance_provider.search(isin_code)
+            if search_results:
+                # Use the first match from yfinance
+                return self.yfinance_provider.get_asset_details(
+                    search_results[0]["ticker_symbol"]
+                )
+            return None
+
         if asset_type == "Mutual Fund" or asset_type == "MUTUAL_FUND":
             return self.amfi_provider.get_asset_details(ticker_symbol)
 
