@@ -48,13 +48,30 @@ jobs:
           cp -r backend/alembic frontend/android/app/src/main/python/
           cp backend/alembic.ini frontend/android/app/src/main/python/
 
+      - name: Download and Patch Python Wheels
+        run: |
+          WHEELS_DIR="frontend/android/app/wheels"
+          mkdir -p "$WHEELS_DIR"
+          # Download pydantic-core (AArch64)
+          pip download pydantic-core==2.23.4 \
+            --only-binary :all: \
+            --platform manylinux_2_17_aarch64 \
+            --dest "$WHEELS_DIR"
+          
+          # Rename for Android compatibility (manylinux -> android_21_aarch64)
+          # Note: Chaquopy 17.0+ targets Android 21 by default for aarch64
+          ORIGINAL_WHEEL=$(ls "$WHEELS_DIR"/pydantic_core-2.23.4-cp313-cp313-manylinux*.whl | head -n 1)
+          if [ -f "$ORIGINAL_WHEEL" ]; then
+            mv "$ORIGINAL_WHEEL" "$WHEELS_DIR/pydantic_core-2.23.4-cp313-cp313-android_21_aarch64.whl"
+          fi
+
       - name: Build APK with Gradle
         working-directory: ./frontend/android
         run: |
           chmod +x gradlew
-          # Chaquopy needs to know which python binary to use (the one from setup-python)
           PYTHON_PATH=$(which python)
-          ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH"
+          # Pass the wheels directory to Gradle via project property
+          ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH" -PextraPipArgs="--find-links=wheels"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
