@@ -15,9 +15,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ArthSaarthi">
 
-        <!-- The main Capacitor Activity (WebView) -->
+        <!-- The main Capacitor Activity (WebView) — subclass registers PythonBackendPlugin -->
         <activity
-            android:name="com.getcapacitor.BridgeActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode">
