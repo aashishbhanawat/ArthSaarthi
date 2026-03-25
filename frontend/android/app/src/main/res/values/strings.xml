@@ -2,6 +2,4 @@
 <resources>
     <string name="app_name">ArthSaarthi</string>
     <string name="title_activity_main">ArthSaarthi</string>
-    <string name="package_name">com.arthsaarthi.app</string>
-    <string name="custom_url_scheme">com.arthsaarthi.app</string>
 </resources>

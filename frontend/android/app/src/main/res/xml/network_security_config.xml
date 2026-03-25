@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!--
-        Allow cleartext (HTTP) traffic to localhost only.
-        The embedded Python/FastAPI backend runs on 127.0.0.1
-        and the WebView needs to communicate with it via HTTP.
-    -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">127.0.0.1</domain>
-        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <!-- For local dev network testing if needed -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
     </domain-config>
 </network-security-config>
