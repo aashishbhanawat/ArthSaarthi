@@ -54,3 +54,17 @@ test_out.txt
 frontend/android/
 frontend/dist/
 frontend/www/
+frontend/android/app/build/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/app/src/main/python/app/
+frontend/android/app/src/main/python/alembic/
+frontend/android/app/src/main/python/alembic.ini
+frontend/android/local.properties
+*.apk
+*.aab
+
+frontend/android/app/libs/python-wheels/
+frontend/android/app/wheels/
+frontend/android/build-tools/
+frontend/android/app/src/main/assets/public/

@@ -1,0 +1,15 @@
+{
+	"appId": "com.arthsaarthi.app",
+	"appName": "ArthSaarthi",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "http",
+		"allowNavigation": [
+			"127.0.0.1"
+		]
+	},
+	"android": {
+		"allowMixedContent": true
+	},
+	"plugins": {}
+}
