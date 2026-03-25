@@ -55,21 +55,21 @@ chaquopy {
 
         // Backend Python dependencies
         pip {
-            install("pydantic-core==2.23.4")
-            install("fastapi==0.115.0")
-            install("uvicorn==0.30.6")
+            // FastAPI 0.100.x is the last version with full pydantic v1 support
+            install("fastapi==0.100.1")
+            install("uvicorn==0.23.2")
             install("sqlalchemy==2.0.35")
-            // pydantic will use the already-installed pydantic-core
-            install("pydantic==2.9.2")
-            install("pydantic-settings==2.5.2")
+            // pydantic v1 is pure Python - no pydantic-core required
+            install("pydantic==1.10.13")
+            install("pydantic-settings==2.0.3")
             install("python-jose==3.4.0")
             install("passlib==1.7.4")
-            install("python-multipart==0.0.12")
-            install("httpx==0.27.2")
-            install("typer==0.12.5")
-            install("email-validator==2.2.0")
+            install("python-multipart==0.0.6")
+            install("httpx==0.24.1")
+            install("typer==0.9.0")
+            install("email-validator==2.0.0")
             install("diskcache==5.6.3")
-            install("aiofiles==24.1.0")
+            install("aiofiles==23.2.1")
         }
     }
 }
