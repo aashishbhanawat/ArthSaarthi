@@ -58,7 +58,7 @@ jobs:
         run: |
           chmod +x gradlew
           PYTHON_PATH=$(which python)
-          ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH"
+          ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH" --no-parallel
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
