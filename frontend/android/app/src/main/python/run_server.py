@@ -28,6 +28,10 @@ def start(port: int, data_dir: str):
     os.environ["DEBUG"] = "false"
     os.environ["LOG_LEVEL"] = "INFO"
 
+    # Critically, set HOME so Path.home() works for logging
+    os.environ["HOME"] = data_dir
+    print(f"PYTHON: Setting HOME to {data_dir}")
+
     # Set up data paths
     db_dir = os.path.join(data_dir, "arthsaarthi")
     os.makedirs(db_dir, exist_ok=True)
