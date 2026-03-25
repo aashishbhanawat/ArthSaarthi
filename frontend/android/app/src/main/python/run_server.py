@@ -40,14 +40,15 @@ def start(port: int, data_dir: str):
     print(f"PYTHON: Setting HOME to {data_dir}")
 
     # Set up data paths
-    db_dir = os.path.join(data_dir, "arthsaarthi")
+    db_dir = os.path.join(data_dir, ".arthsaarthi")
     os.makedirs(db_dir, exist_ok=True)
 
     # Also create the log directory that main.py expects
     log_dir = os.path.join(db_dir, "logs")
     os.makedirs(log_dir, exist_ok=True)
     os.environ["HOME"] = data_dir
-    os.environ["DATABASE_URL"] = f"sqlite:///{os.path.join(db_dir, 'arthsaarthi.db')}"
+    db_path = os.path.join(db_dir, "arthsaarthi.db")
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 
     cache_dir = os.path.join(db_dir, "cache")
     os.makedirs(cache_dir, exist_ok=True)
