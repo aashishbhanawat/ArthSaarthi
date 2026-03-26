@@ -11,9 +11,34 @@ from dateutil.relativedelta import relativedelta
 try:
     from pyxirr import xirr
 except ImportError:
-    logger.warning("pyxirr not found, XIRR calculations will be disabled")
-    def xirr(*args, **kwargs):
-        return 0.0
+    logger.warning("pyxirr not found, using numpy fallback for XIRR")
+    def xirr(dates, payments):
+        if not dates or not payments or len(dates) != len(payments):
+            return 0.0
+        
+        # Newton-Raphson implementation
+        try:
+            # Pre-process dates into year fractions from first date
+            d0 = dates[0]
+            years = np.array([(d - d0).days / 365.0 for d in dates])
+            pmts = np.array(payments, dtype=float)
+            
+            rate = 0.1 # Initial guess
+            for _ in range(50):
+                # NPV
+                npv = np.sum(pmts / (1 + rate)**years)
+                # NPV Derivative
+                deriv = np.sum(-years * pmts / (1 + rate)**(years + 1))
+                
+                if abs(deriv) < 1e-9: break
+                new_rate = rate - npv / deriv
+                if abs(new_rate - rate) < 1e-6: return new_rate
+                rate = new_rate
+                if abs(rate) > 100: break
+            return rate
+        except Exception as e:
+            logger.error(f"XIRR fallback failed: {e}")
+            return 0.0
 
 from sqlalchemy.orm import Session
 
