@@ -160,7 +160,7 @@ pyyaml==6.0.2
     # via uvicorn
 redis==6.4.0
     # via -r backend/requirements.in
-requests==2.32.4
+requests==2.33.0
     # via yfinance
 rich==14.1.0
     # via typer
