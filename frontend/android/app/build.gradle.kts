@@ -84,7 +84,6 @@ chaquopy {
             // Importers
             install("openpyxl")
             install("xlrd")
-            install("pdfplumber")
             install("beautifulsoup4")
         }
     }
