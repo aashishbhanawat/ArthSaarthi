@@ -6,7 +6,13 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-from pyxirr import xirr
+try:
+    from pyxirr import xirr
+except ImportError:
+    logger.warning("pyxirr not found, XIRR calculations will be disabled")
+    def xirr(*args, **kwargs):
+        return 0.0
+
 from sqlalchemy.orm import Session
 
 from app import crud

@@ -74,7 +74,6 @@ chaquopy {
             // Analytical & Data dependencies (flexible versions for Android mirror)
             install("numpy")
             install("pandas")
-            install("pyxirr")
             install("yfinance")
             
             // Database & Auth
