@@ -1,3 +1,78 @@
+## 2026-03-31: v1.2.0 Release Finalization & Screenshot Synchronization
+
+**Task:** Finalize ArthSaarthi v1.2.0 release documentation, synchronize screenshot test suite with the new layout, and update release dates across all project files.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **E2E Screenshot Optimization:**
+    - Refactored `user-guide-screenshots.spec.ts` to support nested container scrolling (`main` overflow-y-auto).
+    - Corrected scroll offsets for analytical charts (Benchmarks, Investment Style, Category Comparison) to ensure full visibility.
+    - Implemented UI-driven mock data creation for the Symbol Aliases admin page.
+2. **Documentation Synchronization:**
+    - Updated `CHANGELOG.md`, `release_notes/v1.2.0.md`, and `docs/project_handoff_summary.md` to reflect the final **March 31, 2026** release date.
+    - Synchronized `docs/user_guide/index.html` with correct screenshot mappings for v1.1.0 and v1.2.0 features.
+    - Refined RSU/ESPP documentation to highlight v1.2.0 grant-type tracking.
+
+### File Changes
+
+**Core Docs:**
+* **Modified:** `CHANGELOG.md`, `release_notes/v1.2.0.md`, `docs/project_handoff_summary.md`
+* **Modified:** `docs/user_guide/index.html`, `docs/workflow_history.md`
+
+**Tests:**
+* **Modified:** `e2e/tests/user-guide-screenshots.spec.ts`
+
+### Verification
+
+* **Screenshots:** Verified all 30 screenshots are correctly captured with proper framing.
+* **Dates:** Standardized on 2026-03-31 across all user-facing and internal release documentation.
+
+---
+
+## 2026-03-25: v1.2.0 Release Preparation & Documentation Overhaul
+
+**Task:** Audit and rewrite the `docs/` directory to prepare for the ArthSaarthi v1.2.0 release. Cleanup legacy branding, synchronize versioning, and standardize cross-platform documentation (Docker Server vs. Electron Desktop).
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Documentation Standardization:**
+    - Performed a deep audit of the `docs/` directory, deleting obsolete MVP schemas and redundant handoff files.
+    - Updated `README.md`, `developer_guide.md`, and `docs/architecture.md` to accurately reflect the dual-mode deployment (Server/Desktop) while stripping premature references to Android builds.
+    - Integrated comprehensive **Mermaid Sequence Diagrams** into `docs/code_flow_guide.md` for all core features (Add Transaction, Analytics, Import Pipeline, Audit Logging, Privacy Mode, etc.).
+    - Created `docs/database_schema.md` as the authoritative source of truth for the v1.2.0 PostgreSQL/SQLite schema.
+    - Updated `docs/ui_ux_design.md` with ASCII wireframes for the new Consolidated Holdings Table and the multi-step Data Import Wizard.
+2. **Version Synchronization:**
+    - Synchronized `APP_VERSION` to `1.2.0` in `backend/app/api/v1/endpoints/system.py`.
+    - Updated version strings in Electron `splash.html` and E2E test headers.
+3. **Repository Cleanup:**
+    - Removed 'Buy Me A Chai' donation links from all README and user guide files.
+    - Purged development-only statement examples (PDFs, XLS) from the repository root to ensure security.
+
+### File Changes
+
+**Core Docs:**
+* **Modified:** `README.md`, `developer_guide.md`, `CONTRIBUTING.md`
+* **Modified:** `docs/architecture.md`, `docs/code_flow_guide.md`, `docs/project_handoff_summary.md`, `docs/ui_ux_design.md`
+* **New:** `docs/database_schema.md`
+* **Deleted:** `docs/mvp_database_schema.md`
+
+**System:**
+* **Modified:** `backend/app/api/v1/endpoints/system.py`
+* **Modified:** `frontend/electron/splash.html`
+
+### Verification
+
+* **Documentation:** Verified all internal cross-links and relative image paths.
+* **Architecture:** Validated Mermaid diagram syntax for syntax errors.
+
+---
+
 ## 2026-03-24: Fixed Deposit Lifecycle, P&L Correction & Import Robustness (#374)
 
 **Task:** Fix the end-to-end lifecycle for Matured FDs in the Transaction History, correct portfolio Realized P&L calculations, improve Import Session error propagation, and fix misplaced unit test discovery.

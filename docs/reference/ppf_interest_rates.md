@@ -32,7 +32,7 @@ This document contains the historical interest rates for the Public Provident Fu
 | 01-Jan-2018 | 30-Sep-2018 | 7.6 |
 | 01-Oct-2018 | 30-Jun-2019 | 8.0 |
 | 01-Jul-2019 | 31-Mar-2020 | 7.9 |
-| 01-Apr-2020 | 30-Sep-2025 | 7.1 |
+| 01-Apr-2020 | 31-Mar-2026 | 7.1 |
 
 ---
 *Note: The period `01.10.2018 TO 31.06.2019` was corrected to `30.06.2019` as June has 30 days.*
