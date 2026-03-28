@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from .asset import Asset
 
@@ -25,7 +25,9 @@ class WatchlistItem(WatchlistItemBase):
     user_id: uuid.UUID
     asset: Asset
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
+        orm_mode = True
 
 
 # Schemas for Watchlist
@@ -51,4 +53,6 @@ class Watchlist(WatchlistBase):
     created_at: datetime
     items: List[WatchlistItem] = []
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
+        orm_mode = True

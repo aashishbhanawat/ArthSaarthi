@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, Field, root_validator
 
 from .enums import TransactionType
 
@@ -22,13 +22,15 @@ class TransactionBase(BaseModel):
     fees: Decimal = Decimal("0.0")
     details: Optional[Dict[str, Any]] = None
 
-    @model_validator(mode="after")
-    def check_future_date(self) -> "TransactionBase":
+    @root_validator(pre=False)
+    @classmethod
+    def check_future_date(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         from datetime import datetime, timezone
 
-        if self.transaction_date:
+        transaction_date = values.get("transaction_date")
+        if transaction_date:
             now = datetime.now(timezone.utc)
-            target_date = self.transaction_date
+            target_date = transaction_date
 
             # Ensure we're comparing aware datetimes
             if target_date.tzinfo is None:
@@ -36,7 +38,7 @@ class TransactionBase(BaseModel):
 
             if target_date > now:
                 raise ValueError("Transaction date cannot be in the future")
-        return self
+        return values
 
 
 class TransactionLinkCreate(BaseModel):
@@ -57,26 +59,32 @@ class TransactionCreateIn(TransactionBase):
     asset_type: Optional[str] = None
     links: Optional[List[TransactionLinkCreate]] = None
 
-    @model_validator(mode="after")
-    def check_asset_provided(self) -> "TransactionCreateIn":
-        if self.asset_id is None and self.ticker_symbol is None:
+    @root_validator(pre=False)
+    @classmethod
+    def check_asset_provided(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values.get("asset_id") is None and values.get("ticker_symbol") is None:
             raise ValueError("Either asset_id or ticker_symbol must be provided")
-        return self
+        return values
 
-    @model_validator(mode="after")
-    def check_integer_quantities_for_corporate_actions(self) -> "TransactionCreateIn":
-        if self.transaction_type in [TransactionType.BONUS, TransactionType.SPLIT]:
+    @root_validator(pre=False)
+    @classmethod
+    def check_integer_quantities_for_corporate_actions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        transaction_type = values.get("transaction_type")
+        quantity = values.get("quantity")
+        price_per_unit = values.get("price_per_unit")
+
+        if transaction_type in [TransactionType.BONUS, TransactionType.SPLIT]:
             # For these types, quantity and price_per_unit represent ratios
             # and must be integers
-            if self.quantity % 1 != 0:
+            if quantity is not None and quantity % 1 != 0:
                 raise ValueError(
                     "Quantity (Ratio New) must be an integer for Bonus/Split."
                 )
-            if self.price_per_unit % 1 != 0:
+            if price_per_unit is not None and price_per_unit % 1 != 0:
                 raise ValueError(
                     "Price per unit (Ratio Old) must be an integer for Bonus/Split."
                 )
-        return self
+        return values
 
 
 # Properties to receive on transaction update
@@ -97,7 +105,9 @@ class TransactionLink(BaseModel):
     sell_transaction_id: uuid.UUID
     buy_transaction_id: uuid.UUID
     quantity: Decimal
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
+        orm_mode = True
 
 
 class Transaction(TransactionBase):
@@ -105,7 +115,9 @@ class Transaction(TransactionBase):
     portfolio_id: uuid.UUID
     asset: "Asset"
     sell_links: List[TransactionLink] = []  # Include links for accurate lot tracking
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
+        orm_mode = True
 
 
 

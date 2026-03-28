@@ -186,6 +186,5 @@ __all__ = [
 ]
 
 # Manually update forward references to resolve circular dependencies
-Asset.model_rebuild()
-
-Transaction.model_rebuild()
+Asset.update_forward_refs()
+Transaction.update_forward_refs()

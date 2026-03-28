@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from .bond import Bond as BondSchema
 
@@ -57,7 +57,9 @@ class AssetUpdate(BaseModel):
 # Properties shared by models stored in DB
 class AssetInDBBase(AssetCreate):
     id: uuid.UUID
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
+        orm_mode = True
 
 
 # Properties to return to client
