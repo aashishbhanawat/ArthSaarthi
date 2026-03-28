@@ -6,6 +6,8 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
+from sqlalchemy.orm import Session
+from app import crud
 from app.services.financial_data_service import FinancialDataService
 
 logger = logging.getLogger(__name__)

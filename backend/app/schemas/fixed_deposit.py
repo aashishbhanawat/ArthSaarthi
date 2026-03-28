@@ -15,7 +15,7 @@ class FixedDepositBase(BaseModel):
     compounding_frequency: str
     interest_payout: str
 
-    @root_validator(pre=False)
+    @root_validator(pre=False, skip_on_failure=True)
     @classmethod
     def check_dates(cls, values: dict) -> dict:
         start_date = values.get("start_date")
