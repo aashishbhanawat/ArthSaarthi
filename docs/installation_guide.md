@@ -88,7 +88,7 @@ Both images support **linux/amd64** and **linux/arm64** architectures.
     *   Generate a secure secret key: `openssl rand -hex 32`
     *   Set `CORS_ORIGINS` to the domain name or IP address you will use to access the application. Example: `CORS_ORIGINS=http://localhost,http://192.168.1.50`
 5.  **Start the Application:** This command pulls the official images from Docker Hub and starts all services.
-    *   By default, this will pull the `latest` version. To pull a specific version (e.g., `v1.0.0`), you can set the `APP_VERSION` environment variable before running the command: `export APP_VERSION="v1.0.0"`
+    *   By default, this will pull the `latest` version. To pull a specific version (e.g., `v1.2.0`), you can set the `APP_VERSION` environment variable before running the command: `export APP_VERSION="v1.2.0"`
     ```bash
     docker-compose up -d
     ```
