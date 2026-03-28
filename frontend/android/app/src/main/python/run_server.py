@@ -109,9 +109,13 @@ def start(port: int, data_dir: str):
         )
         server = uvicorn.Server(config)
 
-        # Use uvicorn's startup sequence to get the actual port and notify Java
+        # Ensure an event loop exists and is set for this thread
         import asyncio
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         
         # Override the server's startup to notify Java about the port
         original_startup = server.startup
