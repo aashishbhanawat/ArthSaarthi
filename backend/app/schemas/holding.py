@@ -37,7 +37,7 @@ class Holding(BaseModel):
         from_attributes = True
         orm_mode = True
 
-    @root_validator(pre=False)
+    @root_validator(pre=False, skip_on_failure=True)
     @classmethod
     def apply_fallbacks_and_enrich(cls, values: dict) -> dict:
         bond = values.get("bond")

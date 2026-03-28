@@ -22,7 +22,7 @@ class TransactionBase(BaseModel):
     fees: Decimal = Decimal("0.0")
     details: Optional[Dict[str, Any]] = None
 
-    @root_validator(pre=False)
+    @root_validator(pre=False, skip_on_failure=True)
     @classmethod
     def check_future_date(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         from datetime import datetime, timezone
@@ -59,14 +59,14 @@ class TransactionCreateIn(TransactionBase):
     asset_type: Optional[str] = None
     links: Optional[List[TransactionLinkCreate]] = None
 
-    @root_validator(pre=False)
+    @root_validator(pre=False, skip_on_failure=True)
     @classmethod
     def check_asset_provided(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if values.get("asset_id") is None and values.get("ticker_symbol") is None:
             raise ValueError("Either asset_id or ticker_symbol must be provided")
         return values
 
-    @root_validator(pre=False)
+    @root_validator(pre=False, skip_on_failure=True)
     @classmethod
     def check_integer_quantities_for_corporate_actions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         transaction_type = values.get("transaction_type")
