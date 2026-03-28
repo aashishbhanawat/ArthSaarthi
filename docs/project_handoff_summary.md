@@ -1,11 +1,11 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-24
+**Last Updated:** 2026-03-27
 
 ## 1. Current Project Status
 
-*   **Overall Status:** 🟢 **Stable (v1.2.0 Release Ready)**
-*   **Summary:** Resolved critical end-to-end lifecycle issues for Matured FDs, including Transaction History injection, color-coded UI labels, and correct deletion logic. Fixed a systemic Portfolio Realized P&L calculation bug and improved Import Session error propagation (propagate 400 instead of 500). Relocated backend unit tests to the standard `app/tests` discovery path.
+*   **Overall Status:** 🟢 **Stable (v1.2.0 QA Complete)**
+*   **Summary:** Successfully completed a comprehensive End-to-End QA run for v1.2.0. Verified transaction lifecycle for Equities, MFs, and Fixed Income. Validated Section 112A Grandfathering logic and corporate action adjustments (Bonus/Split). Generated an exhaustive, screenshot-rich User Guide (`temp_qa_run/USER_GUIDE.md`) with 10+ feature demonstration scripts. Verified application stability across Dashboard, Analytics, and Admin modules.
 
 ## 2. Test Suite Status
 
@@ -15,6 +15,7 @@
 
 ### Recent Stabilization Efforts
 
+*   **Comprehensive QA & User Guide (2026-03-27):** Exhaustive verification of the v1.2.0 release candidate. Validated Reliance (1:1 Bonus) and HDFC Bank (1:2 Reverse Split) sell transactions. Confirmed Section 112A Grandfathering using Actual Cost vs FMV Jan 2018 logic. Generated exhaustive platform documentation with localized media assets.
 *   **FD Lifecycle & Import Robustness (2026-03-24):** Stabilized the FD/RD lifecycle by redacting matured assets from Holdings while preserving their interest in the Portfolio Summary. Implemented synthetic transaction injection for the History tab with conditional Edit/Delete support. Fixed import session commit logic to re-raise `HTTPException` for clearer validation messaging.
 *   **Live Testing v1.2.0 Fixes (2026-03-23):** Completely stabilized the benchmarking engine to handle edge cases like absent Yahoo indices (Debt benchmark fallback) and extreme stock gains (via Lot-Based FIFO tracking). Fixed historical mathematical distortions in PPF, and matured FD/RD analytical models. Fixed `AssetSearchResult` to expose Bond metadata to the frontend.
 
@@ -73,6 +74,7 @@
     -   Privacy Mode to obscure sensitive values.
     -   Context-sensitive help links.
     -   Dark theme with user preference persistence.
+-   **Exhaustive User Guide:** Comprehensive `USER_GUIDE.md` in `temp_qa_run/` featuring 50+ localized screenshots, transaction logs, and feature walk-through scripts.
 -   **Capital Gains & Dividend Reporting:**
     -   Comprehensive Capital Gains reports for Schedule 112A (Grandfathered Equity) and Schedule FA (Foreign Assets).
     -   **Dividend Report (FR 6.5):** Dedicated tracking for dividends, including Rule 115 compliant TTBR FX conversion for foreign assets (ESPP/RSU).

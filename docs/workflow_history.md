@@ -1,4 +1,47 @@
+## 2026-03-27: Comprehensive QA Run & Exhaustive User Guide (v1.2.0)
+
+**Task:** Perform an exhaustive QA verification of the ArthSaarthi application, focusing on taxation, corporate actions, and analytics, and generate a detailed User Guide.
+
+**AI Assistant:** Antigravity
+**Role:** QA Engineer / Technical Writer
+
+### Summary
+
+1. **Transaction Lifecycle & Corporate Actions:**
+    - Verified **RELIANCE industries** 1:1 Bonus and 30-unit SELL transaction via FIFO.
+    - Verified **HDFC BANK** 1:2 Reverse Split (consolidation) and 20-unit SELL transaction.
+    - Successfully validated **Specific Lot Selection** for US Equities (AAPL/MSFT).
+2. **Taxation & Compliance (Schedule 112A):**
+    - Verified **Section 112A Grandfathering** math for RELIANCE (acquired Jan 2017).
+    - Confirmed system correctly used Actual Cost (₹520) as tax base over Jan 31, 2018 FMV (₹424.64).
+    - Verified Capital Gains summary and Schedule 112A report accuracy for FY 2025-26.
+3. **Analytics & Performance:**
+    - Validated **Portfolio XIRR (12.25%)** and **Alpha (0.51%)** against the Nifty 50 benchmark.
+    - Verified Dashboard analytics (Asset Class, Sectoral, Market Cap distribution).
+    - Confirmed **Privacy Mode** functionality across all pages.
+4. **Documentation & User Guide:**
+    - Generated a 150+ line `USER_GUIDE.md` in `temp_qa_run/` with localized media in `temp_qa_run/media/`.
+    - Documented every navigation element, modal, and asset transaction log.
+    - Included voiceover scripts for 10 major feature demonstrations.
+
+### File Changes
+
+* **New:** `temp_qa_run/USER_GUIDE.md` — Exhaustive documentation.
+* **New:** `temp_qa_run/media/` — 50+ localized screenshots and recordings.
+
+### Verification
+
+* **Manual QA:** End-to-end verification of all portfolios (Core Wealth, Retirement Fund, Alpha Trading).
+* **Mathematical Validation:** Confirmed FIFO, Split-adjustment, and Grandfathering math matches official income tax rules.
+
+### Outcome
+
+**Success.** The ArthSaarthi platform is fully verified and documented for the v1.2.0 release.
+
+---
+
 ## 2026-03-24: Fixed Deposit Lifecycle, P&L Correction & Import Robustness (#374)
+
 
 **Task:** Fix the end-to-end lifecycle for Matured FDs in the Transaction History, correct portfolio Realized P&L calculations, improve Import Session error propagation, and fix misplaced unit test discovery.
 
