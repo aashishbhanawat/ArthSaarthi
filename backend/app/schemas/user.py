@@ -2,7 +2,7 @@ import re
 import uuid
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, validator
 
 
 # Shared properties
@@ -16,17 +16,16 @@ class UserCreate(UserBase):
     password: str
     is_admin: bool = False
 
-    model_config = ConfigDict(
-        json_schema_extra={
+    class Config:
+        schema_extra = {
             "example": {
                 "full_name": "Admin User",
                 "email": "admin@example.com",
                 "password": "ValidPassword123!",
             }
         }
-    )
 
-    @field_validator("password")
+    @validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
@@ -47,9 +46,10 @@ class User(UserBase):
     id: uuid.UUID
     is_admin: bool
     is_active: bool
-    model_config = ConfigDict(
-        from_attributes=True,
-        json_schema_extra={
+    class Config:
+        from_attributes = True
+        orm_mode = True
+        schema_extra = {
             "example": {
                 "id": 1,
                 "full_name": "Admin User",
@@ -57,8 +57,7 @@ class User(UserBase):
                 "is_active": True,
                 "is_admin": True,
             }
-        },
-    )
+        }
 
 
 # Properties to receive via API on update
@@ -67,8 +66,8 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
-    model_config = ConfigDict(
-        json_schema_extra={
+    class Config:
+        schema_extra = {
             "example": {
                 "full_name": "John Doe Updated",
                 "email": "johndoe.updated@example.com",
@@ -76,7 +75,6 @@ class UserUpdate(BaseModel):
                 "is_admin": False,
             }
         }
-    )
 
 
 # Properties to receive via API on update for the current user
@@ -88,7 +86,7 @@ class UserPasswordChange(BaseModel):
     old_password: str
     new_password: str
 
-    @field_validator("new_password")
+    @validator("new_password")
     @classmethod
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
