@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     DEPLOYMENT_MODE: Literal["server", "desktop", "android"] = "server"
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "uploads"
+    DISK_CACHE_DIR: Optional[str] = None
 
     ICICI_BREEZE_API_KEY: str = ""
     ZERODHA_KITE_API_KEY: str = ""
@@ -92,6 +93,18 @@ class Settings(BaseSettings):
             upload_dir = Path.home() / ".arthsaarthi" / "uploads"
             upload_dir.mkdir(parents=True, exist_ok=True)
             return str(upload_dir)
+        return v
+
+    @validator("DISK_CACHE_DIR", pre=True, always=True)
+    def set_disk_cache_dir_for_desktop(cls, v, values):
+        if values.get("DEPLOYMENT_MODE") in ("desktop", "android"):
+            if isinstance(v, str):
+                return v
+            from pathlib import Path
+            # Use a stable directory in the user's home for cache
+            cache_dir = Path.home() / ".arthsaarthi" / "cache"
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            return str(cache_dir)
         return v
 
     @validator("REDIS_URL", pre=True, always=True)
