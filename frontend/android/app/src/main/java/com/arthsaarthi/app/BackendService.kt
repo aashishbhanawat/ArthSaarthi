@@ -28,6 +28,12 @@ class BackendService : Service() {
             private set
         var isRunning: Boolean = false
             private set
+
+        @JvmStatic
+        fun updatePort(port: Int) {
+            Log.i(TAG, "Updating backend port to $port")
+            backendPort = port
+        }
     }
 
     private val binder = BackendBinder()
@@ -53,13 +59,6 @@ class BackendService : Service() {
         return START_STICKY
     }
 
-    private fun findFreePort(): Int {
-        return ServerSocket(0).use { socket ->
-            socket.reuseAddress = true
-            socket.localPort
-        }
-    }
-
     private fun startBackendServer() {
         if (isRunning) {
             Log.w(TAG, "Backend server is already running on port $backendPort")
@@ -71,21 +70,21 @@ class BackendService : Service() {
             Python.start(AndroidPlatform(this))
         }
 
-        backendPort = findFreePort()
-        Log.i(TAG, "Starting backend on port $backendPort")
+        // Initial port 0 means let Python choose
+        backendPort = 0
 
         serverThread = Thread {
             try {
                 val py = Python.getInstance()
                 val runServer = py.getModule("run_server")
 
-                // Pass the port and the app's internal data directory
+                // Pass the app's internal data directory
                 val dataDir = filesDir.absolutePath
                 Log.i(TAG, "Data directory: $dataDir")
 
                 isRunning = true
-                // This call blocks until the server stops
-                runServer.callAttr("start", backendPort, dataDir)
+                // Pass port 0 to indicate dynamic selection
+                runServer.callAttr("start", 0, dataDir)
             } catch (e: Exception) {
                 Log.e(TAG, "Backend server crashed", e)
                 isRunning = false
@@ -96,7 +95,7 @@ class BackendService : Service() {
             start()
         }
 
-        Log.i(TAG, "Backend server thread started")
+        Log.i(TAG, "Backend server thread started (awaiting port update from Python)")
     }
 
     override fun onDestroy() {
