@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app import crud
 from app.cache.factory import get_cache_client
+from app.utils.pydantic_compat import model_validate_json
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ def cache_analytics_data(
             if cached_result is not None:
                 logger.debug(f"Cache HIT for key: {cache_key}")
                 if response_model:
-                    return response_model.model_validate_json(cached_result)
+                    return model_validate_json(response_model, cached_result)
                 return json.loads(cached_result)
 
             logger.debug(f"Cache MISS for key: {cache_key}")

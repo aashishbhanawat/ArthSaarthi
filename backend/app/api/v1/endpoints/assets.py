@@ -8,6 +8,9 @@ from app import crud, models, schemas
 from app.core import dependencies as deps
 from app.core.config import settings
 from app.models.user import User
+from app.cache.utils import invalidate_caches_for_portfolio
+from app.core import dependencies
+from app.utils.pydantic_compat import model_dump_json, model_validate
 from app.services.financial_data_service import financial_data_service
 
 router = APIRouter()
@@ -27,7 +30,7 @@ def create_asset(
     if settings.DEBUG:
         print("\n--- BACKEND DEBUG: CREATE ASSET ENDPOINT HIT ---")
         print(f"User: {current_user.email}")
-        print(f"Received Payload: {asset_in.model_dump_json(indent=2)}")
+        print(f"Received Payload: {model_dump_json(asset_in, indent=2)}")
 
     asset = crud.asset.get_by_ticker(db, ticker_symbol=asset_in.ticker_symbol)
 
@@ -98,11 +101,7 @@ def search_stocks(
             "currency": asset.currency,
             "source": "local",
             "fmv_2018": float(asset.fmv_2018) if asset.fmv_2018 else None,
-            "bond": (
-                schemas.Bond.model_validate(asset.bond)
-                if getattr(asset, "bond", None)
-                else None
-            ),
+            "bond": model_validate(schemas.Bond, asset.bond) if getattr(asset, "bond", None) else None,
         })
 
     # 2. If few local results, also search Yahoo Finance

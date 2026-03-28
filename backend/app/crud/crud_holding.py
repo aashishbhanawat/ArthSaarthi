@@ -20,6 +20,7 @@ from app.models.recurring_deposit import RecurringDeposit
 from app.models.transaction_link import TransactionLink
 from app.schemas.enums import BondType, TransactionType
 from app.services.financial_data_service import financial_data_service
+from app.utils.pydantic_compat import model_dump_json
 
 logger = logging.getLogger(__name__)
 
@@ -813,7 +814,7 @@ def _process_market_traded_assets(
     if settings.DEBUG:
         logger.debug("--- Market Traded Holdings ---")
         for h in holdings_list:
-            logger.debug(h.model_dump_json(indent=2))
+            logger.debug(model_dump_json(h, indent=2))
         logger.debug("------------------------------")
 
     return holdings_list, total_realized_pnl
