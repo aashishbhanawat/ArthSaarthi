@@ -6,6 +6,10 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
+from app.services.financial_data_service import FinancialDataService
+
+logger = logging.getLogger(__name__)
+
 try:
     from pyxirr import xirr
 except ImportError:
@@ -31,17 +35,6 @@ except ImportError:
         except Exception as e:
             logger.error(f"XIRR fallback failed in benchmark: {e}")
             return 0.0
-
-from sqlalchemy.orm import Session
-
-from app import crud
-from app.crud.crud_holding import (
-    _calculate_fd_current_value,
-    _calculate_rd_value_at_date,
-)
-from app.services.financial_data_service import FinancialDataService
-
-logger = logging.getLogger(__name__)
 
 # Transaction types that represent inflows
 BUY_TYPES = [

@@ -8,6 +8,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from dateutil.relativedelta import relativedelta
+from app.models.transaction_link import TransactionLink
+
+logger = logging.getLogger(__name__)
+
 try:
     from pyxirr import xirr
 except ImportError:
