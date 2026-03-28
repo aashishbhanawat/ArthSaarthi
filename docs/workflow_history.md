@@ -1,3 +1,27 @@
+## 2026-03-28: Fix Duplicate Exchange Suffix Bug for Indian Tickers
+
+**Task:** Fix a bug where Indian stock tickers already containing `.NS` or `.BO` had those suffixes appended again, causing Yahoo Finance lookup failures.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+- **Root Cause:** `get_asset_details` and `get_price` in `yfinance_provider.py` unconditionally generated lookup variants `[{ticker}.NS, {ticker}.BO, {ticker}]`. When the user passed a ticker like `NTPC.NS` (already containing the suffix), the code queried `NTPC.NS.NS` and `NTPC.NS.BO`, which are invalid symbols, causing "possibly delisted" errors.
+- **Fix:** Added a prefix check before building the variants list. If the ticker already ends with `.NS` or `.BO`, the variants list is just `[ticker_symbol]`, so the lookup is direct.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/services/providers/yfinance_provider.py` — `get_asset_details`, `get_price`
+
+### Verification
+
+* **Backend Tests:** All backend service tests passing.
+* **Manual Verification:** Tested with `NTPC.NS` query — no longer produces `NTPC.NS.NS` errors.
+
+---
+
 ## 2026-03-31: v1.2.0 Release Finalization & Screenshot Synchronization
 
 **Task:** Finalize ArthSaarthi v1.2.0 release documentation, synchronize screenshot test suite with the new layout, and update release dates across all project files.

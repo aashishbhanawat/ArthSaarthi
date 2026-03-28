@@ -440,9 +440,14 @@ class YFinanceProvider(FinancialDataProvider):
 
         logger.debug(f"get_asset_details: Looking up {ticker_symbol}")
         ticker_obj = None
-        for yf_ticker_str in [
-            f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
-        ]:
+
+        upper_ticker = ticker_symbol.upper()
+        if upper_ticker.endswith('.NS') or upper_ticker.endswith('.BO'):
+            variants = [ticker_symbol]
+        else:
+            variants = [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]
+
+        for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
                 temp_ticker = yf.Ticker(yf_ticker_str)
@@ -486,9 +491,14 @@ class YFinanceProvider(FinancialDataProvider):
 
     def get_price(self, ticker_symbol: str) -> Optional[Decimal]:
         ticker_obj = None
-        for yf_ticker_str in [
-            f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
-        ]:
+
+        upper_ticker = ticker_symbol.upper()
+        if upper_ticker.endswith('.NS') or upper_ticker.endswith('.BO'):
+            variants = [ticker_symbol]
+        else:
+            variants = [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]
+
+        for yf_ticker_str in variants:
             try:
                 temp_ticker = yf.Ticker(yf_ticker_str)
                 if not temp_ticker.history(period="1d").empty:
