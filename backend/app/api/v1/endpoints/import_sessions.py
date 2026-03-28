@@ -25,6 +25,7 @@ from app.core.config import settings
 from app.schemas.msg import Msg
 from app.services.import_parsers import parser_factory
 from app.utils.filename import secure_filename
+from app.utils.pydantic_compat import model_dump
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -213,7 +214,7 @@ async def create_import_session(
 
     # 4. Save the list of Pydantic models to a Parquet file
     # Convert list of Pydantic models to a DataFrame for efficient storage
-    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_transactions])
+    parsed_df = pd.DataFrame([model_dump(t) for t in parsed_transactions])
     parsed_file_name = f"{import_session.id}.parquet"
     parsed_file_path = upload_dir / parsed_file_name
     parsed_df.to_parquet(parsed_file_path)
@@ -601,7 +602,7 @@ async def create_fd_import_session(
         )
 
     # 4. Save the list of Pydantic models to a Parquet file
-    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_fds])
+    parsed_df = pd.DataFrame([model_dump(t) for t in parsed_fds])
     parsed_file_name = f"fd_{import_session.id}.parquet"
     parsed_file_path = upload_dir / parsed_file_name
     parsed_df.to_parquet(parsed_file_path)

@@ -16,6 +16,7 @@ from app.models.portfolio import Portfolio
 from app.models.user import User
 from app.schemas.portfolio import PortfolioCreate
 from app.tests.utils.user import create_random_user
+from app.utils.pydantic_compat import model_dump
 
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
@@ -267,7 +268,7 @@ def test_commit_import_session_success(
     ]
     commit_payload = {
         "transactions_to_commit": [
-            tx.model_dump() for tx in transactions_to_commit
+            model_dump(tx) for tx in transactions_to_commit
         ],
         "aliases_to_create": [],
     }
@@ -316,7 +317,7 @@ def test_commit_import_session_asset_not_found(
     ]
     commit_payload = {
         "transactions_to_commit": [
-            tx.model_dump() for tx in transactions_to_commit
+            model_dump(tx) for tx in transactions_to_commit
         ],
         "aliases_to_create": [],
     }

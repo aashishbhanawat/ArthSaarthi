@@ -18,6 +18,11 @@ class WatchlistItemCreate(WatchlistItemBase):
     pass
 
 
+# Properties to receive via API on update
+class WatchlistItemUpdate(WatchlistItemBase):
+    pass
+
+
 # Properties to return to client
 class WatchlistItem(WatchlistItemBase):
     id: uuid.UUID

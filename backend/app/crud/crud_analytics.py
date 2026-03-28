@@ -50,6 +50,7 @@ from app import crud, models, schemas
 from app.cache.utils import cache_analytics_data
 from app.core.financial_definitions import TRANSACTION_BEHAVIORS, CashFlowType
 from app.crud.crud_dashboard import _get_portfolio_history
+from app.utils.pydantic_compat import model_copy, model_validate
 from app.crud.crud_holding import (
     _calculate_fd_current_value,
     _calculate_rd_value_at_date,
@@ -151,7 +152,7 @@ def _get_realized_and_unrealized_cash_flows(
     buy_id_to_copy_map = {} # To easily find the mutable copy by ID for linking
     for t in sorted_txs:
         if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST"):
-            buy_copy = t.model_copy(deep=True)
+            buy_copy = model_copy(t, deep=True)
             # Only scale if demerger exists AND buy is before demerger date
             if (remaining_ratio < Decimal("1.0") and buy_copy.price_per_unit
                     and earliest_demerger_date
@@ -607,7 +608,7 @@ class CRUDAnalytics:
         ).all()
 
         transactions_schemas = [
-            schemas.Transaction.model_validate(tx) for tx in transactions
+            model_validate(schemas.Transaction, tx) for tx in transactions
         ]
 
         analytics_result = _get_realized_and_unrealized_cash_flows(
