@@ -34,6 +34,16 @@ class DiskCacheClient(CacheClient):
             # Key was not in the cache, which is fine for a delete operation
             pass
 
+    def incr(self, key: str, expire: Optional[int] = None) -> int:
+        with self._cache.transact():
+            current = self._cache.get(key, default=0)
+            try:
+                new_val = int(current) + 1
+            except ValueError:
+                new_val = 1
+            self._cache.set(key, str(new_val), expire=expire)
+            return new_val
+
     def clear(self) -> None:
         """Clears the entire disk cache."""
         self._cache.clear()
