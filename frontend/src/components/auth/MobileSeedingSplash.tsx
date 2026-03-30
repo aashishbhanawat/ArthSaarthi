@@ -107,7 +107,7 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
             </div>
 
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
-                This is a one-time process and may take a few minutes on mobile devices.
+                This is a one-time process and may take 10-20 minutes depending on your network.
             </p>
         </div>
     );
