@@ -135,7 +135,7 @@ def get_seeding_status(db: Session = Depends(get_db)):
     try:
         asset_count = db.query(models.Asset).count()
 
-        if asset_count >= MIN_ASSETS_FOR_COMPLETE:
+        if _seeding_state["status"] == SeedingStatus.COMPLETE or (asset_count >= MIN_ASSETS_FOR_COMPLETE and _seeding_state["status"] == SeedingStatus.IDLE):
             return SeedingStatusResponse(
                 status=SeedingStatus.COMPLETE,
                 progress=100,
