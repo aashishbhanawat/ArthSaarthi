@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as api from '../../services/api';
+import api from '../../services/api';
 import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 interface SeedingStatusResponse {
@@ -20,7 +20,7 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
 
     const fetchStatus = useCallback(async () => {
         try {
-            const response = await api.client.get<SeedingStatusResponse>('/api/v1/system/seeding-status');
+            const response = await api.get<SeedingStatusResponse>('/api/v1/system/seeding-status');
             setStatusResponse(response.data);
 
             if (response.data.status === 'complete' || (response.data.status === 'idle' && response.data.asset_count > 100)) {
@@ -43,8 +43,8 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
     const handleRetry = async () => {
         setIsRetrying(true);
         try {
-            await api.client.post('/api/v1/system/seeding-reset');
-            await api.client.post('/api/v1/system/trigger-seeding');
+            await api.post('/api/v1/system/seeding-reset');
+            await api.post('/api/v1/system/trigger-seeding');
             fetchStatus();
         } catch (error) {
             console.error("Failed to retry seeding", error);
