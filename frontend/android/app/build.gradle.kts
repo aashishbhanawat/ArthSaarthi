@@ -82,7 +82,7 @@ chaquopy {
             // Analytical & Data dependencies (flexible versions for Android mirror)
             install("numpy")
             install("pandas")
-            install("yfinance==0.2.65")
+            install("yfinance==1.1.0")
             
             // Database & Auth
             install("alembic")
