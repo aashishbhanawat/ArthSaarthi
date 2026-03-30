@@ -13,9 +13,8 @@ class DiskCacheClient(CacheClient):
     """A cache client implementation using a local disk cache."""
 
     def __init__(self):
-        # Use DISK_CACHE_DIR if set (e.g., on Android), otherwise fallback to platform-specific cache dir
-        import os
-        cache_dir = os.getenv("DISK_CACHE_DIR")
+        from app.core.config import settings
+        cache_dir = settings.DISK_CACHE_DIR
         if not cache_dir:
             cache_dir = user_cache_dir("arthsaarthi", "arthsaarthi-app")
             
