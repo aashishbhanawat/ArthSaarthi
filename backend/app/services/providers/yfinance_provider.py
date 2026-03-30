@@ -9,6 +9,7 @@ import pandas as pd
 import requests
 import requests_cache
 import yfinance as yf
+from tenacity import retry, stop_after_attempt, wait_exponential
 from pydantic import ValidationError
 
 from app.cache.base import CacheClient
@@ -44,6 +45,25 @@ class YFinanceProvider(FinancialDataProvider):
                 "Chrome/91.0.4472.124 Safari/537.36"
             )
         })
+
+    @retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
+    def _fetch_history_with_retry(self, ticker_obj) -> pd.DataFrame:
+        return ticker_obj.history(period="2d", auto_adjust=False)
+
+    @retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
+    def _fetch_download_with_retry(self, tickers_str, start_date, end_date) -> pd.DataFrame:
+        return yf.download(
+            tickers_str,
+            start=start_date,
+            end=end_date,
+            progress=False,
+            session=self.session,
+            auto_adjust=False
+        )
+
+    @retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
+    def _fetch_info_with_retry(self, ticker_obj) -> dict:
+        return ticker_obj.info
 
     def _get_yfinance_ticker(
         self, ticker_symbol: str, exchange: Optional[str]
@@ -132,7 +152,7 @@ class YFinanceProvider(FinancialDataProvider):
             yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
             logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
             for ticker_obj in yf_data.tickers.values():
-                hist = ticker_obj.history(period="2d", auto_adjust=True)
+                hist = self._fetch_history_with_retry(ticker_obj)
                 yf_symbol = ticker_obj.ticker
                 # Use reverse map; fallback to splitting suffix for plain tickers
                 original_ticker = yf_to_original.get(
@@ -228,7 +248,7 @@ class YFinanceProvider(FinancialDataProvider):
 
         try:
             ticker_obj = yf.Ticker(yf_ticker, session=self.session)
-            info = ticker_obj.info
+            info = self._fetch_info_with_retry(ticker_obj)
             if info:
                 trailing_pe = info.get("trailingPE")
                 price_to_book = info.get("priceToBook")
@@ -339,12 +359,10 @@ class YFinanceProvider(FinancialDataProvider):
                 return historical_data
 
         try:
-            yf_data = yf.download(
+            yf_data = self._fetch_download_with_retry(
                 yfinance_tickers_str,
-                start=start_date,
-                end=end_date + timedelta(days=1),  # end date is exclusive
-                progress=False,
-                session=self.session,
+                start_date,
+                end_date + timedelta(days=1)
             )
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
