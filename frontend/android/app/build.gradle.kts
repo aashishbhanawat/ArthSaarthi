@@ -39,6 +39,14 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    applicationVariants.all {
+        val variantName = name
+        outputs.all {
+            val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            outputImpl.outputFileName = "ArthSaarti-${variantName}.apk"
+        }
+    }
 }
 
 // Chaquopy configuration (must be a top-level block in .kts files, Chaquopy 15+)

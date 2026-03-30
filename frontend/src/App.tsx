@@ -20,6 +20,7 @@ import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
 import CapitalGainsPage from './pages/CapitalGainsPage';
 import ProfilePage from './pages/ProfilePage';
+import MorePage from './pages/MorePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -54,6 +55,7 @@ function AppRoutes() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/more" element={<MorePage />} />
           <Route path="/portfolios" element={<PortfolioPage />} />
           <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
           <Route path="/import" element={<DataImportPage />} />
