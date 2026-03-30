@@ -29,7 +29,8 @@ class YFinanceProvider(FinancialDataProvider):
         # Set up a persistent SQLite cache for all yfinance HTTP requests
         # This caches ticker info, crumps, and history calls, drastically reducing 
         # the likelihood of hitting Yahoo's rate limits (HTTP 429).
-        cache_path = str(settings.DISK_CACHE_DIR / "yfinance_cache.sqlite")
+        from pathlib import Path
+        cache_path = str(Path(settings.DISK_CACHE_DIR) / "yfinance_cache.sqlite")
         self.session = requests_cache.CachedSession(
             cache_name=cache_path,
             backend='sqlite',
