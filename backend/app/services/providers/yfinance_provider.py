@@ -46,13 +46,19 @@ class YFinanceProvider(FinancialDataProvider):
             )
         })
 
-    @retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
-    def _fetch_history_with_retry(self, ticker_obj) -> pd.DataFrame:
-        return ticker_obj.history(period="2d", auto_adjust=False)
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=3, max=15), reraise=True)
+    def _fetch_history_with_retry(self, ticker_obj, **kwargs) -> pd.DataFrame:
+        kwargs.setdefault("auto_adjust", False)
+        df = ticker_obj.history(**kwargs)
+        if df is None or df.empty:
+            raise ValueError(f"yfinance history returned empty data for {ticker_obj.ticker}")
+        return df
 
-    @retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=3, max=15), reraise=True)
     def _fetch_download_with_retry(self, tickers_str, start_date, end_date) -> pd.DataFrame:
-        return yf.download(
+        if hasattr(yf, "shared"):
+            yf.shared._ERRORS = {}
+        df = yf.download(
             tickers_str,
             start=start_date,
             end=end_date,
@@ -60,6 +66,13 @@ class YFinanceProvider(FinancialDataProvider):
             session=self.session,
             auto_adjust=False
         )
+        if hasattr(yf, "shared") and getattr(yf.shared, "_ERRORS", {}):
+            errors = yf.shared._ERRORS
+            if any("Rate limited" in str(e) or "Too Many Requests" in str(e) for e in errors.values()):
+                raise ValueError(f"YFinance Rate Limit hit: {errors}")
+        if df is None or df.empty:
+            raise ValueError(f"yfinance download returned empty data for {tickers_str}")
+        return df
 
     @retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
     def _fetch_info_with_retry(self, ticker_obj) -> dict:
@@ -147,7 +160,7 @@ class YFinanceProvider(FinancialDataProvider):
             yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
             logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
             for ticker_obj in yf_data.tickers.values():
-                hist = self._fetch_history_with_retry(ticker_obj)
+                hist = self._fetch_history_with_retry(ticker_obj, period="2d")
                 yf_symbol = ticker_obj.ticker
                 original_ticker = yf_symbol.split(".")[0]
                 logger.debug(
@@ -447,8 +460,8 @@ class YFinanceProvider(FinancialDataProvider):
             )
             ticker_obj = yf.Ticker(yf_ticker, session=self.session)
             # Fetch data with slight buffer
-            hist = ticker_obj.history(
-                start=start_date, end=end_date + timedelta(days=1)
+            hist = self._fetch_history_with_retry(
+                ticker_obj, start=start_date, end=end_date + timedelta(days=1)
             )
 
             if hist.empty:
