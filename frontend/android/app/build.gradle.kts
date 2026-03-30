@@ -97,7 +97,6 @@ chaquopy {
             install("platformdirs==4.3.6")
             install("tenacity")
             install("requests")
-            install("pyxirr")
         }
     }
 }
