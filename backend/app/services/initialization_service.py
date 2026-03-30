@@ -91,7 +91,12 @@ def _download_file(url: str, dest_path: str) -> bool:
 
 def _run_initial_seeding():
     """Actually performs the seeding logic in a thread."""
+    from app.api.v1.endpoints.system import _seeding_state, SeedingStatus
     logger.info("Background initial seeding thread started.")
+    _seeding_state["status"] = SeedingStatus.IN_PROGRESS
+    _seeding_state["progress"] = 10
+    _seeding_state["message"] = "Fetching reference instruments lists..."
+    
     db = SessionLocal()
     try:
         # 1. Seed Interest Rates
@@ -136,24 +141,35 @@ def _run_initial_seeding():
             if "icici" in files: seeder.process_icici_fallback(files["icici"])
             
             db.commit()
+            _seeding_state["status"] = SeedingStatus.COMPLETE
+            _seeding_state["progress"] = 100
+            _seeding_state["message"] = "Background initial seeding completed successfully!"
             logger.info("Background initial seeding completed successfully.")
         finally:
             shutil.rmtree(temp_dir)
     except Exception as e:
+        _seeding_state["status"] = SeedingStatus.FAILED
+        _seeding_state["error"] = str(e)
         logger.error(f"Background initial seeding failed: {e}", exc_info=True)
     finally:
         db.close()
 
 def check_and_seed_on_startup():
     """Checks if database is empty and triggers background seeding if so."""
+    from app.api.v1.endpoints.system import _seeding_state, SeedingStatus
     db = SessionLocal()
     try:
         count = db.query(Asset).count()
         if count < 10000:
             logger.info(f"Assets table has {count} assets (<10000). Triggering background seeding...")
+            _seeding_state["status"] = SeedingStatus.IN_PROGRESS
+            _seeding_state["message"] = "Preparing to download and seed data..."
             threading.Thread(target=_run_initial_seeding, daemon=True).start()
         else:
             logger.info(f"Database already has {count} assets. Skipping initial seeding.")
+            _seeding_state["status"] = SeedingStatus.COMPLETE
+            _seeding_state["progress"] = 100
+            _seeding_state["message"] = "Asset database ready"
     except Exception as e:
         logger.error(f"Error during startup seeding check: {e}")
     finally:
