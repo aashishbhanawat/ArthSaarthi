@@ -45,6 +45,7 @@ const PortfolioDetailPage: React.FC = () => {
     const [fdToDelete, setFdToDelete] = useState<Holding | null>(null);
     const [bondToDelete, setBondToDelete] = useState<Holding | null>(null);
     const [rdToDelete, setRdToDelete] = useState<Holding | null>(null);
+    const [isFabMenuOpen, setFabMenuOpen] = useState(false);
 
     useEffect(() => {
         if (selectedHolding && holdings?.holdings) {
@@ -133,14 +134,43 @@ const PortfolioDetailPage: React.FC = () => {
 
     return (
         <div className="relative">
-            {/* Mobile FAB */}
-            <button
-                onClick={handleOpenCreateTransactionModal}
-                className="lg:hidden fixed bottom-24 right-6 z-50 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 active:scale-90 transition-all"
-                aria-label="Add Transaction"
-            >
-                <PlusIcon className="h-6 w-6" />
-            </button>
+            {/* Mobile FAB Speed Dial */}
+            <div className="lg:hidden fixed bottom-24 right-6 z-50 flex flex-col items-end space-y-4">
+                {isFabMenuOpen && (
+                    <>
+                        <div className="flex items-center space-x-2">
+                            <span className="bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm text-sm font-medium">ESPP/RSU</span>
+                            <button
+                                onClick={() => { setAddAwardModalOpen(true); setFabMenuOpen(false); }}
+                                className="p-3 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 active:scale-90 transition-all"
+                                aria-label="Add ESPP/RSU"
+                            >
+                                <span className="text-xl">🏆</span>
+                            </button>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <span className="bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm text-sm font-medium">Transaction</span>
+                            <button
+                                onClick={() => { handleOpenCreateTransactionModal(); setFabMenuOpen(false); }}
+                                className="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 active:scale-90 transition-all"
+                                aria-label="Add Regular Transaction"
+                            >
+                                <PlusIcon className="h-6 w-6" />
+                            </button>
+                        </div>
+                    </>
+                )}
+                <button
+                    onClick={() => setFabMenuOpen(!isFabMenuOpen)}
+                    className={`p-4 ${isFabMenuOpen ? 'bg-gray-500 rotate-45' : 'bg-blue-600'} text-white rounded-full shadow-xl transition-all duration-300 z-50`}
+                    aria-label="Toggle Add Menu"
+                >
+                    <PlusIcon className="h-7 w-7" />
+                </button>
+                {isFabMenuOpen && (
+                    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[-1]" onClick={() => setFabMenuOpen(false)}></div>
+                )}
+            </div>
 
             <div className="mb-8">
                 <Link to="/portfolios" className="text-blue-600 hover:underline text-sm dark:text-blue-400">
