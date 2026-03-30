@@ -7,10 +7,12 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import requests
+import requests_cache
 import yfinance as yf
 from pydantic import ValidationError
 
 from app.cache.base import CacheClient
+from app.core.config import settings
 
 from .base import FinancialDataProvider
 
@@ -23,7 +25,17 @@ logger = logging.getLogger(__name__)
 class YFinanceProvider(FinancialDataProvider):
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
-        self.session = requests.Session()
+        
+        # Set up a persistent SQLite cache for all yfinance HTTP requests
+        # This caches ticker info, crumps, and history calls, drastically reducing 
+        # the likelihood of hitting Yahoo's rate limits (HTTP 429).
+        cache_path = str(settings.DISK_CACHE_DIR / "yfinance_cache.sqlite")
+        self.session = requests_cache.CachedSession(
+            cache_name=cache_path,
+            backend='sqlite',
+            expire_after=CACHE_TTL_HISTORICAL_PRICE,
+            stale_if_error=True
+        )
         self.session.headers.update({
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

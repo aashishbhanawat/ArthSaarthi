@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '../components/auth/LoginForm';
 import SetupForm from '../components/auth/SetupForm';
+import MobileSeedingSplash from '../components/auth/MobileSeedingSplash';
 import * as api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +11,7 @@ const AuthPage: React.FC = () => {
     const navigate = useNavigate();
     const [setupNeeded, setSetupNeeded] = useState<boolean | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [seedingComplete, setSeedingComplete] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -42,6 +44,9 @@ const AuthPage: React.FC = () => {
     };
 
     const renderContent = () => {
+        if (!seedingComplete) {
+            return <MobileSeedingSplash onComplete={() => setSeedingComplete(true)} />;
+        }
         if (isLoading) {
             return <p className="text-center">Loading...</p>;
         }
