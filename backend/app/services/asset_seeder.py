@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class AssetSeeder:
     # Commit every N assets for live progress updates
-    COMMIT_BATCH_SIZE = 500
+    COMMIT_BATCH_SIZE = 100
 
     def __init__(self, db: Session, debug: bool = False):
         self.db = db
