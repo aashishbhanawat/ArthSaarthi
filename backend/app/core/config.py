@@ -64,10 +64,11 @@ class Settings(BaseSettings):
             # use it as-is
             if isinstance(v, str) and v.startswith("sqlite"):
                 return v
+            from platformdirs import user_data_dir
             from pathlib import Path
-            # Use a stable directory in the user's home for the database
-            app_dir = Path.home() / ".arthsaarthi"
-            app_dir.mkdir(exist_ok=True)
+            # Use a stable, platform-appropriate directory for the database
+            app_dir = Path(user_data_dir("arthsaarthi", "arthsaarthi-app"))
+            app_dir.mkdir(parents=True, exist_ok=True)
             db_path = app_dir / "arthsaarthi.db"
             return f"sqlite:///{db_path.resolve()}"
 
@@ -88,9 +89,10 @@ class Settings(BaseSettings):
     @validator("IMPORT_UPLOAD_DIR", pre=True, always=True)
     def set_upload_dir_for_desktop(cls, v, values):
         if values.get("DEPLOYMENT_MODE") in ("desktop", "android"):
+            from platformdirs import user_data_dir
             from pathlib import Path
-            # Use a stable directory in the user's home for uploads
-            upload_dir = Path.home() / ".arthsaarthi" / "uploads"
+            # Use a stable directory for uploads
+            upload_dir = Path(user_data_dir("arthsaarthi", "arthsaarthi-app")) / "uploads"
             upload_dir.mkdir(parents=True, exist_ok=True)
             return str(upload_dir)
         return v
@@ -100,9 +102,10 @@ class Settings(BaseSettings):
         if values.get("DEPLOYMENT_MODE") in ("desktop", "android"):
             if isinstance(v, str):
                 return v
+            from platformdirs import user_cache_dir
             from pathlib import Path
-            # Use a stable directory in the user's home for cache
-            cache_dir = Path.home() / ".arthsaarthi" / "cache"
+            # Use a stable directory for cache
+            cache_dir = Path(user_cache_dir("arthsaarthi", "arthsaarthi-app"))
             cache_dir.mkdir(parents=True, exist_ok=True)
             return str(cache_dir)
         return v
