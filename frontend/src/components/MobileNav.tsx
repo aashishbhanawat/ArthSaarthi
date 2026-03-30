@@ -1,11 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-    HomeIcon, 
-    BriefcaseIcon, 
-    ListBulletIcon, 
-    ArrowUpTrayIcon, 
-    EllipsisHorizontalIcon 
+import {
+    HomeIcon,
+    BriefcaseIcon,
+    ListBulletIcon,
+    ArrowUpTrayIcon,
+    EllipsisHorizontalIcon
 } from '@heroicons/react/24/outline';
 
 const MobileNav: React.FC = () => {
@@ -23,7 +23,7 @@ const MobileNav: React.FC = () => {
                     <HomeIcon className="h-6 w-6" />
                     <span className="text-[10px] mt-1 font-medium">Home</span>
                 </NavLink>
-                
+
                 <NavLink to="/portfolios" className={({ isActive }) => linkClass(isActive)}>
                     <BriefcaseIcon className="h-6 w-6" />
                     <span className="text-[10px] mt-1 font-medium">Portfolios</span>
@@ -39,7 +39,7 @@ const MobileNav: React.FC = () => {
                     <span className="text-[10px] mt-1 font-medium">Import</span>
                 </NavLink>
 
-                <NavLink to="/profile" className={({ isActive }) => linkClass(isActive)}>
+                <NavLink to="/more" className={({ isActive }) => linkClass(isActive)}>
                     <EllipsisHorizontalIcon className="h-6 w-6" />
                     <span className="text-[10px] mt-1 font-medium">More</span>
                 </NavLink>
