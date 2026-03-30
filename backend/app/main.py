@@ -88,6 +88,10 @@ async def startup_event() -> None:
     if settings.DEPLOYMENT_MODE in ("desktop", "android"):
         logging.info(f"Spawning background snapshot task for {settings.DEPLOYMENT_MODE.capitalize()} App...")
         _snapshot_task = asyncio.create_task(_desktop_snapshot_loop())
+        
+        # Trigger background asset seeding if database is empty
+        from app.services.initialization_service import check_and_seed_on_startup
+        check_and_seed_on_startup()
 
 app.add_middleware(
     CORSMiddleware,

@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+import requests
 import yfinance as yf
 from pydantic import ValidationError
 
@@ -22,6 +23,14 @@ logger = logging.getLogger(__name__)
 class YFinanceProvider(FinancialDataProvider):
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/91.0.4472.124 Safari/537.36"
+            )
+        })
 
     def _get_yfinance_ticker(
         self, ticker_symbol: str, exchange: Optional[str]
@@ -102,7 +111,7 @@ class YFinanceProvider(FinancialDataProvider):
         logger.debug(f"yfinance batch request: '{yfinance_tickers_str}'")
 
         try:
-            yf_data = yf.Tickers(yfinance_tickers_str)
+            yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
             logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
             for ticker_obj in yf_data.tickers.values():
                 hist = ticker_obj.history(period="2d", auto_adjust=True)
@@ -197,7 +206,7 @@ class YFinanceProvider(FinancialDataProvider):
                 return cached
 
         try:
-            ticker_obj = yf.Ticker(yf_ticker)
+            ticker_obj = yf.Ticker(yf_ticker, session=self.session)
             info = ticker_obj.info
             if info:
                 trailing_pe = info.get("trailingPE")
@@ -314,6 +323,7 @@ class YFinanceProvider(FinancialDataProvider):
                 start=start_date,
                 end=end_date + timedelta(days=1),  # end date is exclusive
                 progress=False,
+                session=self.session,
             )
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
@@ -404,7 +414,7 @@ class YFinanceProvider(FinancialDataProvider):
                 f"Fetching index history for {yf_ticker} "
                 f"from {start_date} to {end_date}"
             )
-            ticker_obj = yf.Ticker(yf_ticker)
+            ticker_obj = yf.Ticker(yf_ticker, session=self.session)
             # Fetch data with slight buffer
             hist = ticker_obj.history(
                 start=start_date, end=end_date + timedelta(days=1)
@@ -445,7 +455,7 @@ class YFinanceProvider(FinancialDataProvider):
         ]:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
-                temp_ticker = yf.Ticker(yf_ticker_str)
+                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:
                     logger.debug(f"Found data with variant: {yf_ticker_str}")
                     ticker_obj = temp_ticker
@@ -490,7 +500,7 @@ class YFinanceProvider(FinancialDataProvider):
             f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
         ]:
             try:
-                temp_ticker = yf.Ticker(yf_ticker_str)
+                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:
                     ticker_obj = temp_ticker
                     break
