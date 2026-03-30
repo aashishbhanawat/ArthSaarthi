@@ -94,9 +94,14 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
 
             <div>
                 <h2 className="text-xl font-bold mb-2">Preparing Asset Database</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    {statusResponse.message || `Loaded ${statusResponse.asset_count.toLocaleString()} assets...`}
-                </p>
+                <div className="flex flex-col space-y-1">
+                    <p className="text-blue-600 dark:text-blue-400 font-medium text-sm">
+                        {statusResponse.message || 'Loading synchronized assets...'}
+                    </p>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs">
+                        Total Assets: <span className="font-mono">{statusResponse.asset_count.toLocaleString()}</span>
+                    </p>
+                </div>
             </div>
 
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
