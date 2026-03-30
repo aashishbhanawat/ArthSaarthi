@@ -83,12 +83,12 @@ The Android build uses **Capacitor.js** (wraps the React frontend into a WebView
 #### Android Build Output
 
 After a successful build, the APK can be found at:
-- **Debug:** `frontend/android/app/build/outputs/apk/debug/app-debug.apk`
-- **Release:** `frontend/android/app/build/outputs/apk/release/app-release.apk`
+- **Debug:** `frontend/android/app/build/outputs/apk/debug/ArthSaarti-debug.apk`
+- **Release:** `frontend/android/app/build/outputs/apk/release/ArthSaarti-release.apk`
 
 Install on a connected device:
 ```bash
-adb install frontend/android/app/build/outputs/apk/debug/app-debug.apk
+adb install frontend/android/app/build/outputs/apk/debug/ArthSaarti-debug.apk
 ```
 
 #### Android Known Limitations

@@ -185,7 +185,7 @@ This approach builds a native Android APK containing the React frontend and embe
     cd android
     ./gradlew assembleDebug
     ```
-    The resulting APK will be located at `android/app/build/outputs/apk/debug/app-debug.apk`.
+    The resulting APK will be located at `android/app/build/outputs/apk/debug/ArthSaarti-debug.apk`.
 
 ---
 
