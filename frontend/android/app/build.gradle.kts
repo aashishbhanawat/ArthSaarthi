@@ -95,6 +95,9 @@ chaquopy {
             install("beautifulsoup4")
             install("requests-cache==1.2.0")
             install("platformdirs==4.3.6")
+            install("tenacity")
+            install("requests")
+            install("pyxirr")
         }
     }
 }
