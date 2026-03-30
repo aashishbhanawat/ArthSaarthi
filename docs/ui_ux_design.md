@@ -80,39 +80,49 @@ The "Privacy Mode" is a global toggle that allows users to obscure sensitive fin
 |       |  | [1D][1W][1M][1Y][ALL]     | |                        | |
 |       |  +---------------------------+ +------------------------+ |
 |       |                                                           |
-|       |  Top Holdings (Consolidated)                              |
-|       |  [ Asset Name | Value | P/L% ]                           |
-|       |  [------------|-------|------]                           |
-|       |  [ GOOGL      | ...   | ...  ]                           |
+|       |  Top Holdings Overview                                    |
+|       |  [ Asset Name | Value | P/L% ]                            |
+|       |  [------------|-------|------]                            |
+|       |  [ GOOGL      | ...   | ...  ]                            |
 +-------------------------------------------------------------------+
 ```
 
-## 3. Portfolio Management & "Add New Asset" Flow (FR4)
+### 2.2. Sectioned Consolidated Holdings Table (v1.2.0)
+
+A major feature of v1.2.0 is replacing flat transaction lists with a consolidated, groupable table.
+
+*   **Grouping:** Assets are grouped by type (e.g., `Equity`, `Mutual Funds`, `Fixed Deposits`). Each section acts as a collapsible accordion.
+*   **Sorting:** Each column (Name, Qty, Avg Cost, Current Price, Value, PNL, XIRR) is sortable within its section.
+*   **Drill-Down Modal:** Clicking on any row opens the **Tax Lot Details Modal** (see Section 3.1).
+
+```
++-------------------------------------------------------------------+
+|  [ ▼ ] EQUITY (Total Value: $500,000)                             |
+|-------------------------------------------------------------------|
+|  Asset Name | Qty  | Avg Price | Current | Total Value | PNL      |
+|  GOOGL      | 10   | $100      | $150    | $1,500      | +$500    |
+|  AAPL       | 5    | ...       | ...     | ...         | ...      |
+|-------------------------------------------------------------------|
+|  [ ▶ ] MUTUAL FUNDS (Total Value: $100,000)                       |
+|-------------------------------------------------------------------|
+|  [ ▶ ] FIXED DEPOSITS (Total Value: $50,000)                      |
++-------------------------------------------------------------------+
+```
+
+## 3. Portfolio Detail Page (FR2.3)
 
 ### User Flow
-The user navigates to the "Portfolios" page from the sidebar. They see a list of their created portfolios (e.g., "Retirement", "Vacation Fund"). They can click on a portfolio to see its specific assets or click a global "Add New..." button.
+The user clicks on a portfolio from the "Portfolios" page or the Dashboard. They are presented with a detailed view of that portfolio's overall performance, its asset allocation, and its individual holdings.
 
-### "Add New..." Modal Flow
-This is a multi-step process to handle complexity gracefully.
+### 3.1. Tax Lot Drill-Down & Sell Link Modal (v1.2.0)
 
-1.  **Step 1: Select Category**
-    A modal appears with large, clear buttons for each asset category.
-    `[Market-Traded]` `[Fixed Income]` `[Govt. Scheme]` `[Employee Plan]`
+When a user clicks on a holding in the Consolidated Table or attempts to SELL an asset, they are presented with the **Tax Lot Modal**.
 
-2.  **Step 2: Enter Details**
-    The form dynamically changes based on the selection in Step 1.
-    *   If **Market-Traded** was chosen:
-        *   `Portfolio to add to: [Retirement Fund ▼]`
-        *   `Asset Type: [Stock ▼]` (Stock, ETF, MF, Bond)
-        *   `Ticker: [GOOGL]`
-        *   `Transaction Type: [Buy ▼]`
-        *   Fields: Quantity, Price, Date, Fees.
-    *   If **Employee Plan** was chosen:
-        *   `Plan Type: [RSU ▼]` (RSU, ESPP)
-        *   `Currency: [USD ▼]`
-        *   Fields: Grant ID, Grant Date, Shares Granted, Vesting Schedule.
-
-This guided flow makes adding complex assets intuitive.
+*   This modal lists every acquisition transaction (`BUY`, `RSU_VEST`, `ESPP_PURCHASE`) that makes up the total quantity of the holding.
+*   It shows the `Original Qty`, `Remaining Qty` (after previous sells), and `Purchase Date` for each lot.
+*   **Demerger Handling:** For assets that have undergone a demerger, the modal displays both the original purchase price and the adjusted cost basis (allocated cost).
+*   **Specific Lot Identification:** If the user is selling, checkboxes appear next to each lot, allowing them to perform specific identification (e.g., selling the highest-cost lots first to minimize capital gains tax).
+*   **Performance Metrics:** Every open lot displays its individual CAGR % relative to the current market price.
 
 ## 4. Risk Profile Page (FR12)
 
@@ -164,5 +174,34 @@ The user navigates to the "Goals" page. They see a summary of all their financia
 |       |  | [||||||||||40%||..............]  Off Track          | |
 |       |  | Increase contributions by $250/mo. [Details ->]    | |
 |       |  +----------------------------------------------------+ |
++-------------------------------------------------------------------+
+```
+
+## 6. Automated Data Import Wizard (v1.2.0)
+
+### User Flow
+The user navigates to "Import Data". They upload a file, the system parses it, and then presents a "Staging Preview" where they can review, edit, or reject the parsed transactions before committing them to the permanent database.
+
+### 6.1. Staging Preview Wireframe
+
+The preview differentiates between:
+*   **Valid Transactions:** Ready to be committed.
+*   **Duplicates:** Transactions that already exist in the database (based on date, asset, qty, and price hash).
+*   **Needs Mapping:** Transactions with unrecognized tickers that require [Asset Alias](database_schema.md#asset-aliases) mapping.
+*   **Invalid Transactions:** Rows that failed basic validation (e.g., negative prices, missing dates).
+
+```
++-------------------------------------------------------------------+
+|  Import Session Preview: zerodha_tradebook.csv                    |
+|-------------------------------------------------------------------|
+|  [ ▼ ] Valid Transactions (150 Ready to Import)                   |
+|-------------------------------------------------------------------|
+|  [x] Date       | Ticker  | Action | Qty | Price                  |
+|  [x] 2024-01-01 | RELIANCE| BUY    | 10  | ₹2500                  |
+|  [ ] 2024-01-02 | UNKNOWN | BUY    | 5   | ₹100    [Map Alias ✏️] |
+|-------------------------------------------------------------------|
+|  [ ▶ ] Ignored Duplicates (5 Already in DB)                       |
+|-------------------------------------------------------------------|
+|                                    [ Discard ]   [ Commit Data ]  |
 +-------------------------------------------------------------------+
 ```
