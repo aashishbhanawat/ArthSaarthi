@@ -35,4 +35,4 @@ python-multipart>=0.0.22  # CVE-2026-24486
 pyasn1>=0.6.2  # CVE-2026-23490
 pdfminer.six>=20251230  # CVE-2025-70559
 requests-cache==1.2.0
-requests-cache==1.2.0
+platformdirs==4.3.6
