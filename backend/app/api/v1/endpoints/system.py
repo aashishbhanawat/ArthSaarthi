@@ -48,7 +48,7 @@ _seeding_state = {
 
 
 # Minimum asset count to consider seeding complete
-MIN_ASSETS_FOR_COMPLETE = 100
+MIN_ASSETS_FOR_COMPLETE = 10000
 
 
 def _run_seeding_subprocess():
@@ -143,10 +143,14 @@ def get_seeding_status(db: Session = Depends(get_db)):
                 asset_count=asset_count,
             )
         else:
+            # If NEEDS_SEEDING and we have some assets, estimate progress
+            # assuming background service is running
+            estimated_progress = min(95, int((asset_count / MIN_ASSETS_FOR_COMPLETE) * 100))
+            
             return SeedingStatusResponse(
                 status=SeedingStatus.NEEDS_SEEDING,
-                progress=0,
-                message=f"Only {asset_count} assets found. Seeding required.",
+                progress=estimated_progress,
+                message=f"Loading assets... ({asset_count:,} loaded)",
                 asset_count=asset_count,
             )
     except Exception as e:

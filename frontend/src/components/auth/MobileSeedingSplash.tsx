@@ -23,7 +23,7 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
             const response = await api.get<SeedingStatusResponse>('/api/v1/system/seeding-status');
             setStatusResponse(response.data);
 
-            if (response.data.status === 'complete' || (response.data.status === 'idle' && response.data.asset_count > 100)) {
+            if (response.data.status === 'complete' || (response.data.status === 'idle' && response.data.asset_count > 10000)) {
                 onComplete();
             }
         } catch (error) {
