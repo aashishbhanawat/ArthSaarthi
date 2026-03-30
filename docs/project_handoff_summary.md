@@ -1,20 +1,22 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-03-30
 
 ## 1. Current Project Status
 
-*   **Overall Status:** 🟢 **Stable (v1.2.0 QA Complete)**
-*   **Summary:** Successfully completed a comprehensive End-to-End QA run for v1.2.0. Verified transaction lifecycle for Equities, MFs, and Fixed Income. Validated Section 112A Grandfathering logic and corporate action adjustments (Bonus/Split). Generated an exhaustive, screenshot-rich User Guide (`temp_qa_run/USER_GUIDE.md`) with 10+ feature demonstration scripts. Verified application stability across Dashboard, Analytics, and Admin modules.
+*   **Overall Status:** 🟢 **Stable (Mobile Migration Complete)**
+*   **Summary:** Successfully completed the Mobile-Responsive UI migration. Implemented a dedicated mobile shell (top header, bottom nav), card-based holdings view for small screens, and optimized all core pages for touch interaction. Resolved significant linting noise from android build artifacts. The application is now fully verified for both Desktop and Mobile environments.
 
 ## 2. Test Suite Status
 
 *   **Backend Unit/Integration Tests:** ✅ **310/310 Passing** (Includes relocated security and benchmark tests)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
-*   **Linters (Code Quality):** ✅ **Passing (Ruff E501 resolved project-wide)**
+*   **Linters (Code Quality):** ✅ **Passing (Ruff E501 and ESLint artifacts resolved)**
 
 ### Recent Stabilization Efforts
 
+*   **Mobile UI Migration (2026-03-30):** Finalized the transition to a mobile-responsive frontend. Key features include a responsive sidebar-to-tab-bar navigation pattern, card-based holdings lists for mobile viewports, and horizontal scroll support for all data tables. Optimized modal ergonomics and "Safe Area" layouts for Android devices.
+*   **Android Backend Stabilization (2026-03-28):** Resolved runtime crashes on Android/Chaquopy deployments by implementing a Pydantic compatibility layer (`app/utils/pydantic_compat.py`). This allows the codebase to run on both Pydantic v1 (Android) and v2 (Standard). Refactored all CRUD, API, and test modules to eliminate direct Pydantic v2 method calls.
 *   **Comprehensive QA & User Guide (2026-03-27):** Exhaustive verification of the v1.2.0 release candidate. Validated Reliance (1:1 Bonus) and HDFC Bank (1:2 Reverse Split) sell transactions. Confirmed Section 112A Grandfathering using Actual Cost vs FMV Jan 2018 logic. Generated exhaustive platform documentation with localized media assets.
 *   **FD Lifecycle & Import Robustness (2026-03-24):** Stabilized the FD/RD lifecycle by redacting matured assets from Holdings while preserving their interest in the Portfolio Summary. Implemented synthetic transaction injection for the History tab with conditional Edit/Delete support. Fixed import session commit logic to re-raise `HTTPException` for clearer validation messaging.
 *   **Live Testing v1.2.0 Fixes (2026-03-23):** Completely stabilized the benchmarking engine to handle edge cases like absent Yahoo indices (Debt benchmark fallback) and extreme stock gains (via Lot-Based FIFO tracking). Fixed historical mathematical distortions in PPF, and matured FD/RD analytical models. Fixed `AssetSearchResult` to expose Bond metadata to the frontend.
@@ -80,7 +82,8 @@
     -   **Dividend Report (FR 6.5):** Dedicated tracking for dividends, including Rule 115 compliant TTBR FX conversion for foreign assets (ESPP/RSU).
     -   Support for Tax Lot Accounting (Specific Identification) vs FIFO.
     -   Accurate taxation rules for Bond ETFs, International ETFs, and SGBs.
-    -   **Authenticated Exports:** Universal `downloadCsv` utility to ensure CSV downloads via `window.open` alternative carry Auth tokens.
+    -   **Pydantic Compatibility (Android Stability):** A dedicated compatibility layer (`app/utils/pydantic_compat.py`) is now used for all model serialization and validation. This ensures the backend runs on both Pydantic v1 (Android/Chaquopy) and Pydantic v2 (Desktop/Server) without changes to the business logic. **Mandatory Rule:** Never call `.model_dump()` or `.model_validate()` directly; always use the `pydantic_compat` utility.
+-   **Authenticated Exports:** Universal `downloadCsv` utility to ensure CSV downloads via `window.open` alternative carry Auth tokens.
 
 ## 4. Architectural Improvements
 

@@ -54,60 +54,60 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
 
     return (
         <>
-            <div className="card overflow-x-auto">
-                <table className="table-auto w-full">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Date</th>
-                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Ticker</th>
-                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Asset Name</th>
-                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Type</th>
-                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Quantity</th>
-                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Price/Unit</th>
-                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Total Value (INR)</th>
-                            <th className="p-3 text-center text-sm font-semibold text-gray-600">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {transactions.map((tx) => (
-                            <tr key={tx.id} className="border-b hover:bg-gray-50">
-                                <td className="p-3 text-sm">{formatDate(tx.transaction_date)}</td>
-                                <td className="p-3 text-sm font-mono">{tx.asset.ticker_symbol}</td>
-                                <td className="p-3 text-sm">{tx.asset.name}</td>
-                                <td className={`p-3 text-sm font-semibold ${getTypeColor(tx.transaction_type)}`}>
-                                    {getTypeLabel(tx.transaction_type)}
-                                    {hasUserVisibleDetails(tx.details as Record<string, unknown> | null) && (
-                                        <button
-                                            className="ml-1 text-blue-500 hover:text-blue-700 align-middle focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
-                                            onClick={() => setSelectedTransaction(tx)}
-                                            title="View Details"
-                                            aria-label="View details"
-                                        >
-                                            <InformationCircleIcon className="h-5 w-5" />
-                                        </button>
+        <div className="table-container shadow-none lg:shadow-sm">
+            <table className="table-auto w-full">
+                <thead className="bg-gray-100 dark:bg-gray-800">
+                    <tr>
+                        <th className="p-2 sm:p-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Date</th>
+                        <th className="p-2 sm:p-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Ticker</th>
+                        <th className="p-2 sm:p-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Asset</th>
+                        <th className="p-2 sm:p-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Type</th>
+                        <th className="p-2 sm:p-3 text-right text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Qty</th>
+                        <th className="p-2 sm:p-3 text-right text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Price</th>
+                        <th className="p-2 sm:p-3 text-right text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Value (INR)</th>
+                        <th className="p-2 sm:p-3 text-center text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {transactions.map((tx) => (
+                        <tr key={tx.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50">
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm whitespace-nowrap">{formatDate(tx.transaction_date)}</td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm font-mono whitespace-nowrap">{tx.asset.ticker_symbol}</td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm min-w-[120px]">{tx.asset.name}</td>
+                            <td className={`p-2 sm:p-3 text-xs sm:text-sm font-semibold whitespace-nowrap ${getTypeColor(tx.transaction_type)}`}>
+                                {getTypeLabel(tx.transaction_type)}
+                                {hasUserVisibleDetails(tx.details as Record<string, unknown> | null) && (
+                                    <button
+                                        className="ml-1 text-blue-500 hover:text-blue-700 align-middle focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
+                                        onClick={() => setSelectedTransaction(tx)}
+                                        title="View Details"
+                                        aria-label="View details"
+                                    >
+                                        <InformationCircleIcon className="h-5 w-5" />
+                                    </button>
+                                )}
+                            </td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm text-right whitespace-nowrap">{Number(tx.quantity).toLocaleString('en-IN', { maximumFractionDigits: tx.asset.asset_type === 'FIXED_DEPOSIT' ? 0 : 4 })}</td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm text-right whitespace-nowrap">{formatCurrency(tx.price_per_unit, tx.asset.currency)}</td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm text-right whitespace-nowrap">{formatCurrency(
+                                Number(tx.price_per_unit) * Number(tx.quantity) * (Number(tx.details?.fx_rate) || 1),
+                                'INR'
+                            )}</td>
+                            <td className="p-2 sm:p-3 text-center">
+                                <div className="flex justify-center space-x-1 sm:space-x-2">
+                                    {!isSyntheticFd(tx) && (
+                                        <button onClick={() => onEdit(tx)} className="py-1 px-2 text-[10px] sm:text-xs btn btn-secondary" aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Edit</button>
                                     )}
-                                </td>
-                                <td className="p-3 text-sm text-right">{Number(tx.quantity).toLocaleString('en-IN', { maximumFractionDigits: tx.asset.asset_type === 'FIXED_DEPOSIT' ? 0 : 4 })}</td>
-                                <td className="p-3 text-sm text-right">{formatCurrency(tx.price_per_unit, tx.asset.currency)}</td>
-                                <td className="p-3 text-sm text-right">{formatCurrency(
-                                    Number(tx.price_per_unit) * Number(tx.quantity) * (Number(tx.details?.fx_rate) || 1),
-                                    'INR'
-                                )}</td>
-                                <td className="p-3 text-center">
-                                    <div className="flex justify-center space-x-2">
-                                        {!isSyntheticFd(tx) && (
-                                            <button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm" aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Edit</button>
-                                        )}
-                                        {(!isSyntheticFd(tx) || tx.transaction_type === TransactionType.FD_MATURITY) && (
-                                            <button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm" aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Delete</button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                    {(!isSyntheticFd(tx) || tx.transaction_type === TransactionType.FD_MATURITY) && (
+                                        <button onClick={() => onDelete(tx)} className="py-1 px-2 text-[10px] sm:text-xs btn btn-danger" aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Delete</button>
+                                    )}
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
             {selectedTransaction && (
                 <TransactionDetailsModal
                     transaction={selectedTransaction}

@@ -20,6 +20,8 @@ import DiversificationCharts from '../../components/Portfolio/DiversificationCha
 import BenchmarkComparison from '../../components/Portfolio/BenchmarkComparison';
 import { RecurringDepositDetails } from '../../types/recurring_deposit';
 
+import { PlusIcon } from '@heroicons/react/24/outline';
+
 const PortfolioDetailPage: React.FC = () => {
     const { id: portfolioId } = useParams<{ id: string }>();
 
@@ -130,22 +132,31 @@ const PortfolioDetailPage: React.FC = () => {
     };
 
     return (
-        <div>
+        <div className="relative">
+            {/* Mobile FAB */}
+            <button
+                onClick={handleOpenCreateTransactionModal}
+                className="lg:hidden fixed bottom-24 right-6 z-50 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 active:scale-90 transition-all"
+                aria-label="Add Transaction"
+            >
+                <PlusIcon className="h-6 w-6" />
+            </button>
+
             <div className="mb-8">
                 <Link to="/portfolios" className="text-blue-600 hover:underline text-sm dark:text-blue-400">
                     &larr; Back to Portfolios
                 </Link>
-                <div className="flex justify-between items-center mt-2">
-                    <h1 className="text-3xl font-bold">{portfolio.name}</h1>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-2 gap-4">
+                    <h1 className="text-2xl sm:text-3xl font-bold truncate">{portfolio.name}</h1>
                     <div className="flex space-x-2">
-                        <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary">
+                        <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary flex-1 sm:flex-none text-center">
                             View History
                         </Link>
-                        <div className="relative inline-flex rounded-md shadow-sm">
+                        <div className="relative inline-flex rounded-md shadow-sm flex-1 sm:flex-none">
                             <button
                                 type="button"
                                 onClick={handleOpenCreateTransactionModal}
-                                className="btn btn-primary rounded-r-none border-r border-blue-600 focus:z-10"
+                                className="btn btn-primary rounded-r-none border-r border-blue-600 focus:z-10 flex-1 sm:flex-none justify-center"
                             >
                                 Add Transaction
                             </button>
@@ -175,7 +186,7 @@ const PortfolioDetailPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">{portfolio.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 mt-1 line-clamp-2 sm:line-clamp-none">{portfolio.description}</p>
             </div>
 
             <PortfolioSummary summary={summary} isLoading={isSummaryLoading} error={summaryError} />

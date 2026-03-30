@@ -25,15 +25,20 @@ import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
 import UpdateBanner from './components/UpdateBanner';
 
+import MobileHeader from './components/MobileHeader';
+import MobileNav from './components/MobileNav';
+
 const AppLayout = () => (
   <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
     <UpdateBanner />
-    <div className="grid grid-cols-[auto_1fr] flex-1 overflow-hidden">
+    <MobileHeader />
+    <div className="flex flex-1 overflow-hidden lg:grid lg:grid-cols-[auto_1fr]">
       <NavBar />
-      <main className="p-8 overflow-y-auto">
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto pb-24 lg:pb-8">
         <Outlet />
       </main>
     </div>
+    <MobileNav />
   </div>
 );
 
