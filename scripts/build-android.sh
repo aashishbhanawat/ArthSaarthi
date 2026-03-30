@@ -132,7 +132,7 @@ fi
 echo "Step 7: Building Android APK..."
 (cd frontend/android && ./gradlew assembleDebug -PbuildPython="$PYTHON_BUILD_CMD")
 
-APK_PATH="frontend/android/app/build/outputs/apk/debug/app-debug.apk"
+APK_PATH="frontend/android/app/build/outputs/apk/debug/ArthSaarti-debug.apk"
 echo ""
 echo "--- Android Build Finished ---"
 if [ -f "$APK_PATH" ]; then
