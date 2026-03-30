@@ -149,8 +149,8 @@ def check_and_seed_on_startup():
     db = SessionLocal()
     try:
         count = db.query(Asset).count()
-        if count == 0:
-            logger.info("Assets table is empty. Triggering background seeding...")
+        if count < 10000:
+            logger.info(f"Assets table has {count} assets (<10000). Triggering background seeding...")
             threading.Thread(target=_run_initial_seeding, daemon=True).start()
         else:
             logger.info(f"Database already has {count} assets. Skipping initial seeding.")
