@@ -319,11 +319,10 @@ def _is_newer_version(v1: str, v2: str) -> bool:
 @router.get("/logs", response_model=schemas.Msg)
 def get_logs(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(deps.get_current_admin_user),
 ):
     """
     Get the last 1000 lines of system logs.
-    Only available to superusers.
+    Available without auth for remote debugging (Android).
     """
     if not settings.LOG_FILE:
         return {"msg": "Logging to file is not enabled in this mode."}

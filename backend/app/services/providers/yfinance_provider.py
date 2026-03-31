@@ -38,13 +38,34 @@ class YFinanceProvider(FinancialDataProvider):
             expire_after=CACHE_TTL_HISTORICAL_PRICE,
             stale_if_error=True
         )
+        # Full Chrome 124 browser fingerprint - mirrors what yfinance>=1.0.0 sends
+        # via curl_cffi. On Android we can't use curl_cffi (no arm64 wheel),
+        # so we manually set all relevant headers to reduce Yahoo Finance rate limits.
         self.session.headers.update({
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/91.0.4472.124 Safari/537.36"
-            )
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                "image/avif,image/webp,image/apng,*/*;q=0.8,"
+                "application/signed-exchange;v=b3;q=0.7"
+            ),
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+            "Connection": "keep-alive",
         })
+        # Log the headers once at startup for diagnostics
+        logger.info("YFinanceProvider: session headers = %s", dict(self.session.headers))
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=3, max=15), reraise=True)
     def _fetch_history_with_retry(self, ticker_obj, **kwargs) -> pd.DataFrame:
