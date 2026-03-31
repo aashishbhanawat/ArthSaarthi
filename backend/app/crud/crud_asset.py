@@ -102,12 +102,14 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         new_asset = self.create(db=db, obj_in=asset_in)
 
         # 2. Create the first contribution transaction
+        # Convert date -> str for Pydantic v1 compatibility on Python 3.13,
+        # which does not accept bare date objects for datetime fields.
         transaction_in = schemas.TransactionCreate(
             asset_id=new_asset.id,
             transaction_type="CONTRIBUTION",
             quantity=ppf_in.amount,
             price_per_unit=1,
-            transaction_date=ppf_in.contribution_date,
+            transaction_date=ppf_in.contribution_date.isoformat() if ppf_in.contribution_date else None,
             fees=0,
         )
         new_transaction = crud.transaction.create_with_portfolio(
