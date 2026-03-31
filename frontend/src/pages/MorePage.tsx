@@ -51,6 +51,7 @@ const MorePage: React.FC = () => {
                             )}
                             <MenuItem to="/admin/interest-rates" icon={ScaleIcon} label="Interest Rates" />
                             <MenuItem to="/admin/maintenance" icon={WrenchScrewdriverIcon} label="System Maintenance" />
+                            <MenuItem to="/admin/logs" icon={ListBulletIcon} label="System Logs" />
                             <MenuItem to="/admin/fmv" icon={ScaleIcon} label="FMV Management" />
                             <MenuItem to="/admin/aliases" icon={ListBulletIcon} label="Symbol Aliases" />
                         </div>
