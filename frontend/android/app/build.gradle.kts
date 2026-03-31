@@ -99,6 +99,11 @@ chaquopy {
             install("platformdirs==4.3.6")
             install("tenacity")
             install("requests")
+            // PDF parsing - pdfplumber and pdfminer.six are pure Python (no native extensions)
+            // Pillow has Chaquopy-provided ARM64 wheels
+            install("pdfplumber")
+            install("pdfminer.six")
+            install("Pillow")
         }
     }
 }
