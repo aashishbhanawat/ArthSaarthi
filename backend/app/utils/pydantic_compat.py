@@ -23,9 +23,12 @@ def model_validate(cls: Any, obj: Any, **kwargs) -> Any:
     """
     if hasattr(cls, "model_validate"):
         return cls.model_validate(obj, **kwargs)
-    # Pydantic v1: use from_orm if it's an ORM object, otherwise parse_obj
-    if hasattr(cls.Config, "orm_mode") and cls.Config.orm_mode:
-        return cls.from_orm(obj)
+    # Pydantic v1: use from_orm if the object is an ORM model (not a plain dict)
+    if not isinstance(obj, dict):
+        try:
+            return cls.from_orm(obj)
+        except Exception:
+            pass
     return cls.parse_obj(obj)
 
 def model_copy(obj: Any, **kwargs) -> Any:
