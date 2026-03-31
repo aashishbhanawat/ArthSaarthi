@@ -69,7 +69,7 @@ ArthSaarthi supports two deployment modes:
 > [!NOTE]
 > In Desktop Mode, your data is stored locally on your machine and encrypted. User Management is disabled since you're the only user.
 
-#### Desktop System Tray (v1.2.0)
+#### Desktop System Tray
 
 When running the Desktop App:
 - Closing the window doesn't stop the backend services. Use the **System Tray** (near the clock on Windows/macOS) to **Quit** the application completely.

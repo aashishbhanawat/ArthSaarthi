@@ -59,7 +59,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ env.VERSION }}
           body_path: release_notes/${{ env.VERSION }}.md
-          draft: false
+          draft: true
           prerelease: false
 
   build-installers:
