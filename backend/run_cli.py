@@ -109,6 +109,20 @@ def run_dev_server(
             print("Running manual schema migrations...")
             run_sqlite_migrations(db_path_str)
 
+            # 3. Seed/update historical interest rates (PPF, etc.)
+            from app.db.initial_data import seed_interest_rates
+            from app.db.session import SessionLocal
+            print("Seeding/updating historical interest rates...")
+            db = SessionLocal()
+            try:
+                seed_interest_rates(db)
+                db.commit()
+            except Exception as e:
+                print(f"  Error during interest rate seeding: {e}")
+                db.rollback()
+            finally:
+                db.close()
+
     uvicorn.run(fastapi_app, host=host, port=port)
 
 
