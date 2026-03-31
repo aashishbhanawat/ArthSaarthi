@@ -17,6 +17,7 @@ def _patched_evaluate(self, globalns, localns, type_params=None, recursive_guard
 ForwardRef._evaluate = _patched_evaluate
 
 logger = logging.getLogger("arthsaarthi.android")
+pid_file_path = None
 
 
 def init_android_db():
@@ -31,7 +32,15 @@ def init_android_db():
     logger.info("Initializing Android SQLite database tables...")
     try:
         # Create all tables if they don't exist
-        Base.metadata.create_all(bind=engine)
+        # Base.metadata.create_all is usually safe, but let's be explicit
+        try:
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables verified/created.")
+        except Exception as e:
+            if "already exists" in str(e):
+                logger.warning(f"Note: Table(s) already exist, skipping creation: {e}")
+            else:
+                raise
         
         # Seed initial data (like interest rates)
         db = SessionLocal()
@@ -88,9 +97,28 @@ def start(port: int, data_dir: str):
     if "SECRET_KEY" not in os.environ:
         os.environ["SECRET_KEY"] = "android-local-secret-key-change-if-needed"
 
-    logger.info(f"Preparing ArthSaarthi backend on Android")
-    logger.info(f"Data directory: {data_dir}")
     logger.info(f"Database: {db_path}")
+
+    # Singleton check using PID file
+    global pid_file_path
+    pid_file_path = os.path.join(db_dir, "backend.pid")
+    if os.path.exists(pid_file_path):
+        try:
+            with open(pid_file_path, "r") as f:
+                old_pid = int(f.read().strip())
+            # On Android, we can check if the PID is still alive by sending signal 0
+            try:
+                os.kill(old_pid, 0)
+                logger.warning(f"STALEMATE: Backend already running with PID {old_pid}. Exiting.")
+                return
+            except OSError:
+                logger.info(f"Cleanup: Removing stale PID file for {old_pid}")
+                os.remove(pid_file_path)
+        except Exception:
+            pass
+
+    with open(pid_file_path, "w") as f:
+        f.write(str(os.getpid()))
 
     try:
         import uvicorn
@@ -147,3 +175,19 @@ def start(port: int, data_dir: str):
     except Exception as e:
         logger.error(f"Failed to start backend: {e}", exc_info=True)
         raise
+    finally:
+        if pid_file_path and os.path.exists(pid_file_path):
+            try:
+                os.remove(pid_file_path)
+                logger.info("PID file removed.")
+            except:
+                pass
+        
+        # Attempt to close any remaining database connections
+        try:
+            from app.services.financial_data_service import financial_data_service
+            financial_data_service.close()
+            logger.info("FinancialDataService: session closed.")
+        except:
+            pass
+        logger.info("Backend shutdown complete.")

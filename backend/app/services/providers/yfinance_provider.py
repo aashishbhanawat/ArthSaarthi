@@ -67,6 +67,15 @@ class YFinanceProvider(FinancialDataProvider):
         # Log the headers once at startup for diagnostics
         logger.info("YFinanceProvider: session headers = %s", dict(self.session.headers))
 
+    def close(self):
+        """Explicitly close the requests-cache session to free resources."""
+        if hasattr(self, 'session'):
+            try:
+                self.session.close()
+                logger.info("YFinanceProvider: session closed.")
+            except Exception as e:
+                logger.error(f"Error closing YFinanceProvider session: {e}")
+
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=3, max=15), reraise=True)
     def _fetch_history_with_retry(self, ticker_obj, **kwargs) -> pd.DataFrame:
         kwargs.setdefault("auto_adjust", False)
