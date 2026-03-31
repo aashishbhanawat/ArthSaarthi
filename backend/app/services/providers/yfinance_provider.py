@@ -169,12 +169,17 @@ class YFinanceProvider(FinancialDataProvider):
         if not tickers_to_fetch:
             return prices_data
 
-        yfinance_tickers_str = " ".join(
-            [
-                self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"])
-                for a in tickers_to_fetch
-            ]
-        )
+        # Build a reverse map: yf_ticker -> original DB ticker_symbol
+        # e.g. {"NTPC.NS": "NTPC.NS", "TCS.NS": "TCS"} allows correct attribution
+        # of fetched prices back to the exact ticker stored in the database.
+        yf_to_original: Dict[str, str] = {
+            self._get_yfinance_ticker(
+                a["ticker_symbol"], a["exchange"]
+            ): a["ticker_symbol"]
+            for a in tickers_to_fetch
+        }
+
+        yfinance_tickers_str = " ".join(yf_to_original.keys())
         logger.debug(f"yfinance batch request: '{yfinance_tickers_str}'")
 
         try:
@@ -183,7 +188,10 @@ class YFinanceProvider(FinancialDataProvider):
             for ticker_obj in yf_data.tickers.values():
                 hist = self._fetch_history_with_retry(ticker_obj, period="2d")
                 yf_symbol = ticker_obj.ticker
-                original_ticker = yf_symbol.split(".")[0]
+                # Use reverse map; fallback to splitting suffix for plain tickers
+                original_ticker = yf_to_original.get(
+                    yf_symbol, yf_symbol.split(".")[0]
+                )
                 logger.debug(
                     f"Processing ticker: request={yf_symbol}, "
                     f"mapped_to={original_ticker}, has_data={not hist.empty}"
@@ -515,9 +523,14 @@ class YFinanceProvider(FinancialDataProvider):
 
         logger.debug(f"get_asset_details: Looking up {ticker_symbol}")
         ticker_obj = None
-        for yf_ticker_str in [
-            f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
-        ]:
+
+        upper_ticker = ticker_symbol.upper()
+        if upper_ticker.endswith('.NS') or upper_ticker.endswith('.BO'):
+            variants = [ticker_symbol]
+        else:
+            variants = [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]
+
+        for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
                 temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
@@ -561,9 +574,14 @@ class YFinanceProvider(FinancialDataProvider):
 
     def get_price(self, ticker_symbol: str) -> Optional[Decimal]:
         ticker_obj = None
-        for yf_ticker_str in [
-            f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
-        ]:
+
+        upper_ticker = ticker_symbol.upper()
+        if upper_ticker.endswith('.NS') or upper_ticker.endswith('.BO'):
+            variants = [ticker_symbol]
+        else:
+            variants = [f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol]
+
+        for yf_ticker_str in variants:
             try:
                 temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:

@@ -255,7 +255,7 @@ class UpdateCheckResponse(BaseModel):
 
 
 # Current app version (should match package.json)
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 
 
 @router.get("/check-updates", response_model=UpdateCheckResponse)

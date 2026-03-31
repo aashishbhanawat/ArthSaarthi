@@ -1,135 +1,103 @@
-## 2026-03-30: Mobile-Responsive UI/UX Migration & Linting Cleanup
+## 2026-03-28: Fix Duplicate Exchange Suffix Bug for Indian Tickers
 
-**Task:** Optimize the ArthSaarthi frontend for mobile/Android deployment, implementing responsive navigation and layout, and resolving build-artifact linting noise.
+**Task:** Fix a bug where Indian stock tickers already containing `.NS` or `.BO` had those suffixes appended again, causing Yahoo Finance lookup failures.
 
 **AI Assistant:** Antigravity
-**Role:** Frontend Developer / UI/UX Engineer
+**Role:** Backend Developer
 
 ### Summary
 
-1. **Mobile-First Shell Refactor:**
-    - Created `MobileHeader.tsx` (sticky top bar with theme/privacy toggles) and `MobileNav.tsx` (bottom tab bar).
-    - Refactored `App.tsx` and `NavBar.tsx` to handle responsive layout switching (Sidebar on Desktop, Tab bar on Mobile).
-2. **Component & Page Optimizations:**
-    - **Holdings:** Implemented `HoldingCard.tsx` and refactored `HoldingsTable.tsx` to switch between a dense table (Desktop) and a card-based view (Mobile).
-    - **Portfolio Details:** Added Floating Action Button (FAB) for quick transaction entry and optimized header layouts.
-    - **Transactions:** Refactored `TransactionHistoryTable.tsx` with horizontal scrolling and compact padding.
-    - **Modals:** Improved `TransactionFormModal.tsx` sizing and scroll behavior for small touch screens.
-3. **Build & Code Quality:**
-    - Resolved 335+ false-positive lint errors by ignoring `android/` and `electron/` build artifacts in `.eslintrc.cjs`.
-    - Added "Safe Area" padding utilities to `index.css` for notched mobile devices.
-
-### File Changes
-
-**Frontend:**
-* **New:** `frontend/src/components/MobileHeader.tsx`
-* **New:** `frontend/src/components/MobileNav.tsx`
-* **New:** `frontend/src/components/Portfolio/HoldingCard.tsx`
-* **Modified:** `frontend/src/App.tsx`, `NavBar.tsx`, `index.css`
-* **Modified:** `frontend/src/pages/DashboardPage.tsx`, `PortfolioDetailPage.tsx`, `TransactionsPage.tsx`
-* **Modified:** `frontend/src/components/Portfolio/HoldingsTable.tsx`, `TransactionFormModal.tsx`
-* **Modified:** `frontend/src/components/Transactions/TransactionHistoryTable.tsx`
-* **Modified:** `frontend/.eslintrc.cjs`
-
-### Verification
-
-* **Manual UI Audit:** Verified responsive breakpoints (Mobile < 768px, Tablet < 1024px, Desktop).
-* **Linting:** Confirmed 0 errors after ignoring build directories.
-
-### Outcome
-
-**Success.** ArthSaarthi now provides a premium, "App-like" experience on mobile devices, ready for Android APK distribution.
-
----
-
-## 2026-03-28: ArthSaarthi Android Backend Stabilization (Pydantic Compatibility)
-
-**Task:** Stabilize the ArthSaarthi Android backend by resolving runtime crashes and compatibility issues arising from Pydantic version mismatches (v1 on Android via Chaquopy vs. v2 on Server/Desktop).
-
-**AI Assistant:** Antigravity
-**Role:** Backend Developer / Stability Engineer
-
-### Summary
-
-1. **Pydantic Compatibility Layer (Issue #375):** 
-    - Implemented a unified compatibility utility in `app/utils/pydantic_compat.py`.
-    - Created wrappers for `model_dump()`, `model_dump_json()`, `model_validate()`, `model_validate_json()`, and `model_copy()` to bridge the gap between Pydantic v1 (Chaquopy) and v2 (Standard).
-2. **Comprehensive Codebase Refactor:**
-    - Systematically replaced all direct Pydantic v2 method calls in `app/crud/`, `app/api/v1/`, and `app/cache/` with the compatibility utility.
-    - Updated `app/tests/` and `app/tests/utils/` to ensure test parity across environments.
-3. **Bug Fixes & Regressions:**
-    - Resolved `ImportError` due to missing `WatchlistItemUpdate` schema in `watchlist.py`.
-    - Fixed `AttributeError` in `CRUDWatchlist` by standardizing on `create_with_user`.
-    - Adjusted `test_asset_seeder_enrichment.py` to be resilient against pre-seeded test data.
-4. **Validation:**
-    - Verified the entire backend test suite (300+ tests) passes in the Pydantic v2 environment.
-    - Conducted manual audit to confirm zero direct Pydantic v2 calls remain in production code.
+- **Root Cause:** `get_asset_details` and `get_price` in `yfinance_provider.py` unconditionally generated lookup variants `[{ticker}.NS, {ticker}.BO, {ticker}]`. When the user passed a ticker like `NTPC.NS` (already containing the suffix), the code queried `NTPC.NS.NS` and `NTPC.NS.BO`, which are invalid symbols, causing "possibly delisted" errors.
+- **Fix:** Added a prefix check before building the variants list. If the ticker already ends with `.NS` or `.BO`, the variants list is just `[ticker_symbol]`, so the lookup is direct.
 
 ### File Changes
 
 **Backend:**
-* **New:** `backend/app/utils/pydantic_compat.py` — Compatibility layer.
-* **Modified:** `backend/app/api/v1/endpoints/` (Multiple files) — Refactored Pydantic calls.
-* **Modified:** `backend/app/crud/` (Multiple files) — Refactored Pydantic calls.
-* **Modified:** `backend/app/cache/utils.py` — Refactored caching logic.
-* **Modified:** `backend/app/schemas/watchlist.py` — Added missing schema.
-* **Modified:** `backend/app/tests/` (Multiple files) — Refactored test Pydantic calls.
+* **Modified:** `backend/app/services/providers/yfinance_provider.py` — `get_asset_details`, `get_price`
 
 ### Verification
 
-* **Backend Tests:** 100% passing in Docker environment.
-* **Manual Audit:** Grep search confirmed 0 direct v2 method calls in `app/`.
-
-### Outcome
-
-**Success.** The ArthSaarthi backend is now fully compatible with both Pydantic v1 and v2, ensuring stability on Android/Chaquopy deployments while maintaining modern standards on Desktop/Server.
+* **Backend Tests:** All backend service tests passing.
+* **Manual Verification:** Tested with `NTPC.NS` query — no longer produces `NTPC.NS.NS` errors.
 
 ---
 
-## 2026-03-27: Comprehensive QA Run & Exhaustive User Guide (v1.2.0)
+## 2026-03-31: v1.2.0 Release Finalization & Screenshot Synchronization
 
-**Task:** Perform an exhaustive QA verification of the ArthSaarthi application, focusing on taxation, corporate actions, and analytics, and generate a detailed User Guide.
+**Task:** Finalize ArthSaarthi v1.2.0 release documentation, synchronize screenshot test suite with the new layout, and update release dates across all project files.
 
 **AI Assistant:** Antigravity
-**Role:** QA Engineer / Technical Writer
+**Role:** Full-Stack Developer
 
 ### Summary
 
-1. **Transaction Lifecycle & Corporate Actions:**
-    - Verified **RELIANCE industries** 1:1 Bonus and 30-unit SELL transaction via FIFO.
-    - Verified **HDFC BANK** 1:2 Reverse Split (consolidation) and 20-unit SELL transaction.
-    - Successfully validated **Specific Lot Selection** for US Equities (AAPL/MSFT).
-2. **Taxation & Compliance (Schedule 112A):**
-    - Verified **Section 112A Grandfathering** math for RELIANCE (acquired Jan 2017).
-    - Confirmed system correctly used Actual Cost (₹520) as tax base over Jan 31, 2018 FMV (₹424.64).
-    - Verified Capital Gains summary and Schedule 112A report accuracy for FY 2025-26.
-3. **Analytics & Performance:**
-    - Validated **Portfolio XIRR (12.25%)** and **Alpha (0.51%)** against the Nifty 50 benchmark.
-    - Verified Dashboard analytics (Asset Class, Sectoral, Market Cap distribution).
-    - Confirmed **Privacy Mode** functionality across all pages.
-4. **Documentation & User Guide:**
-    - Generated a 150+ line `USER_GUIDE.md` in `temp_qa_run/` with localized media in `temp_qa_run/media/`.
-    - Documented every navigation element, modal, and asset transaction log.
-    - Included voiceover scripts for 10 major feature demonstrations.
+1. **E2E Screenshot Optimization:**
+    - Refactored `user-guide-screenshots.spec.ts` to support nested container scrolling (`main` overflow-y-auto).
+    - Corrected scroll offsets for analytical charts (Benchmarks, Investment Style, Category Comparison) to ensure full visibility.
+    - Implemented UI-driven mock data creation for the Symbol Aliases admin page.
+2. **Documentation Synchronization:**
+    - Updated `CHANGELOG.md`, `release_notes/v1.2.0.md`, and `docs/project_handoff_summary.md` to reflect the final **March 31, 2026** release date.
+    - Synchronized `docs/user_guide/index.html` with correct screenshot mappings for v1.1.0 and v1.2.0 features.
+    - Refined RSU/ESPP documentation to highlight v1.2.0 grant-type tracking.
 
 ### File Changes
 
-* **New:** `temp_qa_run/USER_GUIDE.md` — Exhaustive documentation.
-* **New:** `temp_qa_run/media/` — 50+ localized screenshots and recordings.
+**Core Docs:**
+* **Modified:** `CHANGELOG.md`, `release_notes/v1.2.0.md`, `docs/project_handoff_summary.md`
+* **Modified:** `docs/user_guide/index.html`, `docs/workflow_history.md`
+
+**Tests:**
+* **Modified:** `e2e/tests/user-guide-screenshots.spec.ts`
 
 ### Verification
 
-* **Manual QA:** End-to-end verification of all portfolios (Core Wealth, Retirement Fund, Alpha Trading).
-* **Mathematical Validation:** Confirmed FIFO, Split-adjustment, and Grandfathering math matches official income tax rules.
+* **Screenshots:** Verified all 30 screenshots are correctly captured with proper framing.
+* **Dates:** Standardized on 2026-03-31 across all user-facing and internal release documentation.
 
-### Outcome
+---
 
-**Success.** The ArthSaarthi platform is fully verified and documented for the v1.2.0 release.
+## 2026-03-25: v1.2.0 Release Preparation & Documentation Overhaul
+
+**Task:** Audit and rewrite the `docs/` directory to prepare for the ArthSaarthi v1.2.0 release. Cleanup legacy branding, synchronize versioning, and standardize cross-platform documentation (Docker Server vs. Electron Desktop).
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Documentation Standardization:**
+    - Performed a deep audit of the `docs/` directory, deleting obsolete MVP schemas and redundant handoff files.
+    - Updated `README.md`, `developer_guide.md`, and `docs/architecture.md` to accurately reflect the dual-mode deployment (Server/Desktop) while stripping premature references to Android builds.
+    - Integrated comprehensive **Mermaid Sequence Diagrams** into `docs/code_flow_guide.md` for all core features (Add Transaction, Analytics, Import Pipeline, Audit Logging, Privacy Mode, etc.).
+    - Created `docs/database_schema.md` as the authoritative source of truth for the v1.2.0 PostgreSQL/SQLite schema.
+    - Updated `docs/ui_ux_design.md` with ASCII wireframes for the new Consolidated Holdings Table and the multi-step Data Import Wizard.
+2. **Version Synchronization:**
+    - Synchronized `APP_VERSION` to `1.2.0` in `backend/app/api/v1/endpoints/system.py`.
+    - Updated version strings in Electron `splash.html` and E2E test headers.
+3. **Repository Cleanup:**
+    - Removed 'Buy Me A Chai' donation links from all README and user guide files.
+    - Purged development-only statement examples (PDFs, XLS) from the repository root to ensure security.
+
+### File Changes
+
+**Core Docs:**
+* **Modified:** `README.md`, `developer_guide.md`, `CONTRIBUTING.md`
+* **Modified:** `docs/architecture.md`, `docs/code_flow_guide.md`, `docs/project_handoff_summary.md`, `docs/ui_ux_design.md`
+* **New:** `docs/database_schema.md`
+* **Deleted:** `docs/mvp_database_schema.md`
+
+**System:**
+* **Modified:** `backend/app/api/v1/endpoints/system.py`
+* **Modified:** `frontend/electron/splash.html`
+
+### Verification
+
+* **Documentation:** Verified all internal cross-links and relative image paths.
+* **Architecture:** Validated Mermaid diagram syntax for syntax errors.
 
 ---
 
 ## 2026-03-24: Fixed Deposit Lifecycle, P&L Correction & Import Robustness (#374)
-
 
 **Task:** Fix the end-to-end lifecycle for Matured FDs in the Transaction History, correct portfolio Realized P&L calculations, improve Import Session error propagation, and fix misplaced unit test discovery.
 
@@ -246,63 +214,8 @@
 
 ---
 
-## 2026-03-14: Advance Tax Dividend Categorization (ITR-2 Schedule CG)
 
 **Task:** Categorize dividends into Advance Tax quarterly buckets (Upto 15/6, 16/6 - 15/9, etc.) and format the UI and CSV exports to mirror ITR-2 Schedule CG.
-
----
-
-## 2026-03-11: v1.2.0 Developer Documentation Overhaul
-
-**Task:** Audit and completely overhaul all developer-facing documentation (README, guides, architecture, design docs) to prepare for the v1.2.0 release.
-
-**AI Assistant:** Antigravity
-**Role:** Technical Writer / System Architect
-
-### Summary
-
-Successfully brought all documentation up-to-date with the current state of the codebase, ensuring new contributors have accurate reference material.
-1. Updated `README.md`, `CONTRIBUTING.md`, and `developer_guide.md` to feature the new Native Desktop and Android compile flows, and legally mandated AI SDLC rules (`GEMINI.md`).
-2. Synced the advanced Mermaid Component Diagram from `uml_design.md` directly into `docs/architecture.md`.
-3. Renamed the outdated `mvp_database_schema.md` to `docs/database_schema.md` and completely rewrote the table constraints to reflect the exact active SQL schema (including Tax Lots, Bonds, Watches).
-4. Added comprehensive Mermaid Sequence Diagrams into `docs/code_flow_guide.md` for all standard API request lifecycle traces (Transactions, Import, Analytics, Audit Logging, Privacy, Caching, Capital Gains, Watchlists, Goals, Daily Snapshots).
-5. Added Ascii wireframes to `docs/ui_ux_design.md` to visually document the new Consolidated Holdings Table layout and the Import Wizard staging interface.
-
-### File Changes
-
-*   **Modified:** `README.md`, `CONTRIBUTING.md`, `developer_guide.md`, `docs/architecture.md`, `docs/code_flow_guide.md`, `docs/ui_ux_design.md`
-*   **Renamed & Rewritten:** `docs/mvp_database_schema.md` -> `docs/database_schema.md`
-
-### Outcome
-
-**Success.** The documentation is perfectly synced with the v1.2.0 features, closing out the technical debt of outdated design diagrams.
-
----
-
-## 2026-03-11: Create Interview Prep Guide
-
-**Task:** Create an interview preparation document outlining how an Embedded C developer built a Full-Stack Python/React app.
-
-**AI Assistant:** Antigravity
-**Role:** Full-Stack Developer / Career Mentor
-
-### Summary
-
-Generated `docs/interview_prep.md` to help the user prepare for technical interviews. The document translates hardware/C concepts (like struct memory mapping, interrupt-driven sequential code, and low-level arrays) into Web/Cloud concepts (SQL ORMs, React Virtual DOM, and Python dicts/generators). It provides STAR-method answers for architectural decisions like the FastAPI+React decoupled monolith, SQLite vs Postgres, Redis caching, and JSON B-Trees.
-
-### File Changes
-
-*   **New:** `docs/interview_prep.md` - Interview prep guide.
-
-### Outcome
-
-**Success.** The user has a targeted study guide mapping their existing Embedded systems knowledge directly to the specific design patterns used in ArthSaarthi.
-
----
-
-## 2026-03-10: Generate UML Design Document
-
-**Task:** Go through code and write UML design document.
 
 **AI Assistant:** Antigravity
 **Role:** Full-Stack Developer
@@ -520,18 +433,6 @@ Fixed the backend startup failure where the initial asset seeding (downloading a
 ### Outcome
 
 **Success.** The application now starts reliably even on initial deployments with clean volumes.
-Analyzed the backend database models and the overall system architecture. Created a comprehensive UML design document containing:
-1. **System Architecture Diagram**: A Component Diagram detailing the Client Tier, Application Tier, Data Tier, and external service integrations.
-2. **Entity-Relationship Diagram (ERD)**: Documenting the relationships between Users, Portfolios, Transactions, Assets, Goals, etc.
-3. **Class Diagram**: Highlighting the core domain logic for key models.
-
-### File Changes
-
-*   **New:** `docs/uml_design.md` - Generated UML documentation with Mermaid diagrams.
-
-### Outcome
-
-**Success.** The codebase architecture and data models have been visually documented, aiding future development and onboarding.
 
 ---
 

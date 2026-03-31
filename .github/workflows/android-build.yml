@@ -74,6 +74,7 @@ jobs:
         working-directory: ./frontend/android
         run: |
           chmod +x gradlew
+          # Chaquopy needs to know which python binary to use (the one from setup-python)
           PYTHON_PATH=$(which python)
           ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH" --no-parallel
 

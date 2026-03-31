@@ -1,24 +1,21 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-03-30
+**Last Updated:** 2026-03-31
 
 ## 1. Current Project Status
 
-*   **Overall Status:** 🟢 **Stable (Mobile Migration Complete)**
-*   **Summary:** Successfully completed the Mobile-Responsive UI migration. Implemented a dedicated mobile shell (top header, bottom nav), card-based holdings view for small screens, and optimized all core pages for touch interaction. Resolved significant linting noise from android build artifacts. The application is now fully verified for both Desktop and Mobile environments.
+*   **Overall Status:** ✅ **Stable (v1.2.0 Released)**
+*   **Summary:** Resolved critical end-to-end lifecycle issues for Matured FDs, including Transaction History injection, color-coded UI labels, and correct deletion logic. Fixed a systemic Portfolio Realized P&L calculation bug and improved Import Session error propagation (propagate 400 instead of 500). Relocated backend unit tests to the standard `app/tests` discovery path.
 
 ## 2. Test Suite Status
 
 *   **Backend Unit/Integration Tests:** ✅ **310/310 Passing** (Includes relocated security and benchmark tests)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
-*   **Linters (Code Quality):** ✅ **Passing (Ruff E501 and ESLint artifacts resolved)**
+*   **Linters (Code Quality):** ✅ **Passing (Ruff E501 resolved project-wide)**
 
 ### Recent Stabilization Efforts
 
-*   **Mobile UI Migration (2026-03-30):** Finalized the transition to a mobile-responsive frontend. Key features include a responsive sidebar-to-tab-bar navigation pattern, card-based holdings lists for mobile viewports, and horizontal scroll support for all data tables. Optimized modal ergonomics and "Safe Area" layouts for Android devices.
-*   **Android Backend Stabilization (2026-03-28):** Resolved runtime crashes on Android/Chaquopy deployments by implementing a Pydantic compatibility layer (`app/utils/pydantic_compat.py`). This allows the codebase to run on both Pydantic v1 (Android) and v2 (Standard). Refactored all CRUD, API, and test modules to eliminate direct Pydantic v2 method calls.
-*   **Comprehensive QA & User Guide (2026-03-27):** Exhaustive verification of the v1.2.0 release candidate. Validated Reliance (1:1 Bonus) and HDFC Bank (1:2 Reverse Split) sell transactions. Confirmed Section 112A Grandfathering using Actual Cost vs FMV Jan 2018 logic. Generated exhaustive platform documentation with localized media assets.
-*   **FD Lifecycle & Import Robustness (2026-03-24):** Stabilized the FD/RD lifecycle by redacting matured assets from Holdings while preserving their interest in the Portfolio Summary. Implemented synthetic transaction injection for the History tab with conditional Edit/Delete support. Fixed import session commit logic to re-raise `HTTPException` for clearer validation messaging.
+*   **FD Lifecycle & Import Robustness (2026-03-31):** Stabilized the FD/RD lifecycle by redacting matured assets from Holdings while preserving their interest in the Portfolio Summary. Implemented synthetic transaction injection for the History tab with conditional Edit/Delete support. Fixed import session commit logic to re-raise `HTTPException` for clearer validation messaging.
 *   **Live Testing v1.2.0 Fixes (2026-03-23):** Completely stabilized the benchmarking engine to handle edge cases like absent Yahoo indices (Debt benchmark fallback) and extreme stock gains (via Lot-Based FIFO tracking). Fixed historical mathematical distortions in PPF, and matured FD/RD analytical models. Fixed `AssetSearchResult` to expose Bond metadata to the frontend.
 
 *   **Advanced Benchmarking (FR6.3):** Implemented hybrid benchmarks (35/65, 50/50 equity/debt blends), risk-free rate overlay, and category-level (equity vs debt) XIRR comparison. Fixed XIRR calculation for category subsets to use actual current market value.
@@ -30,6 +27,7 @@
     *   Fixed `Holding` schema crash for FDs/RDs missing an `account_number`.
 *   **UI "No Data" Fix:** Category comparison no longer hides the entire component when a category has no transactions — keeps navigation elements visible.
 *   **Desktop App Migration Fix:** Added `fmv_2018` to the manual schema migration script in `run_cli.py` to prevent startup crashes when upgrading the desktop app version.
+*   **v1.2.0 Final Stabilization (2026-03-24):** Completed the comprehensive release preparation. Removed all legacy 'Buy Me A Chai' branding, synchronized all versioning to v1.2.0 across frontend and docs, and purged development-only statement files (PDFs, XLS) from the repository root. Standardized documentation by consolidating redundant handoff and roadmap files.
 
 ## 3. Implemented Functionality
 
@@ -76,14 +74,12 @@
     -   Privacy Mode to obscure sensitive values.
     -   Context-sensitive help links.
     -   Dark theme with user preference persistence.
--   **Exhaustive User Guide:** Comprehensive `USER_GUIDE.md` in `temp_qa_run/` featuring 50+ localized screenshots, transaction logs, and feature walk-through scripts.
 -   **Capital Gains & Dividend Reporting:**
     -   Comprehensive Capital Gains reports for Schedule 112A (Grandfathered Equity) and Schedule FA (Foreign Assets).
     -   **Dividend Report (FR 6.5):** Dedicated tracking for dividends, including Rule 115 compliant TTBR FX conversion for foreign assets (ESPP/RSU).
     -   Support for Tax Lot Accounting (Specific Identification) vs FIFO.
     -   Accurate taxation rules for Bond ETFs, International ETFs, and SGBs.
-    -   **Pydantic Compatibility (Android Stability):** A dedicated compatibility layer (`app/utils/pydantic_compat.py`) is now used for all model serialization and validation. This ensures the backend runs on both Pydantic v1 (Android/Chaquopy) and Pydantic v2 (Desktop/Server) without changes to the business logic. **Mandatory Rule:** Never call `.model_dump()` or `.model_validate()` directly; always use the `pydantic_compat` utility.
--   **Authenticated Exports:** Universal `downloadCsv` utility to ensure CSV downloads via `window.open` alternative carry Auth tokens.
+    -   **Authenticated Exports:** Universal `downloadCsv` utility to ensure CSV downloads via `window.open` alternative carry Auth tokens.
 
 ## 4. Architectural Improvements
 
@@ -122,4 +118,4 @@ Based on the `product_backlog.md`, the next features to consider are:
     - `docs/database_schema.md` (formerly `mvp_database_schema.md`) was rewritten to reflect the exact v1.2.0 active PostgreSQL schema, including all new tables (Bonds, Tax Lots, Watchlists).
     - `docs/ui_ux_design.md` was updated with ASCII wireframes for the new Consolidated Holdings Table and the multi-step Data Import Wizard.
     - `docs/code_flow_guide.md` was updated with comprehensive Mermaid Sequence Diagrams for standardizing all documented request lifecycle traces (Add Transaction, Import Pipeline, Analytics, Audit Logging, Privacy Mode, Analytics Caching, Capital Gains, Watchlists, Goal Planning, and Daily Snapshots).
-    - `README.md`, `CONTRIBUTING.md`, and `developer_guide.md` were overhauled to strongly emphasize the mandatory AI developer rules (from `GEMINI.md`) and detail the new Desktop/Android build pipelines.
+    - `README.md`, `CONTRIBUTING.md`, and `developer_guide.md` were overhauled to strongly emphasize the mandatory AI developer rules (from `GEMINI.md`) and detail the new Desktop build pipeline.

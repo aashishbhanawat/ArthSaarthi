@@ -1,12 +1,10 @@
-# Unified UML Design Documentation
+# UML Design Document
 
-This document serves as the single source of truth for the technical design and data models of the ArthSaarthi Personal Portfolio Management System.
-
----
+This document provides architectural UML diagrams for ArthSaarthi's system structure and core logic. For operational sequences, see [code_flow_guide.md](code_flow_guide.md).
 
 ## 1. System Architecture
 
-The following diagram illustrates the high-level decoupled architecture supporting Server (Docker), Desktop (Electron), and Mobile (Android) deployments.
+The following diagram illustrates the high-level decoupled architecture supporting Server (Docker) and Desktop (Electron) deployments.
 
 ```mermaid
 graph TD
@@ -19,7 +17,6 @@ graph TD
         direction TB
         Browser["User Browser (React SPA)"]:::frontend
         Desktop["Desktop App (Electron + React)"]:::frontend
-        Mobile["Mobile App (Android / Capacitor.js)"]:::frontend
     end
 
     subgraph "Application Tier (Python / FastAPI)"
@@ -36,8 +33,8 @@ graph TD
 
     subgraph "Data Tier"
         direction TB
-        PostgreSQL[("PostgreSQL (Server) / SQLite (Desktop/Mobile)")]:::database
-        Redis[("Redis (Server) / DiskCache (Desktop/Mobile)")]:::database
+        PostgreSQL[("PostgreSQL (Server) / SQLite (Desktop)")]:::database
+        Redis[("Redis (Server) / DiskCache (Desktop)")]:::database
     end
 
     subgraph "External Integrations"
@@ -46,21 +43,197 @@ graph TD
         ExchangeData["NSE / BSE / AMFI Master Data"]:::external
     end
 
-    %% Connections
     Browser -- "HTTPS / REST API" --> API
     Desktop -- "Localhost API (PyInstaller binary)" --> API
-    Mobile -- "Localhost API (Chaquopy embedded CPython)" --> API
 
     API -- "SQLAlchemy / Alembic" --> PostgreSQL
     API -- "Cache R/W" --> Redis
-    
+
     AnalyticsService -- "Market Data Fetch" --> YFinance
     DataImportService -- "Security Master Fetch" --> ExchangeData
 ```
 
----
+## 2. Core Domain Class Diagram
 
-## 2. Entity-Relationship Diagram (ERD)
+Defines the logical relationships between the primary entities in the system.
+
+```mermaid
+classDiagram
+    class User {
+        +UUID id
+        +String email
+        +String hashed_password
+        +Role role
+    }
+    class Portfolio {
+        +UUID id
+        +String name
+        +UUID user_id
+        +calculate_valuation()
+    }
+    class Asset {
+        +UUID id
+        +String ticker_symbol
+        +AssetType asset_type
+        +String isin
+        +fetch_latest_price()
+    }
+    class Transaction {
+        +UUID id
+        +String transaction_type
+        +Date date
+        +Numeric quantity
+        +Numeric price_per_unit
+        +UUID portfolio_id
+        +UUID asset_id
+    }
+    class Goal {
+        +UUID id
+        +Float target_amount
+        +Date target_date
+    }
+    class Watchlist {
+        +UUID id
+        +String name
+    }
+
+    User "1" *-- "many" Portfolio : owns
+    User "1" *-- "many" Goal : defines
+    User "1" *-- "many" Watchlist : maintains
+    Portfolio "1" *-- "many" Transaction : contains
+    Asset "1" -- "many" Transaction : "is traded in"
+    Portfolio "many" -- "many" Goal : "contributes to"
+```
+
+## 2b. Backend Class Architecture
+
+The backend implements the **Repository Pattern** via SQLAlchemy CRUD classes, decoupled from the Pydantic-validated FastAPI routers.
+
+```mermaid
+classDiagram
+    class BaseRouter {
+        <<FastAPI>>
+        +get_db()
+        +get_current_user()
+    }
+    class CRUDBase {
+        <<SQLAlchemy>>
+        +get()
+        +get_multi()
+        +create()
+        +update()
+    }
+    class PortfolioService {
+        +calculate_valuation()
+        +get_xirr()
+    }
+
+    BaseRouter <|-- PortfolioRouter
+    CRUDBase <|-- CRUDPortfolio
+    PortfolioRouter --> CRUDPortfolio : uses
+    PortfolioRouter --> PortfolioService : uses
+    CRUDPortfolio --> PortfolioModel : manages
+```
+
+## 3. Entity Lifecycle State Machines
+
+Describes the behavioral states of complex system entities.
+
+### A. Data Import Session
+```mermaid
+stateDiagram-v2
+    [*] --> UPLOADED
+    UPLOADED --> PARSING : Backend Processing
+    PARSING --> STAGING_PREVIEW : Success
+    PARSING --> FAILED : Parser/Format Error
+    
+    state STAGING_PREVIEW {
+        [*] --> READY
+        READY --> MAPPING_REQUIRED : Missing Ticker
+        MAPPING_REQUIRED --> READY : Alias Created
+    }
+    
+    STAGING_PREVIEW --> COMMITTING : User Action
+    COMMITTING --> COMPLETED : DB Sync
+    COMMITTING --> FAILED : Conflict Error
+```
+
+### B. Financial Goal Tracking
+```mermaid
+stateDiagram-v2
+    [*] --> ACTIVE
+    ACTIVE --> ON_TRACK : Value > Required
+    ACTIVE --> OFF_TRACK : Value < Required
+    ON_TRACK --> ACHIEVED : Current >= Target
+    OFF_TRACK --> ON_TRACK : Top-up / Growth
+    ACHIEVED --> [*]
+```
+
+### C. RSU / ESPP Award Lifecycle
+```mermaid
+stateDiagram-v2
+    [*] --> GRANTED
+    GRANTED --> VESTING : Schedule Active
+    VESTING --> VESTED : Vest Event
+    VESTED --> TAX_SETTLED : "Sell to Cover" / Tax Paid
+    TAX_SETTLED --> READY_FOR_SALE : Added to Holdings
+    READY_FOR_SALE --> SOLD : Transaction Logged
+```
+
+### D. Asset Master Seeder
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+    IDLE --> FETCHING : Request Triggered
+    FETCHING --> SEEDING : Data Parsed
+    SEEDING --> UPDATED : DB Merge Complete
+    SEEDING --> FAILED : API/Network Error
+    UPDATED --> IDLE : Reset Rate Limit
+    FAILED --> IDLE
+```
+
+## 4. Core Logic Activity Diagrams
+
+### A. Capital Gains Processing
+```mermaid
+activityDiagram
+    start
+    :Fetch Asset Transactions;
+    if (Specific ID Selected?) then (yes)
+        :Match user-selected Lots;
+    else (no)
+        :Apply FIFO (First-In-First-Out);
+    endif
+    :Check Holding Period;
+    if (Period > Threshold?) then (yes)
+        :Calculate LTCG;
+        :Apply Indexation (if Debt);
+        :Apply Grandfathering (if 112A);
+    else (no)
+        :Calculate STCG;
+    endif
+    :Aggregate Realized P&L;
+    stop
+```
+
+### B. Benchmark Simulation
+```mermaid
+activityDiagram
+    start
+    :Select Reference Index;
+    if (Hybrid Selected?) then (yes)
+        :Load Blended Weights (e.g. 50/50);
+        :Fetch Multiple Index Navs;
+    else (no)
+        :Fetch Single Index Nav;
+    endif
+    :Overlay Risk-Free Baseline (if enabled);
+    :Simulate Portfolio Cashflows into Benchmark;
+    :Calculate Benchmark XIRR;
+    stop
+```
+
+## 6. Entity-Relationship Diagram (Physical Schema)
 
 The core data model follows a strict multi-tenant ownership structure via the `user_id` foreign key.
 
@@ -91,7 +264,6 @@ erDiagram
     Transactions ||--o{ TransactionLinks : buy_side
 
     ImportSessions ||--o{ ParsedTransactions : stages
-
     Goals ||--o{ GoalLinks : defines
 
     Users {
@@ -117,108 +289,4 @@ erDiagram
         uuid portfolio_id FK
         uuid asset_id FK
     }
-```
-
----
-
-## 3. Backend Class Architecture
-
-The backend implements the **Repository Pattern** via SQLAlchemy CRUD classes, decoupled from the Pydantic-validated FastAPI routers.
-
-```mermaid
-classDiagram
-    class BaseRouter {
-        <<FastAPI>>
-        +get_db()
-        +get_current_user()
-    }
-    class CRUDBase {
-        <<SQLAlchemy>>
-        +get()
-        +get_multi()
-        +create()
-        +update()
-    }
-    class PortfolioService {
-        +calculate_valuation()
-        +get_xirr()
-    }
-    
-    BaseRouter <|-- PortfolioRouter
-    CRUDBase <|-- CRUDPortfolio
-    PortfolioRouter --> CRUDPortfolio : uses
-    PortfolioRouter --> PortfolioService : uses
-    CRUDPortfolio --> PortfolioModel : manages
-```
-
----
-
-## 4. Key Sequence Diagrams
-
-### 4.1. Adding a Transaction
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Frontend as React Frontend
-    participant ReactQuery as React Query / API Client
-    participant Router as FastAPI Router
-    participant CRUD as SQLAlchemy CRUD
-    participant DB as Database
-
-    User->>Frontend: Clicks "Add Transaction"
-    Frontend->>Frontend: Opens Modal, validates input
-    User->>Frontend: Submits Form
-    Frontend->>ReactQuery: mutate(portfolioId, transactionData)
-    ReactQuery->>Router: POST /api/v1/portfolios/{id}/transactions/
-    
-    activate Router
-    Router->>Router: Pydantic Validation (TransactionCreate)
-    Router->>CRUD: create_with_portfolio(db, obj_in, user_id)
-    
-    activate CRUD
-    CRUD->>CRUD: Validate user owns portfolio
-    CRUD->>DB: INSERT INTO transactions ...
-    DB-->>CRUD: Return new row data
-    CRUD-->>Router: Return Transaction Model
-    deactivate CRUD
-    
-    Router-->>ReactQuery: 201 Created (JSON Response)
-    deactivate Router
-    
-    ReactQuery->>Frontend: onSuccess trigger
-    Frontend->>ReactQuery: Invalidate ['portfolios'] cache
-    ReactQuery->>Router: GET /api/v1/portfolios (Refetch data)
-    Frontend->>User: Close modal, show updated UI
-```
-
-### 4.2. Data Import Pipeline
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Frontend as React Frontend
-    participant Parser as File Parsers (Python)
-    participant Staging as Local File System (.parquet)
-    participant DB as Database
-
-    User->>Frontend: Uploads CSV & Submits
-    Frontend->>Parser: POST /api/v1/import-sessions/ (Multipart Form)
-    activate Parser
-    Parser->>Parser: Validate File, Select Parser Engine
-    Parser->>Parser: Parse Raw Data into Pydantic Models
-    Parser->>Staging: Save intermediate data as .parquet file
-    Parser->>DB: Create ImportSession record in database
-    Parser-->>Frontend: 200 OK (Return session ID)
-    deactivate Parser
-    
-    User->>Frontend: Selects rows & Clicks "Commit"
-    Frontend->>DB: POST /api/v1/import-sessions/{id}/commit
-    activate DB
-    DB->>DB: BEGIN TRANSACTION
-    DB->>DB: INSERT all selected Transactions
-    DB->>DB: Update ImportSession status = 'COMPLETED'
-    DB->>DB: COMMIT (Atomic)
-    DB-->>Frontend: 200 OK
-    deactivate DB
 ```

@@ -5,9 +5,8 @@
 [![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-174/174-brightgreen)](#)
 [![E2E Tests](https://img.shields.io/badge/E2E_Tests-31/31-brightgreen)](#)
 
-[![Buy Me A Chai](https://buymeachai.ezee.li/assets/images/buymeachai-button.png)](https://buymeachai.ezee.li/aashishbhanawat)
-
 ---
+
 
 **ArthSaarthi** is a self-hostable, privacy-focused application designed to help users manage their personal investment portfolios. It provides a comprehensive suite of tools for tracking assets, analyzing performance, and making informed financial decisions.
 
@@ -78,7 +77,7 @@ To learn how to use the application's features, refer to the **[User Guide](./do
 
 This project was built with a strong emphasis on developer experience and maintainability. If you're interested in the technical details or want to contribute, please check out the following resources:
 
-*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (Docker, Native, Desktop, Android), running tests, and understanding the local development workflow.
+*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (Docker, Native, Desktop), running tests, and understanding the local development workflow.
 *   **[CONTRIBUTING.md](./CONTRIBUTING.md):** Our guide for contributing to the project, including our AI-assisted development process.
 *   **[Architecture & UML Design](./docs/uml_design.md):** The single source of truth for the system's structural design, including the Component Architecture, Entity-Relationship Diagram (ERD), and core Class logic.
 *   **[Code Flow Guide](./docs/code_flow_guide.md):** Detailed walkthroughs (with Sequence Diagrams) of how a request moves from the React frontend to the SQLAlchemy backend.

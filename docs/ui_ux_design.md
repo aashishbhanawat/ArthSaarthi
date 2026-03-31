@@ -80,9 +80,6 @@ The "Privacy Mode" is a global toggle that allows users to obscure sensitive fin
 |       |  | [1D][1W][1M][1Y][ALL]     | |                        | |
 |       |  +---------------------------+ +------------------------+ |
 |       |                                                           |
-|       |  [1D][1W][1M][1Y][ALL]     | |                        | |
-|       |  +---------------------------+ +------------------------+ |
-|       |                                                           |
 |       |  Top Holdings Overview                                    |
 |       |  [ Asset Name | Value | P/L% ]                            |
 |       |  [------------|-------|------]                            |
@@ -112,40 +109,20 @@ A major feature of v1.2.0 is replacing flat transaction lists with a consolidate
 +-------------------------------------------------------------------+
 ```
 
-## 3. Portfolio Management & "Add New Asset" Flow (FR4)
+## 3. Portfolio Detail Page (FR2.3)
 
 ### User Flow
-The user navigates to the "Portfolios" page from the sidebar. They see a list of their created portfolios (e.g., "Retirement", "Vacation Fund"). They can click on a portfolio to see its specific assets or click a global "Add New..." button.
-
-### "Add New..." Modal Flow
-This is a multi-step process to handle complexity gracefully.
-
-1.  **Step 1: Select Category**
-    A modal appears with large, clear buttons for each asset category.
-    `[Market-Traded]` `[Fixed Income]` `[Govt. Scheme]` `[Employee Plan]`
-
-2.  **Step 2: Enter Details**
-    The form dynamically changes based on the selection in Step 1.
-    *   If **Market-Traded** was chosen:
-        *   `Portfolio to add to: [Retirement Fund ▼]`
-        *   `Asset Type: [Stock ▼]` (Stock, ETF, MF, Bond)
-        *   `Ticker: [GOOGL]`
-        *   `Transaction Type: [Buy ▼]`
-        *   Fields: Quantity, Price, Date, Fees.
-    *   If **Employee Plan** was chosen:
-        *   `Plan Type: [RSU ▼]` (RSU, ESPP)
-        *   `Currency: [USD ▼]`
-        *   Fields: Grant ID, Grant Date, Shares Granted, Vesting Schedule.
-
-This guided flow makes adding complex assets intuitive.
+The user clicks on a portfolio from the "Portfolios" page or the Dashboard. They are presented with a detailed view of that portfolio's overall performance, its asset allocation, and its individual holdings.
 
 ### 3.1. Tax Lot Drill-Down & Sell Link Modal (v1.2.0)
 
 When a user clicks on a holding in the Consolidated Table or attempts to SELL an asset, they are presented with the **Tax Lot Modal**.
 
-*   This modal lists every `BUY` transaction that makes up the total quantity of the holding.
+*   This modal lists every acquisition transaction (`BUY`, `RSU_VEST`, `ESPP_PURCHASE`) that makes up the total quantity of the holding.
 *   It shows the `Original Qty`, `Remaining Qty` (after previous sells), and `Purchase Date` for each lot.
-*   If the user is selling, checkboxes appear next to each lot, allowing them to perform **Specific Lot Identification** (e.g., selling the highest-cost lots first to minimize capital gains tax).
+*   **Demerger Handling:** For assets that have undergone a demerger, the modal displays both the original purchase price and the adjusted cost basis (allocated cost).
+*   **Specific Lot Identification:** If the user is selling, checkboxes appear next to each lot, allowing them to perform specific identification (e.g., selling the highest-cost lots first to minimize capital gains tax).
+*   **Performance Metrics:** Every open lot displays its individual CAGR % relative to the current market price.
 
 ## 4. Risk Profile Page (FR12)
 
@@ -196,6 +173,7 @@ The user navigates to the "Goals" page. They see a summary of all their financia
 |       |  | House Down Payment            Target: $150,000     | |
 |       |  | [||||||||||40%||..............]  Off Track          | |
 |       |  | Increase contributions by $250/mo. [Details ->]    | |
+|       |  +----------------------------------------------------+ |
 +-------------------------------------------------------------------+
 ```
 
@@ -206,7 +184,11 @@ The user navigates to "Import Data". They upload a file, the system parses it, a
 
 ### 6.1. Staging Preview Wireframe
 
-The preview differentiates between new, valid transactions, duplicates (already identical hashes in DB), and invalid/unrecognized rows.
+The preview differentiates between:
+*   **Valid Transactions:** Ready to be committed.
+*   **Duplicates:** Transactions that already exist in the database (based on date, asset, qty, and price hash).
+*   **Needs Mapping:** Transactions with unrecognized tickers that require [Asset Alias](database_schema.md#asset-aliases) mapping.
+*   **Invalid Transactions:** Rows that failed basic validation (e.g., negative prices, missing dates).
 
 ```
 +-------------------------------------------------------------------+
