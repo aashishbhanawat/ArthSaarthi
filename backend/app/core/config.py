@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "production"
     IMPORT_UPLOAD_DIR: str = "uploads"
     DISK_CACHE_DIR: Optional[str] = None
+    LOG_DIR: Optional[str] = None
+    LOG_FILE: Optional[str] = None
 
     ICICI_BREEZE_API_KEY: str = ""
     ZERODHA_KITE_API_KEY: str = ""
@@ -99,7 +101,7 @@ class Settings(BaseSettings):
 
     @validator("DISK_CACHE_DIR", pre=True, always=True)
     def set_disk_cache_dir_for_desktop(cls, v, values):
-        if values.get("DEPLOYMENT_MODE") in ("desktop", "android"):
+        if _is_local_mode(values):
             if isinstance(v, str):
                 return v
             from platformdirs import user_cache_dir
@@ -108,6 +110,29 @@ class Settings(BaseSettings):
             cache_dir = Path(user_cache_dir("arthsaarthi", "arthsaarthi-app"))
             cache_dir.mkdir(parents=True, exist_ok=True)
             return str(cache_dir)
+        return v
+
+    @validator("LOG_DIR", pre=True, always=True)
+    def set_log_dir_for_desktop(cls, v, values):
+        if _is_local_mode(values):
+            if isinstance(v, str):
+                return v
+            from platformdirs import user_log_dir
+            from pathlib import Path
+            # Use a stable directory for logs
+            log_dir = Path(user_log_dir("arthsaarthi", "arthsaarthi-app"))
+            log_dir.mkdir(parents=True, exist_ok=True)
+            return str(log_dir)
+        return v
+
+    @validator("LOG_FILE", pre=True, always=True)
+    def set_log_file_for_desktop(cls, v, values):
+        if _is_local_mode(values):
+            if isinstance(v, str):
+                return v
+            from pathlib import Path
+            log_dir = Path(values.get("LOG_DIR"))
+            return str(log_dir / "arthsaarthi.log")
         return v
 
     @validator("REDIS_URL", pre=True, always=True)

@@ -21,6 +21,7 @@ import GoalDetailPage from './pages/GoalDetailPage';
 import CapitalGainsPage from './pages/CapitalGainsPage';
 import ProfilePage from './pages/ProfilePage';
 import MorePage from './pages/MorePage';
+import LogsPage from './pages/LogsPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -72,6 +73,7 @@ function AppRoutes() {
             <Route path="/admin/maintenance" element={<SystemMaintenancePage />} />
             <Route path="/admin/fmv" element={<AdminFMVPage />} />
             <Route path="/admin/aliases" element={<AdminAliasesPage />} />
+            <Route path="/admin/logs" element={<LogsPage />} />
           </Route>
         </Route>
       </Route>

@@ -12,7 +12,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app import models
+from app import models, schemas
+from app.api import deps
+from app.core.config import settings
 from app.db.session import get_db
 
 logger = logging.getLogger(__name__)
@@ -314,3 +316,31 @@ def _is_newer_version(v1: str, v2: str) -> bool:
     except ValueError:
         return False
 
+@router.get("/logs", response_model=schemas.Message)
+def get_logs(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(deps.get_current_active_superuser),
+):
+    """
+    Get the last 1000 lines of system logs.
+    Only available to superusers.
+    """
+    if not settings.LOG_FILE:
+        return {"message": "Logging to file is not enabled in this mode."}
+
+    from pathlib import Path
+    log_path = Path(settings.LOG_FILE)
+    
+    if not log_path.exists():
+        return {"message": f"Log file not found at {log_path}"}
+
+    try:
+        # Read last 1000 lines
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            # Simple tail implementation
+            lines = f.readlines()
+            last_lines = lines[-1000:]
+            return {"message": "".join(last_lines)}
+    except Exception as e:
+        logger.error(f"Error reading log file: {e}")
+        return {"message": f"Error reading log file: {str(e)}"}
