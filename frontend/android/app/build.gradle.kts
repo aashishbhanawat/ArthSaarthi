@@ -74,7 +74,9 @@ chaquopy {
             install("python-multipart==0.0.6")
             install("httpx==0.24.1")
             install("typer==0.9.0")
-            install("email-validator==2.0.0")
+            // email-validator: pin to v1.x — FastAPI 0.100.1 uses the v1 API;
+            // v2.0+ changes the import structure and breaks fastapi.security at startup
+            install("email-validator==1.3.1")
             install("diskcache==5.6.3")
             install("aiofiles==23.2.1")
             
