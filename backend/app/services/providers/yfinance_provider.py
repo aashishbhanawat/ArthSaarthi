@@ -102,7 +102,6 @@ class YFinanceProvider(FinancialDataProvider):
             raise ValueError(f"yfinance download returned empty data for {tickers_str}")
         return df
 
-    @retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
     def _fetch_info_with_retry(self, ticker_obj) -> dict:
         return ticker_obj.info
 
