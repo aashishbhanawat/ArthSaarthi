@@ -14,7 +14,7 @@ const LogsPage: React.FC = () => {
         setLoading(true);
         try {
             const response = await api.get('/api/v1/system/logs');
-            setLogs(response.data.message);
+            setLogs(response.data.msg);
         } catch (error) {
             setLogs('Error fetching logs. Make sure you are an admin and the backend is running.');
             console.error('Failed to fetch logs:', error);
@@ -64,8 +64,8 @@ const LogsPage: React.FC = () => {
                     <button
                         onClick={() => setAutoRefresh(!autoRefresh)}
                         className={`p-2 rounded-lg border flex items-center gap-2 text-sm font-medium transition-colors ${autoRefresh
-                                ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400'
-                                : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400'
+                            : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300'
                             }`}
                     >
                         <ArrowPathIcon className={`h-5 w-5 ${autoRefresh ? 'animate-spin' : ''}`} />
