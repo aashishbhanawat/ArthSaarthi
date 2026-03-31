@@ -8,6 +8,7 @@ import android.util.Log
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import java.net.ServerSocket
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Android Service that hosts the FastAPI/Uvicorn backend via Chaquopy.
@@ -26,8 +27,7 @@ class BackendService : Service() {
         private const val TAG = "BackendService"
         var backendPort: Int = 0
             private set
-        var isRunning: Boolean = false
-            private set
+        val isRunning = AtomicBoolean(false)
 
         @JvmStatic
         fun updatePort(port: Int) {
@@ -53,17 +53,17 @@ class BackendService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "BackendService onStartCommand")
-        if (!isRunning) {
-            startBackendServer()
-        }
+        startBackendServer()
         return START_STICKY
     }
 
     private fun startBackendServer() {
-        if (isRunning) {
-            Log.w(TAG, "Backend server is already running on port $backendPort")
+        if (!isRunning.compareAndSet(false, true)) {
+            Log.w(TAG, "Backend server is already running or starting...")
             return
         }
+
+        Log.i(TAG, "Starting backend server thread...")
 
         // Initialize Chaquopy if not already done
         if (!Python.isStarted()) {
@@ -82,12 +82,11 @@ class BackendService : Service() {
                 val dataDir = filesDir.absolutePath
                 Log.i(TAG, "Data directory: $dataDir")
 
-                isRunning = true
                 // Pass port 0 to indicate dynamic selection
                 runServer.callAttr("start", 0, dataDir)
             } catch (e: Exception) {
                 Log.e(TAG, "Backend server crashed", e)
-                isRunning = false
+                isRunning.set(false)
             }
         }.apply {
             isDaemon = true
@@ -100,7 +99,7 @@ class BackendService : Service() {
 
     override fun onDestroy() {
         Log.i(TAG, "BackendService onDestroy — stopping backend")
-        isRunning = false
+        isRunning.set(false)
         serverThread?.interrupt()
         serverThread = null
         super.onDestroy()

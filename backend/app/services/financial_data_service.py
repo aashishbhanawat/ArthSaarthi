@@ -22,6 +22,10 @@ class FinancialDataService:
         self.amfi_provider = AmfiIndiaProvider(cache_client)
         self.nse_provider = NseBhavcopyProvider(cache_client)
 
+    def close(self):
+        """Close provider sessions to free resources."""
+        self.yfinance_provider.close()
+
     def get_current_prices(
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
