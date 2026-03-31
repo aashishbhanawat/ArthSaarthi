@@ -52,9 +52,8 @@ android {
 // Chaquopy configuration (must be a top-level block in .kts files, Chaquopy 15+)
 chaquopy {
     defaultConfig {
-        // Python 3.13 required: enables sysconfig for Rust cross-compilation
-        // (needed to build pydantic-core from source for Android)
-        version = "3.13"
+        // Python 3.11 matches server/desktop environments for full compatibility
+        version = "3.11"
 
         // Use the python binary path passed via command line property (-PbuildPython)
         if (project.hasProperty("buildPython")) {
