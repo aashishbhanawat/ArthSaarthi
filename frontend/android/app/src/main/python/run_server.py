@@ -10,11 +10,13 @@ import sys
 import logging
 from typing import ForwardRef
 
-# Monkeypatch ForwardRef._evaluate for Python 3.13 / Pydantic v1 compatibility
-_original_evaluate = ForwardRef._evaluate
-def _patched_evaluate(self, globalns, localns, type_params=None, recursive_guard=frozenset()):
-    return _original_evaluate(self, globalns, localns, type_params=type_params, recursive_guard=recursive_guard)
-ForwardRef._evaluate = _patched_evaluate
+# Monkeypatch ForwardRef._evaluate for Python 3.12+ / Pydantic v1 compatibility
+# This is only needed for newer Python versions that added the type_params argument.
+if sys.version_info >= (3, 12):
+    _original_evaluate = ForwardRef._evaluate
+    def _patched_evaluate(self, globalns, localns, type_params=None, recursive_guard=frozenset()):
+        return _original_evaluate(self, globalns, localns, type_params=type_params, recursive_guard=recursive_guard)
+    ForwardRef._evaluate = _patched_evaluate
 
 logger = logging.getLogger("arthsaarthi.android")
 pid_file_path = None
