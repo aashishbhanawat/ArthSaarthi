@@ -85,7 +85,7 @@ chaquopy {
             install("frozendict")
             install("peewee")
             install("multitasking")
-            install("yfinance==0.2.44")
+            install("yfinance==0.2.55")
             
             // Database & Auth
             install("alembic")
