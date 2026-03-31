@@ -93,7 +93,7 @@ class PythonBackendPlugin : Plugin() {
     @PluginMethod
     fun getBackendStatus(call: PluginCall) {
         val result = JSObject()
-        result.put("running", BackendService.isRunning)
+        result.put("running", BackendService.isRunning.get())
         result.put("port", BackendService.backendPort)
         call.resolve(result)
     }
@@ -105,7 +105,7 @@ class PythonBackendPlugin : Plugin() {
     private fun waitForBackendReady(): Int {
         for (i in 0 until HEALTH_CHECK_MAX_RETRIES) {
             val port = BackendService.backendPort
-            if (port > 0 && BackendService.isRunning) {
+            if (port > 0 && BackendService.isRunning.get()) {
                 try {
                     val url = URL("http://127.0.0.1:$port/api/v1/auth/status")
                     val conn = url.openConnection() as HttpURLConnection

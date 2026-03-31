@@ -9,7 +9,7 @@ import pandas as pd
 import requests
 import requests_cache
 import yfinance as yf
-from tenacity import retry, stop_after_attempt, wait_exponential
+
 from pydantic import ValidationError
 
 from app.cache.base import CacheClient
@@ -76,7 +76,6 @@ class YFinanceProvider(FinancialDataProvider):
             except Exception as e:
                 logger.error(f"Error closing YFinanceProvider session: {e}")
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=3, max=15), reraise=True)
     def _fetch_history_with_retry(self, ticker_obj, **kwargs) -> pd.DataFrame:
         kwargs.setdefault("auto_adjust", False)
         df = ticker_obj.history(**kwargs)
@@ -84,7 +83,6 @@ class YFinanceProvider(FinancialDataProvider):
             raise ValueError(f"yfinance history returned empty data for {ticker_obj.ticker}")
         return df
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=3, max=15), reraise=True)
     def _fetch_download_with_retry(self, tickers_str, start_date, end_date) -> pd.DataFrame:
         if hasattr(yf, "shared"):
             yf.shared._ERRORS = {}
