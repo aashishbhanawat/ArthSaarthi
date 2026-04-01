@@ -104,26 +104,49 @@ def start(port: int, data_dir: str):
     # Singleton check using PID file
     global pid_file_path
     pid_file_path = os.path.join(db_dir, "backend.pid")
+    port_file_path = os.path.join(db_dir, "backend.port")
+    
     if os.path.exists(pid_file_path):
         try:
             with open(pid_file_path, "r") as f:
                 old_pid = int(f.read().strip())
             
+            # Check if the process is actually alive
+            is_alive = False
             if old_pid == os.getpid():
-                # Stale PID file from a previous Service lifecycle within the SAME Android process.
-                # The Kotlin layer (BackendService.isRunning) already protects against concurrent threads.
-                logger.info("Ignoring PID file: belongs to the current OS process.")
+                is_alive = True
             else:
-                # On Android, check if the PID is still alive by sending signal 0
                 try:
                     os.kill(old_pid, 0)
-                    logger.warning(f"STALEMATE: Backend already running with PID {old_pid}. Exiting.")
-                    return
+                    is_alive = True
                 except OSError:
-                    logger.info(f"Cleanup: Removing stale PID file for {old_pid}")
-                    os.remove(pid_file_path)
-        except Exception:
-            pass
+                    pass
+
+            if is_alive:
+                logger.info(f"Backend already running (PID {old_pid}). Recovering port...")
+                if os.path.exists(port_file_path):
+                    try:
+                        with open(port_file_path, "r") as f:
+                            old_port = int(f.read().strip())
+                        
+                        # Re-notify Java/Android side of the existing port
+                        from java import jclass
+                        BackendService = jclass("com.arthsaarthi.app.BackendService")
+                        BackendService.updatePort(old_port)
+                        logger.info(f"Port {old_port} recovered and Java notified.")
+                    except Exception as pe:
+                        logger.error(f"Failed to recover port or notify Java: {pe}")
+                
+                if old_pid != os.getpid():
+                    logger.warning("STALEMATE: Backend running in different process. Exiting.")
+                    return
+                else:
+                    logger.info("Continuing within same process (previous thread likely dead or new Service lifecycle).")
+            else:
+                logger.info(f"Cleanup: Removing stale PID file for {old_pid}")
+                os.remove(pid_file_path)
+        except Exception as e:
+            logger.error(f"Error during singleton check: {e}")
 
     with open(pid_file_path, "w") as f:
         f.write(str(os.getpid()))
@@ -166,6 +189,13 @@ def start(port: int, data_dir: str):
                     break
             
             logger.info(f"Uvicorn bound to port: {actual_port}")
+            
+            # Persist port for recovery on app restart
+            try:
+                with open(os.path.join(os.environ["HOME"], ".arthsaarthi", "backend.port"), "w") as f:
+                    f.write(str(actual_port))
+            except Exception as pe:
+                logger.error(f"Failed to persist port: {pe}")
             
             # Notify Java/Android side
             try:
