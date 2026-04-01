@@ -108,14 +108,20 @@ def start(port: int, data_dir: str):
         try:
             with open(pid_file_path, "r") as f:
                 old_pid = int(f.read().strip())
-            # On Android, we can check if the PID is still alive by sending signal 0
-            try:
-                os.kill(old_pid, 0)
-                logger.warning(f"STALEMATE: Backend already running with PID {old_pid}. Exiting.")
-                return
-            except OSError:
-                logger.info(f"Cleanup: Removing stale PID file for {old_pid}")
-                os.remove(pid_file_path)
+            
+            if old_pid == os.getpid():
+                # Stale PID file from a previous Service lifecycle within the SAME Android process.
+                # The Kotlin layer (BackendService.isRunning) already protects against concurrent threads.
+                logger.info("Ignoring PID file: belongs to the current OS process.")
+            else:
+                # On Android, check if the PID is still alive by sending signal 0
+                try:
+                    os.kill(old_pid, 0)
+                    logger.warning(f"STALEMATE: Backend already running with PID {old_pid}. Exiting.")
+                    return
+                except OSError:
+                    logger.info(f"Cleanup: Removing stale PID file for {old_pid}")
+                    os.remove(pid_file_path)
         except Exception:
             pass
 
