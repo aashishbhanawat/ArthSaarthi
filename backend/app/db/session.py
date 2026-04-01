@@ -32,8 +32,13 @@ def get_db():
         logger.debug("DB Session: Attempting to commit.")
         db.commit()
         logger.debug("DB Session: Commit successful.")
-    except Exception:
-        logger.error("DB Session: Exception occurred, rolling back.")
+    except Exception as e:
+        # Don't log ERROR for 4xx client errors (like PASSWORD_REQUIRED)
+        from starlette.exceptions import HTTPException
+        if isinstance(e, HTTPException) and e.status_code < 500:
+            logger.debug(f"DB Session: Client error {e.status_code}, rolling back.")
+        else:
+            logger.error(f"DB Session: Exception occurred, rolling back: {e}")
         db.rollback()
         raise
     finally:
