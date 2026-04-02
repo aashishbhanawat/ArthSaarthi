@@ -1,5 +1,6 @@
 """Provider for fetching data from Yahoo Finance using yahooquery."""
 import logging
+import random
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -18,8 +19,19 @@ CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
 logger = logging.getLogger(__name__)
 
 class YahooQueryProvider(FinancialDataProvider):
+    USER_AGENTS = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+    ]
+
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
+        self.user_agent = random.choice(self.USER_AGENTS)
+
+    def _get_ticker_session(self, symbols: Any) -> Ticker:
+        return Ticker(symbols, user_agent=self.user_agent)
 
     def _get_yahoo_ticker(
         self, ticker_symbol: str, exchange: Optional[str]
@@ -67,7 +79,7 @@ class YahooQueryProvider(FinancialDataProvider):
         
         symbols = list(yf_to_original.keys())
         try:
-            t = Ticker(symbols)
+            t = self._get_ticker_session(symbols)
             # history(period='2d') returns a MultiIndex DataFrame (symbol, date)
             history = t.history(period="2d")
             
@@ -113,7 +125,7 @@ class YahooQueryProvider(FinancialDataProvider):
         symbols = list(yf_to_original.keys())
         
         try:
-            t = Ticker(symbols)
+            t = self._get_ticker_session(symbols)
             history = t.history(start=start_date, end=end_date + timedelta(days=1))
             
             if not history.empty:
@@ -132,7 +144,7 @@ class YahooQueryProvider(FinancialDataProvider):
     def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
         yf_ticker = self._get_yahoo_ticker(ticker_symbol, None)
         try:
-            t = Ticker(yf_ticker)
+            t = self._get_ticker_session(yf_ticker)
             # Fetch price and summaryProfile modules
             all_modules = t.all_modules
             if not isinstance(all_modules, dict):
@@ -165,7 +177,7 @@ class YahooQueryProvider(FinancialDataProvider):
     ) -> Optional[Dict[str, Any]]:
         yf_ticker = self._get_yahoo_ticker(ticker_symbol, exchange)
         try:
-            t = Ticker(yf_ticker)
+            t = self._get_ticker_session(yf_ticker)
             # assetProfile and summaryDetail contain the requested metrics
             all_modules = t.all_modules
             if not isinstance(all_modules, dict):
@@ -190,6 +202,44 @@ class YahooQueryProvider(FinancialDataProvider):
         except Exception as e:
             logger.warning(f"YahooQuery: Enrichment failed for {ticker_symbol}: {e}")
         return None
+
+    def get_enrichment_data_batch(
+        self, tickers: List[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """Fetches enrichment data for multiple tickers in a single call."""
+        if not tickers:
+            return {}
+
+        yf_to_original = {
+            self._get_yahoo_ticker(a["ticker_symbol"], a.get("exchange")): a["ticker_symbol"]
+            for a in tickers
+        }
+        symbols = list(yf_to_original.keys())
+        
+        enrichment_results = {}
+        try:
+            t = self._get_ticker_session(symbols)
+            all_data = t.all_modules
+            
+            if isinstance(all_data, dict):
+                for yf_symbol, original_symbol in yf_to_original.items():
+                    data = all_data.get(yf_symbol)
+                    if isinstance(data, dict):
+                        profile = data.get('assetProfile', {})
+                        summary = data.get('summaryDetail', {})
+                        
+                        enrichment_results[original_symbol] = {
+                            "sector": profile.get("sector"),
+                            "industry": profile.get("industry"),
+                            "country": profile.get("country"),
+                            "market_cap": summary.get("marketCap"),
+                            "trailing_pe": summary.get("trailingPE"),
+                            "price_to_book": summary.get("priceToBook"),
+                        }
+        except Exception as e:
+            logger.warning(f"YahooQuery: Batch enrichment failed: {e}")
+            
+        return enrichment_results
 
     def search(self, query: str) -> List[Dict[str, Any]]:
         try:

@@ -640,38 +640,36 @@ def _process_market_traded_assets(
         except Exception as e:
             logger.error(f"Failed during AMFI enrichment: {e}")
 
-    # 2. Optimize yfinance Enrichment: Parallelize Requests
+    # 2. Optimize YahooQuery Enrichment: Batch Fetch (Avoids 429 Rate Limits)
     if equities_to_enrich:
         logger.info(
-            f"Enriching {len(equities_to_enrich)} Equities via yfinance (Parallel)..."
+            f"Enriching {len(equities_to_enrich)} Equities via YahooQuery (Batch)..."
         )
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Map future to asset
-            future_to_asset = {
-                executor.submit(
-                    financial_data_service.get_enrichment_data,
-                    asset.ticker_symbol,
-                    asset.exchange,
-                ): asset
+        try:
+            # Construct asset list for batch call
+            assets_to_enrich = [
+                {
+                    "ticker_symbol": asset.ticker_symbol,
+                    "exchange": asset.exchange
+                }
                 for asset in equities_to_enrich
-            }
-
-            for future in concurrent.futures.as_completed(future_to_asset):
-                asset = future_to_asset[future]
-                try:
-                    enrichment = future.result()
-                    if enrichment:
-                        asset.sector = enrichment.get("sector")
-                        asset.industry = enrichment.get("industry")
-                        asset.country = enrichment.get("country")
-                        asset.market_cap = enrichment.get("market_cap")
-                        asset.investment_style = enrichment.get("investment_style")
-                        db.add(asset)
-                        needs_commit = True
-                except Exception as exc:
-                    logger.warning(
-                        f"Enrichment failed for {asset.ticker_symbol}: {exc}"
-                    )
+            ]
+            
+            enrichment_results = financial_data_service.get_enrichment_data_batch(assets_to_enrich)
+            
+            for asset in equities_to_enrich:
+                enrichment = enrichment_results.get(asset.ticker_symbol)
+                if enrichment:
+                    asset.sector = enrichment.get("sector")
+                    asset.industry = enrichment.get("industry")
+                    asset.country = enrichment.get("country")
+                    asset.market_cap = enrichment.get("market_cap")
+                    asset.trailing_pe = enrichment.get("trailing_pe")
+                    asset.price_to_book = enrichment.get("price_to_book")
+                    db.add(asset)
+                    needs_commit = True
+        except Exception as e:
+            logger.error(f"Failed during YahooQuery batch enrichment: {e}")
     if needs_commit:
         try:
             db.commit()
