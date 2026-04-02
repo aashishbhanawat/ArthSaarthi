@@ -9,6 +9,7 @@ from app.core.config import settings
 from .providers.amfi_provider import AmfiIndiaProvider  # type: ignore
 from .providers.nse_bhavcopy_provider import NseBhavcopyProvider
 from .providers.yfinance_provider import YFinanceProvider  # type: ignore
+from .providers.yahooquery_provider import YahooQueryProvider
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
 CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 class FinancialDataService:
     def __init__(self, cache_client: Optional[CacheClient]):
         self.yfinance_provider = YFinanceProvider(cache_client)
+        self.yahooquery_provider = YahooQueryProvider(cache_client)
         self.amfi_provider = AmfiIndiaProvider(cache_client)
         self.nse_provider = NseBhavcopyProvider(cache_client)
 
@@ -175,7 +177,12 @@ class FinancialDataService:
         if asset_type == "Mutual Fund" or asset_type == "MUTUAL_FUND":
             return self.amfi_provider.get_asset_details(ticker_symbol)
 
-        # Default to yfinance for other types or if type is unknown
+        # Default to YahooQuery for other types or if type is unknown
+        details = self.yahooquery_provider.get_asset_details(ticker_symbol)
+        if details:
+            return details
+            
+        # Fallback to yfinance
         return self.yfinance_provider.get_asset_details(ticker_symbol)
 
     def search_mutual_funds(self, query: str) -> List[Dict[str, Any]]:
@@ -200,6 +207,21 @@ class FinancialDataService:
         return self.yfinance_provider.get_exchange_rate(
             from_currency, to_currency, date_obj
         )
+
+    def get_enrichment_data(
+        self, ticker_symbol: str, exchange: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Fetches sector, industry, country, marketCap, P/E, P/B for a single ticker.
+        Uses YahooQueryProvider as the preferred source for better metadata reliability.
+        """
+        # Try YahooQuery first as it's more reliable for Indian stock metadata
+        data = self.yahooquery_provider.get_enrichment_data(ticker_symbol, exchange)
+        if data:
+            return data
+            
+        # Fallback to yfinance if needed
+        return self.yfinance_provider.get_enrichment_data(ticker_symbol, exchange)
 
 
 def get_financial_data_service() -> FinancialDataService:

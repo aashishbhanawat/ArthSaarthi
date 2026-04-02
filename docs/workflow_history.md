@@ -1585,3 +1585,36 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 
 ### Outcome
 **Success.** Successfully closed 16 pending security vulnerability reports from Dependabot.
+
+## 2026-04-02: Implement YahooQuery Alternative for Stock Metadata (#350)
+
+**Task:** Integrate `yahooquery` to resolve `yfinance` reliability and rate-limiting issues for Indian stock metadata.
+
+**AI Assistant:** Antigravity
+**Role:** Financial Data Engineer
+
+### Summary
+Implemented `YahooQueryProvider` and integrated it into the core financial data services. This ensures reliable retrieval of Sectors, Industries, and Market Cap for NSE/BSE stocks, which was previously failing with `yfinance`.
+
+**Backend:**
+*   Implemented `YahooQueryProvider` in `app/services/providers/yahooquery_provider.py`.
+*   Updated `FinancialDataService` to prioritize `yahooquery` for metadata and search.
+*   Refactored `crud_holding.py` to use a unified enrichment method.
+*   Added `yahooquery` to `backend/requirements.in`.
+
+**Android:**
+*   Updated `frontend/android/app/build.gradle.kts` to include `yahooquery` in the Chaquopy pip configuration.
+
+### Verification
+*   Ran `verify_yahooquery_integration.py` in the backend container; successfully fetched Reliance and TCS metadata via `yahooquery` (manual verification in container).
+*   Confirmed `yahooquery` is a pure-Python library compatible with Chaquopy.
+
+### File Changes
+*   **New:** [yahooquery_provider.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/providers/yahooquery_provider.py)
+*   **Modified:** [financial_data_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/financial_data_service.py)
+*   **Modified:** [crud_holding.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_holding.py)
+*   **Modified:** [requirements.in](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/requirements.in)
+*   **Modified:** [build.gradle.kts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/build.gradle.kts)
+
+### Outcome
+**Success.** Successfully integrated `yahooquery` for improved metadata reliability and Android compatibility.

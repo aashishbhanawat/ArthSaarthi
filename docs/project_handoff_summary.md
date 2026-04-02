@@ -121,3 +121,12 @@ Based on the `product_backlog.md`, the next features to consider are:
     - `docs/ui_ux_design.md` was updated with ASCII wireframes for the new Consolidated Holdings Table and the multi-step Data Import Wizard.
     - `docs/code_flow_guide.md` was updated with comprehensive Mermaid Sequence Diagrams for standardizing all documented request lifecycle traces (Add Transaction, Import Pipeline, Analytics, Audit Logging, Privacy Mode, Analytics Caching, Capital Gains, Watchlists, Goal Planning, and Daily Snapshots).
     - `README.md`, `CONTRIBUTING.md`, and `developer_guide.md` were overhauled to strongly emphasize the mandatory AI developer rules (from `GEMINI.md`) and detail the new Desktop build pipeline.
+
+## 10. YahooQuery Integration for Android (2026-04-02)
+
+-   **Summary:** Integrated `yahooquery` as a high-reliability fallback and metadata provider for Indian stocks. This addresses `yfinance` rate-limiting and connectivity issues particularly relevant for the experimental Android APK build.
+-   **Key Technical Changes:**
+    -   Implemented `YahooQueryProvider` (Strategy Pattern) for robust metadata fetching.
+    -   Unified `get_enrichment_data` in `FinancialDataService` to prioritize `yahooquery` over `yfinance` for Sectors/Industries.
+    -   Updated Chaquopy configuration in `frontend/android/app/build.gradle.kts` to package `yahooquery`.
+-   **Status:** ✅ **Implemented on `feature/android-apk-experimental` branch.**

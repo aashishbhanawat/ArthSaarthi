@@ -87,6 +87,7 @@ chaquopy {
             install("peewee")
             install("multitasking")
             install("yfinance==0.2.55")
+            install("yahooquery")
             
             // Database & Auth
             install("alembic")
