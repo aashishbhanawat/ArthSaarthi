@@ -64,6 +64,13 @@ class YFinanceProvider(FinancialDataProvider):
         })
         # Log the headers once at startup for diagnostics
         logger.info("YFinanceProvider: session headers = %s", dict(self.session.headers))
+        
+        # Try to get an initial session cookie from Yahoo
+        try:
+            self.session.get("https://finance.yahoo.com", timeout=10)
+            logger.info("YFinanceProvider: Initial session cookie established.")
+        except Exception as e:
+            logger.warning(f"YFinanceProvider: Failed to get initial cookie: {e}")
 
     def _is_cooling_down(self) -> bool:
         if self._last_429_time == 0:

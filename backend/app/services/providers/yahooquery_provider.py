@@ -73,6 +73,13 @@ class YahooQueryProvider(FinancialDataProvider):
         })
         # Log the headers once at startup for diagnostics
         logger.info("YahooQueryProvider: session headers = %s", dict(session.headers))
+        
+        # Try to get an initial session cookie from Yahoo
+        try:
+            session.get("https://finance.yahoo.com", timeout=10)
+            logger.info("YahooQueryProvider: Initial session cookie established.")
+        except Exception as e:
+            logger.warning(f"YahooQueryProvider: Failed to get initial cookie: {e}")
 
         # Add retry strategy for 429 and 5xx errors
         retries = Retry(
