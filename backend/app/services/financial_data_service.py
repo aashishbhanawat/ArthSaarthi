@@ -248,6 +248,15 @@ class FinancialDataService:
         # Fallback to yfinance if needed
         return self.yfinance_provider.get_enrichment_data(ticker_symbol, exchange)
 
+    def get_enrichment_data_batch(
+        self, assets: List[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Fetches enrichment data for multiple assets in a single call.
+        Highly recommended for bulk enrichment to avoid rate limits (429).
+        """
+        return self.yahooquery_provider.get_enrichment_data_batch(assets)
+
 
 def get_financial_data_service() -> FinancialDataService:
     from app.cache.factory import get_cache_client
