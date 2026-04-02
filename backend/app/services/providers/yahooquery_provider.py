@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+import requests_cache
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -43,7 +44,17 @@ class YahooQueryProvider(FinancialDataProvider):
         return (time.time() - self._last_429_time) < self._cooldown_period
 
     def _get_session(self) -> Session:
-        session = Session()
+        # Use CachedSession to store responses locally (SQLite)
+        # expire_after=3600 (1 hour) for general data, but historical/enrichment
+        # are often static, so we can use a longer cache.
+        cache_name = "yahooquery_cache"
+        session = requests_cache.CachedSession(
+            cache_name,
+            backend='sqlite',
+            expire_after=3600,
+            allowable_codes=[200],
+            stale_if_error=True
+        )
         session.headers.update({"User-Agent": self.user_agent})
         # Add retry strategy for 429 and 5xx errors
         retries = Retry(

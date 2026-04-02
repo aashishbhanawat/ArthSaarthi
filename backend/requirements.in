@@ -17,6 +17,7 @@ typer
 uvicorn[standard]
 yfinance==1.1.0
 yahooquery
+requests-cache
 tenacity
 cryptography
 pyxirr
