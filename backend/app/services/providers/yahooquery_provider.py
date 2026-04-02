@@ -133,7 +133,11 @@ class YahooQueryProvider(FinancialDataProvider):
         try:
             t = Ticker(yf_ticker)
             # Fetch price and summaryProfile modules
-            modules = t.all_modules[yf_ticker]
+            all_modules = t.all_modules
+            if not isinstance(all_modules, dict):
+                return None
+                
+            modules = all_modules.get(yf_ticker)
             if isinstance(modules, dict):
                 price = modules.get('price', {})
                 profile = modules.get('summaryProfile', {})
@@ -162,7 +166,11 @@ class YahooQueryProvider(FinancialDataProvider):
         try:
             t = Ticker(yf_ticker)
             # assetProfile and summaryDetail contain the requested metrics
-            modules = t.all_modules[yf_ticker]
+            all_modules = t.all_modules
+            if not isinstance(all_modules, dict):
+                return None
+                
+            modules = all_modules.get(yf_ticker)
             if isinstance(modules, dict):
                 profile = modules.get('assetProfile', {})
                 summary = modules.get('summaryDetail', {})
