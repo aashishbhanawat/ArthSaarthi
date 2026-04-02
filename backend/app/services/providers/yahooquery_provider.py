@@ -60,16 +60,20 @@ class YahooQueryProvider(FinancialDataProvider):
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/123.0.0.0 Mobile Safari/537.36"
             ),
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": "en-IN,en-US;q=0.9,en;q=0.8",
             "Accept-Encoding": "gzip, deflate, br",
             "Referer": "https://finance.yahoo.com/",
-            "Origin": "https://finance.yahoo.com",
+            "Sec-Ch-Ua": '"Chromium";v="123", "Not:A-Brand";v="8", "Google Chrome";v="123"',
+            "Sec-Ch-Ua-Mobile": "?1",
+            "Sec-Ch-Ua-Platform": '"Android"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
             "DNT": "1",
             "Connection": "keep-alive",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-site",
         })
         # Log the headers once at startup for diagnostics
         logger.info("YahooQueryProvider: session headers = %s", dict(session.headers))
@@ -94,8 +98,9 @@ class YahooQueryProvider(FinancialDataProvider):
 
     def _get_ticker_session(self, symbols: Any) -> Ticker:
         # Randomized sleep to avoid burst requests (jitter)
-        time.sleep(random.uniform(0.5, 2.0))
-        return Ticker(symbols, session=self.session, region='IN', country='india')
+        time.sleep(random.uniform(1.0, 3.0))
+        # Use default regional settings (often more stable)
+        return Ticker(symbols, session=self.session)
 
     def _get_yahoo_ticker(
         self, ticker_symbol: str, exchange: Optional[str]
