@@ -7,6 +7,9 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+from requests import Session
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 from yahooquery import Ticker
 from pydantic import ValidationError
 
@@ -29,9 +32,24 @@ class YahooQueryProvider(FinancialDataProvider):
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
         self.user_agent = random.choice(self.USER_AGENTS)
+        self.session = self._get_session()
+
+    def _get_session(self) -> Session:
+        session = Session()
+        session.headers.update({"User-Agent": self.user_agent})
+        # Add retry strategy for 429 and 5xx errors
+        retries = Retry(
+            total=3,
+            backoff_factor=2,  # Exponential backoff: 2s, 4s, 8s
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"]
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        session.mount("https://", adapter)
+        return session
 
     def _get_ticker_session(self, symbols: Any) -> Ticker:
-        return Ticker(symbols, user_agent=self.user_agent)
+        return Ticker(symbols, session=self.session)
 
     def _get_yahoo_ticker(
         self, ticker_symbol: str, exchange: Optional[str]
