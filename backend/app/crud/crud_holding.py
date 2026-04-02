@@ -649,7 +649,7 @@ def _process_market_traded_assets(
             # Map future to asset
             future_to_asset = {
                 executor.submit(
-                    financial_data_service.yfinance_provider.get_enrichment_data,
+                    financial_data_service.get_enrichment_data,
                     asset.ticker_symbol,
                     asset.exchange,
                 ): asset
