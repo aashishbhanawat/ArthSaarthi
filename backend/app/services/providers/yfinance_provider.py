@@ -42,10 +42,6 @@ class YFinanceProvider(FinancialDataProvider):
         self._last_429_time: float = 0
         self._cooldown_period: float = 60  # 1 minute cooldown after 429
         
-    def _is_cooling_down(self) -> bool:
-        if self._last_429_time == 0:
-            return False
-        return (time.time() - self._last_429_time) < self._cooldown_period
         # Full Chrome 124 browser fingerprint - mirrors what yfinance>=1.0.0 sends
         # via curl_cffi. On Android we can't use curl_cffi (no arm64 wheel),
         # so we manually set all relevant headers to reduce Yahoo Finance rate limits.
@@ -74,6 +70,11 @@ class YFinanceProvider(FinancialDataProvider):
         })
         # Log the headers once at startup for diagnostics
         logger.info("YFinanceProvider: session headers = %s", dict(self.session.headers))
+
+    def _is_cooling_down(self) -> bool:
+        if self._last_429_time == 0:
+            return False
+        return (time.time() - self._last_429_time) < self._cooldown_period
 
     def close(self):
         """Explicitly close the requests-cache session to free resources."""
