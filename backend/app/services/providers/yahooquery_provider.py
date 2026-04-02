@@ -13,7 +13,12 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from yahooquery import Ticker
+import yahooquery.utils as yq_utils
 from pydantic import ValidationError
+
+# Force YahooQuery to use query1 instead of query2 (often less throttled)
+yq_utils.BASE_URL = "https://query1.finance.yahoo.com"
+yq_utils.SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
 from app.cache.base import CacheClient
 from app.core.config import settings
 from .base import FinancialDataProvider
@@ -74,6 +79,7 @@ class YahooQueryProvider(FinancialDataProvider):
             "Upgrade-Insecure-Requests": "1",
             "DNT": "1",
             "Connection": "keep-alive",
+            "Priority": "u=0, i",
         })
         # Log the headers once at startup for diagnostics
         logger.info("YahooQueryProvider: session headers = %s", dict(session.headers))
