@@ -148,9 +148,23 @@ class FinancialDataService:
         historical_data: Dict[str, Dict[date, Decimal]] = {}
 
         if other_assets:
-            historical_data.update(self.yfinance_provider.get_historical_prices(
+            logger.info(f"Fetching historical prices for {len(other_assets)} assets via YahooQuery")
+            historical_data.update(self.yahooquery_provider.get_historical_prices(
                 other_assets, start_date, end_date
             ))
+            
+            # Fallback to yfinance for any assets missed by yahooquery
+            found_tickers = set(historical_data.keys())
+            remaining_assets = [
+                a for a in other_assets 
+                if a["ticker_symbol"] not in found_tickers
+            ]
+            
+            if remaining_assets:
+                logger.info(f"Falling back to yfinance for {len(remaining_assets)} historical prices")
+                historical_data.update(self.yfinance_provider.get_historical_prices(
+                    remaining_assets, start_date, end_date
+                ))
 
         if mf_assets:
             historical_data.update(self.amfi_provider.get_historical_prices(

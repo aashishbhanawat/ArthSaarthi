@@ -104,6 +104,7 @@ class YahooQueryProvider(FinancialDataProvider):
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
+        logger.info(f"YahooQuery: Fetching historical prices for {len(assets)} assets")
         historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
         yf_to_original = {
             self._get_yahoo_ticker(a["ticker_symbol"], a["exchange"]): a["ticker_symbol"]
