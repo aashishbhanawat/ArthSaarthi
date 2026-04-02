@@ -14,8 +14,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from yahooquery import Ticker
 from pydantic import ValidationError
-
 from app.cache.base import CacheClient
+from app.core.config import settings
 from .base import FinancialDataProvider
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
@@ -45,13 +45,12 @@ class YahooQueryProvider(FinancialDataProvider):
 
     def _get_session(self) -> Session:
         # Use CachedSession to store responses locally (SQLite)
-        # expire_after=3600 (1 hour) for general data, but historical/enrichment
-        # are often static, so we can use a longer cache.
-        cache_name = "yahooquery_cache"
+        from pathlib import Path
+        cache_path = str(Path(settings.DISK_CACHE_DIR) / "yahooquery_cache.sqlite")
         session = requests_cache.CachedSession(
-            cache_name,
+            cache_path,
             backend='sqlite',
-            expire_after=3600,
+            expire_after=CACHE_TTL_HISTORICAL_PRICE,  # 24 hours
             allowable_codes=[200],
             stale_if_error=True
         )
