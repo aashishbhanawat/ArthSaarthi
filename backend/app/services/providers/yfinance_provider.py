@@ -1,5 +1,6 @@
 """Provider for fetching data from Yahoo Finance."""
 import logging
+import time
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -38,6 +39,13 @@ class YFinanceProvider(FinancialDataProvider):
             expire_after=CACHE_TTL_HISTORICAL_PRICE,
             stale_if_error=True
         )
+        self._last_429_time: float = 0
+        self._cooldown_period: float = 60  # 1 minute cooldown after 429
+        
+    def _is_cooling_down(self) -> bool:
+        if self._last_429_time == 0:
+            return False
+        return (time.time() - self._last_429_time) < self._cooldown_period
         # Full Chrome 124 browser fingerprint - mirrors what yfinance>=1.0.0 sends
         # via curl_cffi. On Android we can't use curl_cffi (no arm64 wheel),
         # so we manually set all relevant headers to reduce Yahoo Finance rate limits.
@@ -123,6 +131,10 @@ class YFinanceProvider(FinancialDataProvider):
     def get_current_prices(
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
+        if self._is_cooling_down():
+            logger.warning("YFinance: Circuit breaker active (cooling down after 429)")
+            return {}
+            
         logger.debug(
             f"get_current_prices: {len(assets)} assets - "
             f"{[(a.get('ticker_symbol'), a.get('exchange')) for a in assets]}"
@@ -228,6 +240,8 @@ class YFinanceProvider(FinancialDataProvider):
                         f"yfinance API returned empty history for {yf_symbol}"
                     )
         except (Exception, ValidationError) as e:
+            if "429" in str(e) or "Rate limit" in str(e):
+                self._last_429_time = time.time()
             logger.error(f"WARNING: Error fetching batch data from yfinance: {e}")
 
         if self.cache_client:
@@ -365,6 +379,10 @@ class YFinanceProvider(FinancialDataProvider):
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
+        if self._is_cooling_down():
+            logger.warning("YFinance: Circuit breaker active (cooling down after 429)")
+            return {}
+            
         historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
         assets_to_fetch = []
         if self.cache_client:
