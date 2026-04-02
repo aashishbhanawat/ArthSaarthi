@@ -1,6 +1,7 @@
 """Provider for fetching data from Yahoo Finance using yahooquery."""
 import logging
 import random
+import time
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -33,6 +34,13 @@ class YahooQueryProvider(FinancialDataProvider):
         self.cache_client = cache_client
         self.user_agent = random.choice(self.USER_AGENTS)
         self.session = self._get_session()
+        self._last_429_time: float = 0
+        self._cooldown_period: float = 60  # 1 minute cooldown after 429
+
+    def _is_cooling_down(self) -> bool:
+        if self._last_429_time == 0:
+            return False
+        return (time.time() - self._last_429_time) < self._cooldown_period
 
     def _get_session(self) -> Session:
         session = Session()
@@ -40,7 +48,7 @@ class YahooQueryProvider(FinancialDataProvider):
         # Add retry strategy for 429 and 5xx errors
         retries = Retry(
             total=3,
-            backoff_factor=2,  # Exponential backoff: 2s, 4s, 8s
+            backoff_factor=3,  # Exponential backoff: 3s, 9s, 27s
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=["GET"]
         )
@@ -49,7 +57,9 @@ class YahooQueryProvider(FinancialDataProvider):
         return session
 
     def _get_ticker_session(self, symbols: Any) -> Ticker:
-        return Ticker(symbols, session=self.session)
+        # Randomized sleep to avoid burst requests (jitter)
+        time.sleep(random.uniform(0.5, 2.0))
+        return Ticker(symbols, session=self.session, region='IN', country='india')
 
     def _get_yahoo_ticker(
         self, ticker_symbol: str, exchange: Optional[str]
@@ -68,6 +78,10 @@ class YahooQueryProvider(FinancialDataProvider):
     def get_current_prices(
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
+        if self._is_cooling_down():
+            logger.warning("YahooQuery: Circuit breaker active (cooling down after 429)")
+            return {}
+            
         logger.info(f"YahooQuery: Fetching current prices for {len(assets)} assets")
         prices_data: Dict[str, Dict[str, Decimal]] = {}
         tickers_to_fetch: List[Dict[str, Any]] = []
@@ -134,6 +148,10 @@ class YahooQueryProvider(FinancialDataProvider):
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
+        if self._is_cooling_down():
+            logger.warning("YahooQuery: Circuit breaker active (cooling down after 429)")
+            return {}
+            
         logger.info(f"YahooQuery: Fetching historical prices for {len(assets)} assets")
         historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
         yf_to_original = {
@@ -160,6 +178,8 @@ class YahooQueryProvider(FinancialDataProvider):
         return historical_data
 
     def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
+        if self._is_cooling_down():
+            return None
         yf_ticker = self._get_yahoo_ticker(ticker_symbol, None)
         try:
             t = self._get_ticker_session(yf_ticker)
@@ -193,6 +213,8 @@ class YahooQueryProvider(FinancialDataProvider):
     def get_enrichment_data(
         self, ticker_symbol: str, exchange: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
+        if self._is_cooling_down():
+            return None
         yf_ticker = self._get_yahoo_ticker(ticker_symbol, exchange)
         try:
             t = self._get_ticker_session(yf_ticker)
@@ -225,7 +247,7 @@ class YahooQueryProvider(FinancialDataProvider):
         self, tickers: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Any]]:
         """Fetches enrichment data for multiple tickers in a single call."""
-        if not tickers:
+        if not tickers or self._is_cooling_down():
             return {}
 
         yf_to_original = {
@@ -255,6 +277,8 @@ class YahooQueryProvider(FinancialDataProvider):
                             "price_to_book": summary.get("priceToBook"),
                         }
         except Exception as e:
+            if "429" in str(e):
+                self._last_429_time = time.time()
             logger.warning(f"YahooQuery: Batch enrichment failed: {e}")
             
         return enrichment_results
