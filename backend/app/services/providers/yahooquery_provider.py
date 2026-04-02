@@ -38,7 +38,7 @@ class YahooQueryProvider(FinancialDataProvider):
     def get_current_prices(
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
-        logger.debug(f"YahooQuery: get_current_prices for {len(assets)} assets")
+        logger.info(f"YahooQuery: Fetching current prices for {len(assets)} assets")
         prices_data: Dict[str, Dict[str, Decimal]] = {}
         tickers_to_fetch: List[Dict[str, Any]] = []
 

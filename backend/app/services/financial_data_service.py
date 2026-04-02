@@ -34,7 +34,7 @@ class FinancialDataService:
         """
         Fetches current prices by delegating to the best provider for each asset type.
         The order of priority is now asset-specific for better accuracy:
-        - Stocks: yfinance -> NSE
+        - Stocks: yahooquery -> yfinance -> NSE
         - Mutual Funds: AMFI -> NSE
         - Bonds: NSE
         """
@@ -64,20 +64,31 @@ class FinancialDataService:
             prices_data.update(self.amfi_provider.get_current_prices(mf_assets))
             logger.debug(f"Prices after AMFI: {prices_data.keys()}")
 
-        # 3. Stocks: yfinance is the primary source for real-time data.
-        #    Append .NS for Indian stocks as required by yfinance.
+        # 3. Stocks: YahooQuery is now the primary source for real-time data.
         if stock_assets:
-            logger.debug(
-                f"Processing {len(stock_assets)} stock assets with yfinance provider."
-            )
-            logger.debug(
-                "Tickers sent to yfinance: "
-                f"{[a['ticker_symbol'] for a in stock_assets]}"
+            logger.info(
+                f"Processing {len(stock_assets)} stock assets with YahooQuery provider."
             )
             prices_data.update(
-                self.yfinance_provider.get_current_prices(stock_assets)
+                self.yahooquery_provider.get_current_prices(stock_assets)
             )
-            logger.debug(f"Prices after yfinance: {prices_data.keys()}")
+            
+            # Fallback to yfinance for any stock prices not found by yahooquery
+            found_tickers = set(prices_data.keys())
+            remaining_stocks = [
+                a for a in stock_assets 
+                if a["ticker_symbol"] not in found_tickers
+            ]
+            
+            if remaining_stocks:
+                logger.info(
+                    f"Falling back to yfinance for {len(remaining_stocks)} stocks."
+                )
+                prices_data.update(
+                    self.yfinance_provider.get_current_prices(remaining_stocks)
+                )
+            
+            logger.debug(f"Prices after stock providers: {prices_data.keys()}")
 
         # 4. Bonds: NSE is the primary source.
         if bond_assets:
