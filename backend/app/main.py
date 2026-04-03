@@ -55,11 +55,10 @@ console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setFormatter(logging.Formatter(log_format))
 root_logger.addHandler(console_handler)
 
-# File handler (desktop mode only)
-if settings.DEPLOYMENT_MODE == "desktop":
-    log_dir = Path.home() / ".arthsaarthi" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / "arthsaarthi.log"
+# File handler (desktop and android mode)
+if settings.DEPLOYMENT_MODE in ("desktop", "android") and settings.LOG_FILE:
+    log_file = Path(settings.LOG_FILE)
+    log_file.parent.mkdir(parents=True, exist_ok=True)
 
     file_handler = RotatingFileHandler(
         log_file,
@@ -74,7 +73,7 @@ if settings.DEPLOYMENT_MODE == "desktop":
         uvicorn_logger = logging.getLogger(logger_name)
         uvicorn_logger.addHandler(file_handler)
 
-    logging.info(f"Desktop mode: Logging to {log_file}")
+    logging.info(f"{settings.DEPLOYMENT_MODE.capitalize()} mode: Logging to {log_file}")
 # --- End Logging Configuration ---
 
 app = FastAPI(
@@ -86,8 +85,9 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event() -> None:
     global _snapshot_task
-    if settings.DEPLOYMENT_MODE == "desktop":
-        logging.info("Spawning background snapshot task for Desktop App...")
+    if settings.DEPLOYMENT_MODE in ("desktop", "android"):
+        logging.info(f"DEBUG: DEPLOYMENT_MODE is '{settings.DEPLOYMENT_MODE}'")
+        logging.info(f"Spawning background snapshot task for {settings.DEPLOYMENT_MODE.capitalize()} App...")
         _snapshot_task = asyncio.create_task(_desktop_snapshot_loop())
 
 app.add_middleware(

@@ -12,7 +12,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app import models
+from app import models, schemas
+from app.core import dependencies as deps
+from app.core.config import settings
 from app.db.session import get_db
 
 logger = logging.getLogger(__name__)
@@ -48,7 +50,7 @@ _seeding_state = {
 
 
 # Minimum asset count to consider seeding complete
-MIN_ASSETS_FOR_COMPLETE = 100
+MIN_ASSETS_FOR_COMPLETE = 10000
 
 
 def _run_seeding_subprocess():
@@ -135,7 +137,7 @@ def get_seeding_status(db: Session = Depends(get_db)):
     try:
         asset_count = db.query(models.Asset).count()
 
-        if asset_count >= MIN_ASSETS_FOR_COMPLETE:
+        if _seeding_state["status"] == SeedingStatus.COMPLETE or (asset_count >= MIN_ASSETS_FOR_COMPLETE and _seeding_state["status"] == SeedingStatus.IDLE):
             return SeedingStatusResponse(
                 status=SeedingStatus.COMPLETE,
                 progress=100,
@@ -143,10 +145,14 @@ def get_seeding_status(db: Session = Depends(get_db)):
                 asset_count=asset_count,
             )
         else:
+            # If NEEDS_SEEDING and we have some assets, estimate progress
+            # assuming background service is running
+            estimated_progress = min(95, int((asset_count / MIN_ASSETS_FOR_COMPLETE) * 100))
+            
             return SeedingStatusResponse(
                 status=SeedingStatus.NEEDS_SEEDING,
-                progress=0,
-                message=f"Only {asset_count} assets found. Seeding required.",
+                progress=estimated_progress,
+                message=f"Loading assets... ({asset_count:,} loaded)",
                 asset_count=asset_count,
             )
     except Exception as e:
@@ -310,3 +316,30 @@ def _is_newer_version(v1: str, v2: str) -> bool:
     except ValueError:
         return False
 
+@router.get("/logs", response_model=schemas.Msg)
+def get_logs(
+    db: Session = Depends(get_db),
+):
+    """
+    Get the last 1000 lines of system logs.
+    Available without auth for remote debugging (Android).
+    """
+    if not settings.LOG_FILE:
+        return {"msg": "Logging to file is not enabled in this mode."}
+
+    from pathlib import Path
+    log_path = Path(settings.LOG_FILE)
+    
+    if not log_path.exists():
+        return {"msg": f"Log file not found at {log_path}"}
+
+    try:
+        # Read last 1000 lines
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            # Simple tail implementation
+            lines = f.readlines()
+            last_lines = lines[-1000:]
+            return {"msg": "".join(last_lines)}
+    except Exception as e:
+        logger.error(f"Error reading log file: {e}")
+        return {"msg": f"Error reading log file: {str(e)}"}

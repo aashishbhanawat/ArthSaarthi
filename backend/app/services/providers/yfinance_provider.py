@@ -1,15 +1,20 @@
 """Provider for fetching data from Yahoo Finance."""
 import logging
+import time
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+import requests
+import requests_cache
 import yfinance as yf
+
 from pydantic import ValidationError
 
 from app.cache.base import CacheClient
+from app.core.config import settings
 
 from .base import FinancialDataProvider
 
@@ -22,6 +27,93 @@ logger = logging.getLogger(__name__)
 class YFinanceProvider(FinancialDataProvider):
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
+        
+        # Set up a persistent SQLite cache for all yfinance HTTP requests
+        # This caches ticker info, crumps, and history calls, drastically reducing 
+        # the likelihood of hitting Yahoo's rate limits (HTTP 429).
+        from pathlib import Path
+        cache_path = str(Path(settings.DISK_CACHE_DIR) / "yfinance_cache.sqlite")
+        self.session = requests_cache.CachedSession(
+            cache_name=cache_path,
+            backend='sqlite',
+            expire_after=CACHE_TTL_HISTORICAL_PRICE,
+            stale_if_error=True
+        )
+        self._last_429_time: float = 0
+        self._cooldown_period: float = 60  # 1 minute cooldown after 429
+        
+        # Full Chrome 124 browser fingerprint - mirrors what yfinance>=1.0.0 sends
+        # via curl_cffi. On Android we can't use curl_cffi (no arm64 wheel),
+        # so we manually set all relevant headers to reduce Yahoo Finance rate limits.
+        self.session.headers.update({
+            "User-Agent": (
+                "Mozilla/5.0 (Linux; Android 13; SM-G991B) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/123.0.0.0 Mobile Safari/537.36"
+            ),
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://finance.yahoo.com/",
+            "Origin": "https://finance.yahoo.com",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-site",
+        })
+        # Log the headers once at startup for diagnostics
+        logger.info("YFinanceProvider: session headers = %s", dict(self.session.headers))
+        
+        # Try to get an initial session cookie from Yahoo
+        try:
+            self.session.get("https://finance.yahoo.com", timeout=10)
+            logger.info("YFinanceProvider: Initial session cookie established.")
+        except Exception as e:
+            logger.warning(f"YFinanceProvider: Failed to get initial cookie: {e}")
+
+    def _is_cooling_down(self) -> bool:
+        if self._last_429_time == 0:
+            return False
+        return (time.time() - self._last_429_time) < self._cooldown_period
+
+    def close(self):
+        """Explicitly close the requests-cache session to free resources."""
+        if hasattr(self, 'session'):
+            try:
+                self.session.close()
+                logger.info("YFinanceProvider: session closed.")
+            except Exception as e:
+                logger.error(f"Error closing YFinanceProvider session: {e}")
+
+    def _fetch_history_with_retry(self, ticker_obj, **kwargs) -> pd.DataFrame:
+        kwargs.setdefault("auto_adjust", False)
+        df = ticker_obj.history(**kwargs)
+        if df is None or df.empty:
+            raise ValueError(f"yfinance history returned empty data for {ticker_obj.ticker}")
+        return df
+
+    def _fetch_download_with_retry(self, tickers_str, start_date, end_date) -> pd.DataFrame:
+        if hasattr(yf, "shared"):
+            yf.shared._ERRORS = {}
+        df = yf.download(
+            tickers_str,
+            start=start_date,
+            end=end_date,
+            progress=False,
+            session=self.session,
+            auto_adjust=False
+        )
+        if hasattr(yf, "shared") and getattr(yf.shared, "_ERRORS", {}):
+            errors = yf.shared._ERRORS
+            if any("Rate limited" in str(e) or "Too Many Requests" in str(e) for e in errors.values()):
+                raise ValueError(f"YFinance Rate Limit hit: {errors}")
+        if df is None or df.empty:
+            raise ValueError(f"yfinance download returned empty data for {tickers_str}")
+        return df
+
+    def _fetch_info_with_retry(self, ticker_obj) -> dict:
+        return ticker_obj.info
 
     def _get_yfinance_ticker(
         self, ticker_symbol: str, exchange: Optional[str]
@@ -41,6 +133,10 @@ class YFinanceProvider(FinancialDataProvider):
     def get_current_prices(
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
+        if self._is_cooling_down():
+            logger.warning("YFinance: Circuit breaker active (cooling down after 429)")
+            return {}
+            
         logger.debug(
             f"get_current_prices: {len(assets)} assets - "
             f"{[(a.get('ticker_symbol'), a.get('exchange')) for a in assets]}"
@@ -107,10 +203,10 @@ class YFinanceProvider(FinancialDataProvider):
         logger.debug(f"yfinance batch request: '{yfinance_tickers_str}'")
 
         try:
-            yf_data = yf.Tickers(yfinance_tickers_str)
+            yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
             logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
             for ticker_obj in yf_data.tickers.values():
-                hist = ticker_obj.history(period="2d", auto_adjust=True)
+                hist = self._fetch_history_with_retry(ticker_obj, period="2d")
                 yf_symbol = ticker_obj.ticker
                 # Use reverse map; fallback to splitting suffix for plain tickers
                 original_ticker = yf_to_original.get(
@@ -146,6 +242,8 @@ class YFinanceProvider(FinancialDataProvider):
                         f"yfinance API returned empty history for {yf_symbol}"
                     )
         except (Exception, ValidationError) as e:
+            if "429" in str(e) or "Rate limit" in str(e):
+                self._last_429_time = time.time()
             logger.error(f"WARNING: Error fetching batch data from yfinance: {e}")
 
         if self.cache_client:
@@ -205,8 +303,8 @@ class YFinanceProvider(FinancialDataProvider):
                 return cached
 
         try:
-            ticker_obj = yf.Ticker(yf_ticker)
-            info = ticker_obj.info
+            ticker_obj = yf.Ticker(yf_ticker, session=self.session)
+            info = self._fetch_info_with_retry(ticker_obj)
             if info:
                 trailing_pe = info.get("trailingPE")
                 price_to_book = info.get("priceToBook")
@@ -283,6 +381,10 @@ class YFinanceProvider(FinancialDataProvider):
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
+        if self._is_cooling_down():
+            logger.warning("YFinance: Circuit breaker active (cooling down after 429)")
+            return {}
+            
         historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
         assets_to_fetch = []
         if self.cache_client:
@@ -317,11 +419,10 @@ class YFinanceProvider(FinancialDataProvider):
                 return historical_data
 
         try:
-            yf_data = yf.download(
+            yf_data = self._fetch_download_with_retry(
                 yfinance_tickers_str,
-                start=start_date,
-                end=end_date + timedelta(days=1),  # end date is exclusive
-                progress=False,
+                start_date,
+                end_date + timedelta(days=1)
             )
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
@@ -412,10 +513,10 @@ class YFinanceProvider(FinancialDataProvider):
                 f"Fetching index history for {yf_ticker} "
                 f"from {start_date} to {end_date}"
             )
-            ticker_obj = yf.Ticker(yf_ticker)
+            ticker_obj = yf.Ticker(yf_ticker, session=self.session)
             # Fetch data with slight buffer
-            hist = ticker_obj.history(
-                start=start_date, end=end_date + timedelta(days=1)
+            hist = self._fetch_history_with_retry(
+                ticker_obj, start=start_date, end=end_date + timedelta(days=1)
             )
 
             if hist.empty:
@@ -458,7 +559,7 @@ class YFinanceProvider(FinancialDataProvider):
         for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
-                temp_ticker = yf.Ticker(yf_ticker_str)
+                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:
                     logger.debug(f"Found data with variant: {yf_ticker_str}")
                     ticker_obj = temp_ticker
@@ -508,7 +609,7 @@ class YFinanceProvider(FinancialDataProvider):
 
         for yf_ticker_str in variants:
             try:
-                temp_ticker = yf.Ticker(yf_ticker_str)
+                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:
                     ticker_obj = temp_ticker
                     break

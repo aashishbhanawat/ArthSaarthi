@@ -25,7 +25,7 @@ class HdfcFdParser(BaseParser):
         fixed_deposits: list[ParsedFixedDeposit] = []
 
         try:
-            with pdfplumber.open(file_path, password=password) as pdf:
+            with pdfplumber.open(file_path, password=password or "") as pdf:
                 in_fd_section = False
 
                 # regex for DD/MM/YYYY or DD-MM-YYYY

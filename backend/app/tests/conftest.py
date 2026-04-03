@@ -75,19 +75,34 @@ def get_auth_headers(
 
 
 
-@pytest.fixture(scope="function")
-def db() -> Generator[Session, None, None]:
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_db():
     """
-    Provides a fresh database for each test function.
+    Ensures all tables are created once for the entire test session.
     """
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    yield
 
-    db_session = SessionLocal()
 
-    yield db_session
+@pytest.fixture(scope="function")
+def db() -> Generator[Session, None, None]:
+    """
+    Provides a fresh database for each test function using transactions.
+    This is much faster and more robust than dropping/recreating tables.
+    """
+    connection = engine.connect()
+    # Begin a transaction
+    transaction = connection.begin()
+    # Bind the session to the connection
+    session = SessionLocal(bind=connection)
 
-    db_session.close()
+    yield session
+
+    session.close()
+    # Roll back everything to leave the DB clean for the next test
+    transaction.rollback()
+    connection.close()
 
 
 @pytest.fixture(scope="function")

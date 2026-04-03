@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 # Need to import Portfolio and User schemas to be used as nested objects
 from .asset_alias import AssetAliasCreate
@@ -38,7 +38,9 @@ class ImportSessionInDBBase(ImportSessionBase):
     source: str
     parsed_file_path: str | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
+        orm_mode = True
 
 
 # Properties to return to client

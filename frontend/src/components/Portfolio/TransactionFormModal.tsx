@@ -916,9 +916,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
     return (
         <div className="modal-overlay z-30" onClick={onClose} data-testid="transaction-form-modal-overlay">
-            <div role="dialog" aria-modal="true" aria-labelledby="transaction-form-modal-title" className="modal-content overflow-visible w-11/12 md:w-3/4 lg:max-w-2xl p-6" onClick={e => e.stopPropagation()} data-testid="transaction-form-modal-content">
-                <h2 id="transaction-form-modal-title" className="text-2xl font-bold mb-4 dark:text-gray-100">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
-                <div className="max-h-[70vh] overflow-y-auto px-2 -mr-2">
+            <div role="dialog" aria-modal="true" aria-labelledby="transaction-form-modal-title" className="modal-content overflow-visible w-full sm:w-11/12 md:max-w-2xl p-4 sm:p-6 mx-2 sm:mx-auto" onClick={e => e.stopPropagation()} data-testid="transaction-form-modal-content">
+                <h2 id="transaction-form-modal-title" className="text-xl sm:text-2xl font-bold mb-4 dark:text-gray-100">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
+                <div className="max-h-[85vh] sm:max-h-[70vh] overflow-y-auto px-1 sm:px-2">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="form-group">

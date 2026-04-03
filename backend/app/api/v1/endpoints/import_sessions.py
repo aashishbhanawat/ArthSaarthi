@@ -25,6 +25,7 @@ from app.core.config import settings
 from app.schemas.msg import Msg
 from app.services.import_parsers import parser_factory
 from app.utils.filename import secure_filename
+from app.utils.pydantic_compat import model_dump
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -211,12 +212,12 @@ async def create_import_session(
             status_code=400, detail="An error occurred during file parsing."
         )
 
-    # 4. Save the list of Pydantic models to a Parquet file
+    # 4. Save the list of Pydantic models to a JSON file
     # Convert list of Pydantic models to a DataFrame for efficient storage
-    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_transactions])
-    parsed_file_name = f"{import_session.id}.parquet"
+    parsed_df = pd.DataFrame([model_dump(t) for t in parsed_transactions])
+    parsed_file_name = f"{import_session.id}.json"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_df.to_parquet(parsed_file_path)
+    parsed_df.to_json(parsed_file_path, orient='records', date_format='iso')
 
     # 5. Update the session with the parsed file path and "PARSED" status
     import_session_update = schemas.ImportSessionUpdate(
@@ -269,7 +270,7 @@ def get_import_session_preview(
         raise HTTPException(status_code=400, detail="No parsed file for this session")
 
     try:
-        df = pd.read_parquet(import_session.parsed_file_path)
+        df = pd.read_json(import_session.parsed_file_path, orient='records')
     except Exception as e:
         log.error(f"Could not read parsed data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not read parsed data.")
@@ -600,11 +601,11 @@ async def create_fd_import_session(
             status_code=400, detail="An error occurred during file parsing."
         )
 
-    # 4. Save the list of Pydantic models to a Parquet file
-    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_fds])
-    parsed_file_name = f"fd_{import_session.id}.parquet"
+    # 4. Save the list of Pydantic models to a JSON file
+    parsed_df = pd.DataFrame([model_dump(t) for t in parsed_fds])
+    parsed_file_name = f"fd_{import_session.id}.json"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_df.to_parquet(parsed_file_path)
+    parsed_df.to_json(parsed_file_path, orient='records', date_format='iso')
 
     # 5. Update the session
     import_session_update = schemas.ImportSessionUpdate(
@@ -638,7 +639,7 @@ def get_fd_import_session_preview(
         raise HTTPException(status_code=400, detail="No parsed file for this session")
 
     try:
-        df = pd.read_parquet(import_session.parsed_file_path)
+        df = pd.read_json(import_session.parsed_file_path, orient='records')
     except Exception as e:
         log.error(f"Could not read parsed data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not read parsed data.")

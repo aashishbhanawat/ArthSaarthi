@@ -1,3 +1,34 @@
+## 2026-04-03: Android Startup Seeding & Login Trigger Diagnostics
+
+**Task:** Fix unintended asset seeding at startup on Android and resolve the Yahoo header test script not triggering after login.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1. **Asset Seeding Fix:**
+    - Identified that `check_and_seed_on_startup()` was being triggered despite being commented out (likely due to stale code or implicit imports).
+    - Physically removed the commented-out lines in `backend/app/main.py`.
+    - Added diagnostic logging to verify `DEPLOYMENT_MODE` during the startup event.
+2. **Login Trigger Diagnostics:**
+    - Augmented the `/login` endpoint in `backend/app/api/v1/endpoints/auth.py` with detailed tracing to verify if the Android-specific test trigger block is executed.
+    - Added an entry log to `trigger_yahoo_header_test` in `backend/app/api/v1/endpoints/testing.py` to confirm the function is reached.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/main.py` — Removed stale seeding code, added startup diagnostic.
+* **Modified:** `backend/app/api/v1/endpoints/auth.py` — Added login tracing for Android trigger.
+* **Modified:** `backend/app/api/v1/endpoints/testing.py` — Added entry log to Yahoo test function.
+
+### Verification
+
+* **Syntax Check:** Verified all modified files compile correctly.
+* **Diagnostic Strategy:** Updated logs to provide clear "DEBUG" indicators in Logcat for `DEPLOYMENT_MODE` and function entry.
+
+---
+
 ## 2026-03-28: Fix Duplicate Exchange Suffix Bug for Indian Tickers
 
 **Task:** Fix a bug where Indian stock tickers already containing `.NS` or `.BO` had those suffixes appended again, causing Yahoo Finance lookup failures.
@@ -1486,3 +1517,36 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 
 ### Outcome
 **Success.** Successfully closed 16 pending security vulnerability reports from Dependabot.
+
+## 2026-04-02: Implement YahooQuery Alternative for Stock Metadata (#350)
+
+**Task:** Integrate `yahooquery` to resolve `yfinance` reliability and rate-limiting issues for Indian stock metadata.
+
+**AI Assistant:** Antigravity
+**Role:** Financial Data Engineer
+
+### Summary
+Implemented `YahooQueryProvider` and integrated it into the core financial data services. This ensures reliable retrieval of Sectors, Industries, and Market Cap for NSE/BSE stocks, which was previously failing with `yfinance`.
+
+**Backend:**
+*   Implemented `YahooQueryProvider` in `app/services/providers/yahooquery_provider.py`.
+*   Updated `FinancialDataService` to prioritize `yahooquery` for metadata and search.
+*   Refactored `crud_holding.py` to use a unified enrichment method.
+*   Added `yahooquery` to `backend/requirements.in`.
+
+**Android:**
+*   Updated `frontend/android/app/build.gradle.kts` to include `yahooquery` in the Chaquopy pip configuration.
+
+### Verification
+*   Ran `verify_yahooquery_integration.py` in the backend container; successfully fetched Reliance and TCS metadata via `yahooquery` (manual verification in container).
+*   Confirmed `yahooquery` is a pure-Python library compatible with Chaquopy.
+
+### File Changes
+*   **New:** [yahooquery_provider.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/providers/yahooquery_provider.py)
+*   **Modified:** [financial_data_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/financial_data_service.py)
+*   **Modified:** [crud_holding.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_holding.py)
+*   **Modified:** [requirements.in](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/requirements.in)
+*   **Modified:** [build.gradle.kts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/build.gradle.kts)
+
+### Outcome
+**Success.** Successfully integrated `yahooquery` for improved metadata reliability and Android compatibility.

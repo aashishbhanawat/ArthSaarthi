@@ -14,6 +14,7 @@ from app.schemas.transaction import TransactionCreate, TransactionType
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.user import create_random_user
 from app.tests.utils.utils import random_lower_string
+from app.utils.pydantic_compat import model_dump
 
 
 @pytest.fixture(scope="function")
@@ -86,7 +87,7 @@ def test_update_bond(db: Session) -> None:
         coupon_rate=Decimal("8.0"),
     )
     bond = crud.bond.create(db=db, obj_in=bond_in)
-    bond_update = BondUpdate(coupon_rate=Decimal("8.25"), **bond_in.model_dump(exclude={
+    bond_update = BondUpdate(coupon_rate=Decimal("8.25"), **model_dump(bond_in, exclude={
         "coupon_rate", "asset_id"}))
     bond2 = crud.bond.update(db=db, db_obj=bond, obj_in=bond_update)
     assert bond2.id == bond.id

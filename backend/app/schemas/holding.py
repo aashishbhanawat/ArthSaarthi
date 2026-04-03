@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, root_validator
 
 from .bond import Bond as BondSchema
 
@@ -35,26 +35,35 @@ class Holding(BaseModel):
 
     class Config:
         from_attributes = True
+        orm_mode = True
 
-    @model_validator(mode="after")
-    def apply_fallbacks_and_enrich(self) -> "Holding":
-        if self.bond:
-            self.interest_rate = self.bond.coupon_rate
-            self.maturity_date = self.bond.maturity_date
-            if not self.isin:
-                self.isin = self.bond.isin
+    @root_validator(pre=False, skip_on_failure=True)
+    @classmethod
+    def apply_fallbacks_and_enrich(cls, values: dict) -> dict:
+        bond = values.get("bond")
+        if bond:
+            values["interest_rate"] = bond.coupon_rate
+            values["maturity_date"] = bond.maturity_date
+            if not values.get("isin"):
+                values["isin"] = bond.isin
 
         # For certain asset types where a live price might not be available (e.g.,
         # unlisted bonds, RDs), fall back to using the average buy price to avoid
         # showing a 100% loss. This should NOT apply to stocks.
-        if (
-            self.asset_type == "BOND"
-            and self.current_price == 0
-        ):
-            self.current_price = self.average_buy_price
-            self.current_value = self.quantity * self.average_buy_price
+        asset_type = values.get("asset_type")
+        current_price = values.get("current_price")
+        average_buy_price = values.get("average_buy_price")
+        quantity = values.get("quantity")
 
-        return self
+        if (
+            asset_type == "BOND"
+            and current_price == 0
+        ):
+            values["current_price"] = average_buy_price
+            if quantity is not None and average_buy_price is not None:
+                values["current_value"] = quantity * average_buy_price
+
+        return values
 
 
 class HoldingsResponse(BaseModel):
@@ -70,9 +79,12 @@ class PortfolioSummary(BaseModel):
 
     class Config:
         from_attributes = True
+        orm_mode = True
 
 
 class PortfolioHoldingsAndSummary(BaseModel):
     summary: PortfolioSummary
     holdings: List[Holding]
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True
+        orm_mode = True

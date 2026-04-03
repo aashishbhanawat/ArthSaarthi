@@ -64,7 +64,9 @@ dump.rdb
 backend/temp_seed_data/
 
 # Crash dumps
+core.[0-9]*
 core
+!backend/app/core/
 
 # CI/CD logs
 log.txt
@@ -92,5 +94,20 @@ abc.txt
 
 .gemini/
 gha-creds-*.json
-clean.sh
-test_out.txt
+
+# Android build artifacts
+frontend/android/app/build/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/app/src/main/python/app/
+frontend/android/app/src/main/python/alembic/
+frontend/android/app/src/main/python/alembic.ini
+frontend/android/local.properties
+*.apk
+*.aab
+
+frontend/android/app/libs/python-wheels/
+frontend/android/app/wheels/
+frontend/android/build-tools/
+frontend/android/app/src/main/assets/public/
+
