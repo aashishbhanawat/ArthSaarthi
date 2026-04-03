@@ -66,6 +66,7 @@ def reset_db(
 def trigger_yahoo_header_test(
     db: Session = Depends(deps.get_db),
 ):
+    logger.info("Function trigger_yahoo_header_test() called.")
     """
     Triggers a background test that rotates through various header configurations
     and tickers to identify what works on Android to bypass 429 rate limits.

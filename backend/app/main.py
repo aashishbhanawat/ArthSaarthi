@@ -86,13 +86,9 @@ app = FastAPI(
 async def startup_event() -> None:
     global _snapshot_task
     if settings.DEPLOYMENT_MODE in ("desktop", "android"):
+        logging.info(f"DEBUG: DEPLOYMENT_MODE is '{settings.DEPLOYMENT_MODE}'")
         logging.info(f"Spawning background snapshot task for {settings.DEPLOYMENT_MODE.capitalize()} App...")
         _snapshot_task = asyncio.create_task(_desktop_snapshot_loop())
-        
-        # Trigger background asset seeding if database is empty
-        # DISABLED TEMPORARILY FOR ANDROID DEBUGGING
-        # from app.services.initialization_service import check_and_seed_on_startup
-        # check_and_seed_on_startup()
 
 app.add_middleware(
     CORSMiddleware,

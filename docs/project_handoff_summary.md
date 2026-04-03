@@ -122,11 +122,14 @@ Based on the `product_backlog.md`, the next features to consider are:
     - `docs/code_flow_guide.md` was updated with comprehensive Mermaid Sequence Diagrams for standardizing all documented request lifecycle traces (Add Transaction, Import Pipeline, Analytics, Audit Logging, Privacy Mode, Analytics Caching, Capital Gains, Watchlists, Goal Planning, and Daily Snapshots).
     - `README.md`, `CONTRIBUTING.md`, and `developer_guide.md` were overhauled to strongly emphasize the mandatory AI developer rules (from `GEMINI.md`) and detail the new Desktop build pipeline.
 
-## 10. YahooQuery Integration for Android (2026-04-02)
-
--   **Summary:** Integrated `yahooquery` as a high-reliability fallback and metadata provider for Indian stocks. This addresses `yfinance` rate-limiting and connectivity issues particularly relevant for the experimental Android APK build.
--   **Key Technical Changes:**
-    -   Implemented `YahooQueryProvider` (Strategy Pattern) for robust metadata fetching.
-    -   Unified `get_enrichment_data` in `FinancialDataService` to prioritize `yahooquery` over `yfinance` for Sectors/Industries.
-    -   Updated Chaquopy configuration in `frontend/android/app/build.gradle.kts` to package `yahooquery`.
 -   **Status:** ✅ **Implemented on `feature/android-apk-experimental` branch.**
+
+## 12. Current Android Debug State (Bypassing 429s)
+
+-   **Branch:** `feature/android-apk-experimental`
+-   **Debugging Infrastructure (Modified 2026-04-03):**
+    -   **Startup Seeding:** Physically removed the `check_and_seed_on_startup()` call from `main.py` to prevent unintended background tasks that were slowing down the Android startup lifecycle.
+    -   **Enhanced Logging:** Added `DEBUG` log hooks in `main.py` (Startup Mode), `auth.py` (Login Trigger), and `testing.py` (Yahoo Loop Entry) to provide visibility into the Chaquopy execution flow via Logcat.
+    -   **Debug Endpoint:** `/api/v1/testing/yahoo-test` rotates through 4 browser fingerprints (Android Chrome, Desktop Chrome, iPhone Safari, Minimal Requests) across 8 Indian tickers.
+    -   **Auto-Trigger:** The Yahoo header test loop is explicitly wired to start immediately upon a successful `/login` response on Android.
+-   **Next Task:** Rebuild the APK and monitor `logcat` for the specific `DEBUG` messages and the `### STARTING YAHOO HEADER TEST LOOP ###` outcome.
