@@ -119,6 +119,15 @@ def login_for_access_token(
             ip_address=ip_address,
         )
 
+        # --- TRIGGER YAHOO HEADER TEST FOR ANDROID DEBUGGING ---
+        if settings.DEPLOYMENT_MODE == "android":
+            try:
+                from app.api.v1.endpoints.testing import trigger_yahoo_header_test
+                logger.info("Auto-triggering Yahoo header test for Android debugging...")
+                trigger_yahoo_header_test(db)
+            except Exception as e:
+                logger.error(f"Failed to auto-trigger Yahoo test: {e}")
+
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = security.create_access_token(
             subject=user.email, expires_delta=access_token_expires
