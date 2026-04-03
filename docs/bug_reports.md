@@ -26,6 +26,40 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-04-03-01
+**Title:** Android Asset Seeding Triggering at Startup Incorrectly
+**Module:** Initialization Service / Android Deployment
+**Reported By:** User
+**Date Reported:** 2026-04-03
+**Classification:** Implementation (Backend)
+**Severity:** Medium
+**Description:** On Android, the background asset seeding was triggering even when the call was commented out in `main.py`. This was likely due to implicit imports or stale code execution in the Chaquopy environment.
+**Steps to Reproduce:**
+1. Start the Android app.
+2. Observe `logcat` for "Assets table has 0 assets (<10000). Triggering background seeding...".
+**Expected Behavior:** Seeding should only trigger if explicitly called or requested via API.
+**Actual Behavior:** Seeding triggered automatically on every startup.
+**Resolution:** Physically removed the commented-out lines in `backend/app/main.py`. Added diagnostic logging to verify `DEPLOYMENT_MODE`.
+
+---
+
+**Bug ID:** 2026-04-03-02
+**Title:** Yahoo Header Test Script Not Triggering After Login
+**Module:** Authentication / Android Debugging
+**Reported By:** User
+**Date Reported:** 2026-04-03
+**Classification:** Implementation (Backend)
+**Severity:** Medium
+**Description:** The diagnostic loop for testing Yahoo Finance headers was not starting after the user logged in on Android, despite being wired in `auth.py`.
+**Steps to Reproduce:**
+1. Log in to the Android app.
+2. Check logs for "### STARTING YAHOO HEADER TEST LOOP ###".
+**Expected Behavior:** The test loop should start immediately upon successful login in `android` mode.
+**Actual Behavior:** No logs appeared, indicating the block was either skipped or silent.
+**Resolution:** Added extensive `DEBUG` logging to `auth.py` and `testing.py` to trace the execution flow and confirm function entry.
+
+---
+
 **Bug ID:** 2026-03-30-01
 **Title:** Frontend Lint Errors in Android/Electron Build Artifacts
 **Module:** UI/Styling, Build Pipeline

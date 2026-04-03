@@ -1,3 +1,34 @@
+## 2026-04-03: Android Startup Seeding & Login Trigger Diagnostics
+
+**Task:** Fix unintended asset seeding at startup on Android and resolve the Yahoo header test script not triggering after login.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1. **Asset Seeding Fix:**
+    - Identified that `check_and_seed_on_startup()` was being triggered despite being commented out (likely due to stale code or implicit imports).
+    - Physically removed the commented-out lines in `backend/app/main.py`.
+    - Added diagnostic logging to verify `DEPLOYMENT_MODE` during the startup event.
+2. **Login Trigger Diagnostics:**
+    - Augmented the `/login` endpoint in `backend/app/api/v1/endpoints/auth.py` with detailed tracing to verify if the Android-specific test trigger block is executed.
+    - Added an entry log to `trigger_yahoo_header_test` in `backend/app/api/v1/endpoints/testing.py` to confirm the function is reached.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/main.py` — Removed stale seeding code, added startup diagnostic.
+* **Modified:** `backend/app/api/v1/endpoints/auth.py` — Added login tracing for Android trigger.
+* **Modified:** `backend/app/api/v1/endpoints/testing.py` — Added entry log to Yahoo test function.
+
+### Verification
+
+* **Syntax Check:** Verified all modified files compile correctly.
+* **Diagnostic Strategy:** Updated logs to provide clear "DEBUG" indicators in Logcat for `DEPLOYMENT_MODE` and function entry.
+
+---
+
 ## 2026-03-28: Fix Duplicate Exchange Suffix Bug for Indian Tickers
 
 **Task:** Fix a bug where Indian stock tickers already containing `.NS` or `.BO` had those suffixes appended again, causing Yahoo Finance lookup failures.
