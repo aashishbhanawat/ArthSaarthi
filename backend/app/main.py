@@ -90,8 +90,9 @@ async def startup_event() -> None:
         _snapshot_task = asyncio.create_task(_desktop_snapshot_loop())
         
         # Trigger background asset seeding if database is empty
-        from app.services.initialization_service import check_and_seed_on_startup
-        check_and_seed_on_startup()
+        # DISABLED TEMPORARILY FOR ANDROID DEBUGGING
+        # from app.services.initialization_service import check_and_seed_on_startup
+        # check_and_seed_on_startup()
 
 app.add_middleware(
     CORSMiddleware,
