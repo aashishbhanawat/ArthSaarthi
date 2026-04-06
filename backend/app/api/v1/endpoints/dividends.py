@@ -2,7 +2,7 @@ import csv
 from io import StringIO
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -33,7 +33,9 @@ def get_dividend_report(
             raise HTTPException(status_code=403, detail="Not enough permissions")
 
     service = DividendService(db)
-    return service.get_dividend_report(fy_year=fy, portfolio_id=portfolio_id, user_id=str(current_user.id))
+    return service.get_dividend_report(
+        fy_year=fy, portfolio_id=portfolio_id, user_id=str(current_user.id)
+    )
 
 @router.get("/export")
 def export_dividend_report_csv(
@@ -53,7 +55,9 @@ def export_dividend_report_csv(
             raise HTTPException(status_code=403, detail="Not enough permissions")
 
     service = DividendService(db)
-    summary = service.get_dividend_report(fy_year=fy, portfolio_id=portfolio_id, user_id=str(current_user.id))
+    summary = service.get_dividend_report(
+        fy_year=fy, portfolio_id=portfolio_id, user_id=str(current_user.id)
+    )
 
     output = StringIO()
     writer = csv.writer(output)

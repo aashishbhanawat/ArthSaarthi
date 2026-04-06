@@ -78,7 +78,9 @@ class CapitalGainsService:
         links = self.db.scalars(query).all()
 
         # 1.5. Pre-fetch and pre-calculate Demerger Cost Reductions
-        demerger_ratios = self._calculate_demerger_ratios(portfolio_id, end_date, user_id)
+        demerger_ratios = self._calculate_demerger_ratios(
+            portfolio_id, end_date, user_id
+        )
 
         gains: List[GainEntry] = []
         foreign_gains: List[ForeignGainEntry] = []
