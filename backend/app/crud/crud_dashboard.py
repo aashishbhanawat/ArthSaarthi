@@ -147,6 +147,8 @@ def _get_portfolio_history(
         )
 
     # --- Pre-fetch Non-Market Assets for Historical Calculation ---
+    from dateutil.relativedelta import relativedelta
+
     from app.crud.crud_holding import (
         _calculate_fd_current_value,
         _calculate_rd_value_at_date,
@@ -184,6 +186,10 @@ def _get_portfolio_history(
 
     all_fds = fd_query.all()
     all_rds = rd_query.all()
+    # Pre-calculate maturity dates for RDs to avoid doing it inside the daily loop
+    for rd in all_rds:
+        rd._maturity_date = rd.start_date + relativedelta(months=rd.tenure_months)
+
     ppf_assets = ppf_asset_query.distinct().all()
 
     all_ppf_rates = []
@@ -469,18 +475,13 @@ def _get_portfolio_history(
                     day_total_value += fd_val
 
                 # 3. Recurring Deposits (Simulated for this historical day)
-                from dateutil.relativedelta import relativedelta
                 for rd in all_rds:
                     if rd.start_date > current_day:
                         continue
 
-                    rd_maturity_date = rd.start_date + relativedelta(
-                        months=rd.tenure_months
-                    )
-
                     # If matured before this historical date, the RD has been
                     # "withdrawn" from the portfolio. Skip it.
-                    if current_day > rd_maturity_date:
+                    if current_day > rd._maturity_date:
                         continue
 
                     rd_val = _calculate_rd_value_at_date(
