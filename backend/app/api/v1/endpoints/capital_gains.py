@@ -1,11 +1,14 @@
 from io import StringIO
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from app import crud
+from app.core import dependencies
 from app.db.session import get_db
+from app.models.user import User
 from app.schemas.capital_gains import CapitalGainsSummary
 from app.services.capital_gains_service import CapitalGainsService
 
@@ -20,6 +23,7 @@ def get_capital_gains(
         30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"
     ),
     db: Session = Depends(get_db),
+    current_user: User = Depends(dependencies.get_current_user),
 ):
     """
     Get Capital Gains Report for a specific Financial Year.
@@ -30,9 +34,16 @@ def get_capital_gains(
     - Schedule 112A Entries (Grandfathered Equity)
     - Detailed list of all realized gains
     """
+    if portfolio_id:
+        portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+        if not portfolio:
+            raise HTTPException(status_code=404, detail="Portfolio not found")
+        if portfolio.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+
     service = CapitalGainsService(db)
     return service.calculate_capital_gains(
-        portfolio_id=portfolio_id, fy_year=fy, slab_rate=slab_rate
+        portfolio_id=portfolio_id, fy_year=fy, slab_rate=slab_rate, user_id=str(current_user.id)
     )
 
 
@@ -45,13 +56,21 @@ def export_capital_gains_csv(
         30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"
     ),
     db: Session = Depends(get_db),
+    current_user: User = Depends(dependencies.get_current_user),
 ):
     """
     Export Capital Gains as a CSV file for download.
     """
+    if portfolio_id:
+        portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+        if not portfolio:
+            raise HTTPException(status_code=404, detail="Portfolio not found")
+        if portfolio.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+
     service = CapitalGainsService(db)
     summary = service.calculate_capital_gains(
-        portfolio_id=portfolio_id, fy_year=fy, slab_rate=slab_rate
+        portfolio_id=portfolio_id, fy_year=fy, slab_rate=slab_rate, user_id=str(current_user.id)
     )
 
     # Build CSV content

@@ -38,7 +38,8 @@ class CapitalGainsService:
         self,
         portfolio_id: Optional[str],
         fy_year: str, # e.g. "2025-26"
-        slab_rate: float = 30.0 # Default to 30% if not provided
+        slab_rate: float = 30.0, # Default to 30% if not provided
+        user_id: Optional[str] = None
     ) -> CapitalGainsSummary:
         """
         Main entry point to calculate Capital Gains for a financial year.
@@ -71,11 +72,13 @@ class CapitalGainsService:
 
         if portfolio_id:
             query = query.where(SellTx.portfolio_id == portfolio_id)
+        if user_id:
+            query = query.where(SellTx.user_id == user_id)
 
         links = self.db.scalars(query).all()
 
         # 1.5. Pre-fetch and pre-calculate Demerger Cost Reductions
-        demerger_ratios = self._calculate_demerger_ratios(portfolio_id, end_date)
+        demerger_ratios = self._calculate_demerger_ratios(portfolio_id, end_date, user_id)
 
         gains: List[GainEntry] = []
         foreign_gains: List[ForeignGainEntry] = []
@@ -188,7 +191,8 @@ class CapitalGainsService:
     def _calculate_demerger_ratios(
         self,
         portfolio_id: Optional[str],
-        end_date: datetime
+        end_date: datetime,
+        user_id: Optional[str] = None
     ) -> Dict[str, List[Tuple[date, Decimal]]]:
         """
         Calculates remaining cost basis ratios for assets that underwent demergers.
@@ -201,6 +205,8 @@ class CapitalGainsService:
         )
         if portfolio_id:
             query = query.where(Transaction.portfolio_id == portfolio_id)
+        if user_id:
+            query = query.where(Transaction.user_id == user_id)
 
         demerger_txs = self.db.scalars(query).all()
         if not demerger_txs:
@@ -231,6 +237,8 @@ class CapitalGainsService:
             )
             if portfolio_id:
                 buy_query = buy_query.where(Transaction.portfolio_id == portfolio_id)
+            if user_id:
+                buy_query = buy_query.where(Transaction.user_id == user_id)
 
             buys = self.db.scalars(buy_query).all()
 
