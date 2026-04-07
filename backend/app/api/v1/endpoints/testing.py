@@ -191,8 +191,13 @@ def trigger_yahoo_header_test(
                     t = Ticker(ticker_symbol, session=session)
                     price = t.price
                     
-                    if isinstance(price, dict) and ticker_symbol in price and 'regularMarketPrice' in price[ticker_symbol]:
-                        logger.info(f"SUCCESS: {ticker_symbol} = {price[ticker_symbol]['regularMarketPrice']} (YahooQuery)")
+                    if isinstance(price, dict) and ticker_symbol in price:
+                        details = price[ticker_symbol]
+                        market_price = details.get('regularMarketPrice') or details.get('currentPrice')
+                        if market_price:
+                            logger.info(f"SUCCESS: {ticker_symbol} = {market_price} (YahooQuery)")
+                        else:
+                            logger.warning(f"FAILURE: {ticker_symbol} no price field. Result: {details}")
                     else:
                         # Log more details on failure
                         logger.warning(f"FAILURE: {ticker_symbol} returned no price. Full body: {price}")
@@ -213,12 +218,15 @@ def trigger_yahoo_header_test(
                 try:
                     logger.info(f"Testing {ticker_symbol} with {h_set['name']} (yfinance on Query2)...")
                     ticker_yf = yf.Ticker(ticker_symbol, session=session)
-                    # Use fast_info or info
                     info = ticker_yf.fast_info
-                    if 'last_price' in info:
-                        logger.info(f"SUCCESS: {ticker_symbol} = {info['last_price']} (yfinance)")
+                    
+                    # Log common price keys to see exactly what we're getting
+                    market_price = info.get('lastPrice') or info.get('last_price') or info.get('regularMarketPrice')
+                    
+                    if market_price:
+                        logger.info(f"SUCCESS: {ticker_symbol} = {market_price} (yfinance)")
                     else:
-                        logger.warning(f"FAILURE: {ticker_symbol} yfinance no last_price. Info: {list(info.keys())}")
+                        logger.warning(f"FAILURE: {ticker_symbol} yfinance no price found. Available info: {list(info.keys())}")
                 except Exception as e:
                     logger.warning(f"yfinance failed for {ticker_symbol}: {e}")
                     

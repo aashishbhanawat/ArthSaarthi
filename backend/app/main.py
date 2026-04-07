@@ -14,6 +14,32 @@ from app.core.middleware import SecurityHeadersMiddleware
 from app.db.session import SessionLocal
 from app.services.snapshot_service import take_daily_snapshots_for_all
 
+# --- DNS Monkeypatch for Android ---
+def _patch_dns():
+    import socket
+    import logging
+    
+    # We only patch if we're in Android mode and having resolution issues.
+    # These IPs were verified to serve Yahoo Finance Query API.
+    YAHOO_DNS_MAP = {
+        "query1.finance.yahoo.com": "27.123.42.204",
+        "query2.finance.yahoo.com": "27.123.43.205",
+        "finance.yahoo.com": "27.123.42.204"
+    }
+    
+    orig_getaddrinfo = socket.getaddrinfo
+
+    def patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+        if host in YAHOO_DNS_MAP:
+            return orig_getaddrinfo(YAHOO_DNS_MAP[host], port, family, type, proto, flags)
+        return orig_getaddrinfo(host, port, family, type, proto, flags)
+
+    socket.getaddrinfo = patched_getaddrinfo
+    logging.info("Android DNS Monkeypatch applied for Yahoo Finance domains.")
+
+if settings.DEPLOYMENT_MODE == "android":
+    _patch_dns()
+
 # --- Background Task for Desktop App ---
 _snapshot_task: Optional[asyncio.Task] = None
 
