@@ -59,6 +59,12 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
                 <ArrowPathIcon className="h-12 w-12 text-blue-500 animate-spin mx-auto" />
                 <h2 className="text-xl font-semibold">Connecting to Engine...</h2>
                 <p className="text-gray-500 dark:text-gray-400">Please wait while ArthSaarthi initializes.</p>
+                <button 
+                  onClick={onComplete}
+                  className="mt-8 text-xs text-gray-400 underline hover:text-blue-500 transition-colors"
+                >
+                  Skip Initialization (Debug)
+                </button>
             </div>
         );
     }
@@ -75,6 +81,12 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
                     className="btn btn-primary mt-4"
                 >
                     {isRetrying ? 'Retrying...' : 'Retry Initialization'}
+                </button>
+                <button 
+                  onClick={onComplete}
+                  className="mt-4 text-xs text-gray-400 underline hover:text-blue-500 transition-colors"
+                >
+                  Skip Initialization (Debug)
                 </button>
             </div>
         );
@@ -114,6 +126,12 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
                 This is a one-time process and may take 10-20 minutes depending on your network.
             </p>
+            <button 
+                onClick={onComplete}
+                className="mt-2 text-xs text-gray-400 underline hover:text-blue-500 transition-colors"
+            >
+                Skip Initialization (Debug)
+            </button>
         </div>
     );
 };

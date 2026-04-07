@@ -124,12 +124,13 @@ Based on the `product_backlog.md`, the next features to consider are:
 
 -   **Status:** ✅ **Implemented on `feature/android-apk-experimental` branch.**
 
-## 12. Current Android Debug State (Bypassing 429s)
+## 12. Current Android Debug State (Bypassing 429s & Seeding)
 
 -   **Branch:** `feature/android-apk-experimental`
--   **Debugging Infrastructure (Modified 2026-04-03):**
-    -   **Startup Seeding:** Physically removed the `check_and_seed_on_startup()` call from `main.py` to prevent unintended background tasks that were slowing down the Android startup lifecycle.
-    -   **Enhanced Logging:** Added `DEBUG` log hooks in `main.py` (Startup Mode), `auth.py` (Login Trigger), and `testing.py` (Yahoo Loop Entry) to provide visibility into the Chaquopy execution flow via Logcat.
+-   **Debugging Infrastructure (Modified 2026-04-07):**
+    -   **Startup Seeding:** Seeding is intentionally disabled in the backend for faster debugging.
+    -   **Splash Screen Bypass:** Added a "Skip Initialization (Debug)" button to the `MobileSeedingSplash` component to allow manual bypass of the seeding check, preventing the app from hanging.
+    -   **Enhanced Logging:** Maintained `DEBUG` log hooks in `main.py`, `auth.py`, and `testing.py` for Chaquopy/Logcat visibility.
     -   **Debug Endpoint:** `/api/v1/testing/yahoo-test` rotates through 4 browser fingerprints (Android Chrome, Desktop Chrome, iPhone Safari, Minimal Requests) across 8 Indian tickers.
     -   **Auto-Trigger:** The Yahoo header test loop is explicitly wired to start immediately upon a successful `/login` response on Android.
--   **Next Task:** Rebuild the APK and monitor `logcat` for the specific `DEBUG` messages and the `### STARTING YAHOO HEADER TEST LOOP ###` outcome.
+-   **Next Task:** Rebuild the APK, use the "Skip" button to reach the login screen, and monitor `logcat` for the Yahoo test outcomes.

@@ -25,6 +25,23 @@ Copy and paste the template below to file a new bug report.
 **Resolution:** (To be filled in when fixed)
 
 ---
+ 
+**Bug ID:** 2026-04-07-01
+**Title:** Android App Stuck on 0% "Preparing Asset Database" Splash Screen
+**Module:** UI/Auth (Frontend)
+**Reported By:** User
+**Date Reported:** 2026-04-07
+**Classification:** Implementation (Frontend)
+**Severity:** High
+**Description:** On fresh Android installations, the app hangs at 0% progress on the seeding splash screen because the background asset seeding is not automatically triggered, or has been intentionally disabled for debugging. This prevents users from accessing the login or setup pages.
+**Steps to Reproduce:**
+1. Install a fresh instance of the Android app with no existing database.
+2. Observe the app getting stuck at the "Preparing Asset Database" screen at 0%.
+**Expected Behavior:** The app should either trigger seeding automatically or provide a way to skip it in debug mode.
+**Actual Behavior:** App remains stuck indefinitely.
+**Resolution:** Added a "Skip Initialization (Debug)" button to the `MobileSeedingSplash` component to allow manual bypass of the seeding check.
+
+---
 
 **Bug ID:** 2026-04-03-01
 **Title:** Android Asset Seeding Triggering at Startup Incorrectly
