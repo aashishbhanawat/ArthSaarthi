@@ -124,13 +124,15 @@ Based on the `product_backlog.md`, the next features to consider are:
 
 -   **Status:** ✅ **Implemented on `feature/android-apk-experimental` branch.**
 
-## 12. Current Android Debug State (Bypassing 429s & Seeding)
-
--   **Branch:** `feature/android-apk-experimental`
--   **Debugging Infrastructure (Modified 2026-04-07):**
-    -   **Startup Seeding:** Seeding is intentionally disabled in the backend for faster debugging.
-    -   **Splash Screen Bypass:** Added a "Skip Initialization (Debug)" button to the `MobileSeedingSplash` component to allow manual bypass of the seeding check, preventing the app from hanging.
-    -   **Enhanced Logging:** Maintained `DEBUG` log hooks in `main.py`, `auth.py`, and `testing.py` for Chaquopy/Logcat visibility.
-    -   **Debug Endpoint:** `/api/v1/testing/yahoo-test` rotates through 4 browser fingerprints (Android Chrome, Desktop Chrome, iPhone Safari, Minimal Requests) across 8 Indian tickers.
-    -   **Auto-Trigger:** The Yahoo header test loop is explicitly wired to start immediately upon a successful `/login` response on Android.
--   **Next Task:** Rebuild the APK, use the "Skip" button to reach the login screen, and monitor `logcat` for the Yahoo test outcomes.
+-   **Current Android Debug State (Bypassing 429s & Seeding):**
+    -   **Branch:** `feature/android-apk-experimental`
+    -   **Debugging Infrastructure (Modified 2026-04-07):**
+        -   **Startup Seeding:** Seeding is intentionally disabled in the backend for faster debugging.
+        -   **Splash Screen Bypass:** Added a "Skip Initialization (Debug)" button to the `MobileSeedingSplash` component.
+        -   **Yahoo Fixes (Applied 2026-04-07):**
+            - **DNS Resilience:** Added a custom logic (and fallback IP mapping) to handle `NameResolutionError` for `query2.finance.yahoo.com` on Android.
+            - **Session Priming:** Added an explicit `finance.yahoo.com` visit before API calls to establish cookies and crumbs, fixing 404 errors on `query1`.
+            - **Regional Optimization:** Forced `region='IN'` and `language='en-IN'` to improve stability for Indian tickers.
+        -   **Enhanced Logging:** Refined `testing.py` to log raw response bodies and status codes for better visibility.
+        -   **Debug Endpoint:** `/api/v1/testing/yahoo-test` rotates through 4 browser fingerprints.
+    -   **Next Task:** Rebuild the APK, use the "Skip" button, and verify the `### STARTING YAHOO HEADER TEST LOOP ###` outcome in `logcat`.
