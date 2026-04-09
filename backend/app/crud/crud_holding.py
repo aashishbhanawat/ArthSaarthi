@@ -640,10 +640,10 @@ def _process_market_traded_assets(
         except Exception as e:
             logger.error(f"Failed during AMFI enrichment: {e}")
 
-    # 2. Optimize YahooQuery Enrichment: Batch Fetch (Avoids 429 Rate Limits)
+    # 2. Optimize yfinance Enrichment: Sequential Batch Fetch (Avoids Concurrent 429s)
     if equities_to_enrich:
         logger.info(
-            f"Enriching {len(equities_to_enrich)} Equities via YahooQuery (Batch)..."
+            f"Enriching {len(equities_to_enrich)} Equities via yfinance (Batch)..."
         )
         try:
             # Construct asset list for batch call

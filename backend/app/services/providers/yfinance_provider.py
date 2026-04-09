@@ -18,14 +18,33 @@ from app.core.config import settings
 
 from .base import FinancialDataProvider
 
+import threading
+
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
 CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
 
 logger = logging.getLogger(__name__)
 
+# Global lock to serialize all Yahoo Finance HTTP requests.
+# This prevents burst 429 errors when multiple threads request prices simultaneously.
+_YFINANCE_LOCK = threading.Lock()
+
 
 class YFinanceProvider(FinancialDataProvider):
+    # Enforce singleton so all threads share one session and cache
+    _instance = None
+    _instance_lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._instance_lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+        return cls._instance
     def __init__(self, cache_client: Optional[CacheClient]):
+        # Singleton guard: only initialize once
+        if hasattr(self, '_initialized'):
+            return
+        self._initialized = True
         self.cache_client = cache_client
         
         # Set up a persistent SQLite cache for all yfinance HTTP requests
@@ -203,11 +222,18 @@ class YFinanceProvider(FinancialDataProvider):
         logger.debug(f"yfinance batch request: '{yfinance_tickers_str}'")
 
         try:
-            yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
-            logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
-            for ticker_obj in yf_data.tickers.values():
-                hist = self._fetch_history_with_retry(ticker_obj, period="2d")
-                yf_symbol = ticker_obj.ticker
+            # Acquire lock to serialize Yahoo requests across all threads.
+            # This prevents the burst-429 issue when multiple portfolio
+            # calculations are triggered concurrently.
+            with _YFINANCE_LOCK:
+                logger.debug(f"[LOCK] Acquired for tickers: {yfinance_tickers_str}")
+                yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
+                raw_results = {}
+                for ticker_obj in yf_data.tickers.values():
+                    hist = self._fetch_history_with_retry(ticker_obj, period="2d")
+                    raw_results[ticker_obj.ticker] = hist
+
+            for yf_symbol, hist in raw_results.items():
                 # Use reverse map; fallback to splitting suffix for plain tickers
                 original_ticker = yf_to_original.get(
                     yf_symbol, yf_symbol.split(".")[0]
