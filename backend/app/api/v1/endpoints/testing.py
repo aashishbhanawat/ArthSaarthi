@@ -128,12 +128,26 @@ def trigger_yahoo_header_test(
                     pass
                 return url
 
-        for h_set in header_sets:
-            logger.info(f"--- Testing Header Set: {h_set['name']} ---")
-            
-            # Create session for this set
-            session = requests.Session()
-            session.headers.update(h_set['headers'])
+        # Define a proxy pool for testing. These are public free proxies, often unreliable,
+        # but they will confirm if the 429 block is IP-based or Fingerprint-based.
+        test_proxies = [
+            None, # Direct
+            {"http": "http://188.166.215.132:8080", "https": "http://188.166.215.132:8080"}, # Public Proxy 1
+            # Add more public proxies if you have reliable ones to test.
+        ]
+
+        for proxy_config in test_proxies:
+            proxy_name = "DIRECT" if proxy_config is None else proxy_config.get("https")
+            logger.info(f"\n=========================================\n--- Testing Proxy: {proxy_name} ---\n=========================================")
+
+            for h_set in header_sets:
+                logger.info(f"--- Testing Header Set: {h_set['name']} ---")
+                
+                # Create session for this set
+                session = requests.Session()
+                session.headers.update(h_set['headers'])
+                if proxy_config:
+                   session.proxies.update(proxy_config)
             
             # PRIME THE SESSION: Visit finance.yahoo.com to get cookies
             try:
