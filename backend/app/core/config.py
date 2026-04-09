@@ -20,7 +20,7 @@ def _is_local_mode(values: dict) -> bool:
 class Settings(BaseSettings):
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     # Default admin user
     ADMIN_USERNAME: str = "admin"

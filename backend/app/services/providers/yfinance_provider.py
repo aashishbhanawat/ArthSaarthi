@@ -329,36 +329,44 @@ class YFinanceProvider(FinancialDataProvider):
                 return cached
 
         try:
-            ticker_obj = yf.Ticker(yf_ticker, session=self.session)
-            info = self._fetch_info_with_retry(ticker_obj)
-            if info:
-                trailing_pe = info.get("trailingPE")
-                price_to_book = info.get("priceToBook")
-
-                # Classify investment style based on P/E and P/B
-                investment_style = self._classify_investment_style(
-                    trailing_pe, price_to_book
-                )
-
-                enrichment_data = {
-                    "sector": info.get("sector"),
-                    "industry": info.get("industry"),
-                    "country": info.get("country"),
-                    "market_cap": info.get("marketCap"),
-                    "trailing_pe": trailing_pe,
-                    "price_to_book": price_to_book,
-                    "investment_style": investment_style,
-                }
-                # Cache for 24 hours
+            with _YFINANCE_LOCK:
+                # Double-check cache inside lock to avoid redundant network calls 
+                # if another thread just finished fetching this ticker.
                 if self.cache_client:
-                    self.cache_client.set_json(
-                        cache_key, enrichment_data, expire=CACHE_TTL_HISTORICAL_PRICE
+                    cached = self.cache_client.get_json(cache_key)
+                    if cached:
+                        return cached
+
+                ticker_obj = yf.Ticker(yf_ticker, session=self.session)
+                info = self._fetch_info_with_retry(ticker_obj)
+                if info:
+                    trailing_pe = info.get("trailingPE")
+                    price_to_book = info.get("priceToBook")
+
+                    # Classify investment style based on P/E and P/B
+                    investment_style = self._classify_investment_style(
+                        trailing_pe, price_to_book
                     )
-                logger.debug(
-                    f"Enrichment fetched for {ticker_symbol}: "
-                    f"sector={info.get('sector')}, style={investment_style}"
-                )
-                return enrichment_data
+
+                    enrichment_data = {
+                        "sector": info.get("sector"),
+                        "industry": info.get("industry"),
+                        "country": info.get("country"),
+                        "market_cap": info.get("marketCap"),
+                        "trailing_pe": trailing_pe,
+                        "price_to_book": price_to_book,
+                        "investment_style": investment_style,
+                    }
+                    # Cache for 24 hours
+                    if self.cache_client:
+                        self.cache_client.set_json(
+                            cache_key, enrichment_data, expire=CACHE_TTL_HISTORICAL_PRICE
+                        )
+                    logger.debug(
+                        f"Enrichment fetched for {ticker_symbol}: "
+                        f"sector={info.get('sector')}, style={investment_style}"
+                    )
+                    return enrichment_data
         except Exception as e:
             logger.warning(f"Error fetching enrichment for {ticker_symbol}: {e}")
 
@@ -445,11 +453,12 @@ class YFinanceProvider(FinancialDataProvider):
                 return historical_data
 
         try:
-            yf_data = self._fetch_download_with_retry(
-                yfinance_tickers_str,
-                start_date,
-                end_date + timedelta(days=1)
-            )
+            with _YFINANCE_LOCK:
+                yf_data = self._fetch_download_with_retry(
+                    yfinance_tickers_str,
+                    start_date,
+                    end_date + timedelta(days=1)
+                )
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
                 if close_prices is not None:
@@ -655,10 +664,14 @@ class YFinanceProvider(FinancialDataProvider):
         Search Yahoo Finance for matching tickers by name, ticker, or ISIN.
         Returns a list of matching assets with their details.
         """
+        if self._is_cooling_down():
+            return []
+
         try:
-            # yfinance provides a Search class for querying Yahoo Finance
-            search_obj = yf.Search(query)
-            quotes = getattr(search_obj, 'quotes', [])
+            with _YFINANCE_LOCK:
+                # yfinance provides a Search class for querying Yahoo Finance
+                search_obj = yf.Search(query, session=self.session)
+                quotes = getattr(search_obj, 'quotes', [])
 
             results = []
             for quote in quotes[:10]:  # Limit to top 10 results
