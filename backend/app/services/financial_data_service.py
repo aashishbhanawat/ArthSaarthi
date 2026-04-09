@@ -9,7 +9,6 @@ from app.core.config import settings
 from .providers.amfi_provider import AmfiIndiaProvider  # type: ignore
 from .providers.nse_bhavcopy_provider import NseBhavcopyProvider
 from .providers.yfinance_provider import YFinanceProvider  # type: ignore
-from .providers.yahooquery_provider import YahooQueryProvider
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
 CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
@@ -20,7 +19,6 @@ logger = logging.getLogger(__name__)
 class FinancialDataService:
     def __init__(self, cache_client: Optional[CacheClient]):
         self.yfinance_provider = YFinanceProvider(cache_client)
-        self.yahooquery_provider = YahooQueryProvider(cache_client)
         self.amfi_provider = AmfiIndiaProvider(cache_client)
         self.nse_provider = NseBhavcopyProvider(cache_client)
 
@@ -64,29 +62,14 @@ class FinancialDataService:
             prices_data.update(self.amfi_provider.get_current_prices(mf_assets))
             logger.debug(f"Prices after AMFI: {prices_data.keys()}")
 
-        # 3. Stocks: YahooQuery is now the primary source for real-time data.
+        # 3. Stocks: yfinance is now the primary source for real-time data on Android.
         if stock_assets:
             logger.info(
-                f"Processing {len(stock_assets)} stock assets with YahooQuery provider."
+                f"Processing {len(stock_assets)} stock assets with yfinance provider."
             )
             prices_data.update(
-                self.yahooquery_provider.get_current_prices(stock_assets)
+                self.yfinance_provider.get_current_prices(stock_assets)
             )
-            
-            # Fallback to yfinance for any stock prices not found by yahooquery
-            found_tickers = set(prices_data.keys())
-            remaining_stocks = [
-                a for a in stock_assets 
-                if a["ticker_symbol"] not in found_tickers
-            ]
-            
-            if remaining_stocks:
-                logger.info(
-                    f"Falling back to yfinance for {len(remaining_stocks)} stocks."
-                )
-                prices_data.update(
-                    self.yfinance_provider.get_current_prices(remaining_stocks)
-                )
             
             logger.debug(f"Prices after stock providers: {prices_data.keys()}")
 
@@ -148,23 +131,10 @@ class FinancialDataService:
         historical_data: Dict[str, Dict[date, Decimal]] = {}
 
         if other_assets:
-            logger.info(f"Fetching historical prices for {len(other_assets)} assets via YahooQuery")
-            historical_data.update(self.yahooquery_provider.get_historical_prices(
+            logger.info(f"Fetching historical prices for {len(other_assets)} assets via yfinance")
+            historical_data.update(self.yfinance_provider.get_historical_prices(
                 other_assets, start_date, end_date
             ))
-            
-            # Fallback to yfinance for any assets missed by yahooquery
-            found_tickers = set(historical_data.keys())
-            remaining_assets = [
-                a for a in other_assets 
-                if a["ticker_symbol"] not in found_tickers
-            ]
-            
-            if remaining_assets:
-                logger.info(f"Falling back to yfinance for {len(remaining_assets)} historical prices")
-                historical_data.update(self.yfinance_provider.get_historical_prices(
-                    remaining_assets, start_date, end_date
-                ))
 
         if mf_assets:
             historical_data.update(self.amfi_provider.get_historical_prices(
@@ -202,12 +172,7 @@ class FinancialDataService:
         if asset_type == "Mutual Fund" or asset_type == "MUTUAL_FUND":
             return self.amfi_provider.get_asset_details(ticker_symbol)
 
-        # Default to YahooQuery for other types or if type is unknown
-        details = self.yahooquery_provider.get_asset_details(ticker_symbol)
-        if details:
-            return details
-            
-        # Fallback to yfinance
+        # Check yfinance
         return self.yfinance_provider.get_asset_details(ticker_symbol)
 
     def search_mutual_funds(self, query: str) -> List[Dict[str, Any]]:
@@ -238,14 +203,7 @@ class FinancialDataService:
     ) -> Optional[Dict[str, Any]]:
         """
         Fetches sector, industry, country, marketCap, P/E, P/B for a single ticker.
-        Uses YahooQueryProvider as the preferred source for better metadata reliability.
         """
-        # Try YahooQuery first as it's more reliable for Indian stock metadata
-        data = self.yahooquery_provider.get_enrichment_data(ticker_symbol, exchange)
-        if data:
-            return data
-            
-        # Fallback to yfinance if needed
         return self.yfinance_provider.get_enrichment_data(ticker_symbol, exchange)
 
     def get_enrichment_data_batch(
@@ -253,9 +211,15 @@ class FinancialDataService:
     ) -> Dict[str, Dict[str, Any]]:
         """
         Fetches enrichment data for multiple assets in a single call.
-        Highly recommended for bulk enrichment to avoid rate limits (429).
         """
-        return self.yahooquery_provider.get_enrichment_data_batch(assets)
+        # Note: yfinance doesn't have a reliable bulk metadata endpoint, so we default to looping
+        # internally if batch doesn't exist, but yfinance doesn't aggressively block info lookup now
+        enrichment_results = {}
+        for asset in assets:
+            data = self.get_enrichment_data(asset['ticker_symbol'], asset.get('exchange'))
+            if data:
+                enrichment_results[asset['ticker_symbol']] = data
+        return enrichment_results
 
 
 def get_financial_data_service() -> FinancialDataService:

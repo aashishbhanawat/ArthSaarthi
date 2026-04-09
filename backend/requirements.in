@@ -16,8 +16,7 @@ sqlalchemy-utils
 typer
 uvicorn[standard]
 yfinance==1.1.0
-yahooquery
-requests-cache
+requests
 tenacity
 cryptography
 pyxirr
