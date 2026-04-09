@@ -158,6 +158,10 @@ def start(port: int, data_dir: str):
         # Initialize the database (tables + base data)
         init_android_db()
 
+        # Trigger background asset seeding if needed (Android specific)
+        from app.services.initialization_service import check_and_seed_on_startup
+        check_and_seed_on_startup()
+
         # Configure Uvicorn
         config = uvicorn.Config(
             app,
