@@ -809,16 +809,21 @@ class AssetSeeder:
         import requests
         from app.core.config import settings
 
-        # Create a session with browser User-Agent ONLY for Android to bypass
-        # the 429 block. On Server/Desktop, we let yfinance handle its own 
-        # sessions (which may use curl_cffi).
-        session = None
-        if settings.DEPLOYMENT_MODE == "android":
-            session = requests.Session()
-            session.headers.update({
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        # Dynamic Header Pool for Android stabilization
+        _CHROME_UAS = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        ]
+        import random
+        def _get_dynamic_headers():
+            ua = random.choice(_CHROME_UAS)
+            langs = ["en-US,en;q=0.9", "en-GB,en;q=0.8", "en-IN,en;q=0.9,hi;q=0.8"]
+            return {
+                "User-Agent": ua,
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
+                "Accept-Language": random.choice(langs),
                 "Accept-Encoding": "gzip, deflate, br",
                 "Connection": "keep-alive",
                 "Upgrade-Insecure-Requests": "1",
@@ -828,14 +833,22 @@ class AssetSeeder:
                 "Sec-Fetch-User": "?1",
                 "DNT": "1",
                 "Cache-Control": "max-age=0",
-            })
-            print(f"[DEBUG] AssetSeeder: Using Deep Chrome Spoofing for enrichment on {settings.DEPLOYMENT_MODE}")
+            }
+
+        # Create a session with browser User-Agent ONLY for Android to bypass
+        # the 429 block. On Server/Desktop, we let yfinance handle its own 
+        # sessions (which may use curl_cffi).
+        session = None
+        if settings.DEPLOYMENT_MODE == "android":
+            session = requests.Session()
+            session.headers.update(_get_dynamic_headers())
+            print(f"[DEBUG] AssetSeeder: Using Dynamic Chrome Spoofing for enrichment on {settings.DEPLOYMENT_MODE}")
             
             # Global Spoof: Intercept yfinance's internal User-Agent logic for the seeding process.
             try:
                 import yfinance.utils as yf_utils
-                yf_utils.get_user_agent = lambda: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-                print("[DEBUG] AssetSeeder: Globally spoofed yfinance User-Agent.")
+                yf_utils.get_user_agent = lambda: random.choice(_CHROME_UAS)
+                print("[DEBUG] AssetSeeder: Globally spoofed yfinance with Dynamic UA Generator.")
             except Exception as e:
                 print(f"[DEBUG] AssetSeeder: Failed to globally spoof yfinance UA: {e}")
 

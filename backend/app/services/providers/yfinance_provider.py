@@ -29,6 +29,15 @@ logger = logging.getLogger(__name__)
 # This prevents burst 429 errors when multiple threads request prices simultaneously.
 _YFINANCE_LOCK = threading.Lock()
 
+# Pool of modern Chrome User-Agents for rotation to prevent fingerprint-based 429s.
+_CHROME_UAS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+]
+
 
 class YFinanceProvider(FinancialDataProvider):
     # Enforce singleton so all threads share one session and cache
@@ -92,18 +101,43 @@ class YFinanceProvider(FinancialDataProvider):
             })
             
             # Global Spoof: Intercept yfinance's internal User-Agent logic.
-            # Some versions of yfinance may ignore the session's headers or 
-            # overwrite them. We force it at the source.
+            # We point it to a lambda that picks a random Chrome UA from our pool
+            # for EVERY request, breaking the static fingerprint.
             try:
                 import yfinance.utils as yf_utils
-                yf_utils.get_user_agent = lambda: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-                logger.info("YFinanceProvider: Globally spoofed yfinance User-Agent.")
+                import random
+                yf_utils.get_user_agent = lambda: random.choice(_CHROME_UAS)
+                logger.info("YFinanceProvider: Globally spoofed yfinance with Dynamic UA Generator.")
             except Exception as e:
                 logger.warning(f"YFinanceProvider: Failed to globally spoof yfinance UA: {e}")
 
-            logger.info("YFinanceProvider: Using Deep Chrome Spoofing for Android.")
+            # Initial header set
+            self.session.headers.update(self._get_dynamic_headers())
+            logger.info("YFinanceProvider: Using Dynamic Chrome Spoofing for Android.")
         else:
             logger.info(f"YFinanceProvider: Let yf handle sessions for {settings.DEPLOYMENT_MODE} mode.")
+
+    def _get_dynamic_headers(self) -> dict:
+        """Generates a fresh set of browser headers with a random Chrome UA and language."""
+        import random
+        ua = random.choice(_CHROME_UAS)
+        langs = ["en-US,en;q=0.9", "en-GB,en;q=0.8", "en-IN,en;q=0.9,hi;q=0.8"]
+        lang = random.choice(langs)
+        
+        return {
+            "User-Agent": ua,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": lang,
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "DNT": "1",
+            "Cache-Control": "max-age=0",
+        }
 
     def _to_safe_decimal(self, value: Any) -> Decimal:
         """
@@ -252,6 +286,11 @@ class YFinanceProvider(FinancialDataProvider):
             # This prevents the burst-429 issue when multiple portfolio
             # calculations are triggered concurrently.
             with _YFINANCE_LOCK:
+                # Rotate headers before major batch request to break fingerprint
+                if self.session:
+                    self.session.headers.update(self._get_dynamic_headers())
+                    logger.debug("YFinanceProvider: Rotated session headers for batch fetch.")
+
                 logger.debug(f"[LOCK] Acquired for tickers: {yfinance_tickers_str}")
                 yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
                 raw_results = {}
@@ -599,6 +638,8 @@ class YFinanceProvider(FinancialDataProvider):
                 f"Fetching index history for {yf_ticker} "
                 f"from {start_date} to {end_date}"
             )
+            if self.session:
+                self.session.headers.update(self._get_dynamic_headers())
             ticker_obj = yf.Ticker(yf_ticker, session=self.session)
             # Fetch data with slight buffer
             hist = self._fetch_history_with_retry(
@@ -645,6 +686,8 @@ class YFinanceProvider(FinancialDataProvider):
         for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
+                if self.session:
+                    self.session.headers.update(self._get_dynamic_headers())
                 temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:
                     logger.debug(f"Found data with variant: {yf_ticker_str}")
@@ -695,6 +738,8 @@ class YFinanceProvider(FinancialDataProvider):
 
         for yf_ticker_str in variants:
             try:
+                if self.session:
+                    self.session.headers.update(self._get_dynamic_headers())
                 temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:
                     ticker_obj = temp_ticker
@@ -720,6 +765,8 @@ class YFinanceProvider(FinancialDataProvider):
 
         try:
             with _YFINANCE_LOCK:
+                if self.session:
+                    self.session.headers.update(self._get_dynamic_headers())
                 # yfinance provides a Search class for querying Yahoo Finance
                 search_obj = yf.Search(query, session=self.session)
                 quotes = getattr(search_obj, 'quotes', [])
