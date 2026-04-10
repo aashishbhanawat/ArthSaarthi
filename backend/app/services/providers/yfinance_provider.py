@@ -62,12 +62,24 @@ class YFinanceProvider(FinancialDataProvider):
         # incompatible with yfinance's modern scraping logic (curl_cffi).
         # We rely on _YFINANCE_LOCK and self.cache_client for performance.
         
-        # Try to get an initial session cookie if possible using standard requests
+        # Conditionally apply User-Agent spoofing.
+        # Diagnostic results (2026-04-10) confirmed that on Android, Yahoo 
+        # Finance blocks default Python User-Agents due to TLS fingerprinting,
+        # but allows Chrome fingerprints even from BoringSSL.
+        self.session = requests.Session()
+        if settings.DEPLOYMENT_MODE == "android":
+            self.session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            })
+            logger.info("YFinanceProvider: Using Chrome User-Agent spoofing for Android.")
+        else:
+            # On Server/Desktop, the default Python UA is usually fine with OpenSSL.
+            # We still use a persistent session for performance.
+            logger.info(f"YFinanceProvider: Using default session for {settings.DEPLOYMENT_MODE} mode.")
+
+        # Try to get an initial session cookie if possible using the browser session
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36"
-            }
-            requests.get("https://finance.yahoo.com", headers=headers, timeout=10)
+            self.session.get("https://finance.yahoo.com", timeout=10)
             logger.info("YFinanceProvider: Initial connectivity check passed.")
         except Exception as e:
             logger.warning(f"YFinanceProvider: Initial connectivity check failed: {e}")
@@ -83,6 +95,7 @@ class YFinanceProvider(FinancialDataProvider):
 
     def _fetch_history_with_retry(self, ticker_obj, **kwargs) -> pd.DataFrame:
         kwargs.setdefault("auto_adjust", False)
+        # Session already passed to ticker_obj during initialization
         df = ticker_obj.history(**kwargs)
         if df is None or df.empty:
             raise ValueError(f"yfinance history returned empty data for {ticker_obj.ticker}")
@@ -96,7 +109,8 @@ class YFinanceProvider(FinancialDataProvider):
             start=start_date,
             end=end_date,
             progress=False,
-            auto_adjust=False
+            auto_adjust=False,
+            session=self.session
         )
         if hasattr(yf, "shared") and getattr(yf.shared, "_ERRORS", {}):
             errors = yf.shared._ERRORS
@@ -202,7 +216,7 @@ class YFinanceProvider(FinancialDataProvider):
             # calculations are triggered concurrently.
             with _YFINANCE_LOCK:
                 logger.debug(f"[LOCK] Acquired for tickers: {yfinance_tickers_str}")
-                yf_data = yf.Tickers(yfinance_tickers_str)
+                yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
                 raw_results = {}
                 for ticker_obj in yf_data.tickers.values():
                     hist = self._fetch_history_with_retry(ticker_obj, period="2d")
@@ -330,7 +344,7 @@ class YFinanceProvider(FinancialDataProvider):
                     if cached:
                         return cached
 
-                ticker_obj = yf.Ticker(yf_ticker)
+                ticker_obj = yf.Ticker(yf_ticker, session=self.session)
                 info = self._fetch_info_with_retry(ticker_obj)
                 if info:
                     trailing_pe = info.get("trailingPE")
