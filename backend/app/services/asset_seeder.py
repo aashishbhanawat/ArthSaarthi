@@ -818,6 +818,14 @@ class AssetSeeder:
                 "Cache-Control": "max-age=0",
             })
             print(f"[DEBUG] AssetSeeder: Using Deep Chrome Spoofing for enrichment on {settings.DEPLOYMENT_MODE}")
+            
+            # Global Spoof: Intercept yfinance's internal User-Agent logic for the seeding process.
+            try:
+                import yfinance.utils as yf_utils
+                yf_utils.get_user_agent = lambda: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                print("[DEBUG] AssetSeeder: Globally spoofed yfinance User-Agent.")
+            except Exception as e:
+                print(f"[DEBUG] AssetSeeder: Failed to globally spoof yfinance UA: {e}")
 
         from app.cache.factory import get_cache_client
         from app.services.providers.amfi_provider import AmfiIndiaProvider

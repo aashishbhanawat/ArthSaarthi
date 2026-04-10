@@ -89,6 +89,17 @@ class YFinanceProvider(FinancialDataProvider):
                 "DNT": "1",
                 "Cache-Control": "max-age=0",
             })
+            
+            # Global Spoof: Intercept yfinance's internal User-Agent logic.
+            # Some versions of yfinance may ignore the session's headers or 
+            # overwrite them. We force it at the source.
+            try:
+                import yfinance.utils as yf_utils
+                yf_utils.get_user_agent = lambda: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                logger.info("YFinanceProvider: Globally spoofed yfinance User-Agent.")
+            except Exception as e:
+                logger.warning(f"YFinanceProvider: Failed to globally spoof yfinance UA: {e}")
+
             logger.info("YFinanceProvider: Using Deep Chrome Spoofing for Android.")
         else:
             logger.info(f"YFinanceProvider: Let yf handle sessions for {settings.DEPLOYMENT_MODE} mode.")
