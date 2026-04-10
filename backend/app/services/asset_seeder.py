@@ -91,6 +91,18 @@ class AssetSeeder:
         except Exception:
             return None
 
+    def _to_decimal(self, value: Any) -> Decimal:
+        try:
+            if value is None:
+                return Decimal("0")
+            f_val = float(value)
+            import math
+            if not math.isfinite(f_val):
+                return Decimal("0")
+            return Decimal(str(f_val))
+        except (ValueError, TypeError, Exception):
+            return Decimal("0")
+
     def _parse_frequency(self, value: Any) -> Optional[PaymentFrequency]:
         """Parses payment frequency string to Enum."""
         if pd.isna(value) or not value:

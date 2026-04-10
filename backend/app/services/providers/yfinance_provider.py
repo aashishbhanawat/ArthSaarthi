@@ -1,6 +1,7 @@
 """Provider for fetching data from Yahoo Finance."""
 import logging
 import time
+import math
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -104,13 +105,21 @@ class YFinanceProvider(FinancialDataProvider):
         else:
             logger.info(f"YFinanceProvider: Let yf handle sessions for {settings.DEPLOYMENT_MODE} mode.")
 
-        # Try to get an initial session cookie if possible using the browser session
-        if self.session:
-            try:
-                self.session.get("https://finance.yahoo.com", timeout=10)
-                logger.info("YFinanceProvider: Initial connectivity check passed.")
-            except Exception as e:
-                logger.warning(f"YFinanceProvider: Initial connectivity check failed: {e}")
+    def _to_safe_decimal(self, value: Any) -> Decimal:
+        """
+        Safely convert a value (often from yfinance) to a Decimal.
+        Handles NaN and Infinity which cause Pydantic v1 (Android) to crash.
+        """
+        try:
+            if value is None:
+                return Decimal("0")
+            f_val = float(value)
+            if not math.isfinite(f_val):
+                return Decimal("0")
+            # Using str(f_val) to maintain precision where possible
+            return Decimal(str(f_val))
+        except (ValueError, TypeError, Exception):
+            return Decimal("0")
 
     def _is_cooling_down(self) -> bool:
         if self._last_429_time == 0:
@@ -261,17 +270,17 @@ class YFinanceProvider(FinancialDataProvider):
                 )
 
                 if not hist.empty and len(hist) >= 2:
-                    current_price = Decimal(str(hist["Close"].iloc[-1]))
+                    current_price = self._to_safe_decimal(hist["Close"].iloc[-1])
                     logger.debug(
                         f"Price fetched: {original_ticker}={current_price}"
                     )
-                    previous_close = Decimal(str(hist["Close"].iloc[-2]))
+                    previous_close = self._to_safe_decimal(hist["Close"].iloc[-2])
                     prices_data[original_ticker] = {
                         "current_price": current_price,
                         "previous_close": previous_close,
                     }
                 elif not hist.empty and len(hist) == 1:
-                    current_price = Decimal(str(hist["Close"].iloc[-1]))
+                    current_price = self._to_safe_decimal(hist["Close"].iloc[-1])
                     logger.debug(
                         f"yfinance API SUCCESS for {yf_symbol} (1 day data). Price: "
                         f"{current_price}"
@@ -511,7 +520,7 @@ class YFinanceProvider(FinancialDataProvider):
                         for a_date, price in close_prices.dropna().items():
                             try:
                                 historical_data[original_ticker][
-                                    a_date.date()] = Decimal(str(price))
+                                    a_date.date()] = self._to_safe_decimal(price)
                             except Exception:
                                 logger.error(
                                     "Failed to convert price for %s on %s. "
@@ -530,7 +539,7 @@ class YFinanceProvider(FinancialDataProvider):
                                 ].dropna().items():
                                     try:
                                         historical_data[original_ticker][
-                                            a_date.date()] = Decimal(str(price))
+                                            a_date.date()] = self._to_safe_decimal(price)
                                     except Exception:
                                         logger.error(
                                             "Failed to convert price for %s on %s. "
@@ -698,7 +707,7 @@ class YFinanceProvider(FinancialDataProvider):
         if ticker_obj:
             hist = ticker_obj.history(period="2d")
             if not hist.empty:
-                return Decimal(str(hist["Close"].iloc[-1]))
+                return self._to_safe_decimal(hist["Close"].iloc[-1])
         return None
 
     def search(self, query: str) -> List[Dict[str, Any]]:
