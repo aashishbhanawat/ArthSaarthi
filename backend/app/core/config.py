@@ -100,17 +100,23 @@ class Settings(BaseSettings):
         return v
 
     @validator("DISK_CACHE_DIR", pre=True, always=True)
-    def set_disk_cache_dir_for_desktop(cls, v, values):
+    def set_disk_cache_dir(cls, v, values):
+        if isinstance(v, str):
+            return v
+        from pathlib import Path
         if _is_local_mode(values):
-            if isinstance(v, str):
-                return v
             from platformdirs import user_cache_dir
-            from pathlib import Path
             # Use a stable directory for cache
             cache_dir = Path(user_cache_dir("arthsaarthi", "arthsaarthi-app"))
+        else:
+            # Server/Docker mode: use /tmp or a dedicated volume path
+            cache_dir = Path("/tmp/arthsaarthi/cache")
+        try:
             cache_dir.mkdir(parents=True, exist_ok=True)
-            return str(cache_dir)
-        return v
+        except Exception:
+            # Fallback for restricted environments
+            return "/tmp"
+        return str(cache_dir)
 
     @validator("LOG_DIR", pre=True, always=True)
     def set_log_dir_for_desktop(cls, v, values):

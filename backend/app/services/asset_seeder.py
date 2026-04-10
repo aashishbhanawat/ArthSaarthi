@@ -794,6 +794,19 @@ class AssetSeeder:
             Dict with enrichment statistics
         """
         import yfinance as yf
+        import requests
+        from app.core.config import settings
+
+        # Create a session with browser User-Agent ONLY for Android to bypass
+        # the 429 block. On Server/Desktop, we let yfinance handle its own 
+        # sessions (which may use curl_cffi).
+        session = None
+        if settings.DEPLOYMENT_MODE == "android":
+            session = requests.Session()
+            session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            })
+            print(f"[DEBUG] AssetSeeder: Using Chrome User-Agent for enrichment on {settings.DEPLOYMENT_MODE}")
 
         from app.cache.factory import get_cache_client
         from app.services.providers.amfi_provider import AmfiIndiaProvider
@@ -846,17 +859,22 @@ class AssetSeeder:
                 import concurrent.futures
 
                 yf_tickers_str = " ".join(ticker_map.keys())
-                yf_data = yf.Tickers(yf_tickers_str)
+                yf_data = yf.Tickers(yf_tickers_str, session=session)
 
                 # Helper for concurrent execution
                 def fetch_info(symbol, ticker_obj):
                     try:
+                        # Ensure the session is used for the .info call
+                        # (Tickers() usually propagates it, but being explicit)
                         return symbol, ticker_obj.info, None
                     except Exception as e:
                         return symbol, None, e
 
+                # On Android, we use a very low worker count to avoid triggering
+                # Yahoo's rate limiting during background metadata enrichment.
+                max_workers = 2 if settings.DEPLOYMENT_MODE == "android" else 10
                 with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=min(10, len(equities))
+                    max_workers=min(max_workers, len(equities))
                 ) as executor:
                     futures = {
                         executor.submit(fetch_info, s, t): s

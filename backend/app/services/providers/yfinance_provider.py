@@ -66,23 +66,26 @@ class YFinanceProvider(FinancialDataProvider):
         # Diagnostic results (2026-04-10) confirmed that on Android, Yahoo 
         # Finance blocks default Python User-Agents due to TLS fingerprinting,
         # but allows Chrome fingerprints even from BoringSSL.
-        self.session = requests.Session()
+        # On Server/Desktop, curl_cffi is often available and handled better 
+        # by yfinance internally. We only pass a session on Android to bypass
+        # the 429 block.
+        self.session = None
         if settings.DEPLOYMENT_MODE == "android":
+            self.session = requests.Session()
             self.session.headers.update({
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
             })
             logger.info("YFinanceProvider: Using Chrome User-Agent spoofing for Android.")
         else:
-            # On Server/Desktop, the default Python UA is usually fine with OpenSSL.
-            # We still use a persistent session for performance.
-            logger.info(f"YFinanceProvider: Using default session for {settings.DEPLOYMENT_MODE} mode.")
+            logger.info(f"YFinanceProvider: Let yf handle sessions for {settings.DEPLOYMENT_MODE} mode.")
 
         # Try to get an initial session cookie if possible using the browser session
-        try:
-            self.session.get("https://finance.yahoo.com", timeout=10)
-            logger.info("YFinanceProvider: Initial connectivity check passed.")
-        except Exception as e:
-            logger.warning(f"YFinanceProvider: Initial connectivity check failed: {e}")
+        if self.session:
+            try:
+                self.session.get("https://finance.yahoo.com", timeout=10)
+                logger.info("YFinanceProvider: Initial connectivity check passed.")
+            except Exception as e:
+                logger.warning(f"YFinanceProvider: Initial connectivity check failed: {e}")
 
     def _is_cooling_down(self) -> bool:
         if self._last_429_time == 0:
@@ -562,7 +565,7 @@ class YFinanceProvider(FinancialDataProvider):
                 f"Fetching index history for {yf_ticker} "
                 f"from {start_date} to {end_date}"
             )
-            ticker_obj = yf.Ticker(yf_ticker)
+            ticker_obj = yf.Ticker(yf_ticker, session=self.session)
             # Fetch data with slight buffer
             hist = self._fetch_history_with_retry(
                 ticker_obj, start=start_date, end=end_date + timedelta(days=1)
@@ -608,7 +611,7 @@ class YFinanceProvider(FinancialDataProvider):
         for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
-                temp_ticker = yf.Ticker(yf_ticker_str)
+                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:
                     logger.debug(f"Found data with variant: {yf_ticker_str}")
                     ticker_obj = temp_ticker
@@ -658,7 +661,7 @@ class YFinanceProvider(FinancialDataProvider):
 
         for yf_ticker_str in variants:
             try:
-                temp_ticker = yf.Ticker(yf_ticker_str)
+                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
                 if not temp_ticker.history(period="1d").empty:
                     ticker_obj = temp_ticker
                     break
@@ -684,7 +687,7 @@ class YFinanceProvider(FinancialDataProvider):
         try:
             with _YFINANCE_LOCK:
                 # yfinance provides a Search class for querying Yahoo Finance
-                search_obj = yf.Search(query)
+                search_obj = yf.Search(query, session=self.session)
                 quotes = getattr(search_obj, 'quotes', [])
 
             results = []

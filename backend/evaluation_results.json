@@ -1,0 +1,54 @@
+[
+    {
+        "symbol": "RELIANCE.NS",
+        "defeatbeta": {
+            "status": "success",
+            "data": "Empty DataFrame\nColumns: [symbol, report_date, open, close, high, low, volume]\nIndex: []",
+            "error": null
+        },
+        "yfinance": {
+            "status": "success",
+            "data": 1350.5,
+            "error": null
+        }
+    },
+    {
+        "symbol": "TCS.NS",
+        "defeatbeta": {
+            "status": "success",
+            "data": "Empty DataFrame\nColumns: [symbol, report_date, open, close, high, low, volume]\nIndex: []",
+            "error": null
+        },
+        "yfinance": {
+            "status": "success",
+            "data": 2450.699951171875,
+            "error": null
+        }
+    },
+    {
+        "symbol": "HDFCBANK.BO",
+        "defeatbeta": {
+            "status": "success",
+            "data": "Empty DataFrame\nColumns: [symbol, report_date, open, close, high, low, volume]\nIndex: []",
+            "error": null
+        },
+        "yfinance": {
+            "status": "success",
+            "data": 751.0999755859375,
+            "error": null
+        }
+    },
+    {
+        "symbol": "AAPL",
+        "defeatbeta": {
+            "status": "success",
+            "data": "     symbol report_date    open   close    high     low     volume\n0      AAPL  1994-11-30    0.34    0.33    0.35    0.33  312032000\n1      AAPL  1994-12-01    0.33    0.32    0.34    0.32  309321600\n2      AAPL  1994-12-02    0.33    0.33    0.33    0.32  172256000\n3      AAPL  1994-12-05    0.33    0.33    0.33    0.32  180275200\n4      AAPL  1994-12-06    0.33    0.34    0.34    0.33  238089600\n...     ...         ...     ...     ...     ...     ...        ...\n7878   AAPL  2026-03-23  253.97  251.49  254.60  250.28   40546100\n7879   AAPL  2026-03-24  250.35  251.64  254.83  249.55   45152300\n7880   AAPL  2026-03-25  254.10  252.62  255.00  251.60   28476700\n7881   AAPL  2026-03-26  252.12  252.89  257.00  250.77   41796700\n7882   AAPL  2026-03-27  253.90  248.80  255.49  248.07   47842500\n\n[7883 rows x 7 columns]",
+            "error": null
+        },
+        "yfinance": {
+            "status": "success",
+            "data": 255.6300048828125,
+            "error": null
+        }
+    }
+]
