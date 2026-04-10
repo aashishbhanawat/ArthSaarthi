@@ -72,10 +72,24 @@ class YFinanceProvider(FinancialDataProvider):
         self.session = None
         if settings.DEPLOYMENT_MODE == "android":
             self.session = requests.Session()
+            # Deep Browser Spoof: Use a full set of modern browser headers to 
+            # mimic a standard Chrome navigation. This is more resilient than 
+            # just the User-Agent.
             self.session.headers.update({
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Connection": "keep-alive",
+                "Upgrade-Insecure-Requests": "1",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-User": "?1",
+                "DNT": "1",
+                "Cache-Control": "max-age=0",
             })
-            logger.info("YFinanceProvider: Using Chrome User-Agent spoofing for Android.")
+            logger.info("YFinanceProvider: Using Deep Chrome Spoofing for Android.")
         else:
             logger.info(f"YFinanceProvider: Let yf handle sessions for {settings.DEPLOYMENT_MODE} mode.")
 
