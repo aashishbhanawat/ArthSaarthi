@@ -73,6 +73,24 @@ def start(port: int, data_dir: str):
     os.environ["DEBUG"] = "false"
     os.environ["LOG_LEVEL"] = "INFO"
 
+    # Enable httpx DEBUG logging to capture Yahoo Finance request/response headers.
+    # yfinance >= 0.2 uses httpx/curl_cffi internally. This will dump all
+    # outgoing request headers and incoming response status lines to logcat.
+    # TODO: Remove or set to WARNING once debugging is complete.
+    import logging as _logging
+    _logging.getLogger("httpx").setLevel(_logging.DEBUG)
+    _logging.getLogger("httpcore").setLevel(_logging.DEBUG)
+
+    # Fix: Set certifi CA bundle so Python's SSL stack uses a known-good CA list.
+    # Prevents crumb/cookie auth failure due to cert verification on Android's BoringSSL.
+    try:
+        import certifi
+        os.environ["SSL_CERT_FILE"] = certifi.where()
+        os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+        logger.info(f"SSL_CERT_FILE set to: {certifi.where()}")
+    except ImportError:
+        logger.warning("certifi not installed; SSL_CERT_FILE not set.")
+
     # Critically, set HOME so Path.home() works for logging
     os.environ["HOME"] = data_dir
     print(f"PYTHON: Setting HOME to {data_dir}")
@@ -90,6 +108,18 @@ def start(port: int, data_dir: str):
     cache_dir = os.path.join(db_dir, "cache")
     os.makedirs(cache_dir, exist_ok=True)
     os.environ["DISK_CACHE_DIR"] = cache_dir
+
+    # Fix: point yfinance's tz cache to a writable Android directory.
+    # Without this, yfinance may fail to write its cache and fall back to
+    # unauthenticated requests, which Yahoo immediately rate-limits.
+    try:
+        import yfinance as yf
+        yf_cache_dir = os.path.join(cache_dir, "yfinance_tz")
+        os.makedirs(yf_cache_dir, exist_ok=True)
+        yf.set_tz_cache_location(yf_cache_dir)
+        logger.info(f"yfinance tz cache set to: {yf_cache_dir}")
+    except Exception as e:
+        logger.warning(f"Could not set yfinance tz cache: {e}")
 
     upload_dir = os.path.join(db_dir, "uploads")
     os.makedirs(upload_dir, exist_ok=True)

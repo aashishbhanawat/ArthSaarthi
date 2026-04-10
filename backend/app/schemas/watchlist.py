@@ -32,7 +32,7 @@ class WatchlistItem(WatchlistItemBase):
 
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True
 
 
 # Schemas for Watchlist
@@ -60,4 +60,4 @@ class Watchlist(WatchlistBase):
 
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True

@@ -107,7 +107,7 @@ class TransactionLink(BaseModel):
     quantity: Decimal
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True
 
 
 class Transaction(TransactionBase):
@@ -117,7 +117,7 @@ class Transaction(TransactionBase):
     sell_links: List[TransactionLink] = []  # Include links for accurate lot tracking
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True
 
 
 

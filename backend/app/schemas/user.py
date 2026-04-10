@@ -17,7 +17,7 @@ class UserCreate(UserBase):
     is_admin: bool = False
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "full_name": "Admin User",
                 "email": "admin@example.com",
@@ -48,8 +48,8 @@ class User(UserBase):
     is_active: bool
     class Config:
         from_attributes = True
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "full_name": "Admin User",
@@ -67,7 +67,7 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "full_name": "John Doe Updated",
                 "email": "johndoe.updated@example.com",

@@ -35,7 +35,7 @@ class Holding(BaseModel):
 
     class Config:
         from_attributes = True
-        orm_mode = True
+        json_encoders = {Decimal: lambda v: float(v)}
 
     @root_validator(pre=False, skip_on_failure=True)
     @classmethod
@@ -79,7 +79,7 @@ class PortfolioSummary(BaseModel):
 
     class Config:
         from_attributes = True
-        orm_mode = True
+        json_encoders = {Decimal: lambda v: float(v)}
 
 
 class PortfolioHoldingsAndSummary(BaseModel):
@@ -87,4 +87,4 @@ class PortfolioHoldingsAndSummary(BaseModel):
     holdings: List[Holding]
     class Config:
         from_attributes = True
-        orm_mode = True
+        json_encoders = {Decimal: lambda v: float(v)}

@@ -22,7 +22,7 @@ class AssetAlias(AssetAliasBase):
 
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True
 
 class AssetAliasWithAsset(AssetAlias):
     """Alias response enriched with asset name and ticker for display."""

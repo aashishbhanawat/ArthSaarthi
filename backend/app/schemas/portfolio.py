@@ -30,4 +30,4 @@ class Portfolio(PortfolioBase):
     transactions: List[Transaction] = []
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True

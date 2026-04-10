@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import requests
-import requests_cache
 import yfinance as yf
 
 from pydantic import ValidationError
@@ -47,49 +46,31 @@ class YFinanceProvider(FinancialDataProvider):
         self._initialized = True
         self.cache_client = cache_client
         
-        # Set up a persistent SQLite cache for all yfinance HTTP requests
-        # This caches ticker info, crumps, and history calls, drastically reducing 
-        # the likelihood of hitting Yahoo's rate limits (HTTP 429).
         from pathlib import Path
-        cache_path = str(Path(settings.DISK_CACHE_DIR) / "yfinance_cache.sqlite")
-        self.session = requests_cache.CachedSession(
-            cache_name=cache_path,
-            backend='sqlite',
-            expire_after=CACHE_TTL_HISTORICAL_PRICE,
-            stale_if_error=True
-        )
         self._last_429_time: float = 0
         self._cooldown_period: float = 60  # 1 minute cooldown after 429
         
-        # Full Chrome 124 browser fingerprint - mirrors what yfinance>=1.0.0 sends
-        # via curl_cffi. On Android we can't use curl_cffi (no arm64 wheel),
-        # so we manually set all relevant headers to reduce Yahoo Finance rate limits.
-        self.session.headers.update({
-            "User-Agent": (
-                "Mozilla/5.0 (Linux; Android 13; SM-G991B) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/123.0.0.0 Mobile Safari/537.36"
-            ),
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Referer": "https://finance.yahoo.com/",
-            "Origin": "https://finance.yahoo.com",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-site",
-        })
-        # Log the headers once at startup for diagnostics
-        logger.info("YFinanceProvider: session headers = %s", dict(self.session.headers))
+        # In-process enrichment cache: serves as a fast fallback when Redis is
+        # unavailable (e.g., Android). Prevents concurrent threads from all
+        # independently querying Yahoo Finance for the same ticker info,
+        # which is the root cause of 429 burst errors on Android.
+        # Key: yf_ticker, Value: (data_dict, expiry_timestamp)
+        self._enrichment_cache: dict = {}
+        self._enrichment_cache_lock = threading.Lock()
         
-        # Try to get an initial session cookie from Yahoo
+        # We no longer use requests-cache session with yfinance because it's 
+        # incompatible with yfinance's modern scraping logic (curl_cffi).
+        # We rely on _YFINANCE_LOCK and self.cache_client for performance.
+        
+        # Try to get an initial session cookie if possible using standard requests
         try:
-            self.session.get("https://finance.yahoo.com", timeout=10)
-            logger.info("YFinanceProvider: Initial session cookie established.")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36"
+            }
+            requests.get("https://finance.yahoo.com", headers=headers, timeout=10)
+            logger.info("YFinanceProvider: Initial connectivity check passed.")
         except Exception as e:
-            logger.warning(f"YFinanceProvider: Failed to get initial cookie: {e}")
+            logger.warning(f"YFinanceProvider: Initial connectivity check failed: {e}")
 
     def _is_cooling_down(self) -> bool:
         if self._last_429_time == 0:
@@ -97,13 +78,8 @@ class YFinanceProvider(FinancialDataProvider):
         return (time.time() - self._last_429_time) < self._cooldown_period
 
     def close(self):
-        """Explicitly close the requests-cache session to free resources."""
-        if hasattr(self, 'session'):
-            try:
-                self.session.close()
-                logger.info("YFinanceProvider: session closed.")
-            except Exception as e:
-                logger.error(f"Error closing YFinanceProvider session: {e}")
+        """No-op. Session is managed by yfinance internally."""
+        pass
 
     def _fetch_history_with_retry(self, ticker_obj, **kwargs) -> pd.DataFrame:
         kwargs.setdefault("auto_adjust", False)
@@ -120,7 +96,6 @@ class YFinanceProvider(FinancialDataProvider):
             start=start_date,
             end=end_date,
             progress=False,
-            session=self.session,
             auto_adjust=False
         )
         if hasattr(yf, "shared") and getattr(yf.shared, "_ERRORS", {}):
@@ -227,7 +202,7 @@ class YFinanceProvider(FinancialDataProvider):
             # calculations are triggered concurrently.
             with _YFINANCE_LOCK:
                 logger.debug(f"[LOCK] Acquired for tickers: {yfinance_tickers_str}")
-                yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
+                yf_data = yf.Tickers(yfinance_tickers_str)
                 raw_results = {}
                 for ticker_obj in yf_data.tickers.values():
                     hist = self._fetch_history_with_retry(ticker_obj, period="2d")
@@ -321,23 +296,41 @@ class YFinanceProvider(FinancialDataProvider):
         yf_ticker = self._get_yfinance_ticker(ticker_symbol, exchange)
         cache_key = f"enrichment:{yf_ticker}"
 
-        # Check cache first
+        # 1. Check in-process memory cache first (works on Android without Redis)
+        with self._enrichment_cache_lock:
+            mem_cached = self._enrichment_cache.get(yf_ticker)
+            if mem_cached:
+                data, expiry = mem_cached
+                if time.time() < expiry:
+                    logger.debug(f"Enrichment in-process cache HIT for {yf_ticker}")
+                    return data
+                else:
+                    del self._enrichment_cache[yf_ticker]
+
+        # 2. Check Redis/disk cache
         if self.cache_client:
             cached = self.cache_client.get_json(cache_key)
             if cached:
-                logger.debug(f"Enrichment cache HIT for {yf_ticker}")
+                logger.debug(f"Enrichment Redis cache HIT for {yf_ticker}")
                 return cached
 
         try:
             with _YFINANCE_LOCK:
-                # Double-check cache inside lock to avoid redundant network calls 
+                # Double-check both caches inside lock to avoid redundant network calls 
                 # if another thread just finished fetching this ticker.
+                with self._enrichment_cache_lock:
+                    mem_cached = self._enrichment_cache.get(yf_ticker)
+                    if mem_cached:
+                        data, expiry = mem_cached
+                        if time.time() < expiry:
+                            return data
+
                 if self.cache_client:
                     cached = self.cache_client.get_json(cache_key)
                     if cached:
                         return cached
 
-                ticker_obj = yf.Ticker(yf_ticker, session=self.session)
+                ticker_obj = yf.Ticker(yf_ticker)
                 info = self._fetch_info_with_retry(ticker_obj)
                 if info:
                     trailing_pe = info.get("trailingPE")
@@ -357,10 +350,15 @@ class YFinanceProvider(FinancialDataProvider):
                         "price_to_book": price_to_book,
                         "investment_style": investment_style,
                     }
-                    # Cache for 24 hours
+                    # Cache in Redis/disk (24 hours)
                     if self.cache_client:
                         self.cache_client.set_json(
                             cache_key, enrichment_data, expire=CACHE_TTL_HISTORICAL_PRICE
+                        )
+                    # Cache in-process (1 hour — shorter to avoid stale data on long runs)
+                    with self._enrichment_cache_lock:
+                        self._enrichment_cache[yf_ticker] = (
+                            enrichment_data, time.time() + 3600
                         )
                     logger.debug(
                         f"Enrichment fetched for {ticker_symbol}: "
@@ -369,6 +367,8 @@ class YFinanceProvider(FinancialDataProvider):
                     return enrichment_data
         except Exception as e:
             logger.warning(f"Error fetching enrichment for {ticker_symbol}: {e}")
+            if "429" in str(e) or "Rate limited" in str(e):
+                self._last_429_time = time.time()
 
         return None
 
@@ -548,7 +548,7 @@ class YFinanceProvider(FinancialDataProvider):
                 f"Fetching index history for {yf_ticker} "
                 f"from {start_date} to {end_date}"
             )
-            ticker_obj = yf.Ticker(yf_ticker, session=self.session)
+            ticker_obj = yf.Ticker(yf_ticker)
             # Fetch data with slight buffer
             hist = self._fetch_history_with_retry(
                 ticker_obj, start=start_date, end=end_date + timedelta(days=1)
@@ -594,7 +594,7 @@ class YFinanceProvider(FinancialDataProvider):
         for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
-                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
+                temp_ticker = yf.Ticker(yf_ticker_str)
                 if not temp_ticker.history(period="1d").empty:
                     logger.debug(f"Found data with variant: {yf_ticker_str}")
                     ticker_obj = temp_ticker
@@ -644,7 +644,7 @@ class YFinanceProvider(FinancialDataProvider):
 
         for yf_ticker_str in variants:
             try:
-                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
+                temp_ticker = yf.Ticker(yf_ticker_str)
                 if not temp_ticker.history(period="1d").empty:
                     ticker_obj = temp_ticker
                     break
@@ -670,7 +670,7 @@ class YFinanceProvider(FinancialDataProvider):
         try:
             with _YFINANCE_LOCK:
                 # yfinance provides a Search class for querying Yahoo Finance
-                search_obj = yf.Search(query, session=self.session)
+                search_obj = yf.Search(query)
                 quotes = getattr(search_obj, 'quotes', [])
 
             results = []

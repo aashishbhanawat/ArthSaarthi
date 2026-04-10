@@ -20,13 +20,13 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
     };
 
     const formatPercent = (value: number) => {
-        return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+        return `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(2)}%`;
     };
 
-    const isPositive = holding.unrealized_pnl >= 0;
+    const isPositive = Number(holding.unrealized_pnl) >= 0;
 
     return (
-        <div 
+        <div
             onClick={() => onClick(holding)}
             className="card p-4 mb-3 active:scale-[0.98] transition-all cursor-pointer border-l-4"
             style={{ borderLeftColor: isPositive ? '#10b981' : '#ef4444' }}
@@ -50,7 +50,7 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
                 <div>
                     <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Avg Buy / Qty</div>
                     <div className="text-xs font-medium dark:text-gray-300">
-                        {isPrivacyMode ? '••••' : holding.average_buy_price.toFixed(2)} / {holding.quantity}
+                        {isPrivacyMode ? '••••' : Number(holding.average_buy_price).toFixed(2)} / {Number(holding.quantity).toLocaleString()}
                     </div>
                 </div>
                 <div className="text-right">
@@ -60,13 +60,13 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
                     </div>
                 </div>
             </div>
-            
+
             <div className="mt-2 flex gap-2">
-                 <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[10px] font-medium text-gray-600 dark:text-gray-400">
+                <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[10px] font-medium text-gray-600 dark:text-gray-400">
                     {holding.asset_type}
                 </span>
                 {holding.investment_style && (
-                     <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 rounded text-[10px] font-medium text-blue-600 dark:text-blue-400">
+                    <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 rounded text-[10px] font-medium text-blue-600 dark:text-blue-400">
                         {holding.investment_style}
                     </span>
                 )}

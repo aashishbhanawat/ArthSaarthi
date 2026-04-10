@@ -76,6 +76,12 @@ if settings.DEPLOYMENT_MODE in ("desktop", "android") and settings.LOG_FILE:
     logging.info(f"{settings.DEPLOYMENT_MODE.capitalize()} mode: Logging to {log_file}")
 # --- End Logging Configuration ---
 
+# Enable httpx/httpcore DEBUG logging to capture Yahoo Finance request and
+# response headers in both Android and server mode for comparison.
+# TODO: Remove once the 429 root cause is confirmed.
+logging.getLogger("httpx").setLevel(logging.DEBUG)
+logging.getLogger("httpcore").setLevel(logging.DEBUG)
+
 app = FastAPI(
     title="Personal Portfolio Management System",
     version="1.2.0",

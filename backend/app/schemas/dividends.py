@@ -21,7 +21,7 @@ class DividendEntry(BaseModel):
 
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True
 
 
 class DividendSummary(BaseModel):
@@ -32,4 +32,4 @@ class DividendSummary(BaseModel):
 
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True

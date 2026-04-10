@@ -62,11 +62,144 @@ def reset_db(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post("/yahoo-test")
-def trigger_yahoo_header_test(
-    db: Session = Depends(deps.get_db),
-):
+@router.get("/network-fingerprint")
+def get_network_fingerprint():
     """
-    Deprecated: The background test loop has been removed.
+    Diagnostic endpoint to expose how Yahoo Finance (and other servers) "see" 
+    this backend's network identity.
+
+    Returns:
+    - ip: The outbound IP address (IPv4 or IPv6)
+    - ja3_hash: The TLS fingerprint hash (JA3). If this differs between server
+                and Android, it's the root cause of Android-specific 429s.
+    - user_agent: The User-Agent string Python's http stack sends
+    - ssl_version: The OpenSSL/BoringSSL version in use
+    - platform: OS and Python version info
+
+    Call this on BOTH server mode and Android mode and compare the ja3_hash.
     """
-    return {"msg": "yahoo-test endpoint removed. Diagnostics complete."}
+    import sys
+    import ssl
+    import platform
+    import requests
+
+    result = {
+        "platform": {
+            "os": platform.platform(),
+            "python": sys.version,
+            "openssl": ssl.OPENSSL_VERSION,
+        },
+        "tls_fingerprint": None,
+        "ip_info": None,
+        "error": None,
+    }
+
+    # 1. Grab TLS fingerprint (JA3 hash) from browserleaks
+    try:
+        resp = requests.get("https://tls.browserleaks.com/json", timeout=10)
+        result["tls_fingerprint"] = resp.json()
+    except Exception as e:
+        result["error"] = f"tls.browserleaks.com failed: {e}"
+
+    # 2. Get outbound IP (to detect IPv4 vs IPv6)
+    try:
+        ip_resp = requests.get("https://api64.ipify.org?format=json", timeout=10)
+        result["ip_info"] = ip_resp.json()
+    except Exception as e:
+        result["ip_info"] = {"error": str(e)}
+
+    logger.info("Network fingerprint: %s", result)
+    return result
+
+
+@router.get("/yfinance-diagnostic")
+def yfinance_diagnostic():
+    """
+    Full yfinance diagnostic endpoint (equivalent to yf_debug.py).
+    Run on BOTH server and Android to compare environments.
+    Key output: ja3_hash, openssl version, cipher count, HTTP status from Yahoo.
+    """
+    import sys
+    import ssl
+    import platform
+    import requests
+    import io
+    import logging as _logging
+
+    out = {}
+
+    # 1. Platform & SSL info
+    ctx = ssl.create_default_context()
+    ciphers = ctx.get_ciphers()
+    out["environment"] = {
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "python": sys.version.split()[0],
+        "openssl": ssl.OPENSSL_VERSION,
+        "cipher_count": len(ciphers),
+        "cipher_list_first_10": [c["name"] for c in ciphers[:10]],
+        "ssl_cert_file": __import__("os").environ.get("SSL_CERT_FILE", "not set"),
+    }
+
+    # 2. requests / certifi info
+    try:
+        import certifi
+        out["certifi"] = certifi.__version__
+    except ImportError:
+        out["certifi"] = "NOT INSTALLED"
+
+    try:
+        import curl_cffi
+        out["curl_cffi"] = curl_cffi.__version__
+    except ImportError:
+        out["curl_cffi"] = "NOT INSTALLED"
+
+    # 3. JA3 fingerprint (Python requests, not curl)
+    try:
+        r = requests.get("https://tls.browserleaks.com/json", timeout=12)
+        out["ja3"] = {
+            "ja3_hash": r.json().get("ja3_hash"),
+            "ja4": r.json().get("ja4"),
+            "user_agent_seen": r.json().get("user_agent"),
+        }
+    except Exception as e:
+        out["ja3"] = {"error": str(e)}
+
+    # 4. Outbound IP
+    try:
+        ip_r = requests.get("https://api64.ipify.org?format=json", timeout=10)
+        out["ip"] = ip_r.json()
+    except Exception as e:
+        out["ip"] = {"error": str(e)}
+
+    # 5. Direct Yahoo Finance API request — check status code
+    test_url = "https://query1.finance.yahoo.com/v8/finance/chart/NTPC.NS?range=1d&interval=1d"
+    for label, headers in [
+        ("default_ua", {}),
+        ("browser_ua", {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"}),
+    ]:
+        try:
+            resp = requests.get(test_url, headers=headers, timeout=12, allow_redirects=False)
+            out[f"yahoo_{label}"] = {
+                "status": resp.status_code,
+                "retry_after": resp.headers.get("Retry-After"),
+                "x_ratelimit": resp.headers.get("x-ratelimit-remaining"),
+                "cf_mitigated": resp.headers.get("cf-mitigated"),
+                "body_preview": resp.text[:200],
+            }
+        except Exception as e:
+            out[f"yahoo_{label}"] = {"error": str(e)}
+
+    # 6. yfinance version and cache location
+    try:
+        import yfinance as yf
+        out["yfinance"] = {"version": yf.__version__}
+        try:
+            out["yfinance"]["tz_cache"] = str(yf.cache.get_tz_cache_location()) if hasattr(yf, "cache") else "unknown"
+        except Exception:
+            pass
+    except Exception as e:
+        out["yfinance"] = {"error": str(e)}
+
+    logger.info("yfinance diagnostic complete")
+    return out

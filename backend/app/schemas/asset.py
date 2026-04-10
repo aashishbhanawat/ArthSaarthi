@@ -59,7 +59,7 @@ class AssetInDBBase(AssetCreate):
     id: uuid.UUID
     class Config:
         from_attributes = True
-        orm_mode = True
+        from_attributes = True
 
 
 # Properties to return to client
