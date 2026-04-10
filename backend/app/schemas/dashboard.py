@@ -11,6 +11,7 @@ class PortfolioHistoryPoint(BaseModel):
     value: Decimal
     class Config:
         from_attributes = True
+        orm_mode = True
         json_encoders = {Decimal: lambda v: float(v)}
 
 
@@ -18,6 +19,7 @@ class PortfolioHistoryResponse(BaseModel):
     history: List[PortfolioHistoryPoint]
     class Config:
         from_attributes = True
+        orm_mode = True
         json_encoders = {Decimal: lambda v: float(v)}
 
 
@@ -27,6 +29,7 @@ class AssetAllocation(BaseModel):
     value: Decimal
     class Config:
         from_attributes = True
+        orm_mode = True
         json_encoders = {Decimal: lambda v: float(v)}
 
 
@@ -34,6 +37,7 @@ class AssetAllocationResponse(BaseModel):
     allocation: List[AssetAllocation]
     class Config:
         from_attributes = True
+        orm_mode = True
         json_encoders = {Decimal: lambda v: float(v)}
 
 
@@ -54,4 +58,5 @@ class DashboardSummary(BaseModel):
     asset_allocation: List[AssetAllocation]
     class Config:
         from_attributes = True
+        orm_mode = True
         json_encoders = {Decimal: lambda v: float(v)}

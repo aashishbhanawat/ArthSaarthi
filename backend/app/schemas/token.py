@@ -7,6 +7,9 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     deployment_mode: Literal["server", "desktop", "android"]
+    class Config:
+        from_attributes = True
+        orm_mode = True
 
 
 class TokenData(BaseModel):

@@ -49,7 +49,7 @@ class FixedDeposit(FixedDepositBase):
 
     class Config:
         from_attributes = True
-        from_attributes = True
+        orm_mode = True
 
 
 class FixedDepositDetails(FixedDeposit):

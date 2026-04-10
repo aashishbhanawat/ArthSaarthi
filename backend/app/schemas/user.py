@@ -48,7 +48,7 @@ class User(UserBase):
     is_active: bool
     class Config:
         from_attributes = True
-        from_attributes = True
+        orm_mode = True
         json_schema_extra = {
             "example": {
                 "id": 1,

@@ -28,7 +28,7 @@ class HistoricalInterestRateInDBBase(HistoricalInterestRateBase):
 
     class Config:
         from_attributes = True
-        from_attributes = True
+        orm_mode = True
 
 
 class HistoricalInterestRate(HistoricalInterestRateInDBBase):

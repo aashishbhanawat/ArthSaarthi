@@ -62,14 +62,14 @@ class AssetInGoalLink(BaseModel):
     ticker_symbol: str
     class Config:
         from_attributes = True
-        from_attributes = True
+        orm_mode = True
 
 class PortfolioInGoalLink(BaseModel):
     id: uuid.UUID
     name: str
     class Config:
         from_attributes = True
-        from_attributes = True
+        orm_mode = True
 
 
 class GoalLink(GoalLinkBase):
@@ -79,4 +79,4 @@ class GoalLink(GoalLinkBase):
     portfolio: Optional[PortfolioInGoalLink] = None
     class Config:
         from_attributes = True
-        from_attributes = True
+        orm_mode = True
