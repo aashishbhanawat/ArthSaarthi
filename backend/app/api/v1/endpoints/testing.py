@@ -141,6 +141,21 @@ def yfinance_diagnostic():
         "ssl_cert_file": __import__("os").environ.get("SSL_CERT_FILE", "not set"),
     }
 
+    # 1b. DNS / IP Raw Connectivity Check
+    import socket
+    try:
+        # Test raw IP connectivity (Cloudflare DNS)
+        socket.create_connection(("1.1.1.1", 53), timeout=3).close()
+        out["network_raw"] = "OK (Reached 1.1.1.1:53)"
+    except Exception as e:
+        out["network_raw"] = f"FAILED: {e}"
+
+    try:
+        # Test DNS resolution directly
+        out["dns_lookup_google"] = socket.gethostbyname("google.com")
+    except Exception as e:
+        out["dns_lookup_google"] = f"FAILED: {e}"
+
     # 2. requests / certifi info
     try:
         import certifi
