@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 # Global lock to serialize all Yahoo Finance HTTP requests.
 # This prevents burst 429 errors when multiple threads request prices simultaneously.
 _YFINANCE_LOCK = threading.Lock()
+# Tracks when the last successful network request was made, to enforce a
+# minimum inter-request delay for Android and prevent burst 429s.
+_LAST_REQUEST_TIME: float = 0.0
+_MIN_REQUEST_INTERVAL: float = 2.0  # seconds between requests on Android
 
 # Pool of modern Chrome User-Agents for rotation to prevent fingerprint-based 429s.
 _CHROME_UAS = [
@@ -287,6 +291,16 @@ class YFinanceProvider(FinancialDataProvider):
             # This prevents the burst-429 issue when multiple portfolio
             # calculations are triggered concurrently.
             with _YFINANCE_LOCK:
+                # Enforce minimum inter-request interval on Android to prevent burst 429s.
+                # Multiple threads serialise here, so we add a delay between them.
+                global _LAST_REQUEST_TIME
+                if settings.DEPLOYMENT_MODE == "android":
+                    elapsed = time.time() - _LAST_REQUEST_TIME
+                    if elapsed < _MIN_REQUEST_INTERVAL:
+                        sleep_for = _MIN_REQUEST_INTERVAL - elapsed
+                        logger.debug(f"YFinanceProvider: Throttling {sleep_for:.2f}s before batch fetch.")
+                        time.sleep(sleep_for)
+
                 # Rotate headers before major batch request to break fingerprint
                 if self.session:
                     self.session.headers.update(self._get_dynamic_headers())
@@ -298,6 +312,9 @@ class YFinanceProvider(FinancialDataProvider):
                 for ticker_obj in yf_data.tickers.values():
                     hist = self._fetch_history_with_retry(ticker_obj, period="2d")
                     raw_results[ticker_obj.ticker] = hist
+
+                # Stamp time after successful fetch so the next thread waits
+                _LAST_REQUEST_TIME = time.time()
 
             for yf_symbol, hist in raw_results.items():
                 # Use reverse map; fallback to splitting suffix for plain tickers
@@ -641,11 +658,18 @@ class YFinanceProvider(FinancialDataProvider):
             )
             if self.session:
                 self.session.headers.update(self._get_dynamic_headers())
+            # Throttle on Android: wait if a recent request was already made
+            global _LAST_REQUEST_TIME
+            if settings.DEPLOYMENT_MODE == "android":
+                elapsed = time.time() - _LAST_REQUEST_TIME
+                if elapsed < _MIN_REQUEST_INTERVAL:
+                    time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
             ticker_obj = yf.Ticker(yf_ticker, session=self.session)
             # Fetch data with slight buffer
             hist = self._fetch_history_with_retry(
                 ticker_obj, start=start_date, end=end_date + timedelta(days=1)
             )
+            _LAST_REQUEST_TIME = time.time()
 
             if hist.empty:
                 logger.warning(f"No history found for index {yf_ticker}")
