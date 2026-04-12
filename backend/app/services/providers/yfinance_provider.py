@@ -100,14 +100,15 @@ class YFinanceProvider(FinancialDataProvider):
                 "Cache-Control": "max-age=0",
             })
             
-            # Global Spoof: Intercept yfinance's internal User-Agent logic.
-            # We point it to a lambda that picks a random Chrome UA from our pool
-            # for EVERY request, breaking the static fingerprint.
+            # Global Spoof: Intercept yfinance's internal User-Agent logic (yfinance 0.2.55).
+            # By replacing the USER_AGENTS pool with our Chrome-only pool, we prevent
+            # yfinance from selecting a Firefox UA which conflicts with our Chrome-specific 
+            # Sec-Fetch headers. We also tie its class-level headers dictionary to our session.
             try:
-                import yfinance.utils as yf_utils
-                import random
-                yf_utils.get_user_agent = lambda: random.choice(_CHROME_UAS)
-                logger.info("YFinanceProvider: Globally spoofed yfinance with Dynamic UA Generator.")
+                import yfinance.data as yf_data
+                yf_data.USER_AGENTS = _CHROME_UAS
+                yf_data.YfData.user_agent_headers = self.session.headers
+                logger.info("YFinanceProvider: Globally spoofed yfinance with Dynamic UA Generator using yfinance.data.")
             except Exception as e:
                 logger.warning(f"YFinanceProvider: Failed to globally spoof yfinance UA: {e}")
 

@@ -844,11 +844,12 @@ class AssetSeeder:
             session.headers.update(_get_dynamic_headers())
             print(f"[DEBUG] AssetSeeder: Using Dynamic Chrome Spoofing for enrichment on {settings.DEPLOYMENT_MODE}")
             
-            # Global Spoof: Intercept yfinance's internal User-Agent logic for the seeding process.
+            # Global Spoof: Intercept yfinance's internal User-Agent logic properties (yfinance 0.2.55)
             try:
-                import yfinance.utils as yf_utils
-                yf_utils.get_user_agent = lambda: random.choice(_CHROME_UAS)
-                print("[DEBUG] AssetSeeder: Globally spoofed yfinance with Dynamic UA Generator.")
+                import yfinance.data as yf_data
+                yf_data.USER_AGENTS = _CHROME_UAS
+                yf_data.YfData.user_agent_headers = session.headers
+                print("[DEBUG] AssetSeeder: Globally spoofed yfinance with Dynamic UA Generator using yfinance.data.")
             except Exception as e:
                 print(f"[DEBUG] AssetSeeder: Failed to globally spoof yfinance UA: {e}")
 
