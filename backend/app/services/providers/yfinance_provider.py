@@ -711,10 +711,21 @@ class YFinanceProvider(FinancialDataProvider):
         for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
-                if self.session:
-                    self.session.headers.update(self._get_dynamic_headers())
-                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
-                if not temp_ticker.history(period="1d").empty:
+                with _YFINANCE_LOCK:
+                    if self.session:
+                        self.session.headers.update(self._get_dynamic_headers())
+                        
+                    global _LAST_REQUEST_TIME
+                    if settings.DEPLOYMENT_MODE == "android":
+                        elapsed = time.time() - _LAST_REQUEST_TIME
+                        if elapsed < _MIN_REQUEST_INTERVAL:
+                            time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
+                            
+                    temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
+                    hist = temp_ticker.history(period="1d")
+                    _LAST_REQUEST_TIME = time.time()
+                    
+                if not hist.empty:
                     logger.debug(f"Found data with variant: {yf_ticker_str}")
                     ticker_obj = temp_ticker
                     break
@@ -763,10 +774,21 @@ class YFinanceProvider(FinancialDataProvider):
 
         for yf_ticker_str in variants:
             try:
-                if self.session:
-                    self.session.headers.update(self._get_dynamic_headers())
-                temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
-                if not temp_ticker.history(period="1d").empty:
+                with _YFINANCE_LOCK:
+                    if self.session:
+                        self.session.headers.update(self._get_dynamic_headers())
+                        
+                    global _LAST_REQUEST_TIME
+                    if settings.DEPLOYMENT_MODE == "android":
+                        elapsed = time.time() - _LAST_REQUEST_TIME
+                        if elapsed < _MIN_REQUEST_INTERVAL:
+                            time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
+                            
+                    temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
+                    hist = temp_ticker.history(period="1d")
+                    _LAST_REQUEST_TIME = time.time()
+                    
+                if not hist.empty:
                     ticker_obj = temp_ticker
                     break
             except (ValueError, Exception) as e:

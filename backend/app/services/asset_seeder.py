@@ -906,12 +906,25 @@ class AssetSeeder:
                 yf_tickers_str = " ".join(ticker_map.keys())
                 yf_data = yf.Tickers(yf_tickers_str, session=session)
 
+                import app.services.providers.yfinance_provider as yf_prov
+                import time
+
                 # Helper for concurrent execution
                 def fetch_info(symbol, ticker_obj):
                     try:
-                        # Ensure the session is used for the .info call
-                        # (Tickers() usually propagates it, but being explicit)
-                        return symbol, ticker_obj.info, None
+                        # Synchronize with the global lock to prevent colliding with real-time portfolio fetches
+                        with yf_prov._YFINANCE_LOCK:
+                            if settings.DEPLOYMENT_MODE == "android":
+                                elapsed = time.time() - yf_prov._LAST_REQUEST_TIME
+                                if elapsed < yf_prov._MIN_REQUEST_INTERVAL:
+                                    time.sleep(yf_prov._MIN_REQUEST_INTERVAL - elapsed)
+                            
+                            info = ticker_obj.info
+                            
+                            if settings.DEPLOYMENT_MODE == "android":
+                                yf_prov._LAST_REQUEST_TIME = time.time()
+                                
+                        return symbol, info, None
                     except Exception as e:
                         return symbol, None, e
 
