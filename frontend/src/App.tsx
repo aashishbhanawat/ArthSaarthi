@@ -22,6 +22,7 @@ import CapitalGainsPage from './pages/CapitalGainsPage';
 import ProfilePage from './pages/ProfilePage';
 import MorePage from './pages/MorePage';
 import LogsPage from './pages/LogsPage';
+import UserGuidePage from './pages/UserGuidePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -31,7 +32,7 @@ import MobileHeader from './components/MobileHeader';
 import MobileNav from './components/MobileNav';
 
 const AppLayout = () => (
-  <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+  <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 pt-safe">
     <UpdateBanner />
     <MobileHeader />
     <div className="flex flex-1 overflow-hidden lg:grid lg:grid-cols-[auto_1fr]">
@@ -57,6 +58,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/more" element={<MorePage />} />
+          <Route path="/help" element={<UserGuidePage />} />
           <Route path="/portfolios" element={<PortfolioPage />} />
           <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
           <Route path="/import" element={<DataImportPage />} />

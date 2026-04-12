@@ -9,20 +9,42 @@ import {
     WrenchScrewdriverIcon,
     ListBulletIcon,
     UserCircleIcon,
-    ChevronRightIcon
+    ChevronRightIcon,
+    
+    StarIcon,
+    ChatBubbleLeftRightIcon,
+    BookOpenIcon
 } from '@heroicons/react/24/outline';
 
-const MenuItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => (
-    <Link to={to} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-        <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
-                <Icon className="h-5 w-5" />
+const MenuItem = ({ to, href, icon: Icon, label, external }: { to?: string, href?: string, icon: any, label: string, external?: boolean }) => {
+    const content = (
+        <>
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
+                    <Icon className="h-5 w-5" />
+                </div>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{label}</span>
             </div>
-            <span className="font-medium text-gray-800 dark:text-gray-200">{label}</span>
-        </div>
-        <ChevronRightIcon className="h-5 w-5 text-gray-400" />
-    </Link>
-);
+            <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+        </>
+    );
+
+    const className = "flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors";
+
+    if (external && href) {
+        return (
+            <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+                {content}
+            </a>
+        );
+    }
+
+    return (
+        <Link to={to || '#'} className={className}>
+            {content}
+        </Link>
+    );
+};
 
 const MorePage: React.FC = () => {
     const { user, deploymentMode } = useAuth();
@@ -39,6 +61,25 @@ const MorePage: React.FC = () => {
                         <MenuItem to="/watchlists" icon={EyeIcon} label="Watchlists" />
                         <MenuItem to="/goals" icon={TrophyIcon} label="Goals" />
                         <MenuItem to="/profile" icon={UserCircleIcon} label="Profile & Settings" />
+                    </div>
+                </section>
+
+                <section>
+                    <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">Help & Community</h2>
+                    <div className="space-y-2">
+                        <MenuItem to="/help" icon={BookOpenIcon} label="User Guide" />
+                        <MenuItem
+                            href="https://github.com/aashishbhanawat/ArthSaarthi"
+                            icon={StarIcon}
+                            label="Give a Star on GitHub"
+                            external
+                        />
+                        <MenuItem
+                            href="https://github.com/aashishbhanawat/ArthSaarthi/issues"
+                            icon={ChatBubbleLeftRightIcon}
+                            label="Report an Issue"
+                            external
+                        />
                     </div>
                 </section>
 

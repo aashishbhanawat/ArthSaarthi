@@ -47,18 +47,37 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Avg Buy / Qty</div>
-                    <div className="text-xs font-medium dark:text-gray-300">
-                        {isPrivacyMode ? '••••' : Number(holding.average_buy_price).toFixed(2)} / {Number(holding.quantity).toLocaleString()}
-                    </div>
-                </div>
-                <div className="text-right">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Unrealized P&L</div>
-                    <div className={`text-xs font-bold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {formatCurrency(holding.unrealized_pnl)}
-                    </div>
-                </div>
+                {['FIXED_DEPOSIT', 'RECURRING_DEPOSIT', 'PPF'].includes(holding.asset_type) ? (
+                    <>
+                        <div>
+                            <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Interest Rate</div>
+                            <div className="text-xs font-medium dark:text-gray-300">
+                                {holding.interest_rate ? `${holding.interest_rate}%` : 'N/A'}
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Maturity Date</div>
+                            <div className="text-xs font-medium dark:text-gray-300">
+                                {holding.maturity_date || 'N/A'}
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div>
+                            <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Avg Buy / Qty</div>
+                            <div className="text-xs font-medium dark:text-gray-300">
+                                {isPrivacyMode ? '••••' : Number(holding.average_buy_price).toFixed(2)} / {Number(holding.quantity).toLocaleString()}
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Unrealized P&L</div>
+                            <div className={`text-xs font-bold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {formatCurrency(holding.unrealized_pnl)}
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             <div className="mt-2 flex gap-2">

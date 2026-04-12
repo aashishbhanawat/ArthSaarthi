@@ -99,7 +99,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
               </label>
               <input
                 id="goal-target-date"
-                type="date"
+                type="text" placeholder="YYYY-MM-DD"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
                 className="form-input"

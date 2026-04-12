@@ -331,7 +331,7 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                     <div className="grid grid-cols-2 gap-4">
                         <div className="form-group">
                             <label htmlFor="date" className="form-label">{awardType === 'RSU_VEST' ? 'Vest Date' : 'Purchase Date'}</label>
-                            <input id="date" type="date" {...register('date', { required: true })} className="form-input" />
+                            <input id="date" type="text" placeholder="YYYY-MM-DD" {...register('date', { required: true })} className="form-input" />
                         </div>
                         <div className="form-group">
                             <label htmlFor="quantity" className="form-label">Quantity</label>

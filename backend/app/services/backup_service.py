@@ -29,10 +29,20 @@ def _serialize_decimal(d: Decimal | None) -> float | None:
     return float(d)
 
 
-def _parse_date(d_str: str | None) -> date | None:
+def _parse_date(d_str: str | None) -> datetime | None:
     if not d_str:
         return None
-    return datetime.strptime(d_str, "%Y-%m-%d").date()
+    try:
+        # Pydantic v1 (Android/Chaquopy) can be strict about datetime types
+        # If the input is just YYYY-MM-DD, we expand it to YYYY-MM-DD 00:00:00
+        dt = datetime.strptime(d_str, "%Y-%m-%d")
+        return dt
+    except ValueError:
+        try:
+            # Try ISO format if simple format fails
+            return datetime.fromisoformat(d_str.replace('Z', '+00:00'))
+        except Exception:
+            return None
 
 
 def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
