@@ -37,8 +37,11 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
 
         # Create the new asset.
         # Use the canonical ticker from details if available (e.g. AMFI scheme code)
-        final_ticker = details.get("ticker_symbol") or ticker_symbol.upper()
-
+        final_ticker = details.pop("ticker_symbol", None) or ticker_symbol.upper()
+        # Also pop isin if present as it's optional and we want to avoid collisions if we were to add it explicitly
+        # details might contain 'isin', we should keep it if it's there but AssetCreate constructor 
+        # would take it from **details.
+        
         # Double check if we already have this asset by its canonical ticker
         db_asset = self.get_by_ticker(db, ticker_symbol=final_ticker)
         if db_asset:

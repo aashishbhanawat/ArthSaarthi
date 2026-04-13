@@ -73,3 +73,9 @@ frontend/android/app/libs/python-wheels/
 frontend/android/app/wheels/
 frontend/android/build-tools/
 frontend/android/app/src/main/assets/public/
+
+# Backend uploads and build
+backend/uploads/
+backend/build/
+backend/venv/
+*.parquet

@@ -125,14 +125,32 @@ async def create_import_session(
             elif source_type == "Zerodha Coin":
                 # Zerodha Coin XLSX has branding/info rows at top
                 # Actual header is at row 14
-                df = pd.read_excel(temp_file_path, skiprows=14)
+                try:
+                    df = pd.read_excel(temp_file_path, skiprows=14, engine='openpyxl')
+                except Exception as e:
+                    logger.warning(f"Failed to read Zerodha Coin with openpyxl, trying xlrd: {e}")
+                    try:
+                        df = pd.read_excel(temp_file_path, skiprows=14, engine='xlrd')
+                    except Exception as e2:
+                        logger.error(f"Failed to read Zerodha Coin with both engines: {e2}")
+                        raise ValueError(f"Could not read Zerodha Coin Excel file: {e2}")
+                
                 # Normalize column names to lowercase for consistency
                 df.columns = df.columns.str.lower().str.replace(' ', '_')
                 parsed_transactions = parser.parse(df)
             elif source_type == "Zerodha Dividend":
                 # Zerodha Dividend XLSX has branding/info rows at top
                 # Actual header is at row 14
-                df = pd.read_excel(temp_file_path, skiprows=14)
+                try:
+                    df = pd.read_excel(temp_file_path, skiprows=14, engine='openpyxl')
+                except Exception as e:
+                    logger.warning(f"Failed to read Zerodha Dividend with openpyxl, trying xlrd: {e}")
+                    try:
+                        df = pd.read_excel(temp_file_path, skiprows=14, engine='xlrd')
+                    except Exception as e2:
+                        logger.error(f"Failed to read Zerodha Dividend with both engines: {e2}")
+                        raise ValueError(f"Could not read Zerodha Dividend Excel file: {e2}")
+                
                 # Normalize column names to lowercase for consistency
                 df.columns = df.columns.str.lower().str.replace(' ', '_')
                 parsed_transactions = parser.parse(df)
