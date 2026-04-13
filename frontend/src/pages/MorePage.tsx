@@ -10,7 +10,7 @@ import {
     ListBulletIcon,
     UserCircleIcon,
     ChevronRightIcon,
-    
+
     StarIcon,
     ChatBubbleLeftRightIcon,
     BookOpenIcon
@@ -60,26 +60,13 @@ const MorePage: React.FC = () => {
                         <MenuItem to="/capital-gains" icon={ScaleIcon} label="Capital Gains" />
                         <MenuItem to="/watchlists" icon={EyeIcon} label="Watchlists" />
                         <MenuItem to="/goals" icon={TrophyIcon} label="Goals" />
-                        <MenuItem to="/profile" icon={UserCircleIcon} label="Profile & Settings" />
                     </div>
                 </section>
 
                 <section>
-                    <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">Help & Community</h2>
+                    <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">Account & Settings</h2>
                     <div className="space-y-2">
-                        <MenuItem to="/help" icon={BookOpenIcon} label="User Guide" />
-                        <MenuItem
-                            href="https://github.com/aashishbhanawat/ArthSaarthi"
-                            icon={StarIcon}
-                            label="Give a Star on GitHub"
-                            external
-                        />
-                        <MenuItem
-                            href="https://github.com/aashishbhanawat/ArthSaarthi/issues"
-                            icon={ChatBubbleLeftRightIcon}
-                            label="Report an Issue"
-                            external
-                        />
+                        <MenuItem to="/profile" icon={UserCircleIcon} label="Profile & Settings" />
                     </div>
                 </section>
 
@@ -98,6 +85,25 @@ const MorePage: React.FC = () => {
                         </div>
                     </section>
                 )}
+
+                <section className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 mt-4 px-1">Help & Community</h2>
+                    <div className="space-y-2">
+                        <MenuItem to="/help" icon={BookOpenIcon} label="User Guide" />
+                        <MenuItem
+                            href="https://github.com/aashishbhanawat/ArthSaarthi"
+                            icon={StarIcon}
+                            label="Give a Star on GitHub"
+                            external
+                        />
+                        <MenuItem
+                            href="https://github.com/aashishbhanawat/ArthSaarthi/issues"
+                            icon={ChatBubbleLeftRightIcon}
+                            label="Report an Issue"
+                            external
+                        />
+                    </div>
+                </section>
             </div>
         </div>
     );

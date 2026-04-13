@@ -192,13 +192,17 @@ def start(port: int, data_dir: str):
         from app.services.initialization_service import check_and_seed_on_startup
         check_and_seed_on_startup()
 
-        # Configure Uvicorn
+        # Configure Uvicorn with more robust settings for Android
         config = uvicorn.Config(
             app,
             host="127.0.0.1",
             port=port,
             log_level="info",
-            access_log=False,
+            access_log=True,            # Enable for debugging exceptions/405s
+            timeout_keep_alive=30,      # Increase keep-alive to handle flaky network
+            timeout_graceful_shutdown=10,
+            limit_concurrency=20,       # Prevent thread exhaustion on small devices
+            backlog=100,
         )
         server = uvicorn.Server(config)
 

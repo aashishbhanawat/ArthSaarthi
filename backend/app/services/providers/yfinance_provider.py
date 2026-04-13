@@ -523,113 +523,120 @@ class YFinanceProvider(FinancialDataProvider):
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
+        """
+        Fetches historical prices for assets. Uses granular per-date caching to
+        avoid redundant network calls for overlapping ranges.
+        """
         if self._is_cooling_down():
             logger.warning("YFinance: Circuit breaker active (cooling down after 429)")
             return {}
-            
+
         historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
-        assets_to_fetch = []
-        if self.cache_client:
-            for asset in assets:
-                not_found_cache_key = (
-                    f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
-                )
-                if not self.cache_client.get_json(not_found_cache_key):
-                    assets_to_fetch.append(asset)
-        else:
-            assets_to_fetch = assets
+        assets_needing_fetch = []
+        
+        # 1. Check granular cache for each asset/date pair
+        for asset in assets:
+            ticker = asset["ticker_symbol"]
+            yf_ticker = self._get_yfinance_ticker(ticker, asset.get("exchange"))
+            
+            # Check for negative cache
+            if self.cache_client:
+                not_found_cache_key = f"asset_details_not_found:{yf_ticker.upper()}"
+                if self.cache_client.get_json(not_found_cache_key):
+                    continue
 
-        yfinance_tickers_map = {
-            self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"]): a[
-                "ticker_symbol"
-            ]
-            for a in assets_to_fetch
-        }
-        yfinance_tickers_str = " ".join(yfinance_tickers_map.keys())
-        cache_key = (
-            f"history:{yfinance_tickers_str}:{start_date.isoformat()}:{end_date.isoformat()}"
+            # Check individual dates
+            missing_dates = []
+            current_lookup = start_date
+            while current_lookup <= end_date:
+                # Skip weekends for cache lookup if we want to be more efficient, 
+                # but yfinance returns them anyway for some indices.
+                cache_key = f"h_price:{yf_ticker}:{current_lookup.isoformat()}"
+                cached_price = self.cache_client.get(cache_key) if self.cache_client else None
+                
+                if cached_price:
+                    historical_data[ticker][current_lookup] = Decimal(cached_price)
+                else:
+                    missing_dates.append(current_lookup)
+                current_lookup += timedelta(days=1)
+            
+            if missing_dates:
+                # Determine missing range for this asset
+                assets_needing_fetch.append({
+                    "asset": asset,
+                    "yf_ticker": yf_ticker,
+                    "start": min(missing_dates),
+                    "end": max(missing_dates)
+                })
+
+        if not assets_needing_fetch:
+            logger.debug("YFinance: All historical data points found in granular cache.")
+            return historical_data
+
+        # 2. Batch fetch missing data
+        # For simplicity and to minimize burst requests, we fetch everything in one batch
+        # from the overall min start to the overall max end across all missing assets.
+        overall_start = min(a["start"] for a in assets_needing_fetch)
+        overall_end = max(a["end"] for a in assets_needing_fetch)
+        yfinance_tickers_list = [a["yf_ticker"] for a in assets_needing_fetch]
+        yfinance_tickers_str = " ".join(yfinance_tickers_list)
+
+        logger.info(
+            f"YFinance: Granular cache MISS. Fetching {len(assets_needing_fetch)} assets "
+            f"from {overall_start} to {overall_end}"
         )
-
-        if self.cache_client:
-            cached_data = self.cache_client.get_json(cache_key)
-            if cached_data:
-                for ticker, date_prices in cached_data.items():
-                    for date_str, price_str in date_prices.items():
-                        historical_data[ticker][
-                            datetime.fromisoformat(date_str).date()
-                        ] = Decimal(price_str)
-                return historical_data
 
         try:
             with _YFINANCE_LOCK:
+                # Throttle on Android
+                global _LAST_REQUEST_TIME
+                if settings.DEPLOYMENT_MODE == "android":
+                    elapsed = time.time() - _LAST_REQUEST_TIME
+                    if elapsed < _MIN_REQUEST_INTERVAL:
+                        time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
+
                 yf_data = self._fetch_download_with_retry(
                     yfinance_tickers_str,
-                    start_date,
-                    end_date + timedelta(days=1)
+                    overall_start,
+                    overall_end + timedelta(days=1)
                 )
+                _LAST_REQUEST_TIME = time.time()
+
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
                 if close_prices is not None:
-                    # yf.download with a single ticker returns a Series for 'Close'.
-                    # With multiple tickers, it returns a DataFrame.
+                    # Map yf_ticker back to original ticker
+                    yf_to_original = {a["yf_ticker"]: a["asset"]["ticker_symbol"] for a in assets_needing_fetch}
+                    
                     if isinstance(close_prices, pd.Series):
-                        original_ticker = list(yfinance_tickers_map.values())[0]
+                        # Single ticker result
+                        yf_symbol = yf_data.columns[0] if hasattr(yf_data, 'columns') else yfinance_tickers_list[0]
+                        original_ticker = yf_to_original.get(yf_symbol, yf_symbol)
                         for a_date, price in close_prices.dropna().items():
-                            try:
-                                historical_data[original_ticker][
-                                    a_date.date()] = self._to_safe_decimal(price)
-                            except Exception:
-                                logger.error(
-                                    "Failed to convert price for %s on %s. "
-                                    "Price: '%s', Type: %s",
-                                    original_ticker,
-                                    a_date.date(),
-                                    price,
-                                    type(price),
-                                )
-                    # Handle DataFrame for multiple tickers
+                            dt = a_date.date()
+                            decimal_price = self._to_safe_decimal(price)
+                            historical_data[original_ticker][dt] = decimal_price
+                            # Cache individual date
+                            if self.cache_client:
+                                cache_key = f"h_price:{yf_symbol}:{dt.isoformat()}"
+                                self.cache_client.set(cache_key, str(decimal_price), expire=CACHE_TTL_HISTORICAL_PRICE)
                     else:
-                        for yf_ticker, original_ticker in yfinance_tickers_map.items():
-                            if yf_ticker in close_prices:
-                                for a_date, price in close_prices[
-                                    yf_ticker
-                                ].dropna().items():
-                                    try:
-                                        historical_data[original_ticker][
-                                            a_date.date()] = self._to_safe_decimal(price)
-                                    except Exception:
-                                        logger.error(
-                                            "Failed to convert price for %s on %s. "
-                                            "Price: '%s', Type: %s",
-                                            original_ticker,
-                                            a_date.date(),
-                                            price,
-                                            type(price),
-                                        )
+                        # Multiple tickers DataFrame
+                        for yf_symbol in close_prices.columns:
+                            original_ticker = yf_to_original.get(yf_symbol, yf_symbol)
+                            for a_date, price in close_prices[yf_symbol].dropna().items():
+                                dt = a_date.date()
+                                decimal_price = self._to_safe_decimal(price)
+                                historical_data[original_ticker][dt] = decimal_price
+                                # Cache individual date
+                                if self.cache_client:
+                                    cache_key = f"h_price:{yf_symbol}:{dt.isoformat()}"
+                                    self.cache_client.set(cache_key, str(decimal_price), expire=CACHE_TTL_HISTORICAL_PRICE)
 
-        except (Exception, ValidationError) as e:
-            print(f"WARNING: Error fetching historical data from yfinance: {e}")
-            return {}
-
-        if self.cache_client:
-            fetched_tickers = set(historical_data.keys())
-            for asset in assets_to_fetch:
-                if asset["ticker_symbol"] not in fetched_tickers:
-                    cache_key = (
-                        f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
-                    )
-                    self.cache_client.set_json(
-                        cache_key,
-                        {"not_found": True},
-                        expire=CACHE_TTL_HISTORICAL_PRICE,
-                    )
-            serializable_data = {
-                t: {dt.isoformat(): str(price) for dt, price in dp.items()}
-                for t, dp in historical_data.items()
-            }
-            self.cache_client.set_json(
-                cache_key, serializable_data, expire=CACHE_TTL_HISTORICAL_PRICE
-            )
+        except Exception as e:
+            logger.error(f"YFinance: Granular fetch failed: {e}")
+            if "429" in str(e) or "Rate limit" in str(e):
+                self._last_429_time = time.time()
 
         return historical_data
 

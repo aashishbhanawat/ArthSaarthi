@@ -26,19 +26,17 @@ db.sqlite3
 data/
 *.db
 
-<<<<<<< HEAD
 # Testing
 coverage/
 .pytest_cache/
 htmlcov/
 e2e/test-results/
 e2e/playwright-report/
-=======
+
 # Crash dumps
 core.[0-9]*
 core
 !backend/app/core/
->>>>>>> 15f3df4 (fix(android): pydantic v1 compatibility and enable logging/background tasks)
 
 # Backup/Restore
 backups/
