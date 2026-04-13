@@ -16,6 +16,7 @@ import { ApiError, getErrorMessage } from '../../types/api';
 import Select from 'react-select';
 import { formatCurrency } from '../../utils/formatting';
 import { debugLog } from '../../utils/debug';
+import DateInput from '../common/DateInput';
 
 interface TransactionFormModalProps {
     portfolioId: string;
@@ -1177,8 +1178,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 <input id="contributionAmount" type="number" step="any" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="contributionDate" className="form-label">Contribution Date</label>
-                                                <input id="contributionDate" type="text" placeholder="YYYY-MM-DD" {...register('contributionDate', { required: true })} className="form-input" />
+                                                <DateInput
+                                                    id="contributionDate"
+                                                    label="Contribution Date"
+                                                    register={register('contributionDate', { required: true })}
+                                                    error={errors.contributionDate?.message}
+                                                    className="w-full"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -1195,8 +1201,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 <input id="accountNumber" type="text" {...register('accountNumber')} className="form-input" />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="openingDate" className="form-label">Opening Date</label>
-                                                <input id="openingDate" type="text" placeholder="YYYY-MM-DD" {...register('openingDate', { required: true })} className="form-input" />
+                                                <DateInput
+                                                    id="openingDate"
+                                                    label="Opening Date"
+                                                    register={register('openingDate', { required: true })}
+                                                    error={errors.openingDate?.message}
+                                                    className="w-full"
+                                                />
                                             </div>
                                         </div>
                                         <h3 className="font-semibold text-lg text-gray-800 mt-4 mb-2">Add First Contribution</h3>
@@ -1206,8 +1217,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 <input id="contributionAmount" type="number" step="any" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="contributionDate" className="form-label">Contribution Date</label>
-                                                <input id="contributionDate" type="text" placeholder="YYYY-MM-DD" {...register('contributionDate', { required: true })} className="form-input" />
+                                                <DateInput
+                                                    id="contributionDate"
+                                                    label="Contribution Date"
+                                                    register={register('contributionDate', { required: true })}
+                                                    error={errors.contributionDate?.message}
+                                                    className="w-full"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -1236,8 +1252,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <input id="faceValue" type="number" step="any" {...register('faceValue', { required: true, valueAsNumber: true })} className="form-input" />
                                 </div>
                                 <div className="form-group col-span-2">
-                                    <label htmlFor="bondMaturityDate" className="form-label">Maturity Date</label>
-                                    <input id="bondMaturityDate" type="text" placeholder="YYYY-MM-DD" {...register('bondMaturityDate', { required: true })} className="form-input" />
+                                    <DateInput
+                                        id="bondMaturityDate"
+                                        label="Maturity Date"
+                                        register={register('bondMaturityDate', { required: true })}
+                                        error={errors.bondMaturityDate?.message}
+                                        className="w-full"
+                                    />
                                 </div>
                             </div>
                         )}
@@ -1291,7 +1312,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
                                         </div>
                                         <div className="form-group">
-                                            <label htmlFor="transaction_date_standard" className="form-label">Date</label>                                        <input id="transaction_date_standard" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            <DateInput
+                                                id="transaction_date_standard"
+                                                label="Date"
+                                                register={register('transaction_date', { required: "Date is required" })}
+                                                error={errors.transaction_date?.message}
+                                                className="w-full"
+                                            />
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group">
@@ -1376,8 +1403,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         {errors.mfDividendAmount && <p className="text-red-500 text-xs italic">{errors.mfDividendAmount.message}</p>}
                                     </div>
                                     <div className="form-group">
-                                        <label htmlFor="transaction_date_mf_dividend" className="form-label">Payment Date</label>
-                                        <input id="transaction_date_mf_dividend" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                        <DateInput
+                                            id="transaction_date_mf_dividend"
+                                            label="Payment Date"
+                                            register={register('transaction_date', { required: "Date is required" })}
+                                            error={errors.transaction_date?.message}
+                                            className="w-full"
+                                        />
                                         {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                     </div>
                                 </div>
@@ -1408,8 +1440,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     {errors.couponAmount && <p className="text-red-500 text-xs italic">{errors.couponAmount.message}</p>}
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="transaction_date_coupon" className="form-label">Date</label>
-                                    <input id="transaction_date_coupon" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                    <DateInput
+                                        id="transaction_date_coupon"
+                                        label="Date"
+                                        register={register('transaction_date', { required: "Date is required" })}
+                                        error={errors.transaction_date?.message}
+                                        className="w-full"
+                                    />
                                     {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                 </div>
                             </div>
@@ -1440,8 +1477,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">
-                                                <label htmlFor="transaction_date_stock_dividend" className="form-label">Payment Date</label>
-                                                <input id="transaction_date_stock_dividend" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                <DateInput
+                                                    id="transaction_date_stock_dividend"
+                                                    label="Payment Date"
+                                                    register={register('transaction_date', { required: "Date is required" })}
+                                                    error={errors.transaction_date?.message}
+                                                    className="w-full"
+                                                />
                                                 {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
                                             <div className="form-group">
@@ -1493,8 +1535,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 {actionType === 'SPLIT' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                         <div className="form-group col-span-2">
-                                            <label htmlFor="transaction_date_split" className="form-label">Effective Date</label>
-                                            <input id="transaction_date_split" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            <DateInput
+                                                id="transaction_date_split"
+                                                label="Effective Date"
+                                                register={register('transaction_date', { required: "Date is required" })}
+                                                error={errors.transaction_date?.message}
+                                                className="w-full"
+                                            />
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group col-span-2">
@@ -1514,8 +1561,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 {actionType === 'BONUS' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                         <div className="form-group col-span-2">
-                                            <label htmlFor="transaction_date_bonus" className="form-label">Effective Date</label>
-                                            <input id="transaction_date_bonus" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            <DateInput
+                                                id="transaction_date_bonus"
+                                                label="Effective Date"
+                                                register={register('transaction_date', { required: "Date is required" })}
+                                                error={errors.transaction_date?.message}
+                                                className="w-full"
+                                            />
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group col-span-2">
@@ -1539,8 +1591,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">
-                                                <label htmlFor="transaction_date_merger" className="form-label">Record Date</label>
-                                                <input id="transaction_date_merger" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                <DateInput
+                                                    id="transaction_date_merger"
+                                                    label="Record Date"
+                                                    register={register('transaction_date', { required: "Date is required" })}
+                                                    error={errors.transaction_date?.message}
+                                                    className="w-full"
+                                                />
                                                 {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
                                             <div className="form-group">
@@ -1589,8 +1646,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">
-                                                <label htmlFor="transaction_date_demerger" className="form-label">Record Date</label>
-                                                <input id="transaction_date_demerger" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                <DateInput
+                                                    id="transaction_date_demerger"
+                                                    label="Record Date"
+                                                    register={register('transaction_date', { required: "Date is required" })}
+                                                    error={errors.transaction_date?.message}
+                                                    className="w-full"
+                                                />
                                                 {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
                                             <div className="form-group">
@@ -1646,8 +1708,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">
-                                                <label htmlFor="transaction_date_rename" className="form-label">Effective Date</label>
-                                                <input id="transaction_date_rename" type="text" placeholder="YYYY-MM-DD" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                <DateInput
+                                                    id="transaction_date_rename"
+                                                    label="Effective Date"
+                                                    register={register('transaction_date', { required: "Date is required" })}
+                                                    error={errors.transaction_date?.message}
+                                                    className="w-full"
+                                                />
                                                 {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
                                             <div className="form-group relative">
@@ -1704,12 +1771,22 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <input id="interestRate" type="number" step="any" {...register('interestRate', { required: "Interest rate is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="startDate" className="form-label">Start Date</label>
-                                    <input id="startDate" type="text" placeholder="YYYY-MM-DD" {...register('startDate', { required: "Start date is required" })} className="form-input" />
+                                    <DateInput
+                                        id="startDate"
+                                        label="Start Date"
+                                        register={register('startDate', { required: "Start date is required" })}
+                                        error={errors.startDate?.message}
+                                        className="w-full"
+                                    />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="maturityDate" className="form-label">Maturity Date</label>
-                                    <input id="maturityDate" type="text" placeholder="YYYY-MM-DD" {...register('maturityDate', { required: "Maturity date is required" })} className="form-input" />
+                                    <DateInput
+                                        id="maturityDate"
+                                        label="Maturity Date"
+                                        register={register('maturityDate', { required: "Maturity date is required" })}
+                                        error={errors.maturityDate?.message}
+                                        className="w-full"
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="compounding_frequency" className="form-label">Compounding</label>
@@ -1750,8 +1827,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <input id="rdInterestRate" type="number" step="any" {...register('rdInterestRate', { required: "Interest rate is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="rdStartDate" className="form-label">Start Date</label>
-                                    <input id="rdStartDate" type="text" placeholder="YYYY-MM-DD" {...register('rdStartDate', { required: "Start date is required" })} className="form-input" />
+                                    <DateInput
+                                        id="rdStartDate"
+                                        label="Start Date"
+                                        register={register('rdStartDate', { required: "Start date is required" })}
+                                        error={errors.rdStartDate?.message}
+                                        className="w-full"
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="tenureMonths" className="form-label">Tenure (in months)</label>

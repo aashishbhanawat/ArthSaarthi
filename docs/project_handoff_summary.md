@@ -1,20 +1,29 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-04-10
+**Last Updated:** 2026-04-13
 
 ## 1. Current Project Status
 
-*   **Overall Status:** ✅ **Stable (v1.2.0 Released)**
-*   **Summary:** Resolved critical end-to-end lifecycle issues for Matured FDs, including Transaction History injection, color-coded UI labels, and correct deletion logic. Fixed a systemic Portfolio Realized P&L calculation bug and improved Import Session error propagation (propagate 400 instead of 500). Relocated backend unit tests to the standard `app/tests` discovery path. Successfully completed a comprehensive End-to-End QA run for v1.2.0. Verified transaction lifecycle for Equities, MFs, and Fixed Income. Validated Section 112A Grandfathering logic and corporate action adjustments (Bonus/Split).
+*   **Overall Status:** ✅ **Stable (v1.2.0 Released)** | 🧪 **Android Experimental v1.2.0-exp Stabilized**
+*   **Summary:** Successfully stabilized and refined the Android v1.2.0-exp build. Resolved critical Pydantic validation errors during backup restoration and fixed "Investment Style" analytics for equities. Completed app-wide mobile card parity by refactoring Transactions, Dashboard, Watchlists, and Admin tools into premium responsive views. Implemented a flexible dual-mode date input (manual + picker) and resolved critical `NaN`-related crashes in the import preview engine.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **310/310 Passing** (Includes relocated security and benchmark tests)
+*   **Backend Unit/Integration Tests:** ✅ **310/310 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
-*   **Linters (Code Quality):** ✅ **Passing (Ruff E501 resolved project-wide)**
+*   **Linters (Code Quality):** ✅ **Passing**
 
-### Recent Stabilization Efforts
+### Recent Stabilization & Refinement Efforts
 
+*   **App-Wide Mobile Card Parity & Import Stability (2026-04-13):**
+    - **Mobile Card Parity:** Transitioned all remaining table-based layouts (Transactions, Dashboard, Watchlists, Aliases, FMV, Users, Interest Rates) into a premium card-based mobile interface with footer actions for better touch ergonomics.
+    - **Import Session Robustness:** Fixed a critical `AttributeError` crash caused by `NaN` values in spreadsheet imports. Added defensive type-checking and sanitization to `crud_asset.py` and `import_sessions.py`.
+    - **Flexible Date Input:** Created a reusable `DateInput.tsx` component supporting both manual typing and native date picking. Integrated it into `TransactionFormModal`, `AddAwardModal`, `InterestRateFormModal`, and `GoalFormModal`.
+    - **Investment Style Analytics:** Resolved "Unknown" classification for equities; updated `AssetSeeder` and `crud_holding.py` to handle metadata enrichment correctly.
+*   **Android v1.2.0-exp Initial Stabilization (2026-04-12):** 
+    - Resolved `ValidationError` in `backup_service.py` by coercing date strings to `datetime`.
+    - Implemented `pt-safe` layout spacing for Android status bar compliance.
+    - Added internal User Guide navigation and GitHub community links.
 *   **FD Lifecycle & Import Robustness (2026-03-31):** Stabilized the FD/RD lifecycle by redacting matured assets from Holdings while preserving their interest in the Portfolio Summary. Implemented synthetic transaction injection for the History tab with conditional Edit/Delete support. Fixed import session commit logic to re-raise `HTTPException` for clearer validation messaging.
 *   **Comprehensive QA & User Guide (2026-03-27):** Exhaustive verification of the v1.2.0 release candidate. Validated Reliance (1:1 Bonus) and HDFC Bank (1:2 Reverse Split) sell transactions. Confirmed Section 112A Grandfathering using Actual Cost vs FMV Jan 2018 logic. Generated exhaustive platform documentation with localized media assets.
 *   **Live Testing v1.2.0 Fixes (2026-03-23):** Completely stabilized the benchmarking engine to handle edge cases like absent Yahoo indices (Debt benchmark fallback) and extreme stock gains (via Lot-Based FIFO tracking). Fixed historical mathematical distortions in PPF, and matured FD/RD analytical models. Fixed `AssetSearchResult` to expose Bond metadata to the frontend.

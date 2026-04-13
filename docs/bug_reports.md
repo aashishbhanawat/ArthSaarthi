@@ -26,6 +26,24 @@ Copy and paste the template below to file a new bug report.
 
 ---
  
+**Bug ID:** 2026-04-13-02
+**Title:** AttributeError: 'float' object has no attribute 'upper' during Import Session Preview
+**Module:** Core Backend / Import Service
+**Reported By:** User
+**Date Reported:** 2026-04-13
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The application crashes with an `AttributeError` when generating an import session preview if the uploaded spreadsheet contains `NaN` values (empty cells) in the `isin` or `ticker_symbol` columns. Pandas interprets these as floats, which do not have the `.upper()` method used in the CRUD layer.
+**Steps to Reproduce:**
+1. Upload a spreadsheet for import that contains empty cells in the ISIN or Ticker columns.
+2. Proceed to the "Preview" stage.
+3. Observe a 500 error and `AttributeError` in the backend logs.
+**Expected Behavior:** The backend should ignore or sanitize `NaN` values and continue processing valid rows.
+**Actual Behavior:** The entire preview request fails with a crash.
+**Resolution:** Added defensive type-checking (`isinstance(val, str)`) to `crud_asset.py` and explicit `pd.isna()` checks to `import_sessions.py` to sanitize incoming row data before string manipulation.
+
+---
+
 **Bug ID:** 2026-04-07-01
 **Title:** Android App Stuck on 0% "Preparing Asset Database" Splash Screen
 **Module:** UI/Auth (Frontend)

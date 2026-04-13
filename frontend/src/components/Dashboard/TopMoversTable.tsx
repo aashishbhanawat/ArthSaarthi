@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatCurrency, formatPercentage } from '../../utils/formatting';
 import { TopMover } from '../../types/dashboard';
+import TopMoversCard from './TopMoversCard';
 
 
 interface TopMoversTableProps {
@@ -16,9 +17,22 @@ const TopMoversTable: React.FC<TopMoversTableProps> = ({ assets }) => {
   };
 
   return (
-    <div className="card">
+    <div className="card border-none shadow-none md:border md:shadow-sm">
       <h2 className="text-xl font-bold mb-4">Top Movers (24h)</h2>
-      <div className="overflow-x-auto">
+
+      {/* Mobile view */}
+      <div className="md:hidden space-y-1">
+        {assets && assets.length > 0 ? (
+          assets.map((asset) => (
+            <TopMoversCard key={asset.ticker_symbol} asset={asset} />
+          ))
+        ) : (
+          <div className="text-center p-4 text-gray-500">No market data available</div>
+        )}
+      </div>
+
+      {/* Desktop view */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="table-auto w-full">
           <thead>
             <tr className="text-left text-gray-600">

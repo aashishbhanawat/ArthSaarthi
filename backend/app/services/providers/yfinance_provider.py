@@ -480,8 +480,9 @@ class YFinanceProvider(FinancialDataProvider):
 
         return None
 
+    @staticmethod
     def _classify_investment_style(
-        self, trailing_pe: Optional[float], price_to_book: Optional[float]
+        trailing_pe: Optional[float], price_to_book: Optional[float]
     ) -> str:
         """
         Classifies investment style based on P/E and P/B ratios.

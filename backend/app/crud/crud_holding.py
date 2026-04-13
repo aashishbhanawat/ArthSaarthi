@@ -611,7 +611,7 @@ def _process_market_traded_assets(
 
     for ticker in current_holdings_tickers:
         asset = ticker_map.get(ticker)
-        if asset and asset.sector is None:
+        if asset and (asset.sector is None or asset.investment_style is None):
             asset_type_upper = (asset.asset_type or "").upper()
             if asset_type_upper in ["STOCK", "ETF"]:
                 equities_to_enrich.append(asset)
@@ -664,8 +664,7 @@ def _process_market_traded_assets(
                     asset.industry = enrichment.get("industry")
                     asset.country = enrichment.get("country")
                     asset.market_cap = enrichment.get("market_cap")
-                    asset.trailing_pe = enrichment.get("trailing_pe")
-                    asset.price_to_book = enrichment.get("price_to_book")
+                    asset.investment_style = enrichment.get("investment_style")
                     db.add(asset)
                     needs_commit = True
         except Exception as e:

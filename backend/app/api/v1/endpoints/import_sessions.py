@@ -290,24 +290,27 @@ def get_import_session_preview(
         parsed_transaction = schemas.ParsedTransaction(**row_data)
 
         # 1. Asset Identification
-        ticker_symbol = row["ticker_symbol"]
+        ticker_symbol = row.get("ticker_symbol")
+        if pd.isna(ticker_symbol):
+            ticker_symbol = ""
+        
         asset = None
 
         # Check ISIN first if available
-        if "isin" in row and row["isin"]:
-            isin_code = row["isin"]
-            asset = crud.asset.get_by_isin(db, isin_code=isin_code)
+        isin_code = row.get("isin")
+        if isin_code and not pd.isna(isin_code):
+            asset = crud.asset.get_by_isin(db, isin_code=str(isin_code))
             if asset:
                  log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
 
         if not asset:
             # This also handles ticker_symbol with "ISIN:" prefix
-            asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
+            asset = crud.asset.get_by_ticker(db, ticker_symbol=str(ticker_symbol))
             if asset:
                 log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
 
         # If ticker looks like "ISIN:XXX", try to auto-create
-        if not asset and ticker_symbol.upper().startswith("ISIN:"):
+        if not asset and isinstance(ticker_symbol, str) and ticker_symbol.upper().startswith("ISIN:"):
             asset = crud.asset.get_or_create_by_ticker(
                 db, ticker_symbol=ticker_symbol, asset_type="Mutual Fund"
             )
@@ -348,12 +351,13 @@ def get_import_session_preview(
             continue
 
         # 2. Duplicate Detection
+        tx_type = str(row.get("transaction_type") or "").upper()
         existing_transaction = crud.transaction.get_by_details(
             db,
             portfolio_id=import_session.portfolio_id,
             asset_id=asset.id,
             transaction_date=pd.to_datetime(row["transaction_date"]),
-            transaction_type=row["transaction_type"].upper(),
+            transaction_type=tx_type,
             quantity=Decimal(str(row["quantity"])),
             price_per_unit=Decimal(str(row["price_per_unit"])),
         )

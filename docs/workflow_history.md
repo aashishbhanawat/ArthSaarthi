@@ -1,6 +1,106 @@
-<<<<<<< HEAD
-## 2026-03-30: Mobile-Responsive UI/UX Migration & Linting Cleanup
-=======
+## 2026-04-13: App-Wide Mobile Card Parity & Import Stability
+
+**Task:** Refactor all remaining table-based layouts (Transactions, Dashboard, Watchlists, Admin) into premium card-based mobile views and fix the import session `NaN` crash.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Mobile Card Parity (Phase 2):**
+    - Refactored **Transaction History**, **Dashboard Top Movers**, and **Watchlists** to use responsive card layouts on mobile (`md:hidden`).
+    - Standardized Admin tools (**Symbol Aliases**, **FMV 2018**, **User Management**, **Interest Rates**) with mobile-optimized cards to ensure a consistent high-premium feel across the entire app.
+    - Integrated Edit/Delete/Save actions directly into card footers for better touch ergonomics.
+2. **Import Session Stability:**
+    - Resolved `AttributeError: 'float' object has no attribute 'upper'` during import previews by adding defensive type-checking and `pd.isna()` sanitization in `crud_asset.py` and `import_sessions.py`.
+    - Ensures the app is resilient to missing data (empty cells) in user-provided spreadsheets.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [crud_asset.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_asset.py) — Defensive type checks for ISIN/Ticker.
+* **Modified:** [import_sessions.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/api/v1/endpoints/import_sessions.py) — Sanitized row-level data processing.
+
+**Frontend:**
+* **New Card Components:** `TransactionCard`, `TopMoversCard`, `WatchlistItemCard`, `AliasCard`, `FMVCard`, `UserCard`, `InterestRateCard`.
+* **Modified Tables:** `TransactionHistoryTable`, `TopMoversTable`, `WatchlistTable`, `InterestRateTable`, `UsersTable`.
+* **Modified Admin Pages:** `AdminAliasesPage`, `AdminFMVPage`.
+
+---
+
+## 2026-04-13: Android UI Parity & Flexible Input UX
+
+**Task:** Align mobile UI density with desktop, fix "Unknown" investment styles, and implement a dual-mode (manual + picker) date input for better mobile UX.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Investment Style Analytics:** 
+    - Resolved "Unknown" classification for equities by refactoring `YFinanceProvider` and updating `AssetSeeder` and `crud_holding.py` to trigger on-demand enrichment for missing metadata.
+2. **UI Density Parity (Mobile):**
+    - Enriched `HoldingCard.tsx` for all asset classes to match desktop table information density.
+    - Added **LTP**, **Day's P&L**, **Invested Amount**, **Coupon/Maturity** (Bonds), and **Opening Dates** (Schemes) to the mobile card view.
+3. **Flexible Date Input UX:**
+    - Created a reusable `DateInput.tsx` component that supports both **manual keyboard entry** (standard text field) and a **native date picker** (via calendar icon).
+    - Rolled out the new component across all relevant modals: `TransactionFormModal`, `AddAwardModal`, `InterestRateFormModal`, and `GoalFormModal`.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [yfinance_provider.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/providers/yfinance_provider.py) — Refactored classification logic.
+* **Modified:** [asset_seeder.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/asset_seeder.py) — Persist style during seeding.
+* **Modified:** [crud_holding.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_holding.py) — Trigger on-demand enrichment.
+
+**Frontend:**
+* **New:** [DateInput.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/common/DateInput.tsx) — Dual-mode input component.
+* **Modified:** [HoldingCard.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/HoldingCard.tsx) — Enriched metric grids.
+* **Modified:** [TransactionFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/TransactionFormModal.tsx) — Switched all 17 date fields to `DateInput`.
+* **Modified:** [AddAwardModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/AddAwardModal.tsx) — Integrated `DateInput`.
+* **Modified:** [InterestRateFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Admin/InterestRateFormModal.tsx) — Integrated `DateInput`.
+* **Modified:** [GoalFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/modals/GoalFormModal.tsx) — Integrated `DateInput`.
+
+---
+
+## 2026-04-12: Android v1.2.0-exp Stabilization & UI Refinements
+
+**Task:** Stabilize Android experimental build by resolving backup restore errors, FMV seeding issues, and improving UI navigation and layout.
+
+**AI Assistant:** Antigravity
+**Role:** Full Stack Developer
+
+### Summary
+
+1. **Functional Fixes:**
+    - **Backup/Restore:** Resolved Pydantic `ValidationError` in `backup_service.py` by ensuring date strings are coerced to `datetime` objects, satisfying Pydantic v1 requirements on Android/Chaquopy.
+    - **FMV 2018 Seeding:** Synchronized fixes from `main` branch via rebase and updated `Asset` schemas to include `fmv_2018` metadata. Added `beautifulsoup4` and `lxml` to backend requirements.
+    - **Investment Style Analytics:** Resolved the "Unknown" issue for equities by adding style classification logic to `AssetSeeder` and `crud_holding.py`. This ensures that both initial seeding and on-demand enrichment correctly persist "Value/Growth/Blend" metadata.
+2. **UI/UX Enhancements:**
+    - **Holding Page:** Refactored `HoldingCard.tsx` to display interest rates and maturity dates for non-market assets (FD/RD/PPF). Enriched the card-based layout for all asset classes to include missing metrics from the desktop tables (LTP, Day's P&L, Invested Amount, Opening Dates, etc.).
+    - **Safe Area Support:** Implemented `pt-safe` and `pb-safe` utility classes with `viewport-fit=cover` in `index.html` to prevent UI overlap with Android status bar/navigation.
+    - **In-App User Guide:** Created a dedicated `UserGuidePage.tsx` with a back/close button to allow returning to the app after viewing the guide.
+    - **Community Links:** Added Star/Report Issue links to the "More" page.
+    - **Input Optimization:** Enabled manual date typing by switching modal date inputs to `type="text"` with placeholders.
+    - **Modals:** Added "X" close buttons to `TransactionFormModal` for better mobile accessibility.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [backup_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/backup_service.py) — Fixed date coercion logic.
+* **Modified:** [asset.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/schemas/asset.py) — Added `fmv_2018` to schemas.
+* **Modified:** [requirements.in](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/requirements.in) — Added `beautifulsoup4`.
+
+**Frontend:**
+* **New:** [UserGuidePage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/UserGuidePage.tsx) — Internal help guide page.
+* **Modified:** [App.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/App.tsx) — Added safest area padding and routes.
+* **Modified:** [HoldingCard.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/HoldingCard.tsx) — Tailored debt asset view.
+* **Modified:** [MorePage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/MorePage.tsx) — Added Community & Help links.
+* **Modified:** [HelpLink.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/HelpLink.tsx) — Switched to internal navigation.
+* **Modified:** [TransactionFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/TransactionFormModal.tsx) — Added close button and manual date input.
+
+---
+
 ## 2026-04-03: Android Startup Seeding & Login Trigger Diagnostics
 
 **Task:** Fix unintended asset seeding at startup on Android and resolve the Yahoo header test script not triggering after login.
@@ -11,7 +111,7 @@
 ### Summary
 
 1. **Asset Seeding Fix:**
-    - Identified that `check_and_seed_on_startup()` was being triggered despite being commented out (likely due to stale code or implicit imports).
+    - Identified that `check_and_seed_on_startup()` was trigger despite being commented out (likely due to stale code or implicit imports).
     - Physically removed the commented-out lines in `backend/app/main.py`.
     - Added diagnostic logging to verify `DEPLOYMENT_MODE` during the startup event.
 2. **Login Trigger Diagnostics:**
@@ -32,7 +132,7 @@
 
 ---
 
-## 2026-03-28: Fix Duplicate Exchange Suffix Bug for Indian Tickers
+## 2026-03-30: Mobile-Responsive UI/UX Migration & Linting Cleanup
 
 **Task:** Optimize the ArthSaarthi frontend for mobile/Android deployment, implementing responsive navigation and layout, and resolving build-artifact linting noise.
 

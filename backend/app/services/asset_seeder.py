@@ -957,6 +957,14 @@ class AssetSeeder:
                             asset.industry = info.get("industry")
                             asset.country = info.get("country")
                             asset.market_cap = info.get("marketCap")
+                            
+                            # Classification for Investment Style
+                            from app.services.providers.yfinance_provider import YFinanceProvider
+                            asset.investment_style = YFinanceProvider._classify_investment_style(
+                                info.get("trailingPE"),
+                                info.get("priceToBook")
+                            )
+                            
                             stats["enriched"] += 1
                             if self.debug:
                                 print(

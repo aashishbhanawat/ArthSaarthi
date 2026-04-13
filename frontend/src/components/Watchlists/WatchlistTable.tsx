@@ -3,6 +3,7 @@ import { Watchlist } from '../../types/watchlist';
 import { useRemoveWatchlistItem } from '../../hooks/useWatchlists';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { formatCurrency } from '../../utils/formatting';
+import WatchlistItemCard from './WatchlistItemCard';
 
 interface WatchlistTableProps {
   watchlist: Watchlist | undefined;
@@ -11,21 +12,21 @@ interface WatchlistTableProps {
 }
 
 const PnlCell: React.FC<{ value: number | undefined; currency?: string | null }> = ({ value, currency }) => {
-    if (value === undefined || value === null) {
-        return <td className="p-2 text-right font-mono text-gray-500">N/A</td>;
-    }
+  if (value === undefined || value === null) {
+    return <td className="p-2 text-right font-mono text-gray-500">N/A</td>;
+  }
 
-    const getPnlColor = (pnl: number) => {
-        if (pnl > 0) return 'text-green-600';
-        if (pnl < 0) return 'text-red-600';
-        return 'text-gray-900';
-    };
+  const getPnlColor = (pnl: number) => {
+    if (pnl > 0) return 'text-green-600 dark:text-green-400';
+    if (pnl < 0) return 'text-red-600 dark:text-red-400';
+    return 'text-gray-900 dark:text-gray-100';
+  };
 
-    return (
-        <td className={`p-2 text-right font-mono ${getPnlColor(value)}`}>
-            {formatCurrency(value, currency)}
-        </td>
-    );
+  return (
+    <td className={`p-2 text-right font-mono ${getPnlColor(value)}`}>
+      {formatCurrency(value, currency)}
+    </td>
+  );
 };
 
 const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, error }) => {
@@ -38,11 +39,11 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="p-4 text-center">Loading...</div>;
   }
 
   if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>;
+    return <div className="p-4 text-center text-red-500">Error: {error.message}</div>;
   }
 
   if (!watchlist || watchlist.items.length === 0) {
@@ -55,41 +56,51 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="table-auto w-full">
-        <thead>
-          <tr className="text-left text-gray-600 text-sm">
-            <th className="p-2">Asset</th>
-            <th className="p-2 text-right">Current Price</th>
-            <th className="p-2 text-right">Day's Change</th>
-            <th className="p-2 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {watchlist.items.map((item) => (
-            <tr key={item.id} className="border-t">
-              <td className="p-2">
-                <div className="font-bold">{item.asset.ticker_symbol}</div>
-                <div className="text-sm text-gray-500 truncate">{item.asset.name}</div>
-              </td>
-              <td className="p-2 text-right font-mono">
-                {item.asset.current_price ? formatCurrency(item.asset.current_price, item.asset.currency) : <span className="text-gray-500">N/A</span>}
-              </td>
-              <PnlCell value={item.asset.day_change} currency={item.asset.currency} />
-              <td className="p-2 text-center">
-                <button
-                  onClick={() => handleRemove(item.id)}
-                  className="btn btn-ghost btn-xs"
-                  aria-label={`Remove ${item.asset.ticker_symbol}`}
-                >
-                  <TrashIcon className="h-4 w-4 text-red-500" />
-                </button>
-              </td>
+    <>
+      {/* Mobile view */}
+      <div className="md:hidden space-y-1">
+        {watchlist.items.map((item) => (
+          <WatchlistItemCard key={item.id} item={item} watchlistId={watchlist.id} />
+        ))}
+      </div>
+
+      {/* Desktop view */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="table-auto w-full">
+          <thead>
+            <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
+              <th className="p-2">Asset</th>
+              <th className="p-2 text-right">Current Price</th>
+              <th className="p-2 text-right">Day's Change</th>
+              <th className="p-2 text-center">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {watchlist.items.map((item) => (
+              <tr key={item.id} className="border-t dark:border-gray-700">
+                <td className="p-2">
+                  <div className="font-bold">{item.asset.ticker_symbol}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{item.asset.name}</div>
+                </td>
+                <td className="p-2 text-right font-mono">
+                  {item.asset.current_price ? formatCurrency(item.asset.current_price, item.asset.currency) : <span className="text-gray-500">N/A</span>}
+                </td>
+                <PnlCell value={item.asset.day_change} currency={item.asset.currency} />
+                <td className="p-2 text-center">
+                  <button
+                    onClick={() => handleRemove(item.id)}
+                    className="btn btn-ghost btn-xs"
+                    aria-label={`Remove ${item.asset.ticker_symbol}`}
+                  >
+                    <TrashIcon className="h-4 w-4 text-red-500" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 };
 
