@@ -214,7 +214,7 @@ const ImportPreviewPage: React.FC = () => {
                                 <td className="p-3 whitespace-nowrap text-right">{formatCurrency(tx.price_per_unit)}</td>
                                 <td className="p-3 whitespace-nowrap text-right">
                                     <button
-                                        className="btn btn-xs btn-outline btn-primary"
+                                        className="btn btn-xs btn-primary shadow-sm"
                                         onClick={() => onMapTicker(tx.ticker_symbol)}
                                     >
                                         Map Symbol

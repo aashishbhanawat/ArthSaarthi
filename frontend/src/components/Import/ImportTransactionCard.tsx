@@ -22,8 +22,8 @@ const ImportTransactionCard: React.FC<ImportTransactionCardProps> = ({
     return (
         <div
             className={`card p-4 transition-all duration-200 border-l-4 ${isNeedsMapping ? 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/10' :
-                    isDuplicate ? 'border-l-warning bg-warning/5 dark:bg-warning/10' :
-                        'border-l-success bg-white dark:bg-gray-800'
+                isDuplicate ? 'border-l-warning bg-warning/5 dark:bg-warning/10' :
+                    'border-l-success bg-white dark:bg-gray-800'
                 } ${!isSelected && !isNeedsMapping ? 'opacity-70 grayscale-[0.3]' : 'shadow-md'} mb-3`}
         >
             <div className="flex items-start gap-3">
@@ -86,13 +86,13 @@ const ImportTransactionCard: React.FC<ImportTransactionCardProps> = ({
                     {isNeedsMapping && onMapTicker && (
                         <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
                             <button
-                                className="btn btn-primary btn-sm btn-block justify-center h-8 min-h-[2rem]"
+                                className="btn btn-primary btn-sm w-full gap-2 shadow-sm"
                                 onClick={onMapTicker}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                                 </svg>
-                                Map Symbol
+                                <span>Map Symbol</span>
                             </button>
                         </div>
                     )}
