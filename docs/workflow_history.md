@@ -20,6 +20,12 @@
     - Added targeted overrides for valid DOM operations (`click()`, `dispatchEvent()`) in component logic.
 4. **Functional & Backend Fixes (Issue 4):**
     - Resolved PPF transaction `invalid datetime format` errors by ensuring dates are combined with minimum time before ISO conversion in the backend.
+5. **Android Versioning & Upgrade Support:**
+    - Incremented `versionCode` to 2 and synchronized `versionName` to 1.2.0 in `build.gradle.kts`.
+    - Added app version display to the bottom of `MorePage.tsx`.
+6. **CI/CD E2E Stability:**
+    - Resolved widespread "locator.fill" timeouts in CI by identifying that the `MobileSeedingSplash` was blocking the login form.
+    - Updated `e2e/global.setup.ts` to call `seeding-complete` via API, ensuring the environment is immediately ready for testing.
 
 ### File Changes
 

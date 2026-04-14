@@ -43,9 +43,9 @@ async function globalSetup() {
   });
   // If user already exists (from previous run), setup might return error, which is fine if we can login.
   if (!adminSetupResponse.ok()) {
-      console.log("Admin setup failed or user exists. Proceeding to login.");
+    console.log("Admin setup failed or user exists. Proceeding to login.");
   } else {
-      console.log('Global setup complete: Admin user created.');
+    console.log('Global setup complete: Admin user created.');
   }
 
   // 3. Login as admin to get a token for seeding
@@ -57,8 +57,8 @@ async function globalSetup() {
   });
 
   if (!loginResponse.ok()) {
-      console.error("Failed to login as admin in global setup.");
-      throw new Error("Admin login failed.");
+    console.error("Failed to login as admin in global setup.");
+    throw new Error("Admin login failed.");
   }
 
   const { access_token } = await loginResponse.json();
@@ -82,7 +82,12 @@ async function globalSetup() {
       console.log(`Could not create asset ${asset.ticker_symbol}, it might already exist.`);
     }
   }
-  console.log(`Global setup complete: Attempted to seed ${assetsToSeed.length} assets.`);
+  // 5. Mark seeding as complete to unblock E2E tests (bypasses MobileSeedingSplash)
+  await requestContext.post('/api/v1/system/seeding-complete', {
+    headers: { Authorization: `Bearer ${access_token}` },
+  });
+
+  console.log(`Global setup complete: Attempted to seed ${assetsToSeed.length} assets and marked seeding complete.`);
 
   await requestContext.dispose();
 }

@@ -104,6 +104,12 @@ const MorePage: React.FC = () => {
                         />
                     </div>
                 </section>
+
+                <div className="text-center pt-8 pb-4">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                        ArthSaarthi v1.2.0
+                    </p>
+                </div>
             </div>
         </div>
     );
