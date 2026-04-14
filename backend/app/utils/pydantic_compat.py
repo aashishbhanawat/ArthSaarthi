@@ -1,5 +1,7 @@
 from typing import Any, Dict
+
 from pydantic import BaseModel
+
 
 def model_dump(obj: BaseModel, **kwargs) -> Dict[str, Any]:
     """

@@ -28,7 +28,7 @@ const LogsPage: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        let interval: any;
+        let interval: NodeJS.Timeout | undefined;
         if (autoRefresh) {
             interval = setInterval(fetchLogs, 5000);
         }

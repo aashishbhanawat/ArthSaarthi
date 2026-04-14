@@ -65,7 +65,7 @@ def reset_db(
 @router.get("/network-fingerprint")
 def get_network_fingerprint():
     """
-    Diagnostic endpoint to expose how Yahoo Finance (and other servers) "see" 
+    Diagnostic endpoint to expose how Yahoo Finance (and other servers) "see"
     this backend's network identity.
 
     Returns:
@@ -78,9 +78,10 @@ def get_network_fingerprint():
 
     Call this on BOTH server mode and Android mode and compare the ja3_hash.
     """
-    import sys
-    import ssl
     import platform
+    import ssl
+    import sys
+
     import requests
 
     result = {
@@ -119,12 +120,11 @@ def yfinance_diagnostic():
     Run on BOTH server and Android to compare environments.
     Key output: ja3_hash, openssl version, cipher count, HTTP status from Yahoo.
     """
-    import sys
-    import ssl
     import platform
+    import ssl
+    import sys
+
     import requests
-    import io
-    import logging as _logging
 
     out = {}
 
@@ -191,10 +191,17 @@ def yfinance_diagnostic():
     test_url = "https://query1.finance.yahoo.com/v8/finance/chart/NTPC.NS?range=1d&interval=1d"
     for label, headers in [
         ("default_ua", {}),
-        ("browser_ua", {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"}),
+        ("spoof", {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            )
+        }),
     ]:
         try:
-            resp = requests.get(test_url, headers=headers, timeout=12, allow_redirects=False)
+            resp = requests.get(
+                test_url, headers=headers, timeout=12, allow_redirects=False
+            )
             out[f"yahoo_{label}"] = {
                 "status": resp.status_code,
                 "retry_after": resp.headers.get("Retry-After"),
@@ -210,7 +217,12 @@ def yfinance_diagnostic():
         import yfinance as yf
         out["yfinance"] = {"version": yf.__version__}
         try:
-            out["yfinance"]["tz_cache"] = str(yf.cache.get_tz_cache_location()) if hasattr(yf, "cache") else "unknown"
+            loc = (
+                yf.cache.get_tz_cache_location()
+                if hasattr(yf, "cache")
+                else "unknown"
+            )
+            out["yfinance"]["tz_cache"] = str(loc)
         except Exception:
             pass
     except Exception as e:

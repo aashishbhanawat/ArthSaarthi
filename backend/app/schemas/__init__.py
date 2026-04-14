@@ -189,6 +189,7 @@ __all__ = [
 
 # Manually update forward references to resolve circular dependencies
 import pydantic
+
 is_v2 = pydantic.__version__.startswith("2.")
 
 if is_v2:

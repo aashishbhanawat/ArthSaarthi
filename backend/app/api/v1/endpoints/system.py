@@ -13,7 +13,6 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import models, schemas
-from app.core import dependencies as deps
 from app.core.config import settings
 from app.db.session import get_db
 
@@ -137,7 +136,11 @@ def get_seeding_status(db: Session = Depends(get_db)):
     try:
         asset_count = db.query(models.Asset).count()
 
-        if _seeding_state["status"] == SeedingStatus.COMPLETE or (asset_count >= MIN_ASSETS_FOR_COMPLETE and _seeding_state["status"] == SeedingStatus.IDLE):
+        is_large_enough = asset_count >= MIN_ASSETS_FOR_COMPLETE
+        is_idle = _seeding_state["status"] == SeedingStatus.IDLE
+        if _seeding_state["status"] == SeedingStatus.COMPLETE or (
+            is_large_enough and is_idle
+        ):
             return SeedingStatusResponse(
                 status=SeedingStatus.COMPLETE,
                 progress=100,
@@ -147,8 +150,10 @@ def get_seeding_status(db: Session = Depends(get_db)):
         else:
             # If NEEDS_SEEDING and we have some assets, estimate progress
             # assuming background service is running
-            estimated_progress = min(95, int((asset_count / MIN_ASSETS_FOR_COMPLETE) * 100))
-            
+            estimated_progress = min(
+                95, int((asset_count / MIN_ASSETS_FOR_COMPLETE) * 100)
+            )
+
             return SeedingStatusResponse(
                 status=SeedingStatus.NEEDS_SEEDING,
                 progress=estimated_progress,
@@ -329,7 +334,7 @@ def get_logs(
 
     from pathlib import Path
     log_path = Path(settings.LOG_FILE)
-    
+
     if not log_path.exists():
         return {"msg": f"Log file not found at {log_path}"}
 

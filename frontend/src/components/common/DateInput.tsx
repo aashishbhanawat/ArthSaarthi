@@ -37,9 +37,11 @@ const DateInput: React.FC<DateInputProps> = ({
                 try {
                     datePickerRef.current.showPicker();
                 } catch (e) {
+                    // eslint-disable-next-line testing-library/no-node-access
                     datePickerRef.current.click();
                 }
             } else {
+                // eslint-disable-next-line testing-library/no-node-access
                 datePickerRef.current.click();
             }
         }
@@ -67,14 +69,16 @@ const DateInput: React.FC<DateInputProps> = ({
 
     const handleRef = (node: HTMLInputElement | null) => {
         // Update our local ref for manual DOM manipulation
-        (textInputRef as any).current = node;
+        if (textInputRef) {
+            (textInputRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
+        }
 
         // Forward to register ref if it exists
         if (registerRef) {
             if (typeof registerRef === 'function') {
                 registerRef(node);
-            } else {
-                (registerRef as any).current = node;
+            } else if (typeof registerRef === 'object' && registerRef !== null) {
+                (registerRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
             }
         }
     };
@@ -99,7 +103,7 @@ const DateInput: React.FC<DateInputProps> = ({
                         value,
                         onChange: (e: React.ChangeEvent<HTMLInputElement>) => onChange?.(e.target.value)
                     } : {})}
-                    className={`form-input pr-10 ${error ? 'border-red-500 focus:ring-red-500' : ''}`}
+                    className={`form-input pr-12 ${error ? 'border-red-500 focus:ring-red-500' : ''}`}
                 />
 
                 {/* Hidden Date Picker */}

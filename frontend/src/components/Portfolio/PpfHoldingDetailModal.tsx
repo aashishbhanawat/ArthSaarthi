@@ -4,7 +4,7 @@ import React from 'react';
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
-import { formatCurrency, formatDate } from '../../utils/formatting';
+import { formatCurrency, formatDate, formatPercentage } from '../../utils/formatting';
 
 interface PpfHoldingDetailModalProps {
   isOpen: boolean;
@@ -85,7 +85,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
           <div data-testid="summary-annualized-return">
             <p className="text-sm text-gray-500 dark:text-gray-400">Annualized Return</p>
             <p className="font-semibold dark:text-gray-100">
-              {isLoadingAnalytics ? '...' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
+              {isLoadingAnalytics ? '...' : formatPercentage(analytics?.xirr_current ?? 0)}
             </p>
           </div>
           <div data-testid="summary-current-rate">
@@ -164,7 +164,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={`ppf-holding-detail-modal-title-${holding.asset_id}`}
-        className="modal-content w-full max-w-3xl p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl bg-white dark:bg-gray-800 z-10"
+        className="modal-content w-full max-w-3xl p-6 pt-safe md:pt-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl bg-white dark:bg-gray-800 z-10"
       >
         <div
           id={`ppf-holding-detail-modal-title-${holding.asset_id}`}

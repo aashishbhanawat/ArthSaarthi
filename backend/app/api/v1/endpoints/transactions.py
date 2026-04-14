@@ -213,7 +213,7 @@ def create_transaction(
             asset_id_to_use = asset_to_use.id
             transaction_create_schema = schemas.TransactionCreate(
                 asset_id=asset_id_to_use,
-                **model_dump(transaction_in, 
+                **model_dump(transaction_in,
                     exclude={"ticker_symbol", "asset_type", "asset_id"}
                 ),
             )

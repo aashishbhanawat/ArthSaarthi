@@ -87,8 +87,10 @@ def test_update_bond(db: Session) -> None:
         coupon_rate=Decimal("8.0"),
     )
     bond = crud.bond.create(db=db, obj_in=bond_in)
-    bond_update = BondUpdate(coupon_rate=Decimal("8.25"), **model_dump(bond_in, exclude={
-        "coupon_rate", "asset_id"}))
+    bond_update = BondUpdate(
+        coupon_rate=Decimal("8.25"),
+        **model_dump(bond_in, exclude={"coupon_rate", "asset_id"}),
+    )
     bond2 = crud.bond.update(db=db, db_obj=bond, obj_in=bond_update)
     assert bond2.id == bond.id
     assert bond2.coupon_rate == Decimal("8.25")
@@ -156,8 +158,10 @@ def test_tradable_bond_valuation_primary_api(
     with patch("app.crud.crud_holding.financial_data_service") as mock_fds:
         # Mock the batch price fetching method
         mock_fds.get_current_prices.return_value = {
-            "CORPBOND": {"current_price": Decimal("1025.50"), "previous_close": Decimal(
-                "1020.00")}
+            "CORPBOND": {
+                "current_price": Decimal("1025.50"),
+                "previous_close": Decimal("1020.00"),
+            }
         }
 
         result = crud.holding.get_portfolio_holdings_and_summary(
@@ -439,7 +443,9 @@ def test_bond_xirr_with_coupon_payment(
         portfolio_id=portfolio.id
     )
 
-    with patch("app.crud.crud_holding.financial_data_service") as mock_fds, patch("app.crud.crud_analytics.date") as mock_date:  # noqa: E501
+    with patch(
+        "app.crud.crud_holding.financial_data_service"
+    ) as mock_fds, patch("app.crud.crud_analytics.date") as mock_date:
         # Mock valuation date and price for XIRR calculation
         mock_date.today.return_value = date(2024, 1, 1)
         mock_fds.get_current_prices.return_value = {

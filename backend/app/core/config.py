@@ -66,8 +66,9 @@ class Settings(BaseSettings):
             # use it as-is
             if isinstance(v, str) and v.startswith("sqlite"):
                 return v
-            from platformdirs import user_data_dir
             from pathlib import Path
+
+            from platformdirs import user_data_dir
             # Use a stable, platform-appropriate directory for the database
             app_dir = Path(user_data_dir("arthsaarthi", "arthsaarthi-app"))
             app_dir.mkdir(parents=True, exist_ok=True)
@@ -91,10 +92,13 @@ class Settings(BaseSettings):
     @validator("IMPORT_UPLOAD_DIR", pre=True, always=True)
     def set_upload_dir_for_desktop(cls, v, values):
         if values.get("DEPLOYMENT_MODE") in ("desktop", "android"):
-            from platformdirs import user_data_dir
             from pathlib import Path
+
+            from platformdirs import user_data_dir
             # Use a stable directory for uploads
-            upload_dir = Path(user_data_dir("arthsaarthi", "arthsaarthi-app")) / "uploads"
+            upload_dir = (
+                Path(user_data_dir("arthsaarthi", "arthsaarthi-app")) / "uploads"
+            )
             upload_dir.mkdir(parents=True, exist_ok=True)
             return str(upload_dir)
         return v
@@ -123,8 +127,9 @@ class Settings(BaseSettings):
         if _is_local_mode(values):
             if isinstance(v, str):
                 return v
-            from platformdirs import user_log_dir
             from pathlib import Path
+
+            from platformdirs import user_log_dir
             # Use a stable directory for logs
             log_dir = Path(user_log_dir("arthsaarthi", "arthsaarthi-app"))
             log_dir.mkdir(parents=True, exist_ok=True)

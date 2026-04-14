@@ -1,6 +1,7 @@
 import React from 'react';
 import { Holding } from '../../types/holding';
 import { usePrivacy } from '../../context/PrivacyContext';
+import { formatPercentage } from '../../utils/formatting';
 
 interface HoldingCardProps {
     holding: Holding;
@@ -17,10 +18,6 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
             currency: 'INR',
             maximumFractionDigits: 0,
         }).format(value);
-    };
-
-    const formatPercent = (value: number) => {
-        return `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(2)}%`;
     };
 
     const isPositive = Number(holding.unrealized_pnl) >= 0;
@@ -52,13 +49,13 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
                 <div>
                     <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Unrealized P&L</div>
                     <div className={`text-xs font-bold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {formatCurrency(holding.unrealized_pnl)} ({formatPercent(holding.unrealized_pnl_percentage)})
+                        {formatCurrency(holding.unrealized_pnl)} ({formatPercentage(holding.unrealized_pnl_percentage)})
                     </div>
                 </div>
                 <div className="text-right">
                     <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Day's P&L</div>
                     <div className={`text-xs font-bold ${isDayPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {formatCurrency(holding.days_pnl)} ({formatPercent(holding.days_pnl_percentage)})
+                        {formatCurrency(holding.days_pnl)} ({formatPercentage(holding.days_pnl_percentage)})
                     </div>
                 </div>
             </div>

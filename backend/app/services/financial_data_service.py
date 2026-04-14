@@ -32,7 +32,7 @@ class FinancialDataService:
         """
         Fetches current prices by delegating to the best provider for each asset type.
         The order of priority is now asset-specific for better accuracy:
-        - Stocks: yahooquery -> yfinance -> NSE
+        - Stocks: yfinance -> NSE
         - Mutual Funds: AMFI -> NSE
         - Bonds: NSE
         """
@@ -70,7 +70,7 @@ class FinancialDataService:
             prices_data.update(
                 self.yfinance_provider.get_current_prices(stock_assets)
             )
-            
+
             logger.debug(f"Prices after stock providers: {prices_data.keys()}")
 
         # 4. Bonds: NSE is the primary source.
@@ -131,7 +131,10 @@ class FinancialDataService:
         historical_data: Dict[str, Dict[date, Decimal]] = {}
 
         if other_assets:
-            logger.info(f"Fetching historical prices for {len(other_assets)} assets via yfinance")
+            logger.info(
+                f"Fetching historical prices for {len(other_assets)} assets "
+                "via yfinance"
+            )
             historical_data.update(self.yfinance_provider.get_historical_prices(
                 other_assets, start_date, end_date
             ))
@@ -212,11 +215,14 @@ class FinancialDataService:
         """
         Fetches enrichment data for multiple assets in a single call.
         """
-        # Note: yfinance doesn't have a reliable bulk metadata endpoint, so we default to looping
-        # internally if batch doesn't exist, but yfinance doesn't aggressively block info lookup now
+        # Note: yfinance doesn't have a reliable bulk metadata endpoint, so
+        # we default to looping internally if batch doesn't exist, but
+        # yfinance doesn't aggressively block info lookup now
         enrichment_results = {}
         for asset in assets:
-            data = self.get_enrichment_data(asset['ticker_symbol'], asset.get('exchange'))
+            data = self.get_enrichment_data(
+                asset['ticker_symbol'], asset.get('exchange')
+            )
             if data:
                 enrichment_results[asset['ticker_symbol']] = data
         return enrichment_results

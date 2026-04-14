@@ -1,17 +1,18 @@
 import logging
+import os
+import shutil
+import tempfile
 import threading
-from sqlalchemy.orm import Session
+from datetime import date, timedelta
+from typing import Dict, Union
+
+import requests
+import urllib3
+
+from app.db.initial_data import seed_interest_rates
 from app.db.session import SessionLocal
 from app.models import Asset
 from app.services.asset_seeder import AssetSeeder
-from app.db.initial_data import seed_interest_rates
-import tempfile
-import os
-import shutil
-import requests
-import urllib3
-from datetime import date, timedelta
-from typing import Dict, Union
 
 # Suppress InsecureRequestWarning for NSDL connections
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -91,18 +92,18 @@ def _download_file(url: str, dest_path: str) -> bool:
 
 def _run_initial_seeding():
     """Actually performs the seeding logic in a thread."""
-    from app.api.v1.endpoints.system import _seeding_state, SeedingStatus
+    from app.api.v1.endpoints.system import SeedingStatus, _seeding_state
     logger.info("Background initial seeding thread started.")
     _seeding_state["status"] = SeedingStatus.IN_PROGRESS
     _seeding_state["progress"] = 10
     _seeding_state["message"] = "Fetching reference instruments lists..."
-    
+
     db = SessionLocal()
     try:
         # 1. Seed Interest Rates
         seed_interest_rates(db)
         db.commit()
-        
+
         # 2. Sync Assets
         seeder = AssetSeeder(db=db, debug=False)
         temp_dir = tempfile.mkdtemp()
@@ -123,27 +124,38 @@ def _run_initial_seeding():
             for source in required_sources:
                 for d in candidate_dates:
                     url = _get_dynamic_urls(d).get(source)
-                    if not url: continue
+                    if not url:
+                        continue
                     filename = url.split("/")[-1]
                     dest = os.path.join(temp_dir, filename)
                     if _download_file(url, dest):
                         files[source] = dest
                         break
-            
+
             # Process
-            if "nsdl" in files: seeder.process_nsdl_file(files["nsdl"])
-            if "bse_public" in files: seeder.process_bse_public_debt(files["bse_public"])
-            if "bse_equity" in files: seeder.process_bse_equity_bhavcopy(files["bse_equity"])
-            if "nse_equity" in files: seeder.process_nse_equity_bhavcopy(files["nse_equity"])
-            if "nse_debt" in files: seeder.process_nse_daily_debt(files["nse_debt"])
-            if "bse_debt" in files: seeder.process_bse_debt_bhavcopy(files["bse_debt"])
-            if "bse_index" in files: seeder.process_bse_index(files["bse_index"])
-            if "icici" in files: seeder.process_icici_fallback(files["icici"])
-            
+            if "nsdl" in files:
+                seeder.process_nsdl_file(files["nsdl"])
+            if "bse_public" in files:
+                seeder.process_bse_public_debt(files["bse_public"])
+            if "bse_equity" in files:
+                seeder.process_bse_equity_bhavcopy(files["bse_equity"])
+            if "nse_equity" in files:
+                seeder.process_nse_equity_bhavcopy(files["nse_equity"])
+            if "nse_debt" in files:
+                seeder.process_nse_daily_debt(files["nse_debt"])
+            if "bse_debt" in files:
+                seeder.process_bse_debt_bhavcopy(files["bse_debt"])
+            if "bse_index" in files:
+                seeder.process_bse_index(files["bse_index"])
+            if "icici" in files:
+                seeder.process_icici_fallback(files["icici"])
+
             db.commit()
             _seeding_state["status"] = SeedingStatus.COMPLETE
             _seeding_state["progress"] = 100
-            _seeding_state["message"] = "Background initial seeding completed successfully!"
+            _seeding_state["message"] = (
+                "Background initial seeding completed successfully!"
+            )
             logger.info("Background initial seeding completed successfully.")
         finally:
             shutil.rmtree(temp_dir)
@@ -156,17 +168,22 @@ def _run_initial_seeding():
 
 def check_and_seed_on_startup():
     """Checks if database is empty and triggers background seeding if so."""
-    from app.api.v1.endpoints.system import _seeding_state, SeedingStatus
+    from app.api.v1.endpoints.system import SeedingStatus, _seeding_state
     db = SessionLocal()
     try:
         count = db.query(Asset).count()
         if count < 10000:
-            logger.info(f"Assets table has {count} assets (<10000). Triggering background seeding...")
+            logger.info(
+                f"Assets table has {count} assets (<10000). "
+                "Triggering background seeding..."
+            )
             _seeding_state["status"] = SeedingStatus.IN_PROGRESS
             _seeding_state["message"] = "Preparing to download and seed data..."
             threading.Thread(target=_run_initial_seeding, daemon=True).start()
         else:
-            logger.info(f"Database already has {count} assets. Skipping initial seeding.")
+            logger.info(
+                f"Database already has {count} assets. Skipping initial seeding."
+            )
             _seeding_state["status"] = SeedingStatus.COMPLETE
             _seeding_state["progress"] = 100
             _seeding_state["message"] = "Asset database ready"

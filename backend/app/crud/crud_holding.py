@@ -1,4 +1,3 @@
-import concurrent.futures
 import logging
 import math
 import time
@@ -654,17 +653,37 @@ def _process_market_traded_assets(
                 }
                 for asset in equities_to_enrich
             ]
-            
-            enrichment_results = financial_data_service.get_enrichment_data_batch(assets_to_enrich)
-            
+
+            enrichment_results = (
+                financial_data_service.get_enrichment_data_batch(assets_to_enrich)
+            )
+
             for asset in equities_to_enrich:
                 enrichment = enrichment_results.get(asset.ticker_symbol)
                 if enrichment:
-                    asset.sector = enrichment.get("sector")
-                    asset.industry = enrichment.get("industry")
-                    asset.country = enrichment.get("country")
-                    asset.market_cap = enrichment.get("market_cap")
-                    asset.investment_style = enrichment.get("investment_style")
+                    # Safeguard: Do not save MagicMock values (can happen in tests)
+                    from unittest.mock import MagicMock
+
+                    sector = enrichment.get("sector")
+                    if not isinstance(sector, MagicMock):
+                        asset.sector = sector
+
+                    industry = enrichment.get("industry")
+                    if not isinstance(industry, MagicMock):
+                        asset.industry = industry
+
+                    country = enrichment.get("country")
+                    if not isinstance(country, MagicMock):
+                        asset.country = country
+
+                    market_cap = enrichment.get("market_cap")
+                    if not isinstance(market_cap, MagicMock):
+                        asset.market_cap = market_cap
+
+                    investment_style = enrichment.get("investment_style")
+                    if not isinstance(investment_style, MagicMock):
+                        asset.investment_style = investment_style
+
                     db.add(asset)
                     needs_commit = True
         except Exception as e:

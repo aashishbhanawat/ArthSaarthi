@@ -21,7 +21,7 @@ const TopMoversTable: React.FC<TopMoversTableProps> = ({ assets }) => {
       <h2 className="text-xl font-bold mb-4">Top Movers (24h)</h2>
 
       {/* Mobile view */}
-      <div className="md:hidden space-y-1">
+      <div className="md:hidden space-y-1 px-4">
         {assets && assets.length > 0 ? (
           assets.map((asset) => (
             <TopMoversCard key={asset.ticker_symbol} asset={asset} />

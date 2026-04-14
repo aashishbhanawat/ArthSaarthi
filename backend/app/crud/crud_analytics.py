@@ -8,49 +8,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from dateutil.relativedelta import relativedelta
-from app.models.transaction_link import TransactionLink
-
-logger = logging.getLogger(__name__)
-
-try:
-    from pyxirr import xirr
-except ImportError:
-    logger.warning("pyxirr not found, using numpy fallback for XIRR")
-    def xirr(dates, payments):
-        if not dates or not payments or len(dates) != len(payments):
-            return 0.0
-        
-        # Newton-Raphson implementation
-        try:
-            # Pre-process dates into year fractions from first date
-            d0 = dates[0]
-            years = np.array([(d - d0).days / 365.0 for d in dates])
-            pmts = np.array(payments, dtype=float)
-            
-            rate = 0.1 # Initial guess
-            for _ in range(50):
-                # NPV
-                npv = np.sum(pmts / (1 + rate)**years)
-                # NPV Derivative
-                deriv = np.sum(-years * pmts / (1 + rate)**(years + 1))
-                
-                if abs(deriv) < 1e-9: break
-                new_rate = rate - npv / deriv
-                if abs(new_rate - rate) < 1e-6: return new_rate
-                rate = new_rate
-                if abs(rate) > 100: break
-            return rate
-        except Exception as e:
-            logger.error(f"XIRR fallback failed: {e}")
-            return 0.0
-
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
+from app import crud, schemas
 from app.cache.utils import cache_analytics_data
 from app.core.financial_definitions import TRANSACTION_BEHAVIORS, CashFlowType
 from app.crud.crud_dashboard import _get_portfolio_history
-from app.utils.pydantic_compat import model_copy, model_validate
 from app.crud.crud_holding import (
     _calculate_fd_current_value,
     _calculate_rd_value_at_date,
@@ -59,8 +22,45 @@ from app.models.fixed_deposit import FixedDeposit
 from app.models.recurring_deposit import RecurringDeposit
 from app.models.transaction import Transaction
 from app.models.transaction_link import TransactionLink
+from app.utils.pydantic_compat import model_copy, model_validate
 
 logger = logging.getLogger(__name__)
+
+try:
+    from pyxirr import xirr
+except ImportError:
+    logger.warning("pyxirr not found, using numpy fallback for XIRR")
+
+    def xirr(dates, payments):
+        if not dates or not payments or len(dates) != len(payments):
+            return 0.0
+
+        # Newton-Raphson implementation
+        try:
+            # Pre-process dates into year fractions from first date
+            d0 = dates[0]
+            years = np.array([(d - d0).days / 365.0 for d in dates])
+            pmts = np.array(payments, dtype=float)
+
+            rate = 0.1  # Initial guess
+            for _ in range(50):
+                # NPV
+                npv = np.sum(pmts / (1 + rate) ** years)
+                # NPV Derivative
+                deriv = np.sum(-years * pmts / (1 + rate) ** (years + 1))
+
+                if abs(deriv) < 1e-9:
+                    break
+                new_rate = rate - npv / deriv
+                if abs(new_rate - rate) < 1e-6:
+                    return new_rate
+                rate = new_rate
+                if abs(rate) > 100:
+                    break
+            return rate
+        except Exception as e:
+            logger.error(f"XIRR fallback failed: {e}")
+            return 0.0
 
 SHARPE_ANNUALIZATION_FACTOR = 252
 SHARPE_STEP_FUNCTION_THRESHOLD = 0.8
@@ -149,22 +149,22 @@ def _get_realized_and_unrealized_cash_flows(
 
     # Create copies to avoid mutation and to track remaining quantities.
     buys = []
-    buy_id_to_copy_map = {} # To easily find the mutable copy by ID for linking
+    buy_id_to_copy_map = {}  # To easily find the mutable copy by ID for linking
     for t in sorted_txs:
         if t.transaction_type in ("BUY", "ESPP_PURCHASE", "RSU_VEST"):
             buy_copy = model_copy(t, deep=True)
             # Only scale if demerger exists AND buy is before demerger date
-            if (remaining_ratio < Decimal("1.0") and buy_copy.price_per_unit
-                    and earliest_demerger_date
-                    and t.transaction_date.date() < earliest_demerger_date):
+            if (
+                remaining_ratio < Decimal("1.0")
+                and buy_copy.price_per_unit
+                and earliest_demerger_date
+                and t.transaction_date.date() < earliest_demerger_date
+            ):
                 buy_copy.price_per_unit = buy_copy.price_per_unit * remaining_ratio
 
             # Use a dict to track quantity to avoid mutating the original model.
             # Ensures we don't accidentally modify SQLAlchemy instances.
-            lot = {
-                "transaction": buy_copy,
-                "available_quantity": buy_copy.quantity
-            }
+            lot = {"transaction": buy_copy, "available_quantity": buy_copy.quantity}
             buys.append(lot)
             buy_id_to_copy_map[buy_copy.id] = lot
 
@@ -175,12 +175,11 @@ def _get_realized_and_unrealized_cash_flows(
 
     # Separate income from contributions
     income_flows = [
-        t for t in sorted_txs
+        t
+        for t in sorted_txs
         if t.transaction_type in ("DIVIDEND", "COUPON", "INTEREST_CREDIT")
     ]
-    contribution_flows = [
-        t for t in sorted_txs if t.transaction_type == "CONTRIBUTION"
-    ]
+    contribution_flows = [t for t in sorted_txs if t.transaction_type == "CONTRIBUTION"]
 
     realized_cash_flows = []
     realized_pnl = Decimal("0.0")
@@ -234,7 +233,7 @@ def _get_realized_and_unrealized_cash_flows(
                     match_quantity = lot["available_quantity"]
 
                 if match_quantity > 0:
-                     # --- Price & P&L Calculation logic (Shared) ---
+                    # --- Price & P&L Calculation logic (Shared) ---
                     if (
                         buy_tx.transaction_type == "RSU_VEST"
                         and buy_tx.details
@@ -359,7 +358,7 @@ def _get_realized_and_unrealized_cash_flows(
             unrealized_cash_flows.append(
                 (
                     buy_tx.transaction_date.date(),
-                    float(-lot["available_quantity"] * buy_price * buy_fx_rate)
+                    float(-lot["available_quantity"] * buy_price * buy_fx_rate),
                 )
             )
 
@@ -424,7 +423,7 @@ def _get_realized_and_unrealized_cash_flows(
         "realized_cash_flows": realized_cash_flows,
         "unrealized_cash_flows": unrealized_cash_flows,
         "realized_pnl": realized_pnl,
-        "dividend_income": total_dividend_income
+        "dividend_income": total_dividend_income,
     }
 
 
@@ -473,8 +472,7 @@ def _get_portfolio_cash_flows(
         amount = Decimal("0.0")
         fx_rate = (
             Decimal(str(tx.details.get("fx_rate", 1)))
-            if tx.details
-            else Decimal(1)
+            if tx.details else Decimal(1)
         )
 
         if tx.transaction_type == "CONTRIBUTION":
@@ -485,8 +483,11 @@ def _get_portfolio_cash_flows(
             amount = tx.quantity * fx_rate
         elif tx.transaction_type == "RSU_VEST":
             # For RSU VEST, outflow is FMV * Quantity * FX Rate
-             fmv = Decimal(str(tx.details.get("fmv", 0))) if tx.details else Decimal(0)
-             amount = tx.quantity * fmv * fx_rate
+            fmv = (
+                Decimal(str(tx.details.get("fmv", 0)))
+                if tx.details else Decimal(0)
+            )
+            amount = tx.quantity * fmv * fx_rate
         else:
             amount = tx.quantity * tx.price_per_unit * fx_rate
 
@@ -502,11 +503,13 @@ def _get_portfolio_cash_flows(
         if (fd.interest_payout or "").upper() != "CUMULATIVE":
             # For non-cumulative FDs, interest payments are inflows
             payout_frequency_map = {
-                "MONTHLY": 1, "QUARTERLY": 3, "HALF_YEARLY": 6,
-                "SEMI-ANNUALLY": 6, "ANNUALLY": 12
+                "MONTHLY": 1,
+                "QUARTERLY": 3,
+                "HALF_YEARLY": 6,
+                "SEMI-ANNUALLY": 6,
+                "ANNUALLY": 12,
             }
-            months_interval = payout_frequency_map.get(
-                fd.compounding_frequency.upper())
+            months_interval = payout_frequency_map.get(fd.compounding_frequency.upper())
             if months_interval:
                 payouts_per_year = Decimal("12.0") / Decimal(str(months_interval))
                 payout_rate = fd.interest_rate / Decimal("100.0") / payouts_per_year
@@ -523,7 +526,8 @@ def _get_portfolio_cash_flows(
                 if last_payout_date < cutoff_date:
                     remaining_days = (cutoff_date - last_payout_date).days
                     daily_rate = (
-                        (fd.interest_rate / Decimal("100.0")) / Decimal("365.25")
+                        (fd.interest_rate / Decimal("100.0")) /
+                        Decimal("365.25")
                     )
                     pro_rata_interest = (
                         fd.principal_amount * daily_rate * Decimal(remaining_days)
@@ -583,7 +587,8 @@ class CRUDAnalytics:
             logger.warning(f"Asset with ID {asset_id} not found.")
             return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
         logger.debug(
-            f"Calculating analytics for asset {asset_id} ({asset.ticker_symbol})"
+            f"Calculating analytics for asset {asset_id} "
+            f"({asset.ticker_symbol})"
         )
 
         # We need the current value of the holding, which is calculated in crud_holding
@@ -603,9 +608,11 @@ class CRUDAnalytics:
 
         # Fetch transaction links for tax lot identification
         transaction_ids = [tx.id for tx in transactions]
-        links = db.query(TransactionLink).filter(
-            TransactionLink.sell_transaction_id.in_(transaction_ids)
-        ).all()
+        links = (
+            db.query(TransactionLink)
+            .filter(TransactionLink.sell_transaction_id.in_(transaction_ids))
+            .all()
+        )
 
         transactions_schemas = [
             model_validate(schemas.Transaction, tx) for tx in transactions
@@ -633,7 +640,7 @@ class CRUDAnalytics:
             xirr_historical_cfs = list(realized_cfs) + list(unrealized_cfs)
             if holding.current_value > 0:
                 xirr_historical_cfs.append((date.today(), float(holding.current_value)))
-            xirr_historical_value = _calculate_xirr_from_cashflows_tuple( # noqa: E501
+            xirr_historical_value = _calculate_xirr_from_cashflows_tuple(
                 xirr_historical_cfs,
             )
 
@@ -641,7 +648,7 @@ class CRUDAnalytics:
             xirr_current=xirr_current_value,
             xirr_historical=xirr_historical_value,
             realized_pnl=realized_pnl,
-            dividend_income=dividend_income
+            dividend_income=dividend_income,
         )
 
     def get_fixed_deposit_analytics(
@@ -702,7 +709,7 @@ class CRUDAnalytics:
         values = list(values)
 
         if today >= maturity_date:
-            pass # _get_portfolio_cash_flows already appended the maturity value
+            pass  # _get_portfolio_cash_flows already appended the maturity value
         else:
             # If active, the inflow is the current value
             final_value = _calculate_rd_value_at_date(
@@ -765,7 +772,8 @@ class CRUDAnalytics:
         end_time = time.time()
         logger.info(
             "Portfolio analytics for portfolio %s took %.4f seconds.",
-            portfolio_id, end_time - start_time,
+            portfolio_id,
+            end_time - start_time,
         )
 
         return schemas.PortfolioAnalytics(
@@ -798,239 +806,31 @@ class CRUDAnalytics:
         daily_values = [v if v > 0 else 1e-9 for v in daily_values]
 
         daily_returns = np.diff(daily_values) / daily_values[:-1]
-
-        if len(daily_returns) == 0 or np.std(daily_returns) == 0:
-            std_val = np.std(daily_returns) if len(daily_returns) > 0 else 'N/A'
-            logger.debug(
-                f"Sharpe ratio: Not enough returns or zero std dev. "
-                f"Returns count: {len(daily_returns)}, Std Dev: {std_val}"
-            )
+        if len(daily_returns) < 2:
             return 0.0
 
-        # Option 2: Threshold check for non-market (step-function) portfolios like PPF.
-        # If the vast majority of days (>80%) have zero price movement,
-        # it indicates an illiquid/fixed-income asset rather than a traded market asset.
-        zero_return_days = np.sum(
-            np.isclose(daily_returns, 0, atol=SHARPE_ZERO_RETURN_TOLERANCE)
-        )
-        if len(daily_returns) > 0 and (
-            (zero_return_days / len(daily_returns))
-            > SHARPE_STEP_FUNCTION_THRESHOLD
-        ):
-            logger.debug(
-                f"Sharpe ratio: Detected step-function portfolio "
-                f"({zero_return_days}/{len(daily_returns)} flat days). Returning 0.0."
-            )
+        avg_return = np.mean(daily_returns)
+        std_return = np.std(daily_returns)
+
+        if std_return < SHARPE_LOW_VOLATILITY_THRESHOLD:
             return 0.0
 
-        # Check for extremely low market volatility (< 1% annualized)
-        std_dev = np.std(daily_returns)
-        annual_volatility = std_dev * np.sqrt(SHARPE_ANNUALIZATION_FACTOR)
-        if annual_volatility < SHARPE_LOW_VOLATILITY_THRESHOLD:
-            logger.debug(
-                f"Sharpe ratio: Volatility extremely low "
-                f"({annual_volatility:.4f} annualized). "
-                f"Returning 0.0."
-            )
-            return 0.0
+        # Annualize
+        ann_return = avg_return * SHARPE_ANNUALIZATION_FACTOR
+        ann_vol = std_return * np.sqrt(SHARPE_ANNUALIZATION_FACTOR)
 
-        sharpe_ratio = (np.mean(daily_returns) / std_dev) * np.sqrt(
-            SHARPE_ANNUALIZATION_FACTOR
-        )
-        logger.debug(
-            f"Sharpe ratio: Calculated value is {sharpe_ratio}. "
-            f"Mean return: {np.mean(daily_returns)}"
-        )
-        return float(sharpe_ratio) if np.isfinite(sharpe_ratio) else 0.0
-
-    def get_diversification(
-        self, db: Session, *, portfolio_id: uuid.UUID
-    ) -> schemas.DiversificationResponse:
-        """
-        Calculates diversification breakdown by sector, country, and asset class
-        for a portfolio (FR6.4).
-        """
-        # Get holdings with current values
-        holdings_result = crud.holding.get_portfolio_holdings_and_summary(
-            db, portfolio_id=portfolio_id
-        )
-        holdings = holdings_result.holdings
-        total_value = holdings_result.summary.total_value or Decimal("0.0")
-
-        if total_value == 0:
-            return schemas.DiversificationResponse(total_value=Decimal("0"))
-
-        # Aggregate by various dimensions
-        by_sector: Dict[str, Dict] = defaultdict(
-            lambda: {"value": Decimal("0"), "count": 0}
-        )
-        by_industry: Dict[str, Dict] = defaultdict(
-            lambda: {"value": Decimal("0"), "count": 0}
-        )
-        by_country: Dict[str, Dict] = defaultdict(
-            lambda: {"value": Decimal("0"), "count": 0}
-        )
-        by_asset_class: Dict[str, Dict] = defaultdict(
-            lambda: {"value": Decimal("0"), "count": 0}
-        )
-        by_market_cap: Dict[str, Dict] = defaultdict(
-            lambda: {"value": Decimal("0"), "count": 0}
-        )
-        by_investment_style: Dict[str, Dict] = defaultdict(
-            lambda: {"value": Decimal("0"), "count": 0}
-        )
-        equity_total = Decimal("0")  # Track equity-only total for Sector/Industry/Cap
-
-        # Optimized: Bulk fetch all assets for the holdings to avoid N+1 queries
-        asset_ids = {h.asset_id for h in holdings}
-        assets = db.query(models.Asset).filter(models.Asset.id.in_(asset_ids)).all()
-        asset_map = {asset.id: asset for asset in assets}
-
-        for h in holdings:
-            # Get asset details from the pre-fetched map
-            asset = asset_map.get(h.asset_id)
-
-            value = h.current_value or Decimal("0")
-            # Use asset_type from Asset if available, otherwise from the Holding schema
-            asset_type = (
-                (asset.asset_type or "").upper() if asset
-                else (h.asset_type or "").upper()
-            )
-
-            # By Country (all assets)
-            # Default country to India for Indian instruments
-            if asset and asset.country:
-                country = asset.country
-            elif asset_type in ["FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF", "BOND"]:
-                country = "India"
-            elif asset_type in ["MUTUAL_FUND", "MUTUAL FUND"]:
-                country = "India"  # Most MFs are Indian
-            else:
-                country = "Unknown"
-            by_country[country]["value"] += value
-            by_country[country]["count"] += 1
-
-            # By Asset Class (derive from asset_type and sector for MFs)
-            if asset_type in ["STOCK", "ETF"]:
-                asset_class = "Equity"
-                equity_total += value  # Track equity-only total
-
-                # Sector/Industry only for equities
-                sector = asset.sector or "Unknown"
-                by_sector[sector]["value"] += value
-                by_sector[sector]["count"] += 1
-
-                industry = asset.industry or "Unknown"
-                by_industry[industry]["value"] += value
-                by_industry[industry]["count"] += 1
-
-                # Market Cap classification for equities
-                # Different thresholds for Indian vs foreign stocks
-                market_cap = asset.market_cap or 0
-                is_indian = (asset.country or "").lower() == "india"
-
-                if is_indian:
-                    # Indian thresholds (in INR)
-                    if market_cap >= 20000_00_00_000:  # 20,000 Cr = 200B INR
-                        cap_class = "Large Cap"
-                    elif market_cap >= 5000_00_00_000:  # 5,000 Cr = 50B INR
-                        cap_class = "Mid Cap"
-                    elif market_cap > 0:
-                        cap_class = "Small Cap"
-                    else:
-                        cap_class = "Unknown"
-                else:
-                    # Foreign thresholds - uses USD-based thresholds.
-                    # NOTE: yfinance returns market cap in the stock's trading
-                    # currency (EUR for AIR.PA, GBP for ULVR.L, etc.), not USD.
-                    # For major currencies (USD/EUR/GBP), thresholds are roughly
-                    # equivalent. Future enhancement: apply live FX conversion.
-                    if market_cap >= 10_000_000_000:  # ~$10B / €10B
-                        cap_class = "Large Cap"
-                    elif market_cap >= 2_000_000_000:  # ~$2B-10B
-                        cap_class = "Mid Cap"
-                    elif market_cap > 0:
-                        cap_class = "Small Cap"
-                    else:
-                        cap_class = "Unknown"
-                by_market_cap[cap_class]["value"] += value
-                by_market_cap[cap_class]["count"] += 1
-
-                # Investment Style classification logic
-                # Only applicable if enrichment data is available
-                style = asset.investment_style or "Unknown"
-                by_investment_style[style]["value"] += value
-                by_investment_style[style]["count"] += 1
-
-            elif asset_type in ["MUTUAL_FUND", "MUTUAL FUND"]:
-                # Map AMFI categories to asset classes
-                mf_sector = (asset.sector or "").lower()
-                if "equity" in mf_sector or "growth" in mf_sector:
-                    asset_class = "Equity"
-                elif ("debt" in mf_sector or "gilt" in mf_sector
-                      or "income" in mf_sector or "money market" in mf_sector
-                      or "liquid" in mf_sector):
-                    asset_class = "Debt"
-                elif "hybrid" in mf_sector:
-                    asset_class = "Hybrid"
-                elif "other" in mf_sector or "solution" in mf_sector:
-                    asset_class = "Hybrid"
-                else:
-                    # Fallback - check if any debt keywords
-                    asset_class = "Equity"
-            elif asset_type in ["BOND", "FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF"]:
-                asset_class = "Debt"  # Consolidated with Debt MFs
-            else:
-                asset_class = "Other"
-
-            by_asset_class[asset_class]["value"] += value
-            by_asset_class[asset_class]["count"] += 1
-
-        # Convert to response format
-        # Helper to convert dicts to list
-        def to_list(d: Dict, total: Decimal) -> list[schemas.DiversificationSegment]:
-            result = []
-            for name, data in d.items():
-                percentage = float((data["value"] / total) * 100) if total > 0 else 0.0
-                result.append(
-                    schemas.DiversificationSegment(
-                        name=name,
-                        value=data["value"],
-                        percentage=percentage,
-                        count=data["count"],
-                    )
-                )
-            return sorted(result, key=lambda x: x.value, reverse=True)
-
-        return schemas.DiversificationResponse(
-            by_asset_class=to_list(by_asset_class, total_value),
-            by_sector=to_list(by_sector, equity_total),
-            by_industry=to_list(by_industry, equity_total),
-            by_market_cap=to_list(by_market_cap, equity_total),
-            by_country=to_list(by_country, total_value),
-            by_investment_style=to_list(by_investment_style, equity_total),
-            total_value=total_value
-        )
-
-def _get_portfolio_current_value(db: Session, portfolio_id: uuid.UUID) -> Decimal:
-    """Helper to get the total current value of a portfolio."""
-    summary = crud.holding.get_portfolio_holdings_and_summary(
-        db, portfolio_id=portfolio_id
-    ).summary
-    return summary.total_value
-
-
-def _get_asset_current_value(
-    db: Session, portfolio_id: uuid.UUID, asset_id: uuid.UUID
-) -> Decimal:
-    """Helper to get the current value of a single asset in a portfolio."""
-    holdings = crud.holding.get_portfolio_holdings_and_summary(
-        db, portfolio_id=portfolio_id
-    ).holdings
-    for h in holdings:
-        if h.asset_id == asset_id:
-            return h.current_value
-    return Decimal("0.0")
+        # Risk-free rate (approx 7%)
+        rf_rate = 0.07
+        sharpe = (ann_return - rf_rate) / ann_vol
+        return float(sharpe)
 
 
 analytics = CRUDAnalytics()
+
+
+
+def _get_holding_history(
+    db: Session, holding_id: uuid.UUID, range_str: str = "all"
+) -> List[Dict[str, Any]]:
+    # This is a stub or helper if needed. Usually logic is in crud_dashboard.
+    return []

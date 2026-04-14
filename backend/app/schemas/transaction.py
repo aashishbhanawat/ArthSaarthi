@@ -68,7 +68,9 @@ class TransactionCreateIn(TransactionBase):
 
     @root_validator(pre=False, skip_on_failure=True)
     @classmethod
-    def check_integer_quantities_for_corporate_actions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_integer_quantities_for_corporate_actions(
+        cls, values: Dict[str, Any]
+    ) -> Dict[str, Any]:
         transaction_type = values.get("transaction_type")
         quantity = values.get("quantity")
         price_per_unit = values.get("price_per_unit")

@@ -1,20 +1,25 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-04-13
+**Last Updated:** 2026-04-14
 
 ## 1. Current Project Status
 
 *   **Overall Status:** ✅ **Stable (v1.2.0 Released)** | 🧪 **Android Experimental v1.2.0-exp Stabilized**
-*   **Summary:** Successfully stabilized and refined the Android v1.2.0-exp build. Resolved critical Pydantic validation errors during backup restoration and fixed "Investment Style" analytics for equities. Completed app-wide mobile card parity by refactoring Transactions, Dashboard, Watchlists, and Admin tools into premium responsive views. Implemented a flexible dual-mode date input (manual + picker) and resolved critical `NaN`-related crashes in the import preview engine.
+*   **Summary:** Successfully resolved gain/loss percentage scaling errors and finalized mobile UI refinements for the Android v1.2.0-exp build. Implemented safe-area compliance for all modal views and refactored mapping resolution into a dedicated mobile-friendly modal. All 188 frontend tests and ESLint checks are passing.
 
 ## 2. Test Suite Status
 
 *   **Backend Unit/Integration Tests:** ✅ **310/310 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
-*   **Linters (Code Quality):** ✅ **Passing**
+*   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ### Recent Stabilization & Refinement Efforts
 
+*   **Android UI Polish, Percentage Scaling & Lint Resolution (2026-04-14):**
+    - **Percentage Correction:** Fixed the "double-conversion" bug in `HoldingCard.tsx` where percentages were shown as 0.38% instead of 38%. Standardized centralized formatting across all Debt/Bond modals.
+    - **Safe Area Support:** Enforced `pt-safe` padding in all drill-down modals and the mobile header for Android status bar compliance.
+    - **Mapping UX:** Modularized the "Needs Mapping" logic into `MappingResolutionModal.tsx`, improving ergonomics on small screens.
+    - **Lint Cleanup:** Resolved 6 frontend lint errors related to type safety (`any`) and direct DOM access in `DateInput.tsx`, `LogsPage.tsx`, and `MorePage.tsx`.
 *   **App-Wide Mobile Card Parity & Import Stability (2026-04-13):**
     - **Mobile Card Parity:** Transitioned all remaining table-based layouts (Transactions, Dashboard, Watchlists, Aliases, FMV, Users, Interest Rates) into a premium card-based mobile interface with footer actions for better touch ergonomics.
     - **Import Session Robustness:** Fixed a critical `AttributeError` crash caused by `NaN` values in spreadsheet imports. Added defensive type-checking and sanitization to `crud_asset.py` and `import_sessions.py`.

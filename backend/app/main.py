@@ -93,7 +93,10 @@ async def startup_event() -> None:
     global _snapshot_task
     if settings.DEPLOYMENT_MODE in ("desktop", "android"):
         logging.info(f"DEBUG: DEPLOYMENT_MODE is '{settings.DEPLOYMENT_MODE}'")
-        logging.info(f"Spawning background snapshot task for {settings.DEPLOYMENT_MODE.capitalize()} App...")
+        logging.info(
+            f"Spawning background snapshot task for "
+            f"{settings.DEPLOYMENT_MODE.capitalize()} App..."
+        )
         _snapshot_task = asyncio.create_task(_desktop_snapshot_loop())
 
 app.add_middleware(

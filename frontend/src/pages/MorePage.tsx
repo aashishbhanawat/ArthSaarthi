@@ -16,7 +16,7 @@ import {
     BookOpenIcon
 } from '@heroicons/react/24/outline';
 
-const MenuItem = ({ to, href, icon: Icon, label, external }: { to?: string, href?: string, icon: any, label: string, external?: boolean }) => {
+const MenuItem = ({ to, href, icon: Icon, label, external }: { to?: string, href?: string, icon: React.ElementType, label: string, external?: boolean }) => {
     const content = (
         <>
             <div className="flex items-center gap-3">

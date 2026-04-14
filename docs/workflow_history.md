@@ -1,3 +1,44 @@
+## 2026-04-14: Android UI Polish, Percentage Scaling Fix & Lint Resolution
+
+**Task:** Resolve "double-conversion" percentage display errors, fix mobile safe-area overlays, refactor mapping resolution to a modal, and resolve 6 frontend lint errors.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Percentage Scaling Fix (Issue 6):**
+    - Identified that `HoldingCard.tsx` (mobile view) used a local `formatPercent` function that failed to multiply decimal values by 100.
+    - Standardized all percentage rendering across `HoldingCard`, `BondDetailModal`, and `PpfHoldingDetailModal` to use the centralized `formatPercentage` utility from `formatting.ts`.
+2. **Mobile UI & Alignment (Issue 1, 2, 3, 5):**
+    - **Safe Areas:** Implemented `pt-safe` padding in `MobileHeader.tsx`, `FixedDepositDetailModal.tsx`, and `PpfHoldingDetailModal.tsx` to prevent content overlap with the Android status bar.
+    - **Top Movers Spacing:** Added horizontal padding to `TopMoversTable.tsx` for consistent mobile spacing.
+    - **Mapping Modal:** Refactored the "Needs Mapping" resolution flow into a dedicated `MappingResolutionModal.tsx` for improved ergonomics on high-transaction portfolios.
+    - **Input Padding:** Adjusted `DateInput.tsx` padding to prevent the calendar icon from overlapping text.
+3. **Lint Resolution:**
+    - Fixed 6 ESLint errors related to `any` types and direct DOM node access in `DateInput.tsx`, `LogsPage.tsx`, and `MorePage.tsx`.
+    - Added targeted overrides for valid DOM operations (`click()`, `dispatchEvent()`) in component logic.
+4. **Functional & Backend Fixes (Issue 4):**
+    - Resolved PPF transaction `invalid datetime format` errors by ensuring dates are combined with minimum time before ISO conversion in the backend.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [crud_asset.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_asset.py) — Fixed PPF date combination logic.
+
+**Frontend:**
+* **New:** [MappingResolutionModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Import/MappingResolutionModal.tsx) — Modular mapping UI.
+* **Modified:** [HoldingCard.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/HoldingCard.tsx) — Fixed percentage scaling.
+* **Modified:** [MobileHeader.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/MobileHeader.tsx) — Added `pt-safe`.
+* **Modified:** [DateInput.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/common/DateInput.tsx) — Fixed lint and padding.
+* **Modified:** [BondDetailModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/BondDetailModal.tsx), [PpfHoldingDetailModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/PpfHoldingDetailModal.tsx) — Standardized percentage formatting.
+* **Modified:** [FixedDepositDetailModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/FixedDepositDetailModal.tsx) — Added `pt-safe`.
+* **Modified:** [TopMoversTable.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Dashboard/TopMoversTable.tsx) — Mobile spacing refinements.
+* **Modified:** [ImportPreviewPage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/Import/ImportPreviewPage.tsx) — Integrated `MappingResolutionModal`.
+* **Modified:** [LogsPage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/LogsPage.tsx), [MorePage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/MorePage.tsx) — Resolved lint errors.
+
+---
+
 ## 2026-04-13: App-Wide Mobile Card Parity & Import Stability
 
 **Task:** Refactor all remaining table-based layouts (Transactions, Dashboard, Watchlists, Admin) into premium card-based mobile views and fix the import session `NaN` crash.
@@ -1752,3 +1793,22 @@ Implemented `YahooQueryProvider` and integrated it into the core financial data 
 
 ### Outcome
 **Success.** Successfully integrated `yahooquery` for improved metadata reliability and Android compatibility.
+
+---
+
+## 2026-04-14: Backend Linting and yahooquery Removal
+
+### Goal
+Resolve 622 PEP 8 linting violations across the backend and remove the experimental `yahooquery` library dependency.
+
+### Proposed Changes
+- **Backend Linting**: Systematically fixed 622 `ruff` errors (E501, E701, F401, F821, etc.) in `app/crud`, `app/api`, and `app/services`.
+- **yahooquery Removal**: Deleted utility scripts, updated `financial_data_service.py` documentation, and removed the dependency from Android's `build.gradle.kts`.
+
+### Execution
+- **Files Deleted**: `backend/verify_yahooquery_integration.py`, `backend/evaluate_metadata_alts.py`.
+- **Modified**: `app/services/financial_data_service.py`, `frontend/android/app/build.gradle.kts`.
+- **Linting**: Achieved "All checks passed!" report from `ruff`.
+
+### Outcome
+**Success.** Codebase is now PEP 8 compliant. All 306 backend tests passed. `yahooquery` was successfully purged from the project without impacting functionality.

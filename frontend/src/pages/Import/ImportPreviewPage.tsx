@@ -5,6 +5,8 @@ import { formatCurrency, formatDate } from '../../utils/formatting';
 import { ParsedTransaction, AssetAliasCreate } from '../../types/import';
 import AssetAliasMappingModal from '../../components/modals/AssetAliasMappingModal';
 import ImportTransactionCard from '../../components/Import/ImportTransactionCard';
+import MappingResolutionModal from '../../components/Import/MappingResolutionModal';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 const ImportPreviewPage: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
@@ -14,6 +16,7 @@ const ImportPreviewPage: React.FC = () => {
     const [selectedTransactionIndices, setSelectedTransactionIndices] = useState<Set<number>>(new Set());
     const [aliasesToCreate, setAliasesToCreate] = useState<AssetAliasCreate[]>([]);
     const [isAliasModalOpen, setAliasModalOpen] = useState(false);
+    const [isMappingModalOpen, setMappingModalOpen] = useState(false);
     const [tickerToMap, setTickerToMap] = useState<string | null>(null);
 
 
@@ -190,57 +193,6 @@ const ImportPreviewPage: React.FC = () => {
         </>
     );
 
-    const NeedsMappingTable = ({ transactions, onMapTicker }: { transactions: ParsedTransaction[], onMapTicker: (ticker: string) => void }) => (
-        <>
-            <div className="hidden md:block overflow-x-auto">
-                <table className="table-auto w-full">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
-                            <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                            <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Unit</th>
-                            <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600 text-gray-900 dark:text-gray-200">
-                        {transactions.map((tx, index) => (
-                            <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td className="p-3 whitespace-nowrap">{formatDate(tx.transaction_date)}</td>
-                                <td className="p-3 font-medium max-w-xs break-words">{tx.ticker_symbol}</td>
-                                <td className="p-3 whitespace-nowrap"><span className={`badge ${tx.transaction_type.toUpperCase() === 'BUY' ? 'badge-success' : 'badge-error'}`}>{tx.transaction_type.toUpperCase()}</span></td>
-                                <td className="p-3 whitespace-nowrap text-right">{tx.quantity}</td>
-                                <td className="p-3 whitespace-nowrap text-right">{formatCurrency(tx.price_per_unit)}</td>
-                                <td className="p-3 whitespace-nowrap text-right">
-                                    <button
-                                        className="btn btn-xs btn-primary shadow-sm"
-                                        onClick={() => onMapTicker(tx.ticker_symbol)}
-                                    >
-                                        Map Symbol
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <div className="md:hidden space-y-2">
-                {transactions.map((tx, index) => (
-                    <ImportTransactionCard
-                        key={index}
-                        transaction={tx}
-                        isSelected={false}
-                        onToggleSelection={() => { }}
-                        isDuplicate={false}
-                        isNeedsMapping={true}
-                        onMapTicker={() => onMapTicker(tx.ticker_symbol)}
-                    />
-                ))}
-            </div>
-        </>
-    );
-
     const InvalidTransactionTable = ({ invalidRows }: { invalidRows: { row_data: Record<string, unknown>; error: string }[] }) => {
         return (
             <table className="table-auto w-full">
@@ -271,14 +223,31 @@ const ImportPreviewPage: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400 mb-4">Review the transactions parsed from <span className="font-semibold">{session.file_name}</span> for portfolio <span className="font-semibold">{session.portfolio.name}</span>.</p>
 
             {/* Warning about cross-verification */}
-            <div className="alert alert-warning mb-8">
+            <div className="alert alert-warning mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                <div>
-                    <span className="font-bold">Important:</span> Please cross-verify all imported transactions against your original statements.
-                    Some transactions may not be extractable due to PDF formatting issues.
-                    If any transactions are missing, please add them manually after import.
+                <div className="text-sm">
+                    <span className="font-bold">Important:</span> Cross-verify transactions against original statements.
                 </div>
             </div>
+
+            {/* Mapping Required Alert */}
+            {previewData.needs_mapping.length > 0 && (
+                <div className="alert alert-error shadow-md mb-8 flex justify-between items-center py-2">
+                    <div className="flex items-center gap-3">
+                        <ExclamationTriangleIcon className="h-6 w-6 text-white" />
+                        <div>
+                            <h3 className="font-bold text-white">Mapping Required</h3>
+                            <div className="text-xs text-white opacity-90">{previewData.needs_mapping.length} symbols need attention before import.</div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setMappingModalOpen(true)}
+                        className="btn btn-sm bg-white border-none text-red-600 hover:bg-gray-100"
+                    >
+                        Resolve Now
+                    </button>
+                </div>
+            )}
 
             <div className="space-y-6">
                 {/* New Transactions */}
@@ -304,18 +273,6 @@ const ImportPreviewPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Transactions Needing Mapping */}
-                {previewData.needs_mapping.length > 0 && (
-                    <div className="card p-4 sm:p-6 bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm">
-                        <h2 className="text-xl font-bold mb-4 text-blue-800 dark:text-blue-300">
-                            Transactions Needing Mapping ({previewData.needs_mapping.length})
-                        </h2>
-                        <p className="text-sm text-blue-700 dark:text-blue-400 mb-4 italic">
-                            These transactions have unrecognized ticker symbols. Map them to an existing asset to include them in the import.
-                        </p>
-                        <NeedsMappingTable transactions={previewData.needs_mapping} onMapTicker={handleOpenAliasModal} />
-                    </div>
-                )}
 
                 {/* Invalid Transactions */}
                 {previewData.invalid.length > 0 && (
@@ -360,6 +317,17 @@ const ImportPreviewPage: React.FC = () => {
                     portfolioId={session.portfolio_id}
                     source={session.source}
                     onAliasCreated={handleAliasCreated}
+                />
+            )}
+
+            {previewData.needs_mapping.length > 0 && (
+                <MappingResolutionModal
+                    isOpen={isMappingModalOpen}
+                    onClose={() => setMappingModalOpen(false)}
+                    transactions={previewData.needs_mapping}
+                    onMapTicker={(ticker) => {
+                        handleOpenAliasModal(ticker);
+                    }}
                 />
             )}
         </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
-import { usePrivacySensitiveCurrency, formatCurrency, formatDate } from '../../utils/formatting';
+import { usePrivacySensitiveCurrency, formatCurrency, formatDate, formatPercentage } from '../../utils/formatting';
 import { XMarkIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface BondDetailModalProps {
@@ -75,7 +75,7 @@ const BondDetailModal: React.FC<BondDetailModalProps> = ({
                     <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Annualized (XIRR)</p>
                         <p className="font-semibold dark:text-gray-100">
-                            {isLoadingAnalytics ? '...' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
+                            {isLoadingAnalytics ? '...' : formatPercentage(analytics?.xirr_current ?? 0)}
                         </p>
                     </div>
                 </div>

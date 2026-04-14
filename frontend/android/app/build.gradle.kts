@@ -87,7 +87,6 @@ chaquopy {
             install("peewee")
             install("multitasking")
             install("yfinance==0.2.55")
-            install("yahooquery")
             install("requests-cache")
             
             // Database & Auth
