@@ -7,7 +7,7 @@ import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
 import { useDebounce } from '../../hooks/useDebounce';
 import { lookupAsset, searchStocks, AssetSearchResult, getFxRate, getAvailableLots, AvailableLot, updateBondByAssetId } from '../../services/portfolioApi';
-import { BondCreate, BondType } from '../../types/bond';
+import { BondCreate, BondType, BondUpdate } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
