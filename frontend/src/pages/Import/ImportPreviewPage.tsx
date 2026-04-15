@@ -15,7 +15,6 @@ const ImportPreviewPage: React.FC = () => {
     const [selectedTransactionIndices, setSelectedTransactionIndices] = useState<Set<number>>(new Set());
     const [aliasesToCreate, setAliasesToCreate] = useState<AssetAliasCreate[]>([]);
     const [isAliasModalOpen, setAliasModalOpen] = useState(false);
-    const [isMappingModalOpen, setMappingModalOpen] = useState(false);
     const [tickerToMap, setTickerToMap] = useState<string | null>(null);
 
 
