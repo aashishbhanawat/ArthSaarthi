@@ -45,7 +45,7 @@ const MobileHeader: React.FC = () => {
                         {getPageTitle()}
                     </h1>
                     <span className="px-1.5 py-0.5 rounded bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
-                        v4
+                        v6
                     </span>
                 </div>
             </div>
