@@ -38,16 +38,11 @@ const MobileHeader: React.FC = () => {
 
     return (
         <header className="lg:hidden sticky top-0 z-40 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 pt-safe flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-2">
-                <img src="ArthSaarthi.png" alt="Logo" className="h-8 w-8 shrink-0" />
-                <div className="flex items-baseline gap-1.5">
-                    <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 truncate max-w-[120px]">
-                        {getPageTitle()}
-                    </h1>
-                    <span className="px-1.5 py-0.5 rounded bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
-                        v6
-                    </span>
-                </div>
+            <div className="flex items-center gap-3">
+                <img src="ArthSaarthi.png" alt="Logo" className="h-8 w-8" />
+                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 truncate max-w-[150px]">
+                    {getPageTitle()}
+                </h1>
             </div>
 
             <div className="flex items-center gap-2">
