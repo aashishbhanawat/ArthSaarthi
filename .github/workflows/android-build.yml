@@ -83,7 +83,7 @@ jobs:
           chmod +x gradlew
           PYTHON_PATH=$(which python)
           # If keystore is available, use it for signing
-          if [ -f "release.keystore" ]; then
+          if [ -f "app/release.keystore" ]; then
             ./gradlew assembleDebug \
               -PbuildPython="$PYTHON_PATH" \
               -PRELEASE_STORE_FILE="release.keystore" \
