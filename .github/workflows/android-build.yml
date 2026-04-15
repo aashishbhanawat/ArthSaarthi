@@ -70,12 +70,30 @@ jobs:
               resized.save(f'{dest}/ic_launcher_round.png')
           "
 
+      - name: Decode Keystore
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/release.keystore
+        env:
+          HAS_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+
       - name: Build APK with Gradle
         working-directory: ./frontend/android
         run: |
           chmod +x gradlew
           PYTHON_PATH=$(which python)
-          ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH" --no-parallel
+          # If keystore is available, use it for signing
+          if [ -f "release.keystore" ]; then
+            ./gradlew assembleDebug \
+              -PbuildPython="$PYTHON_PATH" \
+              -PRELEASE_STORE_FILE="release.keystore" \
+              -PRELEASE_STORE_PASSWORD="${{ secrets.RELEASE_STORE_PASSWORD }}" \
+              -PRELEASE_KEY_ALIAS="${{ secrets.RELEASE_KEY_ALIAS }}" \
+              -PRELEASE_KEY_PASSWORD="${{ secrets.RELEASE_KEY_PASSWORD }}" \
+              --no-parallel
+          else
+            ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH" --no-parallel
+          fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

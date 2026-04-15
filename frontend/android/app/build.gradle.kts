@@ -21,13 +21,30 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // These properties can be provided via gradle.properties or command line -P
+            storeFile = file(project.findProperty("RELEASE_STORE_FILE") ?: "debug.keystore")
+            storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+            keyAlias = project.findProperty("RELEASE_KEY_ALIAS") as String?
+            keyPassword = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            // For experimental builds, we can also use the release config if provided
+            if (project.hasProperty("RELEASE_STORE_FILE")) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
