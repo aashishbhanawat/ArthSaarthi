@@ -75,8 +75,8 @@ const DateInput: React.FC<DateInputProps> = ({
             }
 
             // If react-hook-form register's onChange is available, call it directly too
-            if (registerProps.onChange) {
-                registerProps.onChange({
+            if (register && register.onChange) {
+                register.onChange({
                     target: textInputRef.current,
                     type: 'change'
                 } as unknown as React.ChangeEvent<HTMLInputElement>);
