@@ -12,7 +12,7 @@ android {
         applicationId = "com.arthsaarthi.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
+        versionCode = 3
         versionName = "1.2.0"
 
         ndk {
@@ -87,7 +87,7 @@ chaquopy {
             install("peewee")
             install("multitasking")
             install("yfinance==0.2.55")
-            install("requests-cache")
+            install("requests-cache==1.2.0")
             
             // Database & Auth
             install("alembic")
@@ -98,7 +98,6 @@ chaquopy {
             install("openpyxl")
             install("xlrd")
             install("beautifulsoup4")
-            install("requests-cache==1.2.0")
             install("platformdirs==4.3.6")
             install("tenacity")
             install("requests")
@@ -112,8 +111,8 @@ chaquopy {
 }
 
 dependencies {
-    // Capacitor
-    implementation("com.capacitorjs:core:7.2.0")
+    // Capacitor (aligned with package.json v6)
+    implementation("com.capacitorjs:core:6.0.0")
 
     // AndroidX
     implementation("androidx.core:core-ktx:1.15.0")

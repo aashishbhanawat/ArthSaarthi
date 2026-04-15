@@ -303,6 +303,8 @@ def get_import_session_preview(
 
     try:
         df = pd.read_json(import_session.parsed_file_path, orient='records')
+        # Replace NaN/NaT with None for Pydantic compatibility
+        df = df.where(pd.notnull(df), None)
     except Exception as e:
         log.error(f"Could not read parsed data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not read parsed data.")
@@ -680,6 +682,8 @@ def get_fd_import_session_preview(
 
     try:
         df = pd.read_json(import_session.parsed_file_path, orient='records')
+        # Replace NaN/NaT with None for Pydantic compatibility
+        df = df.where(pd.notnull(df), None)
     except Exception as e:
         log.error(f"Could not read parsed data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not read parsed data.")

@@ -18,9 +18,11 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ title, value, isPnl = false }
     const valueColor = isPnl ? getPnlColor(value) : 'text-gray-800 dark:text-gray-200';
 
     return (
-        <div className="card text-center">
-            <h3 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2">{title}</h3>
-            <p className={`text-4xl font-bold ${valueColor}`}>{formatCurrency(value)}</p>
+        <div className="card text-center p-4">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-500 dark:text-gray-400 mb-1 truncate">{title}</h3>
+            <p className={`text-2xl sm:text-3xl lg:text-4xl font-bold truncate ${valueColor}`} title={formatCurrency(value)}>
+                {formatCurrency(value)}
+            </p>
         </div>
     );
 };

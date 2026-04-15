@@ -6,7 +6,7 @@ import { useCreateRecurringDeposit, useUpdateRecurringDeposit } from '../../hook
 import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
 import { useDebounce } from '../../hooks/useDebounce';
-import { lookupAsset, searchStocks, AssetSearchResult, getFxRate, getAvailableLots, AvailableLot } from '../../services/portfolioApi';
+import { lookupAsset, searchStocks, AssetSearchResult, getFxRate, getAvailableLots, AvailableLot, updateBondByAssetId } from '../../services/portfolioApi';
 import { BondCreate, BondType } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
@@ -202,6 +202,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     'Stock': 'Stock',
                 };
                 const computedAssetType = assetTypeMap[rawAssetType] || 'Stock';
+                if (isEditMode) {
+                    console.log(`[09:12:58] [TRANSACTION] Edit mode - asset object (computed):`, transactionToEdit?.asset);
+                    console.log(`[09:12:58] [TRANSACTION] Edit mode - asset object (selectedAsset):`, selectedAsset);
+                }
                 debugLog('transaction', 'Edit mode - asset object:', transactionToEdit.asset);
                 debugLog('transaction', `Edit mode - rawAssetType: "${rawAssetType}", computedAssetType: "${computedAssetType}"`);
 
@@ -368,11 +372,26 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     useEffect(() => {
         if (selectedAsset && assetType === 'Bond') {
             // Populate the bond-specific fields when a bond asset is selected
-            setValue('bondType', selectedAsset.bond?.bond_type || undefined, { shouldValidate: true });
+            setValue('bondType', selectedAsset.bond?.bond_type || 'CORPORATE' as BondType, { shouldValidate: true });
             setValue('isin', selectedAsset.isin || '', { shouldValidate: true });
-            setValue('couponRate', selectedAsset.bond?.coupon_rate || undefined, { shouldValidate: true });
-            setValue('faceValue', selectedAsset.bond?.face_value || undefined, { shouldValidate: true });
-            setValue('bondMaturityDate', selectedAsset.bond?.maturity_date ? new Date(selectedAsset.bond.maturity_date).toISOString().split('T')[0] : '', { shouldValidate: true });
+            setValue('couponRate', selectedAsset.bond?.coupon_rate ? Number(selectedAsset.bond.coupon_rate) : 0, { shouldValidate: true });
+            setValue('faceValue', selectedAsset.bond?.face_value ? Number(selectedAsset.bond.face_value) : 1000, { shouldValidate: true });
+
+            // Safer date parsing to avoid 1970 issues
+            let maturityDate = '';
+            if (selectedAsset.bond?.maturity_date) {
+                const rawDate = selectedAsset.bond.maturity_date;
+                // If it's already YYYY-MM-DD, use it directly
+                if (/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+                    maturityDate = rawDate.split('T')[0];
+                } else if (rawDate) {
+                    const d = new Date(rawDate);
+                    if (!isNaN(d.getTime())) {
+                        maturityDate = d.toISOString().split('T')[0];
+                    }
+                }
+            }
+            setValue('bondMaturityDate', maturityDate, { shouldValidate: true });
         }
     }, [selectedAsset, assetType, setValue]);
 
@@ -801,6 +820,25 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     fees: data.fees || 0,
                     details,
                 };
+
+                // CRITICAL: Also update Bond metadata if it was changed during edit
+                if (assetType === 'Bond' && selectedAsset?.id) {
+                    const bondData: BondUpdate = {
+                        bond_type: data.bondType as BondType,
+                        coupon_rate: data.couponRate,
+                        face_value: data.faceValue,
+                        maturity_date: data.bondMaturityDate,
+                        isin: data.isin || null,
+                    };
+                    // We call the update endpoint for bond metadata
+                    updateBondByAssetId(portfolioId, selectedAsset.id, bondData)
+                        .then(() => {
+                            console.log("Bond metadata updated successfully during transaction edit.");
+                            // We don't necessarily need to invalidate everything here since the transaction 
+                            // mutation will handle it, but it doesn't hurt.
+                        })
+                        .catch(err => console.error("Failed to update bond metadata during transaction edit:", err));
+                }
                 updateTransactionMutation.mutate({
                     portfolioId,
                     transactionId: transactionToEdit.id,
@@ -826,15 +864,17 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 };
                 const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: data.transaction_type as TransactionType, quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0, details };
 
-                // If the asset already exists and its bond details are complete (i.e., not a placeholder),
-                // we just add a new transaction. Otherwise, we use the bond creation endpoint which
-                // also handles updating (upserting) the bond details along with creating the first transaction.
-                const isBondDetailComplete = selectedAsset.bond && selectedAsset.bond.maturity_date && selectedAsset.bond.maturity_date !== '1970-01-01';
-                if (isBondDetailComplete) {
+                const isSell = data.transaction_type === 'SELL';
+
+                // For Bonds, we now ALWAYS use createBondMutation if we are creating a BUY/CONTRIBUTION.
+                // The backend endpoint performs an upsert, ensuring the latest bond metadata (isin, maturity, coupon)
+                // is saved even if the asset already existed.
+                if (isSell) {
+                    // For SELL, we just add the transaction as metadata usually doesn't change on sell
                     const payload: TransactionCreate = { ...transactionData, asset_id: selectedAsset.id };
                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
                 } else {
-                    // This is for creating a new bond asset and its first transaction
+                    // For others, ensure bond details are synced/created
                     createBondMutation.mutate({ portfolioId, bondData, transactionData }, mutationOptions);
                 }
             };
@@ -1172,7 +1212,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100 mb-2">
                                             {isEditMode ? 'Edit Contribution' : 'Add New Contribution'}
                                         </h3>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="form-group">
                                                 <label htmlFor="contributionAmount" className="form-label">Contribution Amount (₹)</label>
                                                 <input id="contributionAmount" type="number" step="any" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
@@ -1191,8 +1231,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 ) : (
                                     <div>
                                         <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100 mb-2">Create Your PPF Account</h3>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="form-group col-span-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="form-group col-span-1 sm:col-span-2">
                                                 <label htmlFor="institutionName" className="form-label">Institution Name (e.g., SBI, HDFC)</label>
                                                 <input id="institutionName" type="text" {...register('institutionName', { required: true })} className="form-input" />
                                             </div>
@@ -1211,7 +1251,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             </div>
                                         </div>
                                         <h3 className="font-semibold text-lg text-gray-800 mt-4 mb-2">Add First Contribution</h3>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="form-group">
                                                 <label htmlFor="contributionAmount" className="form-label">Contribution Amount (₹)</label>
                                                 <input id="contributionAmount" type="number" step="any" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />

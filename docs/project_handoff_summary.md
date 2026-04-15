@@ -1,6 +1,6 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-04-14
+**Last Updated:** 2026-04-15
 
 ## 1. Current Project Status
 
@@ -15,6 +15,10 @@
 
 ### Recent Stabilization & Refinement Efforts
 
+*   **Bond Metadata Sync, DateInput Fix & Android Dependency Stabilization (2026-04-15):**
+    - **Bond Metadata:** Resolved a major issue where maturity dates were not updating during transaction edits. Added `updateBondByAssetId` and explicit sync in `TransactionFormModal.tsx`.
+    - **DateInput Stabilization:** Fixed the "double-submit" validation lag and calendar synchronization issues.
+    - **Android Dependency Fix:** Downgraded Capacitor and Vite to stable v6 releases to resolve persistent package conflicts. Aligned `appId` and incremented `versionCode` to 3 for successful upgrades.
 *   **Android UI Polish, Percentage Scaling & Lint Resolution (2026-04-14):**
     - **Percentage Correction:** Fixed the "double-conversion" bug in `HoldingCard.tsx` where percentages were shown as 0.38% instead of 38%. Standardized centralized formatting across all Debt/Bond modals.
     - **Safe Area Support:** Enforced `pt-safe` padding in all drill-down modals and the mobile header for Android status bar compliance.

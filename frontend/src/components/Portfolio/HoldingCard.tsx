@@ -46,15 +46,15 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-2 mt-2">
-                <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Unrealized P&L</div>
-                    <div className={`text-xs font-bold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <div className="min-w-0">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-tighter truncate">Unrealized P&L</div>
+                    <div className={`text-xs font-bold truncate ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {formatCurrency(holding.unrealized_pnl)} ({formatPercentage(holding.unrealized_pnl_percentage)})
                     </div>
                 </div>
-                <div className="text-right">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Day's P&L</div>
-                    <div className={`text-xs font-bold ${isDayPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <div className="text-right min-w-0">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-tighter truncate">Day's P&L</div>
+                    <div className={`text-xs font-bold truncate ${isDayPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {formatCurrency(holding.days_pnl)} ({formatPercentage(holding.days_pnl_percentage)})
                     </div>
                 </div>
@@ -155,12 +155,12 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
             className="card p-4 active:scale-[0.98] transition-all cursor-pointer border-l-4"
             style={{ borderLeftColor: isPositive ? '#10b981' : '#ef4444' }}
         >
-            <div className="flex justify-between items-start mb-1">
-                <div className="flex flex-col max-w-[70%]">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{holding.ticker_symbol}</span>
+            <div className="flex justify-between items-start mb-1 gap-2">
+                <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{holding.ticker_symbol}</span>
                     <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">{holding.asset_name}</h3>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                     <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
                         {formatCurrency(holding.current_value)}
                     </div>

@@ -1,3 +1,40 @@
+## 2026-04-15: Bond Metadata Sync, DateInput Fix & Android Dependency Stabilization
+
+**Task:** Resolve Bond maturity date persistence issues, fix DateInput validation lag, and stabilize Android/Frontend dependencies by aligning Capacitor/Vite versions.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Bond Metadata Sync:**
+    - Identified that Bond metadata (maturity date, coupon rate) was being ignored during transaction edits.
+    - Implemented explicit Bond metadata updates in `TransactionFormModal.tsx` for both New and Edit modes.
+    - Added the missing `updateBondByAssetId` API method to `portfolioApi.ts`.
+2. **DateInput & Validation Fixes:**
+    - Resolved the "double-submit" validation lag by ensuring `react-hook-form` is notified of manual input changes via both `change` and `input` events.
+    - Synchronized the hidden native date picker with the visible text input to ensure the calendar opens on the correct date.
+3. **Android & Frontend Stabilization:**
+    - Downgraded `@capacitor/*` and `vite` to stable v6 releases to resolve "conflict package" (ERESOLVE) errors during Android upgrades.
+    - Cleaned up redundant Python dependencies in `build.gradle.kts`.
+    - Synchronized `appId` to `com.arthsaarthi.app` across all configuration files.
+    - Incremented `versionCode` to 3 for a seamless Android upgrade path.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [crud_bond.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_bond.py) — Verified update logic.
+* **Modified:** [asset_seeder.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/asset_seeder.py) — Documented 1970 fallback.
+
+**Frontend:**
+* **Modified:** [DateInput.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/common/DateInput.tsx) — Fixed sync and validation lag.
+* **Modified:** [TransactionFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/TransactionFormModal.tsx) — Enabled metadata sync in Edit/New modes.
+* **Modified:** [portfolioApi.ts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/services/portfolioApi.ts) — Added `updateBondByAssetId`.
+* **Modified:** [package.json](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/package.json) — Downgraded Capacitor/Vite and fixed `appId`.
+* **Modified:** [build.gradle.kts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/build.gradle.kts) — Aligned Capacitor version and cleaned pip dependencies.
+
+---
+
 ## 2026-04-14: Android UI Polish, Percentage Scaling Fix & Lint Resolution
 
 **Task:** Resolve "double-conversion" percentage display errors, fix mobile safe-area overlays, refactor mapping resolution to a modal, and resolve 6 frontend lint errors.

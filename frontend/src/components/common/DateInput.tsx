@@ -31,17 +31,25 @@ const DateInput: React.FC<DateInputProps> = ({
     const textInputRef = useRef<HTMLInputElement>(null);
 
     const handleCalendarClick = () => {
-        if (datePickerRef.current) {
+        if (datePickerRef.current && textInputRef.current) {
+            // SYNC: Set the picker's value to the text input's current value (if valid)
+            const currentVal = textInputRef.current.value;
+            // Simple regex check for YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(currentVal)) {
+                datePickerRef.current.value = currentVal;
+            } else {
+                // Fallback to today if current value is invalid
+                datePickerRef.current.value = new Date().toISOString().split('T')[0];
+            }
+
             // Use showPicker if available (modern browsers), otherwise fallback to click()
             if ('showPicker' in HTMLInputElement.prototype) {
                 try {
                     datePickerRef.current.showPicker();
                 } catch (e) {
-                    // eslint-disable-next-line testing-library/no-node-access
                     datePickerRef.current.click();
                 }
             } else {
-                // eslint-disable-next-line testing-library/no-node-access
                 datePickerRef.current.click();
             }
         }
@@ -53,13 +61,25 @@ const DateInput: React.FC<DateInputProps> = ({
             // Set the value directly in the visible text input
             textInputRef.current.value = newValue;
 
-            // Trigger an input event so react-hook-form / React state picks it up
-            const event = new Event('input', { bubbles: true });
-            textInputRef.current.dispatchEvent(event);
+            // Trigger both 'change' and 'input' events to ensure react-hook-form sees it
+            // Some versions of react-hook-form listen for 'change'
+            const changeEvent = new Event('change', { bubbles: true });
+            textInputRef.current.dispatchEvent(changeEvent);
+
+            const inputEvent = new Event('input', { bubbles: true });
+            textInputRef.current.dispatchEvent(inputEvent);
 
             // Also trigger standard onChange if provided (for GoalFormModal)
             if (onChange) {
                 onChange(newValue);
+            }
+
+            // If react-hook-form register's onChange is available, call it directly too
+            if (registerProps.onChange) {
+                registerProps.onChange({
+                    target: textInputRef.current,
+                    type: 'change'
+                } as unknown as React.ChangeEvent<HTMLInputElement>);
             }
         }
     };

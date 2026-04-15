@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 # Need to import Portfolio and User schemas to be used as nested objects
 from .asset_alias import AssetAliasCreate
@@ -49,6 +49,9 @@ class ImportSession(ImportSessionInDBBase):
     user: User
 
 
+import math
+from typing import Any, Optional
+
 # Schema for the parsed transaction data from the file
 class ParsedTransaction(BaseModel):
     transaction_date: str
@@ -58,6 +61,15 @@ class ParsedTransaction(BaseModel):
     price_per_unit: float
     fees: float
     isin: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def fix_nan(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            for k, v in data.items():
+                if isinstance(v, float) and math.isnan(v):
+                    data[k] = None
+        return data
 
 
 # New schema for the categorized preview response
@@ -87,6 +99,15 @@ class ParsedFixedDeposit(BaseModel):
     maturity_amount: float | None = None
     interest_payout: str = "Cumulative"
     compounding_frequency: str = "Quarterly"
+
+    @model_validator(mode="before")
+    @classmethod
+    def fix_nan(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            for k, v in data.items():
+                if isinstance(v, float) and math.isnan(v):
+                    data[k] = None
+        return data
 
 
 # Schema for FD import preview response
