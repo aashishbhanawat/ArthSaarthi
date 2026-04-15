@@ -12,7 +12,7 @@ android {
         applicationId = "com.arthsaarthi.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
+        versionCode = 3
         versionName = "1.2.0"
 
         ndk {
@@ -61,7 +61,11 @@ android {
         val variantName = name
         outputs.all {
             val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            outputImpl.outputFileName = "ArthSaarti-${variantName}.apk"
+            if (variantName == "release") {
+                outputImpl.outputFileName = "ArthSaarthi-v1.2.0-android.apk"
+            } else {
+                outputImpl.outputFileName = "ArthSaarthi-${variantName}.apk"
+            }
         }
     }
 }

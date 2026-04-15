@@ -1,4 +1,4 @@
-name: Android APK Build (Experimental)
+name: Android APK Build (Release)
 
 on:
   workflow_dispatch:
@@ -84,7 +84,7 @@ jobs:
           PYTHON_PATH=$(which python)
           # If keystore is available, use it for signing
           if [ -f "app/release.keystore" ]; then
-            ./gradlew assembleDebug \
+            ./gradlew assembleRelease \
               -PbuildPython="$PYTHON_PATH" \
               -PRELEASE_STORE_FILE="release.keystore" \
               -PRELEASE_STORE_PASSWORD="${{ secrets.RELEASE_STORE_PASSWORD }}" \
@@ -92,11 +92,11 @@ jobs:
               -PRELEASE_KEY_PASSWORD="${{ secrets.RELEASE_KEY_PASSWORD }}" \
               --no-parallel
           else
-            ./gradlew assembleDebug -PbuildPython="$PYTHON_PATH" --no-parallel
+            ./gradlew assembleRelease -PbuildPython="$PYTHON_PATH" --no-parallel
           fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: frontend/android/app/build/outputs/apk/debug/ArthSaarti-debug.apk
+          name: ArthSaarthi-v1.2.0-android
+          path: frontend/android/app/build/outputs/apk/release/ArthSaarthi-v1.2.0-android.apk
