@@ -1,6 +1,8 @@
 import uuid
+import math
+from typing import Any, Optional, List
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, root_validator
 
 # Need to import Portfolio and User schemas to be used as nested objects
 from .asset_alias import AssetAliasCreate
@@ -49,9 +51,6 @@ class ImportSession(ImportSessionInDBBase):
     user: User
 
 
-import math
-from typing import Any, Optional
-
 # Schema for the parsed transaction data from the file
 class ParsedTransaction(BaseModel):
     transaction_date: str
@@ -62,7 +61,7 @@ class ParsedTransaction(BaseModel):
     fees: float
     isin: str | None = None
 
-    @model_validator(mode="before")
+    @root_validator(pre=True)
     @classmethod
     def fix_nan(cls, data: Any) -> Any:
         if isinstance(data, dict):
@@ -74,18 +73,18 @@ class ParsedTransaction(BaseModel):
 
 # New schema for the categorized preview response
 class ImportSessionPreview(BaseModel):
-    valid_new: list[ParsedTransaction]
-    duplicates: list[ParsedTransaction]
-    invalid: list[dict]  # e.g., {"row_data": {...}, "error": "Invalid data format"}
-    needs_mapping: list[
+    valid_new: List[ParsedTransaction]
+    duplicates: List[ParsedTransaction]
+    invalid: List[dict]  # e.g., {"row_data": {...}, "error": "Invalid data format"}
+    needs_mapping: List[
         ParsedTransaction
     ]  # For rows with unrecognized ticker symbols
 
 
 # New schema for the selective commit request body
 class ImportSessionCommit(BaseModel):
-    transactions_to_commit: list[ParsedTransaction]
-    aliases_to_create: list[AssetAliasCreate] = []
+    transactions_to_commit: List[ParsedTransaction]
+    aliases_to_create: List[AssetAliasCreate] = []
 
 
 # Schema for parsed FD data from bank statements
@@ -100,7 +99,7 @@ class ParsedFixedDeposit(BaseModel):
     interest_payout: str = "Cumulative"
     compounding_frequency: str = "Quarterly"
 
-    @model_validator(mode="before")
+    @root_validator(pre=True)
     @classmethod
     def fix_nan(cls, data: Any) -> Any:
         if isinstance(data, dict):
@@ -112,10 +111,10 @@ class ParsedFixedDeposit(BaseModel):
 
 # Schema for FD import preview response
 class FDImportPreview(BaseModel):
-    parsed_fds: list[ParsedFixedDeposit]
-    duplicates: list[ParsedFixedDeposit]
+    parsed_fds: List[ParsedFixedDeposit]
+    duplicates: List[ParsedFixedDeposit]
 
 
 # Schema for FD import commit request body
 class FDImportCommit(BaseModel):
-    fds_to_commit: list[ParsedFixedDeposit]
+    fds_to_commit: List[ParsedFixedDeposit]
