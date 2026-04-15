@@ -73,7 +73,7 @@ jobs:
       - name: Decode Keystore
         if: env.HAS_KEYSTORE == 'true'
         run: |
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/release.keystore
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/release.keystore
         env:
           HAS_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
 
