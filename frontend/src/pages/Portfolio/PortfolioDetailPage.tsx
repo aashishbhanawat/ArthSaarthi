@@ -176,8 +176,8 @@ const PortfolioDetailPage: React.FC = () => {
                 <Link to="/portfolios" className="text-blue-600 hover:underline text-sm dark:text-blue-400">
                     &larr; Back to Portfolios
                 </Link>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-2 gap-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold truncate">{portfolio.name}</h1>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mt-2 gap-4">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold break-words max-w-full">{portfolio.name}</h1>
                     <div className="flex space-x-2">
                         <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary flex-1 sm:flex-none text-center">
                             View History

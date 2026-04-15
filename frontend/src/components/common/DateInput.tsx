@@ -123,7 +123,7 @@ const DateInput: React.FC<DateInputProps> = ({
                         value,
                         onChange: (e: React.ChangeEvent<HTMLInputElement>) => onChange?.(e.target.value)
                     } : {})}
-                    className={`form-input pr-12 ${error ? 'border-red-500 focus:ring-red-500' : ''}`}
+                    className={`form-input pr-10 text-xs sm:text-sm md:text-base ${error ? 'border-red-500 focus:ring-red-500' : ''}`}
                 />
 
                 {/* Hidden Date Picker */}

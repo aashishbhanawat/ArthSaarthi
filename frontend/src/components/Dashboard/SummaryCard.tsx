@@ -20,7 +20,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ title, value, isPnl = false }
     return (
         <div className="card text-center p-4">
             <h3 className="text-sm sm:text-base font-semibold text-gray-500 dark:text-gray-400 mb-1 truncate">{title}</h3>
-            <p className={`text-2xl sm:text-3xl lg:text-4xl font-bold truncate ${valueColor}`} title={formatCurrency(value)}>
+            <p className={`text-lg sm:text-2xl lg:text-3xl font-bold truncate ${valueColor}`} title={formatCurrency(value)}>
                 {formatCurrency(value)}
             </p>
         </div>
