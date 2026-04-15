@@ -825,6 +825,101 @@ class CRUDAnalytics:
         return float(sharpe)
 
 
+    def get_diversification(self, db: Session, *, portfolio_id: uuid.UUID) -> schemas.DiversificationResponse:
+        """
+        Calculates the diversification breakdown of a portfolio by intersecting
+        Holdings with Asset metadata (sector, class, country, etc.).
+        """
+        from app.models.asset import Asset
+        holdings_and_summary = crud.holding.get_portfolio_holdings_and_summary(
+            db=db, portfolio_id=portfolio_id
+        )
+        holdings = holdings_and_summary.holdings
+        total_value = holdings_and_summary.summary.total_value
+
+        if not holdings or total_value <= 0:
+            return schemas.DiversificationResponse(total_value=0)
+
+        asset_ids = [h.asset_id for h in holdings]
+        assets = db.query(Asset).filter(Asset.id.in_(asset_ids)).all()
+        asset_map = {a.id: a for a in assets}
+
+        by_asset_class = defaultdict(lambda: {"value": Decimal("0"), "count": 0})
+        by_sector = defaultdict(lambda: {"value": Decimal("0"), "count": 0})
+        by_industry = defaultdict(lambda: {"value": Decimal("0"), "count": 0})
+        by_market_cap = defaultdict(lambda: {"value": Decimal("0"), "count": 0})
+        by_investment_style = defaultdict(lambda: {"value": Decimal("0"), "count": 0})
+        by_country = defaultdict(lambda: {"value": Decimal("0"), "count": 0})
+
+        def get_market_cap_category(cap: Optional[int]) -> str:
+            if cap is None:
+                return "Unknown"
+            if cap > 200_000_000_000:
+                return "Large Cap"
+            if cap > 50_000_000_000:
+                return "Mid Cap"
+            return "Small Cap"
+
+        for holding in holdings:
+            val = holding.current_value
+            if val <= 0:
+                continue
+
+            asset = asset_map.get(holding.asset_id)
+            if not asset:
+                continue
+
+            ac = asset.asset_type or holding.asset_type or "Other"
+            by_asset_class[ac]["value"] += val
+            by_asset_class[ac]["count"] += 1
+
+            ctry = asset.country or "Unknown"
+            by_country[ctry]["value"] += val
+            by_country[ctry]["count"] += 1
+
+            if holding.asset_type in ["STOCK", "ETF", "MUTUAL_FUND"]:
+                sec = asset.sector or "Unknown Sector"
+                by_sector[sec]["value"] += val
+                by_sector[sec]["count"] += 1
+
+                ind = asset.industry or "Unknown Industry"
+                by_industry[ind]["value"] += val
+                by_industry[ind]["count"] += 1
+
+                mc = get_market_cap_category(asset.market_cap)
+                by_market_cap[mc]["value"] += val
+                by_market_cap[mc]["count"] += 1
+
+                style = asset.investment_style or holding.investment_style or "Neutral"
+                by_investment_style[style]["value"] += val
+                by_investment_style[style]["count"] += 1
+
+        def format_segments(data_dict):
+            segments = []
+            for name, data in data_dict.items():
+                if data["value"] > 0:
+                    pct = float(data["value"] / total_value * 100) if total_value > 0 else 0.0
+                    segments.append(
+                        schemas.DiversificationSegment(
+                            name=name,
+                            value=data["value"],
+                            percentage=pct,
+                            count=data["count"]
+                        )
+                    )
+            return sorted(segments, key=lambda x: x.value, reverse=True)
+
+        return schemas.DiversificationResponse(
+            total_value=total_value,
+            by_asset_class=format_segments(by_asset_class),
+            by_sector=format_segments(by_sector),
+            by_industry=format_segments(by_industry),
+            by_market_cap=format_segments(by_market_cap),
+            by_investment_style=format_segments(by_investment_style),
+            by_country=format_segments(by_country),
+        )
+
+
 analytics = CRUDAnalytics()
 
 
