@@ -9,6 +9,7 @@ from app.db.initial_data import seed_interest_rates
 from app.db.session import SessionLocal
 from app.models import Asset
 from app.services.asset_seeder import AssetSeeder
+from app.scripts.backfill_transaction_links import run_backfill
 from app.utils.financial_utils import download_all_sources, process_all_sources
 
 # Suppress InsecureRequestWarning for NSDL connections
@@ -76,6 +77,14 @@ def check_and_seed_on_startup():
             _seeding_state["status"] = SeedingStatus.COMPLETE
             _seeding_state["progress"] = 100
             _seeding_state["message"] = "Asset database ready"
+
+        # Always trigger a background backfill for unlinked transactions if any
+        # This ensures data consistency for capital gains reports
+        threading.Thread(
+            target=run_backfill,
+            args=(db,),
+            daemon=True
+        ).start()
     except Exception as e:
         logger.error(f"Error during startup seeding check: {e}")
     finally:

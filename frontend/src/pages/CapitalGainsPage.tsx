@@ -253,8 +253,8 @@ const CapitalGainsPage: React.FC = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {(data.gains || []).map((gain: GainEntry) => (
-                                                <tr key={gain.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                            {(data.gains || []).map((gain: GainEntry, idx: number) => (
+                                                <tr key={`${gain.transaction_id}-${idx}`} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
                                                     <td className="p-2 dark:text-gray-200">
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-1">
@@ -295,8 +295,8 @@ const CapitalGainsPage: React.FC = () => {
 
                                 {/* Mobile Card View */}
                                 <div className="md:hidden space-y-4">
-                                    {(data.gains || []).map((gain: GainEntry) => (
-                                        <GainCard key={gain.transaction_id} gain={gain} />
+                                    {(data.gains || []).map((gain: GainEntry, idx: number) => (
+                                        <GainCard key={`${gain.transaction_id}-${idx}`} gain={gain} />
                                     ))}
                                 </div>
                             </div>
@@ -397,8 +397,8 @@ const CapitalGainsPage: React.FC = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {data.foreign_gains.map((gain: ForeignGainEntry) => (
-                                                    <tr key={gain.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                {data.foreign_gains.map((gain: ForeignGainEntry, idx: number) => (
+                                                    <tr key={`${gain.transaction_id}-${idx}`} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
                                                         <td className="p-2 dark:text-gray-200">
                                                             <span className="font-medium">{gain.asset_ticker}</span>
                                                             {gain.country_code && (
@@ -430,8 +430,8 @@ const CapitalGainsPage: React.FC = () => {
 
                                     {/* Mobile Card View */}
                                     <div className="md:hidden space-y-4">
-                                        {(data.foreign_gains || []).map((gain: ForeignGainEntry) => (
-                                            <ForeignGainCard key={gain.transaction_id} gain={gain} />
+                                        {(data.foreign_gains || []).map((gain: ForeignGainEntry, idx: number) => (
+                                            <ForeignGainCard key={`${gain.transaction_id}-${idx}`} gain={gain} />
                                         ))}
                                     </div>
                                 </div>
@@ -714,8 +714,8 @@ const CapitalGainsPage: React.FC = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {dividendData.entries.map((entry: DividendEntry) => (
-                                                    <tr key={entry.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                {dividendData.entries.map((entry: DividendEntry, idx: number) => (
+                                                    <tr key={`${entry.transaction_id}-${idx}`} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
                                                         <td className="p-2 dark:text-gray-200">
                                                             <div className="flex flex-col">
                                                                 <span className="font-medium">{entry.asset_name || entry.asset_ticker}</span>
@@ -738,8 +738,8 @@ const CapitalGainsPage: React.FC = () => {
 
                                     {/* Mobile Card View */}
                                     <div className="md:hidden space-y-4">
-                                        {dividendData.entries.map((entry: DividendEntry) => (
-                                            <DividendCard key={entry.transaction_id} entry={entry} />
+                                        {dividendData.entries.map((entry: DividendEntry, idx: number) => (
+                                            <DividendCard key={`${entry.transaction_id}-${idx}`} entry={entry} />
                                         ))}
                                     </div>
                                 </div>
