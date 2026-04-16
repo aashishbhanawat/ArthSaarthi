@@ -1,3 +1,35 @@
+## 2026-04-16: Capital Gains Data Integrity & Security Enforcement (Issue #408)
+
+**Task:** Resolve Capital Gains data discrepancies, frontend rendering errors, and critical data isolation security vulnerability.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer / Security Engineer
+
+### Summary
+
+1. **Security Enforcement (Data Isolation):**
+    - Identified a critical data leakage vulnerability where the Capital Gains report could display transactions across different users.
+    - Updated `CapitalGainsService` to enforce `user_id` filtering in all core database queries (TransactionLinks, Demergers, Dividends).
+    - Secured the Capital Gains API endpoints in `capital_gains.py` with `Depends(get_current_active_user)` to block unauthorized cross-user access.
+2. **Capital Gains UI & Data Fixes:**
+    - Fixed duplicate React key warnings in `CapitalGainsPage.tsx` by implementing composite keys for tax lot splits.
+    - Resolved data discrepancies in the Android branch by ensuring chronological transaction sorting during `restore_backup`.
+    - Integrated automatic background backfill into `initialization_service.py` and `backup_service.py` to ensure orphan SELL transactions are correctly linked on startup or restoration.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [capital_gains_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/capital_gains_service.py) — Enforced user-level isolation in all calculation methods.
+* **Modified:** [capital_gains.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/api/v1/endpoints/capital_gains.py) — Secured endpoints and passed authenticated `user_id`.
+* **Modified:** [backup_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/backup_service.py) — Fixed chronological sorting and added post-restore backfill.
+* **Modified:** [initialization_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/initialization_service.py) — Integrated startup link backfill.
+* **Modified:** [backfill_transaction_links.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/scripts/backfill_transaction_links.py) — Refactored to expose programmatic `run_backfill`.
+
+**Frontend:**
+* **Modified:** [CapitalGainsPage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/CapitalGainsPage.tsx) — Resolved duplicate key warnings.
+
+---
+
 ## 2026-04-16: Asset Seeding Logic Consolidation & Regression Fixes
 
 **Task:** Consolidate duplicated asset seeding logic into a centralized utility and fix Android branch regressions (Sharpe ratio, UI parity, diversification data).

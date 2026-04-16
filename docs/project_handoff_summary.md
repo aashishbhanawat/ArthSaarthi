@@ -5,7 +5,7 @@
 ## 1. Current Project Status
 
 *   **Overall Status:** ✅ **Stable (v1.2.0 Released)** | 🧪 **Android Experimental v1.2.0-exp Refined**
-*   **Summary:** Successfully refactored and consolidated the duplicated asset seeding logic into a centralized utility, improving long-term maintainability. Resolved critical regressions in the Android branch related to Sharpe Ratio transparency, UI parity for transaction history, and diversification analytics accuracy. All backend and frontend lint checks are passing.
+*   **Summary:** Successfully refactored and consolidated the duplicated asset seeding logic into a centralized utility. Resolved critical regressions and a **major security vulnerability** in the Capital Gains report by enforcing strict user-level data isolation in the backend and securing API endpoints. Fixed data consistency issues during backup restoration via chronological sorting and automated link backfilling. All backend and frontend lint checks are passing.
 
 ## 2. Test Suite Status
 
@@ -17,8 +17,10 @@
 
 *   **Asset Seeding Consolidation & Regression Fixes (2026-04-16):**
     - **Seeding Refactor:** Created `financial_utils.py` to centralize date/URL/download logic previously duplicated in `cli.py`, `initialization_service.py`, and `admin_assets.py`.
+    - **Capital Gains Security Fix:** Enforced strict `user_id` filtering in `CapitalGainsService` and secured API endpoints in `capital_gains.py` to prevent data leakage between users (Issue #408).
+    - **FIFO Linking & Restoration:** Fixed `backup_service.py` to sort transactions chronologically during restoration and added automated background backfill in `initialization_service.py` to ensure data parity with the baseline.
     - **Sharpe Ratio Documentation:** Verified and documented the expected delta in Sharpe Ratio calculation due to data windowing changes.
-    - **UI Parity:** Restored the premium Transaction History design on the Android branch to match the base release.
+    - **UI Parity:** Restored the premium Transaction History design on the Android branch and fixed duplicate React keys on the Capital Gains page.
     - **Diversification Fix:** Resolved "STOCK" vs "Stock" duplication and missing debt asset accounting in pie charts.
     - **Repository Cleanup:** Purged 10+ redundant temporary files and build artifacts.
     - **Lint Compliance:** Fixed 29 backend/frontend lint issues across multiple modules.
@@ -103,6 +105,7 @@
 -   **Exhaustive User Guide:** Comprehensive `USER_GUIDE.md` in `temp_qa_run/` featuring 50+ localized screenshots, transaction logs, and feature walk-through scripts.
 -   **Capital Gains & Dividend Reporting:**
     -   Comprehensive Capital Gains reports for Schedule 112A (Grandfathered Equity) and Schedule FA (Foreign Assets).
+    -   **Data Isolation:** Enforced strict user-level filtering to ensure users can only ever access their own Capital Gains data (Issue #408).
     -   **Dividend Report (FR 6.5):** Dedicated tracking for dividends, including Rule 115 compliant TTBR FX conversion for foreign assets (ESPP/RSU).
     -   Support for Tax Lot Accounting (Specific Identification) vs FIFO.
     -   Accurate taxation rules for Bond ETFs, International ETFs, and SGBs.

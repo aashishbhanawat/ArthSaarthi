@@ -24,6 +24,22 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-04-16-04
+**Title:** Data Isolation Breach in Capital Gains Report
+**Module:** Core Backend / Security
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Security Vulnerability
+**Severity:** Critical
+**Description:** The Capital Gains report endpoints were missing authentication and user-level data filtering, allowing any authenticated user to potentially access transaction data belonging to other users.
+**Steps to Reproduce:**
+1. Log in as User A.
+2. Directly query `/api/v1/capital-gains/` without providing a portfolio_id (or providing User B's portfolio_id).
+3. Observe data from other users appearing in the response.
+**Expected Behavior:** Users should strictly only see their own transactions.
+**Actual Behavior:** Multi-user data was aggregated into the report.
+**Resolution:** Enforced `Depends(get_current_active_user)` on all Capital Gains endpoints and added mandatory `user_id` filtering to the `CapitalGainsService` database queries. Fixed in PR #379.
+
 ---
  
 **Bug ID:** 2026-04-16-01
