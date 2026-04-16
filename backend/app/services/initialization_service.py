@@ -8,8 +8,8 @@ import urllib3
 from app.db.initial_data import seed_interest_rates
 from app.db.session import SessionLocal
 from app.models import Asset
-from app.services.asset_seeder import AssetSeeder
 from app.scripts.backfill_transaction_links import run_backfill
+from app.services.asset_seeder import AssetSeeder
 from app.utils.financial_utils import download_all_sources, process_all_sources
 
 # Suppress InsecureRequestWarning for NSDL connections
