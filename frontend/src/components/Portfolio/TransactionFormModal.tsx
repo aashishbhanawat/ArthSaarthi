@@ -257,7 +257,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 });
             }
         }
-    }, [isEditMode, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit, reset]);
+    }, [isEditMode, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit, reset, selectedAsset]);
 
     useEffect(() => {
         if (searchTerm.length < 2 || selectedAsset) { // Use debounced term

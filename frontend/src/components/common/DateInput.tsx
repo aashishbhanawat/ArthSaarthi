@@ -47,9 +47,11 @@ const DateInput: React.FC<DateInputProps> = ({
                 try {
                     datePickerRef.current.showPicker();
                 } catch (e) {
+                    // eslint-disable-next-line testing-library/no-node-access
                     datePickerRef.current.click();
                 }
             } else {
+                // eslint-disable-next-line testing-library/no-node-access
                 datePickerRef.current.click();
             }
         }

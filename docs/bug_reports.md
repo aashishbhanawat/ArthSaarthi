@@ -26,6 +26,48 @@ Copy and paste the template below to file a new bug report.
 
 ---
  
+**Bug ID:** 2026-04-16-01
+**Title:** Sharpe Ratio Delta in Android Branch
+**Module:** Analytics (Backend)
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Regression / Documentation
+**Severity:** Medium
+**Description:** The Sharpe Ratio in the Android branch (0.55) differed from the baseline (1.07) for the same ticker (NTPC) and transaction details.
+**Expected Behavior:** Ratios should be consistent across branches for identical data.
+**Actual Behavior:** 0.52 delta in calculation.
+**Resolution:** Accepted as a change in historical data windowing/treatment in the Android branch. Documented for transparency. No code change required.
+
+---
+
+**Bug ID:** 2026-04-16-02
+**Title:** Transaction History UI Regression
+**Module:** UI (Frontend)
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Regression
+**Severity:** Medium
+**Description:** The look-and-feel of the Transaction History in the browser for the Android branch regressed from the premium design of the baseline.
+**Expected Behavior:** UI should maintain the premium design standards of the base branch.
+**Actual Behavior:** Visual regression in table styling and layout.
+**Resolution:** Restored CSS and layout logic in `TransactionHistoryTable.tsx` to match the baseline release.
+
+---
+
+**Bug ID:** 2026-04-16-03
+**Title:** Diversification Chart Data Duplication ("STOCK" vs "Stock")
+**Module:** Analytics (Backend)
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Regression
+**Severity:** Medium
+**Description:** Diversification charts showed "STOCK" and "Stock" as separate entities. Additionally, debt assets (FDs) were not correctly accounted for in the asset class pie chart.
+**Expected Behavior:** Asset classes should be unified and exhaustive.
+**Actual Behavior:** Duplicate labels and missing debt categories.
+**Resolution:** Normalized asset classification logic in `crud_analytics.py` (using UPPERCASE for internal mapping and Title Case for display) and ensured all `Holding` instances (including FD/RD/PPF) are processed in the grouping loop.
+
+---
+
 **Bug ID:** 2026-04-13-02
 **Title:** AttributeError: 'float' object has no attribute 'upper' during Import Session Preview
 **Module:** Core Backend / Import Service

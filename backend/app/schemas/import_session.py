@@ -1,6 +1,6 @@
-import uuid
 import math
-from typing import Any, Optional, List
+import uuid
+from typing import Any, List
 
 from pydantic import BaseModel, root_validator
 

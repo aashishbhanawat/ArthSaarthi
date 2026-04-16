@@ -1,3 +1,37 @@
+## 2026-04-16: Asset Seeding Logic Consolidation & Regression Fixes
+
+**Task:** Consolidate duplicated asset seeding logic into a centralized utility and fix Android branch regressions (Sharpe ratio, UI parity, diversification data).
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Asset Seeding Logic Refactoring:**
+    - Created `app/utils/financial_utils.py` to centralize shared asset seeding functionality (date calculation, URL generation, file downloading, and source processing).
+    - Refactored `cli.py`, `initialization_service.py`, and `admin_assets.py` to utilize the new centralized logic, eliminating significant code duplication.
+2. **Regression Fixes (Android Branch):**
+    - **Sharpe Ratio:** Documented the accepted difference in Sharpe Ratio calculation between the base and Android branches (0.55 vs 1.07), identifying it as a change in historical data windowing.
+    - **UI Parity:** Restored the "Transaction History" look-and-feel to match the base branch's premium design.
+    - **Diversification Analytics:** Fixed "STOCK" vs "Stock" duplication in pie charts and ensured FD/RD/PPF assets are correctly accounted for in asset class breakdowns.
+3. **Lint & Cleanup:**
+    - Resolved 29 backend and frontend lint errors (E501, unused imports, hook dependencies).
+    - Purged redundant temporary files and build artifacts from the repository.
+
+### File Changes
+
+**Backend:**
+* **New:** [financial_utils.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/utils/financial_utils.py) — Centralized seeding utilities.
+* **Modified:** [cli.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/cli.py) — Refactored to use utilities.
+* **Modified:** [initialization_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/initialization_service.py) — Refactored to use utilities.
+* **Modified:** [admin_assets.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/api/v1/endpoints/admin_assets.py) — Refactored to use utilities.
+* **Modified:** [crud_analytics.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_analytics.py) — Fixed diversification classification logic.
+
+**Frontend:**
+* **Modified:** [TransactionHistoryTable.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Transactions/TransactionHistoryTable.tsx) — Restored design parity.
+
+---
+
 ## 2026-04-15: Bond Metadata Sync, DateInput Fix & Android Dependency Stabilization
 
 **Task:** Resolve Bond maturity date persistence issues, fix DateInput validation lag, and stabilize Android/Frontend dependencies by aligning Capacitor/Vite versions.

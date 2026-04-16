@@ -67,27 +67,27 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
                 ))}
             </div>
 
-            <div className="hidden md:block table-container shadow-none lg:shadow-sm">
+            <div className="hidden md:block card overflow-x-auto mt-4 md:mt-0">
                 <table className="table-auto w-full">
-                    <thead className="bg-gray-100 dark:bg-gray-800">
+                    <thead className="bg-gray-100">
                         <tr>
-                            <th className="p-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Date</th>
-                            <th className="p-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Ticker</th>
-                            <th className="p-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Asset</th>
-                            <th className="p-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Type</th>
-                            <th className="p-3 text-right text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Qty</th>
-                            <th className="p-3 text-right text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Price</th>
-                            <th className="p-3 text-right text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Value (INR)</th>
-                            <th className="p-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">Actions</th>
+                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Date</th>
+                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Ticker</th>
+                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Asset Name</th>
+                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Type</th>
+                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Quantity</th>
+                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Price/Unit</th>
+                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Total Value (INR)</th>
+                            <th className="p-3 text-center text-sm font-semibold text-gray-600">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {transactions.map((tx) => (
-                            <tr key={tx.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50">
-                                <td className="p-3 text-sm whitespace-nowrap">{formatDate(tx.transaction_date)}</td>
-                                <td className="p-3 text-sm font-mono whitespace-nowrap">{tx.asset.ticker_symbol}</td>
-                                <td className="p-3 text-sm min-w-[120px]">{tx.asset.name}</td>
-                                <td className={`p-3 text-sm font-semibold whitespace-nowrap ${getTypeColor(tx.transaction_type)}`}>
+                            <tr key={tx.id} className="border-b hover:bg-gray-50">
+                                <td className="p-3 text-sm">{formatDate(tx.transaction_date)}</td>
+                                <td className="p-3 text-sm font-mono">{tx.asset.ticker_symbol}</td>
+                                <td className="p-3 text-sm">{tx.asset.name}</td>
+                                <td className={`p-3 text-sm font-semibold ${getTypeColor(tx.transaction_type)}`}>
                                     {getTypeLabel(tx.transaction_type)}
                                     {hasUserVisibleDetails(tx.details as Record<string, unknown> | null) && (
                                         <button
@@ -100,19 +100,19 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
                                         </button>
                                     )}
                                 </td>
-                                <td className="p-3 text-sm text-right whitespace-nowrap">{Number(tx.quantity).toLocaleString('en-IN', { maximumFractionDigits: tx.asset.asset_type === 'FIXED_DEPOSIT' ? 0 : 4 })}</td>
-                                <td className="p-3 text-sm text-right whitespace-nowrap">{formatCurrency(tx.price_per_unit, tx.asset.currency)}</td>
-                                <td className="p-3 text-sm text-right whitespace-nowrap">{formatCurrency(
+                                <td className="p-3 text-sm text-right">{Number(tx.quantity).toLocaleString('en-IN', { maximumFractionDigits: tx.asset.asset_type === 'FIXED_DEPOSIT' ? 0 : 4 })}</td>
+                                <td className="p-3 text-sm text-right">{formatCurrency(tx.price_per_unit, tx.asset.currency)}</td>
+                                <td className="p-3 text-sm text-right">{formatCurrency(
                                     Number(tx.price_per_unit) * Number(tx.quantity) * (Number(tx.details?.fx_rate) || 1),
                                     'INR'
                                 )}</td>
                                 <td className="p-3 text-center">
                                     <div className="flex justify-center space-x-2">
                                         {!isSyntheticFd(tx) && (
-                                            <button onClick={() => onEdit(tx)} className="btn btn-secondary btn-xs" aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Edit</button>
+                                            <button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm" aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Edit</button>
                                         )}
                                         {(!isSyntheticFd(tx) || tx.transaction_type === TransactionType.FD_MATURITY) && (
-                                            <button onClick={() => onDelete(tx)} className="btn btn-danger btn-xs" aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Delete</button>
+                                            <button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm" aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Delete</button>
                                         )}
                                     </div>
                                 </td>

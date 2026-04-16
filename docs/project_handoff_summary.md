@@ -1,11 +1,11 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-04-15
+**Last Updated:** 2026-04-16
 
 ## 1. Current Project Status
 
-*   **Overall Status:** ✅ **Stable (v1.2.0 Released)** | 🧪 **Android Experimental v1.2.0-exp Stabilized**
-*   **Summary:** Successfully resolved gain/loss percentage scaling errors and finalized mobile UI refinements for the Android v1.2.0-exp build. Implemented safe-area compliance for all modal views and refactored mapping resolution into a dedicated mobile-friendly modal. All 188 frontend tests and ESLint checks are passing.
+*   **Overall Status:** ✅ **Stable (v1.2.0 Released)** | 🧪 **Android Experimental v1.2.0-exp Refined**
+*   **Summary:** Successfully refactored and consolidated the duplicated asset seeding logic into a centralized utility, improving long-term maintainability. Resolved critical regressions in the Android branch related to Sharpe Ratio transparency, UI parity for transaction history, and diversification analytics accuracy. All backend and frontend lint checks are passing.
 
 ## 2. Test Suite Status
 
@@ -15,6 +15,13 @@
 
 ### Recent Stabilization & Refinement Efforts
 
+*   **Asset Seeding Consolidation & Regression Fixes (2026-04-16):**
+    - **Seeding Refactor:** Created `financial_utils.py` to centralize date/URL/download logic previously duplicated in `cli.py`, `initialization_service.py`, and `admin_assets.py`.
+    - **Sharpe Ratio Documentation:** Verified and documented the expected delta in Sharpe Ratio calculation due to data windowing changes.
+    - **UI Parity:** Restored the premium Transaction History design on the Android branch to match the base release.
+    - **Diversification Fix:** Resolved "STOCK" vs "Stock" duplication and missing debt asset accounting in pie charts.
+    - **Repository Cleanup:** Purged 10+ redundant temporary files and build artifacts.
+    - **Lint Compliance:** Fixed 29 backend/frontend lint issues across multiple modules.
 *   **Bond Metadata Sync, DateInput Fix & Android Dependency Stabilization (2026-04-15):**
     - **Bond Metadata:** Resolved a major issue where maturity dates were not updating during transaction edits. Added `updateBondByAssetId` and explicit sync in `TransactionFormModal.tsx`.
     - **DateInput Stabilization:** Fixed the "double-submit" validation lag and calendar synchronization issues.

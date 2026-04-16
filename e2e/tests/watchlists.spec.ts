@@ -75,7 +75,7 @@ test.describe('Watchlists Feature', () => {
     const modal = page.getByRole('dialog', { name: 'Add Asset to Watchlist' });
     await expect(modal).toBeVisible();
     await modal.getByLabel('Search for an asset').fill('AAPL');
-    
+
     // Wait for the debounced search API call to complete before interacting with the results.
     await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
 
@@ -90,11 +90,11 @@ test.describe('Watchlists Feature', () => {
     // Wait for the modal to close before asserting, to give time for the async refetch
     await expect(page.getByRole('heading', { name: 'Add Asset to Watchlist' })).not.toBeVisible();
 
-    await expect(page.getByText('AAPL')).toBeVisible();
+    await expect(page.getByRole('table').getByText('AAPL')).toBeVisible();
 
     // Remove item
     await page.getByRole('button', { name: 'Remove AAPL' }).click();
-    await expect(page.getByText('AAPL')).not.toBeVisible();
+    await expect(page.getByRole('table').getByText('AAPL')).not.toBeVisible();
 
     // Cleanup
     await page.getByRole('button', { name: `Delete ${watchlistName}` }).click();
