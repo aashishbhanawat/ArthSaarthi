@@ -24,6 +24,24 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-04-16-05
+**Title:** FIFO Linking Failure during Backup Restoration
+**Module:** Backup Service / Core Backend
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Data Integrity / Regression
+**Severity:** High
+**Description:** The backup restoration process was processing transactions out of order, causing the auto-FIFO linking logic to fail for SELL transactions inserted before BUYs.
+**Steps to Reproduce:**
+1. Back up a portfolio with linked FIFO transactions.
+2. Restore the backup.
+3. Observe that SELL transactions are unlinked and gains are missing from reports.
+**Expected Behavior:** Transactions should be linked correctly after restoration.
+**Actual Behavior:** Links were lost due to non-chronological insertion.
+**Resolution:** Updated `backup_service.py` to sort transactions by date before restoration and added a post-restore backfill fallback. Fixed in PR #379 (Issue #409).
+
+---
+
 **Bug ID:** 2026-04-16-04
 **Title:** Data Isolation Breach in Capital Gains Report
 **Module:** Core Backend / Security
