@@ -54,9 +54,9 @@ def get_auth_headers(
     client: TestClient,
 ) -> Callable[[str, str], Dict[str, str]]:
     def _get_auth_headers(email: str, password: str) -> Dict[str, str]:
-        if settings.DEPLOYMENT_MODE == "desktop":
-            # In desktop mode, we assume `pre_unlocked_key_manager` has run.
-            # We bypass login and directly create a token.
+        if settings.DEPLOYMENT_MODE in ("desktop", "android"):
+            # In local modes, we assume `pre_unlocked_key_manager` has run (for desktop)
+            # or it's a single-user app. We bypass login and directly create a token.
             auth_token = security.create_access_token(subject=email)
         else:
             # In server mode, perform a standard login to get the token.
