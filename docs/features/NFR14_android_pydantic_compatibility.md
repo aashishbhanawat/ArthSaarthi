@@ -1,4 +1,4 @@
-# Functional Requirement: Android Backend Pydantic Stability
+# Non-Functional Requirement: NFR14 - Android Deployment Stability
 
 ## 1. Objective
 Ensure the ArthSaarthi backend is fully stable when running on Android via Chaquopy, where Pydantic v1 is the only available version, while maintaining compatibility with Pydantic v2 in the Desktop/Server environments.

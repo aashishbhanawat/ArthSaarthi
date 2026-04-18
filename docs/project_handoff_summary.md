@@ -4,17 +4,24 @@
 
 ## 1. Current Project Status
 
-*   **Overall Status:** ✅ **Stable (v1.2.0 Released)** | 🧪 **Android Experimental v1.2.0-exp Refined**
-*   **Summary:** Successfully refactored and consolidated the duplicated asset seeding logic into a centralized utility. Resolved critical regressions and a **major security vulnerability** in the Capital Gains report by enforcing strict user-level data isolation in the backend and securing API endpoints. Fixed data consistency issues during backup restoration via chronological sorting and automated link backfilling. All backend and frontend lint checks are passing.
+*   **Overall Status:** ✅ **Stable (v1.2.0 Released)** | 📱 **Android Native App Stabilized (Experimental)**
+*   **Summary:** Successfully consolidated Android build workflows into the main release and test pipelines. Aligned the backend test suite for `android` deployment mode, ensuring full functional parity and stability. Formalized Android-specific requirements (FR14.4, NFR14) and documented critical native settings for battery optimization, permissions, and background execution. 
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests:** ✅ **310/310 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **310/310 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **304/310 Passing** (6 expected skips for admin-only APIs)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ### Recent Stabilization & Refinement Efforts
 
+*   **Android Build Consolidation & Test Alignment (2026-04-18):**
+    - **Workflow Consolidation:** Integrated Android release and debug builds into `release.yml` and `test-builds.yml`; removed redundant `android-build.yml`.
+    - **Test Alignment:** Updated `conftest.py` and test utilities to support `android` mode (SQLite/DiskCache) with consistent auth bypass logic.
+    - **Verification:** Created `test_android_mode.py` and verified 300+ backend tests pass in `android` mode.
+    - **Documentation:** Formalized FR14.4 and NFR14 for Android stability and native enablement. Documented battery/permission needs in `android_enablement_notes.md`.
+    - **Environment:** Disabled verbose yfinance/httpx debug logging across backend and Android python entry points.
 *   **Asset Seeding Consolidation & Regression Fixes (2026-04-16):**
     - **Seeding Refactor:** Created `financial_utils.py` to centralize date/URL/download logic previously duplicated in `cli.py`, `initialization_service.py`, and `admin_assets.py`.
     - **Capital Gains Security Fix:** Enforced strict `user_id` filtering in `CapitalGainsService` and secured API endpoints in `capital_gains.py` to prevent data leakage between users (Issue #408).

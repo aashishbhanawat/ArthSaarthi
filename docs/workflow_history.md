@@ -1,4 +1,52 @@
-## 2026-04-16: Capital Gains Data Integrity & Security Enforcement (Issue #408)
+## 2026-04-18: Android Build Consolidation, Test Alignment & Requirement Formalization
+
+**Task:** Streamline Android CI/CD pipelines, align backend test suite for `android` mode, and formalize Android-specific functional and non-functional requirements.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer / DevOps Engineer
+
+### Summary
+
+1. **Android Build Workflow Consolidation:**
+    - Integrated the **Android Release build** into `release.yml`. It now automatically builds and uploads a signed APK as a GitHub Release asset.
+    - Integrated the **Android Debug build** into `test-builds.yml` as a selectable platform option for manual testing.
+    - Deleted the redundant standalone `.github/workflows/android-build.yml`.
+2. **Test Suite Alignment & Coverage:**
+    - Updated `conftest.py` and `user.py` utilities to treat `android` mode as a local deployment, enabling necessary auth bypasses for automated testing.
+    - Extended test skips (e.g., admin user management) to `android` mode to reflect its single-user local nature.
+    - Created `backend/app/tests/test_android_mode.py` to verify Android-specific behaviors (logging, startup tasks, unauthenticated logs endpoint).
+    - Verified that **300+ backend tests** pass successfully with `DEPLOYMENT_MODE=android`.
+3. **Requirement Formalization & Documentation:**
+    - Updated `docs/requirements.md` with **FR14.4 (Android Native Enablement)** and **NFR14 (Android Deployment Stability)**.
+    - Renamed and re-numbered `docs/features/android_pydantic_stability.md` to `docs/features/NFR14_android_pydantic_compatibility.md`.
+    - Created `docs/features/FR14.4_android_native_enablement.md` with detailed requirements for the native Android integration.
+    - Authored `docs/android_enablement_notes.md` documenting battery optimization, permission, and background execution requirements.
+4. **Environment Polish:**
+    - Disabled verbose yfinance/httpx debug logging in `main.py` and `run_server.py`.
+    - Verified Python 3.11 compatibility safeguards in `run_server.py`.
+
+### File Changes
+
+**CI/CD:**
+* **Modified:** [.github/workflows/release.yml](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/.github/workflows/release.yml) — Added Android release job.
+* **Modified:** [.github/workflows/test-builds.yml](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/.github/workflows/test-builds.yml) — Added Android debug job.
+* **Deleted:** `.github/workflows/android-build.yml`.
+
+**Backend:**
+* **New:** [test_android_mode.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/tests/test_android_mode.py) — Targeted Android tests.
+* **Modified:** [conftest.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/tests/conftest.py), [user.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/tests/utils/user.py) — Auth bypass alignment.
+* **Modified:** [main.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/main.py) — Disabled debug logs.
+
+**Documentation:**
+* **Modified:** [requirements.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/requirements.md) — Added Android FRs/NFRs.
+* **New:** [FR14.4_android_native_enablement.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR14.4_android_native_enablement.md).
+* **Renamed:** `android_pydantic_stability.md` -> [NFR14_android_pydantic_compatibility.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/NFR14_android_pydantic_compatibility.md).
+* **New:** [android_enablement_notes.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/android_enablement_notes.md).
+
+**Android Native:**
+* **Modified:** [run_server.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/src/main/python/run_server.py) — Disabled debug logs and verified compatibility.
+
+---
 
 **Task:** Resolve Capital Gains data discrepancies, frontend rendering errors, and critical data isolation security vulnerability.
 

@@ -46,6 +46,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
     *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database and a file-based cache.
+    *   **Android Mode:** A standalone Android APK running the backend natively via Chaquopy for a complete mobile experience (Experimental).
 *   **Performance:** Expensive analytics and holdings calculations are cached to improve UI responsiveness and reduce server load.
 
 ### On the Horizon (Future Features)

@@ -73,13 +73,10 @@ def start(port: int, data_dir: str):
     os.environ["DEBUG"] = "false"
     os.environ["LOG_LEVEL"] = "INFO"
 
-    # Enable httpx DEBUG logging to capture Yahoo Finance request/response headers.
-    # yfinance >= 0.2 uses httpx/curl_cffi internally. This will dump all
-    # outgoing request headers and incoming response status lines to logcat.
-    # TODO: Remove or set to WARNING once debugging is complete.
-    import logging as _logging
-    _logging.getLogger("httpx").setLevel(_logging.DEBUG)
-    _logging.getLogger("httpcore").setLevel(_logging.DEBUG)
+    # Enable httpx DEBUG logging ONLY when troubleshooting 429 errors.
+    # import logging as _logging
+    # _logging.getLogger("httpx").setLevel(_logging.DEBUG)
+    # _logging.getLogger("httpcore").setLevel(_logging.DEBUG)
 
     # Fix: Set certifi CA bundle so Python's SSL stack uses a known-good CA list.
     # Prevents crumb/cookie auth failure due to cert verification on Android's BoringSSL.
