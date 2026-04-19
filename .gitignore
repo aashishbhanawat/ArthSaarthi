@@ -79,3 +79,8 @@ backend/uploads/
 backend/build/
 backend/venv/
 *.parquet
+
+# Android secrets & credentials
+*.keystore
+*.jks
+local.properties
