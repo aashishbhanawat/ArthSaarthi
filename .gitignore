@@ -84,3 +84,8 @@ backend/venv/
 *.keystore
 *.jks
 local.properties
+
+# Local setup and temporary credentials
+create_issues.sh
+keystore_base64.txt
+setup.txt
