@@ -1,4 +1,37 @@
-## 2026-04-18: Android Build Consolidation, Test Alignment & Requirement Formalization
+## 2026-04-19: PR 379 Review Fixes & Security Hardening
+
+**Task:** Address automated review comments from PR 379 and harden project security by removing local-only files from Git tracking.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer / Security Lead
+
+### Summary
+
+1. **Review Comment Remediation (PR 379):**
+    - **Wheel Patching:** Replaced the simple `mv` renaming of `manylinux` wheels with a proper metadata-aware patching process using `scripts/patch_wheel.py` in `scripts/build-android.sh`.
+    - **Security:** Replaced the hardcoded `SECRET_KEY` in `run_server.py` with a persistent, dynamically generated key stored in the app's internal data directory.
+    - **Path Alignment:** Aligned the Python wheel lookup path in `build.gradle.kts` with the download location (`libs/python-wheels`) used by the build script.
+2. **Security Hardening:**
+    - **Keystore Protection:** Removed `arthsaarthi-release.keystore` from Git tracking and added it to `.gitignore`.
+    - **Local File Cleanup:** Removed auxiliary local files (`create_issues.sh`, `keystore_base64.txt`, `setup.txt`) from Git index and updated `.gitignore` to prevent future commits of sensitive or local-only tools.
+3. **CI/CD Alignment:**
+    - Ensured `build.gradle.kts` uses dynamic `versionName` for APK output filenames.
+    - Resolved E501 lint and trailing whitespace issues in `test_android_mode.py`.
+
+### File Changes
+
+**Scripts:**
+* **Modified:** [build-android.sh](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/scripts/build-android.sh) — Metadata-aware wheel patching.
+* **Modified:** [run_server.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/src/main/python/run_server.py) — Persistent dynamic `SECRET_KEY`.
+
+**Configuration:**
+* **Modified:** [build.gradle.kts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/build.gradle.kts) — Aligned wheel paths and dynamic names.
+* **Modified:** [.gitignore](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/.gitignore) — Hardened ignore rules for secrets and local files.
+
+**Testing:**
+* **Modified:** [test_android_mode.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/tests/test_android_mode.py) — Lint and whitespace fixes.
+
+---
 
 **Task:** Streamline Android CI/CD pipelines, align backend test suite for `android` mode, and formalize Android-specific functional and non-functional requirements.
 
