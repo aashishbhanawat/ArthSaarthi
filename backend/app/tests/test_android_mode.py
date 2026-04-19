@@ -1,13 +1,10 @@
-import os
 import unittest.mock as mock
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.api.v1.endpoints.system import SeedingStatus
+
 
 def test_android_config_local_mode():
     """Verify that android mode is recognized as a local mode."""
@@ -27,11 +24,11 @@ def test_android_logs_endpoint_unauthenticated(client: TestClient, tmp_path):
     # Arrange: Create a temporary log file and point settings to it
     log_file = tmp_path / "test_android.log"
     log_file.write_text("Test log line 1\nTest log line 2")
-    
+
     with mock.patch("app.core.config.settings.LOG_FILE", str(log_file)):
         # Act
         response = client.get("/api/v1/system/logs")
-        
+
         # Assert
         assert response.status_code == 200
         assert "Test log line 1" in response.json()["msg"]
@@ -58,5 +55,5 @@ def test_android_background_task_initiated(monkeypatch):
     # We can check if the global task variable is set if we import it after startup.
     import app.main as main
     assert main.settings.DEPLOYMENT_MODE == "android"
-    # Note: In a real test environment, we might need to trigger the startup event manually
-    # if the TestClient didn't already do it.
+    # Note: In a real test environment, we might need to trigger the startup 
+    # event manually if the TestClient didn't already do it.
