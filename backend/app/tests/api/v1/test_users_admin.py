@@ -14,8 +14,8 @@ from app.tests.utils.user import (
 pytestmark = [
     pytest.mark.usefixtures("pre_unlocked_key_manager"),
     pytest.mark.skipif(
-        settings.DEPLOYMENT_MODE == "desktop",
-        reason="User management APIs are disabled in desktop mode",
+        settings.DEPLOYMENT_MODE in ("desktop", "android"),
+        reason="User management APIs are disabled in local modes",
     ),
 ]
 

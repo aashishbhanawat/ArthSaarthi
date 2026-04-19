@@ -3,6 +3,7 @@ import { Transaction } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
 import TransactionDetailsModal from './TransactionDetailsModal';
+import TransactionCard from './TransactionCard';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 
 interface TransactionHistoryTableProps {
@@ -54,7 +55,19 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
 
     return (
         <>
-            <div className="card overflow-x-auto">
+            <div className="md:hidden space-y-3">
+                {transactions.map(tx => (
+                    <TransactionCard
+                        key={tx.id}
+                        transaction={tx}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onViewDetails={setSelectedTransaction}
+                    />
+                ))}
+            </div>
+
+            <div className="hidden md:block card overflow-x-auto mt-4 md:mt-0">
                 <table className="table-auto w-full">
                     <thead className="bg-gray-100">
                         <tr>

@@ -19,9 +19,9 @@ const SummaryItem: React.FC<SummaryItemProps> = ({ label, value, isPnl = false }
     const valueColor = isPnl ? getPnlColor(value) : 'text-gray-900 dark:text-gray-100';
 
     return (
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg shadow-sm text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{label}</p>
-            <p className={`text-2xl font-bold ${valueColor}`}>{formatCurrency(value)}</p>
+        <div className="bg-gray-50 dark:bg-gray-800 p-2 sm:p-4 rounded-lg shadow-sm text-center">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate font-semibold uppercase tracking-wider mb-1">{label}</p>
+            <p className={`text-sm sm:text-lg lg:text-xl font-bold ${valueColor}`}>{formatCurrency(value)}</p>
         </div>
     );
 };

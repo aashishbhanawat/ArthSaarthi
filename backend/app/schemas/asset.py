@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from .bond import Bond as BondSchema
 
@@ -25,6 +25,12 @@ class AssetCreate(BaseModel):
     isin: str | None = None
     account_number: Optional[str] = None
     opening_date: Optional[date] = None
+    sector: Optional[str] = None
+    industry: Optional[str] = None
+    country: Optional[str] = None
+    market_cap: Optional[int] = None
+    investment_style: Optional[str] = None
+    fmv_2018: Optional[Decimal] = None
 
 
 class AssetType(str):
@@ -52,12 +58,20 @@ class AssetUpdate(BaseModel):
     asset_type: str | None = None
     currency: str | None = None
     exchange: str | None = None
+    sector: str | None = None
+    industry: str | None = None
+    country: str | None = None
+    market_cap: int | None = None
+    investment_style: str | None = None
+    fmv_2018: Decimal | None = None
 
 
 # Properties shared by models stored in DB
 class AssetInDBBase(AssetCreate):
     id: uuid.UUID
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
+        orm_mode = True
 
 
 # Properties to return to client
@@ -77,3 +91,9 @@ class AssetSearchResult(BaseModel):
     currency: Optional[str] = None
     source: Optional[str] = None  # "local" or "yahoo"
     bond: Optional[BondSchema] = None
+    sector: Optional[str] = None
+    industry: Optional[str] = None
+    country: Optional[str] = None
+    market_cap: Optional[int] = None
+    investment_style: Optional[str] = None
+    fmv_2018: Optional[float] = None

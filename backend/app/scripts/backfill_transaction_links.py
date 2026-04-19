@@ -84,70 +84,80 @@ def get_available_lots_for_backfill(
     return [lot for lot in lots if lot["available_quantity"] > 0]
 
 
+def run_backfill(db: Session, user_id=None):
+    """
+    Core logic to backfill links for unlinked SELL transactions.
+    """
+    # Find all SELL transactions without links
+    query = (
+        db.query(Transaction)
+        .outerjoin(
+            TransactionLink,
+            Transaction.id == TransactionLink.sell_transaction_id
+        )
+        .filter(
+            Transaction.transaction_type == TransactionType.SELL,
+            TransactionLink.id.is_(None)  # No existing links
+        )
+    )
+
+    if user_id:
+        query = query.filter(Transaction.user_id == user_id)
+
+    sell_txs = query.order_by(Transaction.transaction_date).all()
+
+    logger.info(f"Found {len(sell_txs)} unlinked SELL transactions")
+
+    created_count = 0
+    for sell_tx in sell_txs:
+        logger.info(
+            f"Processing SELL: {sell_tx.id} - "
+            f"Asset: {sell_tx.asset_id}, Qty: {sell_tx.quantity}, "
+            f"Date: {sell_tx.transaction_date}"
+        )
+
+        # Get available lots as of sell date
+        available_lots = get_available_lots_for_backfill(
+            db,
+            user_id=sell_tx.user_id,
+            asset_id=sell_tx.asset_id,
+            before_date=sell_tx.transaction_date
+        )
+
+        remaining_qty = sell_tx.quantity
+        for lot in available_lots:
+            if remaining_qty <= 0:
+                break
+            take_qty = min(lot["available_quantity"], remaining_qty)
+            if take_qty > 0:
+                link = TransactionLink(
+                    sell_transaction_id=sell_tx.id,
+                    buy_transaction_id=lot["id"],
+                    quantity=take_qty,
+                )
+                db.add(link)
+                remaining_qty -= take_qty
+                created_count += 1
+                logger.info(
+                    f"  Created link: {take_qty} from lot {lot['id']} "
+                    f"(date: {lot['date']})"
+                )
+
+        if remaining_qty > 0:
+            logger.warning(
+                f"  WARNING: Could not fully link SELL {sell_tx.id}. "
+                f"Remaining: {remaining_qty}"
+            )
+
+    db.commit()
+    logger.info(f"Backfill complete. Created {created_count} TransactionLinks.")
+    return created_count
+
+
 def backfill_links():
     db = SessionLocal()
     try:
-        # Find all SELL transactions without links
-        sell_txs = (
-            db.query(Transaction)
-            .outerjoin(
-                TransactionLink,
-                Transaction.id == TransactionLink.sell_transaction_id
-            )
-            .filter(
-                Transaction.transaction_type == TransactionType.SELL,
-                TransactionLink.id.is_(None)  # No existing links
-            )
-            .order_by(Transaction.transaction_date)
-            .all()
-        )
-
-        logger.info(f"Found {len(sell_txs)} unlinked SELL transactions")
-
-        created_count = 0
-        for sell_tx in sell_txs:
-            logger.info(
-                f"Processing SELL: {sell_tx.id} - "
-                f"Asset: {sell_tx.asset_id}, Qty: {sell_tx.quantity}, "
-                f"Date: {sell_tx.transaction_date}"
-            )
-
-            # Get available lots as of sell date
-            available_lots = get_available_lots_for_backfill(
-                db,
-                user_id=sell_tx.user_id,
-                asset_id=sell_tx.asset_id,
-                before_date=sell_tx.transaction_date
-            )
-
-            remaining_qty = sell_tx.quantity
-            for lot in available_lots:
-                if remaining_qty <= 0:
-                    break
-                take_qty = min(lot["available_quantity"], remaining_qty)
-                if take_qty > 0:
-                    link = TransactionLink(
-                        sell_transaction_id=sell_tx.id,
-                        buy_transaction_id=lot["id"],
-                        quantity=take_qty,
-                    )
-                    db.add(link)
-                    remaining_qty -= take_qty
-                    created_count += 1
-                    logger.info(
-                        f"  Created link: {take_qty} from lot {lot['id']} "
-                        f"(date: {lot['date']})"
-                    )
-
-            if remaining_qty > 0:
-                logger.warning(
-                    f"  WARNING: Could not fully link SELL {sell_tx.id}. "
-                    f"Remaining: {remaining_qty}"
-                )
-
-        db.commit()
-        logger.info(f"Backfill complete. Created {created_count} TransactionLinks.")
-
+        run_backfill(db)
     except Exception as e:
         db.rollback()
         logger.error(f"Backfill failed: {e}")
