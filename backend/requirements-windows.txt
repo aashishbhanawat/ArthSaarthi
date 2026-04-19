@@ -134,7 +134,7 @@ pygments==2.20.0
     # via
     #   pytest
     #   rich
-pytest==8.4.1
+pytest==9.0.3
     # via
     #   -r backend/requirements.in
     #   pytest-mock
