@@ -83,6 +83,17 @@ chaquopy {
 
         // Backend Python dependencies
         pip {
+            // Install local pydantic-core wheel if it exists (for AArch64)
+            // build-android.sh downloads it to frontend/android/app/libs/python-wheels
+            val wheelsDir = file("libs/python-wheels")
+            if (wheelsDir.exists()) {
+                wheelsDir.listFiles()?.forEach { wheel ->
+                    if (wheel.name.contains("pydantic_core") && wheel.extension == "whl") {
+                        install(wheel.absolutePath)
+                    }
+                }
+            }
+
             // FastAPI 0.100.x is the last version with full pydantic v1 support
             install("fastapi==0.100.1")
             install("uvicorn==0.23.2")

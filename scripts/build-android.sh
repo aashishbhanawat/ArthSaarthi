@@ -81,11 +81,14 @@ if [ ! -f "$WHEELS_DIR/$ANDROID_WHEEL" ]; then
         --platform manylinux_2_17_aarch64 \
         --dest "$WHEELS_DIR"
     
-    # Rename for Android compatibility
+    # Patch wheel for Android compatibility
     ORIGINAL_WHEEL=$(ls "$WHEELS_DIR"/pydantic_core-2.23.4-cp313-cp313-manylinux*.whl | head -n 1)
     if [ -f "$ORIGINAL_WHEEL" ]; then
-        mv "$ORIGINAL_WHEEL" "$WHEELS_DIR/$ANDROID_WHEEL"
-        echo "Renamed wheel to: $ANDROID_WHEEL"
+        echo "Patching wheel for Android..."
+        ANDROID_WHEEL_TAG="cp313-cp313-android_26_aarch64"
+        "$PYTHON_BUILD_CMD" scripts/patch_wheel.py "$ORIGINAL_WHEEL" "$WHEELS_DIR/$ANDROID_WHEEL" "$ANDROID_WHEEL_TAG"
+        rm "$ORIGINAL_WHEEL"
+        echo "Patched wheel created at: $WHEELS_DIR/$ANDROID_WHEEL"
     fi
 fi
 

@@ -122,9 +122,24 @@ def start(port: int, data_dir: str):
     os.makedirs(upload_dir, exist_ok=True)
     os.environ["IMPORT_UPLOAD_DIR"] = upload_dir
 
-    # Set a SECRET_KEY if not already set
+    # For a local-only app, generate and store a key if not present.
+    # A more secure approach would use Android's Keystore.
+    key_path = os.path.join(db_dir, ".secret_key")
     if "SECRET_KEY" not in os.environ:
-        os.environ["SECRET_KEY"] = "android-local-secret-key-change-if-needed"
+        if os.path.exists(key_path):
+            with open(key_path, "r") as f:
+                os.environ["SECRET_KEY"] = f.read().strip()
+            logger.info("Loaded existing SECRET_KEY from disk.")
+        else:
+            import secrets
+            new_key = secrets.token_urlsafe(32)
+            os.environ["SECRET_KEY"] = new_key
+            try:
+                with open(key_path, "w") as f:
+                    f.write(new_key)
+                logger.info("Generated and stored new SECRET_KEY.")
+            except Exception as e:
+                logger.error(f"Failed to store SECRET_KEY: {e}")
 
     logger.info(f"Database: {db_path}")
 
