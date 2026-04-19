@@ -55,5 +55,5 @@ def test_android_background_task_initiated(monkeypatch):
     # We can check if the global task variable is set if we import it after startup.
     import app.main as main
     assert main.settings.DEPLOYMENT_MODE == "android"
-    # Note: In a real test environment, we might need to trigger the startup 
+    # Note: In a real test environment, we might need to trigger the startup
     # event manually if the TestClient didn't already do it.

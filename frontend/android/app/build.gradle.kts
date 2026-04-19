@@ -62,7 +62,7 @@ android {
         outputs.all {
             val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             if (variantName == "release") {
-                outputImpl.outputFileName = "ArthSaarthi-v1.2.0-android.apk"
+                outputImpl.outputFileName = "ArthSaarthi-v${versionName}-android.apk"
             } else {
                 outputImpl.outputFileName = "ArthSaarthi-${variantName}.apk"
             }
