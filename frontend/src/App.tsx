@@ -20,20 +20,28 @@ import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
 import CapitalGainsPage from './pages/CapitalGainsPage';
 import ProfilePage from './pages/ProfilePage';
+import MorePage from './pages/MorePage';
+import LogsPage from './pages/LogsPage';
+import UserGuidePage from './pages/UserGuidePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
 import UpdateBanner from './components/UpdateBanner';
 
+import MobileHeader from './components/MobileHeader';
+import MobileNav from './components/MobileNav';
+
 const AppLayout = () => (
-  <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+  <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 pt-safe">
     <UpdateBanner />
-    <div className="grid grid-cols-[auto_1fr] flex-1 overflow-hidden">
+    <MobileHeader />
+    <div className="flex flex-1 overflow-hidden lg:grid lg:grid-cols-[auto_1fr]">
       <NavBar />
-      <main className="p-8 overflow-y-auto">
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto pb-24 lg:pb-8">
         <Outlet />
       </main>
     </div>
+    <MobileNav />
   </div>
 );
 
@@ -49,6 +57,8 @@ function AppRoutes() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/more" element={<MorePage />} />
+          <Route path="/help" element={<UserGuidePage />} />
           <Route path="/portfolios" element={<PortfolioPage />} />
           <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
           <Route path="/import" element={<DataImportPage />} />
@@ -65,6 +75,7 @@ function AppRoutes() {
             <Route path="/admin/maintenance" element={<SystemMaintenancePage />} />
             <Route path="/admin/fmv" element={<AdminFMVPage />} />
             <Route path="/admin/aliases" element={<AdminAliasesPage />} />
+            <Route path="/admin/logs" element={<LogsPage />} />
           </Route>
         </Route>
       </Route>

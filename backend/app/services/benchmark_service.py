@@ -1,12 +1,11 @@
 import logging
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, Tuple
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-from pyxirr import xirr
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -17,6 +16,35 @@ from app.crud.crud_holding import (
 from app.services.financial_data_service import FinancialDataService
 
 logger = logging.getLogger(__name__)
+
+try:
+    from pyxirr import xirr
+except ImportError:
+    logger.warning("pyxirr not found, using numpy fallback for XIRR")
+    def xirr(dates, payments):
+        if not dates or not payments or len(dates) != len(payments):
+            return 0.0
+        import numpy as np
+        try:
+            d0 = dates[0]
+            years = np.array([(d - d0).days / 365.0 for d in dates])
+            pmts = np.array(payments, dtype=float)
+            rate = 0.1
+            for _ in range(50):
+                npv = np.sum(pmts / (1 + rate)**years)
+                deriv = np.sum(-years * pmts / (1 + rate)**(years + 1))
+                if abs(deriv) < 1e-9:
+                    break
+                new_rate = rate - npv / deriv
+                if abs(new_rate - rate) < 1e-6:
+                    return new_rate
+                rate = new_rate
+                if abs(rate) > 100:
+                    break
+            return rate
+        except Exception as e:
+            logger.error(f"XIRR fallback failed in benchmark: {e}")
+            return 0.0
 
 # Transaction types that represent inflows
 BUY_TYPES = [
@@ -158,7 +186,6 @@ class BenchmarkService:
     ) -> Any:
         """Create a mock transaction object for simulation."""
         import uuid
-        from datetime import datetime
 
         from app.schemas.asset import Asset
         from app.schemas.transaction import Transaction

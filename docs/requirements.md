@@ -150,8 +150,9 @@ This document outlines the functional and non-functional requirements for the Ar
 
 ### FR14: Future Scope (Renumbered)
 -   **FR14.1: Two-Factor Authentication (2FA).** `📝 Planned`
--   **FR14.2: Companion Mobile App.** `📝 Planned`
+-   **FR14.2: Companion Mobile App.** Provide a native-feeling experience on mobile devices using Capacitor and a local backend. `✅ Done`
 -   **FR14.3: Sliding Window Session Expiry.** Implement a "sliding window" session where the user's session is extended with each API call, providing a more seamless experience for continuously active users. `📝 Planned`
+-   **FR14.4: Android Native Enablement.** Support running the full Python backend and React frontend as a standalone Android APK. `✅ Done` (See FR14.4_android_native_enablement.md)
 
 ### FR15: AI-Powered Expense Management
 -   **FR15.1: Document Upload.** Users must be able to upload various financial documents, including credit card statements, bank statements, and individual invoices in formats like PDF. `📝 Planned`
@@ -179,3 +180,4 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **NFR9: Pluggable Caching:** The application must support both Redis and a lightweight, file-based cache (`diskcache`) to remove the Redis dependency for non-Docker deployments. `✅ Done`
 -   **NFR12: Pluggable Financial Data Service:** The financial data service must be architected to support multiple, interchangeable data providers for different asset classes and regions. `✅ Done`
 -   **NFR13: API Usage Tracking & Rate Limiting:** The system must provide a mechanism to track and enforce rate limits for external financial data APIs to prevent abuse and manage costs. `📝 Planned`
+-   **NFR14: Android Deployment Stability:** The system must maintain full stability in the restricted Android environment (Pydantic v1, SQLite, disk-based caching, background task limits). `✅ Done` (See NFR14_android_pydantic_compatibility.md)
