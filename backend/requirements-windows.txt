@@ -75,7 +75,7 @@ idna==3.10
     #   requests
 iniconfig==2.1.0
     # via pytest
-mako==1.3.10
+mako==1.3.11
     # via alembic
 markdown-it-py==3.0.0
     # via rich
