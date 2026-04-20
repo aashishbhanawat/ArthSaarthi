@@ -38,9 +38,9 @@ const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick
             <td className="p-2 text-right font-mono">{formatPrivateCurrency(holding.average_buy_price, 'INR')}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.current_price, holding.currency)}</td>
             <td className="p-2 text-right font-mono">{formatPrivateCurrency(holding.current_value, 'INR')}</td>
-            <PnlCell value={Number(holding.days_pnl)} currency="INR" />
-            <PnlCell value={Number(holding.unrealized_pnl)} currency="INR" />
-            <PnlCell value={Number(holding.unrealized_pnl_percentage)} isPercentage />
+            <PnlCell value={holding.days_pnl} currency="INR" />
+            <PnlCell value={holding.unrealized_pnl} currency="INR" />
+            <PnlCell value={holding.unrealized_pnl_percentage} isPercentage />
         </tr>
     );
 };

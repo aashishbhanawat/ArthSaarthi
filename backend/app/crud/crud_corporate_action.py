@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.schemas.enums import TransactionType
-from app.utils.pydantic_compat import model_copy, model_dump_json
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ def handle_dividend(
         f"Is Reinvested: {getattr(transaction_in, 'is_reinvested', False)}"
     )
     logger.debug("Payload received by handle_dividend: %s",
-                 model_dump_json(transaction_in, indent=2))
+                 transaction_in.model_dump_json(indent=2))
 
     # Always save the dividend transaction itself for record-keeping.
     # We create a new schema here to ensure only relevant fields are passed.
@@ -439,7 +438,7 @@ def handle_demerger(
     # Add metadata to the DEMERGER audit transaction
     updated_details = dict(transaction_in.details or {})
     updated_details["total_cost_allocated"] = str(total_cost_allocated)
-    transaction_in_with_cost = model_copy(transaction_in,
+    transaction_in_with_cost = transaction_in.model_copy(
         update={"details": updated_details}
     )
 

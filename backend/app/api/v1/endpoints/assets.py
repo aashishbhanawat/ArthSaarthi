@@ -9,7 +9,6 @@ from app.core import dependencies as deps
 from app.core.config import settings
 from app.models.user import User
 from app.services.financial_data_service import financial_data_service
-from app.utils.pydantic_compat import model_dump_json, model_validate
 
 router = APIRouter()
 
@@ -28,7 +27,7 @@ def create_asset(
     if settings.DEBUG:
         print("\n--- BACKEND DEBUG: CREATE ASSET ENDPOINT HIT ---")
         print(f"User: {current_user.email}")
-        print(f"Received Payload: {model_dump_json(asset_in, indent=2)}")
+        print(f"Received Payload: {asset_in.model_dump_json(indent=2)}")
 
     asset = crud.asset.get_by_ticker(db, ticker_symbol=asset_in.ticker_symbol)
 
@@ -100,7 +99,7 @@ def search_stocks(
             "source": "local",
             "fmv_2018": float(asset.fmv_2018) if asset.fmv_2018 else None,
             "bond": (
-                model_validate(schemas.Bond, asset.bond)
+                schemas.Bond.model_validate(asset.bond)
                 if getattr(asset, "bond", None)
                 else None
             ),

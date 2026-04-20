@@ -9,7 +9,6 @@ from app.cache import utils as cache_utils
 from app.core import dependencies
 from app.schemas.bond import Bond, BondCreate, BondUpdate, BondWithTransactionCreate
 from app.schemas.msg import Msg
-from app.utils.pydantic_compat import model_dump
 
 router = APIRouter()
 
@@ -65,8 +64,8 @@ def create_bond(
     )
 
     bond_in = BondCreate(
-        **model_dump(bond_and_tx_in.bond_data),
-        asset_id=asset.id
+        asset_id=bond_and_tx_in.transaction_data.asset_id,
+        **bond_and_tx_in.bond_data.model_dump(),
     )
 
     if existing_bond:

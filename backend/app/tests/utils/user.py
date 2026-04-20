@@ -47,8 +47,8 @@ def create_random_user(
 
 
 def get_access_token(client: TestClient, email: str, password: str) -> str:
-    if settings.DEPLOYMENT_MODE in ("desktop", "android"):
-        # In local modes, for tests not focused on auth, we bypass the login
+    if settings.DEPLOYMENT_MODE == "desktop":
+        # In desktop mode, for tests not focused on auth, we bypass the login
         # endpoint. This assumes a fixture like `pre_unlocked_key_manager`
         # has already set up and unlocked the master key.
         return create_access_token(subject=email)

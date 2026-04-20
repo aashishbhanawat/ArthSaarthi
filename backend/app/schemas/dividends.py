@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class DividendEntry(BaseModel):
@@ -19,9 +19,7 @@ class DividendEntry(BaseModel):
     amount_inr: Decimal
     period: str
 
-    class Config:
-        from_attributes = True
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DividendSummary(BaseModel):
@@ -30,6 +28,4 @@ class DividendSummary(BaseModel):
     total_amount_inr: Decimal
     bucket_totals: Dict[str, Decimal]
 
-    class Config:
-        from_attributes = True
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

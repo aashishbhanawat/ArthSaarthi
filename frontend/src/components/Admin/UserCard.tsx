@@ -20,8 +20,8 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => onEdit(user)} className="btn btn-secondary btn-xs py-1">Edit</button>
-                    <button onClick={() => onDelete(user)} className="btn btn-danger btn-xs py-1">Delete</button>
+                    <button onClick={() => onEdit(user)} className="btn btn-secondary btn-xs py-1" aria-label={`Edit user ${user.email}`}>Edit</button>
+                    <button onClick={() => onDelete(user)} className="btn btn-danger btn-xs py-1" aria-label={`Delete user ${user.email}`}>Delete</button>
                 </div>
             </div>
         </div>

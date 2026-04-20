@@ -214,18 +214,6 @@ export const updateBond = async (
     return response.data;
 };
 
-export const updateBondByAssetId = async (
-    portfolioId: string,
-    assetId: string,
-    bondData: BondUpdate
-): Promise<Bond> => {
-    const response = await apiClient.put<Bond>(
-        `/api/v1/portfolios/${portfolioId}/bonds/by-asset/${assetId}`,
-        bondData
-    );
-    return response.data;
-};
-
 export const deleteBond = async (bondId: string): Promise<void> => {
     await apiClient.delete(`/api/v1/bonds/${bondId}`);
 };
