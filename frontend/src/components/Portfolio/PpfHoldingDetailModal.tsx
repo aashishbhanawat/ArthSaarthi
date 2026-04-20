@@ -177,6 +177,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
               </p>
             </div>
             <button
+              aria-label="Close"
               onClick={onClose}
               className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors -mt-1 -mr-1"
             >

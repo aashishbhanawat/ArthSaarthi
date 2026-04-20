@@ -1,7 +1,7 @@
 import React from 'react';
 import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, TrashIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -15,8 +15,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
 
   if (!transactions || transactions.length === 0) {
     return (
-      <div className="card text-center p-8">
-        <p className="text-gray-500">No transactions found for this portfolio.</p>
+      <div className="card text-center p-12 bg-gray-50/50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col items-center justify-center space-y-3">
+          <DocumentTextIcon className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No transactions</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+            There are no transactions recorded for this portfolio yet. Use the "Add Transaction" button above to get started.
+          </p>
+        </div>
       </div>
     );
   }

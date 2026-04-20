@@ -91,6 +91,6 @@ describe('TransactionList', () => {
         <TransactionList transactions={[]} onEdit={mockOnEdit} onDelete={mockOnDelete} />
       </PrivacyProvider>
     );
-    expect(screen.getByText(/no transactions found/i)).toBeInTheDocument();
+    expect(screen.getByText('No transactions')).toBeInTheDocument();
   });
 });
