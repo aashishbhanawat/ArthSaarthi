@@ -19,7 +19,7 @@ const BondHoldingRow: React.FC<BondHoldingRowProps> = ({ holding, onRowClick }) 
             <td className="p-2 text-right font-mono">{holding.maturity_date ? formatDate(holding.maturity_date) : 'N/A'}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.total_invested_amount)}</td>
             <td className="p-2 text-right font-mono">{formatCurrency(holding.current_value)}</td>
-            <td className={`p-2 text-right font-mono ${holding.unrealized_pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            <td className={`p-2 text-right font-mono ${Number(holding.unrealized_pnl) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 <div>{formatCurrency(holding.unrealized_pnl)}</div>
                 <div className="text-xs">
                     ({formatPercentage(holding.unrealized_pnl_percentage)})

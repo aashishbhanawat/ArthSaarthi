@@ -46,6 +46,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
     *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database and a file-based cache.
+    *   **Android Mode:** A standalone Android APK running the backend natively via Chaquopy for a complete mobile experience (Experimental).
 *   **Performance:** Expensive analytics and holdings calculations are cached to improve UI responsiveness and reduce server load.
 
 ### On the Horizon (Future Features)
@@ -77,7 +78,7 @@ To learn how to use the application's features, refer to the **[User Guide](./do
 
 This project was built with a strong emphasis on developer experience and maintainability. If you're interested in the technical details or want to contribute, please check out the following resources:
 
-*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (Docker, Native, Desktop), running tests, and understanding the local development workflow.
+*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (Docker, Native, Desktop, Android), running tests, and understanding the local development workflow.
 *   **[CONTRIBUTING.md](./CONTRIBUTING.md):** Our guide for contributing to the project, including our AI-assisted development process.
 *   **[Architecture & UML Design](./docs/uml_design.md):** The single source of truth for the system's structural design, including the Component Architecture, Entity-Relationship Diagram (ERD), and core Class logic.
 *   **[Code Flow Guide](./docs/code_flow_guide.md):** Detailed walkthroughs (with Sequence Diagrams) of how a request moves from the React frontend to the SQLAlchemy backend.

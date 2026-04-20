@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.base_class import Base
+from app.utils.pydantic_compat import model_dump
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -26,7 +27,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
         # Pydantic V2 replaces .dict() with .model_dump()
-        obj_in_data = obj_in.model_dump()
+        obj_in_data = model_dump(obj_in)
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
         db.flush()
@@ -43,7 +44,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            update_data = obj_in.model_dump(exclude_unset=True)
+            update_data = model_dump(obj_in, exclude_unset=True)
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
@@ -59,7 +60,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def create_with_owner(
         self, db: Session, *, obj_in: CreateSchemaType, owner_id: uuid.UUID
     ) -> ModelType:
-        obj_in_data = obj_in.model_dump()
+        obj_in_data = model_dump(obj_in)
         db_obj = self.model(**obj_in_data, user_id=owner_id)
         db.add(db_obj)
         db.flush()

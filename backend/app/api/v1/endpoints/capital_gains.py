@@ -5,10 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app import crud
-from app.core import dependencies
+from app.core.dependencies import get_current_active_user
 from app.db.session import get_db
-from app.models.user import User
+from app.models import User
 from app.schemas.capital_gains import CapitalGainsSummary
 from app.services.capital_gains_service import CapitalGainsService
 
@@ -23,7 +22,7 @@ def get_capital_gains(
         30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"
     ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(dependencies.get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get Capital Gains Report for a specific Financial Year.
@@ -43,10 +42,10 @@ def get_capital_gains(
 
     service = CapitalGainsService(db)
     return service.calculate_capital_gains(
+        user_id=current_user.id,
         portfolio_id=portfolio_id,
         fy_year=fy,
         slab_rate=slab_rate,
-        user_id=str(current_user.id)
     )
 
 
@@ -59,7 +58,7 @@ def export_capital_gains_csv(
         30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"
     ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(dependencies.get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Export Capital Gains as a CSV file for download.
@@ -73,10 +72,10 @@ def export_capital_gains_csv(
 
     service = CapitalGainsService(db)
     summary = service.calculate_capital_gains(
+        user_id=current_user.id,
         portfolio_id=portfolio_id,
         fy_year=fy,
         slab_rate=slab_rate,
-        user_id=str(current_user.id)
     )
 
     # Build CSV content

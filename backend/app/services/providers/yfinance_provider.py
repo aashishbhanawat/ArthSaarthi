@@ -1,15 +1,20 @@
 """Provider for fetching data from Yahoo Finance."""
 import logging
+import math
+import threading
+import time
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+import requests
 import yfinance as yf
 from pydantic import ValidationError
 
 from app.cache.base import CacheClient
+from app.core.config import settings
 
 from .base import FinancialDataProvider
 
@@ -18,10 +23,212 @@ CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
 
 logger = logging.getLogger(__name__)
 
+# Global lock to serialize all Yahoo Finance HTTP requests.
+# This prevents burst 429 errors when multiple threads request prices simultaneously.
+_YFINANCE_LOCK = threading.Lock()
+# Tracks when the last successful network request was made, to enforce a
+# minimum inter-request delay for Android and prevent burst 429s.
+_LAST_REQUEST_TIME: float = 0.0
+_MIN_REQUEST_INTERVAL: float = 2.0  # seconds between requests on Android
+
+# Pool of modern Chrome User-Agents for rotation to prevent fingerprint-based 429s.
+_CHROME_UAS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like "
+    "Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like "
+    "Gecko) Chrome/123.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like "
+    "Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, "
+    "like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36",
+]
+
 
 class YFinanceProvider(FinancialDataProvider):
+    # Enforce singleton so all threads share one session and cache
+    _instance = None
+    _instance_lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._instance_lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+        return cls._instance
     def __init__(self, cache_client: Optional[CacheClient]):
+        # Singleton guard: only initialize once
+        if hasattr(self, '_initialized'):
+            return
+        self._initialized = True
         self.cache_client = cache_client
+
+        self._last_429_time: float = 0
+        self._cooldown_period: float = 60  # 1 minute cooldown after 429
+
+        # In-process enrichment cache: serves as a fast fallback when Redis is
+        # unavailable (e.g., Android). Prevents concurrent threads from all
+        # independently querying Yahoo Finance for the same ticker info,
+        # which is the root cause of 429 burst errors on Android.
+        # Key: yf_ticker, Value: (data_dict, expiry_timestamp)
+        self._enrichment_cache: dict = {}
+        self._enrichment_cache_lock = threading.Lock()
+
+        # We no longer use requests-cache session with yfinance because it's
+        # incompatible with yfinance's modern scraping logic (curl_cffi).
+        # We rely on _YFINANCE_LOCK and self.cache_client for performance.
+
+        # Conditionally apply User-Agent spoofing.
+        # Diagnostic results (2026-04-10) confirmed that on Android, Yahoo
+        # Finance blocks default Python User-Agents due to TLS fingerprinting,
+        # but allows Chrome fingerprints even from BoringSSL.
+        # On Server/Desktop, curl_cffi is often available and handled better
+        # by yfinance internally. We only pass a session on Android to bypass
+        # the 429 block.
+        self.session = None
+        if settings.DEPLOYMENT_MODE == "android":
+            self.session = requests.Session()
+            # Deep Browser Spoof: Use a full set of modern browser headers to
+            # mimic a standard Chrome navigation. This is more resilient than
+            # just the User-Agent.
+            self.session.headers.update({
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                ),
+                "Accept": (
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                    "image/avif,image/webp,image/apng,*/*;q=0.8,"
+                    "application/signed-exchange;v=b3;q=0.7"
+                ),
+                "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Connection": "keep-alive",
+                "Upgrade-Insecure-Requests": "1",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-User": "?1",
+                "DNT": "1",
+                "Cache-Control": "max-age=0",
+            })
+
+            # Global Spoof: Intercept yfinance's internal User-Agent logic
+            # (yfinance 0.2.55). By replacing the USER_AGENTS pool with our
+            # Chrome-only pool, we prevent yfinance from selecting a Firefox UA
+            # which conflicts with our Chrome-specific Sec-Fetch headers.
+            # We also tie its class-level headers dictionary to our session.
+            try:
+                import yfinance.data as yf_data
+                yf_data.USER_AGENTS = _CHROME_UAS
+                yf_data.YfData.user_agent_headers = self.session.headers
+                logger.info(
+                    "YFinanceProvider: Globally spoofed yfinance with Dynamic "
+                    "UA Generator using yfinance.data."
+                )
+            except Exception as e:
+                logger.warning(
+                    f"YFinanceProvider: Failed to globally spoof yfinance UA: {e}"
+                )
+
+            # Initial header set
+            self.session.headers.update(self._get_dynamic_headers())
+            logger.info("YFinanceProvider: Using Dynamic Chrome Spoofing for Android.")
+        else:
+            logger.info(
+                f"YFinanceProvider: Let yf handle sessions for "
+                f"{settings.DEPLOYMENT_MODE} mode."
+            )
+
+    def _get_dynamic_headers(self) -> dict:
+        """
+        Generates a fresh set of browser headers with a random Chrome UA and language.
+        """
+        import random
+        ua = random.choice(_CHROME_UAS)
+        langs = ["en-US,en;q=0.9", "en-GB,en;q=0.8", "en-IN,en;q=0.9,hi;q=0.8"]
+        lang = random.choice(langs)
+
+        return {
+            "User-Agent": ua,
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                "image/avif,image/webp,image/apng,*/*;q=0.8,"
+                "application/signed-exchange;v=b3;q=0.7"
+            ),
+            "Accept-Language": lang,
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "DNT": "1",
+            "Cache-Control": "max-age=0",
+        }
+
+    def _to_safe_decimal(self, value: Any) -> Decimal:
+        """
+        Safely convert a value (often from yfinance) to a Decimal.
+        Handles NaN and Infinity which cause Pydantic v1 (Android) to crash.
+        """
+        try:
+            if value is None:
+                return Decimal("0")
+            f_val = float(value)
+            if not math.isfinite(f_val):
+                return Decimal("0")
+            # Using str(f_val) to maintain precision where possible
+            return Decimal(str(f_val))
+        except (ValueError, TypeError, Exception):
+            return Decimal("0")
+
+    def _is_cooling_down(self) -> bool:
+        if self._last_429_time == 0:
+            return False
+        return (time.time() - self._last_429_time) < self._cooldown_period
+
+    def close(self):
+        """No-op. Session is managed by yfinance internally."""
+        pass
+
+    def _fetch_history_with_retry(self, ticker_obj, **kwargs) -> pd.DataFrame:
+        kwargs.setdefault("auto_adjust", False)
+        # Session already passed to ticker_obj during initialization
+        df = ticker_obj.history(**kwargs)
+        if df is None or df.empty:
+            raise ValueError(
+                f"yfinance history returned empty data for {ticker_obj.ticker}"
+            )
+        return df
+
+    def _fetch_download_with_retry(
+        self, tickers_str, start_date, end_date
+    ) -> pd.DataFrame:
+        if hasattr(yf, "shared"):
+            yf.shared._ERRORS = {}
+        df = yf.download(
+            tickers_str,
+            start=start_date,
+            end=end_date,
+            progress=False,
+            auto_adjust=False,
+            session=self.session
+        )
+        if hasattr(yf, "shared") and getattr(yf.shared, "_ERRORS", {}):
+            errors = yf.shared._ERRORS
+            if any(
+                "Rate limited" in str(e) or "Too Many Requests" in str(e)
+                for e in errors.values()
+            ):
+                raise ValueError(f"YFinance Rate Limit hit: {errors}")
+        if df is None or df.empty:
+            raise ValueError(f"yfinance download returned empty data for {tickers_str}")
+        return df
+
+    def _fetch_info_with_retry(self, ticker_obj) -> dict:
+        return ticker_obj.info
 
     def _get_yfinance_ticker(
         self, ticker_symbol: str, exchange: Optional[str]
@@ -41,6 +248,10 @@ class YFinanceProvider(FinancialDataProvider):
     def get_current_prices(
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
+        if self._is_cooling_down():
+            logger.warning("YFinance: Circuit breaker active (cooling down after 429)")
+            return {}
+
         logger.debug(
             f"get_current_prices: {len(assets)} assets - "
             f"{[(a.get('ticker_symbol'), a.get('exchange')) for a in assets]}"
@@ -107,11 +318,42 @@ class YFinanceProvider(FinancialDataProvider):
         logger.debug(f"yfinance batch request: '{yfinance_tickers_str}'")
 
         try:
-            yf_data = yf.Tickers(yfinance_tickers_str)
-            logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
-            for ticker_obj in yf_data.tickers.values():
-                hist = ticker_obj.history(period="2d", auto_adjust=True)
-                yf_symbol = ticker_obj.ticker
+            # Acquire lock to serialize Yahoo requests across all threads.
+            # This prevents the burst-429 issue when multiple portfolio
+            # calculations are triggered concurrently.
+            with _YFINANCE_LOCK:
+                # Enforce minimum inter-request interval on Android to prevent
+                # burst 429s.
+                # Multiple threads serialise here, so we add a delay between them.
+                global _LAST_REQUEST_TIME
+                if settings.DEPLOYMENT_MODE == "android":
+                    elapsed = time.time() - _LAST_REQUEST_TIME
+                    if elapsed < _MIN_REQUEST_INTERVAL:
+                        sleep_for = _MIN_REQUEST_INTERVAL - elapsed
+                        logger.debug(
+                            f"YFinanceProvider: Throttling {sleep_for:.2f}s "
+                            "before batch fetch."
+                        )
+                        time.sleep(sleep_for)
+
+                # Rotate headers before major batch request to break fingerprint
+                if self.session:
+                    self.session.headers.update(self._get_dynamic_headers())
+                    logger.debug(
+                        "YFinanceProvider: Rotated session headers for batch fetch."
+                    )
+
+                logger.debug(f"[LOCK] Acquired for tickers: {yfinance_tickers_str}")
+                yf_data = yf.Tickers(yfinance_tickers_str, session=self.session)
+                raw_results = {}
+                for ticker_obj in yf_data.tickers.values():
+                    hist = self._fetch_history_with_retry(ticker_obj, period="2d")
+                    raw_results[ticker_obj.ticker] = hist
+
+                # Stamp time after successful fetch so the next thread waits
+                _LAST_REQUEST_TIME = time.time()
+
+            for yf_symbol, hist in raw_results.items():
                 # Use reverse map; fallback to splitting suffix for plain tickers
                 original_ticker = yf_to_original.get(
                     yf_symbol, yf_symbol.split(".")[0]
@@ -122,17 +364,17 @@ class YFinanceProvider(FinancialDataProvider):
                 )
 
                 if not hist.empty and len(hist) >= 2:
-                    current_price = Decimal(str(hist["Close"].iloc[-1]))
+                    current_price = self._to_safe_decimal(hist["Close"].iloc[-1])
                     logger.debug(
                         f"Price fetched: {original_ticker}={current_price}"
                     )
-                    previous_close = Decimal(str(hist["Close"].iloc[-2]))
+                    previous_close = self._to_safe_decimal(hist["Close"].iloc[-2])
                     prices_data[original_ticker] = {
                         "current_price": current_price,
                         "previous_close": previous_close,
                     }
                 elif not hist.empty and len(hist) == 1:
-                    current_price = Decimal(str(hist["Close"].iloc[-1]))
+                    current_price = self._to_safe_decimal(hist["Close"].iloc[-1])
                     logger.debug(
                         f"yfinance API SUCCESS for {yf_symbol} (1 day data). Price: "
                         f"{current_price}"
@@ -146,6 +388,8 @@ class YFinanceProvider(FinancialDataProvider):
                         f"yfinance API returned empty history for {yf_symbol}"
                     )
         except (Exception, ValidationError) as e:
+            if "429" in str(e) or "Rate limit" in str(e):
+                self._last_429_time = time.time()
             logger.error(f"WARNING: Error fetching batch data from yfinance: {e}")
 
         if self.cache_client:
@@ -197,51 +441,88 @@ class YFinanceProvider(FinancialDataProvider):
         yf_ticker = self._get_yfinance_ticker(ticker_symbol, exchange)
         cache_key = f"enrichment:{yf_ticker}"
 
-        # Check cache first
+        # 1. Check in-process memory cache first (works on Android without Redis)
+        with self._enrichment_cache_lock:
+            mem_cached = self._enrichment_cache.get(yf_ticker)
+            if mem_cached:
+                data, expiry = mem_cached
+                if time.time() < expiry:
+                    logger.debug(f"Enrichment in-process cache HIT for {yf_ticker}")
+                    return data
+                else:
+                    del self._enrichment_cache[yf_ticker]
+
+        # 2. Check Redis/disk cache
         if self.cache_client:
             cached = self.cache_client.get_json(cache_key)
             if cached:
-                logger.debug(f"Enrichment cache HIT for {yf_ticker}")
+                logger.debug(f"Enrichment Redis cache HIT for {yf_ticker}")
                 return cached
 
         try:
-            ticker_obj = yf.Ticker(yf_ticker)
-            info = ticker_obj.info
-            if info:
-                trailing_pe = info.get("trailingPE")
-                price_to_book = info.get("priceToBook")
+            with _YFINANCE_LOCK:
+                # Double-check both caches inside lock to avoid redundant network calls
+                # if another thread just finished fetching this ticker.
+                with self._enrichment_cache_lock:
+                    mem_cached = self._enrichment_cache.get(yf_ticker)
+                    if mem_cached:
+                        data, expiry = mem_cached
+                        if time.time() < expiry:
+                            return data
 
-                # Classify investment style based on P/E and P/B
-                investment_style = self._classify_investment_style(
-                    trailing_pe, price_to_book
-                )
-
-                enrichment_data = {
-                    "sector": info.get("sector"),
-                    "industry": info.get("industry"),
-                    "country": info.get("country"),
-                    "market_cap": info.get("marketCap"),
-                    "trailing_pe": trailing_pe,
-                    "price_to_book": price_to_book,
-                    "investment_style": investment_style,
-                }
-                # Cache for 24 hours
                 if self.cache_client:
-                    self.cache_client.set_json(
-                        cache_key, enrichment_data, expire=CACHE_TTL_HISTORICAL_PRICE
+                    cached = self.cache_client.get_json(cache_key)
+                    if cached:
+                        return cached
+
+                ticker_obj = yf.Ticker(yf_ticker, session=self.session)
+                info = self._fetch_info_with_retry(ticker_obj)
+                if info:
+                    trailing_pe = info.get("trailingPE")
+                    price_to_book = info.get("priceToBook")
+
+                    # Classify investment style based on P/E and P/B
+                    investment_style = self._classify_investment_style(
+                        trailing_pe, price_to_book
                     )
-                logger.debug(
-                    f"Enrichment fetched for {ticker_symbol}: "
-                    f"sector={info.get('sector')}, style={investment_style}"
-                )
-                return enrichment_data
+
+                    enrichment_data = {
+                        "sector": info.get("sector"),
+                        "industry": info.get("industry"),
+                        "country": info.get("country"),
+                        "market_cap": info.get("marketCap"),
+                        "trailing_pe": trailing_pe,
+                        "price_to_book": price_to_book,
+                        "investment_style": investment_style,
+                    }
+                    # Cache in Redis/disk (24 hours)
+                    if self.cache_client:
+                        self.cache_client.set_json(
+                            cache_key,
+                            enrichment_data,
+                            expire=CACHE_TTL_HISTORICAL_PRICE,
+                        )
+                    # Cache in-process (1 hour — shorter to avoid stale data on
+                    # long runs)
+                    with self._enrichment_cache_lock:
+                        self._enrichment_cache[yf_ticker] = (
+                            enrichment_data, time.time() + 3600
+                        )
+                    logger.debug(
+                        f"Enrichment fetched for {ticker_symbol}: "
+                        f"sector={info.get('sector')}, style={investment_style}"
+                    )
+                    return enrichment_data
         except Exception as e:
             logger.warning(f"Error fetching enrichment for {ticker_symbol}: {e}")
+            if "429" in str(e) or "Rate limited" in str(e):
+                self._last_429_time = time.time()
 
         return None
 
+    @staticmethod
     def _classify_investment_style(
-        self, trailing_pe: Optional[float], price_to_book: Optional[float]
+        trailing_pe: Optional[float], price_to_book: Optional[float]
     ) -> str:
         """
         Classifies investment style based on P/E and P/B ratios.
@@ -283,109 +564,143 @@ class YFinanceProvider(FinancialDataProvider):
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
-        historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
-        assets_to_fetch = []
-        if self.cache_client:
-            for asset in assets:
-                not_found_cache_key = (
-                    f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
-                )
-                if not self.cache_client.get_json(not_found_cache_key):
-                    assets_to_fetch.append(asset)
-        else:
-            assets_to_fetch = assets
+        """
+        Fetches historical prices for assets. Uses granular per-date caching to
+        avoid redundant network calls for overlapping ranges.
+        """
+        if self._is_cooling_down():
+            logger.warning("YFinance: Circuit breaker active (cooling down after 429)")
+            return {}
 
-        yfinance_tickers_map = {
-            self._get_yfinance_ticker(a["ticker_symbol"], a["exchange"]): a[
-                "ticker_symbol"
-            ]
-            for a in assets_to_fetch
-        }
-        yfinance_tickers_str = " ".join(yfinance_tickers_map.keys())
-        cache_key = (
-            f"history:{yfinance_tickers_str}:{start_date.isoformat()}:{end_date.isoformat()}"
+        historical_data: Dict[str, Dict[date, Decimal]] = defaultdict(dict)
+        assets_needing_fetch = []
+
+        # 1. Check granular cache for each asset/date pair
+        for asset in assets:
+            ticker = asset["ticker_symbol"]
+            yf_ticker = self._get_yfinance_ticker(ticker, asset.get("exchange"))
+
+            # Check for negative cache
+            if self.cache_client:
+                not_found_cache_key = f"asset_details_not_found:{yf_ticker.upper()}"
+                if self.cache_client.get_json(not_found_cache_key):
+                    continue
+
+            # Check individual dates
+            missing_dates = []
+            current_lookup = start_date
+            while current_lookup <= end_date:
+                # Skip weekends for cache lookup if we want to be more efficient,
+                # but yfinance returns them anyway for some indices.
+                cache_key = f"h_price:{yf_ticker}:{current_lookup.isoformat()}"
+                cached_price = (
+                    self.cache_client.get(cache_key) if self.cache_client else None
+                )
+
+                if cached_price:
+                    historical_data[ticker][current_lookup] = Decimal(cached_price)
+                else:
+                    missing_dates.append(current_lookup)
+                current_lookup += timedelta(days=1)
+
+            if missing_dates:
+                # Determine missing range for this asset
+                assets_needing_fetch.append({
+                    "asset": asset,
+                    "yf_ticker": yf_ticker,
+                    "start": min(missing_dates),
+                    "end": max(missing_dates)
+                })
+
+        if not assets_needing_fetch:
+            logger.debug(
+                "YFinance: All historical data points found in granular cache."
+            )
+            return historical_data
+
+        # 2. Batch fetch missing data
+        # For simplicity and to minimize burst requests, we fetch everything
+        # in one batch from the overall min start to the overall max end
+        # across all missing assets.
+        overall_start = min(a["start"] for a in assets_needing_fetch)
+        overall_end = max(a["end"] for a in assets_needing_fetch)
+        yfinance_tickers_list = [a["yf_ticker"] for a in assets_needing_fetch]
+        yfinance_tickers_str = " ".join(yfinance_tickers_list)
+
+        logger.info(
+            f"YFinance: Granular cache MISS. Fetching "
+            f"{len(assets_needing_fetch)} assets "
+            f"from {overall_start} to {overall_end}"
         )
 
-        if self.cache_client:
-            cached_data = self.cache_client.get_json(cache_key)
-            if cached_data:
-                for ticker, date_prices in cached_data.items():
-                    for date_str, price_str in date_prices.items():
-                        historical_data[ticker][
-                            datetime.fromisoformat(date_str).date()
-                        ] = Decimal(price_str)
-                return historical_data
-
         try:
-            yf_data = yf.download(
-                yfinance_tickers_str,
-                start=start_date,
-                end=end_date + timedelta(days=1),  # end date is exclusive
-                progress=False,
-            )
+            with _YFINANCE_LOCK:
+                # Throttle on Android
+                global _LAST_REQUEST_TIME
+                if settings.DEPLOYMENT_MODE == "android":
+                    elapsed = time.time() - _LAST_REQUEST_TIME
+                    if elapsed < _MIN_REQUEST_INTERVAL:
+                        time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
+
+                yf_data = self._fetch_download_with_retry(
+                    yfinance_tickers_str,
+                    overall_start,
+                    overall_end + timedelta(days=1)
+                )
+                _LAST_REQUEST_TIME = time.time()
+
             if not yf_data.empty:
                 close_prices = yf_data.get("Close")
                 if close_prices is not None:
-                    # yf.download with a single ticker returns a Series for 'Close'.
-                    # With multiple tickers, it returns a DataFrame.
+                    # Map yf_ticker back to original ticker
+                    yf_to_original = {
+                        a["yf_ticker"]: a["asset"]["ticker_symbol"]
+                        for a in assets_needing_fetch
+                    }
+
                     if isinstance(close_prices, pd.Series):
-                        original_ticker = list(yfinance_tickers_map.values())[0]
+                        # Single ticker result
+                        yf_symbol = (
+                            yf_data.columns[0]
+                            if hasattr(yf_data, 'columns')
+                            else yfinance_tickers_list[0]
+                        )
+                        original_ticker = yf_to_original.get(yf_symbol, yf_symbol)
                         for a_date, price in close_prices.dropna().items():
-                            try:
-                                historical_data[original_ticker][
-                                    a_date.date()] = Decimal(str(price))
-                            except Exception:
-                                logger.error(
-                                    "Failed to convert price for %s on %s. "
-                                    "Price: '%s', Type: %s",
-                                    original_ticker,
-                                    a_date.date(),
-                                    price,
-                                    type(price),
+                            dt = a_date.date()
+                            decimal_price = self._to_safe_decimal(price)
+                            historical_data[original_ticker][dt] = decimal_price
+                            # Cache individual date
+                            if self.cache_client:
+                                cache_key = f"h_price:{yf_symbol}:{dt.isoformat()}"
+                                self.cache_client.set(
+                                    cache_key,
+                                    str(decimal_price),
+                                    expire=CACHE_TTL_HISTORICAL_PRICE,
                                 )
-                    # Handle DataFrame for multiple tickers
                     else:
-                        for yf_ticker, original_ticker in yfinance_tickers_map.items():
-                            if yf_ticker in close_prices:
-                                for a_date, price in close_prices[
-                                    yf_ticker
-                                ].dropna().items():
-                                    try:
-                                        historical_data[original_ticker][
-                                            a_date.date()] = Decimal(str(price))
-                                    except Exception:
-                                        logger.error(
-                                            "Failed to convert price for %s on %s. "
-                                            "Price: '%s', Type: %s",
-                                            original_ticker,
-                                            a_date.date(),
-                                            price,
-                                            type(price),
-                                        )
+                        # Multiple tickers DataFrame
+                        for yf_symbol in close_prices.columns:
+                            original_ticker = yf_to_original.get(yf_symbol, yf_symbol)
+                            for a_date, price in (
+                                close_prices[yf_symbol].dropna().items()
+                            ):
+                                dt = a_date.date()
+                                decimal_price = self._to_safe_decimal(price)
+                                historical_data[original_ticker][dt] = decimal_price
+                                # Cache individual date
+                                if self.cache_client:
+                                    cache_key = f"h_price:{yf_symbol}:{dt.isoformat()}"
+                                    self.cache_client.set(
+                                        cache_key,
+                                        str(decimal_price),
+                                        expire=CACHE_TTL_HISTORICAL_PRICE,
+                                    )
 
-        except (Exception, ValidationError) as e:
-            print(f"WARNING: Error fetching historical data from yfinance: {e}")
-            return {}
-
-        if self.cache_client:
-            fetched_tickers = set(historical_data.keys())
-            for asset in assets_to_fetch:
-                if asset["ticker_symbol"] not in fetched_tickers:
-                    cache_key = (
-                        f"asset_details_not_found:{asset['ticker_symbol'].upper()}"
-                    )
-                    self.cache_client.set_json(
-                        cache_key,
-                        {"not_found": True},
-                        expire=CACHE_TTL_HISTORICAL_PRICE,
-                    )
-            serializable_data = {
-                t: {dt.isoformat(): str(price) for dt, price in dp.items()}
-                for t, dp in historical_data.items()
-            }
-            self.cache_client.set_json(
-                cache_key, serializable_data, expire=CACHE_TTL_HISTORICAL_PRICE
-            )
+        except Exception as e:
+            logger.error(f"YFinance: Granular fetch failed: {e}")
+            if "429" in str(e) or "Rate limit" in str(e):
+                self._last_429_time = time.time()
 
         return historical_data
 
@@ -412,11 +727,20 @@ class YFinanceProvider(FinancialDataProvider):
                 f"Fetching index history for {yf_ticker} "
                 f"from {start_date} to {end_date}"
             )
-            ticker_obj = yf.Ticker(yf_ticker)
+            if self.session:
+                self.session.headers.update(self._get_dynamic_headers())
+            # Throttle on Android: wait if a recent request was already made
+            global _LAST_REQUEST_TIME
+            if settings.DEPLOYMENT_MODE == "android":
+                elapsed = time.time() - _LAST_REQUEST_TIME
+                if elapsed < _MIN_REQUEST_INTERVAL:
+                    time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
+            ticker_obj = yf.Ticker(yf_ticker, session=self.session)
             # Fetch data with slight buffer
-            hist = ticker_obj.history(
-                start=start_date, end=end_date + timedelta(days=1)
+            hist = self._fetch_history_with_retry(
+                ticker_obj, start=start_date, end=end_date + timedelta(days=1)
             )
+            _LAST_REQUEST_TIME = time.time()
 
             if hist.empty:
                 logger.warning(f"No history found for index {yf_ticker}")
@@ -458,8 +782,21 @@ class YFinanceProvider(FinancialDataProvider):
         for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
-                temp_ticker = yf.Ticker(yf_ticker_str)
-                if not temp_ticker.history(period="1d").empty:
+                with _YFINANCE_LOCK:
+                    if self.session:
+                        self.session.headers.update(self._get_dynamic_headers())
+
+                    global _LAST_REQUEST_TIME
+                    if settings.DEPLOYMENT_MODE == "android":
+                        elapsed = time.time() - _LAST_REQUEST_TIME
+                        if elapsed < _MIN_REQUEST_INTERVAL:
+                            time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
+
+                    temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
+                    hist = temp_ticker.history(period="1d")
+                    _LAST_REQUEST_TIME = time.time()
+
+                if not hist.empty:
                     logger.debug(f"Found data with variant: {yf_ticker_str}")
                     ticker_obj = temp_ticker
                     break
@@ -508,8 +845,21 @@ class YFinanceProvider(FinancialDataProvider):
 
         for yf_ticker_str in variants:
             try:
-                temp_ticker = yf.Ticker(yf_ticker_str)
-                if not temp_ticker.history(period="1d").empty:
+                with _YFINANCE_LOCK:
+                    if self.session:
+                        self.session.headers.update(self._get_dynamic_headers())
+
+                    global _LAST_REQUEST_TIME
+                    if settings.DEPLOYMENT_MODE == "android":
+                        elapsed = time.time() - _LAST_REQUEST_TIME
+                        if elapsed < _MIN_REQUEST_INTERVAL:
+                            time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
+
+                    temp_ticker = yf.Ticker(yf_ticker_str, session=self.session)
+                    hist = temp_ticker.history(period="1d")
+                    _LAST_REQUEST_TIME = time.time()
+
+                if not hist.empty:
                     ticker_obj = temp_ticker
                     break
             except (ValueError, Exception) as e:
@@ -520,7 +870,7 @@ class YFinanceProvider(FinancialDataProvider):
         if ticker_obj:
             hist = ticker_obj.history(period="2d")
             if not hist.empty:
-                return Decimal(str(hist["Close"].iloc[-1]))
+                return self._to_safe_decimal(hist["Close"].iloc[-1])
         return None
 
     def search(self, query: str) -> List[Dict[str, Any]]:
@@ -528,10 +878,16 @@ class YFinanceProvider(FinancialDataProvider):
         Search Yahoo Finance for matching tickers by name, ticker, or ISIN.
         Returns a list of matching assets with their details.
         """
+        if self._is_cooling_down():
+            return []
+
         try:
-            # yfinance provides a Search class for querying Yahoo Finance
-            search_obj = yf.Search(query)
-            quotes = getattr(search_obj, 'quotes', [])
+            with _YFINANCE_LOCK:
+                if self.session:
+                    self.session.headers.update(self._get_dynamic_headers())
+                # yfinance provides a Search class for querying Yahoo Finance
+                search_obj = yf.Search(query, session=self.session)
+                quotes = getattr(search_obj, 'quotes', [])
 
             results = []
             for quote in quotes[:10]:  # Limit to top 10 results

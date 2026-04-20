@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useImportSession, useFDImportSessionPreview, useCommitFDImportSession } from '../../hooks/useImport';
 import { ParsedFixedDeposit } from '../../types/import';
 import { AxiosError } from 'axios';
+import ImportFDCard from '../../components/Import/ImportFDCard';
 
 const FDImportPreviewPage: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
@@ -101,7 +102,8 @@ const FDImportPreviewPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="card overflow-hidden">
+            {/* Desktop Table */}
+            <div className="hidden md:block card overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="table-auto w-full text-sm">
                         <thead className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
@@ -202,6 +204,35 @@ const FDImportPreviewPage: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+                <div className="flex justify-between items-center px-1 mb-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-400">
+                        <input
+                            type="checkbox"
+                            className="checkbox checkbox-xs"
+                            checked={selectedIndices.size === editableFds.length && editableFds.length > 0}
+                            onChange={handleToggleSelectAll}
+                        />
+                        Select All
+                    </label>
+                    <span className="text-xs text-gray-500">{selectedIndices.size} selected</span>
+                </div>
+                {editableFds.map((fd, index) => {
+                    const isDuplicate = index >= previewData.parsed_fds.length;
+                    return (
+                        <ImportFDCard
+                            key={index}
+                            fd={fd}
+                            isSelected={selectedIndices.has(index)}
+                            onToggleSelection={() => handleToggleSelection(index)}
+                            isDuplicate={isDuplicate}
+                            onFieldChange={(field: keyof ParsedFixedDeposit, value: string | number) => handleFieldChange(index, field, value)}
+                        />
+                    );
+                })}
             </div>
 
             <div className="mt-8 flex justify-end gap-4">

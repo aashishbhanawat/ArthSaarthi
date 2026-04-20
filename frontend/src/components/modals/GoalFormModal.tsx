@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Goal, GoalCreate, GoalUpdate } from '../../types/goal';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import DateInput from '../common/DateInput';
 
 interface GoalFormModalProps {
   isOpen: boolean;
@@ -94,23 +95,20 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label htmlFor="goal-target-date" className="form-label">
-                Target Date
-              </label>
-              <input
+              <DateInput
                 id="goal-target-date"
-                type="date"
+                label="Target Date"
                 value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="form-input"
+                onChange={(val) => setTargetDate(val)}
+                className="w-full"
                 required
               />
             </div>
 
             {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <span className="block sm:inline">Error: {error.message}</span>
-                </div>
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <span className="block sm:inline">Error: {error.message}</span>
+              </div>
             )}
 
             <div className="flex items-center justify-end pt-4">
