@@ -15,7 +15,6 @@ if settings.DATABASE_TYPE == "sqlite":
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute("PRAGMA busy_timeout=60000")  # Wait 60 seconds if locked
         cursor.close()
 else:
@@ -32,13 +31,8 @@ def get_db():
         logger.debug("DB Session: Attempting to commit.")
         db.commit()
         logger.debug("DB Session: Commit successful.")
-    except Exception as e:
-        # Don't log ERROR for 4xx client errors (like PASSWORD_REQUIRED)
-        from starlette.exceptions import HTTPException
-        if isinstance(e, HTTPException) and e.status_code < 500:
-            logger.debug(f"DB Session: Client error {e.status_code}, rolling back.")
-        else:
-            logger.error(f"DB Session: Exception occurred, rolling back: {e}")
+    except Exception:
+        logger.error("DB Session: Exception occurred, rolling back.")
         db.rollback()
         raise
     finally:

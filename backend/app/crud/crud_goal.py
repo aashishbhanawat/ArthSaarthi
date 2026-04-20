@@ -13,14 +13,13 @@ from app.schemas.goal import (
     GoalLinkUpdate,
     GoalUpdate,
 )
-from app.utils.pydantic_compat import model_dump
 
 
 class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
     def create_with_owner(
         self, db: Session, *, obj_in: GoalCreate, user_id: uuid.UUID
     ) -> Goal:
-        db_obj = Goal(**model_dump(obj_in), user_id=user_id)
+        db_obj = Goal(**obj_in.model_dump(), user_id=user_id)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
@@ -106,7 +105,7 @@ class CRUDGoalLink(CRUDBase[GoalLink, GoalLinkCreate, GoalLinkUpdate]):
     def create_with_owner(
         self, db: Session, *, obj_in: GoalLinkCreate, user_id: uuid.UUID
     ) -> GoalLink:
-        db_obj = GoalLink(**model_dump(obj_in), user_id=user_id)
+        db_obj = GoalLink(**obj_in.model_dump(), user_id=user_id)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)

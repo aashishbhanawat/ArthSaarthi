@@ -15,7 +15,6 @@ from app.crud import crud_corporate_action
 from app.crud.crud_ppf import trigger_ppf_recalculation
 from app.models.user import User
 from app.schemas.enums import TransactionType
-from app.utils.pydantic_compat import model_dump, model_dump_json
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -213,7 +212,7 @@ def create_transaction(
             asset_id_to_use = asset_to_use.id
             transaction_create_schema = schemas.TransactionCreate(
                 asset_id=asset_id_to_use,
-                **model_dump(transaction_in,
+                **transaction_in.model_dump(
                     exclude={"ticker_symbol", "asset_type", "asset_id"}
                 ),
             )
@@ -234,7 +233,7 @@ def create_transaction(
                 )
                 logger.debug(
                     "Full incoming payload for reinvestment: %s",
-                    model_dump_json(transaction_in, indent=2),
+                    transaction_in.model_dump_json(indent=2),
                 )
                 transaction = crud_corporate_action.handle_dividend(
                     db=db,
@@ -332,7 +331,7 @@ def update_transaction(
     if config.settings.DEBUG:
         logger.warning("--- BACKEND DEBUG: Update Transaction Request ---")
         logger.warning(f"Transaction ID: {transaction_id}")
-        payload = model_dump_json(transaction_in, indent=2, exclude_unset=True)
+        payload = transaction_in.model_dump_json(indent=2, exclude_unset=True)
         logger.warning(f"Update Payload: {payload}")
         logger.warning("---------------------------------------------")
     transaction = crud.transaction.get(db=db, id=transaction_id)

@@ -162,7 +162,7 @@ sequenceDiagram
     actor User
     participant Frontend as React Frontend
     participant Parser as File Parsers (Python)
-    participant Staging as Local File System (.JSON)
+    participant Staging as Local File System (.parquet)
     participant DB as Database (PostgreSQL)
 
     %% Step 1: Upload & Parsing
@@ -171,7 +171,7 @@ sequenceDiagram
     activate Parser
     Parser->>Parser: Validate File, Select Parser Engine
     Parser->>Parser: Parse Raw Data into Pydantic Models
-    Parser->>Staging: Save intermediate data as .JSON file
+    Parser->>Staging: Save intermediate data as .parquet file
     Parser->>DB: Create ImportSession record in database
     Parser-->>Frontend: 200 OK (Return session ID)
     deactivate Parser
@@ -180,7 +180,7 @@ sequenceDiagram
     Frontend->>Frontend: Redirect to /preview/{sessionId}
     Frontend->>Parser: GET /api/v1/import-sessions/{id}/preview
     activate Parser
-    Parser->>Staging: Read .JSON file
+    Parser->>Staging: Read .parquet file
     Parser->>DB: Compare rows (Detect Duplicates)
     Parser-->>Frontend: Return grouped UI data (Valid, Duplicate)
     deactivate Parser

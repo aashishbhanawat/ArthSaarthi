@@ -1,51 +1,92 @@
-# Dependencies
-node_modules/
-.DS_Store
-dist/
-dist-electron/
-dist-web/
-.env
-.env.*
-!.env.example
-*.log
-npm-debug.log*
-
-# IDE/Editor
-.vscode/
+# IDE and OS files
 .idea/
+.vscode/
+.DS_Store
+
+# AI agent scratch directories
+jules-scratch/
+
+# Editor files
 *.swp
-*.swo
+*~
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-venv/
+# Environment files - do not commit secrets
+# These are loaded by docker-compose but should never be in version control.
 .env
-db.sqlite3
-data/
-*.db
+backend/.env
+uploads/
+backend/uploads/
+frontend/.env
+.env.test
+.env.local
+.env.*.local
 
-# Testing
-coverage/
+# Python cache
+__pycache__/
 .pytest_cache/
-htmlcov/
-e2e/test-results/
-e2e/playwright-report/
+venv/
+.venv/
+*.pdf
+*.xls
+*.xlsx
+*.csv
+*.zip
+.mypy_cache/
+.tox/
+*.pyc
+*.pyo
+.jules/*
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# Test artifacts
+**/test.db
+.coverage
+
+# Frontend
+frontend/dist/
+frontend/coverage/
+frontend/node_modules/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Database files
+*.db
+dump.rdb
+/frontend/dist-electron/
+backend/temp_seed_data/
 
 # Crash dumps
-core.[0-9]*
 core
-!backend/app/core/
 
-# Backup/Restore
-backups/
-temp_backups/
+# CI/CD logs
+log.txt
 
-# Logs
-logs/
+# Temp files
+logs.txt
+NAVAll.txt
+vite
+*_extracted.txt
+backend/extract_pdf_text.py
+frontend/*.AppImage
+frontend/*.deb
+frontend/*.rpm
 
-# Development leftovers
+# Local config/setup files (restored but not tracked)
+backend/vercel.json
+create_issues.sh
+image copy.png
+image.png
+render.yaml
+roadmap.md
+setup.txt
 todo.txt
 abc.txt
 
@@ -53,39 +94,3 @@ abc.txt
 gha-creds-*.json
 clean.sh
 test_out.txt
-
-# Android build artifacts
-# Capacitor/Android specific
-frontend/android/
-frontend/dist/
-frontend/www/
-frontend/android/app/build/
-frontend/android/.gradle/
-frontend/android/build/
-frontend/android/app/src/main/python/app/
-frontend/android/app/src/main/python/alembic/
-frontend/android/app/src/main/python/alembic.ini
-frontend/android/local.properties
-*.apk
-*.aab
-
-frontend/android/app/libs/python-wheels/
-frontend/android/app/wheels/
-frontend/android/build-tools/
-frontend/android/app/src/main/assets/public/
-
-# Backend uploads and build
-backend/uploads/
-backend/build/
-backend/venv/
-*.parquet
-
-# Android secrets & credentials
-*.keystore
-*.jks
-local.properties
-
-# Local setup and temporary credentials
-create_issues.sh
-keystore_base64.txt
-setup.txt
