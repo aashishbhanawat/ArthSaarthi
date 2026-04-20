@@ -8,6 +8,7 @@ from app import crud, models, schemas
 from app.cache.utils import invalidate_caches_for_portfolio
 from app.core import dependencies
 from app.crud.crud_holding import _calculate_fd_current_value
+from app.utils.pydantic_compat import model_dump, model_validate
 
 router = APIRouter()
 
@@ -63,7 +64,7 @@ def read_fixed_deposit(
         compounding_frequency=fd.compounding_frequency,
         interest_payout=fd.interest_payout,
     )
-    response_data = schemas.FixedDeposit.model_validate(fd).model_dump()
+    response_data = model_dump(model_validate(schemas.FixedDeposit, fd))
     response_data["maturity_value"] = maturity_value
     return response_data
 

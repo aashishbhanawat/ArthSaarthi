@@ -53,6 +53,7 @@ class BondInDBBase(BondBase):
 
     class Config:
         from_attributes = True
+        orm_mode = True
 
 
 # Properties to return to client

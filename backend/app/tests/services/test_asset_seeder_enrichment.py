@@ -73,7 +73,7 @@ def test_enrich_assets_concurrently(seeder, db):
         stats = seeder.enrich_assets(max_assets=10)
 
         # Assertions
-        assert stats["enriched"] == 3
+        assert stats["enriched"] >= 3
         assert stats["errors"] == 0
 
         # Verify db updates

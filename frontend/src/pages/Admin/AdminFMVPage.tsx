@@ -8,6 +8,7 @@ import {
     seedFMV2018,
     FMVAsset,
 } from '../../services/adminApi';
+import FMVCard from '../../components/Admin/FMVCard';
 
 const AdminFMVPage: React.FC = () => {
     const { addToast } = useToast();
@@ -144,8 +145,33 @@ const AdminFMVPage: React.FC = () => {
                 />
             </div>
 
-            {/* Table */}
-            <div className="card overflow-x-auto">
+            {/* Mobile View */}
+            <div className="md:hidden space-y-1">
+                {isLoading && <div className="text-center p-8">Loading...</div>}
+                {!isLoading && equityAssets.length === 0 && (
+                    <div className="text-center p-8 text-gray-500 card">
+                        No equity assets found. Search by ticker.
+                    </div>
+                )}
+                {equityAssets.map((asset) => (
+                    <FMVCard
+                        key={asset.id || asset.ticker_symbol}
+                        asset={asset}
+                        isEditing={editingTicker === asset.ticker_symbol}
+                        editValue={editValue}
+                        onEdit={handleEdit}
+                        onSave={handleSave}
+                        onCancel={handleCancel}
+                        onFetch={handleFetch}
+                        onEditValueChange={setEditValue}
+                        isUpdating={updateMutation.isPending}
+                        isFetching={fetchingTicker === asset.ticker_symbol}
+                    />
+                ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block card overflow-x-auto">
                 <table className="w-full">
                     <thead>
                         <tr className="border-b dark:border-gray-700">
@@ -160,7 +186,7 @@ const AdminFMVPage: React.FC = () => {
                     <tbody>
                         {isLoading && (
                             <tr>
-                                <td colSpan={5} className="text-center p-8">
+                                <td colSpan={6} className="text-center p-8">
                                     Loading...
                                 </td>
                             </tr>
@@ -168,7 +194,7 @@ const AdminFMVPage: React.FC = () => {
                         {!isLoading && equityAssets.length === 0 && (
                             <tr>
                                 <td
-                                    colSpan={5}
+                                    colSpan={6}
                                     className="text-center p-8 text-gray-500"
                                 >
                                     No equity assets found. Search by ticker.
@@ -187,7 +213,7 @@ const AdminFMVPage: React.FC = () => {
                                     {asset.isin || <span className="text-red-400">Missing</span>}
                                 </td>
                                 <td className="p-3">{asset.name}</td>
-                                <td className="p-3">{asset.asset_type}</td>
+                                <td className="p-3 text-xs uppercase text-gray-500">{asset.asset_type}</td>
                                 <td className="p-3 text-right">
                                     {editingTicker === asset.ticker_symbol ? (
                                         <input
@@ -204,7 +230,7 @@ const AdminFMVPage: React.FC = () => {
                                         <span
                                             className={
                                                 asset.fmv_2018
-                                                    ? 'text-green-600 dark:text-green-400'
+                                                    ? 'text-green-600 dark:text-green-400 font-bold font-mono'
                                                     : 'text-gray-400'
                                             }
                                         >

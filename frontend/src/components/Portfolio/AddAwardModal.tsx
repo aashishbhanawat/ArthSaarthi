@@ -8,6 +8,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { Asset } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
+import DateInput from '../common/DateInput';
 
 interface AddAwardModalProps {
     portfolioId: string;
@@ -37,7 +38,7 @@ type AddAwardFormInputs = {
 
 const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isOpen, transactionToEdit }) => {
     const isEditMode = !!transactionToEdit;
-    const { register, handleSubmit, control, setValue, getValues } = useForm<AddAwardFormInputs>({
+    const { register, handleSubmit, control, setValue, getValues, formState: { errors } } = useForm<AddAwardFormInputs>({
         defaultValues: {
             awardType: 'RSU_VEST',
             price: 0,
@@ -330,8 +331,13 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="form-group">
-                            <label htmlFor="date" className="form-label">{awardType === 'RSU_VEST' ? 'Vest Date' : 'Purchase Date'}</label>
-                            <input id="date" type="date" {...register('date', { required: true })} className="form-input" />
+                            <DateInput
+                                id="date"
+                                label={awardType === 'RSU_VEST' ? 'Vest Date' : 'Purchase Date'}
+                                register={register('date', { required: true })}
+                                error={errors.date?.message as string}
+                                className="w-full"
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="quantity" className="form-label">Quantity</label>
