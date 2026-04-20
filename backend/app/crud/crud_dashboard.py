@@ -186,6 +186,12 @@ def _get_portfolio_history(
     all_rds = rd_query.all()
     ppf_assets = ppf_asset_query.distinct().all()
 
+    from dateutil.relativedelta import relativedelta
+    rd_maturity_dates = {
+        rd.id: rd.start_date + relativedelta(months=rd.tenure_months)
+        for rd in all_rds
+    }
+
     all_ppf_rates = []
     if ppf_assets:
         all_ppf_rates = db.query(HistoricalInterestRate).filter(
@@ -474,9 +480,7 @@ def _get_portfolio_history(
                     if rd.start_date > current_day:
                         continue
 
-                    rd_maturity_date = rd.start_date + relativedelta(
-                        months=rd.tenure_months
-                    )
+                    rd_maturity_date = rd_maturity_dates.get(rd.id)
 
                     # If matured before this historical date, the RD has been
                     # "withdrawn" from the portfolio. Skip it.
@@ -491,14 +495,21 @@ def _get_portfolio_history(
                         current_day,
                     )
 
+                    delta = relativedelta(current_day, rd.start_date)
+                    months_passed = delta.years * 12 + delta.months
+
                     installments_to_date = 0
-                    temp_date = rd.start_date
-                    while (
-                        temp_date <= current_day
-                        and installments_to_date < rd.tenure_months
-                    ):
-                        installments_to_date += 1
-                        temp_date += relativedelta(months=1)
+                    for offset in [0, 1, 2]:
+                        test_installments = months_passed + offset
+                        test_date = rd.start_date + relativedelta(
+                            months=test_installments
+                        )
+                        if test_date <= current_day:
+                            installments_to_date = test_installments + 1
+                        else:
+                            break
+
+                    installments_to_date = min(installments_to_date, rd.tenure_months)
 
                     if installments_to_date > 0:
                         day_total_value += rd_val
