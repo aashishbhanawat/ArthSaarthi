@@ -22,10 +22,6 @@ class FinancialDataService:
         self.amfi_provider = AmfiIndiaProvider(cache_client)
         self.nse_provider = NseBhavcopyProvider(cache_client)
 
-    def close(self):
-        """Close provider sessions to free resources."""
-        self.yfinance_provider.close()
-
     def get_current_prices(
         self, assets: List[Dict[str, Any]]
     ) -> Dict[str, Dict[str, Decimal]]:
@@ -62,16 +58,20 @@ class FinancialDataService:
             prices_data.update(self.amfi_provider.get_current_prices(mf_assets))
             logger.debug(f"Prices after AMFI: {prices_data.keys()}")
 
-        # 3. Stocks: yfinance is now the primary source for real-time data on Android.
+        # 3. Stocks: yfinance is the primary source for real-time data.
+        #    Append .NS for Indian stocks as required by yfinance.
         if stock_assets:
-            logger.info(
+            logger.debug(
                 f"Processing {len(stock_assets)} stock assets with yfinance provider."
+            )
+            logger.debug(
+                "Tickers sent to yfinance: "
+                f"{[a['ticker_symbol'] for a in stock_assets]}"
             )
             prices_data.update(
                 self.yfinance_provider.get_current_prices(stock_assets)
             )
-
-            logger.debug(f"Prices after stock providers: {prices_data.keys()}")
+            logger.debug(f"Prices after yfinance: {prices_data.keys()}")
 
         # 4. Bonds: NSE is the primary source.
         if bond_assets:
@@ -131,10 +131,6 @@ class FinancialDataService:
         historical_data: Dict[str, Dict[date, Decimal]] = {}
 
         if other_assets:
-            logger.info(
-                f"Fetching historical prices for {len(other_assets)} assets "
-                "via yfinance"
-            )
             historical_data.update(self.yfinance_provider.get_historical_prices(
                 other_assets, start_date, end_date
             ))
@@ -175,7 +171,7 @@ class FinancialDataService:
         if asset_type == "Mutual Fund" or asset_type == "MUTUAL_FUND":
             return self.amfi_provider.get_asset_details(ticker_symbol)
 
-        # Check yfinance
+        # Default to yfinance for other types or if type is unknown
         return self.yfinance_provider.get_asset_details(ticker_symbol)
 
     def search_mutual_funds(self, query: str) -> List[Dict[str, Any]]:
@@ -200,32 +196,6 @@ class FinancialDataService:
         return self.yfinance_provider.get_exchange_rate(
             from_currency, to_currency, date_obj
         )
-
-    def get_enrichment_data(
-        self, ticker_symbol: str, exchange: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Fetches sector, industry, country, marketCap, P/E, P/B for a single ticker.
-        """
-        return self.yfinance_provider.get_enrichment_data(ticker_symbol, exchange)
-
-    def get_enrichment_data_batch(
-        self, assets: List[Dict[str, Any]]
-    ) -> Dict[str, Dict[str, Any]]:
-        """
-        Fetches enrichment data for multiple assets in a single call.
-        """
-        # Note: yfinance doesn't have a reliable bulk metadata endpoint, so
-        # we default to looping internally if batch doesn't exist, but
-        # yfinance doesn't aggressively block info lookup now
-        enrichment_results = {}
-        for asset in assets:
-            data = self.get_enrichment_data(
-                asset['ticker_symbol'], asset.get('exchange')
-            )
-            if data:
-                enrichment_results[asset['ticker_symbol']] = data
-        return enrichment_results
 
 
 def get_financial_data_service() -> FinancialDataService:

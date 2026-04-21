@@ -35,7 +35,6 @@ class RecurringDeposit(RecurringDepositBase):
 
     class Config:
         from_attributes = True
-        orm_mode = True
 
 
 class RecurringDepositDetails(RecurringDeposit):

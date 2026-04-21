@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.schemas.transaction import TransactionType
-from app.scripts.backfill_transaction_links import run_backfill
 
 logger = logging.getLogger(__name__)
 
@@ -30,20 +29,10 @@ def _serialize_decimal(d: Decimal | None) -> float | None:
     return float(d)
 
 
-def _parse_date(d_str: str | None) -> datetime | None:
+def _parse_date(d_str: str | None) -> date | None:
     if not d_str:
         return None
-    try:
-        # Pydantic v1 (Android/Chaquopy) can be strict about datetime types
-        # If the input is just YYYY-MM-DD, we expand it to YYYY-MM-DD 00:00:00
-        dt = datetime.strptime(d_str, "%Y-%m-%d")
-        return dt
-    except ValueError:
-        try:
-            # Try ISO format if simple format fails
-            return datetime.fromisoformat(d_str.replace('Z', '+00:00'))
-        except Exception:
-            return None
+    return datetime.strptime(d_str, "%Y-%m-%d").date()
 
 
 def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
@@ -383,12 +372,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                     )
 
             # Transactions
-            # Sort transactions by date to ensure BUYs are processed before SELLs
-            # for reliable FIFO auto-linking.
-            transactions = data.get("transactions", [])
-            transactions.sort(key=lambda x: x.get("transaction_date", "0000-00-00"))
-
-            for tx_data in transactions:
+            for tx_data in data.get("transactions", []):
                 p_name = tx_data.get("portfolio_name")
                 if not p_name or p_name not in portfolio_map:
                     continue
@@ -513,14 +497,6 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                         )
 
         db.commit()
-
-        # Run backfill as a final safeguard to link any orphans
-        try:
-            run_backfill(db, user_id=user_id)
-            db.commit()
-        except Exception as e:
-            logger.warning(f"Post-restore backfill failed: {e}")
-            # Non-critical failure for the main restore flow
 
         # Comprehensive cache invalidation after restore
         from app.cache.factory import get_cache_client

@@ -1,11 +1,13 @@
 import json
+import os
 import pathlib
 import tempfile
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Union
 
+import requests
 import typer
 import urllib3
 from sqlalchemy.orm import Session
@@ -13,9 +15,6 @@ from sqlalchemy.orm import Session
 # Local imports
 from app import models
 from app.services.asset_seeder import AssetSeeder
-from app.utils.financial_utils import (
-    process_all_sources,
-)
 
 # Suppress only the InsecureRequestWarning from urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -33,6 +32,35 @@ def get_db_session():
         db.close()
 
 
+def _download_file(url: str, dest_path: str) -> bool:
+    """
+    Downloads a file from a URL to a destination path.
+    Returns True if successful, False otherwise.
+    """
+    typer.echo(f"Downloading {url}...")
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/91.0.4472.124 Safari/537.36"
+        )
+    }
+    try:
+        # nosec B501: SSL verification disabled for NSDL/BSE/NSE with cert issues
+        response = requests.get(
+            url, stream=True, verify=False, headers=headers, timeout=30  # nosec B501
+        )
+        response.raise_for_status()
+        with open(dest_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        typer.echo(f"Saved to {dest_path}")
+        return True
+    except Exception as e:
+        typer.echo(f"Download failed: {e}")
+        return False
+
+
 def _find_file(directory: pathlib.Path, pattern: str) -> Optional[str]:
     """Finds a file matching the pattern in the directory."""
     files = list(directory.glob(pattern))
@@ -42,6 +70,82 @@ def _find_file(directory: pathlib.Path, pattern: str) -> Optional[str]:
     # Let's sort by name (usually contains date) descending.
     files.sort(key=lambda p: p.name, reverse=True)
     return str(files[0])
+
+
+def get_latest_trading_date() -> date:
+    """Returns the latest potential trading date (today or previous weekday)."""
+    d = date.today()
+    # Simple check: if Sat (5) or Sun (6), go back to Fri
+    if d.weekday() == 5:  # Sat
+        d -= timedelta(days=1)
+    elif d.weekday() == 6:  # Sun
+        d -= timedelta(days=2)
+    return d
+
+
+def decrement_trading_day(d: date) -> date:
+    """Returns the previous trading day (skipping weekends)."""
+    d -= timedelta(days=1)
+    while d.weekday() > 4:  # Sat=5, Sun=6
+        d -= timedelta(days=1)
+    return d
+
+
+def get_dynamic_urls(d: date) -> dict[str, Union[str, list[str]]]:
+    """Generates URLs for a specific date."""
+    dd = d.strftime("%d")
+    mm = d.strftime("%m")
+    yyyy = d.strftime("%Y")
+
+    # NSDL: as_on_DD.MM.YYYY.xls
+    nsdl = (
+        "https://nsdl.co.in/downloadables/excel/cp-debt/"
+        f"Download_the_entire_list_of_Debt_Instruments_(including_Redeemed)_as_on_"
+        f"{dd}.{mm}.{yyyy}.xls"
+    )
+
+    # BSE Equity: BhavCopy_BSE_CM_0_0_0_{YYYY}{MM}{DD}_F_0000.CSV
+    bse_eq = (
+        "https://www.bseindia.com/download/BhavCopy/Equity/"
+        f"BhavCopy_BSE_CM_0_0_0_{yyyy}{mm}{dd}_F_0000.CSV"
+    )
+
+    # BSE Debt: DEBTBHAVCOPY{DD}{MM}{YYYY}.zip
+    bse_debt = (
+        "https://www.bseindia.com/download/Bhavcopy/Debt/"
+        f"DEBTBHAVCOPY{dd}{mm}{yyyy}.zip"
+    )
+
+    # BSE Index: INDEXSummary_{DD}{MM}{YYYY}.csv
+    bse_index = (
+        "https://www.bseindia.com/bsedata/Index_Bhavcopy/"
+        f"INDEXSummary_{dd}{mm}{yyyy}.csv"
+    )
+
+    # NSE Equity: New Uniform Format
+    # BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip
+    nse_eq = (
+        "https://nsearchives.nseindia.com/content/cm/"
+        f"BhavCopy_NSE_CM_0_0_0_{yyyy}{mm}{dd}_F_0000.csv.zip"
+    )
+
+    # Static URLs (Do not change with date, but we include them)
+    bse_public = "https://www.bseindia.com/downloads1/bonds_data.zip"
+    nse_debt = "https://nsearchives.nseindia.com/content/debt/New_debt_listing.xlsx"
+    icici_fallback = (
+        "https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip"
+    )
+
+    return {
+        "nsdl": nsdl,
+        "bse_public": bse_public,
+        "bse_equity": bse_eq,
+        "bse_debt": bse_debt,
+        "nse_debt": nse_debt,
+        "nse_equity": nse_eq,
+        "bse_index": bse_index,
+        "icici": icici_fallback,
+    }
 
 
 @app.command("seed-assets")
@@ -105,22 +209,80 @@ def seed_assets_command(
         temp_dir = tempfile.mkdtemp()
         typer.echo(f"Created temp directory for downloads: {temp_dir}")
 
+        # Prepare candidate dates (Today, T-1, T-2)
+        candidate_dates = []
+        current_d = get_latest_trading_date()
+        candidate_dates.append(current_d)
+        for _ in range(2):
+            current_d = decrement_trading_day(current_d)
+            candidate_dates.append(current_d)
+
+        typer.echo(f"Will try dates: {[d.isoformat() for d in candidate_dates]}")
+
         try:
-            from app.utils.financial_utils import download_all_sources
-            # We wrap the download in a way that respects Typer echoes if needed,
-            # but download_all_sources handles the logic.
-            # For CLI we might want to see the progress, so we pass a logger
-            # or just let it run.
-            files = download_all_sources(temp_dir)
-            if not files:
-                typer.echo("Warning: No files were downloaded.")
+            required_sources = [
+                "nsdl", "bse_public", "bse_equity", "bse_debt",
+                "nse_debt", "nse_equity", "bse_index", "icici"
+            ]
+
+            for source in required_sources:
+                # Try each date for this source
+                for d in candidate_dates:
+                    urls = get_dynamic_urls(d).get(source)
+                    if not urls:
+                        continue
+
+                    if isinstance(urls, str):
+                        urls = [urls]
+
+                    success = False
+                    for url in urls:
+                        filename = url.split('/')[-1]
+                        dest = os.path.join(temp_dir, filename)
+
+                        if _download_file(url, dest):
+                            files[source] = dest
+                            success = True
+                            break
+
+                    if success:
+                        break # Move to next source if successful
+
+                if source not in files:
+                    typer.echo(
+                        f"Warning: Could not download {source} after trying all dates."
+                    )
+
         except Exception as e:
             typer.echo(f"Error during download setup: {e}", err=True)
 
-    # Execute Phases (consolidated in process_all_sources)
-    process_all_sources(seeder, files)
+    # Execute Phases
 
-    # Phase 6: Enrichment (FR6.4)
+    # Phase 1
+    if "nsdl" in files:
+        seeder.process_nsdl_file(files["nsdl"])
+    if "bse_public" in files:
+        seeder.process_bse_public_debt(files["bse_public"])
+
+    # Phase 2
+    if "bse_equity" in files:
+        seeder.process_bse_equity_bhavcopy(files["bse_equity"])
+    if "nse_equity" in files:
+        seeder.process_nse_equity_bhavcopy(files["nse_equity"])
+
+    # Phase 3
+    if "nse_debt" in files:
+        seeder.process_nse_daily_debt(files["nse_debt"])
+    if "bse_debt" in files:
+        seeder.process_bse_debt_bhavcopy(files["bse_debt"])
+
+    # Phase 4
+    if "bse_index" in files:
+        seeder.process_bse_index(files["bse_index"])
+
+    # Phase 5
+    if "icici" in files:
+        seeder.process_icici_fallback(files["icici"])
 
     # Phase 6: Enrichment (FR6.4)
     typer.echo("\n--- Phase 6: Enriching assets with sector/geography data ---")

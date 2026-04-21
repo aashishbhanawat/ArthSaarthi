@@ -13,11 +13,8 @@ class DiskCacheClient(CacheClient):
     """A cache client implementation using a local disk cache."""
 
     def __init__(self):
-        from app.core.config import settings
-        cache_dir = settings.DISK_CACHE_DIR
-        if not cache_dir:
-            cache_dir = user_cache_dir("arthsaarthi", "arthsaarthi-app")
-
+        # Use platformdirs to find the appropriate user-specific cache directory
+        cache_dir = user_cache_dir("arthsaarthi", "arthsaarthi-app")
         self._cache = diskcache.Cache(cache_dir)
         logger.info("Initialized disk-based cache at: %s", cache_dir)
 

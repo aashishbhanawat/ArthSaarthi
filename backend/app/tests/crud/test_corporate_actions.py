@@ -241,7 +241,6 @@ def test_handle_stock_split(db: Session) -> None:
     with patch("app.crud.crud_holding.financial_data_service") as mock_service:
         mock_service.get_current_prices.return_value = {}
         mock_service.yfinance_provider.get_enrichment_data.return_value = {}
-        mock_service.get_enrichment_data_batch.return_value = {}
 
         holdings_data = crud.holding.get_portfolio_holdings_and_summary(
             db=db, portfolio_id=portfolio.id
@@ -741,7 +740,6 @@ def test_multi_demerger_cost_calculation(db: Session) -> None:
     with patch("app.crud.crud_holding.financial_data_service") as mock_service:
         mock_service.get_current_prices.return_value = {}
         mock_service.yfinance_provider.get_enrichment_data.return_value = {}
-        mock_service.get_enrichment_data_batch.return_value = {}
 
         holdings_data = crud.holding.get_portfolio_holdings_and_summary(
             db=db, portfolio_id=portfolio.id
@@ -904,7 +902,6 @@ def test_handle_split_issue_fractional_inr(db: Session) -> None:
     with patch("app.crud.crud_holding.financial_data_service") as mock_service:
         mock_service.get_current_prices.return_value = {}
         mock_service.yfinance_provider.get_enrichment_data.return_value = {}
-        mock_service.get_enrichment_data_batch.return_value = {}
 
         holdings_data = crud.holding.get_portfolio_holdings_and_summary(
             db=db, portfolio_id=portfolio.id

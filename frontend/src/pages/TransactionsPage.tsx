@@ -100,7 +100,7 @@ const TransactionsPage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="hidden lg:block text-3xl font-bold mb-6">Transaction History</h1>
+      <h1 className="text-3xl font-bold mb-6">Transaction History</h1>
       <TransactionFilterBar />
 
       {isLoading && <div className="text-center p-8">Loading transactions...</div>}

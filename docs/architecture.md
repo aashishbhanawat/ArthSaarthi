@@ -83,11 +83,4 @@ For desktop deployments, the application uses **Electron** with:
 *   The backend runs as a local HTTP server on `127.0.0.1:8000`.
 *   **SQLite** database and **DiskCache** instead of PostgreSQL and Redis.
 
-### 2.5. Android Mode (Experimental)
-
-For Android deployments, the application uses:
-*   **Capacitor.js** to wrap the React frontend into an Android WebView.
-*   **Chaquopy** to embed the CPython interpreter and run the FastAPI backend natively on the device.
-*   The backend runs as a local HTTP server on `127.0.0.1:<port>`, identical to the Electron desktop architecture.
-*   **SQLite** and **DiskCache** for storage (same as desktop mode).
 ```

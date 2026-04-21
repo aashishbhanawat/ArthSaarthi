@@ -127,8 +127,8 @@ def test_login_nonexistent_user(client: TestClient):
 
 
 @pytest.mark.skipif(
-    settings.DEPLOYMENT_MODE in ("desktop", "android"),
-    reason="Inactive user concept is not applicable in single-user local modes.",
+    settings.DEPLOYMENT_MODE == "desktop",
+    reason="Inactive user concept is not applicable in single-user desktop mode.",
 )
 def test_login_inactive_user(client: TestClient, db: Session, admin_user_data: dict):
     # Arrange: Create a user

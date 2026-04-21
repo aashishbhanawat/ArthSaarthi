@@ -14,7 +14,7 @@ const PortfolioPage: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Portfolios</h1>
-        <button onClick={() => setModalOpen(true)} className="btn btn-primary btn-sm md:btn-md shadow-sm">
+        <button onClick={() => setModalOpen(true)} className="btn btn-primary">
           Create New Portfolio
         </button>
       </div>
