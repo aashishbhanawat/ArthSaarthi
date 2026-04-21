@@ -34,7 +34,7 @@ def get_dividend_report(
 
     service = DividendService(db)
     return service.get_dividend_report(
-        fy_year=fy, portfolio_id=portfolio_id, user_id=str(current_user.id)
+        fy_year=fy, user_id=str(current_user.id), portfolio_id=portfolio_id
     )
 
 @router.get("/export")
@@ -56,7 +56,7 @@ def export_dividend_report_csv(
 
     service = DividendService(db)
     summary = service.get_dividend_report(
-        fy_year=fy, portfolio_id=portfolio_id, user_id=str(current_user.id)
+        fy_year=fy, user_id=str(current_user.id), portfolio_id=portfolio_id
     )
 
     output = StringIO()

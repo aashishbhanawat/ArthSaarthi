@@ -36,10 +36,10 @@ class CapitalGainsService:
 
     def calculate_capital_gains(
         self,
+        user_id: str,
         portfolio_id: Optional[str],
         fy_year: str, # e.g. "2025-26"
-        slab_rate: float = 30.0, # Default to 30% if not provided
-        user_id: Optional[str] = None
+        slab_rate: float = 30.0 # Default to 30% if not provided
     ) -> CapitalGainsSummary:
         """
         Main entry point to calculate Capital Gains for a financial year.
@@ -64,6 +64,7 @@ class CapitalGainsService:
             .join(TransactionLink.buy_transaction.of_type(BuyTx))
             .join(SellTx.asset.of_type(AssetModel))
             .where(
+                SellTx.user_id == user_id,
                 SellTx.transaction_type == TransactionType.SELL,
                 SellTx.transaction_date >= start_date,
                 SellTx.transaction_date <= end_date
@@ -72,8 +73,6 @@ class CapitalGainsService:
 
         if portfolio_id:
             query = query.where(SellTx.portfolio_id == portfolio_id)
-        if user_id:
-            query = query.where(SellTx.user_id == user_id)
 
         links = self.db.scalars(query).all()
 
@@ -194,7 +193,7 @@ class CapitalGainsService:
         self,
         portfolio_id: Optional[str],
         end_date: datetime,
-        user_id: Optional[str] = None
+        user_id: str
     ) -> Dict[str, List[Tuple[date, Decimal]]]:
         """
         Calculates remaining cost basis ratios for assets that underwent demergers.
@@ -202,13 +201,12 @@ class CapitalGainsService:
         """
         # 1. Fetch all DEMERGER transactions before end_date
         query = select(Transaction).where(
+            Transaction.user_id == user_id,
             Transaction.transaction_type == TransactionType.DEMERGER,
             Transaction.transaction_date <= end_date
         )
         if portfolio_id:
             query = query.where(Transaction.portfolio_id == portfolio_id)
-        if user_id:
-            query = query.where(Transaction.user_id == user_id)
 
         demerger_txs = self.db.scalars(query).all()
         if not demerger_txs:
@@ -233,14 +231,13 @@ class CapitalGainsService:
 
             # Fetch relevant BUYs for this asset before earliest demerger
             buy_query = select(Transaction).where(
+                Transaction.user_id == user_id,
                 Transaction.asset_id == asset_id_str,
                 Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
                 Transaction.transaction_date < earliest_demerger_date
             )
             if portfolio_id:
                 buy_query = buy_query.where(Transaction.portfolio_id == portfolio_id)
-            if user_id:
-                buy_query = buy_query.where(Transaction.user_id == user_id)
 
             buys = self.db.scalars(buy_query).all()
 
