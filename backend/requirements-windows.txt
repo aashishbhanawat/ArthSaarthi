@@ -142,7 +142,7 @@ pytest-mock==3.14.1
     # via -r backend/requirements.in
 python-dateutil==2.9.0.post0
     # via pandas
-python-dotenv==1.1.1
+python-dotenv==1.2.2
     # via
     #   pydantic-settings
     #   uvicorn
