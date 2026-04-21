@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import crud
+from app.cache.factory import get_cache_client
 from app.core import security
 from app.core.config import settings
 from app.core.dependencies import get_current_active_user
@@ -96,7 +97,6 @@ def login_for_access_token(
     ip_address = request.client.host
 
     # Check rate limit
-    from app.cache.factory import get_cache_client
     cache = get_cache_client()
     rate_limit_key = f"{LOGIN_RATE_LIMIT_KEY_PREFIX}{ip_address}"
     if cache:
@@ -151,9 +151,11 @@ def login_for_access_token(
             "deployment_mode": settings.DEPLOYMENT_MODE,
         }
     except HTTPException as e:
-        if e.status_code == status.HTTP_401_UNAUTHORIZED and cache:
-            # Increment failed attempts counter
-            cache.incr(rate_limit_key, expire=LOGIN_RATE_LIMIT_SECONDS)
+        if e.status_code == status.HTTP_401_UNAUTHORIZED:
+            if cache:
+                # Increment failed attempts counter
+                cache.incr(rate_limit_key, expire=LOGIN_RATE_LIMIT_SECONDS)
+            e.headers = {"WWW-Authenticate": "Bearer"}
 
         log_event(
             db,
@@ -162,8 +164,6 @@ def login_for_access_token(
             ip_address=ip_address,
             details={"email": form_data.username, "reason": e.detail},
         )
-        if e.status_code == status.HTTP_401_UNAUTHORIZED:
-            e.headers = {"WWW-Authenticate": "Bearer"}
         raise e
 
 
