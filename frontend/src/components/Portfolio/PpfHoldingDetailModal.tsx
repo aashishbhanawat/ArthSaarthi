@@ -1,10 +1,10 @@
-import { PencilSquareIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
-import { formatCurrency, formatDate, formatPercentage } from '../../utils/formatting';
+import { formatCurrency, formatDate } from '../../utils/formatting';
 
 interface PpfHoldingDetailModalProps {
   isOpen: boolean;
@@ -85,7 +85,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
           <div data-testid="summary-annualized-return">
             <p className="text-sm text-gray-500 dark:text-gray-400">Annualized Return</p>
             <p className="font-semibold dark:text-gray-100">
-              {isLoadingAnalytics ? '...' : formatPercentage(analytics?.xirr_current ?? 0)}
+              {isLoadingAnalytics ? '...' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
             </p>
           </div>
           <div data-testid="summary-current-rate">
@@ -155,41 +155,38 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay pt-safe pb-safe p-4" onClick={onClose}>
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+    >
+      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={`ppf-holding-detail-modal-title-${holding.asset_id}`}
-        className="modal-content w-full max-w-3xl max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl bg-white dark:bg-gray-800"
-        onClick={(e) => e.stopPropagation()}
+        className="modal-content w-full max-w-3xl p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl bg-white dark:bg-gray-800 z-10"
       >
-        <div className="p-6 pb-2 flex-shrink-0">
-          <div
-            id={`ppf-holding-detail-modal-title-${holding.asset_id}`}
-            className="flex justify-between items-start mb-4 gap-4"
-          >
-            <div className="min-w-0">
-              <h2 className="text-xl sm:text-2xl font-bold dark:text-gray-100 break-words">
-                PPF: {holding.asset_name} ({holding.account_number})
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Opened on: {holding.opening_date ? formatDate(holding.opening_date) : 'N/A'}
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors -mt-1 -mr-1"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
+        <div
+          id={`ppf-holding-detail-modal-title-${holding.asset_id}`}
+          className="flex justify-between items-center mb-4"
+        >
+          <div>
+            <h2 className="text-2xl font-bold dark:text-gray-100">
+              PPF Account: {holding.asset_name} ({holding.account_number})
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Opened on: {holding.opening_date ? formatDate(holding.opening_date) : 'N/A'}
+            </p>
           </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2"
+          >
+            <span className="text-2xl leading-none">&times;</span>
+          </button>
         </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-2 min-h-0">
-          {renderContent()}
-        </div>
-
-        <div className="p-6 pt-4 flex-shrink-0 flex justify-end space-x-2 border-t border-gray-100 dark:border-gray-700">
+        {renderContent()}
+        <div className="flex justify-end mt-6">
           <button onClick={onClose} className="btn btn-secondary">
             Close
           </button>

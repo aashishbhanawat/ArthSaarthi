@@ -9,7 +9,6 @@ import TransactionFormModal from '../components/Portfolio/TransactionFormModal';
 import { DeleteConfirmationModal } from '../components/common/DeleteConfirmationModal';
 import { Transaction } from '../types/portfolio';
 import { useDeleteTransaction } from '../hooks/useTransactions';
-import { useDeleteFixedDeposit } from '../hooks/useFixedDeposits';
 
 const PAGE_SIZE = 15;
 
@@ -21,7 +20,6 @@ const TransactionsPage: React.FC = () => {
 
   // State for modals
   const deleteTransactionMutation = useDeleteTransaction();
-  const deleteFixedDepositMutation = useDeleteFixedDeposit();
 
 
   // Filters state derived from URL search params
@@ -63,22 +61,7 @@ const TransactionsPage: React.FC = () => {
   };
 
   const handleConfirmDelete = () => {
-    if (!transactionToDelete) return;
-
-    const fdId = transactionToDelete.details?._fd_id as string | undefined;
-
-    if (fdId && transactionToDelete.transaction_type === 'FD_MATURITY') {
-      // Delete the underlying FD record
-      deleteFixedDepositMutation.mutate(
-        { portfolioId: transactionToDelete.portfolio_id, fdId },
-        {
-          onSuccess: () => {
-            setTransactionToDelete(null);
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-          },
-        }
-      );
-    } else {
+    if (transactionToDelete) {
       deleteTransactionMutation.mutate(
         { portfolioId: transactionToDelete.portfolio_id, transactionId: transactionToDelete.id },
         {
@@ -100,7 +83,7 @@ const TransactionsPage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="hidden lg:block text-3xl font-bold mb-6">Transaction History</h1>
+      <h1 className="text-3xl font-bold mb-6">Transaction History</h1>
       <TransactionFilterBar />
 
       {isLoading && <div className="text-center p-8">Loading transactions...</div>}

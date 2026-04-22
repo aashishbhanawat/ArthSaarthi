@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase
 from app.models.recurring_deposit import RecurringDeposit
-from app.schemas.recurring_deposit import RecurringDepositCreate, RecurringDepositUpdate
-from app.utils.pydantic_compat import model_dump
+from app.schemas.recurring_deposit import (
+    RecurringDepositCreate,
+    RecurringDepositUpdate,
+)
 
 
 class CRUDRD(
@@ -20,7 +22,7 @@ class CRUDRD(
         user_id: uuid.UUID,
     ) -> RecurringDeposit:
         db_obj = self.model(
-            **model_dump(obj_in), user_id=user_id
+            **obj_in.model_dump(), user_id=user_id
         )
         db.add(db_obj)
         db.flush()

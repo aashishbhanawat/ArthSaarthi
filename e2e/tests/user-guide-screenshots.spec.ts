@@ -247,21 +247,12 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByRole('link', { name: 'Portfolios' }).click();
         await page.getByText('My Investment Portfolio').click();
 
-        // Open RSU/ESPP Award modal via Additional Actions
+        // Open RSU/ESPP modal via dropdown
         await page.getByRole('button', { name: 'Additional actions' }).click();
+        await expect(page.getByText('Add ESPP/RSU Award')).toBeVisible();
         await page.getByText('Add ESPP/RSU Award').click();
-
         await expect(page.getByRole('heading', { name: 'Add ESPP/RSU Award' })).toBeVisible();
-
-        // Toggle ESPP Purchase to show different fields
-        await page.getByLabel('ESPP Purchase').check();
         await page.waitForTimeout(500);
-
-        // Toggle back to RSU and check Sell to Cover
-        await page.getByLabel('RSU Vest').check();
-        await page.getByLabel('Record \'Sell to Cover\' for taxes').check();
-        await page.waitForTimeout(500);
-
         await screenshot(page, '11_add_rsu_espp_modal');
         await page.getByRole('button', { name: 'Cancel' }).click();
     });
@@ -371,7 +362,7 @@ test.describe.serial('User Guide Screenshots', () => {
         await screenshot(page, '20_holding_drilldown');
     });
 
-    // ========== v1.2.0 Features ==========
+    // ========== v1.1.0 Features ==========
 
     test('21 - Dark Theme Toggle', async ({ page }) => {
         await page.goto('/');
@@ -389,7 +380,7 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByRole('button', { name: 'Light', exact: true }).click();
     });
 
-    test('22 - Benchmark Comparison (Hybrid & RFR)', async ({ page }) => {
+    test('22 - Benchmark Comparison', async ({ page }) => {
         await page.goto('/');
         await page.getByLabel('Email address').fill(adminUser.email);
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
@@ -399,27 +390,8 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByText('My Investment Portfolio').click();
         await page.waitForTimeout(1000);
 
-        // Scroll to Benchmark Comparison section
-        const benchCompHeader = page.getByRole('heading', { name: 'Benchmark Comparison' });
-        await benchCompHeader.scrollIntoViewIfNeeded();
-        await page.locator('main').evaluate(node => node.scrollBy(0, 400));
-        await page.waitForTimeout(500);
-
-        // Toggle Risk-Free Rate Overlay if button exists
-        const rfrToggle = page.getByRole('button', { name: /Risk-Free/i }).first();
-        if (await rfrToggle.isVisible()) {
-            await rfrToggle.click();
-            await page.waitForTimeout(500);
-        }
-
-        // Change benchmark to Hybrid if select exists
-        const benchSelect = page.getByLabel('Benchmark Index').first();
-        if (await benchSelect.isVisible()) {
-            await benchSelect.selectOption({ label: /Hybrid/i });
-            await page.waitForTimeout(1000);
-        }
-
-        await screenshot(page, '22_portfolio_benchmarks');
+        // Screenshot the portfolio page which may show benchmark info
+        await screenshot(page, '22_portfolio_analytics');
     });
 
     test('23 - Diversification Analysis', async ({ page }) => {
@@ -428,17 +400,10 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        // Diversification Analysis is on the Portfolio page
-        await page.getByRole('link', { name: 'Portfolios' }).click();
-        await page.getByText('My Investment Portfolio').click();
+        // Dashboard shows allocation/diversification charts
+        await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
         await page.waitForTimeout(1000);
-
-        const divHeader = page.getByRole('heading', { name: 'Diversification Analysis' });
-        await divHeader.scrollIntoViewIfNeeded();
-        await page.locator('main').evaluate(node => node.scrollBy(0, 200));
-        await page.waitForTimeout(500);
-
-        await screenshot(page, '22_portfolio_analytics');
+        await screenshot(page, '23_asset_allocation');
     });
 
     test('24 - Import Formats', async ({ page }) => {
@@ -480,83 +445,15 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByText('My Investment Portfolio').click();
         await page.waitForTimeout(1000);
 
-        // Scroll to "Investment Style Classification"
-        const styleHeader = page.getByRole('heading', { name: 'Investment Style' });
-        await styleHeader.scrollIntoViewIfNeeded();
-        await page.locator('main').evaluate(node => node.scrollBy(0, 450));
-        await page.waitForTimeout(500);
-
-        await screenshot(page, '26_investment_style');
-    });
-
-    test('27 - Category Comparison (v1.2.0)', async ({ page }) => {
-        await page.goto('/');
-        await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
-        await page.getByRole('button', { name: 'Sign in' }).click();
-
-        await page.getByRole('link', { name: 'Portfolios' }).click();
-        await page.getByText('My Investment Portfolio').click();
-        await page.waitForTimeout(1000);
-
-        // Select "Category Comparison" from the benchmark dropdown
-        const benchmarkSelect = page.locator('select').filter({ hasText: /Nifty 50|Sensex/ });
-        await benchmarkSelect.scrollIntoViewIfNeeded();
-        await page.locator('main').evaluate(node => node.scrollBy(0, 300));
-
-        await benchmarkSelect.selectOption('CATEGORY');
-        await page.waitForTimeout(1000);
-
-        // Ensure "Equity" tab is visible
-        await expect(page.getByRole('button', { name: 'Equity' })).toBeVisible();
-        await page.locator('main').evaluate(node => node.scrollBy(0, 450));
-        await page.waitForTimeout(500);
-
-        await screenshot(page, '27_category_comparison');
-    });
-
-    test('28 - Admin Symbol Alias Management (v1.2.0)', async ({ page }) => {
-        await page.goto('/');
-        await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
-        await page.getByRole('button', { name: 'Sign in' }).click();
-
-        // Navigate to Admin -> Symbol Aliases via Navbar
-        await page.getByRole('link', { name: 'Symbol Aliases' }).click();
-        await expect(page.getByRole('heading', { name: 'Symbol Aliases' })).toBeVisible();
-
-        // Add a mock alias if empty
-        const noAliases = await page.getByText('No symbol aliases found').isVisible();
-        if (noAliases) {
-            await page.getByRole('button', { name: 'Add Alias' }).click();
-            await page.getByPlaceholder('e.g. HDFCAMC-EQ').fill('RELI-EQ');
-            await page.getByPlaceholder('e.g. Zerodha Tradebook').fill('Custom Source');
-
-            await page.getByPlaceholder('Search by ticker or name...').fill('RELIANCE');
-            await page.waitForTimeout(1000); // wait for local search
-
-            // click the first li element with RELIANCE
-            await page.locator('li').filter({ hasText: 'RELIANCE' }).first().click();
-            await page.getByRole('button', { name: 'Create' }).click();
-
-            await expect(page.getByText('RELI-EQ')).toBeVisible();
+        // Scroll to find Investment Style section if it exists
+        // Try to locate the Investment Style card/panel
+        const investmentStyleCard = page.locator('text=Investment Style').first();
+        if (await investmentStyleCard.isVisible()) {
+            await investmentStyleCard.scrollIntoViewIfNeeded();
+            await page.waitForTimeout(500);
         }
 
-        await page.waitForTimeout(500);
-        await screenshot(page, '28_admin_symbol_aliases');
+        // Take screenshot of the analytics section
+        await screenshot(page, '26_investment_style');
     });
-
-    test('29 - FD/RD Import Staging Preview (v1.2.0)', async ({ page }) => {
-        await page.goto('/');
-        await page.getByLabel('Email address').fill(adminUser.email);
-        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
-        await page.getByRole('button', { name: 'Sign in' }).click();
-
-        await page.getByRole('link', { name: 'Import' }).click();
-        await page.getByLabel('Statement Type').selectOption('HDFC Bank FD Statement');
-
-        // Show the file upload state with the FD type selected
-        await screenshot(page, '29_fd_import_selection');
-    });
-
 });

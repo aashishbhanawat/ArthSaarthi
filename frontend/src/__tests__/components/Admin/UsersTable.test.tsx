@@ -22,10 +22,10 @@ describe('UsersTable', () => {
 
   test('renders table headers and user data correctly', () => {
     renderComponent();
-    expect(screen.getAllByText('admin@example.com').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('test@example.com').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Admin').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('User').length).toBeGreaterThan(0);
+    expect(screen.getByText('admin@example.com')).toBeInTheDocument();
+    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Admin')).toBeInTheDocument();
+    expect(screen.getByText('User')).toBeInTheDocument();
   });
 
   test('calls onEdit with the correct user when Edit button is clicked', () => {

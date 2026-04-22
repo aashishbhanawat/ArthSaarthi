@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.models import Goal
 from app.schemas import GoalCreate
-from app.utils.pydantic_compat import model_dump
 
 
 def create_random_goal(db: Session, user_id: str, target_amount: float = None) -> Goal:
@@ -18,7 +17,7 @@ def create_random_goal(db: Session, user_id: str, target_amount: float = None) -
         target_amount=target_amount,
         target_date=target_date,
     )
-    goal = Goal(**model_dump(goal_in), user_id=user_id)
+    goal = Goal(**goal_in.model_dump(), user_id=user_id)
     db.add(goal)
     db.commit()
     db.refresh(goal)

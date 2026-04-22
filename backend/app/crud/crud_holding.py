@@ -1,3 +1,4 @@
+import concurrent.futures
 import logging
 import math
 import time
@@ -19,7 +20,6 @@ from app.models.recurring_deposit import RecurringDeposit
 from app.models.transaction_link import TransactionLink
 from app.schemas.enums import BondType, TransactionType
 from app.services.financial_data_service import financial_data_service
-from app.utils.pydantic_compat import model_dump_json
 
 logger = logging.getLogger(__name__)
 
@@ -84,19 +84,10 @@ def _calculate_total_interest_paid(fd: models.FixedDeposit, end_date: date) -> D
     interest_per_payout = fd.principal_amount * payout_rate
 
     total_interest = Decimal(0)
-    last_payout_date = fd.start_date
     payout_date = fd.start_date + relativedelta(months=months_interval)
     while payout_date <= end_date:
         total_interest += interest_per_payout
-        last_payout_date = payout_date
         payout_date += relativedelta(months=months_interval)
-
-    if last_payout_date < end_date:
-        remaining_days = (end_date - last_payout_date).days
-        daily_rate = (fd.interest_rate / Decimal("100.0")) / Decimal("365.25")
-        pro_rata_interest = fd.principal_amount * daily_rate * Decimal(remaining_days)
-        total_interest += pro_rata_interest
-
     return total_interest
 
 
@@ -165,8 +156,7 @@ def _process_fixed_deposits(
 
     for fd in matured_fds:
         if fd.interest_payout != "Cumulative":
-            realized_pnl = _calculate_total_interest_paid(fd, fd.maturity_date)
-            total_realized_pnl += realized_pnl
+            total_realized_pnl += _calculate_total_interest_paid(fd, fd.maturity_date)
         else:
             maturity_value = _calculate_fd_current_value(
                 fd.principal_amount,
@@ -176,11 +166,7 @@ def _process_fixed_deposits(
                 fd.compounding_frequency,
                 fd.interest_payout,
             )
-            realized_pnl = maturity_value - fd.principal_amount
-            total_realized_pnl += realized_pnl
-
-        # Matured FD: only accumulate realized P&L; do NOT add to holdings_list
-        # (it will appear in Transaction History instead)
+            total_realized_pnl += maturity_value - fd.principal_amount
 
     for fd in active_fds:
         interest_paid_to_date = _calculate_total_interest_paid(fd, today)
@@ -254,11 +240,7 @@ def _process_recurring_deposits(
             maturity_date,
         )
         total_invested = rd.monthly_installment * rd.tenure_months
-        realized_pnl = maturity_value - total_invested
-        total_realized_pnl += realized_pnl
-
-        # Matured RD: only accumulate realized P&L; do NOT add to holdings_list
-        # (it will appear in Transaction History instead)
+        total_realized_pnl += maturity_value - total_invested
 
     for rd in active_rds:
         current_value = _calculate_rd_value_at_date(
@@ -610,7 +592,7 @@ def _process_market_traded_assets(
 
     for ticker in current_holdings_tickers:
         asset = ticker_map.get(ticker)
-        if asset and (asset.sector is None or asset.investment_style is None):
+        if asset and asset.sector is None:
             asset_type_upper = (asset.asset_type or "").upper()
             if asset_type_upper in ["STOCK", "ETF"]:
                 equities_to_enrich.append(asset)
@@ -639,55 +621,38 @@ def _process_market_traded_assets(
         except Exception as e:
             logger.error(f"Failed during AMFI enrichment: {e}")
 
-    # 2. Optimize yfinance Enrichment: Sequential Batch Fetch (Avoids Concurrent 429s)
+    # 2. Optimize yfinance Enrichment: Parallelize Requests
     if equities_to_enrich:
         logger.info(
-            f"Enriching {len(equities_to_enrich)} Equities via yfinance (Batch)..."
+            f"Enriching {len(equities_to_enrich)} Equities via yfinance (Parallel)..."
         )
-        try:
-            # Construct asset list for batch call
-            assets_to_enrich = [
-                {
-                    "ticker_symbol": asset.ticker_symbol,
-                    "exchange": asset.exchange
-                }
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Map future to asset
+            future_to_asset = {
+                executor.submit(
+                    financial_data_service.yfinance_provider.get_enrichment_data,
+                    asset.ticker_symbol,
+                    asset.exchange,
+                ): asset
                 for asset in equities_to_enrich
-            ]
+            }
 
-            enrichment_results = (
-                financial_data_service.get_enrichment_data_batch(assets_to_enrich)
-            )
-
-            for asset in equities_to_enrich:
-                enrichment = enrichment_results.get(asset.ticker_symbol)
-                if enrichment:
-                    # Safeguard: Do not save MagicMock values (can happen in tests)
-                    from unittest.mock import MagicMock
-
-                    sector = enrichment.get("sector")
-                    if not isinstance(sector, MagicMock):
-                        asset.sector = sector
-
-                    industry = enrichment.get("industry")
-                    if not isinstance(industry, MagicMock):
-                        asset.industry = industry
-
-                    country = enrichment.get("country")
-                    if not isinstance(country, MagicMock):
-                        asset.country = country
-
-                    market_cap = enrichment.get("market_cap")
-                    if not isinstance(market_cap, MagicMock):
-                        asset.market_cap = market_cap
-
-                    investment_style = enrichment.get("investment_style")
-                    if not isinstance(investment_style, MagicMock):
-                        asset.investment_style = investment_style
-
-                    db.add(asset)
-                    needs_commit = True
-        except Exception as e:
-            logger.error(f"Failed during YahooQuery batch enrichment: {e}")
+            for future in concurrent.futures.as_completed(future_to_asset):
+                asset = future_to_asset[future]
+                try:
+                    enrichment = future.result()
+                    if enrichment:
+                        asset.sector = enrichment.get("sector")
+                        asset.industry = enrichment.get("industry")
+                        asset.country = enrichment.get("country")
+                        asset.market_cap = enrichment.get("market_cap")
+                        asset.investment_style = enrichment.get("investment_style")
+                        db.add(asset)
+                        needs_commit = True
+                except Exception as exc:
+                    logger.warning(
+                        f"Enrichment failed for {asset.ticker_symbol}: {exc}"
+                    )
     if needs_commit:
         try:
             db.commit()
@@ -830,7 +795,7 @@ def _process_market_traded_assets(
     if settings.DEBUG:
         logger.debug("--- Market Traded Holdings ---")
         for h in holdings_list:
-            logger.debug(model_dump_json(h, indent=2))
+            logger.debug(h.model_dump_json(indent=2))
         logger.debug("------------------------------")
 
     return holdings_list, total_realized_pnl
@@ -890,7 +855,6 @@ class CRUDHolding:
         )
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
-        # Accumulate realized P&L from matured FDs and RDs into the total
         total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
         ppf_assets = (
             db.query(models.Asset)
@@ -1051,7 +1015,7 @@ class CRUDHolding:
         )
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
-        # Non-market PNL is aggregated inside _calculate_summary loop
+        total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
 
         ppf_assets = (
             db.query(models.Asset)

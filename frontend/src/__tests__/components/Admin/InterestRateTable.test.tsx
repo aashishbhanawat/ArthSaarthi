@@ -30,10 +30,10 @@ describe('InterestRateTable', () => {
   it('renders a table with the correct data', () => {
     render(<InterestRateTable rates={mockRates} onEdit={onEditMock} onDelete={onDeleteMock} />);
 
-    expect(screen.getAllByText('PPF').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('NSC').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('7.10%').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('7.70%').length).toBeGreaterThan(0);
+    expect(screen.getByText('PPF')).toBeInTheDocument();
+    expect(screen.getByText('NSC')).toBeInTheDocument();
+    expect(screen.getByText('7.10%')).toBeInTheDocument();
+    expect(screen.getByText('7.70%')).toBeInTheDocument();
   });
 
   it('calls onEdit with the correct rate when the edit button is clicked', () => {
