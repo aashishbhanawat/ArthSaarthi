@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { HistoricalInterestRate, HistoricalInterestRateCreate, HistoricalInterestRateUpdate } from '../../types/interestRate';
 import { useCreateInterestRate, useUpdateInterestRate } from '../../hooks/useInterestRates';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import DateInput from '../common/DateInput';
 
 interface InterestRateFormModalProps {
   isOpen: boolean;
@@ -72,13 +73,22 @@ const InterestRateFormModal: React.FC<InterestRateFormModalProps> = ({ isOpen, o
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="form-group">
-                <label htmlFor="start_date" className="form-label">Start Date</label>
-                <input id="start_date" type="date" {...register('start_date', { required: 'Start date is required' })} className="form-input" required disabled={isPending} aria-invalid={!!errors.start_date} aria-describedby={errors.start_date ? "start_date_error" : undefined} />
-                {errors.start_date && <p id="start_date_error" className="text-red-500 text-xs italic mt-1" role="alert">{errors.start_date.message}</p>}
+                <DateInput
+                  id="start_date"
+                  label="Start Date"
+                  register={register('start_date', { required: 'Start date is required' })}
+                  error={errors.start_date?.message}
+                  disabled={isPending}
+                />
               </div>
               <div className="form-group">
-                <label htmlFor="end_date" className="form-label">End Date (optional)</label>
-                <input id="end_date" type="date" {...register('end_date')} className="form-input" disabled={isPending} />
+                <DateInput
+                  id="end_date"
+                  label="End Date (optional)"
+                  register={register('end_date')}
+                  error={errors.end_date?.message}
+                  disabled={isPending}
+                />
               </div>
             </div>
             <div className="form-group">

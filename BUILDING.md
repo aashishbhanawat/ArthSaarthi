@@ -54,6 +54,50 @@ It is possible to build installers for different platforms from a single host ma
 - **Building for Windows on Linux/macOS**: Requires `wine` to be installed and configured.
 - **Building for macOS on Linux/Windows**: This is more complex and requires a macOS runner or a virtual machine. It is not officially supported by this project at the moment.
 
+### Building for Android (Experimental)
+
+The Android build uses **Capacitor.js** (wraps the React frontend into a WebView) and **Chaquopy** (embeds the Python/FastAPI backend on the device). This is experimental.
+
+#### Android Prerequisites
+
+- **Android Studio** with Android SDK (API level 34+)
+- **Android NDK** (installed via Android Studio SDK Manager)
+- Set `ANDROID_HOME` environment variable:
+  ```bash
+  export ANDROID_HOME=$HOME/Android/Sdk
+  ```
+- Node.js 18+ and npm
+
+#### Android Build Steps
+
+```bash
+# Using the main build script with --android flag:
+./scripts/build.sh --android          # debug APK
+./scripts/build.sh --android release  # release APK
+
+# Or directly:
+./scripts/build-android.sh            # debug APK
+./scripts/build-android.sh release    # release APK
+```
+
+#### Android Build Output
+
+After a successful build, the APK can be found at:
+- **Debug:** `frontend/android/app/build/outputs/apk/debug/ArthSaarti-debug.apk`
+- **Release:** `frontend/android/app/build/outputs/apk/release/ArthSaarti-release.apk`
+
+Install on a connected device:
+```bash
+adb install frontend/android/app/build/outputs/apk/debug/ArthSaarti-debug.apk
+```
+
+#### Android Known Limitations
+
+- **APK size** is large (~100-200 MB) due to the bundled Python interpreter and dependencies.
+- **First-run startup** is slower as Chaquopy extracts Python on first launch.
+- **PDF import** may not work on Android (some C-extension packages lack Android wheels).
+- This is an **experimental** build target — not production-ready.
+
 ### Build Outputs
 
 After a successful build, the installers can be found in the `frontend/dist-electron/` directory.
@@ -61,3 +105,5 @@ After a successful build, the installers can be found in the `frontend/dist-elec
 -   **On Windows:** You will find a `.exe` installer.
 -   **On macOS:** You will find a `.dmg` file.
 -   **On Linux:** You will find an `.AppImage` file and a `.deb` package.
+-   **On Android:** See the Android section above for APK location.
+

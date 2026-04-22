@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from .transaction import Transaction
 
@@ -28,4 +28,6 @@ class Portfolio(PortfolioBase):
     id: uuid.UUID
     user_id: uuid.UUID
     transactions: List[Transaction] = []
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
+        orm_mode = True

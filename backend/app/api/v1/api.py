@@ -71,11 +71,9 @@ api_router.include_router(
 )
 api_router.include_router(fx.router, prefix="/fx-rate", tags=["fx-rate"])
 
-# Conditionally include the testing router only in the test environment
-logger.warning(f"Current ENVIRONMENT in api.py: '{settings.ENVIRONMENT}'")
-logger.warning(f"CORS confiured: {settings.CORS_ORIGINS}")
-if settings.ENVIRONMENT == "test":
-    logger.warning("Adding testing route in api.py")
+# Conditionally include the testing router in test, android, or desktop environments
+if settings.ENVIRONMENT == "test" or settings.DEPLOYMENT_MODE in ("android", "desktop"):
+    logger.warning(f"Adding testing route in api.py (Mode: {settings.DEPLOYMENT_MODE})")
     api_router.include_router(testing.router, prefix="/testing", tags=["testing"])
 api_router.include_router(
     import_sessions.router, prefix="/import-sessions", tags=["import-sessions"]

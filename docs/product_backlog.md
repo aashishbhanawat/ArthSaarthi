@@ -167,7 +167,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 ## Release 12: Next Steps & Maintenance
 
-**Status: 🚧 In Progress**
+**Status: ✅ COMPLETE (as of 2026-03-24)**
 
 **Features:**
 
@@ -184,23 +184,66 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Fixed Deposit Import from Bank Statements (FR7.2.1):** Import FDs from HDFC, ICICI, and SBI combined PDFs. **✅ Complete**
 -   **Test Coverage Audit (#250):** Review all backend integration tests to identify gaps in coverage, particularly for RSU/ESPP/foreign asset holdings calculations, linked transaction sell paths, and edge cases in analytics (XIRR, P&L). Prompted by Issue #249 where missing test coverage allowed a bug in RSU avg price calculation to go undetected.
 -   **Automated Data Import - Phase 3 (FR7):** Implement a parser for Consolidated Account Statements (MF CAS).
--   **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism.
 
-## Future Releases
+## Detailed Future Release Plan
 
--   **Architectural Refactoring:**
--   **Data Integration (NFR12 - Phase 3):** Implement optional, high-quality data providers for broker APIs (e.g., Zerodha, ICICI Breeze).
--   **API Rate Limiting (NFR13):** Implement usage tracking and rate limiting for external data providers.
--   **Advanced Analytics (FR6):** Implement remaining metrics like TWR, MWR, Beta, Alpha, and benchmarking.
--   **Risk Profile Management (FR12):** Implement the risk questionnaire and portfolio alignment dashboard.
--   **Goal Planning & Tracking (FR13 - Enhancements):** Implement contribution planning and future value projections.
--   **Notifications & Alerts (FR9):** Price alerts, due date reminders via Telegram/Push.
--   **AI-Powered Insights (FR10):**
-    -   Tax-saving suggestions, risk analysis, and portfolio rebalancing suggestions.
-    -   Automated daily/weekly/monthly digests for holdings and watchlists.
--   **Advanced UX (FR11):** Theming, internationalization.
--   **Two-Factor Authentication (FR14.1)**
--   **Companion Mobile App (FR14.2)**
--   **AI-Powered Expense Management (FR15):** Upload and analyze credit card/bank statements to track expenses.
--   **Income & Tax Data Management (FR16):** Log salary and other income sources to generate a structured summary for tax purposes.
- -  **National Pension System (NPS):** Track NPS Tier 1 and Tier 2 holdings.
+### Release v1.3.0: Context & Risk Foundations
+**Focus: Establishing user intent and risk boundaries before AI integration.**
+-   **Risk Profile Management (FR12):**
+    -   Risk Profile Questionnaire to determine risk tolerance (Conservative, Moderate, Aggressive).
+    -   Portfolio Risk Assessment (calculating current allocation risk).
+    -   Risk Alignment Dashboard to flag mismatches.
+-   **Goal Projections & Analytics (FR13 Phase 2):**
+    -   Calculate required contribution rates (SIPs) to hit goal targets.
+    -   Project future value of linked assets using current XIRR to determine "On-Track" status.
+
+### Release v1.4.0: Tax Readiness & Full Financial Picture
+**Focus: Providing the system with all tax-related context necessary for future AI tax-saving recommendations.**
+-   **Unrealized Capital Gains (FR6.5 Phase 2):**
+    -   Calculate and display unrealized STCG/LTCG for active holdings.
+    -   Implement precise exemption pooling (e.g., ₹1.25L equity LTCG exemption).
+-   **Income & Tax Data Management (FR16):**
+    -   Log income sources (Salary, Freelance, TDS).
+    -   Log tax-deductible expenses (Section 80C, Medical).
+
+### Release v1.5.0: Infrastructure, Data & Automation
+**Focus: Integrating official data sources, enabling background processing, and improving automation.**
+-   **Broker API Integration (NFR12):** Implement pluggable data providers for Zerodha Kite and ICICI Breeze to replace `yfinance`, especially for the Android build. This includes the necessary UI for the daily OAuth user login flow.
+-   **API Rate Limiting & Caching (NFR13):** Implement robust caching, request batching, and rate limiting for the new broker APIs to ensure compliance and performance.
+-   **Desktop Update Notification (FR-Desktop-2):** Check GitHub Releases API and notify users of new versions.
+-   **Background Job Scheduler:** Architectural implementation (e.g., APScheduler) to handle asynchronous tasks.
+-   **Automated Corporate Actions:** Use the new scheduler for auto-generation of bond coupons and maturity transactions.
+-   **Market News Feed (FR8.2):** Use the new scheduler for background fetching and linking of relevant financial news to user holdings.
+
+### Release v1.6.0: Security, Admin & Advanced UX
+**Focus: Polishing core user experience and security before introducing AI.**
+-   **Forgotten Password Flow (FR1.6):** Implement a secure password reset mechanism with email routing.
+-   **Profile Security (FR1.5.3 & FR14.3):** Change login email with verification, sliding window session expiry.
+-   **Admin Audit Log Viewer (FR2.4):** UI for admins to view the generated security audit logs.
+-   **Asset Detail Pages (FR8.3):** Deep-dive research pages for individual assets showing historical charts, P/E, and company info.
+
+### Release v2.0.0: AI Co-Pilot Foundations (Major Release)
+**Focus: Integrating core GenAI for portfolio insights and natural language reporting.**
+-   **Configurable AI Engine (FR10.1):** Allow users/admins to connect their preferred AI API keys (Gemini, OpenAI).
+-   **AI Portfolio Rebalancing (FR10.3/10.5):** AI suggests concrete buy/sell actions based on the user's Risk Profile (FR12) and Goals (FR13).
+-   **AI Daily/Weekly Digest (FR10.6):** Natural language summary of portfolio performance, market movements, and relevant news.
+
+### Release v2.1.0: AI Tax & Cashflow Optimization
+**Focus: Advanced programmatic insights for tax efficiency and automated investing.**
+-   **AI Tax-Loss Harvesting (FR10.2):** AI scans unrealized gains/losses to suggest optimal sell-offs, cross-referencing with the v1.4.0 tax engine.
+-   **AI SIP Optimization (FR10.4):** Suggesting optimal investment dates and amounts based on logged cash flow (FR16).
+
+### Release v2.2.0: AI Expense Management
+**Focus: Expanding the platform into day-to-day cashflow and expense tracking.**
+-   **AI-Powered Expense Management (FR15):** 
+    - Upload bank and credit card PDF statements.
+    - AI parsing and automatic expense categorization.
+
+### Release Backlog (v2.X.X and Beyond)
+-   **Advanced Analytics & Reporting (FR6 & FR6.6):** Implement TWR, MWR, Beta, Alpha, Tracking Error, Max Drawdown, and Customizable PDF/CSV Reports.
+-   **Notifications & Alerts (FR9):** Price alerts, due date reminders, and delivery via Telegram/Push Notifications.
+-   **Advanced Security (FR14.1):** Two-Factor Authentication (2FA).
+-   **Platform Expansion:** Internationalization (FR11.2) and Companion Mobile App (FR14.2).
+-   **Income & Tax Data Management (FR16) - Phase 2:** Generate structured informational tax summary reports.
+-   **National Pension System (NPS):** Track NPS Tier 1 and Tier 2 holdings (Postponed pending sample statements).
+-   **PMS/AIF Parsers:** Postponed pending sample statements.

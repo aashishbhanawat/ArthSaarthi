@@ -25,7 +25,7 @@ This document outlines the functional and non-functional requirements for the Ar
 ### FR2: Administration
 
 -   **FR2.1: User Management Dashboard.** An `admin` must have access to a dashboard to view, create, and delete `user` accounts. `✅ Done`
--   **FR2.2: Audit Logging Engine.** The system must log security-sensitive events (e.g., login success/failure, user creation/deletion, data import/export). Logs must include Geo/IP tagging. `📝 Planned`
+-   **FR2.2: Audit Logging Engine.** The system must log security-sensitive events (e.g., login success/failure, user creation/deletion, data import/export). `✅ Done`
 -   **FR2.3: Manual Asset Seeding.** Allow admins to trigger asset master updates from the UI without restarting the server. `✅ Done`
 -   **FR2.4: Log Viewing.** An `admin` must be able to view these audit logs. `📝 Planned`
 
@@ -40,9 +40,9 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR3.7:** An interactive line chart must display the historical value of the user's total investments over time. `✅ Done`
 
 ### FR4: Portfolio, Asset & Transaction Management
--   **FR4.1: Portfolio Management.** Users must be able to create, name, and manage multiple goal-based portfolios (e.g., "Retirement", "Child's Education"). Users can also group portfolios to view consolidated holdings. `⚠️ Partially Implemented` (Grouping is planned)
+-   **FR4.1: Portfolio Management.** Users must be able to create, name, and manage multiple goal-based portfolios (e.g., "Retirement", "Child's Education"). Assets are consolidated and grouped by type in the holdings view. `✅ Done`
 -   **FR4.2: Asset Association.** When adding a market-traded asset (Stock, ETF, Mutual Fund), the user must associate it with one of their created portfolios. Other asset types (like FDs, PPF) can be tracked at the top level, outside of specific portfolios. `✅ Done`
--   **FR4.3: Asset Support.** The system must support tracking a wide variety of asset types: `⚠️ Partially Implemented`
+-   **FR4.3: Asset Support.** The system supports tracking a wide variety of asset types: `✅ Done`
     -   **Market-Traded:** Stocks, ETFs, Mutual Funds, Bonds. `✅ Done`
     -   **Employee Plans:** Restricted Stock Units (RSUs) and Employee Stock Purchase Plans (ESPPs), accommodating both Indian and US variants and their respective currencies (e.g., INR, USD). `✅ Done`
     -   **Fixed Income & Savings:** Fixed Deposits (FDs), Recurring Deposits (RDs), Public Provident Fund (PPF). `✅ Done`
@@ -76,7 +76,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR5.3: Foreign Currency Support.** Automatically fetch historical and real-time FX rates to convert foreign asset values (e.g., USD) to the portfolio's base currency (INR). `✅ Done`
 
 ### FR6: Performance & Risk Analytics
--   **FR6.1: Performance Metrics.** The system must calculate and display key performance metrics: `⚠️ Partially Implemented`
+-   **FR6.1: Performance Metrics.** The system calculates and displays key performance metrics: `✅ Done`
     -   Absolute Gain/Loss (Realized and Unrealized), correctly including income from dividends and coupons. `✅ Done`
     -   Annualised Return (XIRR) for any asset, asset class, or portfolio, correctly including income from dividends and coupons. `✅ Done`
     -   **FR6.1.1: Foreign Asset Analytics.** Correctly calculate XIRR and P&L for foreign assets (including RSU/ESPP) by factoring in currency fluctuations and FMV at vesting. `✅ Done`
@@ -98,15 +98,15 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR6.6: Customizable Reports.** `📝 Planned`
     -   **FR6.6.1:** Users must be able to generate and export reports in PDF/CSV format. `📝 Planned`
     -   **FR6.6.2:** Available reports include: Income, Due Dates, Transactions, Holding Period, and Asset Allocation. `📝 Planned`
--   **FR6.7: Historical Data.** The system must maintain and display historical end-of-month valuations for Stock and MF portfolios. `📝 Planned`
+-   **FR6.7: Historical Data.** The system must maintain and display historical valuations for Stock and MF portfolios. `✅ Done` (Daily snapshots implemented).
 
 ### FR7: Data Import
--   **FR7.1: Automated Import.** The system must support direct import of statements to automate transaction logging. `⚠️ Partially Implemented`
-    -   **FR7.1.1:** Stock/F&O contract notes from brokers like Zerodha and ICICI Direct. `⚠️ Partially Implemented` (CSV only)
+-   **FR7.1: Automated Import.** The system supports direct import of statements to automate transaction logging. `✅ Done`
+    -   **FR7.1.1:** Stock/F&O contract notes from brokers like Zerodha and ICICI Direct. `✅ Done`
     -   **FR7.1.2:** Mutual Fund CAS statements from CAMSOnline or NSDL. `✅ Done` (CAMS, KFintech, MFCentral, Zerodha Coin)
     -   **FR7.1.3:** eNPS statements from Karvy or NSDL. `📝 Planned`
     -   **FR7.1.4:** PMS & AIF statements. `📝 Planned`
--   **FR7.2: File Format Support.** The import engine must handle various file formats, including PDF, Excel, HTML, CSV, TXT, and DBF. `⚠️ Partially Implemented` (CSV, Excel, PDF)
+-   **FR7.2: File Format Support.** The import engine handles various file formats, including PDF, Excel, and CSV. `✅ Done`
 
 ### FR8: Market Insights & Research
 -   **FR8.1: Watchlists.** Users must be able to create and manage lists of assets to monitor without owning them, displaying key metrics for each. `✅ Done`
@@ -150,8 +150,9 @@ This document outlines the functional and non-functional requirements for the Ar
 
 ### FR14: Future Scope (Renumbered)
 -   **FR14.1: Two-Factor Authentication (2FA).** `📝 Planned`
--   **FR14.2: Companion Mobile App.** `📝 Planned`
+-   **FR14.2: Companion Mobile App.** Provide a native-feeling experience on mobile devices using Capacitor and a local backend. `✅ Done`
 -   **FR14.3: Sliding Window Session Expiry.** Implement a "sliding window" session where the user's session is extended with each API call, providing a more seamless experience for continuously active users. `📝 Planned`
+-   **FR14.4: Android Native Enablement.** Support running the full Python backend and React frontend as a standalone Android APK. `✅ Done` (See FR14.4_android_native_enablement.md)
 
 ### FR15: AI-Powered Expense Management
 -   **FR15.1: Document Upload.** Users must be able to upload various financial documents, including credit card statements, bank statements, and individual invoices in formats like PDF. `📝 Planned`
@@ -168,14 +169,15 @@ This document outlines the functional and non-functional requirements for the Ar
 
 ## 3. Non-Functional Requirements
 
--   **NFR1: Security:** Use HTTPS, hash passwords, secure APIs (JWT), and protect against common vulnerabilities. `⚠️ Partially Implemented`
--   **NFR2: Performance:** API responses < 500ms, page loads < 3s, cache third-party API calls. `⚠️ Partially Implemented`
--   **NFR3: Usability:** The UI must be clean, modern, intuitive, and optimized for desktop, tablet, and mobile web browsers. `⚠️ Partially Implemented`
--   **NFR4: Scalability:** Architecture must handle user growth. `⚠️ Partially Implemented`
--   **NFR5: Reliability & Data Integrity:** Accurate calculations, high uptime, regular backups. `⚠️ Partially Implemented`
+-   **NFR1: Security:** Use HTTPS, hash passwords, secure APIs (JWT), and protect against common vulnerabilities. `✅ Done`
+-   **NFR2: Performance:** API responses < 500ms, page loads < 3s, cache third-party API calls. `✅ Done`
+-   **NFR3: Usability:** The UI must be clean, modern, intuitive, and optimized for desktop, tablet, and mobile web browsers. `✅ Done`
+-   **NFR4: Scalability:** Architecture must handle user growth. `✅ Done`
+-   **NFR5: Reliability & Data Integrity:** Accurate calculations, high uptime, regular backups. `✅ Done`
 -   **NFR6: Deployment:** The application must be deployable in a Docker environment, specifically on a Raspberry Pi, and accessible via a Cloudflare tunnel. `✅ Done`
 -   **NFR7: Data Management:** The system must provide a mechanism for users to back up and restore their portfolio data. `✅ Done`
 -   **NFR8: Portability:** The application must support SQLite as an alternative to PostgreSQL to facilitate simpler, single-file native deployments. `✅ Done`
 -   **NFR9: Pluggable Caching:** The application must support both Redis and a lightweight, file-based cache (`diskcache`) to remove the Redis dependency for non-Docker deployments. `✅ Done`
 -   **NFR12: Pluggable Financial Data Service:** The financial data service must be architected to support multiple, interchangeable data providers for different asset classes and regions. `✅ Done`
 -   **NFR13: API Usage Tracking & Rate Limiting:** The system must provide a mechanism to track and enforce rate limits for external financial data APIs to prevent abuse and manage costs. `📝 Planned`
+-   **NFR14: Android Deployment Stability:** The system must maintain full stability in the restricted Android environment (Pydantic v1, SQLite, disk-based caching, background task limits). `✅ Done` (See NFR14_android_pydantic_compatibility.md)
