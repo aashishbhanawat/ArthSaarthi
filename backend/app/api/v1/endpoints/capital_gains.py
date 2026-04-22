@@ -43,10 +43,10 @@ def get_capital_gains(
 
     service = CapitalGainsService(db)
     return service.calculate_capital_gains(
+        user_id=str(current_user.id),
         portfolio_id=portfolio_id,
         fy_year=fy,
-        slab_rate=slab_rate,
-        user_id=str(current_user.id)
+        slab_rate=slab_rate
     )
 
 
@@ -73,10 +73,10 @@ def export_capital_gains_csv(
 
     service = CapitalGainsService(db)
     summary = service.calculate_capital_gains(
+        user_id=str(current_user.id),
         portfolio_id=portfolio_id,
         fy_year=fy,
-        slab_rate=slab_rate,
-        user_id=str(current_user.id)
+        slab_rate=slab_rate
     )
 
     # Build CSV content
