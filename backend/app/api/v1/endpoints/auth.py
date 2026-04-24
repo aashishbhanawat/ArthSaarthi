@@ -20,6 +20,7 @@ from app.schemas.auth import Status
 from app.schemas.msg import Msg
 from app.schemas.user import User, UserCreate, UserPasswordChange
 from app.services.audit_logger import log_event
+from app.utils.ip import get_client_ip
 
 router = APIRouter()
 
@@ -94,7 +95,7 @@ def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     logger.info(f"Login attempt for user: {form_data.username}")
-    ip_address = request.client.host
+    ip_address = get_client_ip(request)
 
     # Check rate limit
     cache = get_cache_client()
