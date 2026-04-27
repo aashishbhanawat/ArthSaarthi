@@ -401,7 +401,7 @@ def _process_market_traded_assets(
     transaction_ids = [tx.id for tx in transactions]
     all_links = (
         db.query(TransactionLink)
-        .options(joinedload(TransactionLink.buy_transaction))
+        .options(joinedload(TransactionLink.buy_transaction, innerjoin=True))
         .filter(TransactionLink.sell_transaction_id.in_(transaction_ids))
         .all()
     )
