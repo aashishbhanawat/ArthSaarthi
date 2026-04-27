@@ -13,11 +13,8 @@ class DiskCacheClient(CacheClient):
     """A cache client implementation using a local disk cache."""
 
     def __init__(self):
-        from app.core.config import settings
-        cache_dir = settings.DISK_CACHE_DIR
-        if not cache_dir:
-            cache_dir = user_cache_dir("arthsaarthi", "arthsaarthi-app")
-
+        # Use platformdirs to find the appropriate user-specific cache directory
+        cache_dir = user_cache_dir("arthsaarthi", "arthsaarthi-app")
         self._cache = diskcache.Cache(cache_dir)
         logger.info("Initialized disk-based cache at: %s", cache_dir)
 
@@ -36,6 +33,16 @@ class DiskCacheClient(CacheClient):
         except KeyError:
             # Key was not in the cache, which is fine for a delete operation
             pass
+
+    def incr(self, key: str, expire: Optional[int] = None) -> int:
+        with self._cache.transact():
+            current = self._cache.get(key, default=0)
+            try:
+                new_val = int(current) + 1
+            except ValueError:
+                new_val = 1
+            self._cache.set(key, str(new_val), expire=expire)
+            return new_val
 
     def clear(self) -> None:
         """Clears the entire disk cache."""

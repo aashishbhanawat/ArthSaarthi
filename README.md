@@ -5,8 +5,9 @@
 [![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-174/174-brightgreen)](#)
 [![E2E Tests](https://img.shields.io/badge/E2E_Tests-31/31-brightgreen)](#)
 
----
+[![Buy Me A Chai](https://buymeachai.ezee.li/assets/images/buymeachai-button.png)](https://buymeachai.ezee.li/aashishbhanawat)
 
+---
 
 **ArthSaarthi** is a self-hostable, privacy-focused application designed to help users manage their personal investment portfolios. It provides a comprehensive suite of tools for tracking assets, analyzing performance, and making informed financial decisions.
 
@@ -29,11 +30,10 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
     *   **ESPP/RSU Tracking:** A dedicated workflow to add and edit ESPP/RSU awards, including support for 'Sell to Cover' tax withholding transactions.
     *   **Foreign Stock & Currency Support:** Track assets in foreign currencies (e.g., USD). Portfolio values, analytics, and performance metrics are automatically converted and consolidated into your base currency (INR) using real-time and historical FX rates.
 *   **Consolidated Holdings View:** A redesigned portfolio page that shows a consolidated holdings table with sorting, replacing a simple transaction list.
-*   **Sectioned Holdings Table:** A redesigned holdings table that groups assets by class (Equity, Mutual Funds, Bonds, FDs, RDs, Cash) into collapsible sections for a clearer overview.
-*   **Tax Lot Accounting (Specific Identification):** When selling assets, explicitly link your "SELL" transactions to historical "BUY" transactions (tax lots) to accurately calculate cost basis and optimize realized capital gains (HIFO, FIFO, LIFO).
+*   **Sectioned Holdings Table:** A redesigned holdings table that groups assets by class into collapsible sections for a clearer overview.
 *   **Mutual Fund Dividend Tracking:** Manually log cash or reinvested dividends for mutual fund holdings.
 *   **Stock Dividend Reinvestment (DRIP):** Support for automatic reinvestment of stock dividends.
-*   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions and remaining tax lot quantities.
+*   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.
 *   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV/Excel/PDF files.
     *   Includes pre-built parsers for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS Statement, Zerodha Coin MF, KFintech PDF, generic format, and **Fixed Deposit (FD) PDFs** (HDFC, ICICI, SBI).
     *   Features an advanced UI for on-the-fly **asset alias mapping** for unrecognized ticker symbols, with admin management (view, edit, delete) of all aliases.
@@ -46,7 +46,6 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
     *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database and a file-based cache.
-    *   **Android Mode:** A standalone Android APK running the backend natively via Chaquopy for a complete mobile experience (Experimental).
 *   **Performance:** Expensive analytics and holdings calculations are cached to improve UI responsiveness and reduce server load.
 
 ### On the Horizon (Future Features)
@@ -78,10 +77,9 @@ To learn how to use the application's features, refer to the **[User Guide](./do
 
 This project was built with a strong emphasis on developer experience and maintainability. If you're interested in the technical details or want to contribute, please check out the following resources:
 
-*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (Docker, Native, Desktop, Android), running tests, and understanding the local development workflow.
-*   **[CONTRIBUTING.md](./CONTRIBUTING.md):** Our guide for contributing to the project, including our AI-assisted development process.
-*   **[Architecture & UML Design](./docs/uml_design.md):** The single source of truth for the system's structural design, including the Component Architecture, Entity-Relationship Diagram (ERD), and core Class logic.
-*   **[Code Flow Guide](./docs/code_flow_guide.md):** Detailed walkthroughs (with Sequence Diagrams) of how a request moves from the React frontend to the SQLAlchemy backend.
+*   **[Developer Guide](./developer_guide.md):** Instructions for setting up a development environment (both Docker and native), running tests, and understanding the local development workflow.
+*   **[Contributing Guide](./CONTRIBUTING.md):** Our guide for contributing to the project, including our AI-assisted development process.
+*   **[Architecture Overview](./docs/architecture.md):** A high-level look at the system's design.
 
 ---
 

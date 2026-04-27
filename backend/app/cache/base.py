@@ -21,6 +21,11 @@ class CacheClient(ABC):
         """Deletes a key from the cache."""
         raise NotImplementedError
 
+    @abstractmethod
+    def incr(self, key: str, expire: Optional[int] = None) -> int:
+        """Atomically increments a key. If it does not exist, sets it to 1."""
+        raise NotImplementedError
+
     def get_json(self, key: str) -> Optional[Any]:
         """Gets a JSON value from the cache and deserializes it."""
         value = self.get(key)

@@ -6,14 +6,13 @@ from sqlalchemy.orm import Session
 from app.crud.base import CRUDBase
 from app.models.watchlist import Watchlist
 from app.schemas.watchlist import WatchlistCreate, WatchlistUpdate
-from app.utils.pydantic_compat import model_dump
 
 
 class CRUDWatchlist(CRUDBase[Watchlist, WatchlistCreate, WatchlistUpdate]):
     def create_with_user(
         self, db: Session, *, obj_in: WatchlistCreate, user_id: uuid.UUID
     ) -> Watchlist:
-        db_obj = Watchlist(**model_dump(obj_in), user_id=user_id)
+        db_obj = Watchlist(**obj_in.model_dump(), user_id=user_id)
         db.add(db_obj)
         db.flush()
         return db_obj

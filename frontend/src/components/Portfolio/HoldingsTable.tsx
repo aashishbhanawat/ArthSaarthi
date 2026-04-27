@@ -9,8 +9,6 @@ import DepositHoldingRow from './holding_rows/DepositHoldingRow';
 import BondHoldingRow from './holding_rows/BondHoldingRow';
 import SchemeHoldingRow from './holding_rows/SchemeHoldingRow';
 
-import HoldingCard from './HoldingCard';
-
 interface HoldingsTableProps {
     holdings: Holding[] | undefined;
     isLoading: boolean;
@@ -64,6 +62,7 @@ const SECTION_CONFIG: { [key: string]: { title: string; columns: { label: string
             { label: 'Current Balance', key: 'current_value' },
         ],
     },
+    // Add other sections as needed
 };
 
 type SortKey = keyof Holding;
@@ -83,6 +82,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                     const aValue = a[config.key];
                     const bValue = b[config.key];
 
+                    // Handle numeric sorting for string-based numbers from the API
                     const numA = Number(aValue);
                     const numB = Number(bValue);
 
@@ -90,6 +90,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                         return config.direction === 'ascending' ? numA - numB : numB - numA;
                     }
 
+                    // Handle string sorting for non-numeric values
                     if (String(aValue) < String(bValue)) {
                         return config.direction === 'ascending' ? -1 : 1;
                     }
@@ -140,9 +141,9 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
     }
 
     return (
-        <div className="card p-4 sm:p-6">
+        <div className="card">
             <h2 className="text-xl font-bold mb-4">Holdings</h2>
-            <Accordion.Root type="multiple" defaultValue={sectionOrder} className="space-y-4">
+            <Accordion.Root type="multiple" defaultValue={sectionOrder} className="space-y-2">
                 {sectionOrder.map((group) => {
                     const sectionHoldings = groupedAndSortedHoldings[group];
                     if (!sectionHoldings) return null;
@@ -156,60 +157,41 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                     };
 
                     return (
-                        <Accordion.Item key={group} value={group} className="border rounded-lg dark:border-gray-700 overflow-hidden" data-testid={`holdings-section-${group}`}>
+                        <Accordion.Item key={group} value={group} className="border rounded-lg dark:border-gray-700" data-testid={`holdings-section-${group}`}>
                             <Accordion.Header>
-                                <Accordion.Trigger className="flex justify-between items-center w-full p-3 sm:p-4 font-semibold text-left bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-t-lg transition-colors">
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 truncate mr-2">
-                                        <span className="truncate">{config.title}</span>
-                                        <span className="text-xs sm:text-sm font-normal text-gray-500 dark:text-gray-400">
-                                            ({formatCurrency(totalValue)})
-                                        </span>
-                                    </div>
-                                    <ChevronDownIcon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 ease-in-out transform group-radix-state-open:rotate-180" />
+                                <Accordion.Trigger className="flex justify-between items-center w-full p-4 font-semibold text-left bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-t-lg">
+                                    <span>{config.title} (Total Value: {formatCurrency(totalValue)})</span>
+                                    <ChevronDownIcon className="w-5 h-5 transition-transform duration-200 ease-in-out transform group-radix-state-open:rotate-180" />
                                 </Accordion.Trigger>
                             </Accordion.Header>
-                            <Accordion.Content className="p-2 sm:p-0">
-                                {/* Desktop View: Table */}
-                                <div className="hidden lg:block table-container">
-                                    <table className="table-auto w-full">
-                                        <thead>
-                                            <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
-                                                {config.columns.map((col, index) => (
-                                                    <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''} cursor-pointer hover:text-blue-500 transition-colors whitespace-nowrap`} onClick={() => requestSort(group, col.key)}>
-                                                        {col.label}{getSortIndicator(col.key)}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {sectionHoldings.map((holding) => {
-                                                switch (group) {
-                                                    case 'EQUITIES':
-                                                        return <EquityHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                    case 'DEPOSITS':
-                                                        return <DepositHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                    case 'BONDS':
-                                                        return <BondHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                    case 'GOVERNMENT_SCHEMES':
-                                                        return <SchemeHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                    default:
-                                                        return null;
-                                                }
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {/* Mobile View: Cards */}
-                                <div className="lg:hidden mt-2 space-y-1">
-                                    {sectionHoldings.map((holding) => (
-                                        <HoldingCard 
-                                            key={holding.asset_id} 
-                                            holding={holding} 
-                                            onClick={onRowClick} 
-                                        />
-                                    ))}
-                                </div>
+                            <Accordion.Content className="overflow-x-auto">
+                                <table className="table-auto w-full">
+                                    <thead>
+                                        <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
+                                            {config.columns.map((col, index) => (
+                                                <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''} cursor-pointer`} onClick={() => requestSort(group, col.key)}>
+                                                    {col.label}{getSortIndicator(col.key)}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {sectionHoldings.map((holding) => {
+                                            switch (group) {
+                                                case 'EQUITIES':
+                                                    return <EquityHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
+                                                case 'DEPOSITS':
+                                                    return <DepositHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
+                                                case 'BONDS':
+                                                    return <BondHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
+                                                case 'GOVERNMENT_SCHEMES':
+                                                    return <SchemeHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
+                                                default:
+                                                    return null;
+                                            }
+                                        })}
+                                    </tbody>
+                                </table>
                             </Accordion.Content>
                         </Accordion.Item>
                     );
@@ -219,4 +201,6 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
     );
 };
 
+// Memoized to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+// but holdings data remains the same.
 export default React.memo(HoldingsTable);

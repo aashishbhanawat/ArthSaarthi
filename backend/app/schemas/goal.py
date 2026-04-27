@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 # Schemas for Goal
@@ -26,10 +26,7 @@ class Goal(GoalBase):
     id: uuid.UUID
     user_id: uuid.UUID
     links: List["GoalLink"] = []
-    class Config:
-        from_attributes = True
-        from_attributes = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GoalWithAnalytics(Goal):
@@ -60,16 +57,12 @@ class AssetInGoalLink(BaseModel):
     id: uuid.UUID
     name: str
     ticker_symbol: str
-    class Config:
-        from_attributes = True
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PortfolioInGoalLink(BaseModel):
     id: uuid.UUID
     name: str
-    class Config:
-        from_attributes = True
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GoalLink(GoalLinkBase):
@@ -77,6 +70,4 @@ class GoalLink(GoalLinkBase):
     user_id: uuid.UUID
     asset: Optional[AssetInGoalLink] = None
     portfolio: Optional[PortfolioInGoalLink] = None
-    class Config:
-        from_attributes = True
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
