@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List
 
+from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session, joinedload
 
 from app.cache.utils import cache_analytics_data
@@ -186,7 +187,6 @@ def _get_portfolio_history(
     all_rds = rd_query.all()
     ppf_assets = ppf_asset_query.distinct().all()
 
-    from dateutil.relativedelta import relativedelta
     rd_maturity_dates = {
         rd.id: rd.start_date + relativedelta(months=rd.tenure_months)
         for rd in all_rds
@@ -475,7 +475,6 @@ def _get_portfolio_history(
                     day_total_value += fd_val
 
                 # 3. Recurring Deposits (Simulated for this historical day)
-                from dateutil.relativedelta import relativedelta
                 for rd in all_rds:
                     if rd.start_date > current_day:
                         continue
@@ -495,24 +494,7 @@ def _get_portfolio_history(
                         current_day,
                     )
 
-                    delta = relativedelta(current_day, rd.start_date)
-                    months_passed = delta.years * 12 + delta.months
-
-                    installments_to_date = 0
-                    for offset in [0, 1, 2]:
-                        test_installments = months_passed + offset
-                        test_date = rd.start_date + relativedelta(
-                            months=test_installments
-                        )
-                        if test_date <= current_day:
-                            installments_to_date = test_installments + 1
-                        else:
-                            break
-
-                    installments_to_date = min(installments_to_date, rd.tenure_months)
-
-                    if installments_to_date > 0:
-                        day_total_value += rd_val
+                    day_total_value += rd_val
 
                 # 4. PPF (Simulated for this historical day)
                 from app.crud.crud_ppf import process_ppf_holding
