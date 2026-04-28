@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
+from app.cache.factory import get_cache_client
 from app.core import security
 from app.core.config import settings
 from app.core.key_manager import key_manager
@@ -54,9 +55,9 @@ def get_auth_headers(
     client: TestClient,
 ) -> Callable[[str, str], Dict[str, str]]:
     def _get_auth_headers(email: str, password: str) -> Dict[str, str]:
-        if settings.DEPLOYMENT_MODE in ("desktop", "android"):
-            # In local modes, we assume `pre_unlocked_key_manager` has run (for desktop)
-            # or it's a single-user app. We bypass login and directly create a token.
+        if settings.DEPLOYMENT_MODE == "desktop":
+            # In desktop mode, we assume `pre_unlocked_key_manager` has run.
+            # We bypass login and directly create a token.
             auth_token = security.create_access_token(subject=email)
         else:
             # In server mode, perform a standard login to get the token.
@@ -75,34 +76,21 @@ def get_auth_headers(
 
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_test_db():
-    """
-    Ensures all tables are created once for the entire test session.
-    """
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-    yield
-
-
 @pytest.fixture(scope="function")
 def db() -> Generator[Session, None, None]:
     """
-    Provides a fresh database for each test function using transactions.
-    This is much faster and more robust than dropping/recreating tables.
+    Provides a fresh database for each test function.
     """
-    connection = engine.connect()
-    # Begin a transaction
-    transaction = connection.begin()
-    # Bind the session to the connection
-    session = SessionLocal(bind=connection)
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
-    yield session
+    # Clear cache before each test
+    cache = get_cache_client()
+    if cache:
+        cache.clear()
 
-    session.close()
-    # Roll back everything to leave the DB clean for the next test
-    transaction.rollback()
-    connection.close()
+    with SessionLocal() as db_session:
+        yield db_session
 
 
 @pytest.fixture(scope="function")

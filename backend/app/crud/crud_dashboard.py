@@ -485,6 +485,9 @@ def _get_portfolio_history(
                     if current_day > rd_maturity_date:
                         continue
 
+                    # rd.start_date <= current_day ensures at least 1 installment
+                    # is paid, so we can directly add the current value without
+                    # redundant loops.
                     rd_val = _calculate_rd_value_at_date(
                         rd.monthly_installment,
                         rd.interest_rate,

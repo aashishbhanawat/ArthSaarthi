@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from app.crud.base import CRUDBase
 from app.models.fixed_deposit import FixedDeposit
 from app.schemas.fixed_deposit import FixedDepositCreate, FixedDepositUpdate
-from app.utils.pydantic_compat import model_dump
 
 
 class CRUDFixedDeposit(CRUDBase[FixedDeposit, FixedDepositCreate, FixedDepositUpdate]):
@@ -39,7 +38,7 @@ class CRUDFixedDeposit(CRUDBase[FixedDeposit, FixedDepositCreate, FixedDepositUp
             )
 
         db_obj = self.model(
-            **model_dump(obj_in), user_id=user_id
+            **obj_in.model_dump(), user_id=user_id
         )
         db.add(db_obj)
         db.flush()

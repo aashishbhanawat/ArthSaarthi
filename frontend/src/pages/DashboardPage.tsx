@@ -22,7 +22,7 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-8">
-      <div className="hidden lg:flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center">
         <div className="flex items-center">
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <HelpLink sectionId="dashboard" />

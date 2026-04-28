@@ -20,8 +20,6 @@ import DiversificationCharts from '../../components/Portfolio/DiversificationCha
 import BenchmarkComparison from '../../components/Portfolio/BenchmarkComparison';
 import { RecurringDepositDetails } from '../../types/recurring_deposit';
 
-import { PlusIcon } from '@heroicons/react/24/outline';
-
 const PortfolioDetailPage: React.FC = () => {
     const { id: portfolioId } = useParams<{ id: string }>();
 
@@ -45,7 +43,6 @@ const PortfolioDetailPage: React.FC = () => {
     const [fdToDelete, setFdToDelete] = useState<Holding | null>(null);
     const [bondToDelete, setBondToDelete] = useState<Holding | null>(null);
     const [rdToDelete, setRdToDelete] = useState<Holding | null>(null);
-    const [isFabMenuOpen, setFabMenuOpen] = useState(false);
 
     useEffect(() => {
         if (selectedHolding && holdings?.holdings) {
@@ -133,60 +130,22 @@ const PortfolioDetailPage: React.FC = () => {
     };
 
     return (
-        <div className="relative">
-            {/* Mobile FAB Speed Dial */}
-            <div className="lg:hidden fixed bottom-24 right-6 z-50 flex flex-col items-end space-y-4">
-                {isFabMenuOpen && (
-                    <>
-                        <div className="flex items-center space-x-2">
-                            <span className="bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm text-sm font-medium">ESPP/RSU</span>
-                            <button
-                                onClick={() => { setAddAwardModalOpen(true); setFabMenuOpen(false); }}
-                                className="p-3 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 active:scale-90 transition-all"
-                                aria-label="Add ESPP/RSU"
-                            >
-                                <span className="text-xl">🏆</span>
-                            </button>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <span className="bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm text-sm font-medium">Transaction</span>
-                            <button
-                                onClick={() => { handleOpenCreateTransactionModal(); setFabMenuOpen(false); }}
-                                className="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 active:scale-90 transition-all"
-                                aria-label="Add Regular Transaction"
-                            >
-                                <PlusIcon className="h-6 w-6" />
-                            </button>
-                        </div>
-                    </>
-                )}
-                <button
-                    onClick={() => setFabMenuOpen(!isFabMenuOpen)}
-                    className={`p-4 ${isFabMenuOpen ? 'bg-gray-500 rotate-45' : 'bg-blue-600'} text-white rounded-full shadow-xl transition-all duration-300 z-50`}
-                    aria-label="Toggle Add Menu"
-                >
-                    <PlusIcon className="h-7 w-7" />
-                </button>
-                {isFabMenuOpen && (
-                    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[-1]" onClick={() => setFabMenuOpen(false)}></div>
-                )}
-            </div>
-
+        <div>
             <div className="mb-8">
                 <Link to="/portfolios" className="text-blue-600 hover:underline text-sm dark:text-blue-400">
                     &larr; Back to Portfolios
                 </Link>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mt-2 gap-4">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold break-words max-w-full">{portfolio.name}</h1>
+                <div className="flex justify-between items-center mt-2">
+                    <h1 className="text-3xl font-bold">{portfolio.name}</h1>
                     <div className="flex space-x-2">
-                        <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary flex-1 sm:flex-none text-center">
+                        <Link to={`/transactions?portfolio_id=${portfolio.id}`} className="btn btn-secondary">
                             View History
                         </Link>
-                        <div className="relative inline-flex rounded-md shadow-sm flex-1 sm:flex-none">
+                        <div className="relative inline-flex rounded-md shadow-sm">
                             <button
                                 type="button"
                                 onClick={handleOpenCreateTransactionModal}
-                                className="btn btn-primary rounded-r-none border-r border-blue-600 focus:z-10 flex-1 sm:flex-none justify-center"
+                                className="btn btn-primary rounded-r-none border-r border-blue-600 focus:z-10"
                             >
                                 Add Transaction
                             </button>
@@ -216,7 +175,7 @@ const PortfolioDetailPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 mt-1 line-clamp-2 sm:line-clamp-none">{portfolio.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">{portfolio.description}</p>
             </div>
 
             <PortfolioSummary summary={summary} isLoading={isSummaryLoading} error={summaryError} />

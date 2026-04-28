@@ -33,9 +33,9 @@ def test_get_dashboard_summary_no_portfolios(
     )
     assert response.status_code == 200
     data = response.json()
-    assert Decimal(str(data["total_value"])) == Decimal("0.0")
-    assert Decimal(str(data["total_unrealized_pnl"])) == Decimal("0.0")
-    assert Decimal(str(data["total_realized_pnl"])) == Decimal("0.0")
+    assert data["total_value"] == "0.0"
+    assert data["total_unrealized_pnl"] == "0.0"
+    assert data["total_realized_pnl"] == "0.0"
     assert data["top_movers"] == []
     assert data["asset_allocation"] == []
 

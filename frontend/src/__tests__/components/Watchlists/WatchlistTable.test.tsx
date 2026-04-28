@@ -19,12 +19,12 @@ const mockWatchlist: Watchlist = {
     {
       id: 'item1',
       asset_id: 'asset1',
-      asset: { id: 'asset1', ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ', isin: null },
+      asset: { id: 'asset1', ticker_symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' },
     },
     {
       id: 'item2',
       asset_id: 'asset2',
-      asset: { id: 'asset2', ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ', isin: null },
+      asset: { id: 'asset2', ticker_symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ' },
     },
   ],
 };
@@ -64,8 +64,8 @@ describe('WatchlistTable', () => {
 
   it('renders a table with watchlist items', () => {
     renderComponent({});
-    expect(screen.getAllByText('AAPL').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('GOOGL').length).toBeGreaterThan(0);
+    expect(screen.getByText('AAPL')).toBeInTheDocument();
+    expect(screen.getByText('GOOGL')).toBeInTheDocument();
   });
 
   it('calls the remove mutation when the remove button is clicked', () => {
@@ -84,18 +84,18 @@ describe('WatchlistTable', () => {
       items: [
         { ...mockWatchlist.items[0], asset: { ...mockWatchlist.items[0].asset, current_price: 150, day_change: 2.5 } },
         { ...mockWatchlist.items[1], asset: { ...mockWatchlist.items[1].asset, current_price: 2800, day_change: -10 } },
-        { id: 'item3', asset_id: 'asset3', asset: { id: 'asset3', ticker_symbol: 'MSFT', name: 'Microsoft', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ', isin: null, day_change: 0 } },
+        { id: 'item3', asset_id: 'asset3', asset: { id: 'asset3', ticker_symbol: 'MSFT', name: 'Microsoft', asset_type: 'STOCK', currency: 'USD', exchange: 'NASDAQ', day_change: 0 } },
       ],
     };
     renderComponent({ watchlist: watchlistWithPrices });
 
     // Check prices are formatted
-    expect(screen.getAllByText('$150.00')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('$2,800.00')[0]).toBeInTheDocument();
+    expect(screen.getByText('$150.00')).toBeInTheDocument();
+    expect(screen.getByText('$2,800.00')).toBeInTheDocument();
 
     // Check P&L colors
-    expect(screen.getAllByText('$2.50')[0]).toHaveClass('text-green-600');
-    expect(screen.getAllByText('-$10.00')[0]).toHaveClass('text-red-600');
-    expect(screen.getAllByText('$0.00')[0]).toHaveClass('text-gray-900');
+    expect(screen.getByText('$2.50')).toHaveClass('text-green-600');
+    expect(screen.getByText('-$10.00')).toHaveClass('text-red-600');
+    expect(screen.getByText('$0.00')).toHaveClass('text-gray-900');
   });
 });

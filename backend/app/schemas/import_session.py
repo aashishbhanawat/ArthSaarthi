@@ -1,8 +1,6 @@
-import math
 import uuid
-from typing import Any, List
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict
 
 # Need to import Portfolio and User schemas to be used as nested objects
 from .asset_alias import AssetAliasCreate
@@ -40,9 +38,7 @@ class ImportSessionInDBBase(ImportSessionBase):
     source: str
     parsed_file_path: str | None = None
 
-    class Config:
-        from_attributes = True
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Properties to return to client
@@ -61,30 +57,21 @@ class ParsedTransaction(BaseModel):
     fees: float
     isin: str | None = None
 
-    @root_validator(pre=True)
-    @classmethod
-    def fix_nan(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            for k, v in data.items():
-                if isinstance(v, float) and math.isnan(v):
-                    data[k] = None
-        return data
-
 
 # New schema for the categorized preview response
 class ImportSessionPreview(BaseModel):
-    valid_new: List[ParsedTransaction]
-    duplicates: List[ParsedTransaction]
-    invalid: List[dict]  # e.g., {"row_data": {...}, "error": "Invalid data format"}
-    needs_mapping: List[
+    valid_new: list[ParsedTransaction]
+    duplicates: list[ParsedTransaction]
+    invalid: list[dict]  # e.g., {"row_data": {...}, "error": "Invalid data format"}
+    needs_mapping: list[
         ParsedTransaction
     ]  # For rows with unrecognized ticker symbols
 
 
 # New schema for the selective commit request body
 class ImportSessionCommit(BaseModel):
-    transactions_to_commit: List[ParsedTransaction]
-    aliases_to_create: List[AssetAliasCreate] = []
+    transactions_to_commit: list[ParsedTransaction]
+    aliases_to_create: list[AssetAliasCreate] = []
 
 
 # Schema for parsed FD data from bank statements
@@ -99,22 +86,13 @@ class ParsedFixedDeposit(BaseModel):
     interest_payout: str = "Cumulative"
     compounding_frequency: str = "Quarterly"
 
-    @root_validator(pre=True)
-    @classmethod
-    def fix_nan(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            for k, v in data.items():
-                if isinstance(v, float) and math.isnan(v):
-                    data[k] = None
-        return data
-
 
 # Schema for FD import preview response
 class FDImportPreview(BaseModel):
-    parsed_fds: List[ParsedFixedDeposit]
-    duplicates: List[ParsedFixedDeposit]
+    parsed_fds: list[ParsedFixedDeposit]
+    duplicates: list[ParsedFixedDeposit]
 
 
 # Schema for FD import commit request body
 class FDImportCommit(BaseModel):
-    fds_to_commit: List[ParsedFixedDeposit]
+    fds_to_commit: list[ParsedFixedDeposit]
