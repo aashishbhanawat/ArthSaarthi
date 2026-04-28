@@ -5,8 +5,9 @@ WORKDIR /app
 
 # Copy package.json and install dependencies
 # This is done in a separate step to leverage Docker layer caching
-COPY package*.json ./
-RUN npm install && npx update-browserslist-db@latest -y
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile && npx update-browserslist-db@latest -y
 
 # Copy the rest of the application code
 COPY . .
@@ -14,4 +15,4 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 3000
 
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["pnpm", "run", "dev", "--", "--host"]
