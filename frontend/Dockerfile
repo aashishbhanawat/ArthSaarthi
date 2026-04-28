@@ -7,7 +7,7 @@ WORKDIR /app
 # This is done in a separate step to leverage Docker layer caching
 RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile && pnpm exec update-browserslist-db@latest -y
+RUN pnpm install --frozen-lockfile && npx update-browserslist-db@latest -y
 
 # Copy the rest of the application code
 COPY . .
