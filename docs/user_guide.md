@@ -23,14 +23,13 @@ ArthSaarthi is a powerful web-based application designed to help you track, mana
    - Stock Splits & Bonus Shares
 5. [Viewing Transaction History](#viewing-transaction-history)
 6. [Import Data](#import-data)
-   - Supported Formats (v1.2.0)
+   - Supported Formats (v1.1)
 7. [Goals](#goals)
 8. [Watchlists](#watchlists)
 9. [Profile & Settings](#profile--settings)
    - Backup & Restore
 10. [Admin Features](#admin-features)
-11. [Capital Gains & Tax](#capital-gains--tax)
-12. [Themes & Privacy](#themes--privacy)
+11. [Themes & Privacy](#themes--privacy)
 
 ---
 
@@ -69,12 +68,6 @@ ArthSaarthi supports two deployment modes:
 > [!NOTE]
 > In Desktop Mode, your data is stored locally on your machine and encrypted. User Management is disabled since you're the only user.
 
-#### Desktop System Tray
-
-When running the Desktop App:
-- Closing the window doesn't stop the backend services. Use the **System Tray** (near the clock on Windows/macOS) to **Quit** the application completely.
-- The tray icon also provides quick status checks for the local server.
-
 ---
 
 ## Dashboard Overview
@@ -90,12 +83,9 @@ After logging in, you'll be taken to the **Dashboard** - your central hub for po
 | **Total Value** | The combined current value of all your investments |
 | **Unrealized P/L** | Profit or loss on holdings you still own |
 | **Realized P/L** | Profit or loss from investments you've sold |
-| **Portfolio History** | Interactive chart showing value changes over time. **(v1.2.0)**: Includes **Daily Snapshots** that automatically record your portfolio's total value every 6 hours to provide a smooth historical curve. |
+| **Portfolio History** | Interactive chart showing value changes over time (7D, 30D, 1Y, All) |
 | **Asset Allocation** | Pie chart showing distribution across different stocks/assets |
 | **Top Movers** | Your best and worst performing assets today |
-
-> [!WARNING]
-> **Valuation Data Availability:** Components like the **Portfolio History** chart and **Benchmark Comparison** metrics will not display valuation data for assets where reliable price history is unavailable (e.g., Gold, certain Bonds, or unlisted instruments). These assets are still tracked at their acquisition cost in the holdings list.
 
 ### Top Movers
 
@@ -147,9 +137,8 @@ Click on any portfolio to see its detailed holdings and performance.
 
 The portfolio detail view shows:
 - Summary cards (Invested, Current Value, Unrealized P/L, Realized P/L)
-- **Consolidated Holdings Table:** Grouped by asset type (Stocks, Mutual Funds, FDs, etc.)
-- Each section is collapsible and shows a total value for that category
-- Sortable columns for Qty, Avg Price, Current Price, Total Value, PNL, and XIRR
+- Holdings breakdown by asset type (Stocks, Mutual Funds, etc.)
+- Individual holding details with quantity, average price, and returns
 
 ### Holding Transaction History
 
@@ -158,10 +147,11 @@ Click on any holding to drill down into its complete transaction history.
 ![Holding Drilldown](./images/holding_drilldown_1768318989034.png)
 
 This view displays:
-- **Active Tax Lots (v1.2.0):** A list of all specific BUY transactions still constituting the current holding.
-- **CAGR per Lot:** See the annualized return for every individual purchase.
-- **Specific Lot Deletion/Edit:** Correct specific errors in your acquisition history without affecting other lots.
-- **Exclusion of Closed Sales:** This view focuses on *what you still own*. For a complete history including closed SELL transactions, refer to the **Transactions** page.
+- List of active BUY transactions (Tax Lots) constituting the current holding
+- **Note:** For a complete history including closed SELL transactions, refer to the **Transactions** page.
+- Date, quantity, price per unit, and total value
+- CAGR and XIRR (Current & Historical) calculations
+- Edit and delete options for each transaction
 
 ### Portfolio Analytics
 
@@ -208,25 +198,6 @@ Compare your portfolio's performance against market benchmarks like **Nifty 50**
 - **Your Portfolio XIRR**: Your actual returns
 - **Benchmark XIRR**: What you'd have earned in the benchmark
 - **Alpha (Excess Return)**: The difference - positive means you outperformed!
-
-#### Hybrid Benchmarks & Risk-Free Overlay (v1.2.0)
-
-v1.2.0 introduces advanced benchmarking modes:
-- **Hybrid Benchmarks**: Select from presets like "CRISIL Hybrid 35/65" or "Balanced 50/50" to compare against blended equity/debt indices.
-- **Risk-Free Rate Overlay**: Toggle a dashed green line to see how your portfolio compares against a steady risk-free compound growth (e.g., 7% p.a.).
-
-#### Category Comparison (v1.2.0)
-
-Drill down into specific asset class performance:
-- **Equity Category**: Compares all your stocks and equity MFs against the Nifty 50.
-- **Debt Category**: Compares your FDs, RDs, and Bonds against a standard 10Y G-Sec yield.
-
-#### Foreign Currency Support (v1.2.0)
-
-For users with US Stocks, RSUs, or ESPPs, ArthSaarthi automatically handles multi-currency tracking:
-- **Automatic FX Rates**: The system fetches historical USD/INR rates based on the transaction date.
-- **Consolidated Valuation**: All assets are converted to your portfolio's base currency (typically INR) in the holdings table.
-- **CAGR/XIRR in Base Currency**: returns are calculated after factoring in both price appreciation and currency fluctuations.
 
 ---
 
@@ -360,15 +331,11 @@ Manage your Public Provident Fund investments with automatic interest calculatio
 For employees with stock compensation, track RSU and ESPP awards.
 
 **How to navigate:**
+1. Go to your Portfolio detail page
+2. Click the **dropdown icon** next to the **Add Transaction** button
 3. Select **Add ESPP/RSU Award**
 
 ![RSU ESPP Modal](./images/rsu_espp_modal_1768318354551.png)
-
-#### Acquisition Types
-
-v1.2.0 tracks how shares were acquired to ensure accurate tax basis:
-- **RSU Vest**: Market value at vest date is treated as your cost basis (already taxed as perquisite).
-- **ESPP Purchase**: Your actual purchase price vs. Fair Market Value (FMV) is used to calculate the taxable benefit and eventual capital gains.
 
 #### RSU Vest Form
 
@@ -435,7 +402,6 @@ Record corporate actions that affect your holdings via **Additional Actions** me
 **Tracking:**
 - View total dividend income in **Advanced Analytics**
 - Check asset drill-down to see dividends received per holding
-- **Dividend Report (v1.2.0):** Access the dedicated report in the **Capital Gains** section to see dividends grouped into **Quarterly Advance Tax Buckets** (e.g., Upto 15/6, 16/6 - 15/9) for easy ITR filing.
 
 ### Stock Splits & Bonus Shares
 
@@ -477,12 +443,13 @@ Bulk import your transaction history from CSV files or brokerage statements.
 3. Choose the **Statement Type** matching your file format
 4. Upload your file
 5. Click **Upload and Preview**
-6. Review parsed transactions in the **Staging Preview**:
-   - **Valid Transactions**: Ready to import (checked by default)
-   - **Ignored Duplicates**: Transactions already found in the database (unchecked by default)
-   - **Unrecognized Assets**: Transactions where the ticker/ISIN isn't recognized (requires [Mapping](#mapping-unrecognized-tickers))
-7. Select or deselect specific rows you wish to commit
-8. Click **Commit Data** to save to your portfolio
+6. Review parsed transactions:
+   - **New Transactions**: Ready to import
+   - **Requiring Mapping**: Need ticker mapping (see below)
+   - **Duplicates**: Already exist in portfolio
+   - **Invalid**: Errors preventing import
+7. Select transactions to import
+8. Click **Commit Transactions**
 
 ### Mapping Unrecognized Tickers
 
@@ -613,41 +580,6 @@ Perform system maintenance tasks including Asset Master synchronization.
 > [!NOTE]
 > **Server Mode:** Asset seeding runs automatically on every server launch/restart. Use **Sync Assets** to update without restarting.
 > **Desktop Mode:** Asset seeding runs only once on first boot. After that, you must manually run **Sync Assets** to get the latest securities.
-
----
-
-## Capital Gains & Tax
-
-ArthSaarthi provides robust reporting for Indian Income Tax compliance.
-
-### Realized Capital Gains
-
-Navigate to **Analytics > Capital Gains** to view your tax liability for a specific Financial Year.
-
-**Key Features:**
-- **LTCG vs STCG**: Automatically classifies gains based on holding periods (e.g., 1 year for Stocks, 2 years for Unlisted/Bonds, etc.).
-- **Grandfathering (Sec 112A)**: For equity sold after 2018, the system factors in the **Jan 31, 2018 FMV** to calculate taxable gains.
-- **Indexation**: For Debt assets and Bonds, the system applies the cost inflation index (CII) to reduce taxable burden.
-- **FIFO Enforcement**: Standard market-traded assets are calculated using the FIFO method as per Indian tax norms.
-
-### Tax Buckets
-
-The **Dividend Report** groups income into government-mandated quarterly buckets:
-1. Upto June 15
-2. June 16 - Sept 15
-3. Sept 16 - Dec 15
-4. Dec 16 - March 15
-5. March 16 - March 31
-
-This allows you to accurately fill the "Schedule OS" (Other Sources) in your ITR.
-
-### Symbol Alias Management (v1.2.0)
-
-Admins can now manage the "Aliases" used during data import:
-1. Navigate to **Admin > Symbol Aliases**.
-2. View all existing mappings (e.g., "RELIANCE-EQ" → "RELIANCE").
-3. **Edit** or **Delete** incorrect mappings to fix future imports.
-4. **Manual Add**: Create a new mapping if the auto-map fails for a specific broker's format.
 
 ---
 

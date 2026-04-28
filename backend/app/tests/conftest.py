@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
+from app.cache.factory import get_cache_client
 from app.core import security
 from app.core.config import settings
 from app.core.key_manager import key_manager
@@ -83,11 +84,13 @@ def db() -> Generator[Session, None, None]:
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
-    db_session = SessionLocal()
+    # Clear cache before each test
+    cache = get_cache_client()
+    if cache:
+        cache.clear()
 
-    yield db_session
-
-    db_session.close()
+    with SessionLocal() as db_session:
+        yield db_session
 
 
 @pytest.fixture(scope="function")

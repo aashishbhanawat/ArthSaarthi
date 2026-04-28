@@ -1,13 +1,55 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../../context/ToastContext';
-import {
-    searchAssetsByFMV,
-    updateFMV2018,
-    lookupFMV2018,
-    seedFMV2018,
-    FMVAsset,
-} from '../../services/adminApi';
+
+interface Asset {
+    id: string;
+    ticker_symbol: string;
+    name: string;
+    asset_type: string;
+    isin?: string;
+    fmv_2018: number | null;
+}
+
+const fetchAssets = async (search: string): Promise<Asset[]> => {
+    // Use local-only admin search for FMV management
+    const url = `/api/v1/admin/assets/fmv-search?query=${encodeURIComponent(search)}&limit=50`;
+    const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    if (!response.ok) throw new Error('Failed to fetch assets');
+    return response.json();
+};
+
+const updateFMV2018 = async ({
+    ticker,
+    fmv_2018,
+}: {
+    ticker: string;
+    fmv_2018: number;
+}) => {
+    const response = await fetch(`/api/v1/admin/assets/${ticker}/fmv-2018`, {
+        method: 'PATCH',
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fmv_2018 }),
+    });
+    if (!response.ok) throw new Error('Failed to update FMV');
+    return response.json();
+};
+
+const lookupFMV2018 = async (ticker: string) => {
+    const response = await fetch(
+        `/api/v1/admin/assets/${ticker}/fmv-2018/lookup`,
+        {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }
+    );
+    if (!response.ok) throw new Error('Lookup failed');
+    return response.json();
+};
 
 const AdminFMVPage: React.FC = () => {
     const { addToast } = useToast();
@@ -16,18 +58,15 @@ const AdminFMVPage: React.FC = () => {
     const [editingTicker, setEditingTicker] = useState<string | null>(null);
     const [editValue, setEditValue] = useState('');
     const [fetchingTicker, setFetchingTicker] = useState<string | null>(null);
-    const [isSeeding, setIsSeeding] = useState(false);
-    const [overwriteSeed, setOverwriteSeed] = useState(false);
 
     const { data: assets = [], isLoading } = useQuery({
         queryKey: ['assets-fmv', search],
-        queryFn: () => searchAssetsByFMV(search),
+        queryFn: () => fetchAssets(search),
         staleTime: 30000,
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ ticker, fmv_2018 }: { ticker: string; fmv_2018: number }) =>
-            updateFMV2018(ticker, fmv_2018),
+        mutationFn: updateFMV2018,
         onSuccess: (_, variables) => {
             addToast(`FMV 2018 updated for ${variables.ticker}`, 'success');
             queryClient.invalidateQueries({ queryKey: ['assets-fmv'] });
@@ -62,6 +101,7 @@ const AdminFMVPage: React.FC = () => {
         try {
             const result = await lookupFMV2018(ticker);
             if (result.fmv_2018) {
+                // Auto-save the fetched value
                 updateMutation.mutate({ ticker, fmv_2018: result.fmv_2018 });
                 addToast(result.message, 'success');
             } else {
@@ -74,10 +114,22 @@ const AdminFMVPage: React.FC = () => {
         }
     };
 
+    const [isSeeding, setIsSeeding] = useState(false);
+    const [overwriteSeed, setOverwriteSeed] = useState(false);
+
     const handleBulkSeed = async () => {
         setIsSeeding(true);
         try {
-            const result = await seedFMV2018(overwriteSeed);
+            const response = await fetch('/api/v1/admin/assets/fmv-2018/seed', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ overwrite: overwriteSeed }),
+            });
+            if (!response.ok) throw new Error('Seed failed');
+            const result = await response.json();
             addToast(
                 `${result.message} (${result.skipped} skipped, ${result.errors} errors)`,
                 'success'
@@ -91,7 +143,7 @@ const AdminFMVPage: React.FC = () => {
     };
 
     // Filter to only show equity-type assets
-    const equityAssets = (assets as FMVAsset[]).filter(
+    const equityAssets = assets.filter(
         (a) =>
             a.asset_type?.toUpperCase() === 'STOCK' ||
             a.asset_type?.toUpperCase() === 'ETF' ||

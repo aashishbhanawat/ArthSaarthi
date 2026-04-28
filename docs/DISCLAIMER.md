@@ -78,4 +78,4 @@ ArthSaarthi is open-source software licensed under the MIT License. You are free
 
 ---
 
-*Last updated: March 2024*
+*Last updated: December 2025*

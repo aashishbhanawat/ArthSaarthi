@@ -482,17 +482,6 @@ def commit_import_session(
 
         return {"msg": f"Successfully committed {transactions_created} transactions."}
 
-    except HTTPException:
-        # Re-raise specific HTTP errors (e.g. insufficient holdings) so the
-        # client receives the correct status code and detail message.
-        db.rollback()
-        crud.import_session.update(
-            db,
-            db_obj=import_session,
-            obj_in={"status": "FAILED", "error_message": None},
-        )
-        db.commit()
-        raise
     except Exception as e:
         db.rollback()
         log.error(f"Failed to commit import session {session_id}: {e}", exc_info=True)
@@ -508,7 +497,6 @@ def commit_import_session(
         raise HTTPException(
             status_code=500, detail="Could not commit transactions."
         )
-
 
 
 @router.post(

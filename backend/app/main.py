@@ -79,7 +79,6 @@ if settings.DEPLOYMENT_MODE == "desktop":
 
 app = FastAPI(
     title="Personal Portfolio Management System",
-    version="1.2.0",
     openapi_url="/api/v1/openapi.json",
 )
 

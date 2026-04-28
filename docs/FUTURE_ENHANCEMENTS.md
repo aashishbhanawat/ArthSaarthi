@@ -5,10 +5,10 @@ This document tracks features and improvements identified during v1.0.0 developm
 ## v1.1.0 (Near-term)
 
 ### Desktop App Improvements
-- [x] **Splash screen during initialization** - Show splash screen with progress bar while seeding completes, then show login (instead of banner approach)
+- [ ] **Splash screen during initialization** - Show splash screen with progress bar while seeding completes, then show login (instead of banner approach)
 - [ ] **Windows ARM64 native builds** - Currently uses x64 via emulation; native build would be faster
-- [x] **Auto-update mechanism** - Check for updates and prompt user to download new version
-- [x] **System tray integration** - Minimize to system tray instead of taskbar
+- [ ] **Auto-update mechanism** - Check for updates and prompt user to download new version
+- [ ] **System tray integration** - Minimize to system tray instead of taskbar
 
 ### Asset Management
 - [ ] **Manual asset creation** - Allow adding custom assets not in exchange lists
@@ -16,7 +16,7 @@ This document tracks features and improvements identified during v1.0.0 developm
 - [ ] **Incremental asset updates** - Only download changed assets instead of full sync
 
 ### User Experience
-- [x] **Dark mode** - System-wide dark theme toggle
+- [ ] **Dark mode** - System-wide dark theme toggle
 - [ ] **Customizable dashboard widgets** - Drag-and-drop dashboard layout
 - [ ] **Export to PDF/Excel** - Export reports and statements
 - [ ] **Keyboard shortcuts** - Power-user keyboard navigation
@@ -31,9 +31,9 @@ This document tracks features and improvements identified during v1.0.0 developm
 - [ ] **Personalized daily digest** - AI-generated portfolio insights email
 
 ### Advanced Analytics
-- [x] **XIRR calculations** - Time-weighted return calculations
-- [x] **Benchmark comparisons** - Compare performance against indices
-- [x] **Tax reports** - Generate capital gains reports for filing
+- [ ] **XIRR calculations** - Time-weighted return calculations
+- [ ] **Benchmark comparisons** - Compare performance against indices
+- [ ] **Tax reports** - Generate capital gains reports for filing
 
 ### Multi-Device Sync
 - [ ] **Cloud sync option** - Opt-in sync between devices

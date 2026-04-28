@@ -75,7 +75,7 @@ test.describe('Watchlists Feature', () => {
     const modal = page.getByRole('dialog', { name: 'Add Asset to Watchlist' });
     await expect(modal).toBeVisible();
     await modal.getByLabel('Search for an asset').fill('AAPL');
-    
+
     // Wait for the debounced search API call to complete before interacting with the results.
     await page.waitForResponse(resp => resp.url().includes('/api/v1/assets/search-stocks'));
 

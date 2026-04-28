@@ -21,7 +21,6 @@ from .asset_alias import (
     AssetAliasWithAsset,
 )
 from .bond import (
-    Bond,
     BondCreate,
     BondUpdate,
     BondWithTransactionCreate,
@@ -170,7 +169,6 @@ __all__ = [
     "GoalLinkCreate",
     "GoalLinkUpdate",
     "GoalWithAnalytics",
-    "Bond",
     "BondCreate",
     "BondUpdate",
     "BondWithTransactionCreate",

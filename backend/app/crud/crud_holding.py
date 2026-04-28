@@ -10,7 +10,7 @@ from typing import List
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import crud, models, schemas
 from app.cache.utils import cache_analytics_data
@@ -84,19 +84,10 @@ def _calculate_total_interest_paid(fd: models.FixedDeposit, end_date: date) -> D
     interest_per_payout = fd.principal_amount * payout_rate
 
     total_interest = Decimal(0)
-    last_payout_date = fd.start_date
     payout_date = fd.start_date + relativedelta(months=months_interval)
     while payout_date <= end_date:
         total_interest += interest_per_payout
-        last_payout_date = payout_date
         payout_date += relativedelta(months=months_interval)
-
-    if last_payout_date < end_date:
-        remaining_days = (end_date - last_payout_date).days
-        daily_rate = (fd.interest_rate / Decimal("100.0")) / Decimal("365.25")
-        pro_rata_interest = fd.principal_amount * daily_rate * Decimal(remaining_days)
-        total_interest += pro_rata_interest
-
     return total_interest
 
 
@@ -165,8 +156,7 @@ def _process_fixed_deposits(
 
     for fd in matured_fds:
         if fd.interest_payout != "Cumulative":
-            realized_pnl = _calculate_total_interest_paid(fd, fd.maturity_date)
-            total_realized_pnl += realized_pnl
+            total_realized_pnl += _calculate_total_interest_paid(fd, fd.maturity_date)
         else:
             maturity_value = _calculate_fd_current_value(
                 fd.principal_amount,
@@ -176,11 +166,7 @@ def _process_fixed_deposits(
                 fd.compounding_frequency,
                 fd.interest_payout,
             )
-            realized_pnl = maturity_value - fd.principal_amount
-            total_realized_pnl += realized_pnl
-
-        # Matured FD: only accumulate realized P&L; do NOT add to holdings_list
-        # (it will appear in Transaction History instead)
+            total_realized_pnl += maturity_value - fd.principal_amount
 
     for fd in active_fds:
         interest_paid_to_date = _calculate_total_interest_paid(fd, today)
@@ -254,11 +240,7 @@ def _process_recurring_deposits(
             maturity_date,
         )
         total_invested = rd.monthly_installment * rd.tenure_months
-        realized_pnl = maturity_value - total_invested
-        total_realized_pnl += realized_pnl
-
-        # Matured RD: only accumulate realized P&L; do NOT add to holdings_list
-        # (it will appear in Transaction History instead)
+        total_realized_pnl += maturity_value - total_invested
 
     for rd in active_rds:
         current_value = _calculate_rd_value_at_date(
@@ -399,9 +381,12 @@ def _process_market_traded_assets(
 
     # --- Pre-fetch Transaction Links ---
     transaction_ids = [tx.id for tx in transactions]
-    all_links = db.query(TransactionLink).filter(
-        TransactionLink.sell_transaction_id.in_(transaction_ids)
-    ).all()
+    all_links = (
+        db.query(TransactionLink)
+        .options(joinedload(TransactionLink.buy_transaction, innerjoin=True))
+        .filter(TransactionLink.sell_transaction_id.in_(transaction_ids))
+        .all()
+    )
 
     sell_links_map = defaultdict(list)
     for link in all_links:
@@ -410,19 +395,10 @@ def _process_market_traded_assets(
     # Map transaction ID to object for quick lookup of Buy price
     tx_map = {tx.id: tx for tx in transactions}
 
-    # Optimization: Pre-fetch any linked buy transactions not in tx_map
-    # (e.g. from other portfolios)
-    missing_buy_ids = {
-        link.buy_transaction_id for link in all_links
-        if link.buy_transaction_id not in tx_map
-    }
-    if missing_buy_ids:
-        logger.debug(f"Pre-fetching {len(missing_buy_ids)} linked buy transactions.")
-        missing_txs = db.query(models.Transaction).filter(
-            models.Transaction.id.in_(missing_buy_ids)
-        ).all()
-        for m_tx in missing_txs:
-            tx_map[m_tx.id] = m_tx
+    # Add eager-loaded buy transactions into tx_map
+    for link in all_links:
+        if link.buy_transaction_id not in tx_map and link.buy_transaction:
+            tx_map[link.buy_transaction_id] = link.buy_transaction
 
     for tx in transactions:
         asset = asset_map.get(tx.asset_id)
@@ -873,7 +849,6 @@ class CRUDHolding:
         )
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
-        # Accumulate realized P&L from matured FDs and RDs into the total
         total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
         ppf_assets = (
             db.query(models.Asset)
@@ -1034,7 +1009,7 @@ class CRUDHolding:
         )
         holdings_list.extend(fd_holdings)
         holdings_list.extend(rd_holdings)
-        # Non-market PNL is aggregated inside _calculate_summary loop
+        total_realized_pnl += pnl_from_matured_fds + pnl_from_matured_rds
 
         ppf_assets = (
             db.query(models.Asset)

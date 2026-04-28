@@ -167,7 +167,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 
 ## Release 12: Next Steps & Maintenance
 
-**Status: ✅ COMPLETE (as of 2026-03-24)**
+**Status: 🚧 In Progress**
 
 **Features:**
 

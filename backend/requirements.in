@@ -25,7 +25,6 @@ requests
 openpyxl
 xlrd
 pdfplumber
-lxml
 
 # Security fixes for transitive dependencies
 urllib3>=2.6.3  # CVE-2026-21441

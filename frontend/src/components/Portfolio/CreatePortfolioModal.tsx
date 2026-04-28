@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCreatePortfolio } from '../../hooks/usePortfolios';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface CreatePortfolioModalProps {
     isOpen: boolean;
@@ -33,10 +34,22 @@ const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ isOpen, onC
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content max-w-md">
+            <div
+                className="modal-content max-w-md"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="create-portfolio-modal-title"
+            >
                 <div className="modal-header">
-                    <h2 className="text-2xl font-bold">Create New Portfolio</h2>
-                    <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+                    <h2 id="create-portfolio-modal-title" className="text-2xl font-bold">Create New Portfolio</h2>
+                    <button
+                        aria-label="Close"
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        disabled={createPortfolioMutation.isPending}
+                    >
+                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                    </button>
                 </div>
                 <div className="p-6">
                     <form onSubmit={handleSubmit}>
@@ -51,6 +64,7 @@ const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ isOpen, onC
                                 onChange={(e) => setName(e.target.value)}
                                 className="form-input"
                                 required
+                                disabled={createPortfolioMutation.isPending}
                             />
                         </div>
                         {createPortfolioMutation.isError && (
@@ -62,7 +76,13 @@ const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ isOpen, onC
                             <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={createPortfolioMutation.isPending} >
                                 Cancel
                             </button>
-                            <button type="submit" className="btn btn-primary" disabled={createPortfolioMutation.isPending} >
+                            <button
+                                type="submit"
+                                className="btn btn-primary flex items-center gap-2"
+                                disabled={createPortfolioMutation.isPending}
+                                aria-busy={createPortfolioMutation.isPending}
+                            >
+                                {createPortfolioMutation.isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
                                 {createPortfolioMutation.isPending ? 'Creating...' : 'Create'}
                             </button>
                         </div>

@@ -33,7 +33,7 @@ click==8.2.1
     # via
     #   typer
     #   uvicorn
-cryptography==46.0.6
+cryptography==46.0.5
     # via python-jose
 curl-cffi==0.13.0
     # via yfinance
@@ -41,7 +41,7 @@ diskcache==5.6.3
     # via -r backend/requirements.in
 dnspython==2.7.0
     # via email-validator
-ecdsa==0.19.2
+ecdsa==0.19.1
     # via python-jose
 email-validator==2.2.0
     # via -r backend/requirements.in
@@ -130,7 +130,7 @@ pydantic-core==2.33.2
     # via pydantic
 pydantic-settings==2.10.1
     # via -r backend/requirements.in
-pygments==2.20.0
+pygments==2.19.2
     # via
     #   pytest
     #   rich
@@ -142,7 +142,7 @@ pytest-mock==3.14.1
     # via -r backend/requirements.in
 python-dateutil==2.9.0.post0
     # via pandas
-python-dotenv==1.1.1
+python-dotenv==1.2.2
     # via
     #   pydantic-settings
     #   uvicorn
@@ -160,7 +160,7 @@ pyyaml==6.0.2
     # via uvicorn
 redis==6.4.0
     # via -r backend/requirements.in
-requests==2.33.0
+requests==2.32.4
     # via yfinance
 rich==14.1.0
     # via typer

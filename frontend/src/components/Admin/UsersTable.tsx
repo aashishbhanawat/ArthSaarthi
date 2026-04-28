@@ -28,8 +28,8 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete }) => {
                 </span>
               </td>
               <td className="text-right py-3 px-4 space-x-2">
-                <button onClick={() => onEdit(user)} className="btn btn-secondary text-sm py-1 px-3">Edit</button>
-                <button onClick={() => onDelete(user)} className="btn btn-danger text-sm py-1 px-3">Delete</button>
+                  <button onClick={() => onEdit(user)} className="btn btn-secondary text-sm py-1 px-3" aria-label={`Edit user ${user.email}`}>Edit</button>
+                  <button onClick={() => onDelete(user)} className="btn btn-danger text-sm py-1 px-3" aria-label={`Delete user ${user.email}`}>Delete</button>
               </td>
             </tr>
           ))}

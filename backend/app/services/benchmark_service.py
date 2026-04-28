@@ -94,7 +94,7 @@ class BenchmarkService:
                         divisor
                     )
                     curr_date = fd.start_date + interval
-                    while curr_date <= min(fd.maturity_date, date.today()):
+                    while curr_date <= fd.maturity_date:
                         synthetic_txns.append(
                             self._create_mock_txn(
                                 curr_date, period_payout, "DIVIDEND"
@@ -370,13 +370,9 @@ class BenchmarkService:
                 subset_current_value=debt_value,
             )
             debt_xirr = results["debt"]["benchmark_xirr"]
-
-            # Since _simulate_daily uses risk_free_rate if index is absent,
-            # bench_xirr will closely match it
-            # We use a tolerance because floats might not exactly match
-            is_rf = abs(debt_xirr - (risk_free_rate / 100)) < 0.001
+            is_rf = debt_xirr == risk_free_rate / 100
             results["debt"]["benchmark_label"] = (
-                f"Risk-Free ({risk_free_rate:.0f}%)" if is_rf
+                "Risk-Free (7%)" if is_rf
                 else "Bond Index"
             )
         elif has_fd_or_rd and debt_value > 0:
@@ -687,6 +683,26 @@ class BenchmarkService:
             )
         )
 
+        # Basic fallback check
+        if benchmark_mode == "single" and not histories:
+            return {
+                "portfolio_xirr": portfolio_xirr,
+                "benchmark_xirr": 0.0,
+                "risk_free_xirr": risk_free_xirr,
+                "days_duration": (end_date - start_date).days,
+                "chart_data": [
+                    {
+                        "date": d.date().isoformat(),
+                        "benchmark_value": 0.0,
+                        "invested_amount": 0.0,
+                        "risk_free_value": rf_vals.get(
+                            d.date().isoformat(), 0.0
+                        ),
+                    }
+                    for d in date_range
+                ],
+            }
+
         # 5. Simulate Daily Values
         chart_data = self._simulate_daily(
             date_range, txns_by_date, histories,
@@ -798,9 +814,6 @@ class BenchmarkService:
             (1 + risk_free_rate / 100) ** (1 / 365) - 1
         )
 
-        # Track lots by asset_id to correctly withdraw benchmark units on SELL
-        lots_by_asset = {}
-
         for d in date_range:
             d_date = d.date()
             d_str = d_date.isoformat()
@@ -841,113 +854,56 @@ class BenchmarkService:
                     invested_amount += Decimal(
                         str(amount_inr)
                     )
-
-                    lot_units = {}
                     for comp in components:
                         ticker = comp["ticker"]
                         weight = comp["weight"]
                         comp_amt = amount_inr * weight
                         price = daily_prices[ticker]
-
-                        added_units = 0.0
                         if price > 0:
                             if ticker not in histories:
-                                added_units = comp_amt
-                                bench_units[ticker] += added_units
+                                bench_units[ticker] += (
+                                    comp_amt
+                                )
                             else:
-                                added_units = comp_amt / price
-                                bench_units[ticker] += added_units
-
-                        lot_units[ticker] = added_units
-
-                    # Save the lot for FIFO removal
-                    asset_id = (
-                        str(txn.asset_id)
-                        if hasattr(txn, "asset_id") and txn.asset_id
-                        else "unknown"
-                    )
-                    if asset_id not in lots_by_asset:
-                        lots_by_asset[asset_id] = []
-                    lots_by_asset[asset_id].append({
-                        'quantity': float(txn.quantity),
-                        'units': lot_units
-                    })
-
-                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND", "COUPON"]:
-                    fallback_to_ratio = False
-
-                    if tx_type not in ["DIVIDEND", "COUPON"]:
-                        invested_amount -= Decimal(str(amount_inr))
-                        if invested_amount < 0:
-                            invested_amount = Decimal("0")
-
-                        # Use FIFO lot matching for SELL/WITHDRAWAL to safely
-                        # remove units
-                        asset_id = (
-                            str(txn.asset_id)
-                            if hasattr(txn, "asset_id") and txn.asset_id
-                            else "unknown"
-                        )
-                        sell_qty = float(txn.quantity)
-                        lots = lots_by_asset.get(asset_id, [])
-                        units_to_remove = {c["ticker"]: 0.0 for c in components}
-
-                        while sell_qty > 0 and lots:
-                            lot = lots[0]
-                            if lot['quantity'] <= sell_qty:
-                                sell_qty -= lot['quantity']
-                                for ticker, u in lot['units'].items():
-                                    units_to_remove[ticker] += u
-                                lots.pop(0)
-                            else:
-                                ratio = sell_qty / lot['quantity']
-                                lot['quantity'] -= sell_qty
-                                for ticker, u in lot['units'].items():
-                                    removed_u = u * ratio
-                                    units_to_remove[ticker] += removed_u
-                                    lot['units'][ticker] -= removed_u
-                                sell_qty = 0
-
-                        # Apply precise removal
-                        for ticker, u in units_to_remove.items():
-                            bench_units[ticker] -= u
-                            if bench_units[ticker] < 1e-9:
-                                bench_units[ticker] = 0.0
-
-                        if sum(units_to_remove.values()) == 0:
-                            fallback_to_ratio = True
-                    else:
-                        # For dividends/coupons, simply use ratio logic
-                        fallback_to_ratio = True
-
-                    if fallback_to_ratio:
-                        total_val = 0
-                        for c in components:
-                            t = c["ticker"]
-                            p = daily_prices[t]
-                            if t not in histories:
-                                total_val += bench_units[t]
-                            else:
-                                total_val += (
-                                    bench_units[t] * p
+                                bench_units[ticker] += (
+                                    comp_amt / price
                                 )
 
-                        if total_val > 0:
-                            ratio = amount_inr / total_val
-                            for comp in components:
-                                ticker = comp["ticker"]
-                                if ticker not in histories:
-                                    bench_units[ticker] -= (
-                                        bench_units[ticker]
-                                        * ratio
-                                    )
-                                else:
-                                    bench_units[ticker] -= (
-                                        bench_units[ticker]
-                                        * ratio
-                                    )
-                                if bench_units[ticker] < 1e-9:
-                                    bench_units[ticker] = 0.0
+                elif tx_type in ["SELL", "WITHDRAWAL", "DIVIDEND", "COUPON"]:
+                    if tx_type not in ["DIVIDEND", "COUPON"]:
+                        invested_amount -= Decimal(
+                            str(amount_inr)
+                        )
+                        # Clamp to zero: matured FD/RD SELL proceeds
+                        # may exceed the original BUY amount, which
+                        # would otherwise make invested_amount negative.
+                        if invested_amount < 0:
+                            invested_amount = Decimal("0")
+                    total_val = 0
+                    for c in components:
+                        t = c["ticker"]
+                        p = daily_prices[t]
+                        if t not in histories:
+                            total_val += bench_units[t]
+                        else:
+                            total_val += (
+                                bench_units[t] * p
+                            )
+
+                    if total_val > 0:
+                        ratio = amount_inr / total_val
+                        for comp in components:
+                            ticker = comp["ticker"]
+                            if ticker not in histories:
+                                bench_units[ticker] -= (
+                                    bench_units[ticker]
+                                    * ratio
+                                )
+                            else:
+                                bench_units[ticker] -= (
+                                    bench_units[ticker]
+                                    * ratio
+                                )
 
             bench_value = 0.0
             for comp in components:

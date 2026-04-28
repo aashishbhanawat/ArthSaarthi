@@ -76,4 +76,3 @@ class AssetSearchResult(BaseModel):
     exchange: Optional[str] = None
     currency: Optional[str] = None
     source: Optional[str] = None  # "local" or "yahoo"
-    bond: Optional[BondSchema] = None
