@@ -116,7 +116,7 @@ class AmfiIndiaProvider(FinancialDataProvider):
         return data
 
     def get_all_nav_data(self) -> Dict[str, Dict[str, Any]]:
-        """Retrieves all NAV data, using a cache if available."""
+        """Retrieves all NAV data, using an in-memory and external cache."""
         now = time.time()
         # Local memory cache for 5 minutes to stabilize object ID
         if self._local_nav_data and (now - self._local_nav_data_time) < 300:
@@ -141,7 +141,22 @@ class AmfiIndiaProvider(FinancialDataProvider):
             )
             self._local_nav_data = fresh_data
             self._local_nav_data_time = now
-        return fresh_data
+        return self._local_nav_data
+
+    def _get_isin_map(self, all_data: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
+        """Builds and caches an ISIN-to-scheme-code mapping."""
+        # We use id(all_data) to check if the underlying data has changed.
+        # This is efficient if fresh data is returned from the cache.
+        if self._isin_map_data_id != id(all_data):
+            isin_map = {}
+            for scheme_code, details in all_data.items():
+                if isin := details.get("isin"):
+                    isin_map[isin.upper()] = scheme_code
+                if isin2 := details.get("isin2"):
+                    isin_map[isin2.upper()] = scheme_code
+            self._isin_map = isin_map
+            self._isin_map_data_id = id(all_data)
+        return self._isin_map
 
     def get_asset_details(self, ticker_symbol: str) -> Optional[Dict[str, Any]]:
         """Gets the details for a given MF scheme code or ISIN."""
@@ -169,20 +184,26 @@ class AmfiIndiaProvider(FinancialDataProvider):
             "ticker_symbol": fund_data.get("scheme_code"),
         }
 
-    def _get_isin_map(self, all_data: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
-        """Builds and caches an ISIN-to-scheme-code mapping."""
-        # We use id(all_data) to check if the underlying data has changed.
-        # This is efficient if fresh data is returned from the cache.
-        if self._isin_map_data_id != id(all_data):
-            isin_map = {}
-            for scheme_code, details in all_data.items():
-                if isin := details.get("isin"):
-                    isin_map[isin.upper()] = scheme_code
-                if isin2 := details.get("isin2"):
-                    isin_map[isin2.upper()] = scheme_code
-            self._isin_map = isin_map
-            self._isin_map_data_id = id(all_data)
-        return self._isin_map
+    def get_scheme_by_isin(self, isin_code: str) -> Optional[Dict[str, Any]]:
+        """Finds a fund's details by looking up its ISIN or ISIN2."""
+        all_data = self.get_all_nav_data()
+        isin_map = self._get_isin_map(all_data)
+        scheme_code = isin_map.get(isin_code.upper())
+        if not scheme_code:
+            return None
+
+        details = all_data.get(scheme_code)
+        if not details:
+            return None
+
+        return {
+            "ticker_symbol": scheme_code,
+            "name": details.get("scheme_name"),
+            "asset_type": "Mutual Fund",
+            "exchange": "AMFI",
+            "currency": "INR",
+            "isin": details.get("isin"),
+        }
 
     def search(self, query: str) -> List[Dict[str, Any]]:
         """Searches for funds by name, scheme code, or ISIN."""
