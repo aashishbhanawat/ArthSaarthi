@@ -21,6 +21,7 @@ from .asset_alias import (
     AssetAliasWithAsset,
 )
 from .bond import (
+    Bond,
     BondCreate,
     BondUpdate,
     BondWithTransactionCreate,
@@ -40,6 +41,7 @@ from .fixed_deposit import (
     FixedDepositUpdate,
 )
 from .goal import (
+    AssetInGoalLink,
     Goal,
     GoalCreate,
     GoalLink,
@@ -47,6 +49,7 @@ from .goal import (
     GoalLinkUpdate,
     GoalUpdate,
     GoalWithAnalytics,
+    PortfolioInGoalLink,
 )
 from .historical_interest_rate import (
     HistoricalInterestRate,
@@ -169,6 +172,7 @@ __all__ = [
     "GoalLinkCreate",
     "GoalLinkUpdate",
     "GoalWithAnalytics",
+    "Bond",
     "BondCreate",
     "BondUpdate",
     "BondWithTransactionCreate",
@@ -184,6 +188,30 @@ __all__ = [
 ]
 
 # Manually update forward references to resolve circular dependencies
-Asset.model_rebuild()
+import pydantic
 
-Transaction.model_rebuild()
+is_v2 = pydantic.__version__.startswith("2.")
+
+if is_v2:
+    # In Pydantic v2, we should use model_rebuild.
+    # We pass the types namespace to help it find the classes.
+    Asset.model_rebuild()
+    Transaction.model_rebuild(_types_namespace={"Asset": Asset})
+    WatchlistItem.model_rebuild(_types_namespace={"Asset": Asset})
+    ImportSession.model_rebuild(_types_namespace={"Portfolio": Portfolio, "User": User})
+    Goal.model_rebuild(_types_namespace={"GoalLink": GoalLink})
+    GoalLink.model_rebuild(_types_namespace={
+        "AssetInGoalLink": AssetInGoalLink,
+        "PortfolioInGoalLink": PortfolioInGoalLink
+    })
+else:
+    # Pydantic v1 (Android)
+    Asset.update_forward_refs()
+    Transaction.update_forward_refs(Asset=Asset)
+    WatchlistItem.update_forward_refs(Asset=Asset)
+    ImportSession.update_forward_refs(Portfolio=Portfolio, User=User)
+    Goal.update_forward_refs(GoalLink=GoalLink)
+    GoalLink.update_forward_refs(
+        AssetInGoalLink=AssetInGoalLink,
+        PortfolioInGoalLink=PortfolioInGoalLink
+    )

@@ -39,16 +39,6 @@ class RedisCacheClient(CacheClient):
             return
         self._client.delete(key)
 
-    def incr(self, key: str, expire: Optional[int] = None) -> int:
-        if not self._client:
-            return 1
-        pipe = self._client.pipeline()
-        pipe.incr(key)
-        if expire is not None:
-            pipe.expire(key, expire)
-        results = pipe.execute()
-        return results[0]
-
     def clear(self) -> None:
         """Clears the entire cache (flushes the current Redis DB)."""
         if not self._client:

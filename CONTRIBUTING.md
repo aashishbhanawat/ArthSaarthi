@@ -40,6 +40,9 @@ To maintain consistency and ensure all work is properly documented, all AI assis
 
 **Code is not "done" until the documentation is also done.**
 
+> [!IMPORTANT]
+> **For AI Assistants:** You MUST adhere strictly to the rules defined in `<MEMORY[GEMINI.md]>`. Do not bypass the pre-commit checklists. You must always update `docs/workflow_history.md` and `docs/project_handoff_summary.md` before finalizing any task.
+
 ### Workflow
 
 1.  **Implement & Test:** Complete the code implementation and ensure all automated tests (backend, frontend, E2E) are passing.

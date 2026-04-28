@@ -133,7 +133,7 @@ For each feature, we'll follow these steps:
     *   Systematically update all other relevant project documents as per the checklist in `docs/COMMIT_TEMPLATE.md`.
     *   Generate a final, standardized commit message using the format specified in `task_prompt/COMMIT_TEMPLATE.md`.
 
-**A `.gitignore` file should be created early in the process to exclude virtual environments, `.env` files, and `__pycache__` directories.**
+**A `.gitignore` file should be created early in the process to exclude virtual environments, `.env` files, and `__pycache__` directories. DO NOT commit or upload any personal data (bank statements, PDFs, XLS) to the repository.**
 
 
 You are now ready to start development of new module.

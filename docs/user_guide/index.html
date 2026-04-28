@@ -13,7 +13,7 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <h1>ArthSaarthi</h1>
-      <p class="version">User Guide v1.1</p>
+      <p class="version">User Guide v1.2.0</p>
       <nav>
         <ul>
           <li><a href="#getting-started">Getting Started</a></li>
@@ -28,7 +28,7 @@
           <li><a href="#profile">Profile & Backup</a></li>
           <li><a href="#admin">Admin Features</a></li>
           <li><a href="#getting-help">Getting Help</a></li>
-          <li><a href="#whats-new">What's New in v1.1</a></li>
+          <li><a href="#whats-new">What's New in v1.2.0</a></li>
         </ul>
       </nav>
     </aside>
@@ -111,6 +111,10 @@
           </div>
         </div>
 
+        <h3 id="daily-snapshots">Daily Performance Snapshots (v1.2.0)</h3>
+        <p>ArthSaarthi now records a snapshot of your portfolio value every 6 hours. This provides a high-fidelity
+          historical curve in your charts, even for assets like FDs that don't have daily market prices.</p>
+
         <h3 id="dashboard-portfolio-history">Portfolio History</h3>
         <p>The Portfolio History chart shows how your total portfolio value has changed over time. You can view
           different time periods (1 month, 3 months, 1 year, all time) to track your investment growth.</p>
@@ -142,6 +146,17 @@
             <h4>Top Losers</h4>
             <p>Assets with the largest decline today</p>
           </div>
+        </div>
+
+        <h3 id="category-comparison">Category Comparison (v1.2.0)</h3>
+        <p>Analyze how specific asset classes are performing against their respective benchmarks:</p>
+        <ul>
+          <li><strong>Equity Category:</strong> Compares your stocks and equity MFs against the Nifty 50.</li>
+          <li><strong>Debt Category:</strong> Compares your FDs, RDs, and Bonds against a 10Y G-Sec yield.</li>
+        </ul>
+        <div class="screenshot">
+          <img src="assets/27_category_comparison.png" alt="Category Comparison">
+          <div class="screenshot-caption">Detailed sector and category performance comparison</div>
         </div>
       </section>
 
@@ -456,7 +471,17 @@
           <li><strong>v1.1+:</strong> ICICI Securities MF (Excel)</li>
           <li><strong>v1.1+:</strong> Zerodha Dividend (XLSX)</li>
           <li><strong>v1.1+:</strong> ICICI DEMAT Dividend (PDF)</li>
+          <li><strong>v1.2.0:</strong> Fixed Deposit (Generic CSV)</li>
+          <li><strong>v1.2.0:</strong> Recurring Deposit (Generic CSV)</li>
         </ul>
+
+        <h3 id="staging-preview">Import Staging Preview (v1.2.0)</h3>
+        <p>Review and edit transactions before they are committed to your database. This intermediate step allows you to
+          correct errors in quantity, price, or ticker mapping without needing to delete and re-import.</p>
+        <div class="screenshot">
+          <img src="assets/29_fd_import_selection.png" alt="Import Staging">
+          <div class="screenshot-caption">Staging preview screen for reviewing parsed data</div>
+        </div>
       </section>
 
       <!-- Goals -->
@@ -551,6 +576,16 @@
         <div class="callout callout-info">
           <strong>Rate Limited:</strong> Asset sync can only be triggered once every 5 minutes.
         </div>
+
+        <h3 id="symbol-aliases">Symbol Alias Management (v1.2.0)</h3>
+        <p>If your broker's CSV uses a non-standard ticker (e.g., 'RELIANCE-BE' instead of 'RELIANCE.NS'), you can
+          create
+          a permanent mapping in the **Symbol Aliases** page. Once mapped, future imports will resolve the ticker
+          automatically.</p>
+        <div class="screenshot">
+          <img src="assets/28_admin_symbol_aliases.png" alt="Symbol Aliases">
+          <div class="screenshot-caption">Manage custom ticker mappings for seamless imports</div>
+        </div>
       </section>
 
       <!-- Getting Help -->
@@ -565,10 +600,32 @@
         </ul>
       </section>
 
-      <!-- What's New in v1.1 -->
+      <!-- What's New in v1.2.0 -->
       <section id="whats-new" class="section">
-        <h2>13. What's New in v1.1</h2>
-        <p>ArthSaarthi v1.1 brings powerful analytics, extensive import support, and a modern dark theme.</p>
+        <h2>13. What's New in v1.2.0</h2>
+        <p>ArthSaarthi v1.2.0 focuses on tax optimization, advanced benchmarking, and data import reliability.</p>
+
+        <h3>Hybrid Benchmarks & RFR Overlay</h3>
+        <p>Compare your performance against blended equity/debt indices or a fixed risk-free compound growth rate.</p>
+        <div class="screenshot">
+          <img src="assets/22_portfolio_benchmarks.png" alt="Portfolio Benchmarks">
+          <div class="screenshot-caption">Performance charts with Hybrid Benchmarks and Risk-Free Rate overlay</div>
+        </div>
+
+        <h3>Capital Gains & Tax Optimization</h3>
+        <p>Full support for Indian tax laws including <strong>LTCG 112A Grandfathering</strong> (Jan 31, 2018 prices)
+          and indexation for debt assets. Specifically identify lots for sale to optimize your tax liability.</p>
+
+        <h3>Multi-Currency Support</h3>
+        <p>Automatically track US Stocks and RSUs with historical USD/INR exchange rate conversion.</p>
+
+        <h3>RSU/ESPP Support</h3>
+        <p>Direct tracking of grant types (RSU vs ESPP) with integrated tax-withholding events.</p>
+
+        <hr>
+
+        <h2>14. What's New in v1.1</h2>
+        <p>ArthSaarthi v1.1 introduced powerful analytics, extensive import support, and a modern dark theme.</p>
 
         <h3>Dark Theme</h3>
         <p>Switch between light, dark, or system themes using the theme toggle in the header.</p>

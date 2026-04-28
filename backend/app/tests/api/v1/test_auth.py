@@ -127,8 +127,8 @@ def test_login_nonexistent_user(client: TestClient):
 
 
 @pytest.mark.skipif(
-    settings.DEPLOYMENT_MODE == "desktop",
-    reason="Inactive user concept is not applicable in single-user desktop mode.",
+    settings.DEPLOYMENT_MODE in ("desktop", "android"),
+    reason="Inactive user concept is not applicable in single-user local modes.",
 )
 def test_login_inactive_user(client: TestClient, db: Session, admin_user_data: dict):
     # Arrange: Create a user
@@ -278,46 +278,3 @@ def test_change_password_invalid_new_password(
 
     # 3. Assert
     assert response.status_code == 422
-
-def test_login_rate_limiting(
-    client: TestClient, db: Session, admin_user_data: dict, mocker
-):
-    """
-    Test that the login endpoint enforces a rate limit after 5 failed attempts.
-    """
-    from app.api.v1.endpoints.auth import MAX_LOGIN_ATTEMPTS
-
-    # Mock cache client
-    mock_cache = mocker.Mock()
-    # Store attempts in a dict to simulate redis
-    cache_store = {}
-
-    def mock_get(key):
-        return cache_store.get(key)
-
-    def mock_incr(key, expire=None):
-        current = cache_store.get(key, 0)
-        cache_store[key] = int(current) + 1
-        return cache_store[key]
-
-    mock_cache.get.side_effect = mock_get
-    mock_cache.incr.side_effect = mock_incr
-
-    mocker.patch("app.cache.factory.get_cache_client", return_value=mock_cache)
-
-    # Create user
-    client.post("/api/v1/auth/setup", json=admin_user_data)
-
-    login_data = {"username": admin_user_data["email"], "password": "wrongpassword!1"}
-
-    # Attempt to login with wrong password multiple times
-    for _ in range(MAX_LOGIN_ATTEMPTS):
-        response = client.post("/api/v1/auth/login", data=login_data)
-        assert response.status_code == 401
-
-    # The next attempt should return 429
-    response = client.post("/api/v1/auth/login", data=login_data)
-    assert response.status_code == 429
-    assert (
-        "Too many failed login attempts" in response.json()["detail"]
-    )

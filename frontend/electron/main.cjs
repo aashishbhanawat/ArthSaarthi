@@ -168,7 +168,7 @@ async function triggerSeedingIfNeeded(port) {
  */
 async function waitForSeedingComplete(port) {
   const POLL_INTERVAL = 2000; // 2 seconds
-  const MAX_WAIT = 600000; // 10 minutes max for seeding
+  const MAX_WAIT = 1800000; // 30 minutes max for seeding (increased for slow networks)
   const startTime = Date.now();
 
   // Initial message
