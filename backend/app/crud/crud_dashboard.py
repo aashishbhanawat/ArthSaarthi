@@ -187,10 +187,11 @@ def _get_portfolio_history(
     all_rds = rd_query.all()
     ppf_assets = ppf_asset_query.distinct().all()
 
-    rd_maturity_dates = {
-        rd.id: rd.start_date + relativedelta(months=rd.tenure_months)
+    # Pre-calculate RD maturity dates to avoid O(N) recalculation inside the daily loop
+    processed_rds = [
+        (rd, rd.start_date + relativedelta(months=rd.tenure_months))
         for rd in all_rds
-    }
+    ]
 
     all_ppf_rates = []
     if ppf_assets:
@@ -475,11 +476,9 @@ def _get_portfolio_history(
                     day_total_value += fd_val
 
                 # 3. Recurring Deposits (Simulated for this historical day)
-                for rd in all_rds:
+                for rd, rd_maturity_date in processed_rds:
                     if rd.start_date > current_day:
                         continue
-
-                    rd_maturity_date = rd_maturity_dates.get(rd.id)
 
                     # If matured before this historical date, the RD has been
                     # "withdrawn" from the portfolio. Skip it.
