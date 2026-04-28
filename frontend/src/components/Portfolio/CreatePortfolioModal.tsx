@@ -33,19 +33,19 @@ const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ isOpen, onC
     if (!isOpen) return null;
 
     return (
-        <div
-            className="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-portfolio-modal-title"
-        >
-            <div className="modal-content max-w-md">
+        <div className="modal-overlay">
+            <div
+                className="modal-content max-w-md"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="create-portfolio-modal-title"
+            >
                 <div className="modal-header">
                     <h2 id="create-portfolio-modal-title" className="text-2xl font-bold">Create New Portfolio</h2>
                     <button
                         aria-label="Close"
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         disabled={createPortfolioMutation.isPending}
                     >
                         <XMarkIcon className="h-6 w-6" aria-hidden="true" />
@@ -76,8 +76,13 @@ const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ isOpen, onC
                             <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={createPortfolioMutation.isPending} >
                                 Cancel
                             </button>
-                            <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={createPortfolioMutation.isPending} >
-                                {createPortfolioMutation.isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
+                            <button
+                                type="submit"
+                                className="btn btn-primary flex items-center gap-2"
+                                disabled={createPortfolioMutation.isPending}
+                                aria-busy={createPortfolioMutation.isPending}
+                            >
+                                {createPortfolioMutation.isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
                                 {createPortfolioMutation.isPending ? 'Creating...' : 'Create'}
                             </button>
                         </div>
