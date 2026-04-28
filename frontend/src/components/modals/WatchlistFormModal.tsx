@@ -41,8 +41,9 @@ const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="watchlist-modal-title"
+      onClick={onClose}
     >
-      <div className="modal-content max-w-md">
+      <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header flex justify-between items-center">
           <h2 id="watchlist-modal-title" className="text-2xl font-bold">
             {isEditMode ? 'Rename Watchlist' : 'Create New Watchlist'}
