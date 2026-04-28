@@ -1,20 +1,3 @@
-## 2026-04-28: PR 412 Review & Approval
-
-**Task:** Review and verify Pull Request #412 performance optimizations.
-
-**AI Assistant:** Antigravity
-**Role:** Full-Stack Developer
-
-### Summary
-
-1. **Performance Optimization (PR #412):**
-    - Reviewed backend `crud_dashboard.py` changes.
-    - Verified the removal of redundant O(N) iterative `relativedelta` calculation loop for RD history generation.
-    - Verified maturity date precomputations outside the dashboard loop, significantly improving `/api/v1/dashboard/history` response times.
-    - Executed backend tests successfully, affirming zero regression in P&L and investment calculations.
-
----
-
 ## 2026-04-19: PR 379 Review Fixes & Security Hardening
 
 **Task:** Address automated review comments from PR 379 and harden project security by removing local-only files from Git tracking.

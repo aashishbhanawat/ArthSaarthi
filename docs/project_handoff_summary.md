@@ -16,9 +16,6 @@
 
 ### Recent Stabilization & Refinement Efforts
 
-*   **Performance Optimization (PR #412) (2026-04-28):**
-    - **RD Optimization:** Approved PR 412 which optimized  by removing redundant iterative RD calculations.
-    - **Maturity Pre-computation:** Implemented outside the dashboard history loop, improving API latency.
 *   **Android Build Consolidation & Test Alignment (2026-04-18):**
     - **Workflow Consolidation:** Integrated Android release and debug builds into `release.yml` and `test-builds.yml`; removed redundant `android-build.yml`.
     - **Test Alignment:** Updated `conftest.py` and test utilities to support `android` mode (SQLite/DiskCache) with consistent auth bypass logic.
