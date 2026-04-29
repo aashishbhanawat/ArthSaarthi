@@ -346,5 +346,7 @@ def get_logs(
             last_lines = lines[-1000:]
             return {"msg": "".join(last_lines)}
     except Exception as e:
-        logger.error(f"Error reading log file: {e}")
-        return {"msg": f"Error reading log file: {str(e)}"}
+        logger.error(f"Error reading log file: {e}", exc_info=True)
+        return {
+            "msg": "Error reading log file. Please check the server logs for details."
+        }
