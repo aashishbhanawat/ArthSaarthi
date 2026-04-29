@@ -105,3 +105,9 @@ Based on the `product_backlog.md`, the next features to consider are:
 -   **Issue #324:** Fixed 16 security vulnerabilities opened by dependable last week (`tar`, `minimatch`, `rollup`, and `diskcache`).
 -   **Frontend:** Updated packages via `npm update tar minimatch rollup` to resolve the vulnerable transitive dependencies.
 -   **Backend:** Removed version constraints on `diskcache` and `ecdsa` as they raised `ResolutionImpossible` errors via `pip-compile` due to nonexistent PyPI distributions matching the GitHub Security Advisory versions exactly. Maintained backend testing parity for the fixed pip constraints.
+
+## 9. Security Fix - Missing Authorization on Tax Reports (2026-04-29)
+
+-   **Issue #423:** Fixed a critical IDOR vulnerability on the Capital Gains and Dividends report endpoints.
+-   **Vulnerability:** The endpoints lacked the `get_current_user` dependency, allowing unauthenticated access and cross-tenant data exposure.
+-   **Fix:** Added the necessary authentication dependency and ensured that the underlying data queries strictly filter by `user_id` to enforce tenant isolation.
