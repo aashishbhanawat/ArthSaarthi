@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import { useDiversification } from '../../hooks/usePortfolios';
@@ -24,7 +24,7 @@ interface DiversificationPieChartProps {
 
 const DiversificationPieChart: React.FC<DiversificationPieChartProps> = ({ title, data }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const options: any = {
+    const options: any = useMemo(() => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -45,9 +45,9 @@ const DiversificationPieChart: React.FC<DiversificationPieChartProps> = ({ title
                 },
             },
         },
-    };
+    }), [data]);
 
-    const chartData = {
+    const chartData = useMemo(() => ({
         labels: data.map((item) => item.name),
         datasets: [
             {
@@ -58,7 +58,7 @@ const DiversificationPieChart: React.FC<DiversificationPieChartProps> = ({ title
                 borderWidth: 1,
             },
         ],
-    };
+    }), [data]);
 
     if (data.length === 0) {
         return (
