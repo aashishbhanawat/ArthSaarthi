@@ -1,6 +1,6 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-04-16
+**Last Updated:** 2026-04-29
 
 ## 1. Current Project Status
 
@@ -16,6 +16,9 @@
 
 ### Recent Stabilization & Refinement Efforts
 
+*   **Dependency Update: python-multipart (2026-04-29):**
+    - **Remediation:** Fixed PR 407 which contained syntax errors and was incomplete. Updated `python-multipart` to `0.0.27` across all requirement files.
+    - **Verification:** Verified that authentication logic (Form data parsing) remains stable via targeted backend tests.
 *   **Android Build Consolidation & Test Alignment (2026-04-18):**
     - **Workflow Consolidation:** Integrated Android release and debug builds into `release.yml` and `test-builds.yml`; removed redundant `android-build.yml`.
     - **Test Alignment:** Updated `conftest.py` and test utilities to support `android` mode (SQLite/DiskCache) with consistent auth bypass logic.
