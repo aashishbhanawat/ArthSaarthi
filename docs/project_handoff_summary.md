@@ -5,7 +5,7 @@
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Fixed 6 dashboard/portfolio issues: cache invalidation for range-specific history keys, benchmark invested amount going negative after FD maturity, matured FDs/RDs appearing in portfolio history, incomplete cache invalidation on restore, PPF log spam, and added timing instrumentation. Previously implemented Dividend Report (FR 6.6) with Quarterly Advance Tax Buckets.
+*   **Summary:** Implemented auto-creation of assets for ISIN tickers during import. Fixed 6 dashboard/portfolio issues: cache invalidation for range-specific history keys, benchmark invested amount going negative after FD maturity, matured FDs/RDs appearing in portfolio history, incomplete cache invalidation on restore, PPF log spam, and added timing instrumentation. Previously implemented Dividend Report (FR 6.6) with Quarterly Advance Tax Buckets.
 
 ## 2. Test Suite Status
 
@@ -53,7 +53,7 @@
     -   **Hybrid Benchmarks:** CRISIL Hybrid 35/65 and Balanced 50/50 blends.
     -   **Risk-Free Rate Overlay:** Dashed green line on chart showing compound risk-free growth.
     -   **Category Comparison:** Equity vs Nifty 50, Debt vs bond yield — with accurate XIRR using actual market values.
--   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS, KFintech, Zerodha Coin, and generic CSV files. Also includes **Fixed Deposit (FD) PDF imports** (HDFC, ICICI, SBI) with password protection support. Supports **asset alias mapping** with admin management (view, edit, delete) of all aliases.
+-   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS, KFintech, Zerodha Coin, and generic CSV files. Also includes **Fixed Deposit (FD) PDF imports** (HDFC, ICICI, SBI) with password protection support. Supports **asset alias mapping** with admin management (view, edit, delete) of all aliases. **Auto-creation of assets for ISIN tickers** ensures seamless onboarding of new funds.
 -   **Watchlists:** Create and manage custom watchlists.
 -   **Goal Planning:** Define financial goals and link assets to track progress.
 -   **Mutual Fund Dividends:** Track both cash and reinvested dividends for mutual funds.

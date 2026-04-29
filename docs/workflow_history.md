@@ -1,3 +1,33 @@
+## 2026-03-15: Auto-create ISIN assets during import
+
+**Task:** Automatically create asset records when an import contains an ISIN-style ticker (e.g., "ISIN:XXX") that doesn't exist in the database.
+
+**AI Assistant:** Jules
+**Role:** Senior Software Engineer
+
+### Summary
+
+1. **Side-Effect Free Preview:** Updated `get_import_session_preview` to fetch asset details externally via `financial_data_service` without persisting them. It now returns transient `Asset` objects for recognized ISINs, allowing users to preview the matched data without polluting the database if they cancel the import.
+2. **Robust Commit Logic:** Updated `commit_import_session` to use `crud.asset.get_or_create_by_ticker` for both explicit ISIN fields and tickers with "ISIN:" prefix. This ensures assets are reliably created during the final persistence phase.
+3. **Lookup Optimization:** Preserved the original precise ISIN lookup as the primary check, falling back to auto-creation only when no local match is found. This prevents duplicate asset creation when an asset already exists with a different ticker but the same ISIN.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Implemented transient preview logic and robust commit auto-creation.
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Added `financial_data_service` import.
+
+### Verification
+
+* **Manual Review:** Verified architectural separation between read-only preview and write-enabled commit.
+* **Syntax Check:** `python3 -m py_compile` passed.
+
+### Outcome
+
+**Success.** Users can now import files with new ISIN-identified assets without needing to manually create them first, while maintaining database integrity and a clean preview experience.
+
+---
+
 ## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
 
 **Task:** Fix 7 reported issues: cache invalidation for dashboard history, benchmark invested amount going negative after FD maturity, matured FDs/RDs in portfolio history, incomplete cache invalidation on restore, PPF log spam, and missing timing instrumentation.
