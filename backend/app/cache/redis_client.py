@@ -42,7 +42,10 @@ class RedisCacheClient(CacheClient):
     def delete_multi(self, keys: List[str]) -> None:
         if not self._client or not keys:
             return
-        self._client.delete(*keys)
+        # Chunking to avoid blocking Redis or hitting argument limits
+        chunk_size = 1000
+        for i in range(0, len(keys), chunk_size):
+            self._client.delete(*keys[i : i + chunk_size])
 
     def incr(self, key: str, expire: Optional[int] = None) -> int:
         if not self._client:
