@@ -502,25 +502,31 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
         from app.cache.factory import get_cache_client
         cache = get_cache_client()
 
-        # 1. Dashboard caches
-        cache.delete(f"analytics:dashboard_summary:{user_id}")
+        # 1. Collect all keys to delete
+        keys_to_delete = [
+            f"analytics:dashboard_summary:{user_id}",
+            f"analytics:all_portfolios_holdings_and_summary:{user_id}",
+        ]
         for range_str in ["7d", "30d", "1y", "all"]:
-            cache.delete(f"analytics:dashboard_history:{user_id}:{range_str}")
+            keys_to_delete.append(f"analytics:dashboard_history:{user_id}:{range_str}")
 
-        # 2. Cross-portfolio aggregation cache
-        cache.delete(f"analytics:all_portfolios_holdings_and_summary:{user_id}")
-
-        # 3. Portfolio-level caches for all restored portfolios
+        # 2. Portfolio and asset-level keys for all restored portfolios
         for p_name, p_id in portfolio_map.items():
-            cache.delete(f"analytics:portfolio_holdings_and_summary:{p_id}")
-            cache.delete(f"analytics:portfolio_analytics:{p_id}")
+            keys_to_delete.extend(
+                [
+                    f"analytics:portfolio_holdings_and_summary:{p_id}",
+                    f"analytics:portfolio_analytics:{p_id}",
+                ]
+            )
 
             # Asset-level analytics for this portfolio
-            portfolio_assets = crud.asset.get_multi_by_portfolio(
-                db, portfolio_id=p_id
-            )
+            portfolio_assets = crud.asset.get_multi_by_portfolio(db, portfolio_id=p_id)
             for asset in portfolio_assets:
-                cache.delete(f"analytics:asset_analytics:{asset.id}")
+                keys_to_delete.append(f"analytics:asset_analytics:{asset.id}")
+
+        # 3. Bulk delete all collected cache keys
+        if cache:
+            cache.delete_multi(keys_to_delete)
 
         # 4. Bulk delete snapshots for all restored portfolios
         if portfolio_map:

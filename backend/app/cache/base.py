@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 
 class CacheClient(ABC):
@@ -9,6 +9,11 @@ class CacheClient(ABC):
     @abstractmethod
     def get(self, key: str) -> Optional[str]:
         """Gets a value from the cache. Returns it as a string."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_multi(self, keys: List[str]) -> None:
+        """Deletes multiple keys from the cache."""
         raise NotImplementedError
 
     @abstractmethod

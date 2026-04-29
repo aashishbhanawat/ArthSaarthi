@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import diskcache
 from platformdirs import user_cache_dir
@@ -33,6 +33,13 @@ class DiskCacheClient(CacheClient):
         except KeyError:
             # Key was not in the cache, which is fine for a delete operation
             pass
+
+    def delete_multi(self, keys: List[str]) -> None:
+        for key in keys:
+            try:
+                del self._cache[key]
+            except KeyError:
+                pass
 
     def incr(self, key: str, expire: Optional[int] = None) -> int:
         with self._cache.transact():

@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import redis
 
@@ -38,6 +38,11 @@ class RedisCacheClient(CacheClient):
         if not self._client:
             return
         self._client.delete(key)
+
+    def delete_multi(self, keys: List[str]) -> None:
+        if not self._client or not keys:
+            return
+        self._client.delete(*keys)
 
     def incr(self, key: str, expire: Optional[int] = None) -> int:
         if not self._client:
