@@ -8,7 +8,7 @@
 ### Summary
 
 1. **PR Review:** Verified the core security fixes in PR #423, which added `get_current_user` dependency to Capital Gains and Dividends endpoints and ensured `user_id` filtering in underlying service queries.
-2. **Bug Fix (Critical):** Identified and fixed a data leak and accuracy bug in `CapitalGainsService._calculate_demerger_ratios`. The `buy_query` was missing `user_id` filtering when `portfolio_id` was not provided, potentially allowing access to other users' transaction data to calculate cost basis ratios.
+2. **Bug Fix (Critical):** Identified and fixed a data leak and accuracy bug in `CapitalGainsService._calculate_demerger_ratios`. The `buy_query` was missing `user_id` filtering when `portfolio_id` was not provided. Refactored to use independent `if` statements for `user_id` and `portfolio_id` to ensure defensive security and consistency.
 3. **Security Testing:** Created a new comprehensive test suite `test_tax_report_security.py` to verify:
     - Unauthenticated access rejection (401).
     - Cross-tenant (IDOR) portfolio access rejection (403).
