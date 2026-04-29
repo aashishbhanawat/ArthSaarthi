@@ -237,8 +237,6 @@ class CapitalGainsService:
                 Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
                 Transaction.transaction_date < earliest_demerger_date
             )
-            if user_id:
-                buy_query = buy_query.where(Transaction.user_id == user_id)
             if portfolio_id:
                 buy_query = buy_query.where(Transaction.portfolio_id == portfolio_id)
 
