@@ -239,6 +239,8 @@ class CapitalGainsService:
             )
             if portfolio_id:
                 buy_query = buy_query.where(Transaction.portfolio_id == portfolio_id)
+            elif user_id:
+                buy_query = buy_query.where(Transaction.user_id == user_id)
 
             buys = self.db.scalars(buy_query).all()
 
