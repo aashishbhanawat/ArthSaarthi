@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, time
 from typing import List, Optional
 
 from sqlalchemy import func, or_
@@ -38,11 +37,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
 
         # Create the new asset.
         # Use the canonical ticker from details if available (e.g. AMFI scheme code)
-        final_ticker = details.pop("ticker_symbol", None) or ticker_symbol.upper()
-        # Also pop isin if present as it's optional and we want to avoid
-        # collisions if we were to add it explicitly.
-        # details might contain 'isin', we should keep it if it's there
-        # but AssetCreate constructor would take it from **details.
+        final_ticker = details.get("ticker_symbol") or ticker_symbol.upper()
 
         # Double check if we already have this asset by its canonical ticker
         db_asset = self.get_by_ticker(db, ticker_symbol=final_ticker)
@@ -107,18 +102,12 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         new_asset = self.create(db=db, obj_in=asset_in)
 
         # 2. Create the first contribution transaction
-        # Convert date -> str for Pydantic v1 compatibility on Python 3.13,
-        # which does not accept bare date objects for datetime fields.
         transaction_in = schemas.TransactionCreate(
             asset_id=new_asset.id,
             transaction_type="CONTRIBUTION",
             quantity=ppf_in.amount,
             price_per_unit=1,
-            transaction_date=(
-                datetime.combine(ppf_in.contribution_date, time.min).isoformat()
-                if ppf_in.contribution_date
-                else None
-            ),
+            transaction_date=ppf_in.contribution_date,
             fees=0,
         )
         new_transaction = crud.transaction.create_with_portfolio(
@@ -127,9 +116,6 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         return new_transaction
 
     def get_by_ticker(self, db: Session, *, ticker_symbol: str) -> Asset | None:
-        if not isinstance(ticker_symbol, str):
-            return None
-
         # Handle ISIN: prefix
         if ticker_symbol.upper().startswith("ISIN:"):
             isin_code = ticker_symbol.split(":", 1)[1]
@@ -142,9 +128,6 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         )
 
     def get_by_isin(self, db: Session, *, isin_code: str) -> Asset | None:
-        if not isinstance(isin_code, str):
-            return None
-
         return (
             db.query(self.model)
             .filter(self.model.isin == isin_code.upper())

@@ -1,4 +1,3 @@
-## 2026-04-29: Dependency Update & PR 407 Fix (python-multipart)
 
 **Task:** Review PR 407 (Dependabot bump of `python-multipart`), fix its incomplete implementation, and verify authentication stability.
 
@@ -601,10 +600,7 @@
 **Success.** All reported v1.2.0 bugs are resolved with comprehensive mathematical unit-level stability, ensuring the application is production-ready for its impending release.
 
 ---
-
 ## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
-
-**Task:** Fix 7 reported issues: cache invalidation for dashboard history, benchmark invested amount going negative after FD maturity, matured FDs/RDs in portfolio history, incomplete cache invalidation on restore, PPF log spam, and missing timing instrumentation.
 
 **AI Assistant:** Antigravity
 **Role:** Backend Developer
@@ -637,63 +633,8 @@
 
 ---
 
-## 2026-03-14: Advance Tax Dividend Categorization (ITR-2 Schedule CG)
 
 **Task:** Categorize dividends into Advance Tax quarterly buckets (Upto 15/6, 16/6 - 15/9, etc.) and format the UI and CSV exports to mirror ITR-2 Schedule CG.
-
----
-
-## 2026-03-11: v1.2.0 Developer Documentation Overhaul
-
-**Task:** Audit and completely overhaul all developer-facing documentation (README, guides, architecture, design docs) to prepare for the v1.2.0 release.
-
-**AI Assistant:** Antigravity
-**Role:** Technical Writer / System Architect
-
-### Summary
-
-Successfully brought all documentation up-to-date with the current state of the codebase, ensuring new contributors have accurate reference material.
-1. Updated `README.md`, `CONTRIBUTING.md`, and `developer_guide.md` to feature the new Native Desktop and Android compile flows, and legally mandated AI SDLC rules (`GEMINI.md`).
-2. Synced the advanced Mermaid Component Diagram from `uml_design.md` directly into `docs/architecture.md`.
-3. Renamed the outdated `mvp_database_schema.md` to `docs/database_schema.md` and completely rewrote the table constraints to reflect the exact active SQL schema (including Tax Lots, Bonds, Watches).
-4. Added comprehensive Mermaid Sequence Diagrams into `docs/code_flow_guide.md` for all standard API request lifecycle traces (Transactions, Import, Analytics, Audit Logging, Privacy, Caching, Capital Gains, Watchlists, Goals, Daily Snapshots).
-5. Added Ascii wireframes to `docs/ui_ux_design.md` to visually document the new Consolidated Holdings Table layout and the Import Wizard staging interface.
-
-### File Changes
-
-*   **Modified:** `README.md`, `CONTRIBUTING.md`, `developer_guide.md`, `docs/architecture.md`, `docs/code_flow_guide.md`, `docs/ui_ux_design.md`
-*   **Renamed & Rewritten:** `docs/mvp_database_schema.md` -> `docs/database_schema.md`
-
-### Outcome
-
-**Success.** The documentation is perfectly synced with the v1.2.0 features, closing out the technical debt of outdated design diagrams.
-
----
-
-## 2026-03-11: Create Interview Prep Guide
-
-**Task:** Create an interview preparation document outlining how an Embedded C developer built a Full-Stack Python/React app.
-
-**AI Assistant:** Antigravity
-**Role:** Full-Stack Developer / Career Mentor
-
-### Summary
-
-Generated `docs/interview_prep.md` to help the user prepare for technical interviews. The document translates hardware/C concepts (like struct memory mapping, interrupt-driven sequential code, and low-level arrays) into Web/Cloud concepts (SQL ORMs, React Virtual DOM, and Python dicts/generators). It provides STAR-method answers for architectural decisions like the FastAPI+React decoupled monolith, SQLite vs Postgres, Redis caching, and JSON B-Trees.
-
-### File Changes
-
-*   **New:** `docs/interview_prep.md` - Interview prep guide.
-
-### Outcome
-
-**Success.** The user has a targeted study guide mapping their existing Embedded systems knowledge directly to the specific design patterns used in ArthSaarthi.
-
----
-
-## 2026-03-10: Generate UML Design Document
-
-**Task:** Go through code and write UML design document.
 
 **AI Assistant:** Antigravity
 **Role:** Full-Stack Developer
@@ -911,18 +852,6 @@ Fixed the backend startup failure where the initial asset seeding (downloading a
 ### Outcome
 
 **Success.** The application now starts reliably even on initial deployments with clean volumes.
-Analyzed the backend database models and the overall system architecture. Created a comprehensive UML design document containing:
-1. **System Architecture Diagram**: A Component Diagram detailing the Client Tier, Application Tier, Data Tier, and external service integrations.
-2. **Entity-Relationship Diagram (ERD)**: Documenting the relationships between Users, Portfolios, Transactions, Assets, Goals, etc.
-3. **Class Diagram**: Highlighting the core domain logic for key models.
-
-### File Changes
-
-*   **New:** `docs/uml_design.md` - Generated UML documentation with Mermaid diagrams.
-
-### Outcome
-
-**Success.** The codebase architecture and data models have been visually documented, aiding future development and onboarding.
 
 ---
 
@@ -1976,55 +1905,3 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 
 ### Outcome
 **Success.** Successfully closed 16 pending security vulnerability reports from Dependabot.
-
-## 2026-04-02: Implement YahooQuery Alternative for Stock Metadata (#350)
-
-**Task:** Integrate `yahooquery` to resolve `yfinance` reliability and rate-limiting issues for Indian stock metadata.
-
-**AI Assistant:** Antigravity
-**Role:** Financial Data Engineer
-
-### Summary
-Implemented `YahooQueryProvider` and integrated it into the core financial data services. This ensures reliable retrieval of Sectors, Industries, and Market Cap for NSE/BSE stocks, which was previously failing with `yfinance`.
-
-**Backend:**
-*   Implemented `YahooQueryProvider` in `app/services/providers/yahooquery_provider.py`.
-*   Updated `FinancialDataService` to prioritize `yahooquery` for metadata and search.
-*   Refactored `crud_holding.py` to use a unified enrichment method.
-*   Added `yahooquery` to `backend/requirements.in`.
-
-**Android:**
-*   Updated `frontend/android/app/build.gradle.kts` to include `yahooquery` in the Chaquopy pip configuration.
-
-### Verification
-*   Ran `verify_yahooquery_integration.py` in the backend container; successfully fetched Reliance and TCS metadata via `yahooquery` (manual verification in container).
-*   Confirmed `yahooquery` is a pure-Python library compatible with Chaquopy.
-
-### File Changes
-*   **New:** [yahooquery_provider.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/providers/yahooquery_provider.py)
-*   **Modified:** [financial_data_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/financial_data_service.py)
-*   **Modified:** [crud_holding.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_holding.py)
-*   **Modified:** [requirements.in](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/requirements.in)
-*   **Modified:** [build.gradle.kts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/build.gradle.kts)
-
-### Outcome
-**Success.** Successfully integrated `yahooquery` for improved metadata reliability and Android compatibility.
-
----
-
-## 2026-04-14: Backend Linting and yahooquery Removal
-
-### Goal
-Resolve 622 PEP 8 linting violations across the backend and remove the experimental `yahooquery` library dependency.
-
-### Proposed Changes
-- **Backend Linting**: Systematically fixed 622 `ruff` errors (E501, E701, F401, F821, etc.) in `app/crud`, `app/api`, and `app/services`.
-- **yahooquery Removal**: Deleted utility scripts, updated `financial_data_service.py` documentation, and removed the dependency from Android's `build.gradle.kts`.
-
-### Execution
-- **Files Deleted**: `backend/verify_yahooquery_integration.py`, `backend/evaluate_metadata_alts.py`.
-- **Modified**: `app/services/financial_data_service.py`, `frontend/android/app/build.gradle.kts`.
-- **Linting**: Achieved "All checks passed!" report from `ruff`.
-
-### Outcome
-**Success.** Codebase is now PEP 8 compliant. All 306 backend tests passed. `yahooquery` was successfully purged from the project without impacting functionality.

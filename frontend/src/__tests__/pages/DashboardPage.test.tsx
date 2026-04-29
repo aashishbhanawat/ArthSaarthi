@@ -113,6 +113,6 @@ describe('DashboardPage', () => {
       isLoading: false, isError: false, error: null, data: { total_value: 1000, total_unrealized_pnl: 0, total_realized_pnl: 0, top_movers: [], asset_allocation: [] }
     });
     render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
-    expect(screen.getAllByText('No market data available').length).toBeGreaterThan(0);
+    expect(screen.getByText('No market data available')).toBeInTheDocument();
   });
 });

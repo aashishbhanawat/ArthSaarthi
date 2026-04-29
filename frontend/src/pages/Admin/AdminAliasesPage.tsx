@@ -14,7 +14,6 @@ import { AxiosError } from 'axios';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 import { useToast } from '../../context/ToastContext';
 import { PencilIcon, TrashIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import AliasCard from '../../components/Admin/AliasCard';
 
 interface LocalAsset {
     id: string;
@@ -216,63 +215,48 @@ const AdminAliasesPage: React.FC = () => {
             {isLoading && <p>Loading aliases...</p>}
             {isError && <p className="text-red-500">Error fetching aliases.</p>}
             {!isLoading && !isError && (
-                <div>
+                <div className="card overflow-x-auto">
                     {aliases.length === 0 ? (
-                        <div className="card text-gray-500 p-4 text-center">
+                        <p className="text-gray-500 p-4 text-center">
                             {searchQuery
                                 ? `No aliases matching "${searchQuery}".`
                                 : 'No symbol aliases found. Create one to map unrecognized tickers to known assets.'}
-                        </div>
+                        </p>
                     ) : (
                         <>
-                            {/* Mobile View */}
-                            <div className="md:hidden space-y-1 mb-4">
-                                {aliases.map((alias) => (
-                                    <AliasCard
-                                        key={alias.id}
-                                        alias={alias}
-                                        onEdit={openEditForm}
-                                        onDelete={(a: AssetAliasWithAsset) => { setDeletingAlias(a); setDeleteOpen(true); }}
-                                    />
-                                ))}
-                            </div>
-
-                            {/* Desktop View */}
-                            <div className="hidden md:block card overflow-x-auto mb-4">
-                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead className="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Alias Symbol</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Source</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maps To (Ticker)</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Name</th>
-                                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Alias Symbol</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Source</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maps To (Ticker)</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Name</th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                    {aliases.map((alias) => (
+                                        <tr key={alias.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                            <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">{alias.alias_symbol}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{alias.source}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-blue-600 dark:text-blue-400">{alias.asset_ticker}</td>
+                                            <td className="px-4 py-3 text-sm">{alias.asset_name}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-right">
+                                                <button onClick={() => openEditForm(alias)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Edit">
+                                                    <PencilIcon className="h-4 w-4 inline" />
+                                                </button>
+                                                <button onClick={() => { setDeletingAlias(alias); setDeleteOpen(true); }} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Delete">
+                                                    <TrashIcon className="h-4 w-4 inline" />
+                                                </button>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                        {aliases.map((alias) => (
-                                            <tr key={alias.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                                <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">{alias.alias_symbol}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{alias.source}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-blue-600 dark:text-blue-400">{alias.asset_ticker}</td>
-                                                <td className="px-4 py-3 text-sm">{alias.asset_name}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-right">
-                                                    <button onClick={() => openEditForm(alias)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Edit">
-                                                        <PencilIcon className="h-4 w-4 inline" />
-                                                    </button>
-                                                    <button onClick={() => { setDeletingAlias(alias); setDeleteOpen(true); }} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Delete">
-                                                        <TrashIcon className="h-4 w-4 inline" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    ))}
+                                </tbody>
+                            </table>
 
                             {/* Pagination */}
                             {totalPages > 1 && (
-                                <div className="flex items-center justify-between px-4 py-3 border-t dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                                <div className="flex items-center justify-between px-4 py-3 border-t dark:border-gray-700">
                                     <span className="text-sm text-gray-500 dark:text-gray-400">
                                         Page {page + 1} of {totalPages}
                                     </span>

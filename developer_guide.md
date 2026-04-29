@@ -157,39 +157,7 @@ You can also pass arguments directly to the underlying test runner (pytest for b
 
 ---
 
-## 3. Android (Experimental) Development
-
-This approach builds a native Android APK containing the React frontend and embedded Python backend.
-
-### Prerequisites
-
-*   **Android Studio** or standard Android SDK command-line tools.
-*   **Java JDK 17+**.
-
-### Build Pipeline
-
-1.  **Frontend Build:**
-    Navigate to `frontend/` and build the Vite project.
-    ```bash
-    npm install
-    npm run build
-    ```
-2.  **Capacitor Sync:**
-    Sync the built web assets and plugins into the Android project.
-    ```bash
-    npx cap sync android
-    ```
-3.  **Gradle Build:**
-    Navigate to the generated `android/` directory and run the Gradle build task. Chaquopy will automatically bundle the backend Python code and pip dependencies during this step.
-    ```bash
-    cd android
-    ./gradlew assembleDebug
-    ```
-    The resulting APK will be located at `android/app/build/outputs/apk/debug/ArthSaarti-debug.apk`.
-
----
-
-## 4. Code Quality & CI/CD
+## 3. Code Quality & CI/CD
 
 *   **Linting:** We use `ruff` for the backend and `eslint` for the frontend. Please run the linters before committing.
 *   **CI/CD:** Our GitHub Actions workflow (in `.github/workflows/ci.yml`) runs all linters and tests on every push and pull request to the `main` branch. All checks must pass before a PR can be merged.

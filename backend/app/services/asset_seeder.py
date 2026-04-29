@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class AssetSeeder:
     # Commit every N assets for live progress updates
-    COMMIT_BATCH_SIZE = 100
+    COMMIT_BATCH_SIZE = 500
 
     def __init__(self, db: Session, debug: bool = False):
         self.db = db
@@ -90,18 +90,6 @@ class AssetSeeder:
             return Decimal(str(value))
         except Exception:
             return None
-
-    def _to_decimal(self, value: Any) -> Decimal:
-        try:
-            if value is None:
-                return Decimal("0")
-            f_val = float(value)
-            import math
-            if not math.isfinite(f_val):
-                return Decimal("0")
-            return Decimal(str(f_val))
-        except (ValueError, TypeError, Exception):
-            return Decimal("0")
 
     def _parse_frequency(self, value: Any) -> Optional[PaymentFrequency]:
         """Parses payment frequency string to Enum."""
@@ -805,70 +793,7 @@ class AssetSeeder:
         Returns:
             Dict with enrichment statistics
         """
-        import requests
         import yfinance as yf
-
-        from app.core.config import settings
-
-        # Dynamic Header Pool for Android stabilization
-        _CHROME_UAS = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 "
-            "Safari/537.36",
-        ]
-        import random
-        def _get_dynamic_headers():
-            ua = random.choice(_CHROME_UAS)
-            langs = ["en-US,en;q=0.9", "en-GB,en;q=0.8", "en-IN,en;q=0.9,hi;q=0.8"]
-            return {
-                "User-Agent": ua,
-                "Accept": (
-                "text/html,application/xhtml+xml,application/xml;q=0.9,"
-                "image/avif,image/webp,image/apng,*/*;q=0.8,"
-                "application/signed-exchange;v=b3;q=0.7"
-            ),
-                "Accept-Language": random.choice(langs),
-                "Accept-Encoding": "gzip, deflate, br",
-                "Connection": "keep-alive",
-                "Upgrade-Insecure-Requests": "1",
-                "Sec-Fetch-Dest": "document",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-Site": "none",
-                "Sec-Fetch-User": "?1",
-                "DNT": "1",
-                "Cache-Control": "max-age=0",
-            }
-
-        # Create a session with browser User-Agent ONLY for Android to bypass
-        # the 429 block. On Server/Desktop, we let yfinance handle its own
-        # sessions (which may use curl_cffi).
-        session = None
-        if settings.DEPLOYMENT_MODE == "android":
-            session = requests.Session()
-            session.headers.update(_get_dynamic_headers())
-            print(
-                f"[DEBUG] AssetSeeder: Using Dynamic Chrome Spoofing for "
-                f"enrichment on {settings.DEPLOYMENT_MODE}"
-            )
-
-            # Global Spoof: Intercept yfinance's internal User-Agent logic
-            # properties (yfinance 0.2.55)
-            try:
-                import yfinance.data as yf_data
-                yf_data.USER_AGENTS = _CHROME_UAS
-                yf_data.YfData.user_agent_headers = session.headers
-                print(
-                    "[DEBUG] AssetSeeder: Globally spoofed yfinance with "
-                    "Dynamic UA Generator using yfinance.data."
-                )
-            except Exception as e:
-                print(f"[DEBUG] AssetSeeder: Failed to globally spoof yfinance UA: {e}")
 
         from app.cache.factory import get_cache_client
         from app.services.providers.amfi_provider import AmfiIndiaProvider
@@ -921,37 +846,17 @@ class AssetSeeder:
                 import concurrent.futures
 
                 yf_tickers_str = " ".join(ticker_map.keys())
-                yf_data = yf.Tickers(yf_tickers_str, session=session)
-
-                import time
-
-                import app.services.providers.yfinance_provider as yf_prov
+                yf_data = yf.Tickers(yf_tickers_str)
 
                 # Helper for concurrent execution
                 def fetch_info(symbol, ticker_obj):
                     try:
-                        # Synchronize with the global lock to prevent colliding
-                        # with real-time portfolio fetches
-                        with yf_prov._YFINANCE_LOCK:
-                            if settings.DEPLOYMENT_MODE == "android":
-                                elapsed = time.time() - yf_prov._LAST_REQUEST_TIME
-                                if elapsed < yf_prov._MIN_REQUEST_INTERVAL:
-                                    time.sleep(yf_prov._MIN_REQUEST_INTERVAL - elapsed)
-
-                            info = ticker_obj.info
-
-                            if settings.DEPLOYMENT_MODE == "android":
-                                yf_prov._LAST_REQUEST_TIME = time.time()
-
-                        return symbol, info, None
+                        return symbol, ticker_obj.info, None
                     except Exception as e:
                         return symbol, None, e
 
-                # On Android, we use a very low worker count to avoid triggering
-                # Yahoo's rate limiting during background metadata enrichment.
-                max_workers = 2 if settings.DEPLOYMENT_MODE == "android" else 10
                 with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=min(max_workers, len(equities))
+                    max_workers=min(10, len(equities))
                 ) as executor:
                     futures = {
                         executor.submit(fetch_info, s, t): s
@@ -976,18 +881,6 @@ class AssetSeeder:
                             asset.industry = info.get("industry")
                             asset.country = info.get("country")
                             asset.market_cap = info.get("marketCap")
-
-                            # Classification for Investment Style
-                            from app.services.providers.yfinance_provider import (
-                                YFinanceProvider,
-                            )
-                            asset.investment_style = (
-                                YFinanceProvider._classify_investment_style(
-                                    info.get("trailingPE"),
-                                    info.get("priceToBook")
-                                )
-                            )
-
                             stats["enriched"] += 1
                             if self.debug:
                                 print(

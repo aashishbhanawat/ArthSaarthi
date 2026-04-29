@@ -5,39 +5,18 @@ All notable changes to ArthSaarthi will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-03-31
+## [1.2.0] - 2026-02-27
 
 ### Added
 
-#### Asset Classes
-- **Bonds (v2)** - Enhanced bond tracking with accurate historical price fallback and improved asset seeder classification
-- **Fixed/Recurring Deposits (v2)** - Stabilized lifecycle management (matured assets), synthetic transaction history, and color-coded UI labels
-
-#### Data Import
-- **FD/RD PDF Import** - Support for importing Fixed Deposit statements from HDFC, ICICI, and SBI password-protected PDFs
-- **Symbol Alias Management** - Admin UI to manage mapping between broker-specific symbols and exchange tickers
-- **KFintech MF Mergers** - Enhanced support for parsing KFintech switch-in/out and merger transactions as BUY/SELL
-
-#### Analytics & Benchmarking
+#### Analytics
 - **Advanced Benchmarking** - Hybrid benchmark indices (CRISIL Hybrid 35+65, Balanced 50/50), risk-free rate overlay with configurable annual rate, and category benchmarking (Equity vs Nifty, Debt vs Bond Yields)
-- **Daily Portfolio Snapshots** - Background caching of daily valuations for rapid historical chart loading
-
-#### Reports
-- **Dividend Export** - Dedicated CSV export for the consolidated dividend report
-- **Demerger Cost Lookup** - Systemic support for demerger cost reduction in capital gains calculations
-- **Schedule 112A Improvements** - Inclusion of expenditure and fees in Long Term Capital Gains (LTCG) reporting
-
-#### Performance (Bolt)
-- **FIFO Optimization** - Reduced capital gains calculation complexity from O(N*N) to O(N) for large portfolios
-- **Prefetching** - Optimized historical data loading for PPF and non-market assets to eliminate N+1 query bottlenecks
 
 ### Fixed
 
-- **Portfolio Realized P&L** - Systemic fix for calculation distortions in historical P&L
-- **FD/RD/PPF/Bond History** - Significant accuracy improvements for non-market assets on the historical chart
-- **Import Error Propagation** - Clearer validation error messaging (propagate 400 instead of 500)
-- **Goal Redirection** - Correct 409 Conflict handling and UI notification when deleting a linked portfolio
-- **E2E Test Stability** - Resolved race conditions in Playwright test suite
+- Category benchmark portfolio XIRR now correctly calculated from subset cash flows
+- Dark mode visibility for risk-free rate input
+- Dropdown width for benchmark selector preventing text truncation
 
 ## [1.1.0] - 2026-01-15
 
