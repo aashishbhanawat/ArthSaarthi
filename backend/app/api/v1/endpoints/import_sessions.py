@@ -16,6 +16,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -301,12 +302,14 @@ def get_import_session_preview(
                 # Try to fetch details without creating (side-effect free preview)
                 details = financial_data_service.get_asset_details(f"ISIN:{isin_code}")
                 if details:
-                    asset = models.Asset(
+                    # Validate and filter through schema to prevent TypeError
+                    asset_in = schemas.AssetCreate(
                         ticker_symbol=details.get("ticker_symbol") or f"ISIN:{isin_code}".upper(),
                         **{k: v for k, v in details.items() if k != "ticker_symbol"}
                     )
+                    asset = models.Asset(**asset_in.model_dump())
             if asset:
-                 log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
+                log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
 
         if not asset:
             # This also handles ticker_symbol with "ISIN:" prefix
@@ -318,10 +321,12 @@ def get_import_session_preview(
         if not asset and ticker_symbol.upper().startswith("ISIN:"):
             details = financial_data_service.get_asset_details(ticker_symbol)
             if details:
-                asset = models.Asset(
+                # Validate and filter through schema to prevent TypeError
+                asset_in = schemas.AssetCreate(
                     ticker_symbol=details.get("ticker_symbol") or ticker_symbol.upper(),
                     **{k: v for k, v in details.items() if k != "ticker_symbol"}
                 )
+                asset = models.Asset(**asset_in.model_dump())
             if asset:
                 log.info(
                     f"Auto-matched (transient) by ISIN: {ticker_symbol} "
@@ -360,8 +365,9 @@ def get_import_session_preview(
 
         # 2. Duplicate Detection
         existing_transaction = None
-        # Only check duplicates if the asset already exists in the database
-        if asset and getattr(asset, "id", None):
+        # Only check duplicates if the asset already exists in the database (persistent)
+        # We use inspect(asset).persistent to check if it's attached to the session
+        if asset and getattr(asset, "id", None) and inspect(asset).persistent:
             existing_transaction = crud.transaction.get_by_details(
                 db,
                 portfolio_id=import_session.portfolio_id,
