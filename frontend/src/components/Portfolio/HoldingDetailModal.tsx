@@ -136,7 +136,10 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
         const sells = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'SELL')));
 
         // Create a Map for O(1) lookup of buy transactions by ID
-        const buyMap = new Map(buys.map((b: Transaction) => [b.id, b]));
+        const buyMap = new Map<string, Transaction>();
+        for (const b of buys) {
+            buyMap.set(b.id, b);
+        }
 
         for (const sell of sells) {
             let sellQuantityToMatch = Number(sell.quantity);
