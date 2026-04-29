@@ -1,6 +1,606 @@
-## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
 
-**Task:** Fix 7 reported issues: cache invalidation for dashboard history, benchmark invested amount going negative after FD maturity, matured FDs/RDs in portfolio history, incomplete cache invalidation on restore, PPF log spam, and missing timing instrumentation.
+**Task:** Review PR 407 (Dependabot bump of `python-multipart`), fix its incomplete implementation, and verify authentication stability.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer / Security Engineer
+
+### Summary
+
+1. **PR 407 Remediation:**
+    - Identified that the original PR had a syntax error in `requirements.in` (`>=0.0.22>=0.0.22`) and failed to update `requirements.txt`.
+    - Corrected the `requirements.in` syntax and bumped the minimum version requirement to `0.0.26` (Dependabot target) which resolved to `0.0.27` (latest).
+    - Synchronized `requirements.txt` and `requirements-windows.txt` to `python-multipart==0.0.27`.
+2. **Verification:**
+    - Confirmed that `pip-compile` produced a clean diff with only the targeted dependency change.
+    - Verified that authentication tests (`test_auth.py`) pass successfully with the updated dependency, ensuring form-data parsing (used in login) remains functional.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [requirements.in](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/requirements.in) — Fixed syntax error and bumped version to 0.0.26+.
+* **Modified:** [requirements.txt](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/requirements.txt) — Compiled update to 0.0.27.
+* **Modified:** [requirements-windows.txt](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/requirements-windows.txt) — Synchronized update to 0.0.27.
+
+---
+
+## 2026-04-19: PR 379 Review Fixes & Security Hardening
+
+**Task:** Address automated review comments from PR 379 and harden project security by removing local-only files from Git tracking.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer / Security Lead
+
+### Summary
+
+1. **Review Comment Remediation (PR 379):**
+    - **Wheel Patching:** Replaced the simple `mv` renaming of `manylinux` wheels with a proper metadata-aware patching process using `scripts/patch_wheel.py` in `scripts/build-android.sh`.
+    - **Security:** Replaced the hardcoded `SECRET_KEY` in `run_server.py` with a persistent, dynamically generated key stored in the app's internal data directory.
+    - **Path Alignment:** Aligned the Python wheel lookup path in `build.gradle.kts` with the download location (`libs/python-wheels`) used by the build script.
+2. **Security Hardening:**
+    - **Keystore Protection:** Removed `arthsaarthi-release.keystore` from Git tracking and added it to `.gitignore`.
+    - **Local File Cleanup:** Removed auxiliary local files (`create_issues.sh`, `keystore_base64.txt`, `setup.txt`) from Git index and updated `.gitignore` to prevent future commits of sensitive or local-only tools.
+3. **CI/CD Alignment:**
+    - Ensured `build.gradle.kts` uses dynamic `versionName` for APK output filenames.
+    - Resolved E501 lint and trailing whitespace issues in `test_android_mode.py`.
+
+### File Changes
+
+**Scripts:**
+* **Modified:** [build-android.sh](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/scripts/build-android.sh) — Metadata-aware wheel patching.
+* **Modified:** [run_server.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/src/main/python/run_server.py) — Persistent dynamic `SECRET_KEY`.
+
+**Configuration:**
+* **Modified:** [build.gradle.kts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/build.gradle.kts) — Aligned wheel paths and dynamic names.
+* **Modified:** [.gitignore](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/.gitignore) — Hardened ignore rules for secrets and local files.
+
+**Testing:**
+* **Modified:** [test_android_mode.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/tests/test_android_mode.py) — Lint and whitespace fixes.
+
+---
+
+**Task:** Streamline Android CI/CD pipelines, align backend test suite for `android` mode, and formalize Android-specific functional and non-functional requirements.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer / DevOps Engineer
+
+### Summary
+
+1. **Android Build Workflow Consolidation:**
+    - Integrated the **Android Release build** into `release.yml`. It now automatically builds and uploads a signed APK as a GitHub Release asset.
+    - Integrated the **Android Debug build** into `test-builds.yml` as a selectable platform option for manual testing.
+    - Deleted the redundant standalone `.github/workflows/android-build.yml`.
+2. **Test Suite Alignment & Coverage:**
+    - Updated `conftest.py` and `user.py` utilities to treat `android` mode as a local deployment, enabling necessary auth bypasses for automated testing.
+    - Extended test skips (e.g., admin user management) to `android` mode to reflect its single-user local nature.
+    - Created `backend/app/tests/test_android_mode.py` to verify Android-specific behaviors (logging, startup tasks, unauthenticated logs endpoint).
+    - Verified that **300+ backend tests** pass successfully with `DEPLOYMENT_MODE=android`.
+3. **Requirement Formalization & Documentation:**
+    - Updated `docs/requirements.md` with **FR14.4 (Android Native Enablement)** and **NFR14 (Android Deployment Stability)**.
+    - Renamed and re-numbered `docs/features/android_pydantic_stability.md` to `docs/features/NFR14_android_pydantic_compatibility.md`.
+    - Created `docs/features/FR14.4_android_native_enablement.md` with detailed requirements for the native Android integration.
+    - Authored `docs/android_enablement_notes.md` documenting battery optimization, permission, and background execution requirements.
+4. **Environment Polish:**
+    - Disabled verbose yfinance/httpx debug logging in `main.py` and `run_server.py`.
+    - Verified Python 3.11 compatibility safeguards in `run_server.py`.
+
+### File Changes
+
+**CI/CD:**
+* **Modified:** [.github/workflows/release.yml](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/.github/workflows/release.yml) — Added Android release job.
+* **Modified:** [.github/workflows/test-builds.yml](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/.github/workflows/test-builds.yml) — Added Android debug job.
+* **Deleted:** `.github/workflows/android-build.yml`.
+
+**Backend:**
+* **New:** [test_android_mode.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/tests/test_android_mode.py) — Targeted Android tests.
+* **Modified:** [conftest.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/tests/conftest.py), [user.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/tests/utils/user.py) — Auth bypass alignment.
+* **Modified:** [main.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/main.py) — Disabled debug logs.
+
+**Documentation:**
+* **Modified:** [requirements.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/requirements.md) — Added Android FRs/NFRs.
+* **New:** [FR14.4_android_native_enablement.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR14.4_android_native_enablement.md).
+* **Renamed:** `android_pydantic_stability.md` -> [NFR14_android_pydantic_compatibility.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/NFR14_android_pydantic_compatibility.md).
+* **New:** [android_enablement_notes.md](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/android_enablement_notes.md).
+
+**Android Native:**
+* **Modified:** [run_server.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/src/main/python/run_server.py) — Disabled debug logs and verified compatibility.
+
+---
+
+**Task:** Resolve Capital Gains data discrepancies, frontend rendering errors, and critical data isolation security vulnerability.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer / Security Engineer
+
+### Summary
+
+1. **Security Enforcement (Data Isolation):**
+    - Identified a critical data leakage vulnerability where the Capital Gains report could display transactions across different users.
+    - Updated `CapitalGainsService` to enforce `user_id` filtering in all core database queries (TransactionLinks, Demergers, Dividends).
+    - Secured the Capital Gains API endpoints in `capital_gains.py` with `Depends(get_current_active_user)` to block unauthorized cross-user access.
+2. **Capital Gains UI & Data Fixes:**
+    - Fixed duplicate React key warnings in `CapitalGainsPage.tsx` by implementing composite keys for tax lot splits.
+    - Resolved data discrepancies in the Android branch by ensuring chronological transaction sorting during `restore_backup`.
+    - Integrated automatic background backfill into `initialization_service.py` and `backup_service.py` to ensure orphan SELL transactions are correctly linked on startup or restoration.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [capital_gains_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/capital_gains_service.py) — Enforced user-level isolation in all calculation methods.
+* **Modified:** [capital_gains.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/api/v1/endpoints/capital_gains.py) — Secured endpoints and passed authenticated `user_id`.
+* **Modified:** [backup_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/backup_service.py) — Fixed chronological sorting and added post-restore backfill.
+* **Modified:** [initialization_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/initialization_service.py) — Integrated startup link backfill.
+* **Modified:** [backfill_transaction_links.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/scripts/backfill_transaction_links.py) — Refactored to expose programmatic `run_backfill`.
+
+**Frontend:**
+* **Modified:** [CapitalGainsPage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/CapitalGainsPage.tsx) — Resolved duplicate key warnings.
+
+---
+
+## 2026-04-16: Asset Seeding Logic Consolidation & Regression Fixes
+
+**Task:** Consolidate duplicated asset seeding logic into a centralized utility and fix Android branch regressions (Sharpe ratio, UI parity, diversification data).
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Asset Seeding Logic Refactoring:**
+    - Created `app/utils/financial_utils.py` to centralize shared asset seeding functionality (date calculation, URL generation, file downloading, and source processing).
+    - Refactored `cli.py`, `initialization_service.py`, and `admin_assets.py` to utilize the new centralized logic, eliminating significant code duplication.
+2. **Regression Fixes (Android Branch):**
+    - **Sharpe Ratio:** Documented the accepted difference in Sharpe Ratio calculation between the base and Android branches (0.55 vs 1.07), identifying it as a change in historical data windowing.
+    - **UI Parity:** Restored the "Transaction History" look-and-feel to match the base branch's premium design.
+    - **Diversification Analytics:** Fixed "STOCK" vs "Stock" duplication in pie charts and ensured FD/RD/PPF assets are correctly accounted for in asset class breakdowns.
+3. **Lint & Cleanup:**
+    - Resolved 29 backend and frontend lint errors (E501, unused imports, hook dependencies).
+    - Purged redundant temporary files and build artifacts from the repository.
+
+### File Changes
+
+**Backend:**
+* **New:** [financial_utils.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/utils/financial_utils.py) — Centralized seeding utilities.
+* **Modified:** [cli.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/cli.py) — Refactored to use utilities.
+* **Modified:** [initialization_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/initialization_service.py) — Refactored to use utilities.
+* **Modified:** [admin_assets.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/api/v1/endpoints/admin_assets.py) — Refactored to use utilities.
+* **Modified:** [crud_analytics.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_analytics.py) — Fixed diversification classification logic.
+
+**Frontend:**
+* **Modified:** [TransactionHistoryTable.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Transactions/TransactionHistoryTable.tsx) — Restored design parity.
+
+---
+
+## 2026-04-15: Bond Metadata Sync, DateInput Fix & Android Dependency Stabilization
+
+**Task:** Resolve Bond maturity date persistence issues, fix DateInput validation lag, and stabilize Android/Frontend dependencies by aligning Capacitor/Vite versions.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Bond Metadata Sync:**
+    - Identified that Bond metadata (maturity date, coupon rate) was being ignored during transaction edits.
+    - Implemented explicit Bond metadata updates in `TransactionFormModal.tsx` for both New and Edit modes.
+    - Added the missing `updateBondByAssetId` API method to `portfolioApi.ts`.
+2. **DateInput & Validation Fixes:**
+    - Resolved the "double-submit" validation lag by ensuring `react-hook-form` is notified of manual input changes via both `change` and `input` events.
+    - Synchronized the hidden native date picker with the visible text input to ensure the calendar opens on the correct date.
+3. **Android & Frontend Stabilization:**
+    - Downgraded `@capacitor/*` and `vite` to stable v6 releases to resolve "conflict package" (ERESOLVE) errors during Android upgrades.
+    - Cleaned up redundant Python dependencies in `build.gradle.kts`.
+    - Synchronized `appId` to `com.arthsaarthi.app` across all configuration files.
+    - Incremented `versionCode` to 3 for a seamless Android upgrade path.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [crud_bond.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_bond.py) — Verified update logic.
+* **Modified:** [asset_seeder.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/asset_seeder.py) — Documented 1970 fallback.
+
+**Frontend:**
+* **Modified:** [DateInput.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/common/DateInput.tsx) — Fixed sync and validation lag.
+* **Modified:** [TransactionFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/TransactionFormModal.tsx) — Enabled metadata sync in Edit/New modes.
+* **Modified:** [portfolioApi.ts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/services/portfolioApi.ts) — Added `updateBondByAssetId`.
+* **Modified:** [package.json](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/package.json) — Downgraded Capacitor/Vite and fixed `appId`.
+* **Modified:** [build.gradle.kts](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/android/app/build.gradle.kts) — Aligned Capacitor version and cleaned pip dependencies.
+
+---
+
+## 2026-04-14: Android UI Polish, Percentage Scaling Fix & Lint Resolution
+
+**Task:** Resolve "double-conversion" percentage display errors, fix mobile safe-area overlays, refactor mapping resolution to a modal, and resolve 6 frontend lint errors.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Percentage Scaling Fix (Issue 6):**
+    - Identified that `HoldingCard.tsx` (mobile view) used a local `formatPercent` function that failed to multiply decimal values by 100.
+    - Standardized all percentage rendering across `HoldingCard`, `BondDetailModal`, and `PpfHoldingDetailModal` to use the centralized `formatPercentage` utility from `formatting.ts`.
+2. **Mobile UI & Alignment (Issue 1, 2, 3, 5):**
+    - **Safe Areas:** Implemented `pt-safe` padding in `MobileHeader.tsx`, `FixedDepositDetailModal.tsx`, and `PpfHoldingDetailModal.tsx` to prevent content overlap with the Android status bar.
+    - **Top Movers Spacing:** Added horizontal padding to `TopMoversTable.tsx` for consistent mobile spacing.
+    - **Mapping Modal:** Refactored the "Needs Mapping" resolution flow into a dedicated `MappingResolutionModal.tsx` for improved ergonomics on high-transaction portfolios.
+    - **Input Padding:** Adjusted `DateInput.tsx` padding to prevent the calendar icon from overlapping text.
+3. **Lint Resolution:**
+    - Fixed 6 ESLint errors related to `any` types and direct DOM node access in `DateInput.tsx`, `LogsPage.tsx`, and `MorePage.tsx`.
+    - Added targeted overrides for valid DOM operations (`click()`, `dispatchEvent()`) in component logic.
+4. **Functional & Backend Fixes (Issue 4):**
+    - Resolved PPF transaction `invalid datetime format` errors by ensuring dates are combined with minimum time before ISO conversion in the backend.
+5. **Android Versioning & Upgrade Support:**
+    - Incremented `versionCode` to 2 and synchronized `versionName` to 1.2.0 in `build.gradle.kts`.
+    - Added app version display to the bottom of `MorePage.tsx`.
+6. **CI/CD E2E Stability:**
+    - Resolved widespread "locator.fill" timeouts in CI by identifying that the `MobileSeedingSplash` was blocking the login form.
+    - Updated `e2e/global.setup.ts` to call `seeding-complete` via API, ensuring the environment is immediately ready for testing.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [crud_asset.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_asset.py) — Fixed PPF date combination logic.
+
+**Frontend:**
+* **New:** [MappingResolutionModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Import/MappingResolutionModal.tsx) — Modular mapping UI.
+* **Modified:** [HoldingCard.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/HoldingCard.tsx) — Fixed percentage scaling.
+* **Modified:** [MobileHeader.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/MobileHeader.tsx) — Added `pt-safe`.
+* **Modified:** [DateInput.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/common/DateInput.tsx) — Fixed lint and padding.
+* **Modified:** [BondDetailModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/BondDetailModal.tsx), [PpfHoldingDetailModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/PpfHoldingDetailModal.tsx) — Standardized percentage formatting.
+* **Modified:** [FixedDepositDetailModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/FixedDepositDetailModal.tsx) — Added `pt-safe`.
+* **Modified:** [TopMoversTable.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Dashboard/TopMoversTable.tsx) — Mobile spacing refinements.
+* **Modified:** [ImportPreviewPage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/Import/ImportPreviewPage.tsx) — Integrated `MappingResolutionModal`.
+* **Modified:** [LogsPage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/LogsPage.tsx), [MorePage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/MorePage.tsx) — Resolved lint errors.
+
+---
+
+## 2026-04-13: App-Wide Mobile Card Parity & Import Stability
+
+**Task:** Refactor all remaining table-based layouts (Transactions, Dashboard, Watchlists, Admin) into premium card-based mobile views and fix the import session `NaN` crash.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Mobile Card Parity (Phase 2):**
+    - Refactored **Transaction History**, **Dashboard Top Movers**, and **Watchlists** to use responsive card layouts on mobile (`md:hidden`).
+    - Standardized Admin tools (**Symbol Aliases**, **FMV 2018**, **User Management**, **Interest Rates**) with mobile-optimized cards to ensure a consistent high-premium feel across the entire app.
+    - Integrated Edit/Delete/Save actions directly into card footers for better touch ergonomics.
+2. **Import Session Stability:**
+    - Resolved `AttributeError: 'float' object has no attribute 'upper'` during import previews by adding defensive type-checking and `pd.isna()` sanitization in `crud_asset.py` and `import_sessions.py`.
+    - Ensures the app is resilient to missing data (empty cells) in user-provided spreadsheets.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [crud_asset.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_asset.py) — Defensive type checks for ISIN/Ticker.
+* **Modified:** [import_sessions.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/api/v1/endpoints/import_sessions.py) — Sanitized row-level data processing.
+
+**Frontend:**
+* **New Card Components:** `TransactionCard`, `TopMoversCard`, `WatchlistItemCard`, `AliasCard`, `FMVCard`, `UserCard`, `InterestRateCard`.
+* **Modified Tables:** `TransactionHistoryTable`, `TopMoversTable`, `WatchlistTable`, `InterestRateTable`, `UsersTable`.
+* **Modified Admin Pages:** `AdminAliasesPage`, `AdminFMVPage`.
+
+---
+
+## 2026-04-13: Android UI Parity & Flexible Input UX
+
+**Task:** Align mobile UI density with desktop, fix "Unknown" investment styles, and implement a dual-mode (manual + picker) date input for better mobile UX.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Investment Style Analytics:** 
+    - Resolved "Unknown" classification for equities by refactoring `YFinanceProvider` and updating `AssetSeeder` and `crud_holding.py` to trigger on-demand enrichment for missing metadata.
+2. **UI Density Parity (Mobile):**
+    - Enriched `HoldingCard.tsx` for all asset classes to match desktop table information density.
+    - Added **LTP**, **Day's P&L**, **Invested Amount**, **Coupon/Maturity** (Bonds), and **Opening Dates** (Schemes) to the mobile card view.
+3. **Flexible Date Input UX:**
+    - Created a reusable `DateInput.tsx` component that supports both **manual keyboard entry** (standard text field) and a **native date picker** (via calendar icon).
+    - Rolled out the new component across all relevant modals: `TransactionFormModal`, `AddAwardModal`, `InterestRateFormModal`, and `GoalFormModal`.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [yfinance_provider.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/providers/yfinance_provider.py) — Refactored classification logic.
+* **Modified:** [asset_seeder.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/asset_seeder.py) — Persist style during seeding.
+* **Modified:** [crud_holding.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/crud/crud_holding.py) — Trigger on-demand enrichment.
+
+**Frontend:**
+* **New:** [DateInput.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/common/DateInput.tsx) — Dual-mode input component.
+* **Modified:** [HoldingCard.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/HoldingCard.tsx) — Enriched metric grids.
+* **Modified:** [TransactionFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/TransactionFormModal.tsx) — Switched all 17 date fields to `DateInput`.
+* **Modified:** [AddAwardModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/AddAwardModal.tsx) — Integrated `DateInput`.
+* **Modified:** [InterestRateFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Admin/InterestRateFormModal.tsx) — Integrated `DateInput`.
+* **Modified:** [GoalFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/modals/GoalFormModal.tsx) — Integrated `DateInput`.
+
+---
+
+## 2026-04-12: Android v1.2.0-exp Stabilization & UI Refinements
+
+**Task:** Stabilize Android experimental build by resolving backup restore errors, FMV seeding issues, and improving UI navigation and layout.
+
+**AI Assistant:** Antigravity
+**Role:** Full Stack Developer
+
+### Summary
+
+1. **Functional Fixes:**
+    - **Backup/Restore:** Resolved Pydantic `ValidationError` in `backup_service.py` by ensuring date strings are coerced to `datetime` objects, satisfying Pydantic v1 requirements on Android/Chaquopy.
+    - **FMV 2018 Seeding:** Synchronized fixes from `main` branch via rebase and updated `Asset` schemas to include `fmv_2018` metadata. Added `beautifulsoup4` and `lxml` to backend requirements.
+    - **Investment Style Analytics:** Resolved the "Unknown" issue for equities by adding style classification logic to `AssetSeeder` and `crud_holding.py`. This ensures that both initial seeding and on-demand enrichment correctly persist "Value/Growth/Blend" metadata.
+2. **UI/UX Enhancements:**
+    - **Holding Page:** Refactored `HoldingCard.tsx` to display interest rates and maturity dates for non-market assets (FD/RD/PPF). Enriched the card-based layout for all asset classes to include missing metrics from the desktop tables (LTP, Day's P&L, Invested Amount, Opening Dates, etc.).
+    - **Safe Area Support:** Implemented `pt-safe` and `pb-safe` utility classes with `viewport-fit=cover` in `index.html` to prevent UI overlap with Android status bar/navigation.
+    - **In-App User Guide:** Created a dedicated `UserGuidePage.tsx` with a back/close button to allow returning to the app after viewing the guide.
+    - **Community Links:** Added Star/Report Issue links to the "More" page.
+    - **Input Optimization:** Enabled manual date typing by switching modal date inputs to `type="text"` with placeholders.
+    - **Modals:** Added "X" close buttons to `TransactionFormModal` for better mobile accessibility.
+
+### File Changes
+
+**Backend:**
+* **Modified:** [backup_service.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/services/backup_service.py) — Fixed date coercion logic.
+* **Modified:** [asset.py](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/app/schemas/asset.py) — Added `fmv_2018` to schemas.
+* **Modified:** [requirements.in](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/backend/requirements.in) — Added `beautifulsoup4`.
+
+**Frontend:**
+* **New:** [UserGuidePage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/UserGuidePage.tsx) — Internal help guide page.
+* **Modified:** [App.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/App.tsx) — Added safest area padding and routes.
+* **Modified:** [HoldingCard.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/HoldingCard.tsx) — Tailored debt asset view.
+* **Modified:** [MorePage.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/pages/MorePage.tsx) — Added Community & Help links.
+* **Modified:** [HelpLink.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/HelpLink.tsx) — Switched to internal navigation.
+* **Modified:** [TransactionFormModal.tsx](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/frontend/src/components/Portfolio/TransactionFormModal.tsx) — Added close button and manual date input.
+
+---
+
+## 2026-04-03: Android Startup Seeding & Login Trigger Diagnostics
+
+**Task:** Fix unintended asset seeding at startup on Android and resolve the Yahoo header test script not triggering after login.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1. **Asset Seeding Fix:**
+    - Identified that `check_and_seed_on_startup()` was trigger despite being commented out (likely due to stale code or implicit imports).
+    - Physically removed the commented-out lines in `backend/app/main.py`.
+    - Added diagnostic logging to verify `DEPLOYMENT_MODE` during the startup event.
+2. **Login Trigger Diagnostics:**
+    - Augmented the `/login` endpoint in `backend/app/api/v1/endpoints/auth.py` with detailed tracing to verify if the Android-specific test trigger block is executed.
+    - Added an entry log to `trigger_yahoo_header_test` in `backend/app/api/v1/endpoints/testing.py` to confirm the function is reached.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/main.py` — Removed stale seeding code, added startup diagnostic.
+* **Modified:** `backend/app/api/v1/endpoints/auth.py` — Added login tracing for Android trigger.
+* **Modified:** `backend/app/api/v1/endpoints/testing.py` — Added entry log to Yahoo test function.
+
+### Verification
+
+* **Syntax Check:** Verified all modified files compile correctly.
+* **Diagnostic Strategy:** Updated logs to provide clear "DEBUG" indicators in Logcat for `DEPLOYMENT_MODE` and function entry.
+
+---
+
+## 2026-03-30: Mobile-Responsive UI/UX Migration & Linting Cleanup
+
+**Task:** Optimize the ArthSaarthi frontend for mobile/Android deployment, implementing responsive navigation and layout, and resolving build-artifact linting noise.
+
+**AI Assistant:** Antigravity
+**Role:** Frontend Developer / UI/UX Engineer
+
+### Summary
+
+1. **Mobile-First Shell Refactor:**
+    - Created `MobileHeader.tsx` (sticky top bar with theme/privacy toggles) and `MobileNav.tsx` (bottom tab bar).
+    - Refactored `App.tsx` and `NavBar.tsx` to handle responsive layout switching (Sidebar on Desktop, Tab bar on Mobile).
+2. **Component & Page Optimizations:**
+    - **Holdings:** Implemented `HoldingCard.tsx` and refactored `HoldingsTable.tsx` to switch between a dense table (Desktop) and a card-based view (Mobile).
+    - **Portfolio Details:** Added Floating Action Button (FAB) for quick transaction entry and optimized header layouts.
+    - **Transactions:** Refactored `TransactionHistoryTable.tsx` with horizontal scrolling and compact padding.
+    - **Modals:** Improved `TransactionFormModal.tsx` sizing and scroll behavior for small touch screens.
+3. **Build & Code Quality:**
+    - Resolved 335+ false-positive lint errors by ignoring `android/` and `electron/` build artifacts in `.eslintrc.cjs`.
+    - Added "Safe Area" padding utilities to `index.css` for notched mobile devices.
+
+### File Changes
+
+**Frontend:**
+* **New:** `frontend/src/components/MobileHeader.tsx`
+* **New:** `frontend/src/components/MobileNav.tsx`
+* **New:** `frontend/src/components/Portfolio/HoldingCard.tsx`
+* **Modified:** `frontend/src/App.tsx`, `NavBar.tsx`, `index.css`
+* **Modified:** `frontend/src/pages/DashboardPage.tsx`, `PortfolioDetailPage.tsx`, `TransactionsPage.tsx`
+* **Modified:** `frontend/src/components/Portfolio/HoldingsTable.tsx`, `TransactionFormModal.tsx`
+* **Modified:** `frontend/src/components/Transactions/TransactionHistoryTable.tsx`
+* **Modified:** `frontend/.eslintrc.cjs`
+
+### Verification
+
+* **Manual UI Audit:** Verified responsive breakpoints (Mobile < 768px, Tablet < 1024px, Desktop).
+* **Linting:** Confirmed 0 errors after ignoring build directories.
+
+### Outcome
+
+**Success.** ArthSaarthi now provides a premium, "App-like" experience on mobile devices, ready for Android APK distribution.
+
+---
+
+## 2026-03-28: ArthSaarthi Android Backend Stabilization (Pydantic Compatibility)
+
+**Task:** Stabilize the ArthSaarthi Android backend by resolving runtime crashes and compatibility issues arising from Pydantic version mismatches (v1 on Android via Chaquopy vs. v2 on Server/Desktop).
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer / Stability Engineer
+
+### Summary
+
+1. **Pydantic Compatibility Layer (Issue #375):** 
+    - Implemented a unified compatibility utility in `app/utils/pydantic_compat.py`.
+    - Created wrappers for `model_dump()`, `model_dump_json()`, `model_validate()`, `model_validate_json()`, and `model_copy()` to bridge the gap between Pydantic v1 (Chaquopy) and v2 (Standard).
+2. **Comprehensive Codebase Refactor:**
+    - Systematically replaced all direct Pydantic v2 method calls in `app/crud/`, `app/api/v1/`, and `app/cache/` with the compatibility utility.
+    - Updated `app/tests/` and `app/tests/utils/` to ensure test parity across environments.
+3. **Bug Fixes & Regressions:**
+    - Resolved `ImportError` due to missing `WatchlistItemUpdate` schema in `watchlist.py`.
+    - Fixed `AttributeError` in `CRUDWatchlist` by standardizing on `create_with_user`.
+    - Adjusted `test_asset_seeder_enrichment.py` to be resilient against pre-seeded test data.
+4. **Validation:**
+    - Verified the entire backend test suite (300+ tests) passes in the Pydantic v2 environment.
+    - Conducted manual audit to confirm zero direct Pydantic v2 calls remain in production code.
+
+### File Changes
+
+**Backend:**
+* **New:** `backend/app/utils/pydantic_compat.py` — Compatibility layer.
+* **Modified:** `backend/app/api/v1/endpoints/` (Multiple files) — Refactored Pydantic calls.
+* **Modified:** `backend/app/crud/` (Multiple files) — Refactored Pydantic calls.
+* **Modified:** `backend/app/cache/utils.py` — Refactored caching logic.
+* **Modified:** `backend/app/schemas/watchlist.py` — Added missing schema.
+* **Modified:** `backend/app/tests/` (Multiple files) — Refactored test Pydantic calls.
+
+### Verification
+
+* **Backend Tests:** 100% passing in Docker environment.
+* **Manual Audit:** Grep search confirmed 0 direct v2 method calls in `app/`.
+
+### Outcome
+
+**Success.** The ArthSaarthi backend is now fully compatible with both Pydantic v1 and v2, ensuring stability on Android/Chaquopy deployments while maintaining modern standards on Desktop/Server.
+
+---
+
+## 2026-03-27: Comprehensive QA Run & Exhaustive User Guide (v1.2.0)
+
+**Task:** Perform an exhaustive QA verification of the ArthSaarthi application, focusing on taxation, corporate actions, and analytics, and generate a detailed User Guide.
+
+**AI Assistant:** Antigravity
+**Role:** QA Engineer / Technical Writer
+
+### Summary
+
+1. **Transaction Lifecycle & Corporate Actions:**
+    - Verified **RELIANCE industries** 1:1 Bonus and 30-unit SELL transaction via FIFO.
+    - Verified **HDFC BANK** 1:2 Reverse Split (consolidation) and 20-unit SELL transaction.
+    - Successfully validated **Specific Lot Selection** for US Equities (AAPL/MSFT).
+2. **Taxation & Compliance (Schedule 112A):**
+    - Verified **Section 112A Grandfathering** math for RELIANCE (acquired Jan 2017).
+    - Confirmed system correctly used Actual Cost (₹520) as tax base over Jan 31, 2018 FMV (₹424.64).
+    - Verified Capital Gains summary and Schedule 112A report accuracy for FY 2025-26.
+3. **Analytics & Performance:**
+    - Validated **Portfolio XIRR (12.25%)** and **Alpha (0.51%)** against the Nifty 50 benchmark.
+    - Verified Dashboard analytics (Asset Class, Sectoral, Market Cap distribution).
+    - Confirmed **Privacy Mode** functionality across all pages.
+4. **Documentation & User Guide:**
+    - Generated a 150+ line `USER_GUIDE.md` in `temp_qa_run/` with localized media in `temp_qa_run/media/`.
+    - Documented every navigation element, modal, and asset transaction log.
+    - Included voiceover scripts for 10 major feature demonstrations.
+
+### File Changes
+
+* **New:** `temp_qa_run/USER_GUIDE.md` — Exhaustive documentation.
+* **New:** `temp_qa_run/media/` — 50+ localized screenshots and recordings.
+
+### Verification
+
+* **Manual QA:** End-to-end verification of all portfolios (Core Wealth, Retirement Fund, Alpha Trading).
+* **Mathematical Validation:** Confirmed FIFO, Split-adjustment, and Grandfathering math matches official income tax rules.
+
+### Outcome
+
+**Success.** The ArthSaarthi platform is fully verified and documented for the v1.2.0 release.
+
+---
+
+## 2026-03-24: Fixed Deposit Lifecycle, P&L Correction & Import Robustness (#374)
+
+
+**Task:** Fix the end-to-end lifecycle for Matured FDs in the Transaction History, correct portfolio Realized P&L calculations, improve Import Session error propagation, and fix misplaced unit test discovery.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **FD Transaction History Lifecycle (Issue 17, 40, 41):** 
+    - Implemented synthetic `FD_DEPOSIT` and `FD_MATURITY` transaction injection in `transactions.py`, scoped to specific portfolios and normalized to naive datetimes.
+    - Updated `TransactionHistoryTable.tsx` with custom labels, color coding (teal/amber), and conditional Edit/Delete visibility.
+    - Wired the `FD_MATURITY` delete action to `useDeleteFixedDeposit` in `TransactionsPage.tsx` to ensure the underlying record is removed.
+2. **Matured FD Redaction & P&L (Issue 17, 42):** 
+    - Redacted matured FDs/RDs from the Holdings UI list in `crud_holding.py` to prevent clutter.
+    - Fixed the missing P&L calculation for redacted assets, ensuring `total_realized_pnl` accurately reflects matured deposit interest in the portfolio summary.
+3. **Import Error Propagation (Issue 43):** Modified `import_sessions.py` to re-raise `HTTPException` during the commit phase, ensuring specific validation errors (e.g., "Insufficient holdings to sell") are displayed to the user instead of a generic 500.
+4. **Backend Test Discovery (Issue 44):** Relocated misplaced test files (`test_auth_security.py`, `test_benchmark_service.py`) from `backend/tests/unit/backend/` to `backend/app/tests/` to ensure they are correctly collected and executed by the standard test suite.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/api/v1/endpoints/transactions.py` — Synthetic FD injection.
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Error propagation fix.
+* **Modified:** `backend/app/crud/crud_holding.py` — Redaction and P&L accumulation.
+* **Modified:** `backend/app/schemas/enums.py` — Added new FD transaction types.
+* **Moved:** `backend/app/tests/crud/test_auth_security.py` (from `backend/tests/unit/backend/`)
+* **Moved:** `backend/app/tests/services/test_benchmark_service.py` (from `backend/tests/unit/backend/`)
+
+**Frontend:**
+* **Modified:** `frontend/src/pages/TransactionsPage.tsx` — Delete wiring.
+* **Modified:** `frontend/src/components/Transactions/TransactionHistoryTable.tsx` — UI labels/actions.
+* **Modified:** `frontend/src/types/enums.ts` — Enum synchronization.
+
+### Verification
+
+* **Backend Tests:** All tests passing after clearing pycache conflict.
+* **Manual Verification:** Verified FD delete-through-history, P&L accuracy, and import error visibility.
+
+### Outcome
+
+**Success.** The Fixed Deposit lifecycle is now mathematically and visually consistent across Holdings and Transaction History, with improved error handling for data imports.
+
+---
+
+## 2026-03-23: Live Testing v1.2.0 Bug Fixes (#373)
+
+**Task:** Fix 7 critical bugs from the v1.2.0 live testing phase related to FD P&L, PPF chart history, benchmark simulations, Pydantic validation crashes, and missing bond API schemas.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1. **Benchmark Simulation Crashes (Issue 19 & 370):** Fixed a Pydantic `ValidationError` in `_generate_synthetic_transactions` by ensuring generated dates do not exceed `date.today()`. Also implemented precision Lot-Based FIFO tracking for `SELL` benchmark outflows to prevent large stock gains from mathematically distorting the long-term benchmark XIRR.
+2. **Benchmark Overlay (Issue 11 & 15):** The Debt/Risk-Free benchmark comparison fell back to 0.0 value and flatlined if Yahoo indices were absent. Removed a premature exit in `_run_simulation` so the fallback Risk-Free logic executes accurately, and implemented dynamic labeling. 
+3. **PPF History Chart (Issue 13):** Fixed the PPF portfolio history flatline by removing a hardcoded `date.today()` and replacing it with the dynamically requested `calculation_date` to prevent premature FY interest accrual.
+4. **Matured FD & RD P&L (Issue 18a, 18b, 17):** Accurately computed pro-rata interest for P&L tracking. Also ensured that the `_get_portfolio_cash_flows` analyzer injects Payout FD interests as `DIVIDEND` inflows to correctly output positive XIRR rather than `0.00%`. Orphaned matured FDs and RDs now correctly appear in the UI with `quantity=0`.
+5. **Asset API Schema (Issue 14):** Fixed the `AssetSearchResult` to expose the optional `bond` dictionary so the frontend API consumer can auto-populate subsequent bond transaction forms (coupon rate, ISIN).
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/services/benchmark_service.py`
+* **Modified:** `backend/app/crud/crud_analytics.py`
+* **Modified:** `backend/app/crud/crud_holding.py`
+* **Modified:** `backend/app/crud/crud_ppf.py`
+* **Modified:** `backend/app/schemas/asset.py`
+* **Modified:** `backend/app/api/v1/endpoints/assets.py`
+* **Modified:** `backend/app/core/config.py` - (Add "android" literal)
+* **Modified:** `backend/app/schemas/token.py` - (Add "android" literal)
+
+### Verification
+
+* **Backend Tests:** 306/306 passing.
+
+### Outcome
+
+**Success.** All reported v1.2.0 bugs are resolved with comprehensive mathematical unit-level stability, ensuring the application is production-ready for its impending release.
+
+---
+## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
 
 **AI Assistant:** Antigravity
 **Role:** Backend Developer
