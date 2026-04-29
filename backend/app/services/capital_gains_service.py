@@ -70,15 +70,17 @@ class CapitalGainsService:
             )
         )
 
+        if user_id:
+            query = query.where(SellTx.user_id == user_id)
         if portfolio_id:
             query = query.where(SellTx.portfolio_id == portfolio_id)
-        elif user_id:
-            query = query.where(SellTx.user_id == user_id)
 
         links = self.db.scalars(query).all()
 
         # 1.5. Pre-fetch and pre-calculate Demerger Cost Reductions
-        demerger_ratios = self._calculate_demerger_ratios(portfolio_id, end_date)
+        demerger_ratios = self._calculate_demerger_ratios(
+            portfolio_id, user_id, end_date
+        )
 
         gains: List[GainEntry] = []
         foreign_gains: List[ForeignGainEntry] = []
@@ -191,6 +193,7 @@ class CapitalGainsService:
     def _calculate_demerger_ratios(
         self,
         portfolio_id: Optional[str],
+        user_id: Optional[str],
         end_date: datetime
     ) -> Dict[str, List[Tuple[date, Decimal]]]:
         """
@@ -202,6 +205,8 @@ class CapitalGainsService:
             Transaction.transaction_type == TransactionType.DEMERGER,
             Transaction.transaction_date <= end_date
         )
+        if user_id:
+            query = query.where(Transaction.user_id == user_id)
         if portfolio_id:
             query = query.where(Transaction.portfolio_id == portfolio_id)
 

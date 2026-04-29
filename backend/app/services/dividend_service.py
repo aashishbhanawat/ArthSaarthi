@@ -103,10 +103,10 @@ class DividendService:
             )
         )
 
+        if user_id:
+            query = query.filter(Transaction.user_id == user_id)
         if portfolio_id:
             query = query.filter(Transaction.portfolio_id == portfolio_id)
-        elif user_id:
-            query = query.filter(Transaction.user_id == user_id)
 
         # Sort by date
         transactions = query.order_by(Transaction.transaction_date.asc()).all()
