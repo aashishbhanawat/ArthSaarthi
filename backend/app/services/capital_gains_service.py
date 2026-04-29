@@ -38,7 +38,8 @@ class CapitalGainsService:
         self,
         portfolio_id: Optional[str],
         fy_year: str, # e.g. "2025-26"
-        slab_rate: float = 30.0 # Default to 30% if not provided
+        slab_rate: float = 30.0, # Default to 30% if not provided
+        user_id: Optional[str] = None
     ) -> CapitalGainsSummary:
         """
         Main entry point to calculate Capital Gains for a financial year.
@@ -71,6 +72,8 @@ class CapitalGainsService:
 
         if portfolio_id:
             query = query.where(SellTx.portfolio_id == portfolio_id)
+        elif user_id:
+            query = query.where(SellTx.user_id == user_id)
 
         links = self.db.scalars(query).all()
 
