@@ -77,7 +77,10 @@ class DividendService:
         return rate
 
     def get_dividend_report(
-        self, fy_year: str, portfolio_id: Optional[str] = None
+        self,
+        fy_year: str,
+        portfolio_id: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> DividendSummary:
         """
         Generate a dividend report for a specific financial year.
@@ -100,6 +103,8 @@ class DividendService:
             )
         )
 
+        if user_id:
+            query = query.filter(Transaction.user_id == user_id)
         if portfolio_id:
             query = query.filter(Transaction.portfolio_id == portfolio_id)
 
