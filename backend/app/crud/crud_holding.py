@@ -10,7 +10,7 @@ from typing import List
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import crud, models, schemas
 from app.cache.utils import cache_analytics_data
@@ -381,9 +381,12 @@ def _process_market_traded_assets(
 
     # --- Pre-fetch Transaction Links ---
     transaction_ids = [tx.id for tx in transactions]
-    all_links = db.query(TransactionLink).filter(
-        TransactionLink.sell_transaction_id.in_(transaction_ids)
-    ).all()
+    all_links = (
+        db.query(TransactionLink)
+        .options(joinedload(TransactionLink.buy_transaction, innerjoin=True))
+        .filter(TransactionLink.sell_transaction_id.in_(transaction_ids))
+        .all()
+    )
 
     sell_links_map = defaultdict(list)
     for link in all_links:
@@ -392,19 +395,10 @@ def _process_market_traded_assets(
     # Map transaction ID to object for quick lookup of Buy price
     tx_map = {tx.id: tx for tx in transactions}
 
-    # Optimization: Pre-fetch any linked buy transactions not in tx_map
-    # (e.g. from other portfolios)
-    missing_buy_ids = {
-        link.buy_transaction_id for link in all_links
-        if link.buy_transaction_id not in tx_map
-    }
-    if missing_buy_ids:
-        logger.debug(f"Pre-fetching {len(missing_buy_ids)} linked buy transactions.")
-        missing_txs = db.query(models.Transaction).filter(
-            models.Transaction.id.in_(missing_buy_ids)
-        ).all()
-        for m_tx in missing_txs:
-            tx_map[m_tx.id] = m_tx
+    # Add eager-loaded buy transactions into tx_map
+    for link in all_links:
+        if link.buy_transaction_id not in tx_map and link.buy_transaction:
+            tx_map[link.buy_transaction_id] = link.buy_transaction
 
     for tx in transactions:
         asset = asset_map.get(tx.asset_id)

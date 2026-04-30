@@ -135,13 +135,19 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
         const buys = JSON.parse(JSON.stringify(sortedTxs.filter(tx => acquisitionTypes.includes(tx.transaction_type))));
         const sells = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'SELL')));
 
+        // Create a Map for O(1) lookup of buy transactions by ID
+        const buyMap = new Map<string, Transaction>();
+        for (const b of buys) {
+            buyMap.set(b.id, b);
+        }
+
         for (const sell of sells) {
             let sellQuantityToMatch = Number(sell.quantity);
 
             // 1. Process Specific Links from Backend
             if (sell.sell_links && sell.sell_links.length > 0) {
                 for (const link of sell.sell_links) {
-                    const linkedBuy = buys.find((b: Transaction) => b.id === link.buy_transaction_id);
+                    const linkedBuy = buyMap.get(link.buy_transaction_id);
                     if (linkedBuy) {
                         const linkQty = Number(link.quantity);
                         const currentBuyQty = Number(linkedBuy.quantity);
