@@ -1,34 +1,32 @@
-## 2026-04-30: Optimize Cache Deletion Using Bulk Operations (#420)
+## 2026-03-15: Auto-create ISIN assets during import
 
-**Task:** Optimize cache invalidation performance by introducing bulk deletion capabilities to the CacheClient interface and implementing them for Redis and DiskCache.
+**Task:** Automatically create asset records when an import contains an ISIN-style ticker (e.g., "ISIN:XXX") that doesn't exist in the database.
 
-**AI Assistant:** Antigravity
-**Role:** Backend Developer
+**AI Assistant:** Jules
+**Role:** Senior Software Engineer
 
 ### Summary
 
-1.  **Cache Interface:** Added `delete_multi(keys: List[str])` to the `CacheClient` abstract base class.
-2.  **Redis Implementation:** Implemented `delete_multi` in `RedisCacheClient` using Redis's bulk `delete` command with 1000-key chunking to prevent blocking.
-3.  **Disk Implementation:** Implemented `delete_multi` in `DiskCacheClient` using `self._cache.transact()` to group file system operations efficiently.
-4.  **Batch Invalidation:** Refactored `invalidate_caches_for_portfolio` and `restore_backup` to collect all keys and perform a single bulk deletion, significantly reducing round-trips to the cache provider.
+1. **Side-Effect Free Preview:** Updated `get_import_session_preview` to fetch asset details externally via `financial_data_service` without persisting them. It now returns transient `Asset` objects for recognized ISINs, allowing users to preview the matched data without polluting the database if they cancel the import.
+2. **Robust Commit Logic:** Updated `commit_import_session` to use `crud.asset.get_or_create_by_ticker` for both explicit ISIN fields and tickers with "ISIN:" prefix. This ensures assets are reliably created during the final persistence phase.
+3. **Lookup Optimization:** Preserved the original precise ISIN lookup as the primary check, falling back to auto-creation only when no local match is found. This prevents duplicate asset creation when an asset already exists with a different ticker but the same ISIN.
 
 ### File Changes
 
 **Backend:**
-*   **Modified:** `backend/app/cache/base.py` — Added `delete_multi` abstract method.
-*   **Modified:** `backend/app/cache/redis_client.py` — Implemented bulk delete with chunking.
-*   **Modified:** `backend/app/cache/disk_client.py` — Implemented bulk delete using transactions.
-*   **Modified:** `backend/app/cache/utils.py` — Refactored `invalidate_caches_for_portfolio` to use `delete_multi`.
-*   **Modified:** `backend/app/services/backup_service.py` — Refactored `restore_backup` cache invalidation to use `delete_multi`.
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Implemented transient preview logic and robust commit auto-creation.
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Added `financial_data_service` import.
 
 ### Verification
 
-*   **Backend Tests:** Verified `test_backup_restore_flow` in `app/tests/api/v1/test_backup_restore.py`. All tests passed.
-*   **Performance:** Drastically reduced cache invalidation time for portfolios with many assets and during full system restores.
+* **Manual Review:** Verified architectural separation between read-only preview and write-enabled commit.
+* **Bug Fix:** Resolved `TypeError` in `CRUDAsset.get_or_create_by_ticker` where `ticker_symbol` was passed twice during auto-creation.
+* **Automated Tests:** Verified with existing `test_import_sessions.py` and new targeted tests for ISIN auto-creation using SQLite.
+* **Syntax Check:** `python3 -m py_compile` passed.
 
 ### Outcome
 
-**Success.** Cache invalidation is now significantly more efficient, especially for larger portfolios and during backup restoration.
+**Success.** Users can now import files with new ISIN-identified assets without needing to manually create them first, while maintaining database integrity and a clean preview experience.
 
 ---
 

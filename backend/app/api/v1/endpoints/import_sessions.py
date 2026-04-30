@@ -16,6 +16,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -23,6 +24,7 @@ from app.cache.utils import invalidate_caches_for_portfolio
 from app.core import dependencies as deps
 from app.core.config import settings
 from app.schemas.msg import Msg
+from app.services.financial_data_service import financial_data_service
 from app.services.import_parsers import parser_factory
 from app.utils.filename import secure_filename
 
@@ -296,8 +298,21 @@ def get_import_session_preview(
         if "isin" in row and row["isin"]:
             isin_code = row["isin"]
             asset = crud.asset.get_by_isin(db, isin_code=isin_code)
+            if not asset:
+                # Try to fetch details without creating (side-effect free preview)
+                details = financial_data_service.get_asset_details(f"ISIN:{isin_code}")
+                if details:
+                    # Validate and filter through schema to prevent TypeError
+                    asset_in = schemas.AssetCreate(
+                        ticker_symbol=(
+                            details.get("ticker_symbol")
+                            or f"ISIN:{isin_code}".upper()
+                        ),
+                        **{k: v for k, v in details.items() if k != "ticker_symbol"}
+                    )
+                    asset = models.Asset(**asset_in.model_dump())
             if asset:
-                 log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
+                log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
 
         if not asset:
             # This also handles ticker_symbol with "ISIN:" prefix
@@ -305,14 +320,20 @@ def get_import_session_preview(
             if asset:
                 log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
 
-        # If ticker looks like "ISIN:XXX", try to auto-create
+        # If ticker looks like "ISIN:XXX", try to find externally
+        # (side-effect free preview)
         if not asset and ticker_symbol.upper().startswith("ISIN:"):
-            asset = crud.asset.get_or_create_by_ticker(
-                db, ticker_symbol=ticker_symbol, asset_type="Mutual Fund"
-            )
+            details = financial_data_service.get_asset_details(ticker_symbol)
+            if details:
+                # Validate and filter through schema to prevent TypeError
+                asset_in = schemas.AssetCreate(
+                    ticker_symbol=details.get("ticker_symbol") or ticker_symbol.upper(),
+                    **{k: v for k, v in details.items() if k != "ticker_symbol"}
+                )
+                asset = models.Asset(**asset_in.model_dump())
             if asset:
                 log.info(
-                    f"Auto-matched/created by ISIN: {ticker_symbol} "
+                    f"Auto-matched (transient) by ISIN: {ticker_symbol} "
                     f"-> {asset.name}"
                 )
 
@@ -347,15 +368,19 @@ def get_import_session_preview(
             continue
 
         # 2. Duplicate Detection
-        existing_transaction = crud.transaction.get_by_details(
-            db,
-            portfolio_id=import_session.portfolio_id,
-            asset_id=asset.id,
-            transaction_date=pd.to_datetime(row["transaction_date"]),
-            transaction_type=row["transaction_type"].upper(),
-            quantity=Decimal(str(row["quantity"])),
-            price_per_unit=Decimal(str(row["price_per_unit"])),
-        )
+        existing_transaction = None
+        # Only check duplicates if the asset already exists in the database (persistent)
+        # We use inspect(asset).persistent to check if it's attached to the session
+        if asset and getattr(asset, "id", None) and inspect(asset).persistent:
+            existing_transaction = crud.transaction.get_by_details(
+                db,
+                portfolio_id=import_session.portfolio_id,
+                asset_id=asset.id,
+                transaction_date=pd.to_datetime(row["transaction_date"]),
+                transaction_type=row["transaction_type"].upper(),
+                quantity=Decimal(str(row["quantity"])),
+                price_per_unit=Decimal(str(row["price_per_unit"])),
+            )
 
         # For display: replace ISIN ticker with actual fund name/ticker
         if ticker_symbol.startswith("ISIN:") and asset:
@@ -414,6 +439,10 @@ def commit_import_session(
             # 1. Try ISIN lookup first (most reliable)
             if parsed_tx.isin:
                 asset = crud.asset.get_by_isin(db, isin_code=parsed_tx.isin)
+                if not asset:
+                    asset = crud.asset.get_or_create_by_ticker(
+                        db, ticker_symbol=f"ISIN:{parsed_tx.isin}"
+                    )
 
             # 2. Try alias lookup (with source)
             if not asset:
@@ -435,9 +464,14 @@ def commit_import_session(
 
             # 4. Try ticker lookup (also handles ISIN: prefix)
             if not asset:
-                asset = crud.asset.get_by_ticker(
-                    db, ticker_symbol=ticker_symbol
-                )
+                if ticker_symbol.upper().startswith("ISIN:"):
+                    asset = crud.asset.get_or_create_by_ticker(
+                        db, ticker_symbol=ticker_symbol
+                    )
+                else:
+                    asset = crud.asset.get_by_ticker(
+                        db, ticker_symbol=ticker_symbol
+                    )
 
             # 6. Try name lookup
             if not asset:
