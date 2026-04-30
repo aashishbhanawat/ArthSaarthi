@@ -44,7 +44,10 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         if db_asset:
             return db_asset
 
-        new_asset_data = AssetCreate(ticker_symbol=final_ticker, **details)
+        new_asset_data = AssetCreate(
+            ticker_symbol=final_ticker,
+            **{k: v for k, v in details.items() if k != "ticker_symbol"}
+        )
         return self.create(db=db, obj_in=new_asset_data)
 
     def get_all_by_type_and_portfolio(
