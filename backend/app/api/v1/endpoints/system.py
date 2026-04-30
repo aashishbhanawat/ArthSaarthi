@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.config import settings
+from app.core.dependencies import get_current_user
 from app.db.session import get_db
 
 logger = logging.getLogger(__name__)
@@ -324,10 +325,10 @@ def _is_newer_version(v1: str, v2: str) -> bool:
 @router.get("/logs", response_model=schemas.Msg)
 def get_logs(
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Get the last 1000 lines of system logs.
-    Available without auth for remote debugging (Android).
     """
     if not settings.LOG_FILE:
         return {"msg": "Logging to file is not enabled in this mode."}
@@ -336,7 +337,7 @@ def get_logs(
     log_path = Path(settings.LOG_FILE)
 
     if not log_path.exists():
-        return {"msg": f"Log file not found at {log_path}"}
+        return {"msg": "Log file not found"}
 
     try:
         # Read last 1000 lines
@@ -345,8 +346,8 @@ def get_logs(
             lines = f.readlines()
             last_lines = lines[-1000:]
             return {"msg": "".join(last_lines)}
-    except Exception as e:
-        logger.error(f"Error reading log file: {e}", exc_info=True)
+    except Exception:
+        logger.error("Error reading log file", exc_info=True)
         return {
             "msg": "Error reading log file. Please check the server logs for details."
         }
