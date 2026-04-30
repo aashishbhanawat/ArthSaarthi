@@ -32,6 +32,7 @@
 
 ## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
 
+
 **Task:** Fix 7 reported issues: cache invalidation for dashboard history, benchmark invested amount going negative after FD maturity, matured FDs/RDs in portfolio history, incomplete cache invalidation on restore, PPF log spam, and missing timing instrumentation.
 
 **AI Assistant:** Antigravity
