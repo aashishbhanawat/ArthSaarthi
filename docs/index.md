@@ -25,7 +25,6 @@ ArthSaarthi is a comprehensive, self-hosted personal investment portfolio manage
 1. [Installation Guide](installation_guide.md) - Set up ArthSaarthi on your system
 2. [User Guide](user_guide.md) - Learn how to use all features
 3. [User Guide (Visual)](user_guide/index.html) - Visual guide with screenshots
-4. [What's New in v1.2.0](v1.2.0.md) - Latest features and improvements
 
 ## Documentation
 

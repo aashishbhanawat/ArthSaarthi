@@ -50,7 +50,7 @@ _seeding_state = {
 
 
 # Minimum asset count to consider seeding complete
-MIN_ASSETS_FOR_COMPLETE = 10000
+MIN_ASSETS_FOR_COMPLETE = 100
 
 
 def _run_seeding_subprocess():
@@ -137,11 +137,7 @@ def get_seeding_status(db: Session = Depends(get_db)):
     try:
         asset_count = db.query(models.Asset).count()
 
-        is_large_enough = asset_count >= MIN_ASSETS_FOR_COMPLETE
-        is_idle = _seeding_state["status"] == SeedingStatus.IDLE
-        if _seeding_state["status"] == SeedingStatus.COMPLETE or (
-            is_large_enough and is_idle
-        ):
+        if asset_count >= MIN_ASSETS_FOR_COMPLETE:
             return SeedingStatusResponse(
                 status=SeedingStatus.COMPLETE,
                 progress=100,
@@ -149,16 +145,10 @@ def get_seeding_status(db: Session = Depends(get_db)):
                 asset_count=asset_count,
             )
         else:
-            # If NEEDS_SEEDING and we have some assets, estimate progress
-            # assuming background service is running
-            estimated_progress = min(
-                95, int((asset_count / MIN_ASSETS_FOR_COMPLETE) * 100)
-            )
-
             return SeedingStatusResponse(
                 status=SeedingStatus.NEEDS_SEEDING,
-                progress=estimated_progress,
-                message=f"Loading assets... ({asset_count:,} loaded)",
+                progress=0,
+                message=f"Only {asset_count} assets found. Seeding required.",
                 asset_count=asset_count,
             )
     except Exception as e:
@@ -261,7 +251,7 @@ class UpdateCheckResponse(BaseModel):
 
 
 # Current app version (should match package.json)
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.1.0"
 
 
 @router.get("/check-updates", response_model=UpdateCheckResponse)

@@ -70,8 +70,8 @@ describe('ImportPreviewPage', () => {
 
         expect(screen.getByText('Import Preview')).toBeInTheDocument();
         expect(screen.getByText('New Transactions (1)')).toBeInTheDocument();
-        expect(screen.getAllByText('TEST').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('BUY').length).toBeGreaterThan(0);
+        expect(screen.getByText('TEST')).toBeInTheDocument();
+        expect(screen.getByText('BUY')).toBeInTheDocument();
     });
 
     it('handles transaction selection and calls the commit mutation with selected data', async () => {
