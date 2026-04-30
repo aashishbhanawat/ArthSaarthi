@@ -1,6 +1,5 @@
 import React from 'react';
 import { User } from '../../types/user';
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface UserCardProps {
     user: User;
@@ -20,25 +19,9 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
                         </span>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <button 
-                        type="button" 
-                        onClick={() => onEdit(user)} 
-                        className="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        aria-label={`Edit user ${user.email}`}
-                        title="Edit User"
-                    >
-                        <PencilSquareIcon className="h-5 w-5" />
-                    </button>
-                    <button 
-                        type="button" 
-                        onClick={() => onDelete(user)} 
-                        className="text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        aria-label={`Delete user ${user.email}`}
-                        title="Delete User"
-                    >
-                        <TrashIcon className="h-5 w-5" />
-                    </button>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => onEdit(user)} className="btn btn-secondary btn-xs py-1">Edit</button>
+                    <button onClick={() => onDelete(user)} className="btn btn-danger btn-xs py-1">Delete</button>
                 </div>
             </div>
         </div>
