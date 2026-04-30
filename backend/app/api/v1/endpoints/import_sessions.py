@@ -304,7 +304,10 @@ def get_import_session_preview(
                 if details:
                     # Validate and filter through schema to prevent TypeError
                     asset_in = schemas.AssetCreate(
-                        ticker_symbol=details.get("ticker_symbol") or f"ISIN:{isin_code}".upper(),
+                        ticker_symbol=(
+                            details.get("ticker_symbol")
+                            or f"ISIN:{isin_code}".upper()
+                        ),
                         **{k: v for k, v in details.items() if k != "ticker_symbol"}
                     )
                     asset = models.Asset(**asset_in.model_dump())
@@ -317,7 +320,8 @@ def get_import_session_preview(
             if asset:
                 log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
 
-        # If ticker looks like "ISIN:XXX", try to find externally (side-effect free preview)
+        # If ticker looks like "ISIN:XXX", try to find externally
+        # (side-effect free preview)
         if not asset and ticker_symbol.upper().startswith("ISIN:"):
             details = financial_data_service.get_asset_details(ticker_symbol)
             if details:
