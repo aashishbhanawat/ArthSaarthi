@@ -51,7 +51,7 @@ test.describe.serial('Admin Interest Rate Management', () => {
     // Instead of asserting the exact string value, which can have floating point representation issues (e.g. "5.500" vs "5.50"),
     // we parse the input's value and compare it numerically for a more robust test.
     const rateValue = await editModal.getByLabel('Interest Rate (%)').inputValue();
-    expect(Number(rateValue)).toBeCloseTo(Number(testRate.rate));
+    expect(parseFloat(rateValue)).toBeCloseTo(parseFloat(testRate.rate));
     await editModal.getByLabel('Interest Rate (%)').fill(updatedRate);
     await editModal.getByRole('button', { name: 'Save Changes' }).click();
 
