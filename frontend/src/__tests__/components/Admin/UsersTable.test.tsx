@@ -30,15 +30,15 @@ describe('UsersTable', () => {
 
   test('calls onEdit with the correct user when Edit button is clicked', () => {
     renderComponent();
-    const editButtons = screen.getAllByRole('button', { name: 'Edit' });
-    fireEvent.click(editButtons[1]); // Click edit for the second user
+    const editButton = screen.getByRole('button', { name: `Edit user ${mockUsers[1].email}` });
+    fireEvent.click(editButton); // Click edit for the second user
     expect(onEdit).toHaveBeenCalledWith(mockUsers[1]);
   });
 
   test('calls onDelete with the correct user when Delete button is clicked', () => {
     renderComponent();
-    const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
-    fireEvent.click(deleteButtons[0]); // Click delete for the first user
+    const deleteButton = screen.getByRole('button', { name: `Delete user ${mockUsers[0].email}` });
+    fireEvent.click(deleteButton); // Click delete for the first user
     expect(onDelete).toHaveBeenCalledWith(mockUsers[0]);
   });
 });
