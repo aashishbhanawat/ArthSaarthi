@@ -20,6 +20,8 @@
 ### Verification
 
 * **Manual Review:** Verified architectural separation between read-only preview and write-enabled commit.
+* **Bug Fix:** Resolved `TypeError` in `CRUDAsset.get_or_create_by_ticker` where `ticker_symbol` was passed twice during auto-creation.
+* **Automated Tests:** Verified with existing `test_import_sessions.py` and new targeted tests for ISIN auto-creation using SQLite.
 * **Syntax Check:** `python3 -m py_compile` passed.
 
 ### Outcome
