@@ -24,6 +24,168 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-04-16-05
+**Title:** FIFO Linking Failure during Backup Restoration
+**Module:** Backup Service / Core Backend
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Data Integrity / Regression
+**Severity:** High
+**Description:** The backup restoration process was processing transactions out of order, causing the auto-FIFO linking logic to fail for SELL transactions inserted before BUYs.
+**Steps to Reproduce:**
+1. Back up a portfolio with linked FIFO transactions.
+2. Restore the backup.
+3. Observe that SELL transactions are unlinked and gains are missing from reports.
+**Expected Behavior:** Transactions should be linked correctly after restoration.
+**Actual Behavior:** Links were lost due to non-chronological insertion.
+**Resolution:** Updated `backup_service.py` to sort transactions by date before restoration and added a post-restore backfill fallback. Fixed in PR #379 (Issue #409).
+
+---
+
+**Bug ID:** 2026-04-16-04
+**Title:** Data Isolation Breach in Capital Gains Report
+**Module:** Core Backend / Security
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Security Vulnerability
+**Severity:** Critical
+**Description:** The Capital Gains report endpoints were missing authentication and user-level data filtering, allowing any authenticated user to potentially access transaction data belonging to other users.
+**Steps to Reproduce:**
+1. Log in as User A.
+2. Directly query `/api/v1/capital-gains/` without providing a portfolio_id (or providing User B's portfolio_id).
+3. Observe data from other users appearing in the response.
+**Expected Behavior:** Users should strictly only see their own transactions.
+**Actual Behavior:** Multi-user data was aggregated into the report.
+**Resolution:** Enforced `Depends(get_current_active_user)` on all Capital Gains endpoints and added mandatory `user_id` filtering to the `CapitalGainsService` database queries. Fixed in PR #379.
+
+---
+
+**Bug ID:** 2026-04-16-01
+**Title:** Sharpe Ratio Delta in Android Branch
+**Module:** Analytics (Backend)
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Regression / Documentation
+**Severity:** Medium
+**Description:** The Sharpe Ratio in the Android branch (0.55) differed from the baseline (1.07) for the same ticker (NTPC) and transaction details.
+**Expected Behavior:** Ratios should be consistent across branches for identical data.
+**Actual Behavior:** 0.52 delta in calculation.
+**Resolution:** Accepted as a change in historical data windowing/treatment in the Android branch. Documented for transparency. No code change required.
+
+---
+
+**Bug ID:** 2026-04-16-02
+**Title:** Transaction History UI Regression
+**Module:** UI (Frontend)
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Regression
+**Severity:** Medium
+**Description:** The look-and-feel of the Transaction History in the browser for the Android branch regressed from the premium design of the baseline.
+**Expected Behavior:** UI should maintain the premium design standards of the base branch.
+**Actual Behavior:** Visual regression in table styling and layout.
+**Resolution:** Restored CSS and layout logic in `TransactionHistoryTable.tsx` to match the baseline release.
+
+---
+
+**Bug ID:** 2026-04-16-03
+**Title:** Diversification Chart Data Duplication ("STOCK" vs "Stock")
+**Module:** Analytics (Backend)
+**Reported By:** User
+**Date Reported:** 2026-04-16
+**Classification:** Regression
+**Severity:** Medium
+**Description:** Diversification charts showed "STOCK" and "Stock" as separate entities. Additionally, debt assets (FDs) were not correctly accounted for in the asset class pie chart.
+**Expected Behavior:** Asset classes should be unified and exhaustive.
+**Actual Behavior:** Duplicate labels and missing debt categories.
+**Resolution:** Normalized asset classification logic in `crud_analytics.py` (using UPPERCASE for internal mapping and Title Case for display) and ensured all `Holding` instances (including FD/RD/PPF) are processed in the grouping loop.
+
+---
+
+**Bug ID:** 2026-04-13-02
+**Title:** AttributeError: 'float' object has no attribute 'upper' during Import Session Preview
+**Module:** Core Backend / Import Service
+**Reported By:** User
+**Date Reported:** 2026-04-13
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The application crashes with an `AttributeError` when generating an import session preview if the uploaded spreadsheet contains `NaN` values (empty cells) in the `isin` or `ticker_symbol` columns. Pandas interprets these as floats, which do not have the `.upper()` method used in the CRUD layer.
+**Steps to Reproduce:**
+1. Upload a spreadsheet for import that contains empty cells in the ISIN or Ticker columns.
+2. Proceed to the "Preview" stage.
+3. Observe a 500 error and `AttributeError` in the backend logs.
+**Expected Behavior:** The backend should ignore or sanitize `NaN` values and continue processing valid rows.
+**Actual Behavior:** The entire preview request fails with a crash.
+**Resolution:** Added defensive type-checking (`isinstance(val, str)`) to `crud_asset.py` and explicit `pd.isna()` checks to `import_sessions.py` to sanitize incoming row data before string manipulation.
+
+---
+
+**Bug ID:** 2026-04-07-01
+**Title:** Android App Stuck on 0% "Preparing Asset Database" Splash Screen
+**Module:** UI/Auth (Frontend)
+**Reported By:** User
+**Date Reported:** 2026-04-07
+**Classification:** Implementation (Frontend)
+**Severity:** High
+**Description:** On fresh Android installations, the app hangs at 0% progress on the seeding splash screen because the background asset seeding is not automatically triggered, or has been intentionally disabled for debugging. This prevents users from accessing the login or setup pages.
+**Steps to Reproduce:**
+1. Install a fresh instance of the Android app with no existing database.
+2. Observe the app getting stuck at the "Preparing Asset Database" screen at 0%.
+**Expected Behavior:** The app should either trigger seeding automatically or provide a way to skip it in debug mode.
+**Actual Behavior:** App remains stuck indefinitely.
+**Resolution:** Added a "Skip Initialization (Debug)" button to the `MobileSeedingSplash` component to allow manual bypass of the seeding check.
+
+---
+
+**Bug ID:** 2026-04-03-01
+**Title:** Android Asset Seeding Triggering at Startup Incorrectly
+**Module:** Initialization Service / Android Deployment
+**Reported By:** User
+**Date Reported:** 2026-04-03
+**Classification:** Implementation (Backend)
+**Severity:** Medium
+**Description:** On Android, the background asset seeding was triggering even when the call was commented out in `main.py`. This was likely due to implicit imports or stale code execution in the Chaquopy environment.
+**Steps to Reproduce:**
+1. Start the Android app.
+2. Observe `logcat` for "Assets table has 0 assets (<10000). Triggering background seeding...".
+**Expected Behavior:** Seeding should only trigger if explicitly called or requested via API.
+**Actual Behavior:** Seeding triggered automatically on every startup.
+**Resolution:** Physically removed the commented-out lines in `backend/app/main.py`. Added diagnostic logging to verify `DEPLOYMENT_MODE`.
+
+---
+
+**Bug ID:** 2026-04-03-02
+**Title:** Yahoo Header Test Script Not Triggering After Login
+**Module:** Authentication / Android Debugging
+**Reported By:** User
+**Date Reported:** 2026-04-03
+**Classification:** Implementation (Backend)
+**Severity:** Medium
+**Description:** The diagnostic loop for testing Yahoo Finance headers was not starting after the user logged in on Android, despite being wired in `auth.py`.
+**Steps to Reproduce:**
+1. Log in to the Android app.
+2. Check logs for "### STARTING YAHOO HEADER TEST LOOP ###".
+**Expected Behavior:** The test loop should start immediately upon successful login in `android` mode.
+**Actual Behavior:** No logs appeared, indicating the block was either skipped or silent.
+**Resolution:** Added extensive `DEBUG` logging to `auth.py` and `testing.py` to trace the execution flow and confirm function entry.
+
+---
+
+**Bug ID:** 2026-03-30-01
+**Title:** Frontend Lint Errors in Android/Electron Build Artifacts
+**Module:** UI/Styling, Build Pipeline
+**Reported By:** User
+**Date Reported:** 2026-03-30
+**Classification:** Implementation (Frontend) / Build Pipeline
+**Severity:** Medium
+**Description:** The frontend linting process was reporting 335+ errors because it was attempting to lint minified and generated assets within the `android` and `electron` build directories.
+**Steps to Reproduce:**
+1. Run `docker compose run --rm frontend npx eslint .`.
+2. Observe massive amount of errors in `android/app/build/...` and `android/app/src/main/assets/...`.
+**Expected Behavior:** Build artifacts and secondary platform specific directories should be ignored by the main frontend linter.
+**Actual Behavior:** Linter crashes or reports hundreds of errors from autogenerated code.
+**Resolution:** Modified `frontend/.eslintrc.cjs` to include `android` and `electron` in the `ignorePatterns` array.
+
 ---
 
 **Bug ID:** 2026-03-10-01
@@ -7198,3 +7360,21 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 **Issue**: Windows build failed due to `cffi` version conflict between `bcrypt` and `cryptography`.
 **Fix**: Updated `bcrypt` to version `4.1.3` in `requirements-windows.txt` to eliminate the `cffi` dependency conflict.
 
+
+---
+
+**Bug ID:** 2026-03-28-01
+**Title:** Pydantic v2 Compatibility Crash on Android/Chaquopy
+**Module:** Core Backend / Pydantic Compatibility
+**Reported By:** User / Automated Testing
+**Date Reported:** 2026-03-28
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The backend crashed on Android devices running Chaquopy because Chaquopy only supports Pydantic v1, whereas the codebase was migrated to Pydantic v2. Common v2 methods like `.model_dump()` and `.model_validate()` resulted in `AttributeError`. Additionally, FastAPI's `ResponseValidationError` occurred when processing models on v1.
+**Steps to Reproduce:**
+1. Deploy the backend to an Android device via Chaquopy.
+2. Attempt any API call that involves Pydantic model serialization or validation (e.g., login, fetching portfolios).
+3. Observe `AttributeError` in the logs.
+**Expected Behavior:** The backend should run seamlessly in both Pydantic v1 and v2 environments.
+**Actual Behavior:** Immediate crashes on all Pydantic operations.
+**Resolution:** Implemented a unified compatibility layer in `app/utils/pydantic_compat.py` that wraps all Pydantic operations and detects the version at runtime. Refactored the entire codebase (CRUD, API, tests) to use these wrappers. Fixed secondary regressions in the watchlist schema and asset seeder tests encountered during the refactor.

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app import crud
 from app.cache.factory import get_cache_client
+from app.utils.pydantic_compat import model_validate_json
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ def cache_analytics_data(
             if cached_result is not None:
                 logger.debug(f"Cache HIT for key: {cache_key}")
                 if response_model:
-                    return response_model.model_validate_json(cached_result)
+                    return model_validate_json(response_model, cached_result)
                 return json.loads(cached_result)
 
             logger.debug(f"Cache MISS for key: {cache_key}")
@@ -99,9 +100,13 @@ def invalidate_caches_for_portfolio(db: Session, portfolio_id: uuid.UUID):
 
     # Invalidate dashboard summary and all range-specific history keys for the user
     # The history cache key format is: analytics:dashboard_history:{user_id}:{range_str}
-    keys_to_delete = [f"analytics:dashboard_summary:{user_id}"]
+    dashboard_summary_key = f"analytics:dashboard_summary:{user_id}"
+    cache.delete(dashboard_summary_key)
+    logger.info(f"Invalidated cache for key: {dashboard_summary_key}")
     for range_str in ["7d", "30d", "1y", "all"]:
-        keys_to_delete.append(f"analytics:dashboard_history:{user_id}:{range_str}")
+        history_key = f"analytics:dashboard_history:{user_id}:{range_str}"
+        cache.delete(history_key)
+        logger.info(f"Invalidated cache for key: {history_key}")
 
     # Delete all DB snapshots for this portfolio to force live recalculation
     try:
@@ -122,23 +127,17 @@ def invalidate_caches_for_portfolio(db: Session, portfolio_id: uuid.UUID):
         )
 
     # Invalidate portfolio-level analytics and holdings summary
-    keys_to_delete.extend(
-        [
-            f"analytics:portfolio_holdings_and_summary:{portfolio_id}",
-            f"analytics:portfolio_analytics:{portfolio_id}",
-            f"analytics:all_portfolios_holdings_and_summary:{user_id}",
-        ]
-    )
+    keys_to_delete = [
+        f"analytics:portfolio_holdings_and_summary:{portfolio_id}",
+        f"analytics:portfolio_analytics:{portfolio_id}",
+        f"analytics:all_portfolios_holdings_and_summary:{user_id}",
+    ]
 
     # Invalidate all asset-level analytics for this portfolio
     portfolio_assets = crud.asset.get_multi_by_portfolio(db, portfolio_id=portfolio_id)
     for asset in portfolio_assets:
         keys_to_delete.append(f"analytics:asset_analytics:{asset.id}")
 
-    if cache:
-        cache.delete_multi(keys_to_delete)
-        logger.info(
-            "Invalidated %d cache entries for portfolio %s",
-            len(keys_to_delete),
-            portfolio_id,
-        )
+    for key in keys_to_delete:
+        cache.delete(key)
+        logger.info(f"Invalidated cache for key: {key}")

@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 
 class CacheClient(ABC):
@@ -12,11 +12,6 @@ class CacheClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def delete_multi(self, keys: List[str]) -> None:
-        """Deletes multiple keys from the cache."""
-        raise NotImplementedError
-
-    @abstractmethod
     def set(self, key: str, value: str, expire: Optional[int] = None) -> None:
         """Sets a value in the cache with an optional TTL."""
         raise NotImplementedError
@@ -24,11 +19,6 @@ class CacheClient(ABC):
     @abstractmethod
     def delete(self, key: str) -> None:
         """Deletes a key from the cache."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def incr(self, key: str, expire: Optional[int] = None) -> int:
-        """Atomically increments a key. If it does not exist, sets it to 1."""
         raise NotImplementedError
 
     def get_json(self, key: str) -> Optional[Any]:

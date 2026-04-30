@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 
 interface HelpLinkProps {
@@ -6,26 +7,22 @@ interface HelpLinkProps {
 }
 
 const HelpLink = ({ sectionId, className = 'h-5 w-5 text-gray-400 hover:text-gray-600' }: HelpLinkProps) => {
+  const navigate = useNavigate();
+
   const handleClick = (e: React.MouseEvent) => {
-    // Check if running in Electron
-    if (window.electronAPI?.openUserGuide) {
-      e.preventDefault();
-      window.electronAPI.openUserGuide(sectionId);
-    }
-    // In web mode, the href will work normally
+    e.preventDefault();
+    // Navigate to local help page instead of opening new window
+    navigate(`/help#${sectionId}`);
   };
 
   return (
-    <a
-      href={`/user_guide/index.html#${sectionId}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Help for this section`}
-      className="ml-2"
+    <button
       onClick={handleClick}
+      aria-label={`Help for this section`}
+      className="ml-2 focus:outline-none"
     >
       <QuestionMarkCircleIcon className={className} />
-    </a>
+    </button>
   );
 };
 

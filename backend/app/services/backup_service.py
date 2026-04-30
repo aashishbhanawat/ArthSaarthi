@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.schemas.transaction import TransactionType
+from app.scripts.backfill_transaction_links import run_backfill
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +30,20 @@ def _serialize_decimal(d: Decimal | None) -> float | None:
     return float(d)
 
 
-def _parse_date(d_str: str | None) -> date | None:
+def _parse_date(d_str: str | None) -> datetime | None:
     if not d_str:
         return None
-    return datetime.strptime(d_str, "%Y-%m-%d").date()
+    try:
+        # Pydantic v1 (Android/Chaquopy) can be strict about datetime types
+        # If the input is just YYYY-MM-DD, we expand it to YYYY-MM-DD 00:00:00
+        dt = datetime.strptime(d_str, "%Y-%m-%d")
+        return dt
+    except ValueError:
+        try:
+            # Try ISO format if simple format fails
+            return datetime.fromisoformat(d_str.replace('Z', '+00:00'))
+        except Exception:
+            return None
 
 
 def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
@@ -372,7 +383,12 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                     )
 
             # Transactions
-            for tx_data in data.get("transactions", []):
+            # Sort transactions by date to ensure BUYs are processed before SELLs
+            # for reliable FIFO auto-linking.
+            transactions = data.get("transactions", [])
+            transactions.sort(key=lambda x: x.get("transaction_date", "0000-00-00"))
+
+            for tx_data in transactions:
                 p_name = tx_data.get("portfolio_name")
                 if not p_name or p_name not in portfolio_map:
                     continue
@@ -498,35 +514,37 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
 
         db.commit()
 
+        # Run backfill as a final safeguard to link any orphans
+        try:
+            run_backfill(db, user_id=user_id)
+            db.commit()
+        except Exception as e:
+            logger.warning(f"Post-restore backfill failed: {e}")
+            # Non-critical failure for the main restore flow
+
         # Comprehensive cache invalidation after restore
         from app.cache.factory import get_cache_client
         cache = get_cache_client()
 
-        # 1. Collect all keys to delete
-        keys_to_delete = [
-            f"analytics:dashboard_summary:{user_id}",
-            f"analytics:all_portfolios_holdings_and_summary:{user_id}",
-        ]
+        # 1. Dashboard caches
+        cache.delete(f"analytics:dashboard_summary:{user_id}")
         for range_str in ["7d", "30d", "1y", "all"]:
-            keys_to_delete.append(f"analytics:dashboard_history:{user_id}:{range_str}")
+            cache.delete(f"analytics:dashboard_history:{user_id}:{range_str}")
 
-        # 2. Portfolio and asset-level keys for all restored portfolios
+        # 2. Cross-portfolio aggregation cache
+        cache.delete(f"analytics:all_portfolios_holdings_and_summary:{user_id}")
+
+        # 3. Portfolio-level caches for all restored portfolios
         for p_name, p_id in portfolio_map.items():
-            keys_to_delete.extend(
-                [
-                    f"analytics:portfolio_holdings_and_summary:{p_id}",
-                    f"analytics:portfolio_analytics:{p_id}",
-                ]
-            )
+            cache.delete(f"analytics:portfolio_holdings_and_summary:{p_id}")
+            cache.delete(f"analytics:portfolio_analytics:{p_id}")
 
             # Asset-level analytics for this portfolio
-            portfolio_assets = crud.asset.get_multi_by_portfolio(db, portfolio_id=p_id)
+            portfolio_assets = crud.asset.get_multi_by_portfolio(
+                db, portfolio_id=p_id
+            )
             for asset in portfolio_assets:
-                keys_to_delete.append(f"analytics:asset_analytics:{asset.id}")
-
-        # 3. Bulk delete all collected cache keys
-        if cache:
-            cache.delete_multi(keys_to_delete)
+                cache.delete(f"analytics:asset_analytics:{asset.id}")
 
         # 4. Bulk delete snapshots for all restored portfolios
         if portfolio_map:

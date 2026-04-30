@@ -6,8 +6,8 @@ import { useCreateRecurringDeposit, useUpdateRecurringDeposit } from '../../hook
 import { useUpdateFixedDeposit } from '../../hooks/useFixedDeposits';
 import { useCreateAsset, useMfSearch, useAssetsByType } from '../../hooks/useAssets';
 import { useDebounce } from '../../hooks/useDebounce';
-import { lookupAsset, searchStocks, AssetSearchResult, getFxRate, getAvailableLots, AvailableLot } from '../../services/portfolioApi';
-import { BondCreate, BondType } from '../../types/bond';
+import { lookupAsset, searchStocks, AssetSearchResult, getFxRate, getAvailableLots, AvailableLot, updateBondByAssetId } from '../../services/portfolioApi';
+import { BondCreate, BondType, BondUpdate } from '../../types/bond';
 import { Asset, MutualFundSearchResult } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate, FixedDepositDetails } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
@@ -16,6 +16,7 @@ import { ApiError, getErrorMessage } from '../../types/api';
 import Select from 'react-select';
 import { formatCurrency } from '../../utils/formatting';
 import { debugLog } from '../../utils/debug';
+import DateInput from '../common/DateInput';
 
 interface TransactionFormModalProps {
     portfolioId: string;
@@ -201,6 +202,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     'Stock': 'Stock',
                 };
                 const computedAssetType = assetTypeMap[rawAssetType] || 'Stock';
+                if (isEditMode) {
+                    console.log(`[09:12:58] [TRANSACTION] Edit mode - asset object (computed):`, transactionToEdit?.asset);
+                    console.log(`[09:12:58] [TRANSACTION] Edit mode - asset object (selectedAsset):`, selectedAsset);
+                }
                 debugLog('transaction', 'Edit mode - asset object:', transactionToEdit.asset);
                 debugLog('transaction', `Edit mode - rawAssetType: "${rawAssetType}", computedAssetType: "${computedAssetType}"`);
 
@@ -252,7 +257,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 });
             }
         }
-    }, [isEditMode, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit, reset]);
+    }, [isEditMode, transactionToEdit, fixedDepositToEdit, recurringDepositToEdit, reset, selectedAsset]);
 
     useEffect(() => {
         if (searchTerm.length < 2 || selectedAsset) { // Use debounced term
@@ -367,11 +372,26 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     useEffect(() => {
         if (selectedAsset && assetType === 'Bond') {
             // Populate the bond-specific fields when a bond asset is selected
-            setValue('bondType', selectedAsset.bond?.bond_type || undefined, { shouldValidate: true });
+            setValue('bondType', selectedAsset.bond?.bond_type || 'CORPORATE' as BondType, { shouldValidate: true });
             setValue('isin', selectedAsset.isin || '', { shouldValidate: true });
-            setValue('couponRate', selectedAsset.bond?.coupon_rate || undefined, { shouldValidate: true });
-            setValue('faceValue', selectedAsset.bond?.face_value || undefined, { shouldValidate: true });
-            setValue('bondMaturityDate', selectedAsset.bond?.maturity_date ? new Date(selectedAsset.bond.maturity_date).toISOString().split('T')[0] : '', { shouldValidate: true });
+            setValue('couponRate', selectedAsset.bond?.coupon_rate ? Number(selectedAsset.bond.coupon_rate) : 0, { shouldValidate: true });
+            setValue('faceValue', selectedAsset.bond?.face_value ? Number(selectedAsset.bond.face_value) : 1000, { shouldValidate: true });
+
+            // Safer date parsing to avoid 1970 issues
+            let maturityDate = '';
+            if (selectedAsset.bond?.maturity_date) {
+                const rawDate = selectedAsset.bond.maturity_date;
+                // If it's already YYYY-MM-DD, use it directly
+                if (/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+                    maturityDate = rawDate.split('T')[0];
+                } else if (rawDate) {
+                    const d = new Date(rawDate);
+                    if (!isNaN(d.getTime())) {
+                        maturityDate = d.toISOString().split('T')[0];
+                    }
+                }
+            }
+            setValue('bondMaturityDate', maturityDate, { shouldValidate: true });
         }
     }, [selectedAsset, assetType, setValue]);
 
@@ -800,6 +820,25 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                     fees: data.fees || 0,
                     details,
                 };
+
+                // CRITICAL: Also update Bond metadata if it was changed during edit
+                if (assetType === 'Bond' && selectedAsset?.id) {
+                    const bondData: BondUpdate = {
+                        bond_type: data.bondType as BondType,
+                        coupon_rate: data.couponRate,
+                        face_value: data.faceValue,
+                        maturity_date: data.bondMaturityDate,
+                        isin: data.isin || null,
+                    };
+                    // We call the update endpoint for bond metadata
+                    updateBondByAssetId(portfolioId, selectedAsset.id, bondData)
+                        .then(() => {
+                            console.log("Bond metadata updated successfully during transaction edit.");
+                            // We don't necessarily need to invalidate everything here since the transaction
+                            // mutation will handle it, but it doesn't hurt.
+                        })
+                        .catch(err => console.error("Failed to update bond metadata during transaction edit:", err));
+                }
                 updateTransactionMutation.mutate({
                     portfolioId,
                     transactionId: transactionToEdit.id,
@@ -825,15 +864,17 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                 };
                 const transactionData: TransactionCreate = { asset_id: assetId, transaction_type: data.transaction_type as TransactionType, quantity: data.quantity, price_per_unit: data.price_per_unit, transaction_date: new Date(data.transaction_date).toISOString(), fees: data.fees || 0, details };
 
-                // If the asset already exists and its bond details are complete (i.e., not a placeholder),
-                // we just add a new transaction. Otherwise, we use the bond creation endpoint which
-                // also handles updating (upserting) the bond details along with creating the first transaction.
-                const isBondDetailComplete = selectedAsset.bond && selectedAsset.bond.maturity_date && selectedAsset.bond.maturity_date !== '1970-01-01';
-                if (isBondDetailComplete) {
+                const isSell = data.transaction_type === 'SELL';
+
+                // For Bonds, we now ALWAYS use createBondMutation if we are creating a BUY/CONTRIBUTION.
+                // The backend endpoint performs an upsert, ensuring the latest bond metadata (isin, maturity, coupon)
+                // is saved even if the asset already existed.
+                if (isSell) {
+                    // For SELL, we just add the transaction as metadata usually doesn't change on sell
                     const payload: TransactionCreate = { ...transactionData, asset_id: selectedAsset.id };
                     createTransactionMutation.mutate({ portfolioId, data: payload }, mutationOptions);
                 } else {
-                    // This is for creating a new bond asset and its first transaction
+                    // For others, ensure bond details are synced/created
                     createBondMutation.mutate({ portfolioId, bondData, transactionData }, mutationOptions);
                 }
             };
@@ -916,9 +957,12 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
 
     return (
         <div className="modal-overlay z-30" onClick={onClose} data-testid="transaction-form-modal-overlay">
-            <div role="dialog" aria-modal="true" aria-labelledby="transaction-form-modal-title" className="modal-content overflow-visible w-11/12 md:w-3/4 lg:max-w-2xl p-6" onClick={e => e.stopPropagation()} data-testid="transaction-form-modal-content">
-                <h2 id="transaction-form-modal-title" className="text-2xl font-bold mb-4 dark:text-gray-100">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
-                <div className="max-h-[70vh] overflow-y-auto px-2 -mr-2">
+            <div role="dialog" aria-modal="true" aria-labelledby="transaction-form-modal-title" className="modal-content overflow-visible w-full sm:w-11/12 md:max-w-2xl p-4 sm:p-6 mx-2 sm:mx-auto" onClick={e => e.stopPropagation()} data-testid="transaction-form-modal-content">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 id="transaction-form-modal-title" className="text-xl sm:text-2xl font-bold dark:text-gray-100">{isEditMode ? 'Edit' : 'Add'} Transaction</h2>
+                    <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl" data-testid="transaction-form-close-button">&times;</button>
+                </div>
+                <div className="max-h-[85vh] sm:max-h-[70vh] overflow-y-auto px-1 sm:px-2">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="form-group">
@@ -1168,22 +1212,27 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100 mb-2">
                                             {isEditMode ? 'Edit Contribution' : 'Add New Contribution'}
                                         </h3>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="form-group">
                                                 <label htmlFor="contributionAmount" className="form-label">Contribution Amount (₹)</label>
                                                 <input id="contributionAmount" type="number" step="any" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="contributionDate" className="form-label">Contribution Date</label>
-                                                <input id="contributionDate" type="date" {...register('contributionDate', { required: true })} className="form-input" />
+                                                <DateInput
+                                                    id="contributionDate"
+                                                    label="Contribution Date"
+                                                    register={register('contributionDate', { required: true })}
+                                                    error={errors.contributionDate?.message}
+                                                    className="w-full"
+                                                />
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
                                     <div>
                                         <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100 mb-2">Create Your PPF Account</h3>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="form-group col-span-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="form-group col-span-1 sm:col-span-2">
                                                 <label htmlFor="institutionName" className="form-label">Institution Name (e.g., SBI, HDFC)</label>
                                                 <input id="institutionName" type="text" {...register('institutionName', { required: true })} className="form-input" />
                                             </div>
@@ -1192,19 +1241,29 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 <input id="accountNumber" type="text" {...register('accountNumber')} className="form-input" />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="openingDate" className="form-label">Opening Date</label>
-                                                <input id="openingDate" type="date" {...register('openingDate', { required: true })} className="form-input" />
+                                                <DateInput
+                                                    id="openingDate"
+                                                    label="Opening Date"
+                                                    register={register('openingDate', { required: true })}
+                                                    error={errors.openingDate?.message}
+                                                    className="w-full"
+                                                />
                                             </div>
                                         </div>
                                         <h3 className="font-semibold text-lg text-gray-800 mt-4 mb-2">Add First Contribution</h3>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="form-group">
                                                 <label htmlFor="contributionAmount" className="form-label">Contribution Amount (₹)</label>
                                                 <input id="contributionAmount" type="number" step="any" {...register('contributionAmount', { required: true, valueAsNumber: true })} className="form-input" />
                                             </div>
                                             <div className="form-group">
-                                                <label htmlFor="contributionDate" className="form-label">Contribution Date</label>
-                                                <input id="contributionDate" type="date" {...register('contributionDate', { required: true })} className="form-input" />
+                                                <DateInput
+                                                    id="contributionDate"
+                                                    label="Contribution Date"
+                                                    register={register('contributionDate', { required: true })}
+                                                    error={errors.contributionDate?.message}
+                                                    className="w-full"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -1233,8 +1292,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <input id="faceValue" type="number" step="any" {...register('faceValue', { required: true, valueAsNumber: true })} className="form-input" />
                                 </div>
                                 <div className="form-group col-span-2">
-                                    <label htmlFor="bondMaturityDate" className="form-label">Maturity Date</label>
-                                    <input id="bondMaturityDate" type="date" {...register('bondMaturityDate', { required: true })} className="form-input" />
+                                    <DateInput
+                                        id="bondMaturityDate"
+                                        label="Maturity Date"
+                                        register={register('bondMaturityDate', { required: true })}
+                                        error={errors.bondMaturityDate?.message}
+                                        className="w-full"
+                                    />
                                 </div>
                             </div>
                         )}
@@ -1288,7 +1352,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                             {errors.price_per_unit && <p className="text-red-500 text-xs italic">{errors.price_per_unit.message}</p>}
                                         </div>
                                         <div className="form-group">
-                                            <label htmlFor="transaction_date_standard" className="form-label">Date</label>                                        <input id="transaction_date_standard" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            <DateInput
+                                                id="transaction_date_standard"
+                                                label="Date"
+                                                register={register('transaction_date', { required: "Date is required" })}
+                                                error={errors.transaction_date?.message}
+                                                className="w-full"
+                                            />
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group">
@@ -1373,8 +1443,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         {errors.mfDividendAmount && <p className="text-red-500 text-xs italic">{errors.mfDividendAmount.message}</p>}
                                     </div>
                                     <div className="form-group">
-                                        <label htmlFor="transaction_date_mf_dividend" className="form-label">Payment Date</label>
-                                        <input id="transaction_date_mf_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                        <DateInput
+                                            id="transaction_date_mf_dividend"
+                                            label="Payment Date"
+                                            register={register('transaction_date', { required: "Date is required" })}
+                                            error={errors.transaction_date?.message}
+                                            className="w-full"
+                                        />
                                         {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                     </div>
                                 </div>
@@ -1405,8 +1480,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     {errors.couponAmount && <p className="text-red-500 text-xs italic">{errors.couponAmount.message}</p>}
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="transaction_date_coupon" className="form-label">Date</label>
-                                    <input id="transaction_date_coupon" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                    <DateInput
+                                        id="transaction_date_coupon"
+                                        label="Date"
+                                        register={register('transaction_date', { required: "Date is required" })}
+                                        error={errors.transaction_date?.message}
+                                        className="w-full"
+                                    />
                                     {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                 </div>
                             </div>
@@ -1437,8 +1517,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">
-                                                <label htmlFor="transaction_date_stock_dividend" className="form-label">Payment Date</label>
-                                                <input id="transaction_date_stock_dividend" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                <DateInput
+                                                    id="transaction_date_stock_dividend"
+                                                    label="Payment Date"
+                                                    register={register('transaction_date', { required: "Date is required" })}
+                                                    error={errors.transaction_date?.message}
+                                                    className="w-full"
+                                                />
                                                 {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
                                             <div className="form-group">
@@ -1490,8 +1575,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 {actionType === 'SPLIT' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                         <div className="form-group col-span-2">
-                                            <label htmlFor="transaction_date_split" className="form-label">Effective Date</label>
-                                            <input id="transaction_date_split" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            <DateInput
+                                                id="transaction_date_split"
+                                                label="Effective Date"
+                                                register={register('transaction_date', { required: "Date is required" })}
+                                                error={errors.transaction_date?.message}
+                                                className="w-full"
+                                            />
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group col-span-2">
@@ -1511,8 +1601,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                 {actionType === 'BONUS' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                         <div className="form-group col-span-2">
-                                            <label htmlFor="transaction_date_bonus" className="form-label">Effective Date</label>
-                                            <input id="transaction_date_bonus" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                            <DateInput
+                                                id="transaction_date_bonus"
+                                                label="Effective Date"
+                                                register={register('transaction_date', { required: "Date is required" })}
+                                                error={errors.transaction_date?.message}
+                                                className="w-full"
+                                            />
                                             {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                         </div>
                                         <div className="form-group col-span-2">
@@ -1536,8 +1631,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">
-                                                <label htmlFor="transaction_date_merger" className="form-label">Record Date</label>
-                                                <input id="transaction_date_merger" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                <DateInput
+                                                    id="transaction_date_merger"
+                                                    label="Record Date"
+                                                    register={register('transaction_date', { required: "Date is required" })}
+                                                    error={errors.transaction_date?.message}
+                                                    className="w-full"
+                                                />
                                                 {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
                                             <div className="form-group">
@@ -1586,8 +1686,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">
-                                                <label htmlFor="transaction_date_demerger" className="form-label">Record Date</label>
-                                                <input id="transaction_date_demerger" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                <DateInput
+                                                    id="transaction_date_demerger"
+                                                    label="Record Date"
+                                                    register={register('transaction_date', { required: "Date is required" })}
+                                                    error={errors.transaction_date?.message}
+                                                    className="w-full"
+                                                />
                                                 {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
                                             <div className="form-group">
@@ -1643,8 +1748,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="form-group">
-                                                <label htmlFor="transaction_date_rename" className="form-label">Effective Date</label>
-                                                <input id="transaction_date_rename" type="date" {...register('transaction_date', { required: "Date is required" })} className="form-input" />
+                                                <DateInput
+                                                    id="transaction_date_rename"
+                                                    label="Effective Date"
+                                                    register={register('transaction_date', { required: "Date is required" })}
+                                                    error={errors.transaction_date?.message}
+                                                    className="w-full"
+                                                />
                                                 {errors.transaction_date && <p className="text-red-500 text-xs italic">{errors.transaction_date.message}</p>}
                                             </div>
                                             <div className="form-group relative">
@@ -1701,12 +1811,22 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <input id="interestRate" type="number" step="any" {...register('interestRate', { required: "Interest rate is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="startDate" className="form-label">Start Date</label>
-                                    <input id="startDate" type="date" {...register('startDate', { required: "Start date is required" })} className="form-input" />
+                                    <DateInput
+                                        id="startDate"
+                                        label="Start Date"
+                                        register={register('startDate', { required: "Start date is required" })}
+                                        error={errors.startDate?.message}
+                                        className="w-full"
+                                    />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="maturityDate" className="form-label">Maturity Date</label>
-                                    <input id="maturityDate" type="date" {...register('maturityDate', { required: "Maturity date is required" })} className="form-input" />
+                                    <DateInput
+                                        id="maturityDate"
+                                        label="Maturity Date"
+                                        register={register('maturityDate', { required: "Maturity date is required" })}
+                                        error={errors.maturityDate?.message}
+                                        className="w-full"
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="compounding_frequency" className="form-label">Compounding</label>
@@ -1747,8 +1867,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                     <input id="rdInterestRate" type="number" step="any" {...register('rdInterestRate', { required: "Interest rate is required", valueAsNumber: true, min: { value: 0, message: "Must be non-negative" } })} className="form-input" />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="rdStartDate" className="form-label">Start Date</label>
-                                    <input id="rdStartDate" type="date" {...register('rdStartDate', { required: "Start date is required" })} className="form-input" />
+                                    <DateInput
+                                        id="rdStartDate"
+                                        label="Start Date"
+                                        register={register('rdStartDate', { required: "Start date is required" })}
+                                        error={errors.rdStartDate?.message}
+                                        className="w-full"
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="tenureMonths" className="form-label">Tenure (in months)</label>

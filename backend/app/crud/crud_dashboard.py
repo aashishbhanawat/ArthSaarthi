@@ -186,14 +186,6 @@ def _get_portfolio_history(
     all_rds = rd_query.all()
     ppf_assets = ppf_asset_query.distinct().all()
 
-    from dateutil.relativedelta import relativedelta
-
-    # Pre-calculate RD maturity dates to avoid O(N) recalculation inside the daily loop
-    processed_rds = [
-        (rd, rd.start_date + relativedelta(months=rd.tenure_months))
-        for rd in all_rds
-    ]
-
     all_ppf_rates = []
     if ppf_assets:
         all_ppf_rates = db.query(HistoricalInterestRate).filter(
@@ -477,18 +469,20 @@ def _get_portfolio_history(
                     day_total_value += fd_val
 
                 # 3. Recurring Deposits (Simulated for this historical day)
-                for rd, rd_maturity_date in processed_rds:
+                from dateutil.relativedelta import relativedelta
+                for rd in all_rds:
                     if rd.start_date > current_day:
                         continue
+
+                    rd_maturity_date = rd.start_date + relativedelta(
+                        months=rd.tenure_months
+                    )
 
                     # If matured before this historical date, the RD has been
                     # "withdrawn" from the portfolio. Skip it.
                     if current_day > rd_maturity_date:
                         continue
 
-                    # rd.start_date <= current_day ensures at least 1 installment
-                    # is paid, so we can directly add the current value without
-                    # redundant loops.
                     rd_val = _calculate_rd_value_at_date(
                         rd.monthly_installment,
                         rd.interest_rate,
@@ -497,7 +491,17 @@ def _get_portfolio_history(
                         current_day,
                     )
 
-                    day_total_value += rd_val
+                    installments_to_date = 0
+                    temp_date = rd.start_date
+                    while (
+                        temp_date <= current_day
+                        and installments_to_date < rd.tenure_months
+                    ):
+                        installments_to_date += 1
+                        temp_date += relativedelta(months=1)
+
+                    if installments_to_date > 0:
+                        day_total_value += rd_val
 
                 # 4. PPF (Simulated for this historical day)
                 from app.crud.crud_ppf import process_ppf_holding

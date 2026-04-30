@@ -1,16 +1,19 @@
 import axios from "axios";
+import { Capacitor } from "@capacitor/core";
+import PythonBackend from "../plugins/PythonBackend";
 
 const apiClient = axios.create({
   // Base URL is determined dynamically by an interceptor.
   // In a standard web build, this will be empty (relying on relative paths).
   // In Electron, it will be set to http://localhost:<port>.
+  // On Android (Capacitor), it will be set to http://127.0.0.1:<port>.
 });
 
 // Only log in development mode
 const isDev = import.meta.env.DEV;
 
-// This interceptor dynamically sets the baseURL when running in Electron.
-// It runs only once and then is ejected.
+// This interceptor dynamically sets the baseURL when running in Electron or Android.
+// It runs only once and then passes through on subsequent requests.
 apiClient.interceptors.request.use(
   async (config) => {
     // If the baseURL is already set, we don't need to do anything.
@@ -18,7 +21,7 @@ apiClient.interceptors.request.use(
       return config;
     }
 
-    // Check if the electronAPI is exposed on the window object
+    // Path 1: Electron desktop mode
     if (window.electronAPI && typeof window.electronAPI.getApiConfig === 'function') {
       try {
         const apiConfig = await window.electronAPI.getApiConfig();
@@ -34,12 +37,21 @@ apiClient.interceptors.request.use(
         }
       }
     }
-
-    // After the first run, we can remove this interceptor if we want,
-    // but leaving it is fine as it will just pass through on subsequent requests.
-    // For cleanliness, let's eject it after it has run once.
-    // Note: This might cause issues if the first request fails for other reasons.
-    // A safer approach is to just let it be. We'll keep it simple for now.
+    // Path 2: Android (Capacitor) mode
+    else if (Capacitor.isNativePlatform()) {
+      try {
+        const apiConfig = await PythonBackend.getApiConfig();
+        const baseUrl = `http://${apiConfig.host}:${apiConfig.port}`;
+        if (isDev) {
+          console.log(`Android/Capacitor environment detected. Setting API base URL to: ${baseUrl}`);
+        }
+        apiClient.defaults.baseURL = baseUrl;
+        config.baseURL = baseUrl;
+      } catch (error) {
+        console.error("Failed to get API config from Android backend:", error);
+      }
+    }
+    // Path 3: Web/Docker mode — uses relative paths (Vite proxy handles /api)
 
     return config;
   },

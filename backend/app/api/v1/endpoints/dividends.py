@@ -2,14 +2,11 @@ import csv
 from io import StringIO
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app import crud
-from app.core import dependencies as deps
 from app.db.session import get_db
-from app.models import User
 from app.schemas.dividends import DividendSummary
 from app.services.dividend_service import DividendService
 
@@ -20,44 +17,24 @@ def get_dividend_report(
     fy: str = Query(..., description="Financial Year (e.g., '2025-26')"),
     portfolio_id: Optional[str] = Query(None, description="Filter by Portfolio ID"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
 ):
     """
     Get Dividend Report for a specific Financial Year.
     """
-    if portfolio_id:
-        portfolio = crud.portfolio.get(db=db, id=portfolio_id)
-        if not portfolio:
-            raise HTTPException(status_code=404, detail="Portfolio not found")
-        if portfolio.user_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Not enough permissions")
-
     service = DividendService(db)
-    return service.get_dividend_report(
-        fy_year=fy, portfolio_id=portfolio_id, user_id=str(current_user.id)
-    )
+    return service.get_dividend_report(fy_year=fy, portfolio_id=portfolio_id)
 
 @router.get("/export")
 def export_dividend_report_csv(
     fy: str = Query(..., description="Financial Year (e.g., '2025-26')"),
     portfolio_id: Optional[str] = Query(None, description="Filter by Portfolio ID"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
 ):
     """
     Export Dividend Report as a CSV file for download.
     """
-    if portfolio_id:
-        portfolio = crud.portfolio.get(db=db, id=portfolio_id)
-        if not portfolio:
-            raise HTTPException(status_code=404, detail="Portfolio not found")
-        if portfolio.user_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Not enough permissions")
-
     service = DividendService(db)
-    summary = service.get_dividend_report(
-        fy_year=fy, portfolio_id=portfolio_id, user_id=str(current_user.id)
-    )
+    summary = service.get_dividend_report(fy_year=fy, portfolio_id=portfolio_id)
 
     output = StringIO()
     writer = csv.writer(output)

@@ -135,19 +135,13 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
         const buys = JSON.parse(JSON.stringify(sortedTxs.filter(tx => acquisitionTypes.includes(tx.transaction_type))));
         const sells = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'SELL')));
 
-        // Create a Map for O(1) lookup of buy transactions by ID
-        const buyMap = new Map<string, Transaction>();
-        for (const b of buys) {
-            buyMap.set(b.id, b);
-        }
-
         for (const sell of sells) {
             let sellQuantityToMatch = Number(sell.quantity);
 
             // 1. Process Specific Links from Backend
             if (sell.sell_links && sell.sell_links.length > 0) {
                 for (const link of sell.sell_links) {
-                    const linkedBuy = buyMap.get(link.buy_transaction_id);
+                    const linkedBuy = buys.find((b: Transaction) => b.id === link.buy_transaction_id);
                     if (linkedBuy) {
                         const linkQty = Number(link.quantity);
                         const currentBuyQty = Number(linkedBuy.quantity);
@@ -176,89 +170,93 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
     }, [transactions]);
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div role="dialog" aria-modal="true" aria-labelledby="holding-detail-modal-title" className="modal-content w-full max-w-6xl p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
-                <div id="holding-detail-modal-title" className="flex justify-between items-center mb-4">
-                    <div>
-                        <h2 className="text-2xl font-bold dark:text-gray-100">
-                            {holding.asset_name} {holding.asset_type !== 'Mutual Fund' && `(${holding.ticker_symbol})`}
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Current Holdings Breakdown</p>
+        <div className="modal-overlay pt-safe pb-safe p-4" onClick={onClose}>
+            <div role="dialog" aria-modal="true" aria-labelledby="holding-detail-modal-title" className="modal-content w-full max-w-6xl max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 pb-2 shrink-0">
+                    <div id="holding-detail-modal-title" className="flex justify-between items-start mb-4 gap-4">
+                        <div className="min-w-0">
+                            <h2 className="text-xl sm:text-2xl font-bold dark:text-gray-100 break-words">
+                                {holding.asset_name} {holding.asset_type !== 'Mutual Fund' && `(${holding.ticker_symbol})`}
+                            </h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Current Holdings Breakdown</p>
+                        </div>
+                        <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors -mt-1 -mr-1">
+                            <XMarkIcon className="h-6 w-6" />
+                        </button>
                     </div>
-                    <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
-                        <XMarkIcon className="h-6 w-6" />
-                    </button>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-2 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <div data-testid="summary-quantity" className="min-w-0">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Quantity</p>
+                            <p className="font-semibold dark:text-gray-100 truncate">{Number(holding.quantity).toLocaleString()}</p>
+                        </div>
+                        <div data-testid="summary-avg-buy-price" className="min-w-0">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Avg. Buy Price</p>
+                            <p className="font-semibold dark:text-gray-100 truncate">{formatSensitiveCurrency(holding.average_buy_price, 'INR')}</p>
+                        </div>
+                        <div data-testid="summary-current-value" className="min-w-0">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Current Value</p>
+                            <p className="font-semibold dark:text-gray-100 truncate">{formatSensitiveCurrency(holding.current_value)}</p>
+                        </div>
+                        <div data-testid="summary-unrealized-pnl" className="min-w-0">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Unrealized P&L</p>
+                            <p className={`font-semibold truncate ${holding.unrealized_pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {formatSensitiveCurrency(holding.unrealized_pnl)}
+                            </p>
+                        </div>
+                        <div data-testid="summary-realized-pnl" className="min-w-0">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Capital Gains</p>
+                            <p className={`font-semibold truncate ${(analytics?.realized_pnl ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatSensitiveCurrency(analytics?.realized_pnl ?? 0)}
+                            </p>
+                        </div>
+                        <div data-testid="summary-dividend-income" className="min-w-0">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Dividend Income</p>
+                            <p className="font-semibold text-green-600 dark:text-green-400 truncate">
+                                {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatSensitiveCurrency(analytics?.dividend_income ?? 0)}
+                            </p>
+                        </div>
+                        <div data-testid="summary-xirr-current" className="min-w-0">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">XIRR (Current)</p>
+                            <p className="font-semibold dark:text-gray-100 truncate">
+                                {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
+                            </p>
+                        </div>
+                        <div data-testid="summary-xirr-historical" className="min-w-0">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">XIRR (Historical)</p>
+                            <p className="font-semibold dark:text-gray-100 truncate">
+                                {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.xirr_historical ?? 0) * 100).toFixed(2)}%`}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    <div data-testid="summary-quantity">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
-                        <p className="font-semibold dark:text-gray-100">{Number(holding.quantity).toLocaleString()}</p>
-                    </div>
-                    <div data-testid="summary-avg-buy-price">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Avg. Buy Price</p>
-                        <p className="font-semibold dark:text-gray-100">{formatSensitiveCurrency(holding.average_buy_price, 'INR')}</p>
-                    </div>
-                    <div data-testid="summary-current-value">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Current Value</p>
-                        <p className="font-semibold dark:text-gray-100">{formatSensitiveCurrency(holding.current_value)}</p>
-                    </div>
-                    <div data-testid="summary-unrealized-pnl">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Unrealized P&L</p>
-                        <p className={`font-semibold ${holding.unrealized_pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {formatSensitiveCurrency(holding.unrealized_pnl)}
-                        </p>
-                    </div>
-                    <div data-testid="summary-realized-pnl">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Capital Gains</p>
-                        <p className={`font-semibold ${(analytics?.realized_pnl ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatSensitiveCurrency(analytics?.realized_pnl ?? 0)}
-                        </p>
-                    </div>
-                    <div data-testid="summary-dividend-income">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Dividend Income</p>
-                        <p className="font-semibold text-green-600 dark:text-green-400">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : formatSensitiveCurrency(analytics?.dividend_income ?? 0)}
-                        </p>
-                    </div>
-                    <div data-testid="summary-xirr-current">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">XIRR (Current)</p>
-                        <p className="font-semibold dark:text-gray-100">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.xirr_current ?? 0) * 100).toFixed(2)}%`}
-                        </p>
-                    </div>
-                    <div data-testid="summary-xirr-historical">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">XIRR (Historical)</p>
-                        <p className="font-semibold dark:text-gray-100">
-                            {isLoadingAnalytics ? '...' : isErrorAnalytics ? 'N/A' : `${((analytics?.xirr_historical ?? 0) * 100).toFixed(2)}%`}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="overflow-y-auto max-h-96">
-                    {isLoading && <p className="text-center p-4 dark:text-gray-300">Loading transactions...</p>}
-                    {error && <p className="text-red-500 text-center p-4">Error loading transactions: {error.message}</p>}
+                <div className="flex-1 overflow-y-auto px-6 min-h-0">
+                    {isLoading && <p className="text-center py-4 dark:text-gray-300">Loading transactions...</p>}
+                    {error && <p className="text-red-500 text-center py-4">Error loading transactions: {error.message}</p>}
                     {transactions && (
-                        <table className="table-auto w-full">
-                            <thead className="sticky top-0 bg-white dark:bg-gray-800 shadow-sm">
-                                <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
-                                    <th className="p-2">Date</th>
-                                    <th className="p-2">Type</th>
-                                    <th className="p-2 text-right">Quantity</th>
-                                    <th className="p-2 text-right">Price/Unit</th>
-                                    <th className="p-2 text-right">Total Value</th>
-                                    <th className="p-2 text-right">CAGR %</th>
-                                    <th className="p-2 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {openTransactions.map((tx: Transaction) => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} currency={holding.currency || 'INR'} demergerInfo={demergerInfo} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
-                            </tbody>
-                        </table>
+                        <div className="overflow-x-auto w-full">
+                            <table className="table-auto w-full min-w-[700px]">
+                                <thead className="sticky top-0 bg-white dark:bg-gray-800 shadow-sm z-10">
+                                    <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
+                                        <th className="p-2 whitespace-nowrap">Date</th>
+                                        <th className="p-2 whitespace-nowrap">Type</th>
+                                        <th className="p-2 text-right whitespace-nowrap">Quantity</th>
+                                        <th className="p-2 text-right whitespace-nowrap">Price/Unit</th>
+                                        <th className="p-2 text-right whitespace-nowrap">Total Value</th>
+                                        <th className="p-2 text-right whitespace-nowrap">CAGR %</th>
+                                        <th className="p-2 text-right whitespace-nowrap">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {openTransactions.map((tx: Transaction) => <TransactionRow key={tx.id} transaction={tx} currentPrice={holding.current_price} currency={holding.currency || 'INR'} demergerInfo={demergerInfo} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />)}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
 
-                <div className="flex justify-end mt-6">
+                <div className="p-6 pt-4 shrink-0 flex justify-end border-t border-gray-100 dark:border-gray-700">
                     <button onClick={onClose} className="btn btn-secondary">Close</button>
                 </div>
             </div>

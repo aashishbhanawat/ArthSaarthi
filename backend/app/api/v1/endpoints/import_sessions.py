@@ -16,7 +16,6 @@ from fastapi import (
     UploadFile,
     status,
 )
-from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -24,9 +23,9 @@ from app.cache.utils import invalidate_caches_for_portfolio
 from app.core import dependencies as deps
 from app.core.config import settings
 from app.schemas.msg import Msg
-from app.services.financial_data_service import financial_data_service
 from app.services.import_parsers import parser_factory
 from app.utils.filename import secure_filename
+from app.utils.pydantic_compat import model_dump
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -126,14 +125,46 @@ async def create_import_session(
             elif source_type == "Zerodha Coin":
                 # Zerodha Coin XLSX has branding/info rows at top
                 # Actual header is at row 14
-                df = pd.read_excel(temp_file_path, skiprows=14)
+                try:
+                    df = pd.read_excel(temp_file_path, skiprows=14, engine='openpyxl')
+                except Exception as e:
+                    log.warning(
+                        f"Failed to read Zerodha Coin with openpyxl, "
+                        f"trying xlrd: {e}"
+                    )
+                    try:
+                        df = pd.read_excel(temp_file_path, skiprows=14, engine='xlrd')
+                    except Exception as e2:
+                        log.error(
+                            f"Failed to read Zerodha Coin with both engines: {e2}"
+                        )
+                        raise ValueError(
+                            f"Could not read Zerodha Coin Excel file: {e2}"
+                        )
+
                 # Normalize column names to lowercase for consistency
                 df.columns = df.columns.str.lower().str.replace(' ', '_')
                 parsed_transactions = parser.parse(df)
             elif source_type == "Zerodha Dividend":
                 # Zerodha Dividend XLSX has branding/info rows at top
                 # Actual header is at row 14
-                df = pd.read_excel(temp_file_path, skiprows=14)
+                try:
+                    df = pd.read_excel(temp_file_path, skiprows=14, engine='openpyxl')
+                except Exception as e:
+                    log.warning(
+                        f"Failed to read Zerodha Dividend with openpyxl, "
+                        f"trying xlrd: {e}"
+                    )
+                    try:
+                        df = pd.read_excel(temp_file_path, skiprows=14, engine='xlrd')
+                    except Exception as e2:
+                        log.error(
+                            f"Failed to read Zerodha Dividend with both engines: {e2}"
+                        )
+                        raise ValueError(
+                            f"Could not read Zerodha Dividend Excel file: {e2}"
+                        )
+
                 # Normalize column names to lowercase for consistency
                 df.columns = df.columns.str.lower().str.replace(' ', '_')
                 parsed_transactions = parser.parse(df)
@@ -213,12 +244,12 @@ async def create_import_session(
             status_code=400, detail="An error occurred during file parsing."
         )
 
-    # 4. Save the list of Pydantic models to a Parquet file
+    # 4. Save the list of Pydantic models to a JSON file
     # Convert list of Pydantic models to a DataFrame for efficient storage
-    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_transactions])
-    parsed_file_name = f"{import_session.id}.parquet"
+    parsed_df = pd.DataFrame([model_dump(t) for t in parsed_transactions])
+    parsed_file_name = f"{import_session.id}.json"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_df.to_parquet(parsed_file_path)
+    parsed_df.to_json(parsed_file_path, orient='records', date_format='iso')
 
     # 5. Update the session with the parsed file path and "PARSED" status
     import_session_update = schemas.ImportSessionUpdate(
@@ -271,7 +302,9 @@ def get_import_session_preview(
         raise HTTPException(status_code=400, detail="No parsed file for this session")
 
     try:
-        df = pd.read_parquet(import_session.parsed_file_path)
+        df = pd.read_json(import_session.parsed_file_path, orient='records')
+        # Replace NaN/NaT with None for Pydantic compatibility
+        df = df.where(pd.notnull(df), None)
     except Exception as e:
         log.error(f"Could not read parsed data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not read parsed data.")
@@ -291,49 +324,37 @@ def get_import_session_preview(
         parsed_transaction = schemas.ParsedTransaction(**row_data)
 
         # 1. Asset Identification
-        ticker_symbol = row["ticker_symbol"]
+        ticker_symbol = row.get("ticker_symbol")
+        if pd.isna(ticker_symbol):
+            ticker_symbol = ""
+
         asset = None
 
         # Check ISIN first if available
-        if "isin" in row and row["isin"]:
-            isin_code = row["isin"]
-            asset = crud.asset.get_by_isin(db, isin_code=isin_code)
-            if not asset:
-                # Try to fetch details without creating (side-effect free preview)
-                details = financial_data_service.get_asset_details(f"ISIN:{isin_code}")
-                if details:
-                    # Validate and filter through schema to prevent TypeError
-                    asset_in = schemas.AssetCreate(
-                        ticker_symbol=(
-                            details.get("ticker_symbol")
-                            or f"ISIN:{isin_code}".upper()
-                        ),
-                        **{k: v for k, v in details.items() if k != "ticker_symbol"}
-                    )
-                    asset = models.Asset(**asset_in.model_dump())
+        isin_code = row.get("isin")
+        if isin_code and not pd.isna(isin_code):
+            asset = crud.asset.get_by_isin(db, isin_code=str(isin_code))
             if asset:
-                log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
+                 log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
 
         if not asset:
             # This also handles ticker_symbol with "ISIN:" prefix
-            asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
+            asset = crud.asset.get_by_ticker(db, ticker_symbol=str(ticker_symbol))
             if asset:
                 log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
 
-        # If ticker looks like "ISIN:XXX", try to find externally
-        # (side-effect free preview)
-        if not asset and ticker_symbol.upper().startswith("ISIN:"):
-            details = financial_data_service.get_asset_details(ticker_symbol)
-            if details:
-                # Validate and filter through schema to prevent TypeError
-                asset_in = schemas.AssetCreate(
-                    ticker_symbol=details.get("ticker_symbol") or ticker_symbol.upper(),
-                    **{k: v for k, v in details.items() if k != "ticker_symbol"}
-                )
-                asset = models.Asset(**asset_in.model_dump())
+        # If ticker looks like "ISIN:XXX", try to auto-create
+        is_isin = (
+            isinstance(ticker_symbol, str)
+            and ticker_symbol.upper().startswith("ISIN:")
+        )
+        if not asset and is_isin:
+            asset = crud.asset.get_or_create_by_ticker(
+                db, ticker_symbol=ticker_symbol, asset_type="Mutual Fund"
+            )
             if asset:
                 log.info(
-                    f"Auto-matched (transient) by ISIN: {ticker_symbol} "
+                    f"Auto-matched/created by ISIN: {ticker_symbol} "
                     f"-> {asset.name}"
                 )
 
@@ -368,19 +389,16 @@ def get_import_session_preview(
             continue
 
         # 2. Duplicate Detection
-        existing_transaction = None
-        # Only check duplicates if the asset already exists in the database (persistent)
-        # We use inspect(asset).persistent to check if it's attached to the session
-        if asset and getattr(asset, "id", None) and inspect(asset).persistent:
-            existing_transaction = crud.transaction.get_by_details(
-                db,
-                portfolio_id=import_session.portfolio_id,
-                asset_id=asset.id,
-                transaction_date=pd.to_datetime(row["transaction_date"]),
-                transaction_type=row["transaction_type"].upper(),
-                quantity=Decimal(str(row["quantity"])),
-                price_per_unit=Decimal(str(row["price_per_unit"])),
-            )
+        tx_type = str(row.get("transaction_type") or "").upper()
+        existing_transaction = crud.transaction.get_by_details(
+            db,
+            portfolio_id=import_session.portfolio_id,
+            asset_id=asset.id,
+            transaction_date=pd.to_datetime(row["transaction_date"]),
+            transaction_type=tx_type,
+            quantity=Decimal(str(row["quantity"])),
+            price_per_unit=Decimal(str(row["price_per_unit"])),
+        )
 
         # For display: replace ISIN ticker with actual fund name/ticker
         if ticker_symbol.startswith("ISIN:") and asset:
@@ -439,10 +457,6 @@ def commit_import_session(
             # 1. Try ISIN lookup first (most reliable)
             if parsed_tx.isin:
                 asset = crud.asset.get_by_isin(db, isin_code=parsed_tx.isin)
-                if not asset:
-                    asset = crud.asset.get_or_create_by_ticker(
-                        db, ticker_symbol=f"ISIN:{parsed_tx.isin}"
-                    )
 
             # 2. Try alias lookup (with source)
             if not asset:
@@ -464,14 +478,9 @@ def commit_import_session(
 
             # 4. Try ticker lookup (also handles ISIN: prefix)
             if not asset:
-                if ticker_symbol.upper().startswith("ISIN:"):
-                    asset = crud.asset.get_or_create_by_ticker(
-                        db, ticker_symbol=ticker_symbol
-                    )
-                else:
-                    asset = crud.asset.get_by_ticker(
-                        db, ticker_symbol=ticker_symbol
-                    )
+                asset = crud.asset.get_by_ticker(
+                    db, ticker_symbol=ticker_symbol
+                )
 
             # 6. Try name lookup
             if not asset:
@@ -516,6 +525,17 @@ def commit_import_session(
 
         return {"msg": f"Successfully committed {transactions_created} transactions."}
 
+    except HTTPException:
+        # Re-raise specific HTTP errors (e.g. insufficient holdings) so the
+        # client receives the correct status code and detail message.
+        db.rollback()
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={"status": "FAILED", "error_message": None},
+        )
+        db.commit()
+        raise
     except Exception as e:
         db.rollback()
         log.error(f"Failed to commit import session {session_id}: {e}", exc_info=True)
@@ -531,6 +551,7 @@ def commit_import_session(
         raise HTTPException(
             status_code=500, detail="Could not commit transactions."
         )
+
 
 
 @router.post(
@@ -622,11 +643,11 @@ async def create_fd_import_session(
             status_code=400, detail="An error occurred during file parsing."
         )
 
-    # 4. Save the list of Pydantic models to a Parquet file
-    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_fds])
-    parsed_file_name = f"fd_{import_session.id}.parquet"
+    # 4. Save the list of Pydantic models to a JSON file
+    parsed_df = pd.DataFrame([model_dump(t) for t in parsed_fds])
+    parsed_file_name = f"fd_{import_session.id}.json"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_df.to_parquet(parsed_file_path)
+    parsed_df.to_json(parsed_file_path, orient='records', date_format='iso')
 
     # 5. Update the session
     import_session_update = schemas.ImportSessionUpdate(
@@ -660,7 +681,9 @@ def get_fd_import_session_preview(
         raise HTTPException(status_code=400, detail="No parsed file for this session")
 
     try:
-        df = pd.read_parquet(import_session.parsed_file_path)
+        df = pd.read_json(import_session.parsed_file_path, orient='records')
+        # Replace NaN/NaT with None for Pydantic compatibility
+        df = df.where(pd.notnull(df), None)
     except Exception as e:
         log.error(f"Could not read parsed data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not read parsed data.")

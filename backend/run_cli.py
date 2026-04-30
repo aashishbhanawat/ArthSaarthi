@@ -66,27 +66,18 @@ def run_dev_server(
     import os
     import subprocess
     import sys
-    from urllib.parse import urlparse
 
     from app.core.config import settings
 
     # This command is for the desktop app, so we assume DEPLOYMENT_MODE is 'desktop'
     # The environment variable is set by the Electron process that calls this.
     if settings.DEPLOYMENT_MODE == "desktop":
-        # Use urlparse to robustly get the path from the database URL
-        # SQLite URLs are like sqlite:////home/user/.arthsaarthi/arthsaarthi.db
-        # urlparse gives path as ///home/... so we need to extract the absolute path
-        parsed_url = urlparse(settings.DATABASE_URL)
-        raw_path = parsed_url.path
+        from app.db.session import engine
 
-        # For sqlite:////path, path is "///path" - we want "/path"
-        # Remove the extra slashes but keep one leading slash for absolute path
-        if raw_path.startswith('///'):
-            db_path_str = raw_path[2:]  # ///home -> /home
-        elif raw_path.startswith('//'):
-            db_path_str = raw_path[1:]  # //home -> /home
-        else:
-            db_path_str = raw_path
+        # Use SQLAlchemy's own URL parser to get the DB path.
+        # This is the only reliable way to get the correct path on all platforms,
+        # including Windows where manual slash stripping produces invalid paths.
+        db_path_str = engine.url.database
 
         is_first_run = not os.path.exists(db_path_str)
 
@@ -100,7 +91,6 @@ def run_dev_server(
             print(f"Upgrading existing database at {db_path_str}...")
             # 1. Create any missing tables that were introduced in newer releases
             from app.db.base import Base
-            from app.db.session import engine
             print("Creating any newly added tables...")
             Base.metadata.create_all(bind=engine)
 
@@ -108,6 +98,20 @@ def run_dev_server(
             # This handles the upgrade path for existing Desktop installations
             print("Running manual schema migrations...")
             run_sqlite_migrations(db_path_str)
+
+            # 3. Seed/update historical interest rates (PPF, etc.)
+            from app.db.initial_data import seed_interest_rates
+            from app.db.session import SessionLocal
+            print("Seeding/updating historical interest rates...")
+            db = SessionLocal()
+            try:
+                seed_interest_rates(db)
+                db.commit()
+            except Exception as e:
+                print(f"  Error during interest rate seeding: {e}")
+                db.rollback()
+            finally:
+                db.close()
 
     uvicorn.run(fastapi_app, host=host, port=port)
 

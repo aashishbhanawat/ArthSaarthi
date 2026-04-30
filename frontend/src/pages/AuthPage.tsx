@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import LoginForm from '../components/auth/LoginForm';
 import SetupForm from '../components/auth/SetupForm';
+import MobileSeedingSplash from '../components/auth/MobileSeedingSplash';
 import * as api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +11,7 @@ const AuthPage: React.FC = () => {
     const navigate = useNavigate();
     const [setupNeeded, setSetupNeeded] = useState<boolean | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [seedingComplete, setSeedingComplete] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -42,6 +44,9 @@ const AuthPage: React.FC = () => {
     };
 
     const renderContent = () => {
+        if (!seedingComplete) {
+            return <MobileSeedingSplash onComplete={() => setSeedingComplete(true)} />;
+        }
         if (isLoading) {
             return <p className="text-center">Loading...</p>;
         }
@@ -56,7 +61,18 @@ const AuthPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md card">{renderContent()}</div>
+            <div className="sm:mx-auto sm:w-full sm:max-w-md card">
+                {renderContent()}
+
+                <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
+                    <Link
+                        to="/admin/logs"
+                        className="text-xs text-gray-400 hover:text-blue-500 transition-colors"
+                    >
+                        View System Logs (Diagnostics)
+                    </Link>
+                </div>
+            </div>
         </div>
     );
 };

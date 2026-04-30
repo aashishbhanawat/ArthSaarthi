@@ -1,4 +1,5 @@
 import logging
+import uuid
 from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal
@@ -36,10 +37,10 @@ class CapitalGainsService:
 
     def calculate_capital_gains(
         self,
+        user_id: uuid.UUID,
         portfolio_id: Optional[str],
         fy_year: str, # e.g. "2025-26"
-        slab_rate: float = 30.0, # Default to 30% if not provided
-        user_id: Optional[str] = None
+        slab_rate: float = 30.0 # Default to 30% if not provided
     ) -> CapitalGainsSummary:
         """
         Main entry point to calculate Capital Gains for a financial year.
@@ -64,14 +65,13 @@ class CapitalGainsService:
             .join(TransactionLink.buy_transaction.of_type(BuyTx))
             .join(SellTx.asset.of_type(AssetModel))
             .where(
+                SellTx.user_id == user_id,
                 SellTx.transaction_type == TransactionType.SELL,
                 SellTx.transaction_date >= start_date,
                 SellTx.transaction_date <= end_date
             )
         )
 
-        if user_id:
-            query = query.where(SellTx.user_id == user_id)
         if portfolio_id:
             query = query.where(SellTx.portfolio_id == portfolio_id)
 
@@ -79,7 +79,7 @@ class CapitalGainsService:
 
         # 1.5. Pre-fetch and pre-calculate Demerger Cost Reductions
         demerger_ratios = self._calculate_demerger_ratios(
-            portfolio_id, user_id, end_date
+            user_id, portfolio_id, end_date.date()
         )
 
         gains: List[GainEntry] = []
@@ -101,6 +101,10 @@ class CapitalGainsService:
 
         for link in links:
             sell_tx = link.sell_transaction
+            # Double check user_id isolation
+            if sell_tx.user_id != user_id:
+                continue
+
             buy_tx = link.buy_transaction
             asset = sell_tx.asset
 
@@ -191,10 +195,7 @@ class CapitalGainsService:
         return start_date, end_date
 
     def _calculate_demerger_ratios(
-        self,
-        portfolio_id: Optional[str],
-        user_id: Optional[str],
-        end_date: datetime
+        self, user_id: uuid.UUID, portfolio_id: Optional[str], end_date: date
     ) -> Dict[str, List[Tuple[date, Decimal]]]:
         """
         Calculates remaining cost basis ratios for assets that underwent demergers.
@@ -202,11 +203,10 @@ class CapitalGainsService:
         """
         # 1. Fetch all DEMERGER transactions before end_date
         query = select(Transaction).where(
+            Transaction.user_id == user_id,
             Transaction.transaction_type == TransactionType.DEMERGER,
             Transaction.transaction_date <= end_date
         )
-        if user_id:
-            query = query.where(Transaction.user_id == user_id)
         if portfolio_id:
             query = query.where(Transaction.portfolio_id == portfolio_id)
 
@@ -233,6 +233,7 @@ class CapitalGainsService:
 
             # Fetch relevant BUYs for this asset before earliest demerger
             buy_query = select(Transaction).where(
+                Transaction.user_id == user_id,
                 Transaction.asset_id == asset_id_str,
                 Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
                 Transaction.transaction_date < earliest_demerger_date

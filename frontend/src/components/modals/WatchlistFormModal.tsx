@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Watchlist } from '../../types/watchlist';
-import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface WatchlistFormModalProps {
   isOpen: boolean;
@@ -37,59 +37,44 @@ const WatchlistFormModal: React.FC<WatchlistFormModalProps> = ({
 
   return (
     <div
-      className="modal-overlay"
+      className="modal modal-open"
       role="dialog"
       aria-modal="true"
       aria-labelledby="watchlist-modal-title"
-      onClick={onClose}
     >
-      <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header flex justify-between items-center">
-          <h2 id="watchlist-modal-title" className="text-2xl font-bold">
-            {isEditMode ? 'Rename Watchlist' : 'Create New Watchlist'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            disabled={isPending}
-            aria-label="Close"
-          >
-            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="p-6">
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="watchlistName">
-                Watchlist Name
-              </label>
-              <input
-                id="watchlistName"
-                type="text"
-                placeholder="E.g., Tech Stocks"
-                className="form-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-            <div className="flex items-center justify-end pt-4">
-              <button type="button" onClick={onClose} className="btn btn-secondary mr-2" disabled={isPending}>
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary flex items-center gap-2"
-                disabled={isPending || !name.trim()}
-              >
-                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
-                {isPending ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          </form>
-        </div>
+      <div className="modal-box">
+        <h3 id="watchlist-modal-title" className="font-bold text-lg">
+          {isEditMode ? 'Rename Watchlist' : 'Create New Watchlist'}
+        </h3>
+        <form onSubmit={handleSubmit}>
+          <div className="form-control w-full py-4">
+            <label className="label" htmlFor="watchlistName">
+              <span className="label-text">Watchlist Name</span>
+            </label>
+            <input
+              id="watchlistName"
+              type="text"
+              placeholder="E.g., Tech Stocks"
+              className="input input-bordered w-full"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="modal-action">
+            <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isPending}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary flex items-center gap-2"
+              disabled={isPending || !name.trim()}
+            >
+              {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
+              {isPending ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

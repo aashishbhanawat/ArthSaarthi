@@ -1,11 +1,11 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-04-30
+**Last Updated:** 2026-04-16
 
 ## 1. Current Project Status
 
-*   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Optimized cache invalidation performance (#420) by introducing bulk deletion support for Redis and DiskCache. Fixed dashboard/portfolio issues including cache invalidation for range-specific keys, benchmark invested amount clamping, and matured asset history tracking.
+*   **Overall Status:** ✅ **Stable (v1.2.0 Released)** | 📱 **Android Native App Stabilized (Experimental)**
+*   **Summary:** Successfully consolidated Android build workflows into the main release and test pipelines. Aligned the backend test suite for `android` deployment mode, ensuring full functional parity and stability. Formalized Android-specific requirements (FR14.4, NFR14) and documented critical native settings for battery optimization, permissions, and background execution.
 
 ## 2. Test Suite Status
 
@@ -93,7 +93,7 @@
     -   **Hybrid Benchmarks:** CRISIL Hybrid 35/65 and Balanced 50/50 blends.
     -   **Risk-Free Rate Overlay:** Dashed green line on chart showing compound risk-free growth.
     -   **Category Comparison:** Equity vs Nifty 50, Debt vs bond yield — with accurate XIRR using actual market values.
--   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS, KFintech, Zerodha Coin, and generic CSV files. Also includes **Fixed Deposit (FD) PDF imports** (HDFC, ICICI, SBI) with password protection support. Supports **asset alias mapping** with admin management (view, edit, delete) of all aliases. **Auto-creation of assets for ISIN tickers** ensures seamless onboarding of new funds.
+-   **Automated Data Import:** Support for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS, KFintech, Zerodha Coin, and generic CSV files. Also includes **Fixed Deposit (FD) PDF imports** (HDFC, ICICI, SBI) with password protection support. Supports **asset alias mapping** with admin management (view, edit, delete) of all aliases.
 -   **Watchlists:** Create and manage custom watchlists.
 -   **Goal Planning:** Define financial goals and link assets to track progress.
 -   **Mutual Fund Dividends:** Track both cash and reinvested dividends for mutual funds.
@@ -123,7 +123,7 @@
 -   **Pluggable Financial Data Service (NFR12):** The `FinancialDataService` has been refactored into a provider-based architecture (Strategy Pattern), making it easy to add new data sources. It currently supports AMFI (Mutual Funds), NSE Bhavcopy (Indian Equities/Bonds), and yfinance (fallback/international).
 -   **Pluggable Caching Layer (NFR9):** The application supports both Redis and a file-based `DiskCache` for improved performance and deployment flexibility.
 -   **Analytics Caching (NFR9.2):** Expensive analytics and holdings calculations are cached to improve UI responsiveness and reduce server load.
--   **Cache Invalidation:** `invalidate_caches_for_portfolio` deletes all range-specific dashboard history keys, portfolio analytics, holdings, and stale `DailyPortfolioSnapshot` DB records. Optimized with **bulk deletion (#420)** for significantly faster invalidation in large-scale operations like backup restores.
+-   **Cache Invalidation:** `invalidate_caches_for_portfolio` deletes all range-specific dashboard history keys, portfolio analytics, holdings, and stale `DailyPortfolioSnapshot` DB records. Restore does comprehensive cache flush across all user data.
 
 ## 5. Known Issues & Active Bugs
 
@@ -159,10 +159,3 @@ Based on the `product_backlog.md`, the next features to consider are:
 
     - **Status:** ✅ **Stabilized**. Android builds are now resilient to Yahoo rate-limiting via dynamic header rotation and global inter-request throttling.
     - **Next Task:** Final verification of the experimental Android APK in a production environment.
-
-## 10. Security Fix - Missing Authorization on Tax Reports (2026-04-29)
-
--   **Issue #423:** Fixed a critical IDOR vulnerability on the Capital Gains and Dividends report endpoints.
--   **Vulnerability:** The endpoints lacked the `get_current_user` dependency, allowing unauthenticated access and cross-tenant data exposure.
--   **Fix:** Added the necessary authentication dependency and ensured that the underlying data queries strictly filter by `user_id` to enforce tenant isolation.
--   **Service Hardening:** Identified and fixed a secondary data leak in `CapitalGainsService._calculate_demerger_ratios` where buy transactions were missing user-scoping.

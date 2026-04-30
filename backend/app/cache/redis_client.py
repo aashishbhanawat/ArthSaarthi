@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Optional
 
 import redis
 
@@ -38,24 +38,6 @@ class RedisCacheClient(CacheClient):
         if not self._client:
             return
         self._client.delete(key)
-
-    def delete_multi(self, keys: List[str]) -> None:
-        if not self._client or not keys:
-            return
-        # Chunking to avoid blocking Redis or hitting argument limits
-        chunk_size = 1000
-        for i in range(0, len(keys), chunk_size):
-            self._client.delete(*keys[i : i + chunk_size])
-
-    def incr(self, key: str, expire: Optional[int] = None) -> int:
-        if not self._client:
-            return 1
-        pipe = self._client.pipeline()
-        pipe.incr(key)
-        if expire is not None:
-            pipe.expire(key, expire)
-        results = pipe.execute()
-        return results[0]
 
     def clear(self) -> None:
         """Clears the entire cache (flushes the current Redis DB)."""

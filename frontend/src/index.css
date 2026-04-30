@@ -107,6 +107,10 @@ body {
     .dark .label-text {
         color: #d1d5db;
     }
+
+    .table-container {
+        @apply w-full overflow-x-auto rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
+    }
 }
 
 /* Scrollbar styling for dark mode */
@@ -207,4 +211,12 @@ body {
 
 .update-admin-note {
     @apply text-blue-100 ml-1;
+}
+
+.pt-safe {
+    padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
 }
