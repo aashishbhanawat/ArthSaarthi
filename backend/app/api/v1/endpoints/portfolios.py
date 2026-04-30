@@ -87,17 +87,18 @@ def delete_portfolio(
             # Invalidate caches after successful deletion
             cache = get_cache_client()
             if cache:
-                # 1. Dashboard caches
-                cache.delete(f"analytics:dashboard_summary:{user_id}")
+                # Collect all keys to delete
+                keys_to_delete = [f"analytics:dashboard_summary:{user_id}"]
                 for range_str in DASHBOARD_HISTORY_RANGES:
-                    cache.delete(f"analytics:dashboard_history:{user_id}:{range_str}")
+                    keys_to_delete.append(f"analytics:dashboard_history:{user_id}:{range_str}")
 
-                # 2. Cross-portfolio aggregation cache
-                cache.delete(f"analytics:all_portfolios_holdings_and_summary:{user_id}")
+                keys_to_delete.extend([
+                    f"analytics:all_portfolios_holdings_and_summary:{user_id}",
+                    f"analytics:portfolio_holdings_and_summary:{portfolio_id}",
+                    f"analytics:portfolio_analytics:{portfolio_id}"
+                ])
 
-                # 3. Portfolio-level caches
-                cache.delete(f"analytics:portfolio_holdings_and_summary:{portfolio_id}")
-                cache.delete(f"analytics:portfolio_analytics:{portfolio_id}")
+                cache.delete_multi(keys_to_delete)
         except Exception as e:
             # It's better to log this error and not fail the request.
             # The portfolio has been deleted, but cache invalidation failed.

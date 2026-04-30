@@ -1,4 +1,39 @@
+## 2026-04-30: Optimize Cache Deletion Using Bulk Operations (#420)
+
+**Task:** Optimize cache invalidation performance by introducing bulk deletion capabilities to the CacheClient interface and implementing them for Redis and DiskCache.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1.  **Cache Interface:** Added `delete_multi(keys: List[str])` to the `CacheClient` abstract base class.
+2.  **Redis Implementation:** Implemented `delete_multi` in `RedisCacheClient` using Redis's bulk `delete` command with 1000-key chunking to prevent blocking.
+3.  **Disk Implementation:** Implemented `delete_multi` in `DiskCacheClient` using `self._cache.transact()` to group file system operations efficiently.
+4.  **Batch Invalidation:** Refactored `invalidate_caches_for_portfolio` and `restore_backup` to collect all keys and perform a single bulk deletion, significantly reducing round-trips to the cache provider.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/cache/base.py` — Added `delete_multi` abstract method.
+*   **Modified:** `backend/app/cache/redis_client.py` — Implemented bulk delete with chunking.
+*   **Modified:** `backend/app/cache/disk_client.py` — Implemented bulk delete using transactions.
+*   **Modified:** `backend/app/cache/utils.py` — Refactored `invalidate_caches_for_portfolio` to use `delete_multi`.
+*   **Modified:** `backend/app/services/backup_service.py` — Refactored `restore_backup` cache invalidation to use `delete_multi`.
+
+### Verification
+
+*   **Backend Tests:** Verified `test_backup_restore_flow` in `app/tests/api/v1/test_backup_restore.py`. All tests passed.
+*   **Performance:** Drastically reduced cache invalidation time for portfolios with many assets and during full system restores.
+
+### Outcome
+
+**Success.** Cache invalidation is now significantly more efficient, especially for larger portfolios and during backup restoration.
+
+---
+
 ## 2026-03-14: Fix Dashboard Cache, Portfolio History, Benchmark & PPF Log Issues (#348)
+
 
 **Task:** Fix 7 reported issues: cache invalidation for dashboard history, benchmark invested amount going negative after FD maturity, matured FDs/RDs in portfolio history, incomplete cache invalidation on restore, PPF log spam, and missing timing instrumentation.
 
