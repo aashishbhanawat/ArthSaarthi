@@ -37,7 +37,10 @@ class DiskCacheClient(CacheClient):
     def delete_multi(self, keys: List[str]) -> None:
         with self._cache.transact():
             for key in keys:
-                self._cache.evict(key)
+                try:
+                    del self._cache[key]
+                except KeyError:
+                    pass
 
     def incr(self, key: str, expire: Optional[int] = None) -> int:
         with self._cache.transact():
