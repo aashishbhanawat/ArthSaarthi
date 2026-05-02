@@ -26,6 +26,24 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-05-02-01
+**Title:** AttributeError: 'float' object has no attribute 'upper' in Import Preview
+**Module:** Import Pipeline (Backend)
+**Reported By:** Antigravity
+**Date Reported:** 2026-05-02
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The import preview endpoint crashed with a 500 error when processing files with missing optional fields (like ISIN). Pandas represents missing strings as `NaN` (floats), and the code attempted to call `.upper()` on these values during asset lookup.
+**Steps to Reproduce:**
+1. Upload a CSV for import where some rows have missing `isin` columns.
+2. Click "Upload and Preview".
+3. Observe 500 Internal Server Error.
+**Expected Behavior:** Missing fields should be handled as `None` and the preview should continue without crashing.
+**Actual Behavior:** Entire request fails with `AttributeError: 'float' object has no attribute 'upper'`.
+**Resolution:** Updated `import_sessions.py` to sanitize `NaN` values to `None` using `row_data` dictionary. Added defensive type checks to `CRUDAsset.get_by_isin` and `get_by_ticker` to return `None` if the input is not a string.
+
+---
+
 **Bug ID:** 2026-03-10-01
 **Title:** Desktop App Startup Fails Due to Missing `fmv_2018` Column
 **Module:** Core Backend, Desktop App

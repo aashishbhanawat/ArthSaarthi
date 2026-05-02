@@ -1,3 +1,40 @@
+## 2026-05-02: Resolve Import Pipeline 500 Errors & NaN Handling
+
+**Task:** Debug and fix persistent 500 Internal Server Errors in the E2E data import pipeline, specifically during the preview phase.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Identified and resolved a critical crash in the import preview pipeline caused by improper handling of missing optional fields in CSV/JSON data.
+
+1. **Root Cause Analysis:** The `AttributeError: 'float' object has no attribute 'upper'` was triggered when the backend attempted to call `.upper()` on a `float(NaN)` value. This happened because `pandas` represents missing string values in JSON/CSV as `NaN` (floats), and the endpoint was passing these raw values to CRUD methods.
+2. **Defensive Endpoint Logic:** Refactored `get_import_session_preview` to consistently use sanitized `row_data` (where `NaN` is converted to `None`) instead of raw `pandas` series rows. This ensures that Pydantic validation handles missing fields correctly as `None`.
+3. **Robust CRUD Implementation:** Added explicit type checks to `CRUDAsset.get_by_ticker` and `CRUDAsset.get_by_isin` to return `None` immediately if the input is not a string, preventing crashes from case-normalization logic.
+4. **Test Robustness:** Fixed a brittle E2E test (`inactivity-timeout.spec.ts`) that failed due to exact string matching on a dynamic countdown timer; switched to a flexible regex locator.
+5. **Enhanced Observability:** Instrumented the import endpoints with granular `try-except` blocks and `logger.error` logging to capture and report specific row-level validation failures without crashing the entire request.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Sanitized NaN values and fixed row access in preview/commit loops.
+* **Modified:** `backend/app/crud/crud_asset.py` — Added defensive type checks to asset lookup methods.
+
+**E2E:**
+* **Modified:** `e2e/tests/inactivity-timeout.spec.ts` — Updated locator to use regex for dynamic countdown text.
+
+### Verification
+
+* **E2E Tests:** All 5 failing tests (Data Import, Asset Mapping, Inactivity Timeout) now pass successfully in the Docker environment.
+* **Logs:** Verified that the backend no longer produces 500 errors and correctly logs individual validation issues if they occur.
+
+### Outcome
+
+**Success.** The data import pipeline is now resilient to missing fields and provides better diagnostic information. All E2E verification tests are green.
+
+---
+
 ## 2026-03-15: Auto-create ISIN assets during import
 
 **Task:** Automatically create asset records when an import contains an ISIN-style ticker (e.g., "ISIN:XXX") that doesn't exist in the database.

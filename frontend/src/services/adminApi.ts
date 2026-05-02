@@ -122,3 +122,45 @@ export const deleteAlias = async (aliasId: string): Promise<{ msg: string }> => 
   const response = await apiClient.delete(`/api/v1/admin/aliases/${aliasId}`);
   return response.data;
 };
+
+// --- FMV 2018 Management (Admin) ---
+export interface FMVAsset {
+  id: string;
+  ticker_symbol: string;
+  name: string;
+  asset_type: string;
+  isin?: string;
+  fmv_2018: number | null;
+}
+
+export interface FMV2018BulkSeedResponse {
+  status: string;
+  updated: number;
+  skipped: number;
+  errors: number;
+  message: string;
+}
+
+export const searchAssetsByFMV = async (query: string, limit = 50): Promise<FMVAsset[]> => {
+  const response = await apiClient.get('/api/v1/admin/assets/fmv-search', {
+    params: { query, limit },
+  });
+  return response.data;
+};
+
+export const updateFMV2018 = async (ticker: string, fmv_2018: number): Promise<FMVAsset> => {
+  const response = await apiClient.patch(`/api/v1/admin/assets/${ticker}/fmv-2018`, { fmv_2018 });
+  return response.data;
+};
+
+export const lookupFMV2018 = async (ticker: string): Promise<{ fmv_2018: number | null; message: string }> => {
+  const response = await apiClient.get(`/api/v1/admin/assets/${ticker}/fmv-2018/lookup`);
+  return response.data;
+};
+
+export const seedFMV2018 = async (overwrite: boolean): Promise<FMV2018BulkSeedResponse> => {
+  const response = await apiClient.post('/api/v1/admin/assets/fmv-2018/seed', { overwrite }, {
+    timeout: 120000, // 2 minute timeout for large BSE/AMFI downloads
+  });
+  return response.data;
+};

@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase
 from app.models.watchlist import WatchlistItem
-from app.schemas.watchlist import WatchlistItemCreate
+from app.schemas.watchlist import WatchlistItemCreate, WatchlistItemUpdate
+from app.utils.pydantic_compat import model_dump
 
 
 class CRUDWatchlistItem(
-    CRUDBase[WatchlistItem, WatchlistItemCreate, WatchlistItemCreate]
+    CRUDBase[WatchlistItem, WatchlistItemCreate, WatchlistItemUpdate]
 ):
     def create_with_watchlist_and_user(
         self,
@@ -19,7 +20,7 @@ class CRUDWatchlistItem(
         user_id: uuid.UUID,
     ) -> WatchlistItem:
         db_obj = WatchlistItem(
-            **obj_in.model_dump(),
+            **model_dump(obj_in),
             watchlist_id=watchlist_id,
             user_id=user_id,
         )

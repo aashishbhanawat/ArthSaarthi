@@ -1,20 +1,34 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-04-30
+**Last Updated:** 2026-05-02
 
 ## 1. Current Project Status
 
-*   **Overall Status:** 🟢 **Stable**
-*   **Summary:** Optimized cache invalidation performance (#420) by introducing bulk deletion support for Redis and DiskCache. Fixed dashboard/portfolio issues including cache invalidation for range-specific keys, benchmark invested amount clamping, and matured asset history tracking.
+*   **Overall Status:** 🟢 **Stable / Release Candidate**
+*   **Summary:** Successfully resolved critical 500 errors in the import pipeline caused by NaN handling issues. Restored full E2E test pass (5/5 import/timeout tests) and enhanced backend robustness for missing spreadsheet data. Maintained Android (Chaquopy) enablement and mobile UI integrity.
 
 ## 2. Test Suite Status
 
 *   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **310/310 Passing**
 *   **Backend Integration Tests (Android/SQLite):** ✅ **304/310 Passing** (6 expected skips for admin-only APIs)
+*   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ### Recent Stabilization & Refinement Efforts
+ 
+*   **Import Pipeline & NaN Robustness (2026-05-02):**
+    - **Crash Resolution:** Fixed a critical `AttributeError` ('float' object has no attribute 'upper') occurring during the import preview phase when optional fields like ISIN were missing.
+    - **Sanitization:** Implemented consistent NaN-to-None sanitization in the import endpoints to ensure Pydantic validation handles missing spreadsheet data correctly.
+    - **CRUD Hardening:** Added defensive type-checking to `CRUDAsset` to prevent crashes when non-string values are passed to ticker or ISIN lookup methods.
+    - **E2E Stability:** Resolved brittle test failures in `inactivity-timeout.spec.ts` by implementing flexible regex-based assertions for dynamic UI elements.
+    - **Verification:** Successfully verified the fix with a passing E2E test suite covering the entire import, mapping, and commitment pipeline.
+*   **Android Restoration & Pydantic v1/v2 Compatibility (2026-05-01):**
+    - **Pydantic Compatibility:** Restored `pydantic_compat.py` and updated all backend schemas to support both Pydantic v1 (Android) and v2 (Server/Docker).
+    - **Storage Migration:** Migrated import session storage from Parquet to JSON to resolve binary dependency crashes in the embedded Android environment.
+    - **Security & Stability:** Restored Login Rate Limiting (PR #376) and verified IDOR protections (PR #423) remain intact. Fixed database authentication conflicts in the test environment.
+    - **Mobile UI:** Restored and merged `MobileHeader`, `MobileNav`, and mobile-optimized layouts with the latest Admin dashboard updates.
+    - **Verification:** Achieved 100% backend test pass (309/309) across both Postgres/Redis and SQLite/DiskCache (Android mode) environments, specifically verifying the rate-limiting engine on both.
 
 *   **Android Build Consolidation & Test Alignment (2026-04-18):**
     - **Workflow Consolidation:** Integrated Android release and debug builds into `release.yml` and `test-builds.yml`; removed redundant `android-build.yml`.
