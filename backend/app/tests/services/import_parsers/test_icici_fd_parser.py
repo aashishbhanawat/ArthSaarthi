@@ -37,8 +37,8 @@ DEPOSIT NO. OPEN DATE PRINCIPAL ROI% MAT. AMOUNT MAT. DATE
     # Check first FD (Cumulative)
     assert fds[0].bank == "ICICI"
     assert fds[0].account_number == "000123456789"
-    assert fds[0].start_date.strftime("%Y-%m-%d") == "2021-10-05"
-    assert fds[0].maturity_date.strftime("%Y-%m-%d") == "2026-10-05"
+    assert fds[0].start_date == "2021-10-05"
+    assert fds[0].maturity_date == "2026-10-05"
     assert fds[0].principal_amount == 500000.0
     assert fds[0].maturity_amount == 645000.0
     assert fds[0].interest_rate == 5.25
@@ -46,8 +46,8 @@ DEPOSIT NO. OPEN DATE PRINCIPAL ROI% MAT. AMOUNT MAT. DATE
 
     # Check 2nd FD (missing mat amount defaults to principal = Payout)
     assert fds[1].account_number == "000987654321"
-    assert fds[1].start_date.strftime("%Y-%m-%d") == "2023-12-12"
-    assert fds[1].maturity_date.strftime("%Y-%m-%d") == "2025-12-12"
+    assert fds[1].start_date == "2023-12-12"
+    assert fds[1].maturity_date == "2025-12-12"
     assert fds[1].principal_amount == 100000.0
     assert fds[1].maturity_amount == 100000.0  # Defaulted
     assert fds[1].interest_rate == 6.0

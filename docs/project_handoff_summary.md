@@ -4,8 +4,9 @@
 
 ## 1. Current Project Status
 
-*   **Overall Status:** 🟢 **Stable / Release Candidate**
-*   **Summary:** Successfully consolidated the Android restoration effort and submitted PR #429. This PR restores the full Android enablement, Capacitor assets, and mobile UI optimizations. All frontend tests (58/58) and backend tests (312/312) are passing. The codebase is lint-clean across the full stack. Maintained Android enablement and mobile UI integrity.
+*   **Overall Status:** Ready for PR / Release Candidate
+
+**Latest Achievement:** Reconciled missing Android enablement (PR #379) changes. Restored CI/CD workflows, fixed Pydantic v1/v2 compat on Android (Chaquopy), and reverted schema date types back to `str` for cross-platform JSON parsing compatibility. Verified 309 passing tests. Maintained Android enablement and mobile UI integrity.
 
 ## 2. Test Suite Status
 

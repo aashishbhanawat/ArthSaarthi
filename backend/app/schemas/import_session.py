@@ -1,7 +1,9 @@
+import math
 import uuid
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 try:
     from pydantic import ConfigDict
@@ -84,25 +86,31 @@ class ImportSessionCommit(BaseModel):
     aliases_to_create: list[AssetAliasCreate] = []
 
 
-# Schema for parsed FD data from bank statements
 class ParsedFixedDeposit(BaseModel):
     bank: str
-    account_number: str | None = None
+    account_number: Optional[str] = None
     principal_amount: float
     interest_rate: float
-    start_date: datetime
-    maturity_date: datetime
-    maturity_amount: float | None = None
+    start_date: str
+    maturity_date: str
+    maturity_amount: Optional[float] = None
     interest_payout: str = "Cumulative"
     compounding_frequency: str = "Quarterly"
+
+    @validator("*", pre=True, each_item=False)
+    @classmethod
+    def fix_nan(cls, v: Any) -> Any:
+        if isinstance(v, float) and math.isnan(v):
+            return None
+        return v
 
 
 # Schema for FD import preview response
 class FDImportPreview(BaseModel):
-    parsed_fds: list[ParsedFixedDeposit]
-    duplicates: list[ParsedFixedDeposit]
+    parsed_fds: List[ParsedFixedDeposit]
+    duplicates: List[ParsedFixedDeposit]
 
 
 # Schema for FD import commit request body
 class FDImportCommit(BaseModel):
-    fds_to_commit: list[ParsedFixedDeposit]
+    fds_to_commit: List[ParsedFixedDeposit]

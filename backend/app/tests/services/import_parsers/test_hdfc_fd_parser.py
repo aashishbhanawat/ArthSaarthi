@@ -37,8 +37,8 @@ FD Number Open/Last Renew Date Maturity Date Rate of Interest Maturity Amount Av
     # Check first FD (Cumulative)
     assert fds[0].bank == "HDFC"
     assert fds[0].account_number == "12345678901234"
-    assert fds[0].start_date.strftime("%Y-%m-%d") == "2023-01-01"
-    assert fds[0].maturity_date.strftime("%Y-%m-%d") == "2026-01-01"
+    assert fds[0].start_date == "2023-01-01"
+    assert fds[0].maturity_date == "2026-01-01"
     assert fds[0].principal_amount == 100000.0
     assert fds[0].maturity_amount == 120000.0
     assert fds[0].interest_rate == 6.50
@@ -46,7 +46,7 @@ FD Number Open/Last Renew Date Maturity Date Rate of Interest Maturity Amount Av
 
     # Check 2nd FD (Payout)
     assert fds[1].account_number == "98765432109876"
-    assert fds[1].start_date.strftime("%Y-%m-%d") == "2022-06-15"
+    assert fds[1].start_date == "2022-06-15"
     assert fds[1].principal_amount == 50000.0
     assert fds[1].maturity_amount == 50000.0
     assert fds[1].interest_rate == 7.10

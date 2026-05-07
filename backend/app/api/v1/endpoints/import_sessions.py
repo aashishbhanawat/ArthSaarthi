@@ -1,6 +1,7 @@
 import logging
 import shutil
 import uuid
+from datetime import date as date_type
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, List, Optional
@@ -778,8 +779,12 @@ def commit_fd_import_session(
                 account_number=parsed_fd.account_number,
                 principal_amount=Decimal(str(parsed_fd.principal_amount)),
                 interest_rate=Decimal(str(parsed_fd.interest_rate)),
-                start_date=parsed_fd.start_date,
-                maturity_date=parsed_fd.maturity_date,
+                start_date=date_type.fromisoformat(
+                    str(parsed_fd.start_date).split("T")[0]
+                ),
+                maturity_date=date_type.fromisoformat(
+                    str(parsed_fd.maturity_date).split("T")[0]
+                ),
                 compounding_frequency=parsed_fd.compounding_frequency,
                 interest_payout=parsed_fd.interest_payout,
                 portfolio_id=import_session.portfolio_id,
