@@ -303,7 +303,7 @@ def test_login_rate_limiting(
     mock_cache.get.side_effect = mock_get
     mock_cache.incr.side_effect = mock_incr
 
-    mocker.patch("app.cache.factory.get_cache_client", return_value=mock_cache)
+    mocker.patch("app.api.v1.endpoints.auth.get_cache_client", return_value=mock_cache)
 
     # Create user
     client.post("/api/v1/auth/setup", json=admin_user_data)

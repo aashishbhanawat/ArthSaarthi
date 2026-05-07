@@ -15,6 +15,7 @@ from app.models.transaction import Transaction
 from app.models.transaction_link import TransactionLink
 from app.schemas.enums import TransactionType
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
+from app.utils.pydantic_compat import model_dump
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +166,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 )
 
         db_obj = self.model(
-            **obj_in.model_dump(exclude={"links"}),
+            **model_dump(obj_in, exclude={"links"}),
             user_id=portfolio.user_id,
             portfolio_id=portfolio_id,
         )

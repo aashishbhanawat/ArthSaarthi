@@ -39,8 +39,8 @@ OTHER INVESTMENTS
     # Check first FD (Cumulative)
     assert fds[0].bank == "SBI"
     assert fds[0].account_number == "XXXXXXX3276"
-    assert fds[0].start_date == "2015-12-07"
-    assert fds[0].maturity_date == "2026-12-07"
+    assert fds[0].start_date.strftime("%Y-%m-%d") == "2015-12-07"
+    assert fds[0].maturity_date.strftime("%Y-%m-%d") == "2026-12-07"
     assert fds[0].principal_amount == 26613.36
     assert fds[0].maturity_amount == 28316.00
     assert fds[0].interest_rate == 6.25

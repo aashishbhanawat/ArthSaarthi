@@ -117,23 +117,36 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
     const canSave = isMfSource ? (selectedMf && isAssetSelected) : (selectedAsset && isAssetSelected);
 
     return (
-        <div className="modal modal-open">
-            <div className="modal-box">
-                <h3 className="font-bold text-lg">Map Unrecognized Symbol</h3>
-                <p className="py-4">
+        <div className="modal-overlay">
+            <div className="modal-content max-w-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-lg">Map Unrecognized Symbol</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        disabled={createAssetMutation.isPending}
+                        aria-label="Close"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <p className="py-2">
                     <span className="font-mono bg-gray-200 dark:bg-gray-600 dark:text-gray-200 px-1 rounded text-sm break-all">{unrecognizedTicker}</span>
                     <span className="block mt-2">Search for an existing asset to map it to.</span>
                     {isMfSource && <span className="text-xs text-blue-600 dark:text-blue-400 block mt-1">Searching AMFI Mutual Fund database</span>}
                 </p>
 
-                <div className="form-control w-full">
-                    <label className="label">
-                        <span className="label-text">{isMfSource ? 'Search Mutual Funds' : 'Search Assets'}</span>
+                <div className="form-group w-full mt-4">
+                    <label className="form-label">
+                        {isMfSource ? 'Search Mutual Funds' : 'Search Assets'}
                     </label>
                     <input
                         type="text"
                         placeholder={isMfSource ? "Type at least 3 characters to search MF..." : "Type to search by name or ticker..."}
-                        className="input input-bordered w-full"
+                        className="form-input"
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -144,7 +157,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
                     />
                 </div>
 
-                {isLoading && <span className="loading loading-spinner loading-sm mt-2"></span>}
+                {isLoading && <div className="flex justify-center mt-2"><span className="loading loading-spinner loading-sm"></span></div>}
 
                 {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
 
@@ -155,18 +168,18 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
                 )}
 
                 {searchResults && searchResults.length > 0 && !isAssetSelected && (
-                    <ul className="menu bg-base-100 w-full rounded-box mt-2 border max-h-60 overflow-y-auto">
+                    <ul className="bg-white dark:bg-gray-700 w-full rounded-md mt-2 border dark:border-gray-600 max-h-60 overflow-y-auto divide-y dark:divide-gray-600 shadow-lg">
                         {isMfSource ? (
                             (searchResults as MutualFundSearchResult[]).map((mf, index) => (
                                 <li key={index} onClick={() => {
                                     setSelectedMf(mf);
                                     setSearchTerm(`${mf.name}`);
                                     setIsAssetSelected(true);
-                                }}>
-                                    <a className="text-sm">
-                                        <span className="truncate">{mf.name}</span>
-                                        <span className="text-xs text-gray-500">({mf.ticker_symbol})</span>
-                                    </a>
+                                }} className="p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <div className="text-sm">
+                                        <div className="font-medium truncate">{mf.name}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">({mf.ticker_symbol})</div>
+                                    </div>
                                 </li>
                             ))
                         ) : (
@@ -175,8 +188,8 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
                                     setSelectedAsset(asset);
                                     setSearchTerm(`${asset.name} (${asset.ticker_symbol})`);
                                     setIsAssetSelected(true);
-                                }}>
-                                    <a>{asset.name} ({asset.ticker_symbol})</a>
+                                }} className="p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <div className="text-sm font-medium">{asset.name} ({asset.ticker_symbol})</div>
                                 </li>
                             ))
                         )}
@@ -188,8 +201,8 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
                 )}
 
 
-                <div className="modal-action">
-                    <button onClick={onClose} className="btn btn-ghost" disabled={createAssetMutation.isPending}>Cancel</button>
+                <div className="flex justify-end gap-3 mt-8">
+                    <button onClick={onClose} className="btn btn-secondary" disabled={createAssetMutation.isPending}>Cancel</button>
                     <button
                         onClick={handleSave}
                         className="btn btn-primary"
@@ -204,4 +217,3 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
 };
 
 export default AssetAliasMappingModal;
-

@@ -291,7 +291,7 @@ def get_import_session_preview(
 
     try:
         for _, row in df.iterrows():
-            # Clean NaNs to None to avoid validation errors for optional string/float fields
+            # Clean NaNs to None to avoid validation errors for optional fields
             row_data = {k: (None if pd.isna(v) else v) for k, v in row.items()}
             try:
                 parsed_transaction = schemas.ParsedTransaction(**row_data)
@@ -310,7 +310,9 @@ def get_import_session_preview(
                 asset = crud.asset.get_by_isin(db, isin_code=isin_code)
                 if not asset:
                     # Try to fetch details without creating (side-effect free preview)
-                    details = financial_data_service.get_asset_details(f"ISIN:{isin_code}")
+                    details = financial_data_service.get_asset_details(
+                        f"ISIN:{isin_code}"
+                    )
                     if details:
                         # Validate and filter through schema to prevent TypeError
                         asset_in = schemas.AssetCreate(
@@ -337,7 +339,9 @@ def get_import_session_preview(
                 if details:
                     # Validate and filter through schema to prevent TypeError
                     asset_in = schemas.AssetCreate(
-                        ticker_symbol=details.get("ticker_symbol") or ticker_symbol.upper(),
+                        ticker_symbol=(
+                            details.get("ticker_symbol") or ticker_symbol.upper()
+                        ),
                         **{k: v for k, v in details.items() if k != "ticker_symbol"}
                     )
                     asset = models.Asset(**model_dump(asset_in))
@@ -375,8 +379,8 @@ def get_import_session_preview(
 
             # 2. Duplicate Detection
             existing_transaction = None
-            # Only check duplicates if the asset already exists in the database (persistent)
-            # We use inspect(asset).persistent to check if it's attached to the session
+            # Only check duplicates if the asset already exists in the database
+            # We use inspect(asset).persistent to check if it's attached
             if asset and getattr(asset, "id", None) and inspect(asset).persistent:
                 existing_transaction = crud.transaction.get_by_details(
                     db,
@@ -504,10 +508,37 @@ def commit_import_session(
                 fees=Decimal(str(parsed_tx.fees)),
             )
 
-            crud.transaction.create_with_portfolio(
-                db=db, obj_in=transaction_in, portfolio_id=import_session.portfolio_id
-            )
-            transactions_created += 1
+            try:
+                crud.transaction.create_with_portfolio(
+                    db=db,
+                    obj_in=transaction_in,
+                    portfolio_id=import_session.portfolio_id
+                )
+                transactions_created += 1
+            except HTTPException as he:
+                db.rollback()
+                error_detail = he.detail
+                # Enhance error message with ticker if it's a holdings error
+                if "Insufficient holdings" in str(error_detail):
+                    error_detail = f"{asset.ticker_symbol}: {error_detail}"
+
+                log.error(
+                    f"Failed to commit transaction for {asset.ticker_symbol} "
+                    f"in session {session_id}: {error_detail}"
+                )
+
+                # Update session status to FAILED and store the detailed error
+                crud.import_session.update(
+                    db,
+                    db_obj=import_session,
+                    obj_in={
+                        "status": "FAILED",
+                        "error_message": error_detail,
+                    },
+                )
+                db.commit()
+                # Re-raise with the detailed message
+                raise HTTPException(status_code=he.status_code, detail=error_detail)
 
         # 3. Update session status to COMPLETED
         crud.import_session.update(
@@ -525,18 +556,22 @@ def commit_import_session(
 
     except Exception as e:
         db.rollback()
-        log.error(f"Failed to commit import session {session_id}: {e}", exc_info=True)
+        error_msg = str(e)
+        log.error(
+            f"Failed to commit import session {session_id}: {error_msg}",
+            exc_info=True
+        )
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": "An unexpected error occurred during commit.",
+                "error_message": f"Unexpected error: {error_msg}",
             },
         )
         db.commit()
         raise HTTPException(
-            status_code=500, detail="Could not commit transactions."
+            status_code=500, detail=f"Could not commit transactions: {error_msg}"
         )
 
 
@@ -690,7 +725,7 @@ def get_fd_import_session_preview(
 
     try:
         for _, row in df.iterrows():
-            # Clean NaNs to None to avoid validation errors for optional string/float fields
+            # Clean NaNs to None to avoid validation errors for optional fields
             fd_data = {k: (None if pd.isna(v) else v) for k, v in row.items()}
             try:
                 parsed_fd = schemas.ParsedFixedDeposit(**fd_data)
@@ -769,8 +804,9 @@ def commit_fd_import_session(
 
     except Exception as e:
         db.rollback()
+        error_msg = str(e)
         log.error(
-            f"Failed to commit FD import session {session_id}: {e}",
+            f"Failed to commit FD import session {session_id}: {error_msg}",
             exc_info=True,
         )
         crud.import_session.update(
@@ -778,8 +814,10 @@ def commit_fd_import_session(
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": "An unexpected error occurred during commit.",
+                "error_message": f"Unexpected error: {error_msg}",
             },
         )
         db.commit()
-        raise HTTPException(status_code=500, detail="Could not commit FDs.")
+        raise HTTPException(
+            status_code=500, detail=f"Could not commit FDs: {error_msg}"
+        )

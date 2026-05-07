@@ -19,8 +19,28 @@ test.describe.serial('FD Data Import E2E Test', () => {
     const dummyPdfPath = path.join(__dirname, 'temp_fd_statement.pdf');
 
     test.beforeAll(() => {
-        // Create a dummy PDF file for testing upload (content format doesn't matter for the upload dialog test)
-        fs.writeFileSync(dummyPdfPath, 'dummy pdf content for E2E');
+        // Create a minimal valid PDF file for testing upload
+        const minimalPdf = Buffer.from(
+            '%PDF-1.4\n' +
+            '1 0 obj <</Type/Catalog/Pages 2 0 R>> endobj\n' +
+            '2 0 obj <</Type/Pages/Count 1/Kids [3 0 R]>> endobj\n' +
+            '3 0 obj <</Type/Page/Parent 2 0 R/Resources <<>>/Contents 4 0 R/MediaBox [0 0 612 792]>> endobj\n' +
+            '4 0 obj <</Length 0>> stream\n' +
+            'endstream\n' +
+            'endobj\n' +
+            'xref\n' +
+            '0 5\n' +
+            '0000000000 65535 f\n' +
+            '0000000009 00000 n\n' +
+            '0000000052 00000 n\n' +
+            '0000000101 00000 n\n' +
+            '0000000199 00000 n\n' +
+            'trailer <</Size 5/Root 1 0 R>>\n' +
+            'startxref\n' +
+            '249\n' +
+            '%%EOF'
+        );
+        fs.writeFileSync(dummyPdfPath, minimalPdf);
     });
 
     test.afterAll(() => {

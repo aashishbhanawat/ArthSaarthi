@@ -64,9 +64,11 @@ class TestZerodhaCoinParser:
         result = parser.parse(sample_zerodha_coin_df)
 
         for tx in result:
-            assert len(tx.transaction_date) == 10
-            assert tx.transaction_date[4] == "-"
-            assert tx.transaction_date[7] == "-"
+            # tx.transaction_date is now a datetime object due to Pydantic schema
+            date_str = tx.transaction_date.strftime("%Y-%m-%d")
+            assert len(date_str) == 10
+            assert date_str[4] == "-"
+            assert date_str[7] == "-"
 
     def test_parse_sets_zero_fees(self, parser, sample_zerodha_coin_df):
         """Test that fees are set to 0."""

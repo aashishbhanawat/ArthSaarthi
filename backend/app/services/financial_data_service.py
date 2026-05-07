@@ -197,6 +197,15 @@ class FinancialDataService:
             from_currency, to_currency, date_obj
         )
 
+    def get_enrichment_data_batch(
+        self, assets: List[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Fetches enrichment data for a list of assets in batch.
+        Currently delegates to yfinance provider.
+        """
+        return self.yfinance_provider.get_enrichment_data_batch(assets)
+
 
 def get_financial_data_service() -> FinancialDataService:
     from app.cache.factory import get_cache_client

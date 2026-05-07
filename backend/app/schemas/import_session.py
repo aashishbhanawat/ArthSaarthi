@@ -1,6 +1,12 @@
 import uuid
+from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+
+try:
+    from pydantic import ConfigDict
+except ImportError:
+    ConfigDict = None
 
 # Need to import Portfolio and User schemas to be used as nested objects
 from .asset_alias import AssetAliasCreate
@@ -38,7 +44,11 @@ class ImportSessionInDBBase(ImportSessionBase):
     source: str
     parsed_file_path: str | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            from_orm = True
 
 
 # Properties to return to client
@@ -49,7 +59,7 @@ class ImportSession(ImportSessionInDBBase):
 
 # Schema for the parsed transaction data from the file
 class ParsedTransaction(BaseModel):
-    transaction_date: str
+    transaction_date: datetime
     ticker_symbol: str
     transaction_type: str
     quantity: float
@@ -80,8 +90,8 @@ class ParsedFixedDeposit(BaseModel):
     account_number: str | None = None
     principal_amount: float
     interest_rate: float
-    start_date: str
-    maturity_date: str
+    start_date: datetime
+    maturity_date: datetime
     maturity_amount: float | None = None
     interest_payout: str = "Cumulative"
     compounding_frequency: str = "Quarterly"

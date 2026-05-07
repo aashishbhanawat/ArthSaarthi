@@ -12,7 +12,8 @@ class CRUDPortfolio(CRUDBase[Portfolio, PortfolioCreate, PortfolioUpdate]):
     def create_with_owner(
         self, db: Session, *, obj_in: PortfolioCreate, user_id: uuid.UUID
     ) -> Portfolio:
-        db_obj = Portfolio(**obj_in.model_dump(), user_id=user_id)
+        from app.utils.pydantic_compat import model_dump
+        db_obj = Portfolio(**model_dump(obj_in), user_id=user_id)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)

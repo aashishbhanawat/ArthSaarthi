@@ -584,3 +584,22 @@ class YFinanceProvider(FinancialDataProvider):
                 )
                 return result[ticker][latest_available_date]
         return None
+
+    def get_enrichment_data_batch(
+        self, assets: List[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Fetches enrichment data for multiple tickers.
+        Uses cache to avoid redundant network calls.
+        """
+        results = {}
+        for asset in assets:
+            ticker = asset.get("ticker_symbol")
+            if not ticker:
+                continue
+
+            enrichment = self.get_enrichment_data(ticker, asset.get("exchange"))
+            if enrichment:
+                results[ticker] = enrichment
+
+        return results

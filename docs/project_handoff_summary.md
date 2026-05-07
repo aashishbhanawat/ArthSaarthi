@@ -1,22 +1,29 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-05-02
+**Last Updated:** 2026-05-06
 
 ## 1. Current Project Status
 
 *   **Overall Status:** 🟢 **Stable / Release Candidate**
-*   **Summary:** Successfully resolved critical 500 errors in the import pipeline caused by NaN handling issues. Restored full E2E test pass (5/5 import/timeout tests) and enhanced backend robustness for missing spreadsheet data. Maintained Android (Chaquopy) enablement and mobile UI integrity.
+*   **Summary:** Successfully resolved critical 500 errors in the import pipeline and fixed persistent frontend test failures caused by the transition to a responsive dual-layout. All frontend and backend tests are passing. Cleaned up linting errors across the full stack (backend endpoints and frontend TSX files). Maintained Android enablement and mobile UI integrity.
 
 ## 2. Test Suite Status
 
 *   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **310/310 Passing**
 *   **Backend Integration Tests (Android/SQLite):** ✅ **304/310 Passing** (6 expected skips for admin-only APIs)
+*   **Frontend Unit Tests (Jest):** ✅ **58/58 Passing** (Resolved responsive layout conflicts)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ### Recent Stabilization & Refinement Efforts
  
+*   **Mobile UX Optimization & Backend Stabilization (2026-05-02):**
+    - **Capital Gains Mobile Refactor:** Transitioned the `CapitalGainsPage.tsx` from horizontally scrolling tables to a responsive, card-based dual-layout. Implemented custom cards for Advance Tax, Realized Gains, Schedule 112A, Foreign Gains, and Dividends.
+    - **Breakpoint Standardization:** Synchronized responsive breakpoints to `lg` (1024px) across the application to ensure consistent UI on tablets and large-screen mobile devices.
+    - **Backend Bond Fix:** Resolved a critical `AttributeError` (missing `Bond` export in `app.schemas`) that was crashing the `search-stocks` and `watchlists` endpoints.
+    - **Import Logic Hardening:** Enhanced transaction commit logic to provide more descriptive error messages (e.g., specific ticker names for "insufficient holdings" errors).
+    - **CSS Standardization:** Purged non-standard utility classes and ensured alignment with the project's design system (standardized green/success tokens).
 *   **Import Pipeline & NaN Robustness (2026-05-02):**
     - **Crash Resolution:** Fixed a critical `AttributeError` ('float' object has no attribute 'upper') occurring during the import preview phase when optional fields like ISIN were missing.
     - **Sanitization:** Implemented consistent NaN-to-None sanitization in the import endpoints to ensure Pydantic validation handles missing spreadsheet data correctly.

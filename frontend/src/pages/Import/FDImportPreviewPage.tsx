@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useImportSession, useFDImportSessionPreview, useCommitFDImportSession } from '../../hooks/useImport';
 import { ParsedFixedDeposit } from '../../types/import';
 import { AxiosError } from 'axios';
+import ImportFDCard from '../../components/Import/ImportFDCard';
 
 const FDImportPreviewPage: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
@@ -102,7 +103,8 @@ const FDImportPreviewPage: React.FC = () => {
             </div>
 
             <div className="card overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Desktop View */}
+                <div className="hidden lg:block overflow-x-auto">
                     <table className="table-auto w-full text-sm">
                         <thead className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
                             <tr>
@@ -201,6 +203,31 @@ const FDImportPreviewPage: React.FC = () => {
                             })}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="lg:hidden p-4 space-y-2">
+                    <div className="flex justify-between items-center mb-4 px-1">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+                            <input
+                                type="checkbox"
+                                className="checkbox checkbox-sm checkbox-primary"
+                                checked={selectedIndices.size === editableFds.length && editableFds.length > 0}
+                                onChange={handleToggleSelectAll}
+                            />
+                            Select All
+                        </label>
+                    </div>
+                    {editableFds.map((fd, index) => (
+                        <ImportFDCard
+                            key={index}
+                            fd={fd}
+                            isSelected={selectedIndices.has(index)}
+                            onToggleSelection={() => handleToggleSelection(index)}
+                            isDuplicate={index >= previewData.parsed_fds.length}
+                            onFieldChange={(field, value) => handleFieldChange(index, field, value)}
+                        />
+                    ))}
                 </div>
             </div>
 

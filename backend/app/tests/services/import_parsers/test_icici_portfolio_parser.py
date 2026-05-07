@@ -39,7 +39,7 @@ def test_parse_valid_csv_data(parser):
     t1 = transactions[0]
     assert t1.ticker_symbol == "ABAOFF"
     assert t1.isin == "INE421A01028"
-    assert t1.transaction_date == "2015-07-08"
+    assert t1.transaction_date.strftime("%Y-%m-%d") == "2015-07-08"
     assert t1.transaction_type == "BUY"
     assert t1.quantity == 30.0
     assert t1.price_per_unit == 290.0
@@ -50,7 +50,7 @@ def test_parse_valid_csv_data(parser):
     t2 = transactions[1]
     assert t2.ticker_symbol == "GESHIP"
     assert t2.isin == "INE017A01032"
-    assert t2.transaction_date == "2025-02-11"
+    assert t2.transaction_date.strftime("%Y-%m-%d") == "2025-02-11"
 
 def test_parse_excludes_invalid_actions(parser):
     """Test ignoring actions other than Buy/Sell logic if applicable."""

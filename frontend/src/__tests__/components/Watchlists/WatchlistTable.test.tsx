@@ -49,23 +49,23 @@ describe('WatchlistTable', () => {
 
   it('renders loading state', () => {
     renderComponent({ isLoading: true, watchlist: undefined });
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText(/Loading assets/i)).toBeInTheDocument();
   });
 
   it('renders error state', () => {
     renderComponent({ error: new Error('Failed to load'), watchlist: undefined });
-    expect(screen.getByText('Error: Failed to load')).toBeInTheDocument();
+    expect(screen.getByText(/Error: Failed to load/i)).toBeInTheDocument();
   });
 
   it('renders empty state for a watchlist with no items', () => {
     renderComponent({ watchlist: { ...mockWatchlist, items: [] } });
-    expect(screen.getByText('This watchlist is empty.')).toBeInTheDocument();
+    expect(screen.getByText(/This watchlist is empty/i)).toBeInTheDocument();
   });
 
   it('renders a table with watchlist items', () => {
     renderComponent({});
-    expect(screen.getByText('AAPL')).toBeInTheDocument();
-    expect(screen.getByText('GOOGL')).toBeInTheDocument();
+    expect(screen.getAllByText('AAPL').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('GOOGL').length).toBeGreaterThan(0);
   });
 
   it('calls the remove mutation when the remove button is clicked', () => {
@@ -89,13 +89,13 @@ describe('WatchlistTable', () => {
     };
     renderComponent({ watchlist: watchlistWithPrices });
 
-    // Check prices are formatted
-    expect(screen.getByText('$150.00')).toBeInTheDocument();
-    expect(screen.getByText('$2,800.00')).toBeInTheDocument();
+    // Check prices are formatted (might appear in both table and cards)
+    expect(screen.getAllByText('$150.00').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('$2,800.00').length).toBeGreaterThan(0);
 
     // Check P&L colors
-    expect(screen.getByText('$2.50')).toHaveClass('text-green-600');
-    expect(screen.getByText('-$10.00')).toHaveClass('text-red-600');
-    expect(screen.getByText('$0.00')).toHaveClass('text-gray-900');
+    expect(screen.getAllByText('$2.50')[0]).toHaveClass('text-green-600');
+    expect(screen.getAllByText('-$10.00')[0]).toHaveClass('text-red-600');
+    expect(screen.getAllByText('$0.00')[0]).toHaveClass('text-gray-900');
   });
 });

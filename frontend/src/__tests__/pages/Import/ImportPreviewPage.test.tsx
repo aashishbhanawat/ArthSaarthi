@@ -70,8 +70,8 @@ describe('ImportPreviewPage', () => {
 
         expect(screen.getByText('Import Preview')).toBeInTheDocument();
         expect(screen.getByText('New Transactions (1)')).toBeInTheDocument();
-        expect(screen.getByText('TEST')).toBeInTheDocument();
-        expect(screen.getByText('BUY')).toBeInTheDocument();
+        expect(screen.getAllByText('TEST').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('BUY').length).toBeGreaterThan(0);
     });
 
     it('handles transaction selection and calls the commit mutation with selected data', async () => {
@@ -82,7 +82,11 @@ describe('ImportPreviewPage', () => {
 
         // Initial state: transaction is selected by default
         let commitButton = await screen.findByRole('button', { name: /Commit 1 Transactions/ });
-        let rowCheckbox = (await screen.findAllByRole('checkbox'))[1];
+        // findByRole returns all checkboxes. Desktop has Header + Row, Mobile has Header + Row.
+        // Total 4 checkboxes for 1 transaction? 
+        // Let's use getAllByRole and pick one that represents the transaction.
+        let checkboxes = await screen.findAllByRole('checkbox');
+        let rowCheckbox = checkboxes[1]; // First row checkbox in desktop table
         expect(commitButton).toBeEnabled();
         expect(rowCheckbox).toBeChecked();
 
@@ -91,7 +95,8 @@ describe('ImportPreviewPage', () => {
 
         // Check state after deselect
         commitButton = await screen.findByRole('button', { name: /Commit 0 Transactions/ });
-        rowCheckbox = (await screen.findAllByRole('checkbox'))[1];
+        checkboxes = await screen.findAllByRole('checkbox');
+        rowCheckbox = checkboxes[1];
         expect(commitButton).toBeDisabled();
         expect(rowCheckbox).not.toBeChecked();
 

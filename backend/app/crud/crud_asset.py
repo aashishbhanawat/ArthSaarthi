@@ -121,7 +121,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
     def get_by_ticker(self, db: Session, *, ticker_symbol: str) -> Asset | None:
         if not ticker_symbol or not isinstance(ticker_symbol, str):
             return None
-            
+
         # Handle ISIN: prefix
         if ticker_symbol.upper().startswith("ISIN:"):
             isin_code = ticker_symbol.split(":", 1)[1]
@@ -136,7 +136,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
     def get_by_isin(self, db: Session, *, isin_code: str) -> Asset | None:
         if not isin_code or not isinstance(isin_code, str):
             return None
-            
+
         return (
             db.query(self.model)
             .filter(self.model.isin == isin_code.upper())

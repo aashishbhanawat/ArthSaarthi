@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../../context/ToastContext';
+import FMVCard from '../../components/Admin/FMVCard';
+import { FMVAsset } from '../../services/adminApi';
 
-interface Asset {
-    id: string;
-    ticker_symbol: string;
-    name: string;
-    asset_type: string;
-    isin?: string;
-    fmv_2018: number | null;
-}
 
-const fetchAssets = async (search: string): Promise<Asset[]> => {
+const fetchAssets = async (search: string): Promise<FMVAsset[]> => {
     // Use local-only admin search for FMV management
     const url = `/api/v1/admin/assets/fmv-search?query=${encodeURIComponent(search)}&limit=50`;
     const response = await fetch(url, {
@@ -197,138 +191,166 @@ const AdminFMVPage: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="card overflow-x-auto">
-                <table className="w-full">
-                    <thead>
-                        <tr className="border-b dark:border-gray-700">
-                            <th className="text-left p-3">Ticker</th>
-                            <th className="text-left p-3">ISIN</th>
-                            <th className="text-left p-3">Name</th>
-                            <th className="text-left p-3">Type</th>
-                            <th className="text-right p-3">FMV (Jan 31, 2018)</th>
-                            <th className="text-center p-3">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {isLoading && (
-                            <tr>
-                                <td colSpan={5} className="text-center p-8">
-                                    Loading...
-                                </td>
+            <div className="card">
+                {/* Desktop View */}
+                <div className="hidden lg:block overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b dark:border-gray-700">
+                                <th className="text-left p-3">Ticker</th>
+                                <th className="text-left p-3">ISIN</th>
+                                <th className="text-left p-3">Name</th>
+                                <th className="text-left p-3">Type</th>
+                                <th className="text-right p-3">FMV (Jan 31, 2018)</th>
+                                <th className="text-center p-3">Actions</th>
                             </tr>
-                        )}
-                        {!isLoading && equityAssets.length === 0 && (
-                            <tr>
-                                <td
-                                    colSpan={5}
-                                    className="text-center p-8 text-gray-500"
+                        </thead>
+                        <tbody>
+                            {isLoading && (
+                                <tr>
+                                    <td colSpan={6} className="text-center p-8">
+                                        Loading...
+                                    </td>
+                                </tr>
+                            )}
+                            {!isLoading && equityAssets.length === 0 && (
+                                <tr>
+                                    <td
+                                        colSpan={6}
+                                        className="text-center p-8 text-gray-500"
+                                    >
+                                        No equity assets found. Search by ticker.
+                                    </td>
+                                </tr>
+                            )}
+                            {equityAssets.map((asset) => (
+                                <tr
+                                    key={asset.id || asset.ticker_symbol}
+                                    className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                                 >
-                                    No equity assets found. Search by ticker.
-                                </td>
-                            </tr>
-                        )}
-                        {equityAssets.map((asset) => (
-                            <tr
-                                key={asset.id || asset.ticker_symbol}
-                                className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                            >
-                                <td className="p-3 font-mono">
-                                    {asset.ticker_symbol}
-                                </td>
-                                <td className="p-3 font-mono text-xs text-gray-500">
-                                    {asset.isin || <span className="text-red-400">Missing</span>}
-                                </td>
-                                <td className="p-3">{asset.name}</td>
-                                <td className="p-3">{asset.asset_type}</td>
-                                <td className="p-3 text-right">
-                                    {editingTicker === asset.ticker_symbol ? (
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={editValue}
-                                            onChange={(e) =>
-                                                setEditValue(e.target.value)
-                                            }
-                                            className="form-input w-32 text-right"
-                                            autoFocus
-                                        />
-                                    ) : (
-                                        <span
-                                            className={
-                                                asset.fmv_2018
-                                                    ? 'text-green-600 dark:text-green-400'
-                                                    : 'text-gray-400'
-                                            }
-                                        >
-                                            {asset.fmv_2018
-                                                ? `₹${asset.fmv_2018.toFixed(2)}`
-                                                : 'Not set'}
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="p-3 text-center">
-                                    {editingTicker === asset.ticker_symbol ? (
-                                        <div className="flex gap-2 justify-center">
-                                            <button
-                                                onClick={() =>
-                                                    handleSave(
-                                                        asset.ticker_symbol
-                                                    )
+                                    <td className="p-3 font-mono">
+                                        {asset.ticker_symbol}
+                                    </td>
+                                    <td className="p-3 font-mono text-xs text-gray-500">
+                                        {asset.isin || <span className="text-red-400">Missing</span>}
+                                    </td>
+                                    <td className="p-3">{asset.name}</td>
+                                    <td className="p-3">{asset.asset_type}</td>
+                                    <td className="p-3 text-right">
+                                        {editingTicker === asset.ticker_symbol ? (
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editValue}
+                                                onChange={(e) =>
+                                                    setEditValue(e.target.value)
                                                 }
-                                                disabled={updateMutation.isPending}
-                                                className="btn btn-primary btn-sm"
+                                                className="form-input w-32 text-right"
+                                                autoFocus
+                                            />
+                                        ) : (
+                                            <span
+                                                className={
+                                                    asset.fmv_2018
+                                                        ? 'text-green-600 dark:text-green-400'
+                                                        : 'text-gray-400'
+                                                }
                                             >
-                                                {updateMutation.isPending
-                                                    ? 'Saving...'
-                                                    : 'Save'}
-                                            </button>
-                                            <button
-                                                onClick={handleCancel}
-                                                className="btn btn-secondary btn-sm"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex gap-2 justify-center">
-                                            {!asset.fmv_2018 && (
+                                                {asset.fmv_2018
+                                                    ? `₹${asset.fmv_2018.toFixed(2)}`
+                                                    : 'Not set'}
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="p-3 text-center">
+                                        {editingTicker === asset.ticker_symbol ? (
+                                            <div className="flex gap-2 justify-center">
                                                 <button
                                                     onClick={() =>
-                                                        handleFetch(
+                                                        handleSave(
                                                             asset.ticker_symbol
                                                         )
                                                     }
-                                                    disabled={
-                                                        fetchingTicker ===
-                                                        asset.ticker_symbol
-                                                    }
+                                                    disabled={updateMutation.isPending}
                                                     className="btn btn-primary btn-sm"
-                                                    title="Fetch from Yahoo Finance"
                                                 >
-                                                    {fetchingTicker ===
-                                                        asset.ticker_symbol
-                                                        ? 'Fetching...'
-                                                        : 'Fetch'}
+                                                    {updateMutation.isPending
+                                                        ? 'Saving...'
+                                                        : 'Save'}
                                                 </button>
-                                            )}
-                                            <button
-                                                onClick={() =>
-                                                    handleEdit(
-                                                        asset.ticker_symbol,
-                                                        asset.fmv_2018
-                                                    )
-                                                }
-                                                className="btn btn-secondary btn-sm"
-                                            >
-                                                Edit
-                                            </button>
-                                        </div>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                                <button
+                                                    onClick={handleCancel}
+                                                    className="btn btn-secondary btn-sm"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex gap-2 justify-center">
+                                                {!asset.fmv_2018 && (
+                                                    <button
+                                                        onClick={() =>
+                                                            handleFetch(
+                                                                asset.ticker_symbol
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            fetchingTicker ===
+                                                            asset.ticker_symbol
+                                                        }
+                                                        className="btn btn-primary btn-sm"
+                                                        title="Fetch from Yahoo Finance"
+                                                    >
+                                                        {fetchingTicker ===
+                                                            asset.ticker_symbol
+                                                            ? 'Fetching...'
+                                                            : 'Fetch'}
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() =>
+                                                        handleEdit(
+                                                            asset.ticker_symbol,
+                                                            asset.fmv_2018
+                                                        )
+                                                    }
+                                                    className="btn btn-secondary btn-sm"
+                                                >
+                                                    Edit
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="lg:hidden p-2 space-y-1">
+                    {isLoading && <div className="text-center p-8">Loading...</div>}
+                    {!isLoading && equityAssets.length === 0 && (
+                        <div className="text-center p-8 text-gray-500">
+                            No equity assets found. Search by ticker.
+                        </div>
+                    )}
+                    {equityAssets.map((asset) => (
+                        <FMVCard
+                            key={asset.id || asset.ticker_symbol}
+                            asset={asset}
+                            isEditing={editingTicker === asset.ticker_symbol}
+                            editValue={editValue}
+                            onEdit={handleEdit}
+                            onSave={handleSave}
+                            onCancel={handleCancel}
+                            onFetch={handleFetch}
+                            onEditValueChange={setEditValue}
+                            isUpdating={updateMutation.isPending}
+                            isFetching={fetchingTicker === asset.ticker_symbol}
+                        />
+                    ))}
+                </div>
             </div>
 
             {/* Help text */}

@@ -1,3 +1,52 @@
+## 2026-05-06: Resolve Frontend Responsive Test Failures & Lint Cleanup
+
+**Task:** Resolve multiple frontend test failures caused by duplicate elements in responsive dual-layouts and fix backend lint errors in import endpoints and test suites.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Identified and resolved a series of frontend test failures triggered by the transition to a responsive dual-layout (concurrently rendering desktop tables and mobile cards). This architectural change introduced duplicate elements in the DOM, causing `TestingLibraryElementError` exceptions.
+
+1. **Responsive Test Resolution:**
+    - **Dual-Layout Handling:** Updated `InterestRateTable.test.tsx`, `UsersTable.test.tsx`, and `WatchlistTable.test.tsx` to use `getAllByText` instead of singular `getByText` to accommodate elements present in both desktop and mobile views.
+    - **Flexible Text Matching:** Implemented custom regex matchers and `textContent` comparison functions in `AddAssetToWatchlistModal.test.tsx` and `DashboardPage.test.tsx` to handle text split across multiple nested elements (e.g., symbols in parentheses).
+    - **Specific Role Querying:** Refined queries in `AddAssetToWatchlistModal.test.tsx` to use `getByRole('button', { name: ... })`, ensuring accurate targeting of interactive elements and avoiding parent container matches.
+2. **Lint Cleanup:**
+    - **E501 (Line too long):** Fixed 12+ instances of long lines and comments in `backend/app/api/v1/endpoints/import_sessions.py` and associated test files to adhere to the 88-character limit.
+    - **Syntax Correction:** Resolved a syntax error in `test_import_sessions.py` introduced by an incorrect `sed` operation during the linting phase.
+    - **Unused Variables:** Removed an unused variable assignment in `scratch/test_import_parsing.py`.
+3. **Frontend Lint Cleanup:**
+    - **Explicit Any:** Resolved `typescript-eslint/no-explicit-any` errors in `AdminFMVPage.tsx` and `CapitalGainsPage.tsx`.
+    - **Type Safety:** Replaced local interfaces with shared `FMVAsset` and `Schedule112AEntry` types from `adminApi.ts` and `useCapitalGains.ts`.
+4. **Verification:**
+    - **Frontend:** Confirmed that all 58 frontend unit tests now pass successfully and `npm run lint` reports zero errors.
+    - **Backend:** Verified that `ruff check . --fix` reports no issues in the backend codebase.
+
+### File Changes
+
+**Frontend:**
+* **Modified:** `frontend/src/__tests__/components/Watchlists/WatchlistTable.test.tsx`
+* **Modified:** `frontend/src/__tests__/pages/DashboardPage.test.tsx`
+* **Modified:** `frontend/src/__tests__/components/modals/AddAssetToWatchlistModal.test.tsx`
+* **Modified:** `frontend/src/pages/Admin/AdminFMVPage.tsx`
+* **Modified:** `frontend/src/pages/CapitalGainsPage.tsx`
+* **Modified:** `frontend/src/__tests__/components/Admin/InterestRateTable.test.tsx`
+* **Modified:** `frontend/src/__tests__/components/Admin/UsersTable.test.tsx`
+
+**Backend:**
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py`
+* **Modified:** `backend/app/tests/api/test_import_sessions.py`
+* **Modified:** `backend/app/tests/utils/mock_financial_data.py`
+* **Modified:** `backend/scratch/test_import_parsing.py`
+
+### Outcome
+
+**Success.** All frontend tests are green, the codebase is lint-clean (both backend and frontend), and the application's test suite now correctly handles the responsive dual-layout pattern.
+
+---
+
 ## 2026-05-02: Resolve Import Pipeline 500 Errors & NaN Handling
 
 **Task:** Debug and fix persistent 500 Internal Server Errors in the E2E data import pipeline, specifically during the preview phase.

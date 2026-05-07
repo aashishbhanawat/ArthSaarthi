@@ -8,6 +8,7 @@ import EquityHoldingRow from './holding_rows/EquityHoldingRow';
 import DepositHoldingRow from './holding_rows/DepositHoldingRow';
 import BondHoldingRow from './holding_rows/BondHoldingRow';
 import SchemeHoldingRow from './holding_rows/SchemeHoldingRow';
+import HoldingCard from './HoldingCard';
 
 interface HoldingsTableProps {
     holdings: Holding[] | undefined;
@@ -165,33 +166,47 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                                 </Accordion.Trigger>
                             </Accordion.Header>
                             <Accordion.Content className="overflow-x-auto">
-                                <table className="table-auto w-full">
-                                    <thead>
-                                        <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
-                                            {config.columns.map((col, index) => (
-                                                <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''} cursor-pointer`} onClick={() => requestSort(group, col.key)}>
-                                                    {col.label}{getSortIndicator(col.key)}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {sectionHoldings.map((holding) => {
-                                            switch (group) {
-                                                case 'EQUITIES':
-                                                    return <EquityHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                case 'DEPOSITS':
-                                                    return <DepositHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                case 'BONDS':
-                                                    return <BondHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                case 'GOVERNMENT_SCHEMES':
-                                                    return <SchemeHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
-                                                default:
-                                                    return null;
-                                            }
-                                        })}
-                                    </tbody>
-                                </table>
+                                {/* Desktop Table View */}
+                                <div className="hidden lg:block">
+                                    <table className="table-auto w-full">
+                                        <thead>
+                                            <tr className="text-left text-gray-600 dark:text-gray-400 text-sm">
+                                                {config.columns.map((col, index) => (
+                                                    <th key={index} className={`p-2 ${index > 0 ? 'text-right' : ''} cursor-pointer`} onClick={() => requestSort(group, col.key)}>
+                                                        {col.label}{getSortIndicator(col.key)}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {sectionHoldings.map((holding) => {
+                                                switch (group) {
+                                                    case 'EQUITIES':
+                                                        return <EquityHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
+                                                    case 'DEPOSITS':
+                                                        return <DepositHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
+                                                    case 'BONDS':
+                                                        return <BondHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
+                                                    case 'GOVERNMENT_SCHEMES':
+                                                        return <SchemeHoldingRow key={holding.asset_id} holding={holding} onRowClick={onRowClick} />;
+                                                    default:
+                                                        return null;
+                                                }
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Card View */}
+                                <div className="lg:hidden p-1 space-y-3">
+                                    {sectionHoldings.map((holding) => (
+                                        <HoldingCard
+                                            key={holding.asset_id}
+                                            holding={holding}
+                                            onClick={() => onRowClick(holding)}
+                                        />
+                                    ))}
+                                </div>
                             </Accordion.Content>
                         </Accordion.Item>
                     );

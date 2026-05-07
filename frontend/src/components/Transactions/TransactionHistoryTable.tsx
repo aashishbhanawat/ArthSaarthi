@@ -3,6 +3,7 @@ import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
 import TransactionDetailsModal from './TransactionDetailsModal';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import TransactionCard from './TransactionCard';
 
 interface TransactionHistoryTableProps {
   transactions: Transaction[];
@@ -33,50 +34,66 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
 
   return (
     <>
-        <div className="card overflow-x-auto">
-        <table className="table-auto w-full">
-            <thead className="bg-gray-100">
-            <tr>
-                <th className="p-3 text-left text-sm font-semibold text-gray-600">Date</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-600">Ticker</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-600">Asset Name</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-600">Type</th>
-                <th className="p-3 text-right text-sm font-semibold text-gray-600">Quantity</th>
-                <th className="p-3 text-right text-sm font-semibold text-gray-600">Price/Unit</th>
-                <th className="p-3 text-right text-sm font-semibold text-gray-600">Total Value (INR)</th>
-                <th className="p-3 text-center text-sm font-semibold text-gray-600">Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {transactions.map((tx) => (
-                <tr key={tx.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 text-sm">{formatDate(tx.transaction_date)}</td>
-                    <td className="p-3 text-sm font-mono">{tx.asset.ticker_symbol}</td>
-                    <td className="p-3 text-sm">{tx.asset.name}</td>
-                    <td className={`p-3 text-sm font-semibold ${getTypeColor(tx.transaction_type)}`}>
-                        {tx.transaction_type}
-                        {tx.details && (
-                            <button
-                                className="ml-1 text-blue-500 hover:text-blue-700 align-middle focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
-                                onClick={() => setSelectedTransaction(tx)}
-                                title="View Details"
-                                aria-label="View details"
-                            >
-                                <InformationCircleIcon className="h-5 w-5" />
-                            </button>
-                        )}
-                    </td>
-                    <td className="p-3 text-sm text-right">{Number(tx.quantity).toLocaleString('en-IN', { maximumFractionDigits: tx.asset.asset_type === 'FIXED_DEPOSIT' ? 0 : 4 })}</td>
-                    <td className="p-3 text-sm text-right">{formatCurrency(tx.price_per_unit, tx.asset.currency)}</td>
-                    <td className="p-3 text-sm text-right">{formatCurrency(
-                        Number(tx.price_per_unit) * Number(tx.quantity) * (Number(tx.details?.fx_rate) || 1),
-                        'INR'
-                    )}</td>
-                    <td className="p-3 text-center"><div className="flex justify-center space-x-2"><button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm" aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Edit</button><button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm" aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Delete</button></div></td>
-                </tr>
-            ))}
-            </tbody>
-        </table>
+        <div className="card">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+                <table className="table-auto w-full">
+                    <thead className="bg-gray-100">
+                        <tr>
+                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Date</th>
+                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Ticker</th>
+                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Asset Name</th>
+                            <th className="p-3 text-left text-sm font-semibold text-gray-600">Type</th>
+                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Quantity</th>
+                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Price/Unit</th>
+                            <th className="p-3 text-right text-sm font-semibold text-gray-600">Total Value (INR)</th>
+                            <th className="p-3 text-center text-sm font-semibold text-gray-600">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {transactions.map((tx) => (
+                            <tr key={tx.id} className="border-b hover:bg-gray-50">
+                                <td className="p-3 text-sm">{formatDate(tx.transaction_date)}</td>
+                                <td className="p-3 text-sm font-mono">{tx.asset.ticker_symbol}</td>
+                                <td className="p-3 text-sm">{tx.asset.name}</td>
+                                <td className={`p-3 text-sm font-semibold ${getTypeColor(tx.transaction_type)}`}>
+                                    {tx.transaction_type}
+                                    {tx.details && (
+                                        <button
+                                            className="ml-1 text-blue-500 hover:text-blue-700 align-middle focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
+                                            onClick={() => setSelectedTransaction(tx)}
+                                            title="View Details"
+                                            aria-label="View details"
+                                        >
+                                            <InformationCircleIcon className="h-5 w-5" />
+                                        </button>
+                                    )}
+                                </td>
+                                <td className="p-3 text-sm text-right">{Number(tx.quantity).toLocaleString('en-IN', { maximumFractionDigits: tx.asset.asset_type === 'FIXED_DEPOSIT' ? 0 : 4 })}</td>
+                                <td className="p-3 text-sm text-right">{formatCurrency(tx.price_per_unit, tx.asset.currency)}</td>
+                                <td className="p-3 text-sm text-right">{formatCurrency(
+                                    Number(tx.price_per_unit) * Number(tx.quantity) * (Number(tx.details?.fx_rate) || 1),
+                                    'INR'
+                                )}</td>
+                                <td className="p-3 text-center"><div className="flex justify-center space-x-2"><button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm" aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Edit</button><button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm" aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Delete</button></div></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden p-1 space-y-1">
+                {transactions.map((tx) => (
+                    <TransactionCard
+                        key={tx.id}
+                        transaction={tx}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onViewDetails={setSelectedTransaction}
+                    />
+                ))}
+            </div>
         </div>
         {selectedTransaction && (
             <TransactionDetailsModal

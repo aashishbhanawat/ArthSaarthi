@@ -68,81 +68,86 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open" role="dialog" aria-labelledby="add-asset-modal-title">
-      <div className="modal-box">
-        <button
-          onClick={onClose}
-          className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-          aria-label="Close"
-        >
-          ✕
-        </button>
-        <h3 id="add-asset-modal-title" className="font-bold text-lg">Add Asset to Watchlist</h3>
+    <div className="modal-overlay" role="dialog" aria-labelledby="add-asset-modal-title" onClick={onClose}>
+      <div className="modal-content max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 id="add-asset-modal-title" className="text-2xl font-bold">Add Asset to Watchlist</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Close"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
 
-        <div className="form-control w-full mt-4">
-          <label className="label" htmlFor="asset-search-input">
-            <span className="label-text">Search for an asset</span>
+        <div className="form-group w-full mt-4">
+          <label className="form-label" htmlFor="asset-search-input">
+            Search for an asset
           </label>
-          <div className="dropdown w-full">
+          <div className="relative w-full">
             <input
               id="asset-search-input"
               type="text"
               placeholder="Search for assets..."
-              className="input input-bordered w-full"
+              className="form-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {debouncedSearchTerm && (
-              <ul className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-full mt-1">
-                {isLoading && <li><a>Loading...</a></li>}
+              <ul className="absolute z-10 w-full bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg divide-y dark:divide-gray-700">
+                {isLoading && <li className="p-3 text-sm text-gray-500">Loading...</li>}
                 {filteredResults.map((asset) => (
                   <li key={asset.id || asset.ticker_symbol}>
                     <button
                       type="button"
+                      className="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       onClick={() => {
                         setSelectedAsset(asset);
                         setSearchTerm(asset.name);
                       }}
                     >
-                      {asset.name} ({asset.ticker_symbol})
+                      <div className="font-medium">{asset.name}</div>
+                      <div className="text-xs text-gray-500">({asset.ticker_symbol})</div>
                     </button>
                   </li>
                 ))}
                 {!isLoading &&
                   filteredResults.length === 0 &&
-                  !selectedAsset && <li><a>No results found</a></li>}
+                  !selectedAsset && <li className="p-3 text-sm text-gray-500">No results found</li>}
               </ul>
             )}
           </div>
         </div>
 
-        <div className="modal-action mt-6 flex justify-between items-center w-full">
-          <div className="flex-1 min-w-0">
-            {selectedAsset && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold">Selected:</span>
-                <span className="truncate" title={selectedAsset.name}>{selectedAsset.name}</span>
-                <button
-                  onClick={() => setSelectedAsset(null)}
-                  className="btn btn-ghost btn-xs btn-circle"
-                  aria-label="Clear selection"
-                  disabled={isAdding}
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
+        <div className="mt-8">
+          {selectedAsset && (
+            <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-6 border border-blue-100 dark:border-blue-800">
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase block">Selected</span>
+                <span className="text-sm font-medium truncate block" title={selectedAsset.name}>{selectedAsset.name}</span>
               </div>
-            )}
-          </div>
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isAdding}>Cancel</button>
-            <button
-              onClick={handleAdd}
-              className="btn btn-primary"
-              disabled={!selectedAsset || isAdding}
-            >
-              {isAdding ? 'Adding...' : 'Add Asset to Watchlist'}
-            </button>
-          </div>
+              <button
+                onClick={() => setSelectedAsset(null)}
+                className="text-blue-500 hover:text-blue-700 p-1"
+                aria-label="Clear selection"
+                disabled={isAdding}
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isAdding}>Cancel</button>
+          <button
+            onClick={handleAdd}
+            className="btn btn-primary"
+            disabled={!selectedAsset || isAdding}
+          >
+            {isAdding ? 'Adding...' : 'Add to Watchlist'}
+          </button>
         </div>
       </div>
     </div>

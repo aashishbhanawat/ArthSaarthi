@@ -52,7 +52,8 @@ describe('AddAssetToWatchlistModal', () => {
     fireEvent.change(searchInput, { target: { value: 'AAPL' } });
 
     await waitFor(() => {
-      expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
+      // Use a custom matcher that targets the button specifically to avoid parent element matches
+      expect(screen.getByRole('button', { name: /Apple Inc\.\s*\(AAPL\)/i })).toBeInTheDocument();
     });
   });
 
@@ -64,10 +65,10 @@ describe('AddAssetToWatchlistModal', () => {
     const searchInput = screen.getByLabelText('Search for an asset');
     fireEvent.change(searchInput, { target: { value: 'GOOGL' } });
 
-    const searchResult = await screen.findByText('Alphabet Inc. (GOOGL)');
+    const searchResult = await screen.findByRole('button', { name: /Alphabet Inc\.\s*\(GOOGL\)/i });
     fireEvent.click(searchResult);
 
-    const addButton = screen.getByRole('button', { name: 'Add Asset to Watchlist' });
+    const addButton = screen.getByRole('button', { name: 'Add to Watchlist' });
     expect(addButton).not.toBeDisabled();
     fireEvent.click(addButton);
 
@@ -89,10 +90,10 @@ describe('AddAssetToWatchlistModal', () => {
     const searchInput = screen.getByLabelText('Search for an asset');
     fireEvent.change(searchInput, { target: { value: 'MSFT' } });
 
-    const searchResult = await screen.findByText('Microsoft (MSFT)');
+    const searchResult = await screen.findByRole('button', { name: /Microsoft\s*\(MSFT\)/i });
     fireEvent.click(searchResult);
 
-    const addButton = screen.getByRole('button', { name: 'Add Asset to Watchlist' });
+    const addButton = screen.getByRole('button', { name: 'Add to Watchlist' });
     fireEvent.click(addButton);
 
     // Should verify loading state or button change if possible, but mainly check calls
@@ -109,7 +110,7 @@ describe('AddAssetToWatchlistModal', () => {
 
   it('disables the add button when no asset is selected', () => {
     renderComponent({});
-    const addButton = screen.getByRole('button', { name: 'Add Asset to Watchlist' });
+    const addButton = screen.getByRole('button', { name: 'Add to Watchlist' });
     expect(addButton).toBeDisabled();
   });
 });

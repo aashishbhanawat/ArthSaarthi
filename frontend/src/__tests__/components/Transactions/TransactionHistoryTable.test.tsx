@@ -82,8 +82,8 @@ describe('TransactionHistoryTable', () => {
       </PrivacyProvider>
     );
 
-    expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
-    expect(screen.getByText('Alphabet Inc.')).toBeInTheDocument();
+    expect(screen.getAllByText('Apple Inc.').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Alphabet Inc.').length).toBeGreaterThan(0);
   });
 
   it('renders the details button (InformationCircleIcon) for transactions with details', () => {
@@ -98,11 +98,11 @@ describe('TransactionHistoryTable', () => {
     );
 
     // The first transaction has details, so it should have the button
-    const detailsButton = screen.getByLabelText('View details');
-    expect(detailsButton).toBeInTheDocument();
+    const detailsButtons = screen.getAllByLabelText('View details');
+    expect(detailsButtons.length).toBeGreaterThan(0);
 
     // Check if it opens the modal
-    fireEvent.click(detailsButton);
+    fireEvent.click(detailsButtons[0]);
     expect(screen.getByTestId('transaction-details-modal')).toBeInTheDocument();
   });
 
@@ -132,10 +132,9 @@ describe('TransactionHistoryTable', () => {
       </PrivacyProvider>
     );
 
-    // There might be multiple "Edit" buttons if we rendered multiple transactions,
-    // but here we render one. However, the component renders "Edit" text buttons.
-    const editButton = screen.getByText('Edit');
-    fireEvent.click(editButton);
+    // Get all Edit buttons (Desktop and Mobile)
+    const editButtons = screen.getAllByText('Edit');
+    fireEvent.click(editButtons[0]);
 
     expect(mockOnEdit).toHaveBeenCalledWith(mockTransactions[0]);
   });
@@ -151,8 +150,8 @@ describe('TransactionHistoryTable', () => {
       </PrivacyProvider>
     );
 
-    const deleteButton = screen.getByText('Delete');
-    fireEvent.click(deleteButton);
+    const deleteButtons = screen.getAllByText('Delete');
+    fireEvent.click(deleteButtons[0]);
 
     expect(mockOnDelete).toHaveBeenCalledWith(mockTransactions[0]);
   });

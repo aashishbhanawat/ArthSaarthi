@@ -34,7 +34,7 @@ const NavBar: React.FC = () => {
         `${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass} flex items-center gap-3`;
 
     return (
-        <aside className="bg-white flex flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <aside className="hidden lg:flex bg-white flex flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700">
             {/* Header with Logo */}
             <div className="flex items-center gap-3 mb-4">
                 <img src="ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-16 w-16" />
