@@ -25,7 +25,8 @@ Successfully consolidated the Android restoration effort into a single pull requ
   - Restored missing Android build and release workflows (`.github/workflows/release.yml`, `.github/workflows/test-builds.yml`).
   - Fixed Pydantic v1/v2 compatibility on Android by restoring `model_validate_json` via `pydantic_compat` in `cache/utils.py`.
   - Reverted date fields in `ParsedFixedDeposit` back to `str` for JSON/Chaquopy compatibility and re-implemented explicit date parsing in endpoints.
-  - Verified backend endpoints, caching logic, and confirmed all 309 tests passing.
+  - Restored `.isoformat()` string conversion for `transaction_date` in `crud_asset.py` to prevent Chaquopy Pydantic V1 failures during PPF creation.
+  - Verified backend endpoints, caching logic, and confirmed all tests passing.
   - Addressed missing issues detailed in git issue #425.
 
 ## 2026-05-06: Resolve Frontend Responsive Test Failures & Lint Cleanup
