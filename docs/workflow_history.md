@@ -1,3 +1,23 @@
+## 2026-05-08: Resolve E2E Test Regressions & Docker Config Fix
+
+**Task:** Resolve E2E test failures in `watchlists.spec.ts` caused by responsive dual-layout duplicates and fix Docker E2E database initialization.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Identified and resolved E2E test failures that were blocking the CI/CD pipeline after the recent mobile UI optimizations.
+
+1. **Watchlist E2E Fixes:**
+    - **Locator Correction:** Updated `watchlists.spec.ts` to use the correct button name "Add to Watchlist" (previously mismatched as "Add Asset to Watchlist").
+    - **Strict Mode Resolution:** Applied `.first()` to tickers and action buttons in `watchlists.spec.ts` to handle duplicate elements present in both desktop table and mobile card views.
+2. **Docker E2E Hardening:**
+    - **DB Initialization:** Overrode the `db` service in `docker-compose.e2e.yml` to use `.env.test`, ensuring the database is correctly created as `pms_db_test` during test runs.
+3. **Verification:** Confirmed both Watchlist E2E tests pass locally in the Docker environment.
+
+---
+
 ## 2026-05-07: Finalize Android Restoration & Create PR #429
 
 **Task:** Finalize the restoration of the Android enablement and mobile UI optimizations from the reverted PR #379, and submit the final consolidated PR.

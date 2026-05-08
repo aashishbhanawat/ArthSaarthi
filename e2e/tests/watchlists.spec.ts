@@ -85,16 +85,16 @@ test.describe('Watchlists Feature', () => {
     await modal.locator('li', { hasText: 'Apple Inc.' }).getByRole('button', { name: 'Apple Inc. (AAPL)' }).click();
 
     // After selecting the asset, we must click the main button to add it and close the modal.
-    await modal.getByRole('button', { name: 'Add Asset to Watchlist' }).click();
+    await modal.getByRole('button', { name: 'Add to Watchlist' }).click();
 
     // Wait for the modal to close before asserting, to give time for the async refetch
     await expect(page.getByRole('heading', { name: 'Add Asset to Watchlist' })).not.toBeVisible();
 
-    await expect(page.getByText('AAPL')).toBeVisible();
+    await expect(page.getByText('AAPL').first()).toBeVisible();
 
     // Remove item
-    await page.getByRole('button', { name: 'Remove AAPL' }).click();
-    await expect(page.getByText('AAPL')).not.toBeVisible();
+    await page.getByRole('button', { name: 'Remove AAPL' }).first().click();
+    await expect(page.getByText('AAPL').first()).not.toBeVisible();
 
     // Cleanup
     await page.getByRole('button', { name: `Delete ${watchlistName}` }).click();
