@@ -1,3 +1,19 @@
+## 2026-05-08: Resolve Android Build Failure (TypeScript Error)
+
+**Task:** Fix TypeScript compilation error in `CapitalGainsPage.tsx` blocking the Android build job.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Resolved a critical TypeScript error that was causing the Capacitor/Android build to fail during the type-checking phase.
+
+1. **Type Fix:** Refactored `AdvanceTaxCard` in `CapitalGainsPage.tsx` to use explicit keys from the `ITRRow` model, eliminating invalid string indexing that triggered `TS7053`.
+2. **Verification:** Confirmed the fix with a successful `npx tsc --noEmit` run in the frontend container.
+
+---
+
 ## 2026-05-08: Resolve E2E Test Regressions & Docker Config Fix
 
 **Task:** Resolve E2E test failures in `watchlists.spec.ts` caused by responsive dual-layout duplicates and fix Docker E2E database initialization.

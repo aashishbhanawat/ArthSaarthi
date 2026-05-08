@@ -55,29 +55,29 @@ type TabType = 'capital-gains' | 'schedule-fa' | 'dividends';
 
 // --- Mobile Card Components ---
 
-const AdvanceTaxCard: React.FC<{ row: ITRRow | { category_label: string, period_values: Record<string, number> }, periodLabels: string[] }> = ({ row, periodLabels }) => (
+const AdvanceTaxCard: React.FC<{ row: ITRRow, periodLabels: string[] }> = ({ row, periodLabels }) => (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-3 border-l-4 border-blue-500">
         <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2 border-b dark:border-gray-700 pb-1">{row.category_label}</h3>
         <div className="space-y-2 mt-2">
             <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">{periodLabels[0]}:</span>
-                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_6 || row.period_values['Upto 15/6'] || 0, 'INR')}</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_6, 'INR')}</span>
             </div>
             <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">{periodLabels[1]}:</span>
-                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_9 || row.period_values['16/6 - 15/9'] || 0, 'INR')}</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_9, 'INR')}</span>
             </div>
             <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">{periodLabels[2]}:</span>
-                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_12 || row.period_values['16/9 - 15/12'] || 0, 'INR')}</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_12, 'INR')}</span>
             </div>
             <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">{periodLabels[3]}:</span>
-                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_3 || row.period_values['16/12 - 15/3'] || 0, 'INR')}</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_3, 'INR')}</span>
             </div>
             <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">{periodLabels[4]}:</span>
-                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_31_3 || row.period_values['16/3 - 31/3'] || 0, 'INR')}</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_31_3, 'INR')}</span>
             </div>
         </div>
     </div>

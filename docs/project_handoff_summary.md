@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Reconciled missing Android enablement (PR #379) changes and resolved E2E test regressions caused by the new responsive dual-layout. Fixed button name mismatches and strict mode violations in `watchlists.spec.ts`. Optimized Docker E2E configuration to ensure consistent database initialization. Verified 309/310 backend tests and full E2E watchlist suite passing.
+**Latest Achievement:** Reconciled missing Android enablement (PR #379) changes and resolved E2E test regressions. Fixed TypeScript compilation errors in `CapitalGainsPage.tsx` that were blocking the Android build job. Optimized Docker E2E configuration and verified full type safety across the frontend. Verified 309/310 backend tests passing.
 
 ## 2. Test Suite Status
 
