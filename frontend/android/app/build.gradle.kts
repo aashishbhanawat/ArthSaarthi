@@ -49,12 +49,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
 
     applicationVariants.all {
@@ -143,8 +143,8 @@ chaquopy {
 }
 
 dependencies {
-    // Capacitor (aligned with package.json v6)
-    implementation("com.capacitorjs:core:6.0.0")
+    // Capacitor (aligned with package.json v7)
+    implementation("com.capacitorjs:core:7.0.0")
 
     // AndroidX
     implementation("androidx.core:core-ktx:1.15.0")
