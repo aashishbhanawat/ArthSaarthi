@@ -1,3 +1,20 @@
+## 2026-05-08: Restore Capacitor Android Configuration
+
+**Task:** Restore missing `variables.gradle` and Capacitor Gradle hooks in Kotlin DSL files to fix `npx cap update` failure.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Identified and resolved a structural issue in the Android project that was blocking Capacitor CLI operations.
+
+1. **Configuration Restoration:** Re-created `variables.gradle` with standard Capacitor 6 version definitions.
+2. **Gradle Integration:** Added `apply(from = ...)` hooks to `settings.gradle.kts`, `build.gradle.kts` (root), and `app/build.gradle.kts` to correctly include Capacitor-managed build scripts.
+3. **Verification:** Verified that the project structure now aligns with Capacitor 6 requirements for Kotlin DSL projects.
+
+---
+
 ## 2026-05-08: Resolve Android Build Failure (TypeScript Error)
 
 **Task:** Fix TypeScript compilation error in `CapitalGainsPage.tsx` blocking the Android build job.

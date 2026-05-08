@@ -6,3 +6,5 @@ plugins {
     // Chaquopy: embeds CPython interpreter for running the FastAPI backend
     id("com.chaquo.python") version "17.0.0" apply false
 }
+
+apply(from = "variables.gradle")

@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ArthSaarthi"
 include(":app")
+apply(from = "capacitor.settings.gradle")

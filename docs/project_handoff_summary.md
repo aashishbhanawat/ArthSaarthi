@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Reconciled missing Android enablement (PR #379) changes and resolved E2E test regressions. Fixed TypeScript compilation errors in `CapitalGainsPage.tsx` that were blocking the Android build job. Optimized Docker E2E configuration and verified full type safety across the frontend. Verified 309/310 backend tests passing.
+**Latest Achievement:** Reconciled missing Android enablement (PR #379) changes. Resolved E2E test regressions and TypeScript compilation errors. Restored missing Capacitor Android configuration files (`variables.gradle`) and Gradle hooks, fixing the `npx cap update` failure and restoring the mobile build pipeline.
 
 ## 2. Test Suite Status
 
