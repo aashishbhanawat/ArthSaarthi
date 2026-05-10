@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useCapitalGains, GainEntry, ForeignGainEntry, ITRRow } from '../hooks/useCapitalGains';
+import { useCapitalGains, GainEntry, ForeignGainEntry, ITRRow, Schedule112AEntry } from '../hooks/useCapitalGains';
 import { useScheduleFA, ScheduleFAEntry } from '../hooks/useScheduleFA';
 import { useDividends, DividendEntry } from '../hooks/useDividends';
 import { formatCurrency } from '../utils/formatting';
@@ -52,6 +52,230 @@ const formatCurrency2 = (val: number | string, prefix?: string): string => {
 };
 
 type TabType = 'capital-gains' | 'schedule-fa' | 'dividends';
+
+// --- Mobile Card Components ---
+
+const AdvanceTaxCard: React.FC<{ row: ITRRow, periodLabels: string[] }> = ({ row, periodLabels }) => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-3 border-l-4 border-blue-500">
+        <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2 border-b dark:border-gray-700 pb-1">{row.category_label}</h3>
+        <div className="space-y-2 mt-2">
+            <div className="flex justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">{periodLabels[0]}:</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_6, 'INR')}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">{periodLabels[1]}:</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_9, 'INR')}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">{periodLabels[2]}:</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_12, 'INR')}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">{periodLabels[3]}:</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_15_3, 'INR')}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">{periodLabels[4]}:</span>
+                <span className="font-semibold dark:text-gray-200">{formatCurrency(row.period_values.upto_31_3, 'INR')}</span>
+            </div>
+        </div>
+    </div>
+);
+
+const GainCard: React.FC<{ gain: GainEntry }> = ({ gain }) => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-3 border-l-4 border-l-green-500">
+        <div className="flex justify-between items-start mb-2">
+            <div className="flex flex-col">
+                <div className="flex items-center gap-1">
+                    <span className="font-bold text-sm text-gray-900 dark:text-gray-100">{gain.asset_name || gain.asset_ticker}</span>
+                    {gain.is_hybrid_warning && <span className="text-yellow-500">⚠️</span>}
+                </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{gain.asset_ticker} • {gain.asset_type}</span>
+            </div>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${gain.gain_type === 'LTCG' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>
+                {gain.tax_rate}
+            </span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-y-2 mt-3 text-xs">
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Buy Date</span>
+                <span className="dark:text-gray-200">{new Date(gain.buy_date).toLocaleDateString('en-IN')}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Sell Date</span>
+                <span className="dark:text-gray-200">{new Date(gain.sell_date).toLocaleDateString('en-IN')}</span>
+            </div>
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Quantity</span>
+                <span className="dark:text-gray-200">{formatQty(gain.quantity)}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Hold Days</span>
+                <span className="dark:text-gray-200">{gain.holding_days}</span>
+            </div>
+            <div className="pt-2 border-t dark:border-gray-700">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Gain/Loss</span>
+                <span className={`font-bold text-sm ${gain.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(gain.gain, 'INR')}
+                </span>
+            </div>
+            <div className="text-right pt-2 border-t dark:border-gray-700">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Sell Value</span>
+                <span className="font-bold dark:text-gray-200">{formatCurrency(gain.total_sell_value, 'INR')}</span>
+            </div>
+        </div>
+        
+        {(gain.is_grandfathered || gain.corporate_action_adjusted) && (
+            <div className="flex gap-1 mt-3 pt-2 border-t dark:border-gray-700">
+                {gain.is_grandfathered && <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1 rounded font-bold uppercase">Grandfathered</span>}
+                {gain.corporate_action_adjusted && <span className="text-[10px] bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-1 rounded font-bold uppercase">Corp Action</span>}
+            </div>
+        )}
+    </div>
+);
+
+const Schedule112ACard: React.FC<{ entry: Schedule112AEntry }> = ({ entry }) => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-3 border-l-4 border-l-blue-400">
+        <div className="flex justify-between items-start mb-2">
+            <div>
+                <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100">{entry.asset_name}</h3>
+                <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">{entry.isin}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Quantity</span>
+                <span className="text-xs dark:text-gray-200">{formatQty(entry.quantity)}</span>
+            </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-y-2 mt-3 text-xs border-t dark:border-gray-700 pt-2">
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Sale Value</span>
+                <span className="dark:text-gray-200">{formatCurrency(entry.full_value_consideration, 'INR')}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Final Cost</span>
+                <span className="dark:text-gray-200">{formatCurrency(entry.cost_of_acquisition_final, 'INR')}</span>
+            </div>
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">FMV 31 Jan 18</span>
+                <span className="dark:text-gray-200">{entry.fmv_31jan2018 ? formatCurrency(entry.fmv_31jan2018, 'INR') : '-'}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Gain</span>
+                <span className={`font-bold ${entry.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(entry.balance, 'INR')}
+                </span>
+            </div>
+        </div>
+    </div>
+);
+
+const ForeignGainCard: React.FC<{ gain: ForeignGainEntry }> = ({ gain }) => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-3 border-l-4 border-l-indigo-500">
+        <div className="flex justify-between items-start mb-2">
+            <div>
+                <div className="flex items-center gap-1">
+                    <span className="font-bold text-sm text-gray-900 dark:text-gray-100">{gain.asset_ticker}</span>
+                    {gain.country_code && <span className="text-[10px] bg-gray-100 dark:bg-gray-700 px-1 rounded uppercase">{gain.country_code}</span>}
+                </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{gain.currency} • {gain.gain_type}</span>
+            </div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase">Hold: {gain.holding_days}d</span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-y-2 mt-3 text-xs border-t dark:border-gray-700 pt-2">
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Buy Date</span>
+                <span className="dark:text-gray-200">{new Date(gain.buy_date).toLocaleDateString('en-IN')}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Sell Date</span>
+                <span className="dark:text-gray-200">{new Date(gain.sell_date).toLocaleDateString('en-IN')}</span>
+            </div>
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Quantity</span>
+                <span className="dark:text-gray-200">{formatQty(gain.quantity)}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Gain/Loss</span>
+                <span className={`font-bold ${gain.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency2(gain.gain, gain.currency)}
+                </span>
+            </div>
+        </div>
+    </div>
+);
+
+const ScheduleFACard: React.FC<{ entry: ScheduleFAEntry }> = ({ entry }) => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-3 border-l-4 border-l-green-500">
+        <div className="flex justify-between items-start mb-2">
+            <div>
+                <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100">{entry.entity_name}</h3>
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">{entry.asset_ticker} • {entry.country_name}</span>
+            </div>
+            <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1 rounded font-bold uppercase">{entry.nature_of_entity}</span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-y-2 mt-3 text-xs border-t dark:border-gray-700 pt-2">
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Initial Value</span>
+                <span className="dark:text-gray-200">{formatCurrency2(entry.initial_value, entry.currency)}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold text-green-600">Peak Value</span>
+                <span className="font-bold text-green-600">{formatCurrency2(entry.peak_value, entry.currency)}</span>
+            </div>
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Closing Value</span>
+                <span className="dark:text-gray-200">{formatCurrency2(entry.closing_value, entry.currency)}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold text-orange-600">Proceeds</span>
+                <span className="font-bold text-orange-600">{formatCurrency2(entry.gross_proceeds_from_sale, entry.currency)}</span>
+            </div>
+        </div>
+    </div>
+);
+
+const DividendCard: React.FC<{ entry: DividendEntry }> = ({ entry }) => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-3 border-l-4 border-l-emerald-500">
+        <div className="flex justify-between items-start mb-2">
+            <div>
+                <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100">{entry.asset_name || entry.asset_ticker}</h3>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{entry.asset_ticker} • {new Date(entry.date).toLocaleDateString('en-IN')}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Quantity</span>
+                <span className="text-xs dark:text-gray-200 font-bold">{formatQty(entry.quantity)}</span>
+            </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-y-2 mt-3 text-xs border-t dark:border-gray-700 pt-2">
+            <div>
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">Native Amount</span>
+                <span className="dark:text-gray-200">{formatCurrency2(entry.amount_native, entry.currency)}</span>
+            </div>
+            <div className="text-right">
+                <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold text-green-600">INR Amount</span>
+                <span className="font-bold text-green-600">{formatCurrency(entry.amount_inr, 'INR')}</span>
+            </div>
+            {entry.currency !== 'INR' && (
+                <>
+                    <div>
+                        <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">TTBR Date</span>
+                        <span className="dark:text-gray-200">{entry.ttbr_date ? new Date(entry.ttbr_date).toLocaleDateString('en-IN') : '-'}</span>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-gray-500 dark:text-gray-400 block uppercase text-[10px] font-bold">TTBR Rate</span>
+                        <span className="dark:text-gray-200">{entry.ttbr_rate ? formatQty(entry.ttbr_rate) : '-'}</span>
+                    </div>
+                </>
+            )}
+        </div>
+    </div>
+);
 
 const CapitalGainsPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('capital-gains');
@@ -186,30 +410,41 @@ const CapitalGainsPage: React.FC = () => {
                             </div>
 
                             {/* ITR-2 Schedule CG Matrix */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8 overflow-x-auto">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8">
                                 <h2 className="text-xl font-semibold mb-4 dark:text-white">ITR-2 Schedule CG (Advance Tax Breakdown)</h2>
-                                <table className="min-w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-100 dark:bg-gray-700">
-                                            <th className="p-2 text-left dark:text-gray-200">Category</th>
-                                            {periodLabels.map((label) => (
-                                                <th key={label} className="p-2 text-right dark:text-gray-200">{label}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {(data.itr_schedule_cg || []).map((row: ITRRow, idx: number) => (
-                                            <tr key={idx} className="border-b dark:border-gray-600">
-                                                <td className="p-2 font-medium dark:text-gray-200">{row.category_label}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_15_6, 'INR')}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_15_9, 'INR')}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_15_12, 'INR')}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_15_3, 'INR')}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_31_3, 'INR')}</td>
+                                
+                                {/* Desktop Table */}
+                                <div className="hidden lg:block overflow-x-auto">
+                                    <table className="min-w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-gray-100 dark:bg-gray-700">
+                                                <th className="p-2 text-left dark:text-gray-200">Category</th>
+                                                {periodLabels.map((label) => (
+                                                    <th key={label} className="p-2 text-right dark:text-gray-200">{label}</th>
+                                                ))}
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {(data.itr_schedule_cg || []).map((row: ITRRow, idx: number) => (
+                                                <tr key={idx} className="border-b dark:border-gray-600">
+                                                    <td className="p-2 font-medium dark:text-gray-200">{row.category_label}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_15_6, 'INR')}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_15_9, 'INR')}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_15_12, 'INR')}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_15_3, 'INR')}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(row.period_values.upto_31_3, 'INR')}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Cards */}
+                                <div className="lg:hidden">
+                                    {(data.itr_schedule_cg || []).map((row: ITRRow, idx: number) => (
+                                        <AdvanceTaxCard key={idx} row={row} periodLabels={periodLabels} />
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-8">
@@ -227,67 +462,78 @@ const CapitalGainsPage: React.FC = () => {
                             </div>
 
                             {/* Detailed Gains Table */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 overflow-x-auto">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                                 <h2 className="text-xl font-semibold mb-4 dark:text-white">Realized Gains ({(data.gains || []).length} transactions)</h2>
-                                <table className="min-w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-100 dark:bg-gray-700">
-                                            <th className="p-2 text-left dark:text-gray-200">Asset</th>
-                                            <th className="p-2 text-left dark:text-gray-200">Type</th>
-                                            <th className="p-2 text-right dark:text-gray-200">Qty</th>
-                                            <th className="p-2 text-right dark:text-gray-200">Buy Date</th>
-                                            <th className="p-2 text-right dark:text-gray-200">Sell Date</th>
-                                            <th className="p-2 text-right dark:text-gray-200">Days</th>
-                                            <th className="p-2 text-right dark:text-gray-200">Buy Value</th>
-                                            <th className="p-2 text-right dark:text-gray-200">Sell Value</th>
-                                            <th className="p-2 text-right dark:text-gray-200">Gain/Loss</th>
-                                            <th className="p-2 text-center dark:text-gray-200">Category</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {(data.gains || []).map((gain: GainEntry) => (
-                                            <tr key={gain.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="p-2 dark:text-gray-200">
-                                                    <div className="flex flex-col">
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="font-medium">{gain.asset_name || gain.asset_ticker}</span>
-                                                            {gain.is_hybrid_warning && (
-                                                                <span title="Hybrid Fund: Tax rate depends on equity exposure. Verify manually." className="cursor-help text-yellow-500">
-                                                                    ⚠️
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">{gain.asset_ticker}</span>
-                                                    </div>
-                                                    <div className="flex gap-1 mt-1">
-                                                        {gain.is_grandfathered && <span className="text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 px-1 rounded">GF</span>}
-                                                        {gain.corporate_action_adjusted && <span className="text-xs bg-orange-100 dark:bg-orange-800 text-orange-700 dark:text-orange-200 px-1 rounded">CA</span>}
-                                                    </div>
-                                                </td>
-                                                <td className="p-2 dark:text-gray-300">{gain.asset_type}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{formatQty(gain.quantity)}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{new Date(gain.buy_date).toLocaleDateString('en-IN')}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{new Date(gain.sell_date).toLocaleDateString('en-IN')}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{gain.holding_days}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{formatCurrency(gain.total_buy_value, 'INR')}</td>
-                                                <td className="p-2 text-right dark:text-gray-300">{formatCurrency(gain.total_sell_value, 'INR')}</td>
-                                                <td className={`p-2 text-right font-medium ${gain.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {formatCurrency(gain.gain, 'INR')}
-                                                </td>
-                                                <td className="p-2 text-center">
-                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${gain.gain_type === 'LTCG' ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200' : 'bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200'}`}>
-                                                        {gain.tax_rate}
-                                                    </span>
-                                                </td>
+                                
+                                {/* Desktop Table */}
+                                <div className="hidden lg:block overflow-x-auto">
+                                    <table className="min-w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-gray-100 dark:bg-gray-700">
+                                                <th className="p-2 text-left dark:text-gray-200">Asset</th>
+                                                <th className="p-2 text-left dark:text-gray-200">Type</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Qty</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Buy Date</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Sell Date</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Days</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Buy Value</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Sell Value</th>
+                                                <th className="p-2 text-right dark:text-gray-200">Gain/Loss</th>
+                                                <th className="p-2 text-center dark:text-gray-200">Category</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {(data.gains || []).map((gain: GainEntry) => (
+                                                <tr key={gain.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                    <td className="p-2 dark:text-gray-200">
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="font-medium">{gain.asset_name || gain.asset_ticker}</span>
+                                                                {gain.is_hybrid_warning && (
+                                                                    <span title="Hybrid Fund: Tax rate depends on equity exposure. Verify manually." className="cursor-help text-yellow-500">
+                                                                        ⚠️
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-xs text-gray-500 dark:text-gray-400">{gain.asset_ticker}</span>
+                                                        </div>
+                                                        <div className="flex gap-1 mt-1">
+                                                            {gain.is_grandfathered && <span className="text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 px-1 rounded">GF</span>}
+                                                            {gain.corporate_action_adjusted && <span className="text-xs bg-orange-100 dark:bg-orange-800 text-orange-700 dark:text-orange-200 px-1 rounded">CA</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-2 dark:text-gray-300">{gain.asset_type}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatQty(gain.quantity)}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{new Date(gain.buy_date).toLocaleDateString('en-IN')}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{new Date(gain.sell_date).toLocaleDateString('en-IN')}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{gain.holding_days}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(gain.total_buy_value, 'INR')}</td>
+                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(gain.total_sell_value, 'INR')}</td>
+                                                    <td className={`p-2 text-right font-medium ${gain.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {formatCurrency(gain.gain, 'INR')}
+                                                    </td>
+                                                    <td className="p-2 text-center">
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${gain.gain_type === 'LTCG' ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200' : 'bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200'}`}>
+                                                            {gain.tax_rate}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Cards */}
+                                <div className="lg:hidden">
+                                    {(data.gains || []).map((gain: GainEntry) => (
+                                        <GainCard key={gain.transaction_id} gain={gain} />
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Schedule 112A Section (if applicable) */}
                             {(data.schedule_112a || []).length > 0 && (
-                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mt-8 overflow-x-auto">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mt-8">
                                     <div className="flex justify-between items-center mb-4">
                                         <h2 className="text-xl font-semibold dark:text-white">Schedule 112A (Grandfathered Equity LTCG)</h2>
                                         <button
@@ -308,42 +554,53 @@ const CapitalGainsPage: React.FC = () => {
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                                         Detailed breakdown for ITR-2 Schedule 112A filing.
                                     </p>
-                                    <table className="min-w-full text-sm">
-                                        <thead>
-                                            <tr className="bg-gray-100 dark:bg-gray-700">
-                                                <th className="p-2 text-left dark:text-gray-200">ISIN</th>
-                                                <th className="p-2 text-left dark:text-gray-200">Name</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Qty</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Sale Value</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Original Cost</th>
-                                                <th className="p-2 text-right dark:text-gray-200">FMV 31 Jan 2018</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Final Cost</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Capital Gain</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.schedule_112a.map((entry, idx) => (
-                                                <tr key={idx} className="border-b dark:border-gray-600">
-                                                    <td className="p-2 font-mono text-xs dark:text-gray-200">{entry.isin}</td>
-                                                    <td className="p-2 dark:text-gray-200">{entry.asset_name}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatQty(entry.quantity)}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(entry.full_value_consideration, 'INR')}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(entry.cost_of_acquisition_orig, 'INR')}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{entry.fmv_31jan2018 ? formatCurrency(entry.fmv_31jan2018, 'INR') : '-'}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency(entry.cost_of_acquisition_final, 'INR')}</td>
-                                                    <td className={`p-2 text-right font-medium ${entry.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {formatCurrency(entry.balance, 'INR')}
-                                                    </td>
+
+                                    {/* Desktop Table */}
+                                    <div className="hidden lg:block overflow-x-auto">
+                                        <table className="min-w-full text-sm">
+                                            <thead>
+                                                <tr className="bg-gray-100 dark:bg-gray-700">
+                                                    <th className="p-2 text-left dark:text-gray-200">ISIN</th>
+                                                    <th className="p-2 text-left dark:text-gray-200">Name</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Qty</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Sale Value</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Original Cost</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">FMV 31 Jan 2018</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Final Cost</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Capital Gain</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {data.schedule_112a.map((entry, idx) => (
+                                                    <tr key={idx} className="border-b dark:border-gray-600">
+                                                        <td className="p-2 font-mono text-xs dark:text-gray-200">{entry.isin}</td>
+                                                        <td className="p-2 dark:text-gray-200">{entry.asset_name}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatQty(entry.quantity)}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatCurrency(entry.full_value_consideration, 'INR')}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatCurrency(entry.cost_of_acquisition_orig, 'INR')}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{entry.fmv_31jan2018 ? formatCurrency(entry.fmv_31jan2018, 'INR') : '-'}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatCurrency(entry.cost_of_acquisition_final, 'INR')}</td>
+                                                        <td className={`p-2 text-right font-medium ${entry.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {formatCurrency(entry.balance, 'INR')}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Mobile Cards */}
+                                    <div className="lg:hidden">
+                                        {data.schedule_112a.map((entry, idx) => (
+                                            <Schedule112ACard key={idx} entry={entry} />
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 
                             {/* Foreign Capital Gains Section */}
                             {(data.foreign_gains || []).length > 0 && (
-                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mt-8 overflow-x-auto">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mt-8">
                                     <h2 className="text-xl font-semibold mb-4 dark:text-white">Foreign Capital Gains</h2>
                                     <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-4">
                                         <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -351,51 +608,62 @@ const CapitalGainsPage: React.FC = () => {
                                             After conversion, add the capital gain to the respective tax category (STCG/LTCG).
                                         </p>
                                     </div>
-                                    <table className="min-w-full text-sm">
-                                        <thead>
-                                            <tr className="bg-gray-100 dark:bg-gray-700">
-                                                <th className="p-2 text-left dark:text-gray-200">Asset</th>
-                                                <th className="p-2 text-left dark:text-gray-200">Currency</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Qty</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Buy Date</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Sell Date</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Days</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Buy Value</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Sell Value</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Gain/Loss</th>
-                                                <th className="p-2 text-center dark:text-gray-200">Type</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.foreign_gains.map((gain: ForeignGainEntry) => (
-                                                <tr key={gain.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                    <td className="p-2 dark:text-gray-200">
-                                                        <span className="font-medium">{gain.asset_ticker}</span>
-                                                        {gain.country_code && (
-                                                            <span className="ml-1 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-1 rounded">
-                                                                {gain.country_code}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-2 dark:text-gray-300 font-mono">{gain.currency}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatQty(gain.quantity)}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{new Date(gain.buy_date).toLocaleDateString('en-IN')}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{new Date(gain.sell_date).toLocaleDateString('en-IN')}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{gain.holding_days}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency2(gain.total_buy_value, gain.currency)}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency2(gain.total_sell_value, gain.currency)}</td>
-                                                    <td className={`p-2 text-right font-medium ${gain.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {formatCurrency2(gain.gain, gain.currency)}
-                                                    </td>
-                                                    <td className="p-2 text-center">
-                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${gain.gain_type === 'LTCG' ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200' : 'bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200'}`}>
-                                                            {gain.gain_type}
-                                                        </span>
-                                                    </td>
+
+                                    {/* Desktop Table */}
+                                    <div className="hidden lg:block overflow-x-auto">
+                                        <table className="min-w-full text-sm">
+                                            <thead>
+                                                <tr className="bg-gray-100 dark:bg-gray-700">
+                                                    <th className="p-2 text-left dark:text-gray-200">Asset</th>
+                                                    <th className="p-2 text-left dark:text-gray-200">Currency</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Qty</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Buy Date</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Sell Date</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Days</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Buy Value</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Sell Value</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Gain/Loss</th>
+                                                    <th className="p-2 text-center dark:text-gray-200">Type</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {data.foreign_gains.map((gain: ForeignGainEntry) => (
+                                                    <tr key={gain.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                        <td className="p-2 dark:text-gray-200">
+                                                            <span className="font-medium">{gain.asset_ticker}</span>
+                                                            {gain.country_code && (
+                                                                <span className="ml-1 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-1 rounded">
+                                                                    {gain.country_code}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="p-2 dark:text-gray-300 font-mono">{gain.currency}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatQty(gain.quantity)}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{new Date(gain.buy_date).toLocaleDateString('en-IN')}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{new Date(gain.sell_date).toLocaleDateString('en-IN')}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{gain.holding_days}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatCurrency2(gain.total_buy_value, gain.currency)}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatCurrency2(gain.total_sell_value, gain.currency)}</td>
+                                                        <td className={`p-2 text-right font-medium ${gain.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {formatCurrency2(gain.gain, gain.currency)}
+                                                        </td>
+                                                        <td className="p-2 text-center">
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${gain.gain_type === 'LTCG' ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200' : 'bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200'}`}>
+                                                                {gain.gain_type}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Mobile Cards */}
+                                    <div className="lg:hidden">
+                                        {data.foreign_gains.map((gain: ForeignGainEntry) => (
+                                            <ForeignGainCard key={gain.transaction_id} gain={gain} />
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </>
@@ -506,62 +774,73 @@ const CapitalGainsPage: React.FC = () => {
                                     No foreign assets found for calendar year {selectedCalendarYear}.
                                 </div>
                             ) : (
-                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 overflow-x-auto">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                                     <h2 className="text-xl font-semibold mb-4 dark:text-white">
                                         Schedule FA A3 - Foreign Equity & Debt ({faData.entries.length} entries)
                                     </h2>
-                                    <table className="min-w-full text-sm">
-                                        <thead>
-                                            <tr className="bg-gray-100 dark:bg-gray-700">
-                                                <th className="p-2 text-left dark:text-gray-200">Country</th>
-                                                <th className="p-2 text-left dark:text-gray-200">Name of Entity</th>
-                                                <th className="p-2 text-left dark:text-gray-200">Nature</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Date Acquired</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Initial Value</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Peak Value</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Closing Balance</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Gross Paid/Credited</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Gross Proceeds</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {faData.entries.map((entry: ScheduleFAEntry, idx: number) => (
-                                                <tr key={idx} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                    <td className="p-2 dark:text-gray-200">
-                                                        <div className="font-medium">{entry.country_name}</div>
-                                                    </td>
-                                                    <td className="p-2 dark:text-gray-200">
-                                                        <div className="font-medium">{entry.entity_name}</div>
-                                                        <div className="text-xs text-gray-500 font-mono">{entry.asset_ticker}</div>
-                                                    </td>
-                                                    <td className="p-2 dark:text-gray-300">{entry.nature_of_entity}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300 font-mono">
-                                                        {entry.date_acquired ? new Date(entry.date_acquired).toLocaleDateString('en-IN') : '-'}
-                                                    </td>
-                                                    <td className="p-2 text-right dark:text-gray-300">
-                                                        {formatCurrency2(entry.initial_value, entry.currency)}
-                                                    </td>
-                                                    <td className="p-2 text-right text-green-600 font-medium">
-                                                        <div>{formatCurrency2(entry.peak_value, entry.currency)}</div>
-                                                        {entry.peak_value_date && (
-                                                            <div className="text-xs text-gray-500 font-normal">
-                                                                on {new Date(entry.peak_value_date).toLocaleDateString('en-IN')}
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-2 text-right dark:text-gray-300">
-                                                        {formatCurrency2(entry.closing_value, entry.currency)}
-                                                    </td>
-                                                    <td className="p-2 text-right dark:text-gray-300">
-                                                        {formatCurrency2(entry.gross_amount_received, entry.currency)}
-                                                    </td>
-                                                    <td className="p-2 text-right dark:text-gray-300">
-                                                        {formatCurrency2(entry.gross_proceeds_from_sale, entry.currency)}
-                                                    </td>
+
+                                    {/* Desktop Table */}
+                                    <div className="hidden md:block overflow-x-auto">
+                                        <table className="min-w-full text-sm">
+                                            <thead>
+                                                <tr className="bg-gray-100 dark:bg-gray-700">
+                                                    <th className="p-2 text-left dark:text-gray-200">Country</th>
+                                                    <th className="p-2 text-left dark:text-gray-200">Name of Entity</th>
+                                                    <th className="p-2 text-left dark:text-gray-200">Nature</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Date Acquired</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Initial Value</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Peak Value</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Closing Balance</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Gross Paid/Credited</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Gross Proceeds</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {faData.entries.map((entry: ScheduleFAEntry, idx: number) => (
+                                                    <tr key={idx} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                        <td className="p-2 dark:text-gray-200">
+                                                            <div className="font-medium">{entry.country_name}</div>
+                                                        </td>
+                                                        <td className="p-2 dark:text-gray-200">
+                                                            <div className="font-medium">{entry.entity_name}</div>
+                                                            <div className="text-xs text-gray-500 font-mono">{entry.asset_ticker}</div>
+                                                        </td>
+                                                        <td className="p-2 dark:text-gray-300">{entry.nature_of_entity}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300 font-mono">
+                                                            {entry.date_acquired ? new Date(entry.date_acquired).toLocaleDateString('en-IN') : '-'}
+                                                        </td>
+                                                        <td className="p-2 text-right dark:text-gray-300">
+                                                            {formatCurrency2(entry.initial_value, entry.currency)}
+                                                        </td>
+                                                        <td className="p-2 text-right text-green-600 font-medium">
+                                                            <div>{formatCurrency2(entry.peak_value, entry.currency)}</div>
+                                                            {entry.peak_value_date && (
+                                                                <div className="text-xs text-gray-500 font-normal">
+                                                                    on {new Date(entry.peak_value_date).toLocaleDateString('en-IN')}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="p-2 text-right dark:text-gray-300">
+                                                            {formatCurrency2(entry.closing_value, entry.currency)}
+                                                        </td>
+                                                        <td className="p-2 text-right dark:text-gray-300">
+                                                            {formatCurrency2(entry.gross_amount_received, entry.currency)}
+                                                        </td>
+                                                        <td className="p-2 text-right dark:text-gray-300">
+                                                            {formatCurrency2(entry.gross_proceeds_from_sale, entry.currency)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Mobile Cards */}
+                                    <div className="md:hidden">
+                                        {faData.entries.map((entry: ScheduleFAEntry, idx: number) => (
+                                            <ScheduleFACard key={idx} entry={entry} />
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </>
@@ -619,26 +898,44 @@ const CapitalGainsPage: React.FC = () => {
                             </div>
 
                             {/* Advance Tax Breakdown Matrix */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8 overflow-x-auto">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8">
                                 <h2 className="text-xl font-semibold mb-4 dark:text-white">Dividend Advance Tax Breakdown</h2>
-                                <table className="min-w-full text-sm mt-4">
-                                    <thead>
-                                        <tr className="bg-gray-100 dark:bg-gray-700">
-                                            {periodLabels.map((label) => (
-                                                <th key={label} className="p-2 text-right dark:text-gray-200">{label}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr className="border-b dark:border-gray-600">
-                                            {periodLabels.map((period) => (
-                                                <td key={period} className="p-2 text-right dark:text-gray-300 font-medium">
+                                
+                                {/* Desktop Table */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <table className="min-w-full text-sm mt-4">
+                                        <thead>
+                                            <tr className="bg-gray-100 dark:bg-gray-700">
+                                                {periodLabels.map((label) => (
+                                                    <th key={label} className="p-2 text-right dark:text-gray-200">{label}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr className="border-b dark:border-gray-600">
+                                                {periodLabels.map((period) => (
+                                                    <td key={period} className="p-2 text-right dark:text-gray-300 font-medium">
+                                                        {formatCurrency(dividendData.bucket_totals[period] || 0, 'INR')}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Cards */}
+                                <div className="md:hidden">
+                                    <div className="space-y-2">
+                                        {periodLabels.map((period) => (
+                                            <div key={period} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                                <span className="text-sm font-medium dark:text-gray-300">{period}</span>
+                                                <span className="text-sm font-bold text-green-600">
                                                     {formatCurrency(dividendData.bucket_totals[period] || 0, 'INR')}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Detailed Dividends Table */}
@@ -647,41 +944,52 @@ const CapitalGainsPage: React.FC = () => {
                                     No dividends found for FY {selectedFY}.
                                 </div>
                             ) : (
-                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 overflow-x-auto">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                                     <h2 className="text-xl font-semibold mb-4 dark:text-white">Dividend Entries ({dividendData.entries.length} items)</h2>
-                                    <table className="min-w-full text-sm">
-                                        <thead>
-                                            <tr className="bg-gray-100 dark:bg-gray-700">
-                                                <th className="p-2 text-left dark:text-gray-200">Asset</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Date</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Quantity</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Amount (Native)</th>
-                                                <th className="p-2 text-right dark:text-gray-200">TTBR Date</th>
-                                                <th className="p-2 text-right dark:text-gray-200">TTBR Rate</th>
-                                                <th className="p-2 text-right dark:text-gray-200">Amount (INR)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {dividendData.entries.map((entry: DividendEntry) => (
-                                                <tr key={entry.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                    <td className="p-2 dark:text-gray-200">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-medium">{entry.asset_name || entry.asset_ticker}</span>
-                                                            <span className="text-xs text-gray-500 dark:text-gray-400">{entry.asset_ticker}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{new Date(entry.date).toLocaleDateString('en-IN')}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatQty(entry.quantity)}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{formatCurrency2(entry.amount_native, entry.currency)}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{entry.ttbr_date ? new Date(entry.ttbr_date).toLocaleDateString('en-IN') : '-'}</td>
-                                                    <td className="p-2 text-right dark:text-gray-300">{entry.ttbr_rate ? formatQty(entry.ttbr_rate) : '-'}</td>
-                                                    <td className="p-2 text-right font-medium text-green-600">
-                                                        {formatCurrency(entry.amount_inr, 'INR')}
-                                                    </td>
+                                    
+                                    {/* Desktop Table */}
+                                    <div className="hidden md:block overflow-x-auto">
+                                        <table className="min-w-full text-sm">
+                                            <thead>
+                                                <tr className="bg-gray-100 dark:bg-gray-700">
+                                                    <th className="p-2 text-left dark:text-gray-200">Asset</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Date</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Quantity</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Amount (Native)</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">TTBR Date</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">TTBR Rate</th>
+                                                    <th className="p-2 text-right dark:text-gray-200">Amount (INR)</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {dividendData.entries.map((entry: DividendEntry) => (
+                                                    <tr key={entry.transaction_id} className="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                        <td className="p-2 dark:text-gray-200">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-medium">{entry.asset_name || entry.asset_ticker}</span>
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400">{entry.asset_ticker}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{new Date(entry.date).toLocaleDateString('en-IN')}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatQty(entry.quantity)}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{formatCurrency2(entry.amount_native, entry.currency)}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{entry.ttbr_date ? new Date(entry.ttbr_date).toLocaleDateString('en-IN') : '-'}</td>
+                                                        <td className="p-2 text-right dark:text-gray-300">{entry.ttbr_rate ? formatQty(entry.ttbr_rate) : '-'}</td>
+                                                        <td className="p-2 text-right font-medium text-green-600">
+                                                            {formatCurrency(entry.amount_inr, 'INR')}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Mobile Cards */}
+                                    <div className="md:hidden">
+                                        {dividendData.entries.map((entry: DividendEntry) => (
+                                            <DividendCard key={entry.transaction_id} entry={entry} />
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </>

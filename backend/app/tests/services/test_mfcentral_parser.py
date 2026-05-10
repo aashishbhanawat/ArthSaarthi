@@ -80,10 +80,11 @@ class TestMfCentralParser:
         result = parser.parse(sample_mfcentral_df)
 
         for tx in result:
-            # Check date format matches YYYY-MM-DD
-            assert len(tx.transaction_date) == 10
-            assert tx.transaction_date[4] == "-"
-            assert tx.transaction_date[7] == "-"
+            # tx.transaction_date is now a datetime object due to Pydantic schema
+            date_str = tx.transaction_date.strftime("%Y-%m-%d")
+            assert len(date_str) == 10
+            assert date_str[4] == "-"
+            assert date_str[7] == "-"
 
     def test_parse_handles_schemes_as_ticker_symbols(
         self, parser, sample_mfcentral_df

@@ -14,6 +14,13 @@ class MockYFinanceProvider:
             "market_cap": 100000000000,  # 100B (1000 Cr) - fits in BigInteger
         }
 
+    def get_enrichment_data_batch(self, assets: List[Dict[str, Any]]):
+        """Returns mock enrichment data for multiple assets."""
+        return {
+            a["ticker_symbol"]: self.get_enrichment_data(a["ticker_symbol"])
+            for a in assets
+        }
+
 
 class MockAmfiProvider:
     """Mock AMFI provider for testing."""
@@ -227,6 +234,10 @@ class MockFinancialDataService:
         if from_currency == "USD" and to_currency == "INR":
             return Decimal("83.50")
         return None
+
+    def get_enrichment_data_batch(self, assets: List[Dict[str, Any]]):
+        """Returns mock enrichment data for multiple assets."""
+        return self.yfinance_provider.get_enrichment_data_batch(assets)
 
     def search_stocks(self, query: str) -> List[Dict[str, Any]]:
         """

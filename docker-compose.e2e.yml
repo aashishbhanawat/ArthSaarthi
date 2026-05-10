@@ -6,6 +6,10 @@ services:
       - ENVIRONMENT=test
       - PYTHONPATH=/app
 
+  db:
+    env_file:
+      - ./backend/.env.test
+
   test-e2e:
     build:
       context: ./e2e

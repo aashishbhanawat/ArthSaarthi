@@ -31,7 +31,7 @@ def test_zerodha_parser_success():
     assert result[0].quantity == 10.0
     assert result[0].price_per_unit == 2500.0
     assert result[0].fees == 50.0
-    assert result[0].transaction_date == "2023-01-01"
+    assert result[0].transaction_date.strftime("%Y-%m-%d") == "2023-01-01"
 
     # Check second transaction
     assert result[1].ticker_symbol == "TCS"

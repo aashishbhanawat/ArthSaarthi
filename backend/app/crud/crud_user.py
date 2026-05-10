@@ -7,6 +7,7 @@ from app.core.security import DUMMY_PASSWORD_HASH, get_password_hash, verify_pas
 from app.crud.base import CRUDBase
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserUpdateMe
+from app.utils.pydantic_compat import model_dump
 
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
@@ -41,7 +42,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            update_data = obj_in.model_dump(exclude_unset=True)
+            update_data = model_dump(obj_in, exclude_unset=True)
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
     def update_me(
@@ -50,7 +51,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            update_data = obj_in.model_dump(exclude_unset=True)
+            update_data = model_dump(obj_in, exclude_unset=True)
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:

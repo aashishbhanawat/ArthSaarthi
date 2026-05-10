@@ -1,6 +1,7 @@
 import logging
 import shutil
 import uuid
+from datetime import date as date_type
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, List, Optional
@@ -27,6 +28,7 @@ from app.schemas.msg import Msg
 from app.services.financial_data_service import financial_data_service
 from app.services.import_parsers import parser_factory
 from app.utils.filename import secure_filename
+from app.utils.pydantic_compat import model_dump
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -213,12 +215,12 @@ async def create_import_session(
             status_code=400, detail="An error occurred during file parsing."
         )
 
-    # 4. Save the list of Pydantic models to a Parquet file
+    # 4. Save the list of Pydantic models to a JSON file (Android compatible)
     # Convert list of Pydantic models to a DataFrame for efficient storage
-    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_transactions])
-    parsed_file_name = f"{import_session.id}.parquet"
+    parsed_df = pd.DataFrame([model_dump(t) for t in parsed_transactions])
+    parsed_file_name = f"{import_session.id}.json"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_df.to_parquet(parsed_file_path)
+    parsed_df.to_json(parsed_file_path, orient='records', date_format='iso')
 
     # 5. Update the session with the parsed file path and "PARSED" status
     import_session_update = schemas.ImportSessionUpdate(
@@ -271,7 +273,9 @@ def get_import_session_preview(
         raise HTTPException(status_code=400, detail="No parsed file for this session")
 
     try:
-        df = pd.read_parquet(import_session.parsed_file_path)
+        df = pd.read_json(import_session.parsed_file_path, orient='records')
+        # Replace NaN/NaT with None for Pydantic compatibility
+        df = df.where(pd.notnull(df), None)
     except Exception as e:
         log.error(f"Could not read parsed data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not read parsed data.")
@@ -286,120 +290,130 @@ def get_import_session_preview(
         alias.alias_symbol: alias.asset_id for alias in aliases_to_create
     }
 
-    for _, row in df.iterrows():
-        row_data = row.to_dict()
-        parsed_transaction = schemas.ParsedTransaction(**row_data)
+    try:
+        for _, row in df.iterrows():
+            # Clean NaNs to None to avoid validation errors for optional fields
+            row_data = {k: (None if pd.isna(v) else v) for k, v in row.items()}
+            try:
+                parsed_transaction = schemas.ParsedTransaction(**row_data)
+            except Exception as e:
+                log.error(f"Validation error for row: {row_data}. Error: {e}")
+                invalid.append({"row_data": row_data, "error": str(e)})
+                continue
 
-        # 1. Asset Identification
-        ticker_symbol = row["ticker_symbol"]
-        asset = None
+            # 1. Asset Identification
+            ticker_symbol = row_data["ticker_symbol"]
+            asset = None
 
-        # Check ISIN first if available
-        if "isin" in row and row["isin"]:
-            isin_code = row["isin"]
-            asset = crud.asset.get_by_isin(db, isin_code=isin_code)
+            # Check ISIN first if available
+            if "isin" in row_data and row_data["isin"]:
+                isin_code = row_data["isin"]
+                asset = crud.asset.get_by_isin(db, isin_code=isin_code)
+                if not asset:
+                    # Try to fetch details without creating (side-effect free preview)
+                    details = financial_data_service.get_asset_details(
+                        f"ISIN:{isin_code}"
+                    )
+                    if details:
+                        # Validate and filter through schema to prevent TypeError
+                        asset_in = schemas.AssetCreate(
+                            ticker_symbol=(
+                                details.get("ticker_symbol")
+                                or f"ISIN:{isin_code}".upper()
+                            ),
+                            **{k: v for k, v in details.items() if k != "ticker_symbol"}
+                        )
+                        asset = models.Asset(**model_dump(asset_in))
+                if asset:
+                    log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
+
             if not asset:
-                # Try to fetch details without creating (side-effect free preview)
-                details = financial_data_service.get_asset_details(f"ISIN:{isin_code}")
+                # This also handles ticker_symbol with "ISIN:" prefix
+                asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
+                if asset:
+                    log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
+
+            # If ticker looks like "ISIN:XXX", try to find externally
+            # (side-effect free preview)
+            if not asset and ticker_symbol.upper().startswith("ISIN:"):
+                details = financial_data_service.get_asset_details(ticker_symbol)
                 if details:
                     # Validate and filter through schema to prevent TypeError
                     asset_in = schemas.AssetCreate(
                         ticker_symbol=(
-                            details.get("ticker_symbol")
-                            or f"ISIN:{isin_code}".upper()
+                            details.get("ticker_symbol") or ticker_symbol.upper()
                         ),
                         **{k: v for k, v in details.items() if k != "ticker_symbol"}
                     )
-                    asset = models.Asset(**asset_in.model_dump())
-            if asset:
-                log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
-
-        if not asset:
-            # This also handles ticker_symbol with "ISIN:" prefix
-            asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
-            if asset:
-                log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
-
-        # If ticker looks like "ISIN:XXX", try to find externally
-        # (side-effect free preview)
-        if not asset and ticker_symbol.upper().startswith("ISIN:"):
-            details = financial_data_service.get_asset_details(ticker_symbol)
-            if details:
-                # Validate and filter through schema to prevent TypeError
-                asset_in = schemas.AssetCreate(
-                    ticker_symbol=details.get("ticker_symbol") or ticker_symbol.upper(),
-                    **{k: v for k, v in details.items() if k != "ticker_symbol"}
-                )
-                asset = models.Asset(**asset_in.model_dump())
-            if asset:
-                log.info(
-                    f"Auto-matched (transient) by ISIN: {ticker_symbol} "
-                    f"-> {asset.name}"
-                )
-
-        if not asset:
-            # Check pending aliases from the current session first
-            if ticker_symbol in pending_alias_map:
-                asset_id = pending_alias_map[ticker_symbol]
-                asset = crud.asset.get(db, id=asset_id)
+                    asset = models.Asset(**model_dump(asset_in))
                 if asset:
-                    log.debug(
-                        f"Found in pending aliases: {ticker_symbol}"
+                    log.info(
+                        f"Auto-matched (transient) by ISIN: {ticker_symbol} "
+                        f"-> {asset.name}"
                     )
-            else:
-                # Then check persisted aliases
-                asset_alias = crud.asset_alias.get_by_alias(
+
+            if not asset:
+                # Check pending aliases from the current session first
+                if ticker_symbol in pending_alias_map:
+                    asset_id = pending_alias_map[ticker_symbol]
+                    asset = crud.asset.get(db, id=asset_id)
+                    if asset:
+                        log.debug(
+                            f"Found in pending aliases: {ticker_symbol}"
+                        )
+                else:
+                    # Then check persisted aliases
+                    asset_alias = crud.asset_alias.get_by_alias(
+                        db,
+                        alias_symbol=ticker_symbol,
+                        source=import_session.source,
+                    )
+                    if asset_alias:
+                        asset = asset_alias.asset
+                        log.debug(f"Found by alias: {ticker_symbol} -> {asset.name}")
+
+            if not asset:
+                # If no asset or alias is found, it needs user mapping
+                log.debug(f"No match found for: {ticker_symbol}")
+                needs_mapping.append(parsed_transaction)
+                continue
+
+            # 2. Duplicate Detection
+            existing_transaction = None
+            # Only check duplicates if the asset already exists in the database
+            # We use inspect(asset).persistent to check if it's attached
+            if asset and getattr(asset, "id", None) and inspect(asset).persistent:
+                existing_transaction = crud.transaction.get_by_details(
                     db,
-                    alias_symbol=ticker_symbol,
-                    source=import_session.source,
+                    portfolio_id=import_session.portfolio_id,
+                    asset_id=asset.id,
+                    transaction_date=pd.to_datetime(row_data["transaction_date"]),
+                    transaction_type=row_data["transaction_type"].upper(),
+                    quantity=Decimal(str(row_data["quantity"])),
+                    price_per_unit=Decimal(str(row_data["price_per_unit"])),
                 )
-                if asset_alias:
-                    asset = asset_alias.asset
-                    log.debug(f"Found by alias: {ticker_symbol} -> {asset.name}")
 
-        # NOTE: Fuzzy matching was removed because it caused incorrect mappings
-        # (e.g., "Short Term" matching "Ultra Short Term").
-        # For CAMS-style tickers, users must manually map via the mapping modal.
+            # For display: replace ISIN ticker with actual fund name/ticker
+            if ticker_symbol.startswith("ISIN:") and asset:
+                parsed_transaction.ticker_symbol = asset.name or asset.ticker_symbol
 
-        if not asset:
-            # If no asset or alias is found, it needs user mapping
-            log.debug(f"No match found for: {ticker_symbol}")
-            needs_mapping.append(parsed_transaction)
-            continue
+            if existing_transaction:
+                duplicates.append(parsed_transaction)
+            else:
+                valid_new.append(parsed_transaction)
 
-        # 2. Duplicate Detection
-        existing_transaction = None
-        # Only check duplicates if the asset already exists in the database (persistent)
-        # We use inspect(asset).persistent to check if it's attached to the session
-        if asset and getattr(asset, "id", None) and inspect(asset).persistent:
-            existing_transaction = crud.transaction.get_by_details(
-                db,
-                portfolio_id=import_session.portfolio_id,
-                asset_id=asset.id,
-                transaction_date=pd.to_datetime(row["transaction_date"]),
-                transaction_type=row["transaction_type"].upper(),
-                quantity=Decimal(str(row["quantity"])),
-                price_per_unit=Decimal(str(row["price_per_unit"])),
-            )
+        log.info(f"Preview: {len(valid_new)} new, {len(duplicates)} duplicates, "
+                 f"{len(needs_mapping)} needs_mapping, {len(invalid)} invalid")
 
-        # For display: replace ISIN ticker with actual fund name/ticker
-        if ticker_symbol.startswith("ISIN:") and asset:
-            parsed_transaction.ticker_symbol = asset.name or asset.ticker_symbol
-
-        if existing_transaction:
-            duplicates.append(parsed_transaction)
-        else:
-            valid_new.append(parsed_transaction)
-
-    log.info(f"Preview: {len(valid_new)} new, {len(duplicates)} duplicates, "
-             f"{len(needs_mapping)} needs_mapping, {len(invalid)} invalid")
-
-    return schemas.ImportSessionPreview(
-        valid_new=valid_new,
-        duplicates=duplicates,
-        invalid=invalid,
-        needs_mapping=needs_mapping,
-    )
+        return schemas.ImportSessionPreview(
+            valid_new=valid_new,
+            duplicates=duplicates,
+            invalid=invalid,
+            needs_mapping=needs_mapping,
+        )
+    except Exception as e:
+        log.error(f"Error in get_import_session_preview: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{session_id}/commit", response_model=Msg)
@@ -492,15 +506,40 @@ def commit_import_session(
                 quantity=Decimal(str(parsed_tx.quantity)),
                 price_per_unit=Decimal(str(parsed_tx.price_per_unit)),
                 transaction_date=pd.to_datetime(parsed_tx.transaction_date),
-                fees=Decimal(str(parsed_tx.fees)),  # The ticker_symbol is intentionally
-                # omitted here. The transaction is created using the asset_id resolved
-                # from the alias, preventing a new lookup.
+                fees=Decimal(str(parsed_tx.fees)),
             )
 
-            crud.transaction.create_with_portfolio(
-                db=db, obj_in=transaction_in, portfolio_id=import_session.portfolio_id
-            )
-            transactions_created += 1
+            try:
+                crud.transaction.create_with_portfolio(
+                    db=db,
+                    obj_in=transaction_in,
+                    portfolio_id=import_session.portfolio_id
+                )
+                transactions_created += 1
+            except HTTPException as he:
+                db.rollback()
+                error_detail = he.detail
+                # Enhance error message with ticker if it's a holdings error
+                if "Insufficient holdings" in str(error_detail):
+                    error_detail = f"{asset.ticker_symbol}: {error_detail}"
+
+                log.error(
+                    f"Failed to commit transaction for {asset.ticker_symbol} "
+                    f"in session {session_id}: {error_detail}"
+                )
+
+                # Update session status to FAILED and store the detailed error
+                crud.import_session.update(
+                    db,
+                    db_obj=import_session,
+                    obj_in={
+                        "status": "FAILED",
+                        "error_message": error_detail,
+                    },
+                )
+                db.commit()
+                # Re-raise with the detailed message
+                raise HTTPException(status_code=he.status_code, detail=error_detail)
 
         # 3. Update session status to COMPLETED
         crud.import_session.update(
@@ -518,18 +557,22 @@ def commit_import_session(
 
     except Exception as e:
         db.rollback()
-        log.error(f"Failed to commit import session {session_id}: {e}", exc_info=True)
+        error_msg = str(e)
+        log.error(
+            f"Failed to commit import session {session_id}: {error_msg}",
+            exc_info=True
+        )
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": "An unexpected error occurred during commit.",
+                "error_message": f"Unexpected error: {error_msg}",
             },
         )
         db.commit()
         raise HTTPException(
-            status_code=500, detail="Could not commit transactions."
+            status_code=500, detail=f"Could not commit transactions: {error_msg}"
         )
 
 
@@ -622,11 +665,11 @@ async def create_fd_import_session(
             status_code=400, detail="An error occurred during file parsing."
         )
 
-    # 4. Save the list of Pydantic models to a Parquet file
-    parsed_df = pd.DataFrame([t.model_dump() for t in parsed_fds])
-    parsed_file_name = f"fd_{import_session.id}.parquet"
+    # 4. Save the list of Pydantic models to a JSON file
+    parsed_df = pd.DataFrame([model_dump(t) for t in parsed_fds])
+    parsed_file_name = f"fd_{import_session.id}.json"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_df.to_parquet(parsed_file_path)
+    parsed_df.to_json(parsed_file_path, orient='records', date_format='iso')
 
     # 5. Update the session
     import_session_update = schemas.ImportSessionUpdate(
@@ -660,7 +703,9 @@ def get_fd_import_session_preview(
         raise HTTPException(status_code=400, detail="No parsed file for this session")
 
     try:
-        df = pd.read_parquet(import_session.parsed_file_path)
+        df = pd.read_json(import_session.parsed_file_path, orient='records')
+        # Replace NaN/NaT with None for Pydantic compatibility
+        df = df.where(pd.notnull(df), None)
     except Exception as e:
         log.error(f"Could not read parsed data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not read parsed data.")
@@ -679,21 +724,30 @@ def get_fd_import_session_preview(
         for fd in existing_fds if fd.account_number and fd.start_date
     }
 
-    for _, row in df.iterrows():
-        fd_data = row.to_dict()
-        parsed_fd = schemas.ParsedFixedDeposit(**fd_data)
+    try:
+        for _, row in df.iterrows():
+            # Clean NaNs to None to avoid validation errors for optional fields
+            fd_data = {k: (None if pd.isna(v) else v) for k, v in row.items()}
+            try:
+                parsed_fd = schemas.ParsedFixedDeposit(**fd_data)
+            except Exception as e:
+                log.error(f"Validation error for row: {fd_data}. Error: {e}")
+                continue
 
-        # Duplicate detection: match both account number AND start date
-        # Renewals (same account_number, diff start_date) are NOT duplicates.
-        if (parsed_fd.account_number, parsed_fd.start_date) in existing_lookup:
-            duplicates.append(parsed_fd)
-        else:
-            parsed_fds.append(parsed_fd)
+            # Duplicate detection: match both account number AND start date
+            # Renewals (same account_number, diff start_date) are NOT duplicates.
+            if (parsed_fd.account_number, parsed_fd.start_date) in existing_lookup:
+                duplicates.append(parsed_fd)
+            else:
+                parsed_fds.append(parsed_fd)
 
-    return schemas.FDImportPreview(
-        parsed_fds=parsed_fds,
-        duplicates=duplicates,
-    )
+        return schemas.FDImportPreview(
+            parsed_fds=parsed_fds,
+            duplicates=duplicates,
+        )
+    except Exception as e:
+        log.error(f"Error in get_fd_import_session_preview: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{session_id}/fd-commit", response_model=Msg)
@@ -725,8 +779,12 @@ def commit_fd_import_session(
                 account_number=parsed_fd.account_number,
                 principal_amount=Decimal(str(parsed_fd.principal_amount)),
                 interest_rate=Decimal(str(parsed_fd.interest_rate)),
-                start_date=parsed_fd.start_date,
-                maturity_date=parsed_fd.maturity_date,
+                start_date=date_type.fromisoformat(
+                    str(parsed_fd.start_date).split("T")[0]
+                ),
+                maturity_date=date_type.fromisoformat(
+                    str(parsed_fd.maturity_date).split("T")[0]
+                ),
                 compounding_frequency=parsed_fd.compounding_frequency,
                 interest_payout=parsed_fd.interest_payout,
                 portfolio_id=import_session.portfolio_id,
@@ -751,8 +809,9 @@ def commit_fd_import_session(
 
     except Exception as e:
         db.rollback()
+        error_msg = str(e)
         log.error(
-            f"Failed to commit FD import session {session_id}: {e}",
+            f"Failed to commit FD import session {session_id}: {error_msg}",
             exc_info=True,
         )
         crud.import_session.update(
@@ -760,8 +819,10 @@ def commit_fd_import_session(
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": "An unexpected error occurred during commit.",
+                "error_message": f"Unexpected error: {error_msg}",
             },
         )
         db.commit()
-        raise HTTPException(status_code=500, detail="Could not commit FDs.")
+        raise HTTPException(
+            status_code=500, detail=f"Could not commit FDs: {error_msg}"
+        )

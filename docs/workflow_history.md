@@ -1,3 +1,175 @@
+## 2026-05-08: Restore Capacitor Android Configuration
+
+**Task:** Restore missing `variables.gradle` and Capacitor Gradle hooks in Kotlin DSL files to fix `npx cap update` failure.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Identified and resolved a structural issue in the Android project that was blocking Capacitor CLI operations.
+
+1. **Configuration Restoration:** Re-created `variables.gradle` with standard Capacitor 6 version definitions.
+2. **Gradle Integration:** Added `apply(from = ...)` hooks to `settings.gradle.kts`, `build.gradle.kts` (root), and `app/build.gradle.kts` to correctly include Capacitor-managed build scripts.
+3. **Verification:** Verified that the project structure now aligns with Capacitor 6 requirements for Kotlin DSL projects.
+
+---
+
+## 2026-05-08: Resolve Android Build Failure (TypeScript Error)
+
+**Task:** Fix TypeScript compilation error in `CapitalGainsPage.tsx` blocking the Android build job.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Resolved a critical TypeScript error that was causing the Capacitor/Android build to fail during the type-checking phase.
+
+1. **Type Fix:** Refactored `AdvanceTaxCard` in `CapitalGainsPage.tsx` to use explicit keys from the `ITRRow` model, eliminating invalid string indexing that triggered `TS7053`.
+2. **Verification:** Confirmed the fix with a successful `npx tsc --noEmit` run in the frontend container.
+
+---
+
+## 2026-05-08: Resolve E2E Test Regressions & Docker Config Fix
+
+**Task:** Resolve E2E test failures in `watchlists.spec.ts` caused by responsive dual-layout duplicates and fix Docker E2E database initialization.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Identified and resolved E2E test failures that were blocking the CI/CD pipeline after the recent mobile UI optimizations.
+
+1. **Watchlist E2E Fixes:**
+    - **Locator Correction:** Updated `watchlists.spec.ts` to use the correct button name "Add to Watchlist" (previously mismatched as "Add Asset to Watchlist").
+    - **Strict Mode Resolution:** Applied `.first()` to tickers and action buttons in `watchlists.spec.ts` to handle duplicate elements present in both desktop table and mobile card views.
+2. **Docker E2E Hardening:**
+    - **DB Initialization:** Overrode the `db` service in `docker-compose.e2e.yml` to use `.env.test`, ensuring the database is correctly created as `pms_db_test` during test runs.
+3. **Verification:** Confirmed both Watchlist E2E tests pass locally in the Docker environment.
+
+---
+
+## 2026-05-07: Finalize Android Restoration & Create PR #429
+
+**Task:** Finalize the restoration of the Android enablement and mobile UI optimizations from the reverted PR #379, and submit the final consolidated PR.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Successfully consolidated the Android restoration effort into a single pull request, ensuring all new files and logic from the experimental branch were preserved and optimized.
+
+1. **PR #379 Reconciliation:** Verified all 87 new files and 175 total changes from the original Android enablement effort were correctly present in the restoration branch.
+2. **Mobile UX Optimization:** Finalized the vertical card-based layouts for Dashboard, Watchlist, and Capital Gains pages, ensuring standard `lg` (1024px) breakpoints.
+3. **Test & Lint Finalization:** Confirmed a 100% pass rate for the 58 frontend unit tests and maintained a lint-clean codebase across the full stack.
+4. **PR Submission:** Pushed the `fix/restore-android-mobile-pr379` branch to remote and created PR #429 with comprehensive documentation of the changes.
+
+### Outcome
+
+**Success.** The Android restoration is complete and ready for merge. PR #429 is open.
+
+---
+
+## 2026-05-07
+- **Android Enablement Reconciliation (PR #379)**: 
+  - Restored missing Android build and release workflows (`.github/workflows/release.yml`, `.github/workflows/test-builds.yml`).
+  - Fixed Pydantic v1/v2 compatibility on Android by restoring `model_validate_json` via `pydantic_compat` in `cache/utils.py`.
+  - Reverted date fields in `ParsedFixedDeposit` back to `str` for JSON/Chaquopy compatibility and re-implemented explicit date parsing in endpoints.
+  - Restored `.isoformat()` string conversion for `transaction_date` in `crud_asset.py` to prevent Chaquopy Pydantic V1 failures during PPF creation.
+  - Verified backend endpoints, caching logic, and confirmed all tests passing.
+  - Addressed missing issues detailed in git issue #425.
+
+## 2026-05-06: Resolve Frontend Responsive Test Failures & Lint Cleanup
+
+**Task:** Resolve multiple frontend test failures caused by duplicate elements in responsive dual-layouts and fix backend lint errors in import endpoints and test suites.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+### Summary
+
+Identified and resolved a series of frontend test failures triggered by the transition to a responsive dual-layout (concurrently rendering desktop tables and mobile cards). This architectural change introduced duplicate elements in the DOM, causing `TestingLibraryElementError` exceptions.
+
+1. **Responsive Test Resolution:**
+    - **Dual-Layout Handling:** Updated `InterestRateTable.test.tsx`, `UsersTable.test.tsx`, and `WatchlistTable.test.tsx` to use `getAllByText` instead of singular `getByText` to accommodate elements present in both desktop and mobile views.
+    - **Flexible Text Matching:** Implemented custom regex matchers and `textContent` comparison functions in `AddAssetToWatchlistModal.test.tsx` and `DashboardPage.test.tsx` to handle text split across multiple nested elements (e.g., symbols in parentheses).
+    - **Specific Role Querying:** Refined queries in `AddAssetToWatchlistModal.test.tsx` to use `getByRole('button', { name: ... })`, ensuring accurate targeting of interactive elements and avoiding parent container matches.
+2. **Lint Cleanup:**
+    - **E501 (Line too long):** Fixed 12+ instances of long lines and comments in `backend/app/api/v1/endpoints/import_sessions.py` and associated test files to adhere to the 88-character limit.
+    - **Syntax Correction:** Resolved a syntax error in `test_import_sessions.py` introduced by an incorrect `sed` operation during the linting phase.
+    - **Unused Variables:** Removed an unused variable assignment in `scratch/test_import_parsing.py`.
+3. **Frontend Lint Cleanup:**
+    - **Explicit Any:** Resolved `typescript-eslint/no-explicit-any` errors in `AdminFMVPage.tsx` and `CapitalGainsPage.tsx`.
+    - **Type Safety:** Replaced local interfaces with shared `FMVAsset` and `Schedule112AEntry` types from `adminApi.ts` and `useCapitalGains.ts`.
+4. **Verification:**
+    - **Frontend:** Confirmed that all 58 frontend unit tests now pass successfully and `npm run lint` reports zero errors.
+    - **Backend:** Verified that `ruff check . --fix` reports no issues in the backend codebase.
+
+### File Changes
+
+**Frontend:**
+* **Modified:** `frontend/src/__tests__/components/Watchlists/WatchlistTable.test.tsx`
+* **Modified:** `frontend/src/__tests__/pages/DashboardPage.test.tsx`
+* **Modified:** `frontend/src/__tests__/components/modals/AddAssetToWatchlistModal.test.tsx`
+* **Modified:** `frontend/src/pages/Admin/AdminFMVPage.tsx`
+* **Modified:** `frontend/src/pages/CapitalGainsPage.tsx`
+* **Modified:** `frontend/src/__tests__/components/Admin/InterestRateTable.test.tsx`
+* **Modified:** `frontend/src/__tests__/components/Admin/UsersTable.test.tsx`
+
+**Backend:**
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py`
+* **Modified:** `backend/app/tests/api/test_import_sessions.py`
+* **Modified:** `backend/app/tests/utils/mock_financial_data.py`
+* **Modified:** `backend/scratch/test_import_parsing.py`
+
+### Outcome
+
+**Success.** All frontend tests are green, the codebase is lint-clean (both backend and frontend), and the application's test suite now correctly handles the responsive dual-layout pattern.
+
+---
+
+## 2026-05-02: Resolve Import Pipeline 500 Errors & NaN Handling
+
+**Task:** Debug and fix persistent 500 Internal Server Errors in the E2E data import pipeline, specifically during the preview phase.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Identified and resolved a critical crash in the import preview pipeline caused by improper handling of missing optional fields in CSV/JSON data.
+
+1. **Root Cause Analysis:** The `AttributeError: 'float' object has no attribute 'upper'` was triggered when the backend attempted to call `.upper()` on a `float(NaN)` value. This happened because `pandas` represents missing string values in JSON/CSV as `NaN` (floats), and the endpoint was passing these raw values to CRUD methods.
+2. **Defensive Endpoint Logic:** Refactored `get_import_session_preview` to consistently use sanitized `row_data` (where `NaN` is converted to `None`) instead of raw `pandas` series rows. This ensures that Pydantic validation handles missing fields correctly as `None`.
+3. **Robust CRUD Implementation:** Added explicit type checks to `CRUDAsset.get_by_ticker` and `CRUDAsset.get_by_isin` to return `None` immediately if the input is not a string, preventing crashes from case-normalization logic.
+4. **Test Robustness:** Fixed a brittle E2E test (`inactivity-timeout.spec.ts`) that failed due to exact string matching on a dynamic countdown timer; switched to a flexible regex locator.
+5. **Enhanced Observability:** Instrumented the import endpoints with granular `try-except` blocks and `logger.error` logging to capture and report specific row-level validation failures without crashing the entire request.
+
+### File Changes
+
+**Backend:**
+* **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Sanitized NaN values and fixed row access in preview/commit loops.
+* **Modified:** `backend/app/crud/crud_asset.py` — Added defensive type checks to asset lookup methods.
+
+**E2E:**
+* **Modified:** `e2e/tests/inactivity-timeout.spec.ts` — Updated locator to use regex for dynamic countdown text.
+
+### Verification
+
+* **E2E Tests:** All 5 failing tests (Data Import, Asset Mapping, Inactivity Timeout) now pass successfully in the Docker environment.
+* **Logs:** Verified that the backend no longer produces 500 errors and correctly logs individual validation issues if they occur.
+
+### Outcome
+
+**Success.** The data import pipeline is now resilient to missing fields and provides better diagnostic information. All E2E verification tests are green.
+
+---
+
 ## 2026-03-15: Auto-create ISIN assets during import
 
 **Task:** Automatically create asset records when an import contains an ISIN-style ticker (e.g., "ISIN:XXX") that doesn't exist in the database.

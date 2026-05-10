@@ -105,20 +105,33 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         new_asset = self.create(db=db, obj_in=asset_in)
 
         # 2. Create the first contribution transaction
-        transaction_in = schemas.TransactionCreate(
+        from datetime import datetime, time
+
+        new_transaction_in = schemas.TransactionCreate(
             asset_id=new_asset.id,
+            portfolio_id=portfolio_id,
             transaction_type="CONTRIBUTION",
             quantity=ppf_in.amount,
             price_per_unit=1,
-            transaction_date=ppf_in.contribution_date,
+            # Android JSON payload compatibility workaround
+            # Chaquopy (via local backend) needs string-based isoformat dates
+            # which does not accept bare date objects for datetime fields.
+            transaction_date=(
+                datetime.combine(ppf_in.contribution_date, time.min).isoformat()
+                if ppf_in.contribution_date
+                else None
+            ),
             fees=0,
         )
         new_transaction = crud.transaction.create_with_portfolio(
-            db=db, obj_in=transaction_in, portfolio_id=portfolio_id
+            db=db, obj_in=new_transaction_in, portfolio_id=portfolio_id
         )
         return new_transaction
 
     def get_by_ticker(self, db: Session, *, ticker_symbol: str) -> Asset | None:
+        if not ticker_symbol or not isinstance(ticker_symbol, str):
+            return None
+
         # Handle ISIN: prefix
         if ticker_symbol.upper().startswith("ISIN:"):
             isin_code = ticker_symbol.split(":", 1)[1]
@@ -131,6 +144,9 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         )
 
     def get_by_isin(self, db: Session, *, isin_code: str) -> Asset | None:
+        if not isin_code or not isinstance(isin_code, str):
+            return None
+
         return (
             db.query(self.model)
             .filter(self.model.isin == isin_code.upper())

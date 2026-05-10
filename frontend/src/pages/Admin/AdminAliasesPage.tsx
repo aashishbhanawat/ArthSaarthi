@@ -14,6 +14,7 @@ import { AxiosError } from 'axios';
 import { DeleteConfirmationModal } from '../../components/common/DeleteConfirmationModal';
 import { useToast } from '../../context/ToastContext';
 import { PencilIcon, TrashIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import AliasCard from '../../components/Admin/AliasCard';
 
 interface LocalAsset {
     id: string;
@@ -224,35 +225,50 @@ const AdminAliasesPage: React.FC = () => {
                         </p>
                     ) : (
                         <>
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead className="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Alias Symbol</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Source</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maps To (Ticker)</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Name</th>
-                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                    {aliases.map((alias) => (
-                                        <tr key={alias.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">{alias.alias_symbol}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{alias.source}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-blue-600 dark:text-blue-400">{alias.asset_ticker}</td>
-                                            <td className="px-4 py-3 text-sm">{alias.asset_name}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-right">
-                                                <button onClick={() => openEditForm(alias)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Edit">
-                                                    <PencilIcon className="h-4 w-4 inline" />
-                                                </button>
-                                                <button onClick={() => { setDeletingAlias(alias); setDeleteOpen(true); }} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Delete">
-                                                    <TrashIcon className="h-4 w-4 inline" />
-                                                </button>
-                                            </td>
+                            {/* Desktop View */}
+                            <div className="hidden lg:block overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead className="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Alias Symbol</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Source</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maps To (Ticker)</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Name</th>
+                                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                        {aliases.map((alias) => (
+                                            <tr key={alias.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                                <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">{alias.alias_symbol}</td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{alias.source}</td>
+                                                <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-blue-600 dark:text-blue-400">{alias.asset_ticker}</td>
+                                                <td className="px-4 py-3 text-sm">{alias.asset_name}</td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-right">
+                                                    <button onClick={() => openEditForm(alias)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Edit">
+                                                        <PencilIcon className="h-4 w-4 inline" />
+                                                    </button>
+                                                    <button onClick={() => { setDeletingAlias(alias); setDeleteOpen(true); }} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Delete">
+                                                        <TrashIcon className="h-4 w-4 inline" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile View */}
+                            <div className="lg:hidden p-2 space-y-1">
+                                {aliases.map((alias) => (
+                                    <AliasCard
+                                        key={alias.id}
+                                        alias={alias}
+                                        onEdit={openEditForm}
+                                        onDelete={(a) => { setDeletingAlias(a); setDeleteOpen(true); }}
+                                    />
+                                ))}
+                            </div>
 
                             {/* Pagination */}
                             {totalPages > 1 && (

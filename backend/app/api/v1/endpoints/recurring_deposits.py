@@ -9,6 +9,7 @@ from app import crud, models, schemas
 from app.cache.utils import invalidate_caches_for_portfolio
 from app.core import dependencies
 from app.crud.crud_holding import _calculate_rd_value_at_date
+from app.utils.pydantic_compat import model_dump, model_validate
 
 router = APIRouter()
 
@@ -68,7 +69,7 @@ def read_recurring_deposit(
     )
 
     return schemas.recurring_deposit.RecurringDepositDetails(
-        **schemas.recurring_deposit.RecurringDeposit.model_validate(rd).model_dump(),
+        **model_dump(model_validate(schemas.recurring_deposit.RecurringDeposit, rd)),
         maturity_value=maturity_value,
     )
 

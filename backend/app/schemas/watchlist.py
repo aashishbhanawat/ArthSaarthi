@@ -2,7 +2,12 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+
+try:
+    from pydantic import ConfigDict
+except ImportError:
+    ConfigDict = None
 
 from .asset import Asset
 
@@ -18,6 +23,11 @@ class WatchlistItemCreate(WatchlistItemBase):
     pass
 
 
+# Properties to receive via API on update
+class WatchlistItemUpdate(WatchlistItemBase):
+    pass
+
+
 # Properties to return to client
 class WatchlistItem(WatchlistItemBase):
     id: uuid.UUID
@@ -25,7 +35,11 @@ class WatchlistItem(WatchlistItemBase):
     user_id: uuid.UUID
     asset: Asset
 
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            from_orm = True
 
 
 # Schemas for Watchlist
@@ -51,4 +65,8 @@ class Watchlist(WatchlistBase):
     created_at: datetime
     items: List[WatchlistItem] = []
 
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            from_orm = True

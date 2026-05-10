@@ -31,7 +31,7 @@ test.describe('Inactivity Timeout', () => {
     await page.reload();
 
     await expect(page.locator('text=Session Timeout')).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('text=You will be logged out in 3 seconds due to inactivity.')).toBeVisible();
+    await expect(page.getByText(/You will be logged out in \d+ seconds due to inactivity\./)).toBeVisible();
 
     // Wait for the countdown to finish and the user to be logged out
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible({ timeout: 8000 });

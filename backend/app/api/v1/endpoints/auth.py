@@ -96,14 +96,15 @@ def login_for_access_token(
 ):
     logger.info(f"Login attempt for user: {form_data.username}")
     ip_address = get_client_ip(request)
-
-    # Check rate limit
-    cache = get_cache_client()
     rate_limit_key = f"{LOGIN_RATE_LIMIT_KEY_PREFIX}{ip_address}"
+
+    # Get cache client (works for both Redis and DiskCache)
+    cache = get_cache_client()
+
     if cache:
-        attempts_str = cache.get(rate_limit_key)
-        if attempts_str and int(attempts_str) >= MAX_LOGIN_ATTEMPTS:
-            logger.warning(f"Login rate limit exceeded for IP: {ip_address}")
+        attempts = cache.get(rate_limit_key) or 0
+        if int(attempts) >= MAX_LOGIN_ATTEMPTS:
+            logger.warning(f"Rate limit exceeded for IP: {ip_address}")
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Too many failed login attempts. Please try again later.",
@@ -156,7 +157,6 @@ def login_for_access_token(
             if cache:
                 # Increment failed attempts counter
                 cache.incr(rate_limit_key, expire=LOGIN_RATE_LIMIT_SECONDS)
-            e.headers = {"WWW-Authenticate": "Bearer"}
 
         log_event(
             db,
@@ -165,6 +165,7 @@ def login_for_access_token(
             ip_address=ip_address,
             details={"email": form_data.username, "reason": e.detail},
         )
+        e.headers = {"WWW-Authenticate": "Bearer"}
         raise e
 
 
