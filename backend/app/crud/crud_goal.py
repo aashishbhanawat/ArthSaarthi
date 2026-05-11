@@ -72,6 +72,7 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                 transactions = (
                     db.query(transaction.Transaction)
                     .filter(transaction.Transaction.asset_id == link.asset_id)
+                    .filter(transaction.Transaction.user_id == goal.user_id)
                     .all()
                 )
                 if transactions:
