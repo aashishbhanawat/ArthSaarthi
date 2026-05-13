@@ -70,12 +70,14 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                 # across all portfolios. For now, we will just find the first
                 # portfolio that contains the asset.
                 transactions = (
-                    db.query(transaction.Transaction)
+                    db.query(transaction.Transaction.portfolio_id)
                     .filter(transaction.Transaction.asset_id == link.asset_id)
+                    .filter(transaction.Transaction.user_id == goal.user_id)
+                    .limit(1)
                     .all()
                 )
                 if transactions:
-                    portfolio_id = transactions[0].portfolio_id
+                    portfolio_id = transactions[0][0]
                     if portfolio_id not in portfolio_cache:
                         portfolio_cache[portfolio_id] = (
                             crud.holding.get_portfolio_holdings_and_summary(

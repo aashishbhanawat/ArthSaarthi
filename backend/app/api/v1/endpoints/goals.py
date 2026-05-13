@@ -125,6 +125,13 @@ def create_goal_link(
             detail="Goal ID in path and body do not match",
         )
 
+    if link_in.portfolio_id:
+        portfolio = crud.portfolio.get(db=db, id=link_in.portfolio_id)
+        if not portfolio or portfolio.user_id != current_user.id:
+            raise HTTPException(
+                status_code=403, detail="Not enough permissions for this portfolio"
+            )
+
     link = crud.goal_link.create_with_owner(
         db=db, obj_in=link_in, user_id=current_user.id
     )
