@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDashboardAllocation } from '../../hooks/useDashboard';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
@@ -20,7 +20,7 @@ const generateColors = (numColors: number) => {
 const AssetAllocationChart: React.FC = () => {
   const { data, isLoading, isError, error } = useDashboardAllocation();
 
-  const options = {
+  const options = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -31,9 +31,9 @@ const AssetAllocationChart: React.FC = () => {
         display: false,
       },
     },
-  };
+  }), []);
 
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: data?.allocation.map((item) => item.ticker) || [],
     datasets: [
       {
@@ -44,7 +44,7 @@ const AssetAllocationChart: React.FC = () => {
         borderWidth: 1,
       },
     ],
-  };
+  }), [data]);
 
   return (
     <div className="card">

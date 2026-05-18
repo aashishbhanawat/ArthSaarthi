@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDashboardHistory } from '../../hooks/useDashboard';
 import {
   Chart as ChartJS,
@@ -33,7 +33,7 @@ const PortfolioHistoryChart: React.FC = () => {
     { value: 'all', label: 'All' },
   ];
 
-  const options = {
+  const options = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -44,9 +44,9 @@ const PortfolioHistoryChart: React.FC = () => {
         display: false,
       },
     },
-  };
+  }), []);
 
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: data?.history.map((point) => point.date) || [],
     datasets: [
       {
@@ -56,7 +56,7 @@ const PortfolioHistoryChart: React.FC = () => {
         backgroundColor: 'rgba(54, 162, 235, 0.5)',
       },
     ],
-  };
+  }), [data]);
 
   return (
     <div className="card">

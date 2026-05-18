@@ -1,3 +1,6 @@
 ## 2026-04-20 - Optimize matching logic in HoldingDetailModal
 **Learning:** Finding items in an array repeatedly within a nested loop creates an $O(N^2)$ bottleneck. Constructing a Map/Dictionary for lookups reduces complexity to $O(N)$.
 **Action:** Always index collections by ID into a Map before performing repeated lookups in a loop.
+## $(date +%Y-%m-%d) - Memoize react-chartjs-2 Props to Prevent Render Churn
+**Learning:** In React applications using `react-chartjs-2`, passing unmemoized object literals directly to the `options` and `data` props of chart components (like `<Pie />` or `<Line />`) causes the underlying Chart.js instances to re-render unnecessarily on every parent component update. This is especially costly when the data object includes dynamic computations, such as mapping over arrays or generating HSL color strings, leading to redundant O(N) operations and significant CPU overhead during rapid UI updates.
+**Action:** Always wrap the `options` and `data` (or `chartData`) object definitions in `useMemo` hooks. For static `options`, use an empty dependency array `[]`. For `chartData`, include the underlying data source (e.g., `[data]`) in the dependency array to ensure the chart only recalculates and updates when the actual data changes.
