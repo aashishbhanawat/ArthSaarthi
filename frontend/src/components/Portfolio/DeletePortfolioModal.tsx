@@ -23,7 +23,11 @@ const DeletePortfolioModal: React.FC<DeletePortfolioModalProps> = ({ isOpen, onC
             >
                 <div className="modal-header">
                     <h2 id="delete-modal-title" className="text-2xl font-bold text-red-600 dark:text-red-400">Delete Portfolio</h2>
-                    <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">&times;</button>
+                    <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
                 <div className="p-6">
                     <p id="delete-modal-desc" className="text-gray-700 dark:text-gray-300 mb-4">
@@ -39,7 +43,7 @@ const DeletePortfolioModal: React.FC<DeletePortfolioModalProps> = ({ isOpen, onC
                         <button type="button" onClick={onConfirm} className="btn btn-danger flex items-center gap-2" disabled={isPending}>
                             {isPending ? (
                                 <>
-                                    <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                                    <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />
                                     <span>Deleting...</span>
                                 </>
                             ) : (

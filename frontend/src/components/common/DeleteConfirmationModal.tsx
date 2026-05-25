@@ -81,7 +81,7 @@ export const DeleteConfirmationModal: React.FC<
             >
               {isDeleting ? (
                 <>
-                  <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                  <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />
                   <span>Deleting...</span>
                 </>
               ) : (

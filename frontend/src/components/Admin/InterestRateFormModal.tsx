@@ -98,7 +98,7 @@ const InterestRateFormModal: React.FC<InterestRateFormModalProps> = ({ isOpen, o
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={isPending}>
-                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
+                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
                 {isPending ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Rate')}
               </button>
             </div>
