@@ -22,16 +22,16 @@ ChartJS.register(
   Legend
 );
 
+const RANGES = [
+  { value: '7d', label: '7D' },
+  { value: '30d', label: '30D' },
+  { value: '1y', label: '1Y' },
+  { value: 'all', label: 'All' },
+];
+
 const PortfolioHistoryChart: React.FC = () => {
   const [range, setRange] = useState('30d');
   const { data, isLoading, isError, error } = useDashboardHistory(range);
-
-  const ranges = useMemo(() => [
-    { value: '7d', label: '7D' },
-    { value: '30d', label: '30D' },
-    { value: '1y', label: '1Y' },
-    { value: 'all', label: 'All' },
-  ], []);
 
   const options = useMemo(() => ({
     responsive: true,
@@ -63,7 +63,7 @@ const PortfolioHistoryChart: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold dark:text-white">Portfolio History</h2>
         <div className="flex items-center space-x-2">
-          {ranges.map((r) => (
+          {RANGES.map((r) => (
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
