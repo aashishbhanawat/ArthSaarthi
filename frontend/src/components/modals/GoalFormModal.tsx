@@ -122,7 +122,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
                 className="btn btn-primary flex items-center gap-2"
                 disabled={isPending || !name.trim() || !targetAmount || !targetDate}
               >
-                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
+                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
                 {isPending ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Goal')}
               </button>
             </div>

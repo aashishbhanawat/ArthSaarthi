@@ -56,7 +56,7 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
     if (!statusResponse) {
         return (
             <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-                <ArrowPathIcon className="h-12 w-12 text-blue-500 animate-spin mx-auto" />
+                <ArrowPathIcon className="h-12 w-12 text-blue-500 animate-spin mx-auto" aria-hidden="true" />
                 <h2 className="text-xl font-semibold">Connecting to Engine...</h2>
                 <p className="text-gray-500 dark:text-gray-400">Please wait while ArthSaarthi initializes.</p>
                 <button 

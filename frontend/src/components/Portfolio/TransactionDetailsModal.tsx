@@ -16,12 +16,16 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ isOpe
     const isForeign = transaction.asset.currency !== 'INR';
 
     return (
-        <div className="modal-overlay z-40" onClick={onClose}>
+        <div className="modal-overlay z-40" role="dialog" aria-modal="true" aria-labelledby="transaction-details-modal-title" onClick={onClose}>
             <div className="modal-content w-11/12 max-w-lg p-6 relative" onClick={e => e.stopPropagation()}>
-                <button aria-label="Close" onClick={onClose} className="absolute right-4 top-4 text-gray-500 hover:text-gray-700">
-                    &times;
-                </button>
-                <h2 className="text-xl font-bold mb-4">Transaction Details</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 id="transaction-details-modal-title" className="text-xl font-bold">Transaction Details</h2>
+                    <button type="button" aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
 
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">

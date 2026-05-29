@@ -21,7 +21,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
       disabled={isLoading || disabled}
       {...props}
     >
-      {isLoading && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
+      {isLoading && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
       {isLoading && loadingText ? loadingText : children}
     </button>
   );

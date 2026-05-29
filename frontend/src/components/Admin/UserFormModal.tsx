@@ -154,7 +154,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={isPending}>
-                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
+                {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
                 {isPending ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create User')}
               </button>
             </div>

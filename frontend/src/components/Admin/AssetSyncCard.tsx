@@ -63,7 +63,7 @@ const AssetSyncCard: React.FC = () => {
                     disabled={isLoading}
                     className="btn btn-primary flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <ArrowPathIcon className={`h-5 w-5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                    <ArrowPathIcon className={`h-5 w-5 mr-2 ${isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
                     {isLoading ? 'Syncing Assets...' : 'Sync Assets'}
                 </button>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-3">

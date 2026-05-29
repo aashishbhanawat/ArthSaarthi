@@ -1,0 +1,3 @@
+## 2026-05-25 - Screen Reader Feedback on Loading Buttons and Modals
+**Learning:** `animate-spin` on SVGs without `aria-hidden="true"` can cause screen readers to announce useless graphic elements repeatedly, and modal close buttons using `&times;` (×) are often pronounced as "times" rather than "close" by screen readers if they lack an explicit `aria-label` or clear context. We also observed that when users attempt to dismiss an item from a form, the `×` symbol without label is opaque to screen readers.
+**Action:** Always add `aria-hidden="true"` to decorative spinning loading icons (like `<ArrowPathIcon animate-spin />`). Ensure that icon-only buttons (like `×` or an SVG `XMarkIcon`) use clear `aria-label` attributes like `"Close"` or `"Clear selection"`.
