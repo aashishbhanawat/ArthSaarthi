@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDashboardHistory } from '../../hooks/useDashboard';
 import {
   Chart as ChartJS,
@@ -22,18 +22,18 @@ ChartJS.register(
   Legend
 );
 
+const RANGES = [
+  { value: '7d', label: '7D' },
+  { value: '30d', label: '30D' },
+  { value: '1y', label: '1Y' },
+  { value: 'all', label: 'All' },
+];
+
 const PortfolioHistoryChart: React.FC = () => {
   const [range, setRange] = useState('30d');
   const { data, isLoading, isError, error } = useDashboardHistory(range);
 
-  const ranges = [
-    { value: '7d', label: '7D' },
-    { value: '30d', label: '30D' },
-    { value: '1y', label: '1Y' },
-    { value: 'all', label: 'All' },
-  ];
-
-  const options = {
+  const options = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -44,9 +44,9 @@ const PortfolioHistoryChart: React.FC = () => {
         display: false,
       },
     },
-  };
+  }), []);
 
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: data?.history.map((point) => point.date) || [],
     datasets: [
       {
@@ -56,14 +56,14 @@ const PortfolioHistoryChart: React.FC = () => {
         backgroundColor: 'rgba(54, 162, 235, 0.5)',
       },
     ],
-  };
+  }), [data]);
 
   return (
     <div className="card">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold dark:text-white">Portfolio History</h2>
         <div className="flex items-center space-x-2">
-          {ranges.map((r) => (
+          {RANGES.map((r) => (
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
