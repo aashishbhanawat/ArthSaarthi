@@ -16,6 +16,7 @@ import { ApiError, getErrorMessage } from '../../types/api';
 import Select from 'react-select';
 import { formatCurrency } from '../../utils/formatting';
 import { debugLog } from '../../utils/debug';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface TransactionFormModalProps {
     portfolioId: string;
@@ -956,8 +957,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 {!isEditMode && (
                                                     <>
                                                         {selectedAsset && (
-                                                            <button type="button" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 text-xl font-bold">
-                                                                &times;
+                                                            <button type="button" aria-label="Clear selection" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 font-bold">
+                                                                <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                                                             </button>
                                                         )}
                                                         {isSearching && <div className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg dark:text-gray-200">Searching...</div>}
@@ -1074,9 +1075,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
                                                 {!isEditMode && (
                                                     <>
                                                         {selectedAsset && (
-                                                            <button type="button" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 text-xl font-bold">
-
-                                                                &times;
+                                                            <button type="button" aria-label="Clear selection" onClick={handleClearSelectedAsset} className="absolute right-2 top-2 text-red-500 font-bold">
+                                                                <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                                                             </button>
                                                         )}
                                                         {isSearching && <div className="absolute z-20 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 p-2 shadow-lg dark:text-gray-200">Searching...</div>}
