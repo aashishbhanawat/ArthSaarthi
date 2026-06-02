@@ -27,6 +27,42 @@ ChartJS.register(
     Legend
 );
 
+const CHART_OPTIONS = {
+    responsive: true,
+    interaction: {
+        mode: 'index' as const,
+        intersect: false,
+    },
+    plugins: {
+        legend: { position: 'top' as const },
+        tooltip: {
+            callbacks: {
+                label: function (context: TooltipItem<'line'>) {
+                    let label = context.dataset.label || '';
+                    if (label) label += ': ';
+                    if (context.parsed.y !== null) {
+                        label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
+                    }
+                    return label;
+                }
+            }
+        }
+    },
+    scales: {
+        y: {
+            ticks: {
+                callback: function (value: string | number) {
+                    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+                    if (Math.abs(numValue) >= 10000000) return (numValue / 10000000).toFixed(1) + 'Cr';
+                    if (Math.abs(numValue) >= 100000) return (numValue / 100000).toFixed(1) + 'L';
+                    if (Math.abs(numValue) >= 1000) return (numValue / 1000).toFixed(1) + 'k';
+                    return value;
+                }
+            }
+        }
+    }
+};
+
 interface Props {
     portfolioId: string;
 }
@@ -118,42 +154,6 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
             datasets,
         };
     }, [currentData?.chart_data, benchmarkLabel, showRiskFree, riskFreeRate]);
-
-    const options = useMemo(() => ({
-        responsive: true,
-        interaction: {
-            mode: 'index' as const,
-            intersect: false,
-        },
-        plugins: {
-            legend: { position: 'top' as const },
-            tooltip: {
-                callbacks: {
-                    label: function (context: TooltipItem<'line'>) {
-                        let label = context.dataset.label || '';
-                        if (label) label += ': ';
-                        if (context.parsed.y !== null) {
-                            label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
-                        }
-                        return label;
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                ticks: {
-                    callback: function (value: string | number) {
-                        const numValue = typeof value === 'string' ? parseFloat(value) : value;
-                        if (Math.abs(numValue) >= 10000000) return (numValue / 10000000).toFixed(1) + 'Cr';
-                        if (Math.abs(numValue) >= 100000) return (numValue / 100000).toFixed(1) + 'L';
-                        if (Math.abs(numValue) >= 1000) return (numValue / 1000).toFixed(1) + 'k';
-                        return value;
-                    }
-                }
-            }
-        }
-    }), []);
 
     if (isLoading) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
     if (error) return <div className="text-red-500 p-4 bg-red-50 rounded-lg">Failed to load benchmark comparison.</div>;
@@ -288,7 +288,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                     </div>
 
                     <div className="h-96 w-full">
-                        <Line options={options} data={chartDataObj} />
+                        <Line options={CHART_OPTIONS} data={chartDataObj} />
                     </div>
                 </>
             )}
