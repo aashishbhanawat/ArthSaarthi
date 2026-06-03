@@ -8,6 +8,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { Asset } from '../../types/asset';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/portfolio';
 import { TransactionType } from '../../types/enums';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface AddAwardModalProps {
     portfolioId: string;
@@ -245,7 +246,9 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
             <div role="dialog" className="modal-content w-11/12 md:w-3/4 lg:max-w-2xl p-6 overflow-visible" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-bold">{isEditMode ? 'Edit' : 'Add'} ESPP/RSU Award</h2>
-                    <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -292,10 +295,11 @@ const AddAwardModal: React.FC<AddAwardModalProps> = ({ portfolioId, onClose, isO
                             {selectedAsset && (
                                 <button
                                     type="button"
+                                    aria-label="Clear selection"
                                     onClick={handleClearAsset}
                                     className="absolute right-2 top-2 text-red-500 font-bold"
                                 >
-                                    &times;
+                                    <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                                 </button>
                             )}
                         </div>

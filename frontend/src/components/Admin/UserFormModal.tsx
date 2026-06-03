@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserUpdate } from '../../types/user';
 import { useCreateUser, useUpdateUser } from '../../hooks/useUsers';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -94,7 +94,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       <div role="dialog" aria-modal="true" aria-labelledby="user-form-modal-title" className="modal-content max-w-md">
         <div className="modal-header">
           <h2 id="user-form-modal-title" className="text-2xl font-bold">{isEditing ? 'Edit User' : 'Create New User'}</h2>
-          <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+          <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+          </button>
         </div>
         <div className="p-6">
           <form onSubmit={handleSubmit}>

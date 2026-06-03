@@ -1,4 +1,4 @@
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
@@ -181,8 +181,9 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2"
+            aria-label="Close"
           >
-            <span className="text-2xl leading-none">&times;</span>
+            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
           </button>
         </div>
         {renderContent()}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { HistoricalInterestRate, HistoricalInterestRateCreate, HistoricalInterestRateUpdate } from '../../types/interestRate';
 import { useCreateInterestRate, useUpdateInterestRate } from '../../hooks/useInterestRates';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface InterestRateFormModalProps {
   isOpen: boolean;
@@ -61,7 +61,9 @@ const InterestRateFormModal: React.FC<InterestRateFormModalProps> = ({ isOpen, o
       <div role="dialog" aria-modal="true" aria-labelledby="rate-form-modal-title" className="modal-content max-w-md">
         <div className="modal-header">
           <h2 id="rate-form-modal-title" className="text-2xl font-bold">{isEditing ? 'Edit Interest Rate' : 'Add New Interest Rate'}</h2>
-          <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+          <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+          </button>
         </div>
         <div className="p-6">
           <form onSubmit={handleSubmit(onSubmit)}>

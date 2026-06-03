@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Goal, GoalCreate, GoalUpdate } from '../../types/goal';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface GoalFormModalProps {
   isOpen: boolean;
@@ -59,7 +59,9 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
           <h2 id="goal-modal-title" className="text-2xl font-bold">
             {isEditMode ? 'Edit Goal' : 'Create New Goal'}
           </h2>
-          <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+          <button aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+          </button>
         </div>
         <div className="p-6">
           <form onSubmit={handleSubmit}>
