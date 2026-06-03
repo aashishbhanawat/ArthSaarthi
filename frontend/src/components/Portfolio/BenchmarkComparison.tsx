@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -27,6 +27,42 @@ ChartJS.register(
     Legend
 );
 
+const CHART_OPTIONS = {
+    responsive: true,
+    interaction: {
+        mode: 'index' as const,
+        intersect: false,
+    },
+    plugins: {
+        legend: { position: 'top' as const },
+        tooltip: {
+            callbacks: {
+                label: function (context: TooltipItem<'line'>) {
+                    let label = context.dataset.label || '';
+                    if (label) label += ': ';
+                    if (context.parsed.y !== null) {
+                        label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
+                    }
+                    return label;
+                }
+            }
+        }
+    },
+    scales: {
+        y: {
+            ticks: {
+                callback: function (value: string | number) {
+                    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+                    if (Math.abs(numValue) >= 10000000) return (numValue / 10000000).toFixed(1) + 'Cr';
+                    if (Math.abs(numValue) >= 100000) return (numValue / 100000).toFixed(1) + 'L';
+                    if (Math.abs(numValue) >= 1000) return (numValue / 1000).toFixed(1) + 'k';
+                    return value;
+                }
+            }
+        }
+    }
+};
+
 interface Props {
     portfolioId: string;
 }
@@ -51,14 +87,33 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
         return formatPercentage(value);
     };
 
-    if (isLoading) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
-    if (error) return <div className="text-red-500 p-4 bg-red-50 rounded-lg">Failed to load benchmark comparison.</div>;
-    if (!data) return null;
+    // --- Determine which data source to use based on mode ---
+    let currentData: BenchmarkComparisonResponse | undefined = data;
+    let benchmarkLabel = benchmarkTicker === '^NSEI' ? 'Nifty 50' : 'Sensex';
+    let noDataForCategory = false;
 
-    type ChartDataItem = BenchmarkComparisonResponse['chart_data'][number];
+    if (benchmarkMode === 'hybrid') {
+        benchmarkLabel = hybridPreset === 'CRISIL_HYBRID_35_65' ? 'CRISIL Hybrid 35+65' : 'Balanced 50/50';
+    }
 
-    // --- Helper to render a chart from chart_data ---
-    const renderChart = (chartDataSrc: ChartDataItem[], benchmarkLabelFull: string) => {
+    if (benchmarkMode === 'category' && data?.category_data) {
+        if (categoryTab === 'equity' && data.category_data.equity) {
+            currentData = { ...data.category_data.equity, risk_free_xirr: data.risk_free_xirr };
+            benchmarkLabel = data.category_data.equity.benchmark_label;
+        } else if (categoryTab === 'debt' && data.category_data.debt) {
+            currentData = { ...data.category_data.debt, risk_free_xirr: data.risk_free_xirr };
+            benchmarkLabel = data.category_data.debt.benchmark_label;
+        } else {
+            noDataForCategory = true;
+        }
+    }
+
+    const xirrDiff = (currentData?.portfolio_xirr || 0) - (currentData?.benchmark_xirr || 0);
+    const isAnnualized = (currentData?.days_duration || 0) < 365;
+    const annualizedLabel = isAnnualized ? " (Annualized)" : "";
+
+    const chartDataObj = useMemo(() => {
+        const chartDataSrc = currentData?.chart_data || [];
         const datasets: ChartDataset<'line'>[] = [
             {
                 label: 'Invested Amount',
@@ -70,7 +125,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                 tension: 0.1,
             },
             {
-                label: `Hypothetical ${benchmarkLabelFull} Value`,
+                label: `Hypothetical ${benchmarkLabel} Value`,
                 data: chartDataSrc.map(d => d.benchmark_value),
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.5)',
@@ -91,77 +146,18 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
             });
         }
 
-        const chartDataObj = {
+        return {
             labels: chartDataSrc.map(d => {
                 const date = new Date(d.date);
                 return date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
             }),
             datasets,
         };
+    }, [currentData?.chart_data, benchmarkLabel, showRiskFree, riskFreeRate]);
 
-        const options = {
-            responsive: true,
-            interaction: {
-                mode: 'index' as const,
-                intersect: false,
-            },
-            plugins: {
-                legend: { position: 'top' as const },
-                tooltip: {
-                    callbacks: {
-                        label: function (context: TooltipItem<'line'>) {
-                            let label = context.dataset.label || '';
-                            if (label) label += ': ';
-                            if (context.parsed.y !== null) {
-                                label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
-                            }
-                            return label;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: {
-                        callback: function (value: string | number) {
-                            const numValue = typeof value === 'string' ? parseFloat(value) : value;
-                            if (Math.abs(numValue) >= 10000000) return (numValue / 10000000).toFixed(1) + 'Cr';
-                            if (Math.abs(numValue) >= 100000) return (numValue / 100000).toFixed(1) + 'L';
-                            if (Math.abs(numValue) >= 1000) return (numValue / 1000).toFixed(1) + 'k';
-                            return value;
-                        }
-                    }
-                }
-            }
-        };
-
-        return <Line options={options} data={chartDataObj} />;
-    };
-
-    // --- Determine which data source to use based on mode ---
-    let currentData: BenchmarkComparisonResponse = data;
-    let benchmarkLabel = benchmarkTicker === '^NSEI' ? 'Nifty 50' : 'Sensex';
-    let noDataForCategory = false;
-
-    if (benchmarkMode === 'hybrid') {
-        benchmarkLabel = hybridPreset === 'CRISIL_HYBRID_35_65' ? 'CRISIL Hybrid 35+65' : 'Balanced 50/50';
-    }
-
-    if (benchmarkMode === 'category' && data.category_data) {
-        if (categoryTab === 'equity' && data.category_data.equity) {
-            currentData = { ...data.category_data.equity, risk_free_xirr: data.risk_free_xirr };
-            benchmarkLabel = data.category_data.equity.benchmark_label;
-        } else if (categoryTab === 'debt' && data.category_data.debt) {
-            currentData = { ...data.category_data.debt, risk_free_xirr: data.risk_free_xirr };
-            benchmarkLabel = data.category_data.debt.benchmark_label;
-        } else {
-            noDataForCategory = true;
-        }
-    }
-
-    const xirrDiff = currentData.portfolio_xirr - currentData.benchmark_xirr;
-    const isAnnualized = (currentData.days_duration || 0) < 365;
-    const annualizedLabel = isAnnualized ? " (Annualized)" : "";
+    if (isLoading) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
+    if (error) return <div className="text-red-500 p-4 bg-red-50 rounded-lg">Failed to load benchmark comparison.</div>;
+    if (!data) return null;
 
     const handleSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const val = e.target.value;
@@ -264,14 +260,14 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                     <div className={`grid grid-cols-1 ${showRiskFree ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 mb-8`}>
                         <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
                             <p className="text-sm font-medium text-gray-500 text-center">Portfolio XIRR{annualizedLabel}</p>
-                            <div className={`text-3xl font-bold mt-2 text-center ${currentData.portfolio_xirr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatPercent(currentData.portfolio_xirr)}
+                            <div className={`text-3xl font-bold mt-2 text-center ${(currentData?.portfolio_xirr || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatPercent(currentData?.portfolio_xirr || 0)}
                             </div>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
                             <p className="text-sm font-medium text-gray-500 text-center break-words leading-tight">{benchmarkLabel} XIRR{annualizedLabel}</p>
-                            <div className={`text-3xl font-bold mt-2 text-center ${currentData.benchmark_xirr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatPercent(currentData.benchmark_xirr)}
+                            <div className={`text-3xl font-bold mt-2 text-center ${(currentData?.benchmark_xirr || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatPercent(currentData?.benchmark_xirr || 0)}
                             </div>
                         </div>
                         {showRiskFree && (
@@ -292,7 +288,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                     </div>
 
                     <div className="h-96 w-full">
-                        {renderChart(currentData.chart_data, benchmarkLabel)}
+                        <Line options={CHART_OPTIONS} data={chartDataObj} />
                     </div>
                 </>
             )}
