@@ -39,8 +39,19 @@ const hasUserVisibleDetails = (details: Record<string, unknown> | null | undefin
     return Object.keys(details).some(k => !internalKeys.has(k));
 };
 
-const isSyntheticFd = (tx: Transaction): boolean =>
-    !!(tx.details as Record<string, unknown> | null)?._fd_id;
+const isEditable = (tx: Transaction): boolean => {
+    if (tx.details && (tx.details as Record<string, unknown>)._fd_id) return false;
+    if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') return false;
+    return true;
+};
+
+const isDeletable = (tx: Transaction): boolean => {
+    if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') return false;
+    if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
+        return tx.transaction_type === 'FD_MATURITY';
+    }
+    return true;
+};
 
 const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEdit, onDelete, onViewDetails }) => {
     const formatCurrency = usePrivacySensitiveCurrency();
@@ -87,7 +98,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEd
 
             <div className="pt-3 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
                 <div className="flex items-center gap-1">
-                    {!isSyntheticFd(tx) && (
+                    {isEditable(tx) && (
                         <button
                             onClick={() => onEdit(tx)}
                             className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -96,7 +107,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEd
                             <PencilIcon className="h-5 w-5" />
                         </button>
                     )}
-                    {(!isSyntheticFd(tx) || tx.transaction_type === 'FD_MATURITY') && (
+                    {isDeletable(tx) && (
                         <button
                             onClick={() => onDelete(tx)}
                             className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"

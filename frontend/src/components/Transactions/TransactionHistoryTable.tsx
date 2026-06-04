@@ -24,6 +24,40 @@ const getTypeColor = (type: string) => {
     }
 };
 
+const isEditable = (tx: Transaction): boolean => {
+  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
+    return false;
+  }
+  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
+    return false;
+  }
+  return true;
+};
+
+const isDeletable = (tx: Transaction): boolean => {
+  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
+    return false;
+  }
+  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
+    return tx.transaction_type === 'FD_MATURITY';
+  }
+  return true;
+};
+
+const getDisabledTitle = (tx: Transaction, action: 'edit' | 'delete'): string | undefined => {
+  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
+    return `PPF interest credit transactions are system-generated and cannot be ${action === 'edit' ? 'modified' : 'deleted'}.`;
+  }
+  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
+    if (action === 'edit') {
+      return 'Fixed Deposit transactions are system-generated and cannot be modified.';
+    } else if (tx.transaction_type !== 'FD_MATURITY') {
+      return 'Fixed Deposit transactions are system-generated and cannot be deleted.';
+    }
+  }
+  return undefined;
+};
+
 const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ transactions, onEdit, onDelete }) => {
   const formatCurrency = usePrivacySensitiveCurrency();
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -75,7 +109,28 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
                                     Number(tx.price_per_unit) * Number(tx.quantity) * (Number(tx.details?.fx_rate) || 1),
                                     'INR'
                                 )}</td>
-                                <td className="p-3 text-center"><div className="flex justify-center space-x-2"><button onClick={() => onEdit(tx)} className="btn btn-secondary btn-sm" aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Edit</button><button onClick={() => onDelete(tx)} className="btn btn-danger btn-sm" aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}>Delete</button></div></td>
+                                <td className="p-3 text-center">
+                                    <div className="flex justify-center space-x-2">
+                                        <button
+                                            onClick={() => onEdit(tx)}
+                                            className="btn btn-secondary btn-sm"
+                                            disabled={!isEditable(tx)}
+                                            title={getDisabledTitle(tx, 'edit')}
+                                            aria-label={`Edit ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => onDelete(tx)}
+                                            className="btn btn-danger btn-sm"
+                                            disabled={!isDeletable(tx)}
+                                            title={getDisabledTitle(tx, 'delete')}
+                                            aria-label={`Delete ${tx.transaction_type} transaction for ${tx.asset.ticker_symbol}`}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         ))}
                     </tbody>

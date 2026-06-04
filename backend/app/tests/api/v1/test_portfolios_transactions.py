@@ -294,3 +294,57 @@ def test_delete_transaction(client: TestClient, db: Session, get_auth_headers):
     assert response.json()["msg"] == "Transaction deleted successfully"
     db_transaction = crud.transaction.get(db, id=transaction_id)
     assert db_transaction is None
+
+
+def test_ppf_interest_credit_immutability(
+    client: TestClient, db: Session, get_auth_headers
+) -> None:
+    from app import schemas
+
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="PPF Portfolio")
+
+    # Create a PPF asset
+    asset_in = schemas.AssetCreate(
+        name="Test PPF Asset",
+        ticker_symbol="TEST_PPF",
+        asset_type="PPF",
+        currency="INR",
+        exchange="N/A",
+    )
+    asset = crud.asset.create(db=db, obj_in=asset_in)
+
+    # Create an INTEREST_CREDIT transaction
+    transaction = create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        quantity=5000,
+        price_per_unit=1.0,
+        transaction_type="INTEREST_CREDIT",
+    )
+    transaction_id = transaction.id
+
+    # 1. Verify updating the transaction returns 400
+    update_data = {"quantity": 6000.0}
+    response = client.put(
+        f"{settings.API_V1_STR}/transactions/{transaction_id}?portfolio_id={portfolio.id}",
+        headers=headers,
+        json=update_data,
+    )
+    assert response.status_code == 400
+    assert "cannot be modified" in response.json()["detail"]
+
+    # 2. Verify deleting the transaction returns 400
+    response = client.delete(
+        f"{settings.API_V1_STR}/transactions/{transaction_id}?portfolio_id={portfolio.id}",
+        headers=headers,
+    )
+    assert response.status_code == 400
+    assert "cannot be deleted" in response.json()["detail"]
+
+    # Verify transaction still exists in db
+    db_transaction = crud.transaction.get(db, id=transaction_id)
+    assert db_transaction is not None
+

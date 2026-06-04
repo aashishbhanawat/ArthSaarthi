@@ -10,6 +10,40 @@ interface TransactionListProps {
   onDelete: (transaction: Transaction) => void;
 }
 
+const isEditable = (tx: Transaction): boolean => {
+  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
+    return false;
+  }
+  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
+    return false;
+  }
+  return true;
+};
+
+const isDeletable = (tx: Transaction): boolean => {
+  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
+    return false;
+  }
+  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
+    return tx.transaction_type === 'FD_MATURITY';
+  }
+  return true;
+};
+
+const getDisabledTitle = (tx: Transaction, action: 'edit' | 'delete'): string | undefined => {
+  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
+    return `PPF interest credit transactions are system-generated and cannot be ${action === 'edit' ? 'modified' : 'deleted'}.`;
+  }
+  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
+    if (action === 'edit') {
+      return 'Fixed Deposit transactions are system-generated and cannot be modified.';
+    } else if (tx.transaction_type !== 'FD_MATURITY') {
+      return 'Fixed Deposit transactions are system-generated and cannot be deleted.';
+    }
+  }
+  return undefined;
+};
+
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit, onDelete }) => {
   const formatCurrency = usePrivacySensitiveCurrency();
 
@@ -76,8 +110,24 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
                 )}</td>
                 <td className="p-3 text-center">
                   <div className="flex justify-center space-x-2">
-                    <button onClick={() => onEdit(tx)} className="p-1 text-gray-500 hover:text-blue-600" aria-label={`Edit transaction for ${tx.asset.ticker_symbol}`}><PencilSquareIcon className="h-5 w-5" /></button>
-                    <button onClick={() => onDelete(tx)} className="p-1 text-gray-500 hover:text-red-600" aria-label={`Delete transaction for ${tx.asset.ticker_symbol}`}><TrashIcon className="h-5 w-5" /></button>
+                    <button
+                      onClick={() => onEdit(tx)}
+                      className="p-1 text-gray-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-500"
+                      disabled={!isEditable(tx)}
+                      title={getDisabledTitle(tx, 'edit')}
+                      aria-label={`Edit transaction for ${tx.asset.ticker_symbol}`}
+                    >
+                      <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(tx)}
+                      className="p-1 text-gray-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-500"
+                      disabled={!isDeletable(tx)}
+                      title={getDisabledTitle(tx, 'delete')}
+                      aria-label={`Delete transaction for ${tx.asset.ticker_symbol}`}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
                   </div>
                 </td>
               </tr>
