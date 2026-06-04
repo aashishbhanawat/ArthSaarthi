@@ -30,6 +30,7 @@ class AssetSeeder:
         self.alias_count = 0
         self.skipped_series_counts = collections.Counter()
         self._pending_commits = 0  # Track pending assets since last commit
+        self.nse_series_map = {}  # ISIN -> Series mapping from NSEScripMaster
 
         # Caches to prevent duplicates
         self.existing_isins: Set[str] = set()
@@ -45,6 +46,9 @@ class AssetSeeder:
         inspector = inspect(self.db.bind)
         if not inspector.has_table("assets"):
             return
+
+        # Auto-correct any previously misclassified assets (Issue #438)
+        self._fix_misclassified_bonds()
 
         assets = self.db.query(
             models.Asset.isin,
@@ -66,6 +70,116 @@ class AssetSeeder:
                 f"[DEBUG] Loaded {len(self.existing_isins)} ISINs, "
                 f"{len(self.existing_tickers)} Tickers."
             )
+
+    def _fix_misclassified_bonds(self):
+        """Auto-corrects previously misclassified BOND assets."""
+        try:
+            from sqlalchemy.orm import joinedload
+
+            # Query existing assets that are classified as BOND
+            bond_assets = (
+                self.db.query(models.Asset)
+                .options(joinedload(models.Asset.bond))
+                .filter(models.Asset.asset_type == "BOND")
+                .all()
+            )
+
+            months = [
+                "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+            ]
+            corrected_count = 0
+
+            for asset in bond_assets:
+                name = asset.name.upper()
+                ticker = asset.ticker_symbol.upper()
+
+                # Check if it matches any strong bond indicators under new rules
+                # 1. Government / Sovereign Bonds
+                is_gov = any(k in name for k in [
+                    "GSEC", "GOI", "SDL", "STRIP", "T-BILL", "TBILL",
+                    "TREASURY BILL"
+                ]) or "SGB" in ticker or "SOVEREIGN GOLD" in name
+
+                # 2. Corporate Bond Keywords
+                is_corp_kw = any(k in name for k in [
+                    "NCD", "DEBENTURE", "PERP", "ZEROCOUP", "SUB DEBT",
+                    "TIER I", "TIER II", "UPPER TIER", "INFRA BOND"
+                ])
+
+                # 3. Bond Structural Indicators
+                has_fv = bool(re.search(
+                    r"\bFV\s*\d+\s*(L|LAC|CR|K|00)\b", name
+                ))
+                has_complex_date = bool(re.search(
+                    r"\d{2}[A-Z]{2,3}\d{2}", name
+                ))
+                has_series = bool(re.search(
+                    r"\b(SR|SERIES|OP|OPT)\s*[-]?\s*[IVX\d]+\b", name
+                ))
+                is_tax_free = "TAX FREE" in name
+
+                # 4. Contextual Heuristics
+                is_finance = any(
+                    k in name for k in ["FINANCE", "FINCORP", "FIN"]
+                )
+                has_bond_ind = any(k in name for k in ["SR-", "SR ", "%"])
+                has_coupon_pattern = bool(re.search(
+                    r"\b\d{1,2}\.\d{1,2}\b", name
+                ))
+
+                # Old month match vs new month match
+                matched_old_month = any(m in name for m in months)
+                matched_new_month = bool(re.search(
+                    r"(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)"
+                    r"(\b|\d)",
+                    name
+                ))
+                has_year = bool(re.search(r"20\d{2}", name))
+
+                # Legitimate bond if matches any indicator
+                is_legit_bond = (
+                    is_gov or is_corp_kw or has_fv or has_complex_date or
+                    has_series or is_tax_free or
+                    (is_finance and (
+                        has_bond_ind or has_coupon_pattern
+                        or has_complex_date
+                    )) or has_year or matched_new_month
+                )
+
+                # False positive: matched month in the past but doesn't now
+                is_false_positive = (
+                    not is_legit_bond and matched_old_month
+                    and not matched_new_month
+                )
+
+                if is_false_positive:
+                    if self.debug:
+                        print(
+                            f"[DEBUG] Correcting misclassified asset: "
+                            f"{asset.ticker_symbol} ({asset.name}) "
+                            f"from BOND to STOCK."
+                        )
+                    asset.asset_type = "STOCK"
+
+                    # Delete linked bond record if it exists
+                    associated_bond = asset.bond
+                    if associated_bond:
+                        self.db.delete(associated_bond)
+
+                    corrected_count += 1
+
+            if corrected_count > 0:
+                self.db.commit()
+                if self.debug:
+                    print(
+                        f"[DEBUG] Corrected {corrected_count} "
+                        f"misclassified assets."
+                    )
+        except Exception as e:
+            self.db.rollback()
+            if self.debug:
+                print(f"[DEBUG] Error correcting misclassified assets: {e}")
 
     def _parse_date(self, value: Any) -> Optional[date]:
         """Parses a date from various formats."""
@@ -580,7 +694,15 @@ class AssetSeeder:
                     f for f in z.namelist()
                     if f.endswith(".txt") or f.endswith(".csv")
                 ]
+
+                # Prioritize NSEScripMaster.txt to build the ISIN -> Series
+                # mapping first. Only process standard scrip master files,
+                # skipping derivatives/F&O.
+                target_files = ["NSEScripMaster.txt", "BSEScripMaster.txt"]
+                txt_files = [f for f in target_files if f in txt_files]
+
                 for filename in txt_files:
+                    exchange = "NSE" if "NSE" in filename else "BSE"
                     with z.open(filename) as f:
                         # Assuming CSV/Txt format. ICICI usually comma or pipe?
                         # Code in cli.py used csv.DictReader, implying comma.
@@ -592,20 +714,38 @@ class AssetSeeder:
                         # NSEScripMaster uses ", " (comma-space)
                         # delimiters, causing leading spaces in
                         # column names. Strip them.
-                        df.columns = df.columns.str.strip()
-                        # Strip whitespace from string values
+                        df.columns = df.columns.str.strip().str.replace('"', '')
+                        # Strip whitespace and double quotes from string values
                         str_cols = df.select_dtypes(
                             include='object'
                         ).columns
                         df[str_cols] = df[str_cols].apply(
-                            lambda s: s.str.strip()
+                            lambda s: s.str.strip().str.replace('"', '')
                         )
+
+                        # If processing NSE master, build the ISIN -> Series map first
+                        if (
+                            filename == "NSEScripMaster.txt"
+                            and "ISINCode" in df.columns
+                            and "Series" in df.columns
+                        ):
+                            clean_df = df.dropna(subset=["ISINCode", "Series"])
+                            self.nse_series_map.update(
+                                zip(
+                                    clean_df["ISINCode"].astype(str).str.strip(),
+                                    clean_df["Series"]
+                                    .astype(str)
+                                    .str.strip()
+                                    .str.upper(),
+                                )
+                            )
+
                         for _, row in df.iterrows():
-                             self._process_fallback_row(row)
+                             self._process_fallback_row(row, exchange)
         except Exception as e:
             print(f"Error processing Fallback Zip: {e}")
 
-    def _process_fallback_row(self, row: pd.Series):
+    def _process_fallback_row(self, row: pd.Series, exchange: Optional[str] = None):
         # NSE: ExchangeCode, CompanyName, ISINCode, Series
         # BSE: ScripID, ScripName, ISINCode, Series
 
@@ -620,33 +760,62 @@ class AssetSeeder:
         series = row.get('Series', '')
 
         ticker = None
-        exchange = "BSE"  # Default
+        if not exchange:
+            # Fallback to auto-detection (for tests and backwards compatibility)
+            if nse_code and not pd.isna(nse_code):
+                ticker = str(nse_code).strip()
+                exchange = "NSE"
+            elif bse_code and not pd.isna(bse_code):
+                ticker = str(bse_code).strip()
+                exchange = "BSE"
+        else:
+            if exchange == "NSE":
+                ticker = row.get('ExchangeCode') or row.get('Symbol')
+            else:
+                ticker = row.get('ScripID') or row.get('ExchangeCode')
 
-        # Determine primary exchange and ticker
-        if nse_code and not pd.isna(nse_code):
-            ticker = str(nse_code).strip()
-            exchange = "NSE"
-        elif bse_code and not pd.isna(bse_code):
-            ticker = str(bse_code).strip()
-            exchange = "BSE"
-
-        if not ticker:
+        if not ticker or pd.isna(ticker):
             return
 
-        name = str(name).strip() if name else ""
+        ticker = str(ticker).strip()
+        name = str(name).strip() if name and not pd.isna(name) else ""
         isin = (
             str(isin).strip()
             if isin and not pd.isna(isin)
             else None
         )
-        series = str(series).strip().upper()
+        series = str(series).strip().upper() if series and not pd.isna(series) else ''
 
-        # Apply Heuristic Classification
-        asset_type, bond_type = (
-            self._classify_asset_heuristic(
-                ticker, name, series
+        # Apply Classification Logic using NSEScripMaster mapping lookup
+        lookup_series = series
+        if isin and isin in self.nse_series_map:
+            lookup_series = self.nse_series_map[isin]
+
+        asset_type = None
+        bond_type = None
+
+        if lookup_series in ["EQ", "BE", "SM", "ST"]:
+            asset_type = "STOCK"
+            bond_type = None
+        elif series == "C":
+            asset_type = "STOCK"
+            bond_type = None
+        elif lookup_series == "GB":
+            asset_type = "BOND"
+            bond_type = BondType.SGB
+        elif lookup_series == "GS":
+            asset_type = "BOND"
+            bond_type = BondType.GOVERNMENT
+        elif lookup_series.startswith(('N', 'Y', 'Z')):
+            asset_type = "BOND"
+            bond_type = BondType.CORPORATE
+        else:
+            # Apply Heuristic Classification
+            asset_type, bond_type = (
+                self._classify_asset_heuristic(
+                    ticker, name, lookup_series
+                )
             )
-        )
 
         if not asset_type:
             asset_type = "STOCK"
@@ -758,11 +927,13 @@ class AssetSeeder:
             return "BOND", BondType.CORPORATE
 
         # Rule B: General Corporate Bonds
-        months = [
-            "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-            "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
-        ]
-        has_month = any(m in name for m in months)
+        # Use regex to only match months as standalone words or adjacent to
+        # digits (e.g. 25JAN26 or JAN 26) to prevent matching substrings
+        # inside words like INDRAPRASHTHA, AMARA, KUMAR.
+        has_month = bool(re.search(
+            r"(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\b|\d)",
+            name
+        ))
         has_year = bool(re.search(r"20\d{2}", name)) # 20xx
 
         stock_exclusions = [
