@@ -1,24 +1,30 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-05-07
+**Last Updated:** 2026-06-04
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Reconciled missing Android enablement (PR #379) changes. Resolved E2E test regressions and TypeScript compilation errors. Restored missing Capacitor Android configuration files (`variables.gradle`) and Gradle hooks, fixing the `npx cap update` failure and restoring the mobile build pipeline.
+**Latest Achievement:** Resolved regular stock misclassification as bonds (Issue #438) by implementing an in-memory NSEScripMaster ISIN-to-Series mapping, data sanitization (whitespace/quote stripping), and refined regex month heuristics.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **310/310 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **304/310 Passing** (6 expected skips for admin-only APIs)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **326/326 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **323/326 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **58/58 Passing** (Resolved responsive layout conflicts)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ### Recent Stabilization & Refinement Efforts
- 
+
+*   **Asset Seeding & Classification Bug (2026-06-04):**
+    - **Asset Misclassification Fix:** Resolved Git Issue #438 where regular stocks containing month-like substrings in their names (e.g., "Indraprastha Gas" containing "APR", "Amara Raja" containing "MAR") were incorrectly classified as `BOND`.
+    - **In-Memory NSEScripMaster Mapping:** Implemented an in-memory `ISIN -> Series` lookup map populated from `NSEScripMaster.txt` first. This ensures BSE and NSE assets are classified based on the authoritative NSE Series column (e.g., `EQ`, `BE`, `SM`, `ST` mapped to `STOCK`), irrespective of the source exchange.
+    - **Refined Heuristics:** Replaced aggressive substring matching with a precise word-boundary regex (`(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\b|\d)`) to isolate month names.
+    - **Verification:** Authored 5 new regression tests verifying stock/bond classification and cross-exchange ISIN mapping. Verified all 323 tests pass cleanly.
+
 *   **Mobile UX Optimization & Backend Stabilization (2026-05-02):**
     - **Capital Gains Mobile Refactor:** Transitioned the `CapitalGainsPage.tsx` from horizontally scrolling tables to a responsive, card-based dual-layout. Implemented custom cards for Advance Tax, Realized Gains, Schedule 112A, Foreign Gains, and Dividends.
     - **Breakpoint Standardization:** Synchronized responsive breakpoints to `lg` (1024px) across the application to ensure consistent UI on tablets and large-screen mobile devices.

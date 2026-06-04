@@ -26,6 +26,27 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-06-04-01
+**Title:** Equity Stocks Misclassified as Bonds in Asset Seeding
+**Module:** Core Backend (Asset Seeding)
+**Reported By:** Antigravity
+**Date Reported:** 2026-06-04
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** During ICICI Security Master seeding, equity stocks with names containing month abbreviation substrings (such as "Indraprastha Gas" containing "APR", "Amara Raja" containing "MAR", "Kumar Wire" containing "MAR") were incorrectly classified as `BOND` by the seeder's fallback heuristic.
+**Steps to Reproduce:**
+1. Run the asset seeder with fallback master zip data containing equities like Indraprastha Gas or Amara Raja.
+2. The seeder processes fallback rows, and in `_classify_asset_heuristic`, matches month substrings.
+3. Observe these assets incorrectly created with `asset_type="BOND"`.
+**Expected Behavior:** Equities should be correctly resolved as `STOCK` based on their series mapping, or not match month abbreviations unless they represent actual standalone words or are adjacent to digits (as in SGB or Government Bond symbols).
+**Actual Behavior:** Equities with month-like names are classified as corporate bonds.
+**Resolution:**
+1. Implemented NSEScripMaster.txt ISIN-to-Series mapping to prioritize authoritative series codes (e.g., `EQ`, `BE`, `SM`, `ST` mapped to `STOCK`) before running fallback heuristics.
+2. Refined the month matching regex to `r"(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\b|\d)"` to only match months as standalone words or adjacent to digits, preventing false positives within company names.
+3. Cleaned CSV/TXT headers and row values of extraneous whitespace and double quotes.
+
+---
+
 **Bug ID:** 2026-05-02-01
 **Title:** AttributeError: 'float' object has no attribute 'upper' in Import Preview
 **Module:** Import Pipeline (Backend)

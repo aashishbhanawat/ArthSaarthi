@@ -1,3 +1,21 @@
+## 2026-06-04: Resolve Asset Seeding Bond Misclassification (Issue #438)
+
+**Task:** Fix incorrect classification of regular equities (e.g. Indraprastha Gas, Amara Raja) as bonds by using an in-memory NSEScripMaster ISIN-to-Series mapping and a refined month regex heuristic.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+Identified and resolved the root cause of the asset seeder misclassifying equity stocks containing month-like substrings as corporate bonds.
+
+1. **In-Memory Series Mapping:** Updated `AssetSeeder` to process `NSEScripMaster.txt` before `BSEScripMaster.txt` to build a dictionary mapping ISINs to their authoritative NSE series codes.
+2. **Authoritative Classification:** Refactored `_process_fallback_row` to check the mapped NSE series (e.g. `EQ`, `BE`, `SM`, `ST` -> `STOCK`) before fallback heuristics.
+3. **Refined Regex Heuristic:** Updated `_classify_asset_heuristic` to only match month abbreviation patterns if they are preceded/followed by word boundaries or digits, avoiding false positives in stock names like `AMARA` (matching `MAR`) or `INDRAPRASHTHA` (matching `APR`).
+4. **Verification:** Added a comprehensive regression test suite `test_asset_classification.py` and ran all backend tests. All 323 tests passed.
+
+---
+
 ## 2026-05-08: Restore Capacitor Android Configuration
 
 **Task:** Restore missing `variables.gradle` and Capacitor Gradle hooks in Kotlin DSL files to fix `npx cap update` failure.
