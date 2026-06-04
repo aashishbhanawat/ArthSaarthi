@@ -12,7 +12,8 @@ Identified and resolved the root cause of the asset seeder misclassifying equity
 1. **In-Memory Series Mapping:** Updated `AssetSeeder` to process `NSEScripMaster.txt` before `BSEScripMaster.txt` to build a dictionary mapping ISINs to their authoritative NSE series codes.
 2. **Authoritative Classification:** Refactored `_process_fallback_row` to check the mapped NSE series (e.g. `EQ`, `BE`, `SM`, `ST` -> `STOCK`) before fallback heuristics.
 3. **Refined Regex Heuristic:** Updated `_classify_asset_heuristic` to only match month abbreviation patterns if they are preceded/followed by word boundaries or digits, avoiding false positives in stock names like `AMARA` (matching `MAR`) or `INDRAPRASHTHA` (matching `APR`).
-4. **Verification:** Added a comprehensive regression test suite `test_asset_classification.py` and ran all backend tests. All 323 tests passed.
+4. **Self-Healing Database Correction:** Added an automatic `_fix_misclassified_bonds` step when the asset seeder loads existing assets. This scans the database for assets that were classified as `BOND` under old rules but are false positives under the new rules, changing their `asset_type` to `STOCK` and deleting the associated child `Bond` records. Also created a standalone correction script `backend/app/scripts/fix_misclassified_bonds.py` for manual/one-off operations.
+5. **Verification:** Added comprehensive unit and migration regression tests to `test_asset_classification.py`. All tests passed cleanly.
 
 ---
 

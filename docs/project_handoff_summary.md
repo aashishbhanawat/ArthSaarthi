@@ -23,7 +23,8 @@
     - **Asset Misclassification Fix:** Resolved Git Issue #438 where regular stocks containing month-like substrings in their names (e.g., "Indraprastha Gas" containing "APR", "Amara Raja" containing "MAR") were incorrectly classified as `BOND`.
     - **In-Memory NSEScripMaster Mapping:** Implemented an in-memory `ISIN -> Series` lookup map populated from `NSEScripMaster.txt` first. This ensures BSE and NSE assets are classified based on the authoritative NSE Series column (e.g., `EQ`, `BE`, `SM`, `ST` mapped to `STOCK`), irrespective of the source exchange.
     - **Refined Heuristics:** Replaced aggressive substring matching with a precise word-boundary regex (`(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\b|\d)`) to isolate month names.
-    - **Verification:** Authored 5 new regression tests verifying stock/bond classification and cross-exchange ISIN mapping. Verified all 323 tests pass cleanly.
+    - **Self-Healing Database Correction:** Embedded an auto-correction step inside the asset seeder startup that scans for and automatically corrects previously misclassified `BOND` assets to `STOCK`, deleting the orphaned child `Bond` records. Also created a standalone python script `fix_misclassified_bonds.py` to fix existing data on-demand.
+    - **Verification:** Authored 6 regression tests verifying classification, cross-exchange mapping, and automatic database correction. Verified all 326 tests pass cleanly.
 
 *   **Mobile UX Optimization & Backend Stabilization (2026-05-02):**
     - **Capital Gains Mobile Refactor:** Transitioned the `CapitalGainsPage.tsx` from horizontally scrolling tables to a responsive, card-based dual-layout. Implemented custom cards for Advance Tax, Realized Gains, Schedule 112A, Foreign Gains, and Dividends.
