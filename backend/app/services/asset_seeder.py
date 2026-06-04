@@ -47,6 +47,9 @@ class AssetSeeder:
         if not inspector.has_table("assets"):
             return
 
+        # Auto-correct any previously misclassified assets (Issue #438)
+        self._fix_misclassified_bonds()
+
         assets = self.db.query(
             models.Asset.isin,
             models.Asset.ticker_symbol,
@@ -67,6 +70,115 @@ class AssetSeeder:
                 f"[DEBUG] Loaded {len(self.existing_isins)} ISINs, "
                 f"{len(self.existing_tickers)} Tickers."
             )
+
+    def _fix_misclassified_bonds(self):
+        """Auto-corrects previously misclassified BOND assets."""
+        try:
+            # Query existing assets that are classified as BOND
+            bond_assets = self.db.query(models.Asset).filter(
+                models.Asset.asset_type == "BOND"
+            ).all()
+
+            months = [
+                "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+            ]
+            corrected_count = 0
+
+            for asset in bond_assets:
+                name = asset.name.upper()
+                ticker = asset.ticker_symbol.upper()
+
+                # Check if it matches any strong bond indicators under new rules
+                # 1. Government / Sovereign Bonds
+                is_gov = any(k in name for k in [
+                    "GSEC", "GOI", "SDL", "STRIP", "T-BILL", "TBILL",
+                    "TREASURY BILL"
+                ]) or "SGB" in ticker or "SOVEREIGN GOLD" in name
+
+                # 2. Corporate Bond Keywords
+                is_corp_kw = any(k in name for k in [
+                    "NCD", "DEBENTURE", "PERP", "ZEROCOUP", "SUB DEBT",
+                    "TIER I", "TIER II", "UPPER TIER", "INFRA BOND"
+                ])
+
+                # 3. Bond Structural Indicators
+                has_fv = bool(re.search(
+                    r"\bFV\s*\d+\s*(L|LAC|CR|K|00)\b", name
+                ))
+                has_complex_date = bool(re.search(
+                    r"\d{2}[A-Z]{2,3}\d{2}", name
+                ))
+                has_series = bool(re.search(
+                    r"\b(SR|SERIES|OP|OPT)\s*[-]?\s*[IVX\d]+\b", name
+                ))
+                is_tax_free = "TAX FREE" in name
+
+                # 4. Contextual Heuristics
+                is_finance = any(
+                    k in name for k in ["FINANCE", "FINCORP", "FIN"]
+                )
+                has_bond_ind = any(k in name for k in ["SR-", "SR ", "%"])
+                has_coupon_pattern = bool(re.search(
+                    r"\b\d{1,2}\.\d{1,2}\b", name
+                ))
+
+                # Old month match vs new month match
+                matched_old_month = any(m in name for m in months)
+                matched_new_month = bool(re.search(
+                    r"(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)"
+                    r"(\b|\d)",
+                    name
+                ))
+                has_year = bool(re.search(r"20\d{2}", name))
+
+                # Legitimate bond if matches any indicator
+                is_legit_bond = (
+                    is_gov or is_corp_kw or has_fv or has_complex_date or
+                    has_series or is_tax_free or
+                    (is_finance and (
+                        has_bond_ind or has_coupon_pattern
+                        or has_complex_date
+                    )) or has_year or matched_new_month
+                )
+
+                # False positive: matched month in the past but doesn't now
+                is_false_positive = (
+                    not is_legit_bond and matched_old_month
+                    and not matched_new_month
+                )
+
+                if is_false_positive:
+                    if self.debug:
+                        print(
+                            f"[DEBUG] Correcting misclassified asset: "
+                            f"{asset.ticker_symbol} ({asset.name}) "
+                            f"from BOND to STOCK."
+                        )
+                    asset.asset_type = "STOCK"
+
+                    # Delete linked bond record if it exists
+                    associated_bond = (
+                        self.db.query(models.Bond)
+                        .filter(models.Bond.asset_id == asset.id)
+                        .first()
+                    )
+                    if associated_bond:
+                        self.db.delete(associated_bond)
+
+                    corrected_count += 1
+
+            if corrected_count > 0:
+                self.db.commit()
+                if self.debug:
+                    print(
+                        f"[DEBUG] Corrected {corrected_count} "
+                        f"misclassified assets."
+                    )
+        except Exception as e:
+            self.db.rollback()
+            if self.debug:
+                print(f"[DEBUG] Error correcting misclassified assets: {e}")
 
     def _parse_date(self, value: Any) -> Optional[date]:
         """Parses a date from various formats."""

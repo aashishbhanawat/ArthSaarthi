@@ -1,8 +1,11 @@
+from datetime import date
+
 import pandas as pd
 import pytest
 from sqlalchemy.orm import Session
 
 from app.models.asset import Asset
+from app.models.bond import Bond
 from app.schemas.enums import BondType
 from app.services.asset_seeder import AssetSeeder
 
@@ -187,3 +190,82 @@ def test_refined_month_heuristic(seeder: AssetSeeder):
         asset_type, bond_type = seeder._classify_asset_heuristic(ticker, name, series)
         assert asset_type == "BOND"
         assert bond_type == BondType.CORPORATE or bond_type == BondType.SGB
+
+
+def test_auto_correction_of_misclassified_bonds(db: Session):
+    """Verify that previously misclassified BOND assets (e.g. IGL with
+    month-like substring) are automatically corrected to STOCK and their
+    linked Bond records are deleted.
+    """
+    # 1. Create a misclassified asset in the database manually
+    asset_igl = Asset(
+        ticker_symbol="IGL_TEST",
+        name="INDRAPRASHTHA GAS LTD",
+        asset_type="BOND",
+        currency="INR",
+        exchange="BSE",
+        isin="INE203G01027_TEST"
+    )
+    db.add(asset_igl)
+    db.commit()
+
+    # 2. Create the associated Bond record
+    bond_igl = Bond(
+        asset_id=asset_igl.id,
+        bond_type=BondType.CORPORATE,
+        isin="INE203G01027_TEST",
+        maturity_date=date(2030, 1, 1)
+    )
+    db.add(bond_igl)
+    db.commit()
+
+    # 3. Create a legitimate bond to verify it's NOT touched
+    asset_sgb = Asset(
+        ticker_symbol="SGB_TEST",
+        name="SGB 2.5% 25JAN26",
+        asset_type="BOND",
+        currency="INR",
+        exchange="BSE",
+        isin="IN0020200012_TEST"
+    )
+    db.add(asset_sgb)
+    db.commit()
+
+    bond_sgb = Bond(
+        asset_id=asset_sgb.id,
+        bond_type=BondType.SGB,
+        isin="IN0020200012_TEST",
+        maturity_date=date(2026, 1, 25)
+    )
+    db.add(bond_sgb)
+    db.commit()
+
+    # 4. Initialize AssetSeeder, which calls _load_existing_assets
+    # and _fix_misclassified_bonds
+    AssetSeeder(db=db, debug=True)
+
+    # 5. Assertions
+    # IGL should be corrected to STOCK
+    db.refresh(asset_igl)
+    assert asset_igl.asset_type == "STOCK"
+
+    # Linked Bond for IGL should be deleted
+    associated_bond_igl = (
+        db.query(Bond).filter_by(asset_id=asset_igl.id).first()
+    )
+    assert associated_bond_igl is None
+
+    # SGB should remain a BOND
+    db.refresh(asset_sgb)
+    assert asset_sgb.asset_type == "BOND"
+    associated_bond_sgb = (
+        db.query(Bond).filter_by(asset_id=asset_sgb.id).first()
+    )
+    assert associated_bond_sgb is not None
+
+    # Cleanup test data
+    db.delete(associated_bond_sgb)
+    db.delete(asset_sgb)
+    db.delete(asset_igl)
+    db.commit()
+
