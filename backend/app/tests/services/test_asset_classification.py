@@ -242,30 +242,36 @@ def test_auto_correction_of_misclassified_bonds(db: Session):
 
     # 4. Initialize AssetSeeder, which calls _load_existing_assets
     # and _fix_misclassified_bonds
-    AssetSeeder(db=db, debug=True)
+    try:
+        AssetSeeder(db=db, debug=True)
 
-    # 5. Assertions
-    # IGL should be corrected to STOCK
-    db.refresh(asset_igl)
-    assert asset_igl.asset_type == "STOCK"
+        # 5. Assertions
+        # IGL should be corrected to STOCK
+        db.refresh(asset_igl)
+        assert asset_igl.asset_type == "STOCK"
 
-    # Linked Bond for IGL should be deleted
-    associated_bond_igl = (
-        db.query(Bond).filter_by(asset_id=asset_igl.id).first()
-    )
-    assert associated_bond_igl is None
+        # Linked Bond for IGL should be deleted
+        associated_bond_igl = (
+            db.query(Bond.id).filter_by(asset_id=asset_igl.id).first()
+        )
+        assert associated_bond_igl is None
 
-    # SGB should remain a BOND
-    db.refresh(asset_sgb)
-    assert asset_sgb.asset_type == "BOND"
-    associated_bond_sgb = (
-        db.query(Bond).filter_by(asset_id=asset_sgb.id).first()
-    )
-    assert associated_bond_sgb is not None
-
-    # Cleanup test data
-    db.delete(associated_bond_sgb)
-    db.delete(asset_sgb)
-    db.delete(asset_igl)
-    db.commit()
+        # SGB should remain a BOND
+        db.refresh(asset_sgb)
+        assert asset_sgb.asset_type == "BOND"
+        associated_bond_sgb = (
+            db.query(Bond.id).filter_by(asset_id=asset_sgb.id).first()
+        )
+        assert associated_bond_sgb is not None
+    finally:
+        # Cleanup test data safely
+        for b in db.query(Bond).filter(
+            Bond.isin.in_(["INE203G01027_TEST", "IN0020200012_TEST"])
+        ).all():
+            db.delete(b)
+        for a in db.query(Asset).filter(
+            Asset.isin.in_(["INE203G01027_TEST", "IN0020200012_TEST"])
+        ).all():
+            db.delete(a)
+        db.commit()
 

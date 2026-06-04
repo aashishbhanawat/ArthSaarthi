@@ -7,7 +7,6 @@ sys.path.insert(0, "/app")
 
 from app.db.session import SessionLocal
 from app.models.asset import Asset
-from app.models.bond import Bond
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,9 +15,11 @@ logger = logging.getLogger(__name__)
 def fix_misclassified_bonds():
     db = SessionLocal()
     try:
+        from sqlalchemy.orm import joinedload
         # Find all assets currently classified as BOND
         bond_assets = (
             db.query(Asset)
+            .options(joinedload(Asset.bond))
             .filter(Asset.asset_type == "BOND")
             .all()
         )
@@ -103,11 +104,7 @@ def fix_misclassified_bonds():
                 asset.asset_type = "STOCK"
 
                 # Delete associated bond record if exists
-                associated_bond = (
-                    db.query(Bond)
-                    .filter(Bond.asset_id == asset.id)
-                    .first()
-                )
+                associated_bond = asset.bond
                 if associated_bond:
                     logger.info(
                         f"  Deleting linked Bond record with ID "

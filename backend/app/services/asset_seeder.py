@@ -74,10 +74,15 @@ class AssetSeeder:
     def _fix_misclassified_bonds(self):
         """Auto-corrects previously misclassified BOND assets."""
         try:
+            from sqlalchemy.orm import joinedload
+
             # Query existing assets that are classified as BOND
-            bond_assets = self.db.query(models.Asset).filter(
-                models.Asset.asset_type == "BOND"
-            ).all()
+            bond_assets = (
+                self.db.query(models.Asset)
+                .options(joinedload(models.Asset.bond))
+                .filter(models.Asset.asset_type == "BOND")
+                .all()
+            )
 
             months = [
                 "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -158,11 +163,7 @@ class AssetSeeder:
                     asset.asset_type = "STOCK"
 
                     # Delete linked bond record if it exists
-                    associated_bond = (
-                        self.db.query(models.Bond)
-                        .filter(models.Bond.asset_id == asset.id)
-                        .first()
-                    )
+                    associated_bond = asset.bond
                     if associated_bond:
                         self.db.delete(associated_bond)
 
@@ -723,18 +724,21 @@ class AssetSeeder:
                         )
 
                         # If processing NSE master, build the ISIN -> Series map first
-                        if filename == "NSEScripMaster.txt":
-                            for _, row in df.iterrows():
-                                isin = row.get('ISINCode')
-                                series = row.get('Series')
-                                has_val = (
-                                    isin and not pd.isna(isin)
-                                    and series and not pd.isna(series)
+                        if (
+                            filename == "NSEScripMaster.txt"
+                            and "ISINCode" in df.columns
+                            and "Series" in df.columns
+                        ):
+                            clean_df = df.dropna(subset=["ISINCode", "Series"])
+                            self.nse_series_map.update(
+                                zip(
+                                    clean_df["ISINCode"].astype(str).str.strip(),
+                                    clean_df["Series"]
+                                    .astype(str)
+                                    .str.strip()
+                                    .str.upper(),
                                 )
-                                if has_val:
-                                    clean_isin = str(isin).strip()
-                                    clean_series = str(series).strip().upper()
-                                    self.nse_series_map[clean_isin] = clean_series
+                            )
 
                         for _, row in df.iterrows():
                              self._process_fallback_row(row, exchange)
