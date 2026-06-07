@@ -106,7 +106,7 @@ protobuf==6.33.5
     # via yfinance
 psycopg2-binary==2.9.10
     # via -r backend/requirements.in
-pyarrow==21.0.0
+pyarrow==23.0.1
     # via -r backend/requirements.in
 pdfplumber==0.11.4
     # via -r backend/requirements.in
