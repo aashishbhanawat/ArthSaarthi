@@ -1,3 +1,27 @@
+## 2026-06-04: Securing PPF Interest Transactions (Issue #440)
+
+**Task:** Prevent unauthorized editing or deletion of system-generated PPF interest credit transactions by enforcing read-only status in the backend and disabling action buttons in the frontend UI.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Successfully implemented restrictions to prevent updating or deleting system-generated PPF interest credit transactions, securing data integrity.
+
+1. **Backend Protection:** Updated `backend/app/api/v1/endpoints/transactions.py` to intercept `PUT` and `DELETE` requests for transactions that belong to a `PPF` asset and are of type `INTEREST_CREDIT`, returning a `400 Bad Request` HTTP error.
+2. **Backend Integration Tests:** Appended a new integration test `test_ppf_interest_credit_immutability` to `backend/app/tests/api/v1/test_portfolios_transactions.py` verifying that unauthorized modification and deletion requests are rejected with a 400 error.
+3. **Frontend UI Restrictions:**
+   - **TransactionHistoryTable.tsx:** Disabled "Edit" and "Delete" buttons in the desktop view for PPF interest credit rows, adding explanatory tooltip titles.
+   - **TransactionCard.tsx:** Hid "Edit" and "Delete" buttons entirely in the mobile view cards for interest credit rows.
+   - **TransactionList.tsx:** Disabled "Edit" and "Delete" icon buttons in the portfolio transaction list table for interest credit rows with a tooltip explanation.
+4. **PR Review Enhancements (2026-06-07):**
+   - **Defensive Backend Checking:** Added defensive checks in `update_transaction` and `delete_transaction` to ensure `transaction.asset` is not `None` before checking `asset_type`, preventing potential `AttributeError` crashes.
+   - **Frontend DRY Extraction:** Extracted identical transaction helper functions (`isEditable`, `isDeletable`, `getDisabledTitle`) into a shared utility file `frontend/src/utils/transaction.ts` and imported them in `TransactionHistoryTable.tsx`, `TransactionCard.tsx`, and `TransactionList.tsx`.
+5. **Verification:** Ran backend pytest suite (SQLite mode) and frontend Jest unit tests (188/188 passing).
+
+---
+
 ## 2026-06-04: Resolve Asset Seeding Bond Misclassification (Issue #438)
 
 **Task:** Fix incorrect classification of regular equities (e.g. Indraprastha Gas, Amara Raja) as bonds by using an in-memory NSEScripMaster ISIN-to-Series mapping and a refined month regex heuristic.

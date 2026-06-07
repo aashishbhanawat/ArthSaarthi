@@ -345,8 +345,21 @@ def update_transaction(
     if transaction.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
+    if (
+        transaction.asset
+        and transaction.asset.asset_type == "PPF"
+        and transaction.transaction_type == TransactionType.INTEREST_CREDIT.value
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "PPF interest credit transactions are system-generated "
+                "and cannot be modified."
+            ),
+        )
+
     # --- Smart Recalculation for PPF ---
-    if transaction.asset.asset_type == "PPF":
+    if transaction.asset and transaction.asset.asset_type == "PPF":
         logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} "
                     f"due to transaction update."
         )
@@ -390,8 +403,21 @@ def delete_transaction(
     if transaction.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
+    if (
+        transaction.asset
+        and transaction.asset.asset_type == "PPF"
+        and transaction.transaction_type == TransactionType.INTEREST_CREDIT.value
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "PPF interest credit transactions are system-generated "
+                "and cannot be deleted."
+            ),
+        )
+
     # --- Smart Recalculation for PPF ---
-    if transaction.asset.asset_type == "PPF":
+    if transaction.asset and transaction.asset.asset_type == "PPF":
         logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} "
                     f"due to transaction deletion."
         )

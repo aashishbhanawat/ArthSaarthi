@@ -1,6 +1,7 @@
 import React from 'react';
 import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
+import { isEditable, isDeletable, getDisabledTitle } from '../../utils/transaction';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface TransactionListProps {
@@ -76,8 +77,24 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
                 )}</td>
                 <td className="p-3 text-center">
                   <div className="flex justify-center space-x-2">
-                    <button onClick={() => onEdit(tx)} className="p-1 text-gray-500 hover:text-blue-600" aria-label={`Edit transaction for ${tx.asset.ticker_symbol}`}><PencilSquareIcon className="h-5 w-5" /></button>
-                    <button onClick={() => onDelete(tx)} className="p-1 text-gray-500 hover:text-red-600" aria-label={`Delete transaction for ${tx.asset.ticker_symbol}`}><TrashIcon className="h-5 w-5" /></button>
+                    <button
+                      onClick={() => onEdit(tx)}
+                      className="p-1 text-gray-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-500"
+                      disabled={!isEditable(tx)}
+                      title={getDisabledTitle(tx, 'edit')}
+                      aria-label={`Edit transaction for ${tx.asset.ticker_symbol}`}
+                    >
+                      <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(tx)}
+                      className="p-1 text-gray-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-500"
+                      disabled={!isDeletable(tx)}
+                      title={getDisabledTitle(tx, 'delete')}
+                      aria-label={`Delete transaction for ${tx.asset.ticker_symbol}`}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
                   </div>
                 </td>
               </tr>

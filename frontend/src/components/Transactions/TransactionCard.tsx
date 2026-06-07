@@ -1,6 +1,7 @@
 import React from 'react';
 import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
+import { isEditable, isDeletable } from '../../utils/transaction';
 import { InformationCircleIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface TransactionCardProps {
@@ -38,9 +39,6 @@ const hasUserVisibleDetails = (details: Record<string, unknown> | null | undefin
     const internalKeys = new Set(['_fd_id']);
     return Object.keys(details).some(k => !internalKeys.has(k));
 };
-
-const isSyntheticFd = (tx: Transaction): boolean =>
-    !!(tx.details as Record<string, unknown> | null)?._fd_id;
 
 const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEdit, onDelete, onViewDetails }) => {
     const formatCurrency = usePrivacySensitiveCurrency();
@@ -87,7 +85,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEd
 
             <div className="pt-3 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
                 <div className="flex items-center gap-1">
-                    {!isSyntheticFd(tx) && (
+                    {isEditable(tx) && (
                         <button
                             onClick={() => onEdit(tx)}
                             className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -96,7 +94,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEd
                             <PencilIcon className="h-5 w-5" />
                         </button>
                     )}
-                    {(!isSyntheticFd(tx) || tx.transaction_type === 'FD_MATURITY') && (
+                    {isDeletable(tx) && (
                         <button
                             onClick={() => onDelete(tx)}
                             className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
