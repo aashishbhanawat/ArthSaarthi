@@ -1,6 +1,7 @@
 import React from 'react';
 import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
+import { isEditable, isDeletable } from '../../utils/transaction';
 import { InformationCircleIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface TransactionCardProps {
@@ -37,20 +38,6 @@ const hasUserVisibleDetails = (details: Record<string, unknown> | null | undefin
     if (!details) return false;
     const internalKeys = new Set(['_fd_id']);
     return Object.keys(details).some(k => !internalKeys.has(k));
-};
-
-const isEditable = (tx: Transaction): boolean => {
-    if (tx.details && (tx.details as Record<string, unknown>)._fd_id) return false;
-    if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') return false;
-    return true;
-};
-
-const isDeletable = (tx: Transaction): boolean => {
-    if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') return false;
-    if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
-        return tx.transaction_type === 'FD_MATURITY';
-    }
-    return true;
 };
 
 const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEdit, onDelete, onViewDetails }) => {

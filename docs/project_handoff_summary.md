@@ -1,6 +1,6 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-06-04
+**Last Updated:** 2026-06-07
 
 ## 1. Current Project Status
 
@@ -12,16 +12,17 @@
 
 *   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **327/327 Passing**
 *   **Backend Integration Tests (Android/SQLite):** ✅ **324/327 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **58/58 Passing** (Resolved responsive layout conflicts)
+*   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing** (Extracted shared transaction utilities)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ### Recent Stabilization & Refinement Efforts
 
-*   **PPF Interest Transaction Security (Issue #440) (2026-06-04):**
-    - **Backend Protection:** Implemented checks in `PUT /api/v1/transactions/{transaction_id}` and `DELETE /api/v1/transactions/{transaction_id}` endpoints to reject updates or deletions of `INTEREST_CREDIT` transactions belonging to a `PPF` asset, returning a `400 Bad Request` HTTP error.
+*   **PPF Interest Transaction Security (Issue #440) (Updated 2026-06-07):**
+    - **Backend Protection:** Implemented checks in `PUT /api/v1/transactions/{transaction_id}` and `DELETE /api/v1/transactions/{transaction_id}` endpoints to reject updates or deletions of `INTEREST_CREDIT` transactions belonging to a `PPF` asset, returning a `400 Bad Request` HTTP error. Added defensive checks to ensure `transaction.asset` is not `None` before checking `asset_type`.
     - **Frontend Immutability:** Disabled the "Edit" and "Delete" buttons in the desktop `TransactionHistoryTable` and portfolio `TransactionList` views with explanatory tooltip titles. Hid the edit/delete options entirely in the mobile card-based `TransactionCard` view.
+    - **DRY Refactoring:** Extracted the transaction helper functions (`isEditable`, `isDeletable`, `getDisabledTitle`) into a shared utility file (`frontend/src/utils/transaction.ts`) to avoid duplicate logic across frontend components.
     - **Verification:** Added `test_ppf_interest_credit_immutability` to the integration test suite, verifying both update and delete operations are rejected. Passed all backend and frontend unit tests cleanly.
 
 *   **Asset Seeding & Classification Bug (2026-06-04):**

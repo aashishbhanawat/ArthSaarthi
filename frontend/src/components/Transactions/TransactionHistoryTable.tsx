@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
+import { isEditable, isDeletable, getDisabledTitle } from '../../utils/transaction';
 import TransactionDetailsModal from './TransactionDetailsModal';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import TransactionCard from './TransactionCard';
@@ -22,40 +23,6 @@ const getTypeColor = (type: string) => {
         case 'BONUS': return 'text-green-500';
         default: return 'text-gray-600';
     }
-};
-
-const isEditable = (tx: Transaction): boolean => {
-  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
-    return false;
-  }
-  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
-    return false;
-  }
-  return true;
-};
-
-const isDeletable = (tx: Transaction): boolean => {
-  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
-    return false;
-  }
-  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
-    return tx.transaction_type === 'FD_MATURITY';
-  }
-  return true;
-};
-
-const getDisabledTitle = (tx: Transaction, action: 'edit' | 'delete'): string | undefined => {
-  if (tx.asset.asset_type === 'PPF' && tx.transaction_type === 'INTEREST_CREDIT') {
-    return `PPF interest credit transactions are system-generated and cannot be ${action === 'edit' ? 'modified' : 'deleted'}.`;
-  }
-  if (tx.details && (tx.details as Record<string, unknown>)._fd_id) {
-    if (action === 'edit') {
-      return 'Fixed Deposit transactions are system-generated and cannot be modified.';
-    } else if (tx.transaction_type !== 'FD_MATURITY') {
-      return 'Fixed Deposit transactions are system-generated and cannot be deleted.';
-    }
-  }
-  return undefined;
 };
 
 const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ transactions, onEdit, onDelete }) => {
