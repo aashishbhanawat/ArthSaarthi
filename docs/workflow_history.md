@@ -1,3 +1,22 @@
+## 2026-06-07: Restore failing due to "Insufficient holdings to sell" (Issue #441)
+
+**Task:** Prevent restore operation from failing due to "Insufficient holdings to sell" when `SELL` transactions are processed out-of-order before their corresponding `BUY` transactions.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+Identified and resolved the root cause where the DB restore operation fails if transactions in the backup JSON are processed in an arbitrary non-chronological order.
+
+1. **Transaction Sorting during Restore:** Updated `restore_backup` in `backend/app/services/backup_service.py` to sort transactions prior to processing. Transactions are sorted:
+   - Chronologically by `transaction_date` (ascending).
+   - For transactions sharing the same date, non-`SELL` transactions (e.g. `BUY`, `CONTRIBUTION`, etc.) are processed before `SELL` transactions, guaranteeing that holdings are built before they are disposed of.
+2. **Integration Tests:** Added a new test `test_backup_restore_shuffled_transactions` to `backend/app/tests/api/v1/test_backup_restore.py` that shuffles backup transactions (specifically placing `SELL` transactions before `BUY` transactions) and verifies the restore operation successfully processes them without throwing holding validation errors.
+3. **Verification:** Ran the full backup/restore test suite (`pytest app/tests/api/v1/test_backup_restore.py`) and confirmed all tests pass.
+
+---
+
 ## 2026-06-04: Securing PPF Interest Transactions (Issue #440)
 
 **Task:** Prevent unauthorized editing or deletion of system-generated PPF interest credit transactions by enforcing read-only status in the backend and disabling action buttons in the frontend UI.

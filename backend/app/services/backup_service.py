@@ -372,7 +372,16 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                     )
 
             # Transactions
-            for tx_data in data.get("transactions", []):
+            transactions = data.get("transactions", [])
+            def get_tx_sort_key(tx):
+                t_date = tx.get("transaction_date") or ""
+                t_type = tx.get("transaction_type")
+                priority = 2 if t_type == "SELL" else 1
+                return (t_date, priority)
+
+            sorted_transactions = sorted(transactions, key=get_tx_sort_key)
+
+            for tx_data in sorted_transactions:
                 p_name = tx_data.get("portfolio_name")
                 if not p_name or p_name not in portfolio_map:
                     continue
