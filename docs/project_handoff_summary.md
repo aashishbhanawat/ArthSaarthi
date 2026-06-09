@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-06-07
+**Last Updated:** 2026-06-09
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved backup restore failing with "Insufficient holdings to sell" error by sorting transactions chronologically (and acquisitions before disposals) during the restore phase (Issue #441).
+**Latest Achievement:** Enhanced database restore robustness by standardizing date serialization/parsing and normalizing transaction types case-insensitively during backup restore (Issue #441 follow-up).
 
 ## 2. Test Suite Status
 
@@ -18,6 +18,10 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Transaction Restore Robustness (PR #457 Review / Issue #441 Follow-up) (Updated 2026-06-09):**
+    - **Backend Fix:** Refined helper functions `_serialize_date` and `_parse_date` in `backend/app/services/backup_service.py` to support date/datetime objects and ISO strings. Serialized all transaction dates to strings during key generation for sorting to prevent `TypeError` when comparing date and datetime objects. Normalized transaction types to uppercase (e.g., converting `"sell"` to `"SELL"` and `"Buy"` to `"BUY"`) to prevent enum validation issues during restore.
+    - **Regression Test Coverage:** Added `test_backup_restore_robust_sorting` to `test_backup_restore.py` to verify sorting and ingestion of mixed-format backup data.
 
 *   **Transaction Sorting during Restore (Issue #441) (Updated 2026-06-07):**
     - **Backend Fix:** Updated `restore_backup` in `backend/app/services/backup_service.py` to sort transactions before processing. Sorting is chronological by `transaction_date`, and for identical dates, acquisitions (e.g., `BUY`, `CONTRIBUTION`) are processed before disposals (`SELL`). This ensures that the database has sufficient holdings recorded before a `SELL` transaction is processed.

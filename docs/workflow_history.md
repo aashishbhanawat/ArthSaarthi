@@ -1,3 +1,22 @@
+## 2026-06-09: Enhancing Transaction Restore Robustness (PR #457 Review / Issue #441 Follow-up)
+
+**Task:** Refine transaction sorting and type normalization during database restore to robustly handle diverse date/datetime formats (objects vs ISO strings) and mixed-case transaction types.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+Addressed PR review feedback on database restore robustness:
+
+1. **Robust Date Normalization:** Updated `_serialize_date` and `_parse_date` in `backend/app/services/backup_service.py` to correctly identify and convert standard `date`, `datetime`, and string representations (including ISO strings with `T` timestamps).
+2. **Date-Based Sorting:** Serialized transaction dates to strings within the sorting key function (`get_tx_sort_key`) to prevent `TypeError` when comparing date objects directly with datetime objects.
+3. **Case-Insensitive Transaction Types:** Normalized transaction type strings to uppercase (e.g., converting `"sell"` to `"SELL"` and `"Buy"` to `"BUY"`) to ensure correct enum mapping and avoid validation failures.
+4. **Regression Testing:** Added a comprehensive regression test `test_backup_restore_robust_sorting` to `backend/app/tests/api/v1/test_backup_restore.py` that verifies programmatic restores containing date/datetime objects and mixed-case transaction types sort and load correctly.
+5. **Verification:** Confirmed all 327 backend tests pass successfully.
+
+---
+
 ## 2026-06-07: Restore failing due to "Insufficient holdings to sell" (Issue #441)
 
 **Task:** Prevent restore operation from failing due to "Insufficient holdings to sell" when `SELL` transactions are processed out-of-order before their corresponding `BUY` transactions.
