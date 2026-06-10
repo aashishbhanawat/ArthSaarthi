@@ -175,3 +175,92 @@ def test_read_transactions_with_filters_and_pagination(
     data = response.json()
     assert data["total"] == 3
     assert len(data["transactions"]) == 1
+
+
+def test_get_available_lots_multi_portfolio(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+) -> None:
+    """
+    Test that available lots can be filtered by portfolio_id and that permissions are enforced.
+    """
+    from decimal import Decimal
+
+    # Create main user and their headers
+    user, password = create_random_user(db)
+    user_headers = get_auth_headers(user.email, password)
+
+    # Create two portfolios for the same user
+    portfolio1 = create_test_portfolio(db, user_id=user.id, name="Portfolio 1")
+    portfolio2 = create_test_portfolio(db, user_id=user.id, name="Portfolio 2")
+
+    # Create a test asset
+    asset = create_test_asset(db, ticker_symbol="TEST_LOTS_ASSET")
+
+    # Create buy transaction in Portfolio 1
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=10,
+            price_per_unit=100,
+            transaction_date=datetime.utcnow() - timedelta(days=2),
+            fees=0,
+        ),
+        portfolio_id=portfolio1.id,
+    )
+
+    # Create buy transaction in Portfolio 2
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=15,
+            price_per_unit=200,
+            transaction_date=datetime.utcnow() - timedelta(days=1),
+            fees=0,
+        ),
+        portfolio_id=portfolio2.id,
+    )
+    db.commit()
+
+    base_url = f"{settings.API_V1_STR}/transactions/available-lots/{asset.id}"
+
+    # 1. Fetch available lots without portfolio filter (should return both lots)
+    response = client.get(base_url, headers=user_headers)
+    assert response.status_code == 200, response.json()
+    lots = response.json()
+    assert len(lots) == 2
+    total_qty = sum(Decimal(lot["available_quantity"]) for lot in lots)
+    assert total_qty == Decimal("25")
+
+    # 2. Fetch available lots filtered by Portfolio 1
+    response = client.get(f"{base_url}?portfolio_id={portfolio1.id}", headers=user_headers)
+    assert response.status_code == 200, response.json()
+    lots1 = response.json()
+    assert len(lots1) == 1
+    assert Decimal(lots1[0]["available_quantity"]) == Decimal("10")
+
+    # 3. Fetch available lots filtered by Portfolio 2
+    response = client.get(f"{base_url}?portfolio_id={portfolio2.id}", headers=user_headers)
+    assert response.status_code == 200, response.json()
+    lots2 = response.json()
+    assert len(lots2) == 1
+    assert Decimal(lots2[0]["available_quantity"]) == Decimal("15")
+
+    # 4. Verify IDOR security checks (unauthorized access to portfolio)
+    other_user, other_password = create_random_user(db)
+    other_headers = get_auth_headers(other_user.email, other_password)
+
+    response = client.get(f"{base_url}?portfolio_id={portfolio1.id}", headers=other_headers)
+    assert response.status_code == 403, response.json()
+    assert "Not enough permissions" in response.json()["detail"]
+
+    # 5. Verify non-existent portfolio ID returns 404
+    non_existent_uuid = uuid.uuid4()
+    response = client.get(f"{base_url}?portfolio_id={non_existent_uuid}", headers=user_headers)
+    assert response.status_code == 404, response.json()
+    assert "Portfolio not found" in response.json()["detail"]

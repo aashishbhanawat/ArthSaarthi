@@ -1,3 +1,34 @@
+## 2026-06-10: Scope Sell Modal Holdings to Active Portfolio (Issue #442)
+
+**Task:** Fix the sell modal displaying tax lots from all of a user's portfolios instead of restricting them to the currently active portfolio.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+Identified and resolved the root cause of cross-portfolio lot leakage:
+
+1. **Backend API & CRUD Updates:**
+   - Updated `crud.transaction.get_available_lots` in `backend/app/crud/crud_transaction.py` to accept an optional `portfolio_id` parameter and apply it to filter the transactions.
+   - Updated the auto-FIFO linking in `create_with_portfolio` to pass `portfolio_id` to `get_available_lots`.
+   - Updated the `/api/v1/transactions/available-lots/{asset_id}` GET endpoint in `backend/app/api/v1/endpoints/transactions.py` to accept `portfolio_id` as a query parameter.
+   - Enforced permissions check inside the endpoint to verify that the requested `portfolio_id` belongs to the `current_user` to prevent IDOR security vulnerabilities.
+2. **Frontend Service & Component Integration:**
+   - Modified `getAvailableLots` in `frontend/src/services/portfolioApi.ts` to accept `portfolioId` and pass it as the `portfolio_id` query parameter.
+   - Updated the `TransactionFormModal` component (`frontend/src/components/Portfolio/TransactionFormModal.tsx`) to pass the active `portfolioId` to `getAvailableLots` and added `portfolioId` to the `useEffect` dependency array.
+3. **Regression Testing:**
+   - Created a comprehensive integration test `test_get_available_lots_multi_portfolio` in `backend/app/tests/api/v1/test_transactions.py` that verifies:
+     - Available lots return properly scoped to the selected portfolio.
+     - Accessing details of unauthorized portfolios is blocked with a 403 Forbidden error.
+     - Non-existent portfolios return a 404 Not Found error.
+4. **Verification:**
+   - Ran backend pytest transaction suites (4/4 tests passed).
+   - Ran frontend Jest unit tests (188/188 tests passed).
+   - Ran frontend build (`npm run build`) to ensure type safety.
+
+---
+
 ## 2026-06-09: Enhancing Transaction Restore Robustness (PR #457 Review / Issue #441 Follow-up)
 
 **Task:** Refine transaction sorting and type normalization during database restore to robustly handle diverse date/datetime formats (objects vs ISO strings) and mixed-case transaction types.

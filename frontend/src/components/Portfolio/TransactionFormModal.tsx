@@ -381,7 +381,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
         if (selectedAsset && selectedAsset.id && transactionType === 'SELL' && (assetType === 'Stock' || assetType === 'Mutual Fund')) {
             setIsLoadingLots(true);
             const editTxId = transactionToEdit?.id;
-            getAvailableLots(selectedAsset.id, editTxId)
+            getAvailableLots(selectedAsset.id, editTxId, portfolioId)
                 .then(lots => {
                     setAvailableLots(lots);
                     // If detailed lot selection mapping exists in edited transaction, populate it?
@@ -396,7 +396,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
             setAvailableLots([]);
             setLotSelections({});
         }
-    }, [selectedAsset, transactionType, assetType, transactionToEdit]);
+    }, [selectedAsset, transactionType, assetType, transactionToEdit, portfolioId]);
 
     // Helper to calculate total selected quantity
     const totalSelectedQty = Object.values(lotSelections).reduce((sum, qty) => sum + qty, 0);
