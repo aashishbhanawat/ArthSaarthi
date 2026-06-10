@@ -15,11 +15,13 @@ logger = logging.getLogger(__name__)
 BACKUP_VERSION = "1.2"
 
 
-def _serialize_date(d: date | datetime | None) -> str | None:
+def _serialize_date(d: Any) -> str | None:
     if isinstance(d, datetime):
         return d.strftime("%Y-%m-%d")
     if isinstance(d, date):
         return d.strftime("%Y-%m-%d")
+    if isinstance(d, str):
+        return d.split("T")[0]
     return None
 
 
@@ -29,10 +31,17 @@ def _serialize_decimal(d: Decimal | None) -> float | None:
     return float(d)
 
 
-def _parse_date(d_str: str | None) -> date | None:
-    if not d_str:
+def _parse_date(d: Any) -> date | None:
+    if not d:
         return None
-    return datetime.strptime(d_str, "%Y-%m-%d").date()
+    if isinstance(d, datetime):
+        return d.date()
+    if isinstance(d, date):
+        return d
+    if isinstance(d, str):
+        cleaned = d.split("T")[0]
+        return datetime.strptime(cleaned, "%Y-%m-%d").date()
+    return None
 
 
 def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
@@ -372,13 +381,25 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                     )
 
             # Transactions
-            for tx_data in data.get("transactions", []):
+            transactions = data.get("transactions", [])
+            def get_tx_sort_key(tx):
+                t_date = tx.get("transaction_date")
+                t_date_str = _serialize_date(t_date) or ""
+                t_type = tx.get("transaction_type")
+                priority = 2 if t_type and str(t_type).upper() == "SELL" else 1
+                return (t_date_str, priority)
+
+            sorted_transactions = sorted(transactions, key=get_tx_sort_key)
+
+            for tx_data in sorted_transactions:
                 p_name = tx_data.get("portfolio_name")
                 if not p_name or p_name not in portfolio_map:
                     continue
 
                 p_id = portfolio_map[p_name]
-                t_type = tx_data["transaction_type"]
+                t_type = tx_data.get("transaction_type")
+                if t_type and isinstance(t_type, str):
+                    t_type = t_type.upper()
                 if t_type == "PPF_CONTRIBUTION":
                     t_type = TransactionType.CONTRIBUTION
 

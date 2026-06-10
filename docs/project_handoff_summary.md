@@ -1,23 +1,31 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-06-07
+**Last Updated:** 2026-06-09
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Secured PPF interest credit transactions by preventing updates and deletions in the backend API and disabling/hiding corresponding action buttons in the frontend UI (Issue #440).
+**Latest Achievement:** Enhanced database restore robustness by standardizing date serialization/parsing and normalizing transaction types case-insensitively during backup restore (Issue #441 follow-up).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **327/327 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **324/327 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **328/328 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **325/328 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing** (Extracted shared transaction utilities)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
-### Recent Stabilization & Refinement Efforts
+## Recent Stabilization & Refinement Efforts
+
+*   **Transaction Restore Robustness (PR #457 Review / Issue #441 Follow-up) (Updated 2026-06-09):**
+    - **Backend Fix:** Refined helper functions `_serialize_date` and `_parse_date` in `backend/app/services/backup_service.py` to support date/datetime objects and ISO strings. Serialized all transaction dates to strings during key generation for sorting to prevent `TypeError` when comparing date and datetime objects. Normalized transaction types to uppercase (e.g., converting `"sell"` to `"SELL"` and `"Buy"` to `"BUY"`) to prevent enum validation issues during restore.
+    - **Regression Test Coverage:** Added `test_backup_restore_robust_sorting` to `test_backup_restore.py` to verify sorting and ingestion of mixed-format backup data.
+
+*   **Transaction Sorting during Restore (Issue #441) (Updated 2026-06-07):**
+    - **Backend Fix:** Updated `restore_backup` in `backend/app/services/backup_service.py` to sort transactions before processing. Sorting is chronological by `transaction_date`, and for identical dates, acquisitions (e.g., `BUY`, `CONTRIBUTION`) are processed before disposals (`SELL`). This ensures that the database has sufficient holdings recorded before a `SELL` transaction is processed.
+    - **Integration Test Coverage:** Added `test_backup_restore_shuffled_transactions` to `test_backup_restore.py`, verifying that restore completes successfully even when the backup transactions are shuffled out of order.
 
 *   **PPF Interest Transaction Security (Issue #440) (Updated 2026-06-07):**
     - **Backend Protection:** Implemented checks in `PUT /api/v1/transactions/{transaction_id}` and `DELETE /api/v1/transactions/{transaction_id}` endpoints to reject updates or deletions of `INTEREST_CREDIT` transactions belonging to a `PPF` asset, returning a `400 Bad Request` HTTP error. Added defensive checks to ensure `transaction.asset` is not `None` before checking `asset_type`.

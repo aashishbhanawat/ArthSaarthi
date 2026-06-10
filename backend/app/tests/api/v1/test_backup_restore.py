@@ -150,3 +150,184 @@ def test_backup_restore_flow(client: TestClient, db: Session, get_auth_headers):
     assert len(goals[0].links) == 1
     assert goals[0].links[0].asset is not None
     assert goals[0].links[0].asset.ticker_symbol == "RELIANCE"
+
+
+def test_backup_restore_shuffled_transactions(
+    client: TestClient, db: Session, get_auth_headers
+):
+    # 1. Setup Data
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+
+    portfolio = create_test_portfolio(
+        db, user_id=user.id, name="Test Portfolio Shuffled"
+    )
+
+    # Create a Stock Asset
+    stock_asset_in = schemas.AssetCreate(
+        name="Tata Consultancy Services",
+        ticker_symbol="TCS",
+        asset_type="STOCK",
+        currency="INR",
+        isin="INE467B01029",
+    )
+    crud.asset.create(db, obj_in=stock_asset_in)
+
+    # Transaction 1: BUY 10 TCS on 2023-01-01
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="TCS",
+        quantity=10,
+        price_per_unit=3000,
+        transaction_type="BUY",
+        transaction_date=date(2023, 1, 1),
+    )
+
+    # Transaction 2: SELL 4 TCS on 2023-01-02
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="TCS",
+        quantity=4,
+        price_per_unit=3100,
+        transaction_type="SELL",
+        transaction_date=date(2023, 1, 2),
+    )
+
+    # Transaction 3: BUY 5 TCS on 2023-01-03
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="TCS",
+        quantity=5,
+        price_per_unit=3050,
+        transaction_type="BUY",
+        transaction_date=date(2023, 1, 3),
+    )
+
+    # Transaction 4: SELL 8 TCS on 2023-01-04
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="TCS",
+        quantity=8,
+        price_per_unit=3200,
+        transaction_type="SELL",
+        transaction_date=date(2023, 1, 4),
+    )
+
+    # 2. Backup
+    response = client.get("/api/v1/users/me/backup", headers=headers)
+    assert response.status_code == 200
+    backup_data = response.json()
+
+    transactions = backup_data["data"]["transactions"]
+    assert len(transactions) == 4
+
+    # Manually reorder transactions so SELL transactions appear FIRST
+    # (i.e. processed before their corresponding BUYs, which would fail if not sorted)
+    shuffled_txs = sorted(
+        transactions, key=lambda tx: 0 if tx["transaction_type"] == "SELL" else 1
+    )
+    backup_data["data"]["transactions"] = shuffled_txs
+
+    # 3. Restore (Wipe and Restore)
+    file_content = json.dumps(backup_data).encode('utf-8')
+    files = {'file': ('backup.json', file_content, 'application/json')}
+
+    response = client.post("/api/v1/users/me/restore", headers=headers, files=files)
+    assert response.status_code == 200
+    assert response.json()["message"] == "Restore successful"
+
+    # 4. Verify Data Restored
+    db.expire_all()
+    portfolios = crud.portfolio.get_multi_by_owner(db, user_id=user.id)
+    assert len(portfolios) == 1
+    assert portfolios[0].name == "Test Portfolio Shuffled"
+
+    restored_txs = crud.transaction.get_multi_by_portfolio(
+        db, portfolio_id=portfolios[0].id
+    )
+    assert len(restored_txs) == 4
+
+
+def test_backup_restore_robust_sorting(db: Session):
+    from app.services.backup_service import restore_backup
+
+    # 1. Setup Data
+    user, _ = create_random_user(db)
+    create_test_portfolio(
+        db, user_id=user.id, name="Test Portfolio Robust"
+    )
+
+    # Create a Stock Asset
+    stock_asset_in = schemas.AssetCreate(
+        name="Infosys",
+        ticker_symbol="INFY",
+        asset_type="STOCK",
+        currency="INR",
+        isin="INE009A01021",
+    )
+    crud.asset.create(db, obj_in=stock_asset_in)
+
+    # Prepare backup data with date/datetime objects and mixed case transaction types
+    backup_data = {
+        "metadata": {
+            "version": "1.2"
+        },
+        "data": {
+            "portfolios": [
+                {"name": "Test Portfolio Robust", "description": "Robust sorting test"}
+            ],
+            "transactions": [
+                # Sell transaction with date object and lowercase "sell"
+                # (appears first, but date is later)
+                {
+                    "portfolio_name": "Test Portfolio Robust",
+                    "transaction_type": "sell",
+                    "quantity": 5.0,
+                    "price_per_unit": 1600.0,
+                    "transaction_date": date(2023, 1, 2),
+                    "fees": 0.0,
+                    "isin": "INE009A01021"
+                },
+                # Buy transaction with datetime object and mixed case "Buy"
+                # (appears second, but date is earlier)
+                {
+                    "portfolio_name": "Test Portfolio Robust",
+                    "transaction_type": "Buy",
+                    "quantity": 10.0,
+                    "price_per_unit": 1500.0,
+                    "transaction_date": datetime(2023, 1, 1, 12, 0),
+                    "fees": 0.0,
+                    "isin": "INE009A01021"
+                }
+            ]
+        }
+    }
+
+    # 2. Call restore_backup directly (programmatic call with datetime/date objects)
+    restore_backup(db, user_id=user.id, backup_data=backup_data)
+
+    # 3. Verify
+    db.expire_all()
+    portfolios = crud.portfolio.get_multi_by_owner(db, user_id=user.id)
+    assert len(portfolios) == 1
+    assert portfolios[0].name == "Test Portfolio Robust"
+
+    restored_txs = crud.transaction.get_multi_by_portfolio(
+        db, portfolio_id=portfolios[0].id
+    )
+    assert len(restored_txs) == 2
+
+    # Verify that BUY transaction was processed first and then SELL transaction
+    # Since date is sorted, BUY (2023-01-01) should have been processed before
+    # SELL (2023-01-02).
+    # And they should both be successfully created in the DB as BUY and SELL.
+    buy_tx = next(t for t in restored_txs if t.transaction_type == "BUY")
+    sell_tx = next(t for t in restored_txs if t.transaction_type == "SELL")
+    assert buy_tx.quantity == 10
+    assert sell_tx.quantity == 5
+
+
