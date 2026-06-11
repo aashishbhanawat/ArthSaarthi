@@ -1,6 +1,6 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-06-10
+**Last Updated:** 2026-06-11
 
 ## 1. Current Project Status
 
@@ -19,10 +19,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
-*   **Sell Modal Portfolio Scoping (Issue #442) (Updated 2026-06-10):**
+*   **Sell Modal Portfolio Scoping (Issue #442) (Updated 2026-06-11):**
     - **Backend Fix:** Updated `crud.transaction.get_available_lots` to accept and filter by `portfolio_id`. Modified the `/available-lots/{asset_id}` GET endpoint to accept `portfolio_id` as a query parameter and added authorization checks to verify portfolio ownership. Passed `portfolio_id` to `get_available_lots` during auto-FIFO linking in `create_with_portfolio`.
+    - **PR Review Optimization:** Optimized the portfolio ownership check by querying only the `user_id` column instead of fetching the entire model instance. Removed the redundant database-level `.order_by(...)` clause in `get_available_lots` since transactions are sorted in Python.
     - **Frontend Fix:** Modified the `getAvailableLots` API service function to pass `portfolio_id`. Updated `TransactionFormModal` to supply the active `portfolioId` and added it as a dependency in the useEffect fetch block.
-    - **Regression Test Coverage:** Created `test_get_available_lots_multi_portfolio` verifying correct filtering of available lots by portfolio, IDOR security permissions (403), and non-existent portfolio handling (404).
+    - **Regression Test Coverage:** Created `test_get_available_lots_multi_portfolio` verifying correct filtering of available lots by portfolio, IDOR security permissions (403), and non-existent portfolio handling (404). Fixed PEP8 line length warnings (E501) across code files and tests.
 
 *   **Transaction Restore Robustness (PR #457 Review / Issue #441 Follow-up) (Updated 2026-06-09):**
     - **Backend Fix:** Refined helper functions `_serialize_date` and `_parse_date` in `backend/app/services/backup_service.py` to support date/datetime objects and ISO strings. Serialized all transaction dates to strings during key generation for sorting to prevent `TypeError` when comparing date and datetime objects. Normalized transaction types to uppercase (e.g., converting `"sell"` to `"SELL"` and `"Buy"` to `"BUY"`) to prevent enum validation issues during restore.

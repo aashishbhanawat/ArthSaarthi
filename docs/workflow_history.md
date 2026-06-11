@@ -26,6 +26,10 @@ Identified and resolved the root cause of cross-portfolio lot leakage:
    - Ran backend pytest transaction suites (4/4 tests passed).
    - Ran frontend Jest unit tests (188/188 tests passed).
    - Ran frontend build (`npm run build`) to ensure type safety.
+5. **PR Review Enhancements (2026-06-11):**
+   - **Endpoint Check Optimization:** Avoided loading the entire `Portfolio` model instance in `endpoints/transactions.py` by querying only the `user_id` column.
+   - **Removed Redundant Sort:** Removed the database-level `.order_by` clause from `crud.transaction.get_available_lots` as sorting is already performed in Python.
+   - **Code Linting & Style:** Fixed line length warnings (E501) across endpoints and tests to satisfy style standards.
 
 ---
 

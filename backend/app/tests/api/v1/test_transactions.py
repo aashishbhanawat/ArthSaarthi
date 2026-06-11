@@ -183,7 +183,8 @@ def test_get_available_lots_multi_portfolio(
     get_auth_headers: Callable[[str, str], Dict[str, str]],
 ) -> None:
     """
-    Test that available lots can be filtered by portfolio_id and that permissions are enforced.
+    Test that available lots can be filtered by portfolio_id and that
+    permissions are enforced.
     """
     from decimal import Decimal
 
@@ -238,14 +239,18 @@ def test_get_available_lots_multi_portfolio(
     assert total_qty == Decimal("25")
 
     # 2. Fetch available lots filtered by Portfolio 1
-    response = client.get(f"{base_url}?portfolio_id={portfolio1.id}", headers=user_headers)
+    response = client.get(
+        f"{base_url}?portfolio_id={portfolio1.id}", headers=user_headers
+    )
     assert response.status_code == 200, response.json()
     lots1 = response.json()
     assert len(lots1) == 1
     assert Decimal(lots1[0]["available_quantity"]) == Decimal("10")
 
     # 3. Fetch available lots filtered by Portfolio 2
-    response = client.get(f"{base_url}?portfolio_id={portfolio2.id}", headers=user_headers)
+    response = client.get(
+        f"{base_url}?portfolio_id={portfolio2.id}", headers=user_headers
+    )
     assert response.status_code == 200, response.json()
     lots2 = response.json()
     assert len(lots2) == 1
@@ -255,12 +260,16 @@ def test_get_available_lots_multi_portfolio(
     other_user, other_password = create_random_user(db)
     other_headers = get_auth_headers(other_user.email, other_password)
 
-    response = client.get(f"{base_url}?portfolio_id={portfolio1.id}", headers=other_headers)
+    response = client.get(
+        f"{base_url}?portfolio_id={portfolio1.id}", headers=other_headers
+    )
     assert response.status_code == 403, response.json()
     assert "Not enough permissions" in response.json()["detail"]
 
     # 5. Verify non-existent portfolio ID returns 404
     non_existent_uuid = uuid.uuid4()
-    response = client.get(f"{base_url}?portfolio_id={non_existent_uuid}", headers=user_headers)
+    response = client.get(
+        f"{base_url}?portfolio_id={non_existent_uuid}", headers=user_headers
+    )
     assert response.status_code == 404, response.json()
     assert "Portfolio not found" in response.json()["detail"]

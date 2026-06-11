@@ -446,7 +446,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         if portfolio_id:
             query = query.filter(Transaction.portfolio_id == portfolio_id)
 
-        transactions = query.order_by(Transaction.transaction_date).all()
+        transactions = query.all()
 
         # Sort by date, then by type priority (Acquisitions BEFORE Disposals)
         # This ensures that if RSU Vest and Sell-to-Cover share the exact same

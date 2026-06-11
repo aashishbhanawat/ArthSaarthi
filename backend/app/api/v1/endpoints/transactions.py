@@ -157,10 +157,14 @@ def get_available_lots(
     # Verify asset belongs to user's portfolio implicitly by checking user_id
     # Actually availability depends on user + asset.
     if portfolio_id:
-        portfolio = crud.portfolio.get(db=db, id=portfolio_id)
-        if not portfolio:
+        portfolio_user_id = (
+            db.query(models.Portfolio.user_id)
+            .filter(models.Portfolio.id == portfolio_id)
+            .scalar()
+        )
+        if portfolio_user_id is None:
             raise HTTPException(status_code=404, detail="Portfolio not found")
-        if portfolio.user_id != current_user.id:
+        if portfolio_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Not enough permissions")
 
     return crud.transaction.get_available_lots(
