@@ -26,6 +26,31 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-06-10-01
+**Title:** Sell Modal Displays Tax Lots Across All Portfolios
+**Module:** Portfolio Management / Core Backend / UI
+**Reported By:** QA / Developer
+**Date Reported:** 2026-06-10
+**Classification:** Implementation (Backend & Frontend)
+**Severity:** High
+**Description:** The "Sell" transaction modal incorrectly displays tax lots from all of a user's portfolios instead of restricting them to the currently active portfolio. This can result in cross-portfolio data leaks and incorrect tax lot calculations during FIFO or specific identification mapping.
+**Steps to Reproduce:**
+1. Create a user with two portfolios (Portfolio A and Portfolio B).
+2. Buy the same asset in both portfolios (e.g. 10 shares in Portfolio A, 15 shares in Portfolio B).
+3. Open the "Sell" modal for that asset in Portfolio A.
+4. Observe that tax lots from both portfolios are visible and selectable.
+**Expected Behavior:** Only the tax lots belonging to the selected/active portfolio should be displayed in the Sell modal.
+**Actual Behavior:** Tax lots from all portfolios are aggregated and shown.
+**Resolution:**
+1. Modified `crud.transaction.get_available_lots` in `backend/app/crud/crud_transaction.py` to accept and filter by `portfolio_id`.
+2. Updated the auto-FIFO linking in `create_with_portfolio` to pass `portfolio_id` to `get_available_lots`.
+3. Updated the `/api/v1/transactions/available-lots/{asset_id}` GET endpoint in `backend/app/api/v1/endpoints/transactions.py` to accept `portfolio_id` as a query parameter and added authorization checks to verify ownership.
+4. Modified the frontend service `getAvailableLots` in `frontend/src/services/portfolioApi.ts` to accept and pass `portfolioId`.
+5. Updated `TransactionFormModal` in `frontend/src/components/Portfolio/TransactionFormModal.tsx` to pass the active `portfolioId` to the service and added it to the `useEffect` dependency array.
+6. Added regression test `test_get_available_lots_multi_portfolio` to verify correct filtering and security restrictions.
+
+---
+
 **Bug ID:** 2026-06-04-01
 **Title:** Equity Stocks Misclassified as Bonds in Asset Seeding
 **Module:** Core Backend (Asset Seeding)

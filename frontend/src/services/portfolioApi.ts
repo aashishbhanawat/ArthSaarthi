@@ -360,8 +360,14 @@ export interface AvailableLot {
     details: Record<string, unknown>;
 }
 
-export const getAvailableLots = async (assetId: string, transactionId?: string): Promise<AvailableLot[]> => {
-    const params = transactionId ? { exclude_transaction_id: transactionId } : {};
+export const getAvailableLots = async (assetId: string, transactionId?: string, portfolioId?: string): Promise<AvailableLot[]> => {
+    const params: Record<string, string> = {};
+    if (transactionId) {
+        params.exclude_transaction_id = transactionId;
+    }
+    if (portfolioId) {
+        params.portfolio_id = portfolioId;
+    }
     const response = await apiClient.get<AvailableLot[]>(`/api/v1/transactions/available-lots/${assetId}`, { params });
     return response.data;
 };

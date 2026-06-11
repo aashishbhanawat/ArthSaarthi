@@ -192,6 +192,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             )
             available_lots = self.get_available_lots(
                 db=db, user_id=portfolio.user_id, asset_id=obj_in.asset_id,
+                portfolio_id=portfolio_id,
                 exclude_sell_id=db_obj.id
             )
             remaining_qty = obj_in.quantity
@@ -421,6 +422,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
     def get_available_lots(
         self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID,
+        portfolio_id: Optional[uuid.UUID] = None,
         exclude_sell_id: Optional[uuid.UUID] = None
     ) -> List[dict]:
         """
@@ -428,23 +430,23 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         and specific identification for linked sells.
 
         Args:
+            portfolio_id: Optional portfolio ID to restrict lots to
             exclude_sell_id: Optional SELL transaction ID to exclude from processing
                             (used during auto-linking to avoid the new SELL
                             consuming its own lots)
         """
         # Fetch all relevant transactions sorted by date
-        transactions = (
-            db.query(Transaction)
-            .filter(
-                Transaction.user_id == user_id,
-                Transaction.asset_id == asset_id,
-                Transaction.transaction_type.in_(
-                    ["BUY", "ESPP_PURCHASE", "RSU_VEST", "SELL"]
-                ),
-            )
-            .order_by(Transaction.transaction_date)
-            .all()
+        query = db.query(Transaction).filter(
+            Transaction.user_id == user_id,
+            Transaction.asset_id == asset_id,
+            Transaction.transaction_type.in_(
+                ["BUY", "ESPP_PURCHASE", "RSU_VEST", "SELL"]
+            ),
         )
+        if portfolio_id:
+            query = query.filter(Transaction.portfolio_id == portfolio_id)
+
+        transactions = query.all()
 
         # Sort by date, then by type priority (Acquisitions BEFORE Disposals)
         # This ensures that if RSU Vest and Sell-to-Cover share the exact same

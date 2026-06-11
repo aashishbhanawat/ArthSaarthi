@@ -1,23 +1,29 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-06-09
+**Last Updated:** 2026-06-11
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Enhanced database restore robustness by standardizing date serialization/parsing and normalizing transaction types case-insensitively during backup restore (Issue #441 follow-up).
+**Latest Achievement:** Fixed cross-portfolio lot leakage in the Sell modal by filtering available tax lots by the active portfolio ID (Issue #442).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **328/328 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **325/328 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **329/329 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **326/329 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing** (Extracted shared transaction utilities)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Sell Modal Portfolio Scoping (Issue #442) (Updated 2026-06-11):**
+    - **Backend Fix:** Updated `crud.transaction.get_available_lots` to accept and filter by `portfolio_id`. Modified the `/available-lots/{asset_id}` GET endpoint to accept `portfolio_id` as a query parameter and added authorization checks to verify portfolio ownership. Passed `portfolio_id` to `get_available_lots` during auto-FIFO linking in `create_with_portfolio`.
+    - **PR Review Optimization:** Optimized the portfolio ownership check by querying only the `user_id` column instead of fetching the entire model instance. Removed the redundant database-level `.order_by(...)` clause in `get_available_lots` since transactions are sorted in Python.
+    - **Frontend Fix:** Modified the `getAvailableLots` API service function to pass `portfolio_id`. Updated `TransactionFormModal` to supply the active `portfolioId` and added it as a dependency in the useEffect fetch block.
+    - **Regression Test Coverage:** Created `test_get_available_lots_multi_portfolio` verifying correct filtering of available lots by portfolio, IDOR security permissions (403), and non-existent portfolio handling (404). Fixed PEP8 line length warnings (E501) across code files and tests.
 
 *   **Transaction Restore Robustness (PR #457 Review / Issue #441 Follow-up) (Updated 2026-06-09):**
     - **Backend Fix:** Refined helper functions `_serialize_date` and `_parse_date` in `backend/app/services/backup_service.py` to support date/datetime objects and ISO strings. Serialized all transaction dates to strings during key generation for sorting to prevent `TypeError` when comparing date and datetime objects. Normalized transaction types to uppercase (e.g., converting `"sell"` to `"SELL"` and `"Buy"` to `"BUY"`) to prevent enum validation issues during restore.

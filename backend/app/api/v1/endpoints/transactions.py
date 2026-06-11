@@ -147,6 +147,7 @@ def get_available_lots(
     *,
     db: Session = Depends(dependencies.get_db),
     asset_id: uuid.UUID,
+    portfolio_id: Optional[uuid.UUID] = Query(None),
     exclude_transaction_id: Optional[uuid.UUID] = None,
     current_user: User = Depends(dependencies.get_current_user),
 ) -> Any:
@@ -155,10 +156,22 @@ def get_available_lots(
     """
     # Verify asset belongs to user's portfolio implicitly by checking user_id
     # Actually availability depends on user + asset.
+    if portfolio_id:
+        portfolio_user_id = (
+            db.query(models.Portfolio.user_id)
+            .filter(models.Portfolio.id == portfolio_id)
+            .scalar()
+        )
+        if portfolio_user_id is None:
+            raise HTTPException(status_code=404, detail="Portfolio not found")
+        if portfolio_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+
     return crud.transaction.get_available_lots(
         db=db,
         user_id=current_user.id,
         asset_id=asset_id,
+        portfolio_id=portfolio_id,
         exclude_sell_id=exclude_transaction_id,
     )
 
