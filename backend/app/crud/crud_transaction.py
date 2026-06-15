@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, load_only
 
 from app import crud, schemas
 from app.crud.base import CRUDBase
+from app.models.asset import Asset
 from app.models.transaction import Transaction
 from app.models.transaction_link import TransactionLink
 from app.schemas.enums import TransactionType
@@ -436,6 +437,14 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                             (used during auto-linking to avoid the new SELL
                             consuming its own lots)
         """
+        # Pre-fetch the asset currency to optimize db lookups inside the loop
+        asset_currency = (
+            db.query(Asset.currency)
+            .filter(Asset.id == asset_id)
+            .limit(1)
+            .scalar()
+        )
+
         # Fetch all relevant transactions sorted by date
         query = db.query(Transaction).filter(
             Transaction.user_id == user_id,
@@ -501,7 +510,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 lots.append(lot)
                 lots_map[tx.id] = lot
             elif tx.transaction_type == "SPLIT":
-                if tx.price_per_unit > 0:
+                if tx.price_per_unit > 0 and tx.quantity > 0:
                     ratio = tx.quantity / tx.price_per_unit
 
                     # 1. Calculate total available quantity before split
@@ -514,8 +523,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
                     # 3. Floor total if asset currency is INR and
                     # deduct fractional difference
-                    asset = crud.asset.get(db=db, id=asset_id)
-                    if asset and asset.currency == "INR":
+                    if asset_currency == "INR":
                         total_after = total_before * ratio
                         total_after_floored = Decimal(math.floor(total_after))
                         fraction = total_after - total_after_floored

@@ -143,7 +143,7 @@ def test_tax_lot_accounting_flow(db: Session):
     # relying on previous sales
     # proves that the system knows what has been sold.
 
-
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_tax_lot_split_adjustment(db: Session):
     # Setup: User
     user, _ = create_random_user(db)
@@ -244,7 +244,7 @@ def test_tax_lot_split_adjustment(db: Session):
     # Lot 2 remains untouched at 20
     assert float(lot2_after["available_quantity"]) == 20.0
 
-
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_tax_lot_split_inr_flooring(db: Session):
     # Setup: User
     user, _ = create_random_user(db)

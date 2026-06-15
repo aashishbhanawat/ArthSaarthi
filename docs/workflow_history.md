@@ -1641,12 +1641,16 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 2. **INR Flooring:** For Indian Rupees (INR) assets, floored the split-adjusted total quantity to integer values and deducted the fractional difference from the lots (in reverse chronological order) to mirror standard market operations.
 3. **Tests:** Added comprehensive integration tests (`test_tax_lot_split_adjustment` and `test_tax_lot_split_inr_flooring`) in `backend/app/tests/crud/test_tax_lot_accounting_flow.py` to verify correct quantity/price scaling, FIFO matching, and INR flooring behavior.
 4. **Test Gap Resolution:** Expanded regression testing by adding `test_tax_lot_reverse_split_adjustment` (for INR reverse splits where ratio < 1 with flooring) and `test_tax_lot_reverse_split_usd` (for USD reverse splits retaining fractional shares).
+5. **PR Review Optimizations & CI Fixes:**
+    - Optimized database access by pre-fetching the asset currency outside the transaction loop in `get_available_lots`.
+    - Added a defensive check (`tx.quantity > 0`) to prevent a division-by-zero error on split ratio calculations.
+    - Added `@pytest.mark.usefixtures("pre_unlocked_key_manager")` decorators to the first two split tests to resolve key-manager SQLite encryption failures in the CI/CD pipeline.
 
 ### File Changes
 
 **Backend:**
-*   **Modified:** `backend/app/crud/crud_transaction.py` - Integrated `SPLIT` transaction processing into `get_available_lots`.
-*   **Modified:** `backend/app/tests/crud/test_tax_lot_accounting_flow.py` - Appended new integration/regression tests for split adjustment, INR flooring, and reverse splits.
+*   **Modified:** `backend/app/crud/crud_transaction.py` - Integrated optimized `SPLIT` transaction processing into `get_available_lots`.
+*   **Modified:** `backend/app/tests/crud/test_tax_lot_accounting_flow.py` - Appended new integration/regression tests and decorated existing split tests.
 
 ### Outcome
-**Success.** Tax lots in the Sell modal are now dynamically adjusted for corporate action splits and reverse splits, preventing overselling and ensuring correct cost-basis tracking for subsequent sales. All backend (SQLite/Postgres) and frontend test suites pass.
+**Success.** Tax lots in the Sell modal are now dynamically adjusted for corporate action splits and reverse splits, preventing overselling and ensuring correct cost-basis tracking for subsequent sales. Database performance has been optimized, division-by-zero checks are in place, and SQLite encrypted test environments (Desktop) pass without KeyManager failures.
