@@ -143,3 +143,299 @@ def test_tax_lot_accounting_flow(db: Session):
     # relying on previous sales
     # proves that the system knows what has been sold.
 
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_tax_lot_split_adjustment(db: Session):
+    # Setup: User
+    user, _ = create_random_user(db)
+
+    # Setup: Portfolio
+    portfolio = crud.portfolio.create_with_owner(
+        db=db,
+        obj_in=schemas.PortfolioCreate(name="Split Test Portfolio"),
+        user_id=user.id
+    )
+
+    # Setup: Asset (USD Stock, so no flooring)
+    asset = crud.asset.create(
+        db=db,
+        obj_in=schemas.AssetCreate(
+            ticker_symbol="SPLITLOT",
+            name="Split Lot Stock",
+            asset_type="STOCK",
+            currency="USD",
+        ),
+    )
+
+    # 1. Buy 10 units @ 100 on D-10
+    buy1 = crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=10,
+            price_per_unit=100,
+            transaction_date=datetime.now() - timedelta(days=10)
+        ),
+        portfolio_id=portfolio.id
+    )
+
+    # 2. Buy 10 units @ 120 on D-5
+    buy2 = crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=10,
+            price_per_unit=120,
+            transaction_date=datetime.now() - timedelta(days=5)
+        ),
+        portfolio_id=portfolio.id
+    )
+
+    # 3. Perform a 2-for-1 stock split on D-3
+    crud.crud_corporate_action.handle_stock_split(
+        db=db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="SPLIT",
+            quantity=2,  # New
+            price_per_unit=1,  # Old
+            transaction_date=datetime.now() - timedelta(days=3)
+        )
+    )
+
+    # 4. Check Available Lots
+    lots = crud.transaction.get_available_lots(
+        db=db, asset_id=asset.id, user_id=user.id
+    )
+    assert len(lots) == 2, "Should have 2 available lots"
+    lot1 = next(lot for lot in lots if lot["id"] == buy1.id)
+    lot2 = next(lot for lot in lots if lot["id"] == buy2.id)
+
+    # Verify that quantities are doubled and prices are halved
+    assert float(lot1["available_quantity"]) == 20.0
+    assert float(lot1["price_per_unit"]) == 50.0
+    assert float(lot2["available_quantity"]) == 20.0
+    assert float(lot2["price_per_unit"]) == 60.0
+
+    # 5. Sell 15 units. FIFO should consume from Lot 1 (which now has 20 units)
+    crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="SELL",
+            quantity=15,
+            price_per_unit=70,
+            transaction_date=datetime.now()
+        ),
+        portfolio_id=portfolio.id
+    )
+
+    lots_after = crud.transaction.get_available_lots(
+        db=db, asset_id=asset.id, user_id=user.id
+    )
+    lot1_after = next(lot for lot in lots_after if lot["id"] == buy1.id)
+    lot2_after = next(lot for lot in lots_after if lot["id"] == buy2.id)
+
+    # Lot 1 was 20, sold 15 -> 5 remaining
+    assert float(lot1_after["available_quantity"]) == 5.0
+    # Lot 2 remains untouched at 20
+    assert float(lot2_after["available_quantity"]) == 20.0
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_tax_lot_split_inr_flooring(db: Session):
+    # Setup: User
+    user, _ = create_random_user(db)
+
+    # Setup: Portfolio
+    portfolio = crud.portfolio.create_with_owner(
+        db=db,
+        obj_in=schemas.PortfolioCreate(name="Split INR Portfolio"),
+        user_id=user.id
+    )
+
+    # Setup: Asset (INR Stock, floors fractional shares)
+    asset = crud.asset.create(
+        db=db,
+        obj_in=schemas.AssetCreate(
+            ticker_symbol="INRSLOT",
+            name="INR Split Stock",
+            asset_type="STOCK",
+            currency="INR",
+        ),
+    )
+
+    # 1. Buy 1 unit @ 100 on D-10
+    crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=1,
+            price_per_unit=100,
+            transaction_date=datetime.now() - timedelta(days=10)
+        ),
+        portfolio_id=portfolio.id
+    )
+
+    # 2. Perform a 3:2 stock split on D-5 (3 new for 2 old)
+    # 1 share * 1.5 ratio = 1.5 shares -> floored to 1 share in INR
+    crud.crud_corporate_action.handle_stock_split(
+        db=db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="SPLIT",
+            quantity=3,  # New
+            price_per_unit=2,  # Old
+            transaction_date=datetime.now() - timedelta(days=5)
+        )
+    )
+
+    # 3. Check Available Lots
+    lots = crud.transaction.get_available_lots(
+        db=db, asset_id=asset.id, user_id=user.id
+    )
+    assert len(lots) == 1, "Should have 1 available lot"
+    lot1 = lots[0]
+
+    # Verify that the lot quantity is floored to 1.0 (originally 1.5 before flooring)
+    assert float(lot1["available_quantity"]) == 1.0
+    # Price per unit is adjusted: 100 / 1.5 = 66.6666...
+    assert abs(float(lot1["price_per_unit"]) - (100.0 / 1.5)) < 0.01
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_tax_lot_reverse_split_adjustment(db: Session):
+    """
+    Test that a reverse stock split (ratio < 1) is correctly applied to tax lots:
+    - INR asset: floors total shares and deducts fractional differences.
+    """
+    # 0. Setup User and Portfolio
+    user, _ = create_random_user(db)
+    portfolio = crud.portfolio.create_with_owner(
+        db=db,
+        obj_in=schemas.PortfolioCreate(name="Test Portfolio"),
+        user_id=user.id
+    )
+
+    # Asset: INR STOCK
+    asset = crud.asset.create(
+        db=db,
+        obj_in=schemas.AssetCreate(
+            ticker_symbol="INR_REV_STOCK",
+            name="INR Reverse Split Stock",
+            asset_type="STOCK",
+            currency="INR",
+        )
+    )
+
+    # 1. Buy 5 units @ 100 on D-10
+    crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=5,
+            price_per_unit=100,
+            transaction_date=datetime.now() - timedelta(days=10)
+        ),
+        portfolio_id=portfolio.id
+    )
+
+    # 2. Perform a 1:2 reverse stock split on D-5 (1 new for 2 old)
+    crud.crud_corporate_action.handle_stock_split(
+        db=db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="SPLIT",
+            quantity=1,  # New
+            price_per_unit=2,  # Old
+            transaction_date=datetime.now() - timedelta(days=5)
+        )
+    )
+
+    # 3. Check Available Lots
+    lots = crud.transaction.get_available_lots(
+        db=db, asset_id=asset.id, user_id=user.id
+    )
+    assert len(lots) == 1, "Should have 1 available lot"
+    lot1 = lots[0]
+
+    # Verify that the lot quantity is floored: 5 * 0.5 = 2.5 -> floored to 2.0
+    assert float(lot1["available_quantity"]) == 2.0
+    # Price per unit is adjusted: 100 / 0.5 = 200.0
+    assert float(lot1["price_per_unit"]) == 200.0
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_tax_lot_reverse_split_usd(db: Session):
+    """
+    Test that a reverse stock split (ratio < 1) for a USD asset
+    retains fractional shares:
+    - USD asset: no flooring applied.
+    """
+    # 0. Setup User and Portfolio
+    user, _ = create_random_user(db)
+    portfolio = crud.portfolio.create_with_owner(
+        db=db,
+        obj_in=schemas.PortfolioCreate(name="Test Portfolio"),
+        user_id=user.id
+    )
+
+    # Asset: USD STOCK
+    asset = crud.asset.create(
+        db=db,
+        obj_in=schemas.AssetCreate(
+            ticker_symbol="USD_REV_STOCK",
+            name="USD Reverse Split Stock",
+            asset_type="STOCK",
+            currency="USD",
+        )
+    )
+
+    # 1. Buy 5 units @ 100 on D-10
+    crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=5,
+            price_per_unit=100,
+            transaction_date=datetime.now() - timedelta(days=10)
+        ),
+        portfolio_id=portfolio.id
+    )
+
+    # 2. Perform a 1:2 reverse stock split on D-5 (1 new for 2 old)
+    crud.crud_corporate_action.handle_stock_split(
+        db=db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="SPLIT",
+            quantity=1,  # New
+            price_per_unit=2,  # Old
+            transaction_date=datetime.now() - timedelta(days=5)
+        )
+    )
+
+    # 3. Check Available Lots
+    lots = crud.transaction.get_available_lots(
+        db=db, asset_id=asset.id, user_id=user.id
+    )
+    assert len(lots) == 1, "Should have 1 available lot"
+    lot1 = lots[0]
+
+    # Verify that the lot quantity is NOT floored: 5 * 0.5 = 2.5
+    assert float(lot1["available_quantity"]) == 2.5
+    # Price per unit is adjusted: 100 / 0.5 = 200.0
+    assert float(lot1["price_per_unit"]) == 200.0
+
+

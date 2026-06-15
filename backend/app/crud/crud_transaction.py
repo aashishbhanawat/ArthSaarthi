@@ -1,4 +1,5 @@
 import logging
+import math
 import uuid
 from collections import defaultdict
 from datetime import datetime
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session, load_only
 
 from app import crud, schemas
 from app.crud.base import CRUDBase
+from app.models.asset import Asset
 from app.models.transaction import Transaction
 from app.models.transaction_link import TransactionLink
 from app.schemas.enums import TransactionType
@@ -435,12 +437,20 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                             (used during auto-linking to avoid the new SELL
                             consuming its own lots)
         """
+        # Pre-fetch the asset currency to optimize db lookups inside the loop
+        asset_currency = (
+            db.query(Asset.currency)
+            .filter(Asset.id == asset_id)
+            .limit(1)
+            .scalar()
+        )
+
         # Fetch all relevant transactions sorted by date
         query = db.query(Transaction).filter(
             Transaction.user_id == user_id,
             Transaction.asset_id == asset_id,
             Transaction.transaction_type.in_(
-                ["BUY", "ESPP_PURCHASE", "RSU_VEST", "SELL"]
+                ["BUY", "ESPP_PURCHASE", "RSU_VEST", "SELL", "SPLIT"]
             ),
         )
         if portfolio_id:
@@ -455,9 +465,11 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         def get_type_priority(tx_type: str) -> int:
             if tx_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST"]:
                 return 1
-            if tx_type == "SELL":
+            if tx_type == "SPLIT":
                 return 2
-            return 3
+            if tx_type == "SELL":
+                return 3
+            return 4
 
         transactions.sort(key=lambda t: (
             t.transaction_date, get_type_priority(t.transaction_type)
@@ -492,10 +504,40 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 lot = {
                     "transaction": tx,
                     "available_quantity": tx.quantity,
+                    "price_per_unit": tx.price_per_unit,
                     "date": tx.transaction_date,
                 }
                 lots.append(lot)
                 lots_map[tx.id] = lot
+            elif tx.transaction_type == "SPLIT":
+                if tx.price_per_unit > 0 and tx.quantity > 0:
+                    ratio = tx.quantity / tx.price_per_unit
+
+                    # 1. Calculate total available quantity before split
+                    total_before = sum(lot["available_quantity"] for lot in lots)
+
+                    # 2. Scale each lot's quantity and adjust price per unit
+                    for lot in lots:
+                        lot["available_quantity"] *= ratio
+                        lot["price_per_unit"] /= ratio
+
+                    # 3. Floor total if asset currency is INR and
+                    # deduct fractional difference
+                    if asset_currency == "INR":
+                        total_after = total_before * ratio
+                        total_after_floored = Decimal(math.floor(total_after))
+                        fraction = total_after - total_after_floored
+                        if fraction > 0:
+                            remaining_fraction = fraction
+                            for lot in reversed(lots):
+                                if remaining_fraction <= 0:
+                                    break
+                                deduct = min(
+                                    lot["available_quantity"],
+                                    remaining_fraction
+                                )
+                                lot["available_quantity"] -= deduct
+                                remaining_fraction -= deduct
             elif tx.transaction_type == "SELL":
                 # Skip the excluded sell (used during auto-linking)
                 if exclude_sell_id and tx.id == exclude_sell_id:
@@ -537,7 +579,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 "id": lot["transaction"].id,
                 "date": lot["date"],
                 "available_quantity": lot["available_quantity"],
-                "price_per_unit": lot["transaction"].price_per_unit,
+                "price_per_unit": lot["price_per_unit"],
                 "type": lot["transaction"].transaction_type,
                 "details": lot["transaction"].details
             }

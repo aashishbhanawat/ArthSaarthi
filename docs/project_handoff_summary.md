@@ -215,3 +215,13 @@ Based on the `product_backlog.md`, the next features to consider are:
 -   **Vulnerability:** The endpoints lacked the `get_current_user` dependency, allowing unauthenticated access and cross-tenant data exposure.
 -   **Fix:** Added the necessary authentication dependency and ensured that the underlying data queries strictly filter by `user_id` to enforce tenant isolation.
 -   **Service Hardening:** Identified and fixed a secondary data leak in `CapitalGainsService._calculate_demerger_ratios` where buy transactions were missing user-scoping.
+
+## 11. Sell Modal Tax Lot Split Adjustment (2026-06-15)
+
+-   **Issue #443:** Fixed tax lots in the Sell modal showing the original purchase quantity instead of the split-adjusted quantity.
+-   **Fix:** Refactored `get_available_lots` in `crud_transaction.py` to replay `SPLIT` transactions chronologically on existing tax lots, adjusting both quantities and prices. Included a flooring mechanism for INR assets to prevent fractional share allocations.
+-   **PR Review & CI/CD Optimizations:**
+    - Pre-fetched asset currency outside the transaction processing loop to optimize database access and avoid N+1 queries.
+    - Added a defensive check (`tx.quantity > 0`) to prevent division by zero in the split ratio calculations.
+    - Applied `@pytest.mark.usefixtures("pre_unlocked_key_manager")` decorators to the first two split tests to resolve KeyManager failures in SQLite encrypted (Desktop) test environments.
+-   **Verification:** Implemented unit/integration tests covering base split quantity/price adjustments, subsequent FIFO matching, INR flooring, and reverse stock splits (ratio < 1) for both INR and USD assets. Verified that all 332 backend and 188 frontend tests pass under all SQLite (encrypted and plain) and PostgreSQL environments, along with linting checks.
