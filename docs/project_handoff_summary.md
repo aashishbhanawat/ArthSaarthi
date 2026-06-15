@@ -220,4 +220,4 @@ Based on the `product_backlog.md`, the next features to consider are:
 
 -   **Issue #443:** Fixed tax lots in the Sell modal showing the original purchase quantity instead of the split-adjusted quantity.
 -   **Fix:** Refactored `get_available_lots` in `crud_transaction.py` to replay `SPLIT` transactions chronologically on existing tax lots, adjusting both quantities and prices. Included a flooring mechanism for INR assets to prevent fractional share allocations.
--   **Verification:** Implemented unit/integration tests covering base split quantity/price adjustments, subsequent FIFO matching, and INR flooring. Verified that all 330 backend and 188 frontend tests pass, along with frontend and backend linters.
+-   **Verification:** Implemented unit/integration tests covering base split quantity/price adjustments, subsequent FIFO matching, INR flooring, and reverse stock splits (ratio < 1) for both INR and USD assets to verify flooring and fractional retention behaviors. Verified that all 332 backend and 188 frontend tests pass, along with frontend and backend linters.

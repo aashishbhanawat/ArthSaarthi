@@ -1640,12 +1640,13 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 1. **SPLIT Corporate Action Processing:** Updated `get_available_lots` in `backend/app/crud/crud_transaction.py` to chronologically replay `SPLIT` transactions, scaling the available quantity and price per unit of all existing tax lots before the split.
 2. **INR Flooring:** For Indian Rupees (INR) assets, floored the split-adjusted total quantity to integer values and deducted the fractional difference from the lots (in reverse chronological order) to mirror standard market operations.
 3. **Tests:** Added comprehensive integration tests (`test_tax_lot_split_adjustment` and `test_tax_lot_split_inr_flooring`) in `backend/app/tests/crud/test_tax_lot_accounting_flow.py` to verify correct quantity/price scaling, FIFO matching, and INR flooring behavior.
+4. **Test Gap Resolution:** Expanded regression testing by adding `test_tax_lot_reverse_split_adjustment` (for INR reverse splits where ratio < 1 with flooring) and `test_tax_lot_reverse_split_usd` (for USD reverse splits retaining fractional shares).
 
 ### File Changes
 
 **Backend:**
 *   **Modified:** `backend/app/crud/crud_transaction.py` - Integrated `SPLIT` transaction processing into `get_available_lots`.
-*   **Modified:** `backend/app/tests/crud/test_tax_lot_accounting_flow.py` - Appended new integration/regression tests for split adjustment and INR flooring.
+*   **Modified:** `backend/app/tests/crud/test_tax_lot_accounting_flow.py` - Appended new integration/regression tests for split adjustment, INR flooring, and reverse splits.
 
 ### Outcome
-**Success.** Tax lots in the Sell modal are now dynamically adjusted for corporate action splits, preventing overselling and ensuring correct cost-basis tracking for subsequent sales.
+**Success.** Tax lots in the Sell modal are now dynamically adjusted for corporate action splits and reverse splits, preventing overselling and ensuring correct cost-basis tracking for subsequent sales. All backend (SQLite/Postgres) and frontend test suites pass.

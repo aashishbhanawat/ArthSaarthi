@@ -308,3 +308,134 @@ def test_tax_lot_split_inr_flooring(db: Session):
     assert abs(float(lot1["price_per_unit"]) - (100.0 / 1.5)) < 0.01
 
 
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_tax_lot_reverse_split_adjustment(db: Session):
+    """
+    Test that a reverse stock split (ratio < 1) is correctly applied to tax lots:
+    - INR asset: floors total shares and deducts fractional differences.
+    """
+    # 0. Setup User and Portfolio
+    user, _ = create_random_user(db)
+    portfolio = crud.portfolio.create_with_owner(
+        db=db,
+        obj_in=schemas.PortfolioCreate(name="Test Portfolio"),
+        user_id=user.id
+    )
+
+    # Asset: INR STOCK
+    asset = crud.asset.create(
+        db=db,
+        obj_in=schemas.AssetCreate(
+            ticker_symbol="INR_REV_STOCK",
+            name="INR Reverse Split Stock",
+            asset_type="STOCK",
+            currency="INR",
+        )
+    )
+
+    # 1. Buy 5 units @ 100 on D-10
+    crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=5,
+            price_per_unit=100,
+            transaction_date=datetime.now() - timedelta(days=10)
+        ),
+        portfolio_id=portfolio.id
+    )
+
+    # 2. Perform a 1:2 reverse stock split on D-5 (1 new for 2 old)
+    crud.crud_corporate_action.handle_stock_split(
+        db=db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="SPLIT",
+            quantity=1,  # New
+            price_per_unit=2,  # Old
+            transaction_date=datetime.now() - timedelta(days=5)
+        )
+    )
+
+    # 3. Check Available Lots
+    lots = crud.transaction.get_available_lots(
+        db=db, asset_id=asset.id, user_id=user.id
+    )
+    assert len(lots) == 1, "Should have 1 available lot"
+    lot1 = lots[0]
+
+    # Verify that the lot quantity is floored: 5 * 0.5 = 2.5 -> floored to 2.0
+    assert float(lot1["available_quantity"]) == 2.0
+    # Price per unit is adjusted: 100 / 0.5 = 200.0
+    assert float(lot1["price_per_unit"]) == 200.0
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_tax_lot_reverse_split_usd(db: Session):
+    """
+    Test that a reverse stock split (ratio < 1) for a USD asset
+    retains fractional shares:
+    - USD asset: no flooring applied.
+    """
+    # 0. Setup User and Portfolio
+    user, _ = create_random_user(db)
+    portfolio = crud.portfolio.create_with_owner(
+        db=db,
+        obj_in=schemas.PortfolioCreate(name="Test Portfolio"),
+        user_id=user.id
+    )
+
+    # Asset: USD STOCK
+    asset = crud.asset.create(
+        db=db,
+        obj_in=schemas.AssetCreate(
+            ticker_symbol="USD_REV_STOCK",
+            name="USD Reverse Split Stock",
+            asset_type="STOCK",
+            currency="USD",
+        )
+    )
+
+    # 1. Buy 5 units @ 100 on D-10
+    crud.transaction.create_with_portfolio(
+        db=db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="BUY",
+            quantity=5,
+            price_per_unit=100,
+            transaction_date=datetime.now() - timedelta(days=10)
+        ),
+        portfolio_id=portfolio.id
+    )
+
+    # 2. Perform a 1:2 reverse stock split on D-5 (1 new for 2 old)
+    crud.crud_corporate_action.handle_stock_split(
+        db=db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type="SPLIT",
+            quantity=1,  # New
+            price_per_unit=2,  # Old
+            transaction_date=datetime.now() - timedelta(days=5)
+        )
+    )
+
+    # 3. Check Available Lots
+    lots = crud.transaction.get_available_lots(
+        db=db, asset_id=asset.id, user_id=user.id
+    )
+    assert len(lots) == 1, "Should have 1 available lot"
+    lot1 = lots[0]
+
+    # Verify that the lot quantity is NOT floored: 5 * 0.5 = 2.5
+    assert float(lot1["available_quantity"]) == 2.5
+    # Price per unit is adjusted: 100 / 0.5 = 200.0
+    assert float(lot1["price_per_unit"]) == 200.0
+
+
