@@ -1654,3 +1654,27 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 
 ### Outcome
 **Success.** Tax lots in the Sell modal are now dynamically adjusted for corporate action splits and reverse splits, preventing overselling and ensuring correct cost-basis tracking for subsequent sales. Database performance has been optimized, division-by-zero checks are in place, and SQLite encrypted test environments (Desktop) pass without KeyManager failures.
+
+---
+
+## 2026-06-19: Fix PPF Account Collisions (#444)
+
+**Task:** Prevent globally unique ticker symbol violations when creating PPF accounts for different users with the same account number, and handle the new format robustly in backup/restore.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **User-Specific Ticker Generation:** Updated the `create_ppf_and_first_contribution` logic in `crud_asset.py` to generate user-specific PPF ticker symbols (`PPF-{user_id_short}-{account_number}`) instead of the legacy `PPF-{account_number}`.
+2. **Robust Backup and Restore:** Refactored the `restore_backup` process in `backup_service.py` to support the new user-specific PPF ticker formats during both asset resolution and transaction linking, while maintaining backward compatibility with the legacy `PPF-{account_number}` format (acting as a fallback).
+3. **Tests:** Created comprehensive multi-user collision and backup/restore tests in `backend/app/tests/api/v1/test_ppf_multi_user.py` covering multi-user PPF creation, new backup/restore compatibility, and legacy backup/restore format compatibility.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/crud/crud_asset.py` - Generated user-specific PPF ticker symbols in `create_ppf_and_first_contribution`.
+*   **Modified:** `backend/app/services/backup_service.py` - Updated `restore_backup` to resolve and parse new user-specific tickers and support legacy fallbacks.
+*   **New:** `backend/app/tests/api/v1/test_ppf_multi_user.py` - Added integration tests for multi-user collisions and legacy backup/restore.
+
+### Outcome
+**Success.** PPF accounts can now be created with the same account number by different users without causing unique constraint violations. The backup/restore system correctly migrates legacy backups to the new format while maintaining complete backward compatibility.
