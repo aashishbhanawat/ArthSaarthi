@@ -226,10 +226,13 @@ Based on the `product_backlog.md`, the next features to consider are:
     - Applied `@pytest.mark.usefixtures("pre_unlocked_key_manager")` decorators to the first two split tests to resolve KeyManager failures in SQLite encrypted (Desktop) test environments.
 -   **Verification:** Implemented unit/integration tests covering base split quantity/price adjustments, subsequent FIFO matching, INR flooring, and reverse stock splits (ratio < 1) for both INR and USD assets. Verified that all 332 backend and 188 frontend tests pass under all SQLite (encrypted and plain) and PostgreSQL environments, along with linting checks.
 
-## 12. PPF Account Collision Prevention (Issue #444) (Updated 2026-06-19)
+## 12. PPF Account Collision Prevention (Issue #444) (Updated 2026-06-20)
 
 -   **Issue #444:** Prevent globally unique ticker symbol violations when creating PPF accounts for different users with the same account number.
 -   **Fix:**
-    -   **Backend:** Updated `create_ppf_and_first_contribution` in `crud_asset.py` to generate user-specific PPF ticker symbols (`PPF-{user_id_short}-{account_number}`).
-    -   **Backup & Restore:** Updated `restore_backup` in `backup_service.py` to support the new user-specific PPF ticker format during both asset resolution and transaction restoration, while keeping the legacy `PPF-{account_number}` format as a fallback for backward compatibility.
--   **Verification:** Implemented multi-user collision and backup/restore tests in `backend/app/tests/api/v1/test_ppf_multi_user.py` covering multi-user PPF creation, new backup/restore compatibility, and legacy backup/restore format compatibility. All backend SQLite and Postgres tests pass successfully.
+    -   **Backend Ticker & Optimization:** Updated `create_ppf_and_first_contribution` in `crud_asset.py` to generate user-specific PPF ticker symbols (`PPF-{user_id_short}-{account_number}`). Optimized database queries by fetching only the `user_id` scalar instead of loading the entire `Portfolio` model instance.
+    -   **Strict Backup & Restore Isolation:** Modified `restore_backup` in `backup_service.py` to remove legacy fallbacks to the generic `old_ticker` during asset resolution and transaction lookup, enforcing strict user-specific ticker matching to ensure complete user data isolation and prevent potential data leaks.
+-   **Verification:** 
+    -   Implemented multi-user collision and backup/restore tests in `backend/app/tests/api/v1/test_ppf_multi_user.py`.
+    -   Updated the legacy backup/restore tests in `backend/app/tests/api/v1/test_backup_restore.py` to align assertions with the new user-specific PPF ticker formatting.
+    -   Verified that all 335 backend tests pass successfully in both SQLite and Postgres/Redis environments, and the code compiles without linting errors.

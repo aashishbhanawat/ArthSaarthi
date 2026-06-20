@@ -299,9 +299,6 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                 new_ticker = f"PPF-{user_id_short}{ppf_data['account_number']}".upper()
                 asset = crud.asset.get_by_ticker(db, ticker_symbol=new_ticker)
                 if not asset:
-                    old_ticker = f"PPF-{ppf_data['account_number']}".upper()
-                    asset = crud.asset.get_by_ticker(db, ticker_symbol=old_ticker)
-                if not asset:
                     # Create Asset
                     asset_in = schemas.AssetCreate(
                         name=ppf_data["institution"],
@@ -421,9 +418,6 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                     acc_num = tx_data["ppf_account_number"]
                     new_ticker = f"PPF-{user_id_short}{acc_num}".upper()
                     asset = crud.asset.get_by_ticker(db, ticker_symbol=new_ticker)
-                    if not asset:
-                        old_ticker = f"PPF-{acc_num}".upper()
-                        asset = crud.asset.get_by_ticker(db, ticker_symbol=old_ticker)
                 elif "isin" in tx_data and tx_data["isin"]:
                     # First try to find by ISIN in the database
                     asset = (

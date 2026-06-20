@@ -136,8 +136,9 @@ def test_backup_restore_flow(client: TestClient, db: Session, get_auth_headers):
     assert len(transactions) == 2
 
     # Check PPF transaction
+    expected_ppf_ticker = f"PPF-{str(user.id)[:8]}-12345".upper()
     t_ppf = next(
-        (t for t in transactions if t.asset.ticker_symbol == "PPF-12345"), None
+        (t for t in transactions if t.asset.ticker_symbol == expected_ppf_ticker), None
     )
     assert t_ppf is not None
     assert t_ppf.transaction_type == "CONTRIBUTION"

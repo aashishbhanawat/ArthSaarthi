@@ -94,14 +94,15 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         Creates a PPF Asset and its initial contribution transaction.
         """
         # 1. Create the Asset
-        portfolio = (
-            db.query(models.Portfolio)
+        user_id = (
+            db.query(models.Portfolio.user_id)
             .filter(models.Portfolio.id == portfolio_id)
-            .first()
+            .limit(1)
+            .scalar()
         )
         user_id_short = ""
-        if portfolio:
-            user_id_short = f"{str(portfolio.user_id)[:8]}-"
+        if user_id:
+            user_id_short = f"{str(user_id)[:8]}-"
 
         suffix = ppf_in.account_number or uuid.uuid4().hex[:8]
         ticker = f"PPF-{user_id_short}{suffix}".upper()
