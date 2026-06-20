@@ -295,13 +295,14 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
 
             # Independent Assets: PPF
             for ppf_data in data.get("ppf_accounts", []):
-                ticker = f"PPF-{ppf_data['account_number']}"
-                asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
+                user_id_short = f"{str(user_id)[:8]}-"
+                new_ticker = f"PPF-{user_id_short}{ppf_data['account_number']}".upper()
+                asset = crud.asset.get_by_ticker(db, ticker_symbol=new_ticker)
                 if not asset:
                     # Create Asset
                     asset_in = schemas.AssetCreate(
                         name=ppf_data["institution"],
-                        ticker_symbol=ticker,
+                        ticker_symbol=new_ticker,
                         asset_type="PPF",
                         currency="INR",
                         account_number=ppf_data["account_number"],
@@ -413,8 +414,10 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                 # Find Asset
                 asset = None
                 if "ppf_account_number" in tx_data:
-                    ticker = f"PPF-{tx_data['ppf_account_number']}"
-                    asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker)
+                    user_id_short = f"{str(user_id)[:8]}-"
+                    acc_num = tx_data["ppf_account_number"]
+                    new_ticker = f"PPF-{user_id_short}{acc_num}".upper()
+                    asset = crud.asset.get_by_ticker(db, ticker_symbol=new_ticker)
                 elif "isin" in tx_data and tx_data["isin"]:
                     # First try to find by ISIN in the database
                     asset = (

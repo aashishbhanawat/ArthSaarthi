@@ -1,17 +1,17 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-06-11
+**Last Updated:** 2026-06-19
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Fixed cross-portfolio lot leakage in the Sell modal by filtering available tax lots by the active portfolio ID (Issue #442).
+**Latest Achievement:** Resolved PPF account creation collisions (#444) by introducing user-specific ticker symbols and refactoring the backup/restore engine with fallback compatibility.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **329/329 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **326/329 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **335/338 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **335/338 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing** (Extracted shared transaction utilities)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
@@ -225,3 +225,14 @@ Based on the `product_backlog.md`, the next features to consider are:
     - Added a defensive check (`tx.quantity > 0`) to prevent division by zero in the split ratio calculations.
     - Applied `@pytest.mark.usefixtures("pre_unlocked_key_manager")` decorators to the first two split tests to resolve KeyManager failures in SQLite encrypted (Desktop) test environments.
 -   **Verification:** Implemented unit/integration tests covering base split quantity/price adjustments, subsequent FIFO matching, INR flooring, and reverse stock splits (ratio < 1) for both INR and USD assets. Verified that all 332 backend and 188 frontend tests pass under all SQLite (encrypted and plain) and PostgreSQL environments, along with linting checks.
+
+## 12. PPF Account Collision Prevention (Issue #444) (Updated 2026-06-20)
+
+-   **Issue #444:** Prevent globally unique ticker symbol violations when creating PPF accounts for different users with the same account number.
+-   **Fix:**
+    -   **Backend Ticker & Optimization:** Updated `create_ppf_and_first_contribution` in `crud_asset.py` to generate user-specific PPF ticker symbols (`PPF-{user_id_short}-{account_number}`). Optimized database queries by fetching only the `user_id` scalar instead of loading the entire `Portfolio` model instance.
+    -   **Strict Backup & Restore Isolation:** Modified `restore_backup` in `backup_service.py` to remove legacy fallbacks to the generic `old_ticker` during asset resolution and transaction lookup, enforcing strict user-specific ticker matching to ensure complete user data isolation and prevent potential data leaks.
+-   **Verification:** 
+    -   Implemented multi-user collision and backup/restore tests in `backend/app/tests/api/v1/test_ppf_multi_user.py`.
+    -   Updated the legacy backup/restore tests in `backend/app/tests/api/v1/test_backup_restore.py` to align assertions with the new user-specific PPF ticker formatting.
+    -   Verified that all 335 backend tests pass successfully in both SQLite and Postgres/Redis environments, and the code compiles without linting errors.
