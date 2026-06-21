@@ -7262,3 +7262,8 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 **Issue**: Windows build failed due to `cffi` version conflict between `bcrypt` and `cryptography`.
 **Fix**: Updated `bcrypt` to version `4.1.3` in `requirements-windows.txt` to eliminate the `cffi` dependency conflict.
 
+## [2026-06-21] Erroneous Q2-2026 PPF Interest Rate End Date (Issue #445)
+**Issue**: The end date for the final PPF interest rate entry (Q2-2026) was set incorrectly to `2026-03-31` in commit `7ab22337`, causing incorrect interest rate calculations for Q2-2026.
+**Fix**: Reverted the end date back to `2026-06-30` in `backend/app/db/seed_data/ppf_interest_rates.py`. Implemented a comprehensive verification test `test_seed_interest_rates_correctness` in `backend/app/tests/api/v1/test_admin_interest_rates.py` to check seed data ranges, gaps/overlaps, sorting, and database seeding functionality.
+
+
