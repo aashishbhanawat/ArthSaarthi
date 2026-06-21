@@ -1683,3 +1683,26 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 
 ### Outcome
 **Success.** PPF accounts can now be created with the same account number by different users without causing unique constraint violations. The backup/restore system correctly migrates legacy backups to the new format while maintaining complete backward compatibility. All PR review comments have been resolved.
+
+---
+
+## 2026-06-21: Revert PPF interest rate for Q2-2026 (#445)
+
+**Task:** Revert the end date for the last PPF interest rate entry back to 2026-06-30 (Q2-2026) and add tests to verify the correctness and chronological continuity of future interest rate seed data.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Reverted PPF Interest Rate End Date:** Corrected the end date for the last PPF interest rate entry in `ppf_interest_rates.py` back to `2026-06-30` (representing Q2-2026), resolving the issue where it was accidentally set to `2026-03-31` (representing Q1-2026).
+2. **Added Seed Data Correctness Tests:** Implemented a new validation and database seeding test `test_seed_interest_rates_correctness` in `test_admin_interest_rates.py`. This test programmatically checks the seed data for chronological order, non-overlapping date ranges, lack of gaps, non-negative rates, and coverage of at least Q2-2026, while also verifying that database seeding behaves as expected.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/db/seed_data/ppf_interest_rates.py` - Updated the last entry's end date to `2026-06-30`.
+*   **Modified:** `backend/app/tests/api/v1/test_admin_interest_rates.py` - Appended `test_seed_interest_rates_correctness` to validate the seed data integrity and database seeding operations.
+
+### Outcome
+**Success.** The Q2-2026 interest rate end date has been reverted, and automated verification tests ensure that future changes to seed data will not introduce gaps, overlaps, or date coverage regressions.
+

@@ -236,3 +236,12 @@ Based on the `product_backlog.md`, the next features to consider are:
     -   Implemented multi-user collision and backup/restore tests in `backend/app/tests/api/v1/test_ppf_multi_user.py`.
     -   Updated the legacy backup/restore tests in `backend/app/tests/api/v1/test_backup_restore.py` to align assertions with the new user-specific PPF ticker formatting.
     -   Verified that all 335 backend tests pass successfully in both SQLite and Postgres/Redis environments, and the code compiles without linting errors.
+
+## 13. Revert PPF Interest Rate for Q2-2026 (Issue #445) (Updated 2026-06-21)
+
+-   **Issue #445:** Revert the end date for the last PPF interest rate entry back to 2026-06-30 (Q2-2026) and add validation tests.
+-   **Fix:**
+    -   **Reverted PPF Interest Rate End Date:** Reverted the end date in `backend/app/db/seed_data/ppf_interest_rates.py` back to `2026-06-30` (representing Q2-2026) instead of `2026-03-31`.
+    -   **Added Seed Data Verification Tests:** Implemented a verification test (`test_seed_interest_rates_correctness` in `test_admin_interest_rates.py`) to programmatically ensure interest rate seed data has no gaps, overlaps, contains only non-negative rates, is sorted chronologically, covers up to at least Q2-2026, and successfully seeds database tables.
+-   **Verification:** Verified that the new tests and the entire backend test suite pass without issues in both SQLite and Postgres environments, and passes strict ruff lints.
+
