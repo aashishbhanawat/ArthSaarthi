@@ -145,6 +145,7 @@ const DateInput: React.FC<DateInputProps> = ({
                     disabled={disabled}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors bg-white dark:bg-gray-700 rounded-md"
                     title="Open calendar"
+                    aria-label="Open calendar"
                 >
                     <CalendarIcon className="w-5 h-5" />
                 </button>
