@@ -67,6 +67,7 @@ const PortfolioHistoryChart: React.FC = () => {
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
+              aria-pressed={range === r.value}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${range === r.value
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
