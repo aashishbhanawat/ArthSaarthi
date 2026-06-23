@@ -4,4 +4,4 @@
 ## 2026-06-21 - Add ARIA label to icon-only button\n**Learning:** Icon-only buttons (like the Calendar button in DateInput.tsx) can easily be overlooked for accessibility. While `title` provides a tooltip for sighted users, `aria-label` is crucial for screen readers to properly announce the button's action.\n**Action:** Always verify that buttons containing only an SVG or Icon component have a descriptive `aria-label` attribute.
 ## 2026-06-22 - Chart Time Range Toggle Buttons
 **Learning:** When using buttons as a mutually exclusive toggle group (like the 7D/30D/1Y time range selectors in PortfolioHistoryChart), their active state needs to be conveyed to screen readers. Standard styling only conveys visual state.
-**Action:** Always add an `aria-pressed={isActive}` attribute to buttons that function as toggles so their state is properly announced to assistive technologies.
+**Action:** Use role="tab" and aria-selected={isActive} for mutually exclusive buttons instead of aria-pressed so their state is properly announced to assistive technologies.
