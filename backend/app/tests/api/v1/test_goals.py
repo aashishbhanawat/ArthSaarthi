@@ -121,7 +121,17 @@ def test_create_goal_link_with_asset(client: TestClient, db: Session, get_auth_h
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
     goal = create_random_goal(db, user_id=user.id)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Test Portfolio")
     asset = create_test_asset(db, ticker_symbol="AAPL")
+    # Need to create a transaction so the asset is "owned" by the user
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="AAPL",
+        quantity=10,
+        price_per_unit=100,
+    )
+
     link_data = {"goal_id": str(goal.id), "asset_id": str(asset.id)}
 
     response = client.post(
@@ -157,7 +167,16 @@ def test_delete_goal_link(client: TestClient, db: Session, get_auth_headers):
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
     goal = create_random_goal(db, user_id=user.id)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Test Portfolio")
     asset = create_test_asset(db, ticker_symbol="GOOG")
+    # Need to create a transaction so the asset is "owned" by the user
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="GOOG",
+        quantity=10,
+        price_per_unit=100,
+    )
     link_data = {"goal_id": str(goal.id), "asset_id": str(asset.id)}
     response = client.post(
         f"/api/v1/goals/{goal.id}/links", headers=headers, json=link_data

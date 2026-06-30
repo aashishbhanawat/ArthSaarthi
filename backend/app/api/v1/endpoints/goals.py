@@ -132,6 +132,31 @@ def create_goal_link(
                 status_code=403, detail="Not enough permissions for this portfolio"
             )
 
+    if link_in.asset_id:
+        from app.models.asset import Asset
+        asset_exists = (
+            db.query(Asset.id)
+            .filter(Asset.id == link_in.asset_id)
+            .limit(1)
+            .first()
+        )
+        if not asset_exists:
+            raise HTTPException(status_code=404, detail="Asset not found")
+        # Ensure the user has at least one transaction for this asset
+        # (i.e. it's part of their portfolio)
+        from app.models.transaction import Transaction
+        user_has_asset = (
+            db.query(Transaction.id)
+            .filter(Transaction.asset_id == link_in.asset_id)
+            .filter(Transaction.user_id == current_user.id)
+            .limit(1)
+            .first()
+        )
+        if not user_has_asset:
+            raise HTTPException(
+                status_code=403, detail="Not enough permissions for this asset"
+            )
+
     link = crud.goal_link.create_with_owner(
         db=db, obj_in=link_in, user_id=current_user.id
     )
