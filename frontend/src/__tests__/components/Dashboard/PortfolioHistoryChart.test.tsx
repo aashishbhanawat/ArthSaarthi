@@ -66,7 +66,7 @@ describe('PortfolioHistoryChart', () => {
 
     expect(mockUseDashboardHistory).toHaveBeenCalledWith('30d');
 
-    const button7d = screen.getByRole('button', { name: /7d/i });
+    const button7d = screen.getByRole('tab', { name: /7d/i });
     fireEvent.click(button7d);
 
     expect(mockUseDashboardHistory).toHaveBeenLastCalledWith('7d');
