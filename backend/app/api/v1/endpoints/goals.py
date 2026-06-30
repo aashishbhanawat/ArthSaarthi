@@ -133,7 +133,13 @@ def create_goal_link(
             )
 
     if link_in.asset_id:
-        asset_exists = crud.asset.get(db=db, id=link_in.asset_id)
+        from app.models.asset import Asset
+        asset_exists = (
+            db.query(Asset.id)
+            .filter(Asset.id == link_in.asset_id)
+            .limit(1)
+            .first()
+        )
         if not asset_exists:
             raise HTTPException(status_code=404, detail="Asset not found")
         # Ensure the user has at least one transaction for this asset
@@ -143,6 +149,7 @@ def create_goal_link(
             db.query(Transaction.id)
             .filter(Transaction.asset_id == link_in.asset_id)
             .filter(Transaction.user_id == current_user.id)
+            .limit(1)
             .first()
         )
         if not user_has_asset:
