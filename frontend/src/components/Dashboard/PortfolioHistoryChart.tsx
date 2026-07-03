@@ -62,10 +62,13 @@ const PortfolioHistoryChart: React.FC = () => {
     <div className="card">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold dark:text-white">Portfolio History</h2>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2" role="tablist" aria-label="Time range selection">
           {RANGES.map((r) => (
             <button
               key={r.value}
+              type="button"
+              role="tab"
+              aria-selected={range === r.value}
               onClick={() => setRange(r.value)}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${range === r.value
                 ? 'bg-blue-600 text-white'
