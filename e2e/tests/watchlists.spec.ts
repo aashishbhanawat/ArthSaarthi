@@ -67,7 +67,7 @@ test.describe('Watchlists Feature', () => {
     // Wait for the detail view to load. Asserting the heading and the empty-state
     // message are visible is a robust way to ensure the component is ready for interaction.
     await expect(page.getByRole('heading', { name: watchlistName })).toBeVisible();
-    await expect(page.getByText('This watchlist is empty.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'This watchlist is empty' })).toBeVisible();
 
     // Add item
     await page.getByRole('button', { name: 'Add Asset' }).click();
