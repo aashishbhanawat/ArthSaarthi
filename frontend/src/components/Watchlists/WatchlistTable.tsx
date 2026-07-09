@@ -2,6 +2,7 @@ import React from 'react';
 import { Watchlist } from '../../types/watchlist';
 import { useRemoveWatchlistItem } from '../../hooks/useWatchlists';
 import { TrashIcon } from '@heroicons/react/24/solid';
+import { ListBulletIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../utils/formatting';
 import WatchlistItemCard from './WatchlistItemCard';
 
@@ -49,8 +50,9 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
   if (!watchlist || watchlist.items.length === 0) {
     return (
       <div className="text-center p-8">
-        <p className="text-gray-500">This watchlist is empty.</p>
-        <p className="text-sm text-gray-400 mt-2">Add assets to start tracking.</p>
+        <ListBulletIcon className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">This watchlist is empty</h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Add assets to start tracking.</p>
       </div>
     );
   }
