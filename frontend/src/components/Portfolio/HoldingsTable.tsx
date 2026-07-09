@@ -105,6 +105,18 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
         return grouped;
     }, [holdings, sortConfig]);
 
+    // Optimize: Pre-calculate and memoize the total value of each group to avoid
+    // O(N) recalculations of array subsets on every render (e.g., accordion toggles)
+    const groupTotals = useMemo(() => {
+        const totals: Record<string, number> = {};
+        for (const group in groupedAndSortedHoldings) {
+            totals[group] = groupedAndSortedHoldings[group].reduce(
+                (acc, h) => acc + Number(h.current_value), 0
+            );
+        }
+        return totals;
+    }, [groupedAndSortedHoldings]);
+
     const requestSort = (group: string, key: SortKey) => {
         let direction: SortDirection = 'ascending';
         if (sortConfig[group] && sortConfig[group].key === key && sortConfig[group].direction === 'ascending') {
@@ -150,7 +162,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                     if (!sectionHoldings) return null;
 
                     const config = SECTION_CONFIG[group];
-                    const totalValue = sectionHoldings.reduce((acc, h) => acc + Number(h.current_value), 0);
+                    const totalValue = groupTotals[group] || 0;
 
                     const getSortIndicator = (key: SortKey) => {
                         if (!sortConfig[group] || sortConfig[group].key !== key) return null;
