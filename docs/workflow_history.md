@@ -1,3 +1,20 @@
+## 2026-07-14: Comprehensive unit test suite for Benchmark Service outflows and edge cases (Issue #371)
+
+**Task:** Provide a comprehensive unit test suite to address the coverage gaps in `BenchmarkService` for outflows, withdrawals, all transaction types, synthetic transactions (FDs/RDs), and negative balance clamping.
+
+**AI Assistant:** Antigravity
+**Role:** Backend Developer
+
+### Summary
+
+1. **Outflows & Withdrawals Verification:** Added `test_benchmark_outflows_and_withdrawals` to verify that `SELL` and `WITHDRAWAL` transactions correctly reduce benchmark units and adjust the invested amount chronologically.
+2. **Transaction Types Handling:** Added `test_benchmark_all_transaction_types` to verify that all transaction types defined in the system (e.g. `BUY`, `DEPOSIT`, `RSU_VEST`, `ESPP_PURCHASE`, `CONTRIBUTION`, `SELL`, `WITHDRAWAL`, `DIVIDEND`, `COUPON`, `BONUS`, `SPLIT`) are either processed as inflows/outflows or ignored properly.
+3. **Synthetic Transactions:** Added `test_synthetic_transactions_generation_and_processing` to verify that FDs (with semi-annually intervals) and RDs correctly generate synthetic transactions (BUY, DIVIDEND, SELL on maturity).
+4. **Negative Balance Clamping:** Added `test_benchmark_invested_amount_clamping` to verify that selling highly profitable assets clamps the `invested_amount` to zero instead of letting it go negative.
+5. **Verification & Linting:** Ran ruff check and pytest inside the SQLite test container. All 11 tests passed with zero linting errors.
+
+---
+
 ## 2026-06-10: Scope Sell Modal Holdings to Active Portfolio (Issue #442)
 
 **Task:** Fix the sell modal displaying tax lots from all of a user's portfolios instead of restricting them to the currently active portfolio.
