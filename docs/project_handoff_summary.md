@@ -1,6 +1,6 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-06-19
+**Last Updated:** 2026-07-14
 
 ## 1. Current Project Status
 
@@ -10,14 +10,18 @@
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **335/338 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **335/338 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **346/349 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **346/349 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing** (Extracted shared transaction utilities)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Benchmark Service Test Coverage (Issue #371) (Updated 2026-07-14):**
+    - **Backend Fix:** Added comprehensive unit tests in `backend/tests/unit/backend/test_benchmark_service.py` verifying outflow/withdrawal reduction ratios, clamping negative invested amounts to zero under highly profitable sales, synthetic transactions generated for FDs and RDs (including interval mapping checks), and correct handling/ignoring of all other transaction types (`RSU_VEST`, `CONTRIBUTION`, `COUPON`, `DIVIDEND`, `BONUS`, `SPLIT`, etc.).
+    - **Verification:** Achieved 100% statement and branch coverage of the outflow block in `_simulate_daily`. Verified all tests pass successfully in the test container with clean ruff check linting.
 
 *   **Sell Modal Portfolio Scoping (Issue #442) (Updated 2026-06-11):**
     - **Backend Fix:** Updated `crud.transaction.get_available_lots` to accept and filter by `portfolio_id`. Modified the `/available-lots/{asset_id}` GET endpoint to accept `portfolio_id` as a query parameter and added authorization checks to verify portfolio ownership. Passed `portfolio_id` to `get_available_lots` during auto-FIFO linking in `create_with_portfolio`.
