@@ -289,7 +289,7 @@ def test_category_benchmark_splits_correctly(
 
 
 def test_benchmark_outflows_and_withdrawals(
-    benchmark_service, mock_db, mock_financial_service
+    benchmark_service, mock_financial_service
 ):
     """Test that SELL and WITHDRAWAL reduce benchmark units correctly."""
     mock_financial_service.yfinance_provider = MagicMock()
@@ -356,7 +356,7 @@ def test_benchmark_outflows_and_withdrawals(
 
 
 def test_benchmark_all_transaction_types(
-    benchmark_service, mock_db, mock_financial_service
+    benchmark_service, mock_financial_service
 ):
     """Test that all transaction types are handled or ignored properly."""
     mock_financial_service.yfinance_provider = MagicMock()
@@ -517,7 +517,7 @@ def test_synthetic_transactions_generation_and_processing(
 
 
 def test_benchmark_invested_amount_clamping(
-    benchmark_service, mock_db, mock_financial_service
+    benchmark_service, mock_financial_service
 ):
     """Test that invested_amount is clamped to zero when assets are sold."""
     mock_financial_service.yfinance_provider = MagicMock()
