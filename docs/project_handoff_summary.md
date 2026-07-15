@@ -1,23 +1,29 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-14
+**Last Updated:** 2026-07-15
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved PPF account creation collisions (#444) by introducing user-specific ticker symbols and refactoring the backup/restore engine with fallback compatibility.
+**Latest Achievement:** Upgraded the Risk Profiling questionnaire to the validated 13-question Grable & Lytton scale, including localized INR currencies, responsive scrollable sidebar navigation, and localStorage state persistence.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **346/349 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **346/349 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **344/347 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **344/347 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing** (Extracted shared transaction utilities)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Risk Profile 13-Question Grable & Lytton Upgrade (Issue #76) (Updated 2026-07-15):**
+    - **Backend:** Updated validation schemas to require 13 answers (`q1` to `q13`), refactored scoring logic in `crud_risk.py` with standard G&L points and benchmarks (Conservative, Moderate, Growth, Aggressive), and updated all integration unit tests.
+    - **Frontend:** Upgraded wizard questionnaire in `RiskQuestionnaireWizard.tsx` to display all 13 questions with localized INR (`₹`) currency, adjusted progress calculation to start at 0% complete, implemented `localStorage` progress caching to prevent losing state upon component unmounting, and added auto-redirect to `/risk-profile` on first login boarding in `DashboardPage.tsx`.
+    - **Responsiveness:** Corrected vertical overflow layout clipping of the sidebar navigation menu in `NavBar.tsx` and updated mobile header title mapping.
+    - **Verification:** All Jest and backend integration tests passed successfully with zero linter errors.
 
 *   **Benchmark Service Test Coverage (Issue #371) (Updated 2026-07-14):**
     - **Backend Fix:** Added comprehensive unit tests in `backend/tests/unit/backend/test_benchmark_service.py` verifying outflow/withdrawal reduction ratios, clamping negative invested amounts to zero under highly profitable sales, synthetic transactions generated for FDs and RDs (including interval mapping checks), and correct handling/ignoring of all other transaction types (`RSU_VEST`, `CONTRIBUTION`, `COUPON`, `DIVIDEND`, `BONUS`, `SPLIT`, etc.).

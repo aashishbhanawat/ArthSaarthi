@@ -1,3 +1,35 @@
+## 2026-07-15: Risk Profile Questionnaire Upgrade to Grable & Lytton 13-Question Scale (Issue #76 / FR12.1)
+
+**Task:** Upgrade the Risk Profile Questionnaire to the validated 13-question Grable & Lytton (1999) Financial Risk Tolerance scale, refine scoring & risk profile mapping, add local currency support, enable localStorage state persistence for multi-step progress, implement onboarding auto-redirect, and resolve ESLint explicit-any warnings.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend Scoring & Validation Scale:**
+   - Upgraded Pydantic schema validation in `backend/app/schemas/risk.py` to validate exactly 13 questions (`q1` through `q13`).
+   - Refactored `calculate_risk` in `backend/app/crud/crud_risk.py` to calculate score totals (range: 13-47) and map them to their correct risk profiles: Conservative (13-18), Moderate (19-28), Growth (29-32), and Aggressive (33-47).
+   - Aligned backend unit tests in `backend/app/tests/api/v1/test_risk.py`.
+2. **Frontend UI Components & Currency Localisation:**
+   - Replaced the 6 questions in `frontend/src/components/Risk/RiskQuestionnaireWizard.tsx` with the complete 13 questions of the Grable & Lytton scale.
+   - Localized all currency figures in the questions and options to INR (`₹`) instead of dollars (`$`).
+   - Adjusted progress percentage display to show `0% Complete` on the first question instead of starting at 17%.
+3. **State Caching & Persistence (`localStorage`):**
+   - Added automatic `localStorage` synchronization for `currentStep` and `answers` in `RiskQuestionnaireWizard.tsx` to prevent losing progress if the user navigates away or refreshes the page mid-survey.
+   - Cleared the cached state in `RiskProfilePage.tsx` upon successful questionnaire submission or when initiating a "Retake".
+4. **Onboarding Auto-Routing:**
+   - Modified `frontend/src/pages/DashboardPage.tsx` to query the user's risk profile and automatically redirect them to `/risk-profile` if it does not yet exist.
+5. **Responsiveness (Sidebar Scrolling):**
+   - Fixed vertical scrolling and layout clipping on the sidebar in `frontend/src/components/NavBar.tsx` by setting `h-full max-h-full overflow-hidden`.
+   - Updated mobile header title mapping in `frontend/src/components/MobileHeader.tsx`.
+6. **Code Quality & Testing:**
+   - Cleaned up ESLint typescript `no-explicit-any` errors in pages.
+   - Addressed testing failures in `DashboardPage.test.tsx` by mocking `useRiskProfile` and utilizing `<MemoryRouter>`.
+   - Verified that all 344 backend integration tests and 188 frontend unit tests pass successfully.
+
+---
+
 ## 2026-07-14: Risk Profile Questionnaire Implementation (Issue #76 / FR12.1)
 
 **Task:** Implement the Risk Profile Questionnaire feature (FR12.1) spanning database schema/migrations, backend APIs and CRUD, frontend wizard/results pages, security encryption, and test coverage.
