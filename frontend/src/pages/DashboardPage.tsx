@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AxiosError } from 'axios';
 import { useDashboardSummary } from '../hooks/useDashboard';
 import { useRiskProfile } from '../hooks/useRisk';
 import SummaryCard from '../components/Dashboard/SummaryCard';
@@ -18,7 +19,7 @@ const DashboardPage = () => {
   const { error: riskError } = useRiskProfile();
 
   useEffect(() => {
-    if (riskError && (riskError as any).response?.status === 404) {
+    if (riskError && (riskError as AxiosError).response?.status === 404) {
       navigate('/risk-profile', { replace: true });
     }
   }, [riskError, navigate]);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AxiosError } from 'axios';
 import { useRiskProfile, useSaveRiskProfile } from '../hooks/useRisk';
 import RiskQuestionnaireWizard from '../components/Risk/RiskQuestionnaireWizard';
 import RiskProfileResults from '../components/Risk/RiskProfileResults';
@@ -29,7 +30,7 @@ const RiskProfilePage: React.FC = () => {
     }
 
     // Check if error is not a 404 (404 means user hasn't filled it yet, which is expected)
-    const isNotFoundError = error && (error as any).response?.status === 404;
+    const isNotFoundError = error && (error as AxiosError).response?.status === 404;
     const hasProfile = !!profile && !isNotFoundError;
 
     return (

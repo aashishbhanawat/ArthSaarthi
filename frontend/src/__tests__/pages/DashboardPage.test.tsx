@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { PrivacyProvider } from '../../context/PrivacyContext';
 import DashboardPage from '../../pages/DashboardPage';
 import {
@@ -7,9 +8,11 @@ import {
   useDashboardHistory,
   useDashboardAllocation,
 } from '../../hooks/useDashboard';
+import { useRiskProfile } from '../../hooks/useRisk';
 
-// Mock the hook
+// Mock the hooks
 jest.mock('../../hooks/useDashboard');
+jest.mock('../../hooks/useRisk');
 jest.mock('../../components/Dashboard/PortfolioHistoryChart', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
@@ -34,6 +37,7 @@ jest.mock('../../components/HelpLink', () => {
 const mockUseDashboardSummary = useDashboardSummary as jest.Mock;
 const mockUseDashboardHistory = useDashboardHistory as jest.Mock;
 const mockUseDashboardAllocation = useDashboardAllocation as jest.Mock;
+const mockUseRiskProfile = useRiskProfile as jest.Mock;
 
 describe('DashboardPage', () => {
   beforeEach(() => {
@@ -67,11 +71,24 @@ describe('DashboardPage', () => {
       error: null,
       data: { allocation: [] },
     });
+
+    mockUseRiskProfile.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      error: null,
+      data: { answers: {}, score: 32, risk_category: 'Growth' },
+    });
   });
 
   it('should render loading state', () => {
     mockUseDashboardSummary.mockReturnValue({ isLoading: true });
-    render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
+    render(
+      <MemoryRouter>
+        <PrivacyProvider>
+          <DashboardPage />
+        </PrivacyProvider>
+      </MemoryRouter>
+    );
     expect(screen.getByText('Loading dashboard data...')).toBeInTheDocument();
   });
 
@@ -82,12 +99,24 @@ describe('DashboardPage', () => {
       error: new Error('Failed to fetch dashboard'),
       data: null,
     });
-    render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
+    render(
+      <MemoryRouter>
+        <PrivacyProvider>
+          <DashboardPage />
+        </PrivacyProvider>
+      </MemoryRouter>
+    );
     expect(screen.getByText('Error loading dashboard data.')).toBeInTheDocument();
   });
 
   it('should render dashboard with data on success', () => {
-    render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
+    render(
+      <MemoryRouter>
+        <PrivacyProvider>
+          <DashboardPage />
+        </PrivacyProvider>
+      </MemoryRouter>
+    );
 
     // Check for main title
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
@@ -112,7 +141,13 @@ describe('DashboardPage', () => {
     mockUseDashboardSummary.mockReturnValue({
       isLoading: false, isError: false, error: null, data: { total_value: 1000, total_unrealized_pnl: 0, total_realized_pnl: 0, top_movers: [], asset_allocation: [] }
     });
-    render(<PrivacyProvider><DashboardPage /></PrivacyProvider>);
+    render(
+      <MemoryRouter>
+        <PrivacyProvider>
+          <DashboardPage />
+        </PrivacyProvider>
+      </MemoryRouter>
+    );
     expect(screen.getByText(/No market data available/i)).toBeInTheDocument();
   });
 });
