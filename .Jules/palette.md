@@ -1,7 +1,3 @@
-## 2026-05-25 - Screen Reader Feedback on Loading Buttons and Modals
-**Learning:** `animate-spin` on SVGs without `aria-hidden="true"` can cause screen readers to announce useless graphic elements repeatedly, and modal close buttons using `&times;` (×) are often pronounced as "times" rather than "close" by screen readers if they lack an explicit `aria-label` or clear context. We also observed that when users attempt to dismiss an item from a form, the `×` symbol without label is opaque to screen readers.
-**Action:** Always add `aria-hidden="true"` to decorative spinning loading icons (like `<ArrowPathIcon animate-spin />`). Ensure that icon-only buttons (like `×` or an SVG `XMarkIcon`) use clear `aria-label` attributes like `"Close"` or `"Clear selection"`.
-## 2026-06-21 - Add ARIA label to icon-only button\n**Learning:** Icon-only buttons (like the Calendar button in DateInput.tsx) can easily be overlooked for accessibility. While `title` provides a tooltip for sighted users, `aria-label` is crucial for screen readers to properly announce the button's action.\n**Action:** Always verify that buttons containing only an SVG or Icon component have a descriptive `aria-label` attribute.
-## 2026-06-22 - Chart Time Range Toggle Buttons
-**Learning:** When using buttons as a mutually exclusive toggle group (like the 7D/30D/1Y time range selectors in PortfolioHistoryChart), their active state needs to be conveyed to screen readers. Standard styling only conveys visual state.
-**Action:** Use role="tab" and aria-selected={isActive} for mutually exclusive buttons instead of aria-pressed so their state is properly announced to assistive technologies.
+## 2024-03-24 - Empty state in Watchlist Selector
+**Learning:** For inline or sidebar menu components (like `ul` element menus), providing a simple `<li>` empty state message provides much better UX than silently rendering an empty container, but shouldn't use the full-page empty state Heroicon layout.
+**Action:** When working with inline lists, add a simple text `<li>` element when the underlying data is empty.
