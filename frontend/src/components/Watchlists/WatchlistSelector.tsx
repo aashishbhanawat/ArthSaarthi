@@ -79,7 +79,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
         </button>
       </div>
       <ul className="menu bg-base-100 rounded-box">
-        {watchlists?.length === 0 && (
+        {(!watchlists || watchlists.length === 0) && (
           <li className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
             No watchlists yet. Create one!
           </li>
