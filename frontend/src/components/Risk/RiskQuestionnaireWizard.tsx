@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRiskProfileCreate } from '../../types/risk';
 
 interface RiskQuestionnaireWizardProps {
@@ -31,10 +31,10 @@ const QUESTIONS: Question[] = [
         id: 'q2',
         text: 'You are on a TV game show and can choose one of the following. Which would you take?',
         options: [
-            { value: 'A', text: '$1,000 in cash', points: 1 },
-            { value: 'B', text: 'A 50% chance at winning $5,000', points: 2 },
-            { value: 'C', text: 'A 25% chance at winning $10,000', points: 3 },
-            { value: 'D', text: 'A 5% chance at winning $100,000', points: 4 },
+            { value: 'A', text: '₹1,00,000 in cash', points: 1 },
+            { value: 'B', text: 'A 50% chance at winning ₹5,00,000', points: 2 },
+            { value: 'C', text: 'A 25% chance at winning ₹10,00,000', points: 3 },
+            { value: 'D', text: 'A 5% chance at winning ₹1,00,00,000', points: 4 },
         ],
     },
     {
@@ -49,7 +49,7 @@ const QUESTIONS: Question[] = [
     },
     {
         id: 'q4',
-        text: 'If you unexpectedly received $20,000 to invest, what would you do?',
+        text: 'If you unexpectedly received ₹10,00,000 to invest, what would you do?',
         options: [
             { value: 'A', text: 'Deposit it in a bank account, money market account, or an insured CD', points: 1 },
             { value: 'B', text: 'Invest it in safe high quality bonds or bond mutual funds', points: 2 },
@@ -89,31 +89,31 @@ const QUESTIONS: Question[] = [
         id: 'q8',
         text: 'Given the best- and worst-case returns of the four investment choices below, which would you prefer?',
         options: [
-            { value: 'A', text: '$200 gain best case; $0 gain/loss worst case', points: 1 },
-            { value: 'B', text: '$800 gain best case; $200 loss worst case', points: 2 },
-            { value: 'C', text: '$2,600 gain best case; $800 loss worst case', points: 3 },
-            { value: 'D', text: '$4,800 gain best case; $2,400 loss worst case', points: 4 },
+            { value: 'A', text: '₹10,000 gain best case; ₹0 gain/loss worst case', points: 1 },
+            { value: 'B', text: '₹40,000 gain best case; ₹10,000 loss worst case', points: 2 },
+            { value: 'C', text: '₹1,30,000 gain best case; ₹40,000 loss worst case', points: 3 },
+            { value: 'D', text: '₹2,40,000 gain best case; ₹1,20,000 loss worst case', points: 4 },
         ],
     },
     {
         id: 'q9',
-        text: 'In addition to whatever you own, you have been given $1,000. You are now asked to choose between:',
+        text: 'In addition to whatever you own, you have been given ₹50,000. You are now asked to choose between:',
         options: [
-            { value: 'A', text: 'A sure gain of $500', points: 1 },
-            { value: 'B', text: 'A 50% chance to gain $1,000 and a 50% chance to gain nothing', points: 3 },
+            { value: 'A', text: 'A sure gain of ₹25,000', points: 1 },
+            { value: 'B', text: 'A 50% chance to gain ₹50,000 and a 50% chance to gain nothing', points: 3 },
         ],
     },
     {
         id: 'q10',
-        text: 'In addition to whatever you own, you have been given $2,000. You are now asked to choose between:',
+        text: 'In addition to whatever you own, you have been given ₹1,00,000. You are now asked to choose between:',
         options: [
-            { value: 'A', text: 'A sure loss of $500', points: 1 },
-            { value: 'B', text: 'A 50% chance to lose $1,000 and a 50% chance to lose nothing', points: 3 },
+            { value: 'A', text: 'A sure loss of ₹25,000', points: 1 },
+            { value: 'B', text: 'A 50% chance to lose ₹50,000 and a 50% chance to lose nothing', points: 3 },
         ],
     },
     {
         id: 'q11',
-        text: 'Suppose a relative left you an inheritance of $100,000, stipulating in the will that you invest ALL the money in ONE of the following choices. Which one would you select?',
+        text: 'Suppose a relative left you an inheritance of ₹50,00,000, stipulating in the will that you invest ALL the money in ONE of the following choices. Which one would you select?',
         options: [
             { value: 'A', text: 'A savings account or money market mutual fund', points: 1 },
             { value: 'B', text: 'A mutual fund that owns stocks and bonds', points: 2 },
@@ -123,7 +123,7 @@ const QUESTIONS: Question[] = [
     },
     {
         id: 'q12',
-        text: 'If you had to invest $20,000, which of the following investment choices would you find most appealing?',
+        text: 'If you had to invest ₹10,00,000, which of the following investment choices would you find most appealing?',
         options: [
             { value: 'A', text: '60% in low-risk investments, 30% in medium-risk investments, 10% in high-risk investments', points: 1 },
             { value: 'B', text: '30% in low-risk investments, 40% in medium-risk investments, 30% in high-risk investments', points: 2 },
@@ -143,8 +143,22 @@ const QUESTIONS: Question[] = [
 ];
 
 const RiskQuestionnaireWizard: React.FC<RiskQuestionnaireWizardProps> = ({ onSubmit, isSubmitting }) => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [answers, setAnswers] = useState<Record<string, string>>({});
+    const [currentStep, setCurrentStep] = useState<number>(() => {
+        const saved = localStorage.getItem('risk_wizard_step');
+        return saved ? parseInt(saved, 10) : 0;
+    });
+    const [answers, setAnswers] = useState<Record<string, string>>(() => {
+        const saved = localStorage.getItem('risk_wizard_answers');
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    useEffect(() => {
+        localStorage.setItem('risk_wizard_step', currentStep.toString());
+    }, [currentStep]);
+
+    useEffect(() => {
+        localStorage.setItem('risk_wizard_answers', JSON.stringify(answers));
+    }, [answers]);
 
     const handleSelectOption = (value: string) => {
         const questionId = QUESTIONS[currentStep].id;

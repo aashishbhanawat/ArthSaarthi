@@ -79,7 +79,7 @@ const NavBar: React.FC = () => {
                 </button>
             </div>
 
-            <nav className="flex flex-col gap-2 flex-grow">
+            <nav className="flex flex-col gap-2 flex-grow overflow-y-auto min-h-0 pr-1">
                 <NavLink
                     to="/dashboard"
                     className={({ isActive }) => linkClass(isActive)}

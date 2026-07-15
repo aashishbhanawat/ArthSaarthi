@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDashboardSummary } from '../hooks/useDashboard';
+import { useRiskProfile } from '../hooks/useRisk';
 import SummaryCard from '../components/Dashboard/SummaryCard';
 import TopMoversTable from '../components/Dashboard/TopMoversTable';
 import PortfolioHistoryChart from '../components/Dashboard/PortfolioHistoryChart';
@@ -9,8 +12,16 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   const { data: summary, isLoading, isError } = useDashboardSummary();
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
+  const { error: riskError } = useRiskProfile();
+
+  useEffect(() => {
+    if (riskError && (riskError as any).response?.status === 404) {
+      navigate('/risk-profile', { replace: true });
+    }
+  }, [riskError, navigate]);
 
   if (isLoading) {
     return <div className="text-center p-8">Loading dashboard data...</div>;

@@ -11,6 +11,8 @@ const RiskProfilePage: React.FC = () => {
     const handleSubmit = (answersData: { answers: Record<string, string> }) => {
         saveProfile.mutate(answersData, {
             onSuccess: () => {
+                localStorage.removeItem('risk_wizard_step');
+                localStorage.removeItem('risk_wizard_answers');
                 setForceWizard(false);
             },
         });
@@ -44,7 +46,11 @@ const RiskProfilePage: React.FC = () => {
             {hasProfile && !forceWizard ? (
                 <RiskProfileResults
                     profile={profile!}
-                    onRetake={() => setForceWizard(true)}
+                    onRetake={() => {
+                        localStorage.removeItem('risk_wizard_step');
+                        localStorage.removeItem('risk_wizard_answers');
+                        setForceWizard(true);
+                    }}
                 />
             ) : (
                 <RiskQuestionnaireWizard
