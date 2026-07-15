@@ -20,7 +20,7 @@ class UserRiskProfileBase(BaseModel):
         if not isinstance(v, dict):
             raise ValueError("answers must be a dictionary")
 
-        required_questions = {f"q{i}" for i in range(1, 7)}
+        required_questions = {f"q{i}" for i in range(1, 14)}
         valid_choices = {"A", "B", "C", "D"}
 
         # Check all questions are answered

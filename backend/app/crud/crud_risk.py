@@ -10,14 +10,21 @@ from app.schemas.risk import UserRiskProfileCreate, UserRiskProfileUpdate
 
 
 def calculate_risk(answers: Dict[str, str]) -> Tuple[int, str]:
-    # Points definition
+    # Grable & Lytton 13-item scale points definition
     points = {
-        "q1": {"A": 6, "B": 4, "C": 2, "D": 1},
-        "q2": {"A": 6, "B": 4, "C": 2, "D": 1},
+        "q1": {"A": 4, "B": 3, "C": 2, "D": 1},
+        "q2": {"A": 1, "B": 2, "C": 3, "D": 4},
         "q3": {"A": 1, "B": 2, "C": 3, "D": 4},
-        "q4": {"A": 1, "B": 2, "C": 3, "D": 4},
-        "q5": {"A": 1, "B": 2, "C": 3, "D": 4},
+        "q4": {"A": 1, "B": 2, "C": 3},
+        "q5": {"A": 1, "B": 2, "C": 3},
         "q6": {"A": 1, "B": 2, "C": 3, "D": 4},
+        "q7": {"A": 1, "B": 2, "C": 3, "D": 4},
+        "q8": {"A": 1, "B": 2, "C": 3, "D": 4},
+        "q9": {"A": 1, "B": 3},
+        "q10": {"A": 1, "B": 3},
+        "q11": {"A": 1, "B": 2, "C": 3, "D": 4},
+        "q12": {"A": 1, "B": 2, "C": 3},
+        "q13": {"A": 1, "B": 2, "C": 3, "D": 4},
     }
 
     score = 0
@@ -25,12 +32,16 @@ def calculate_risk(answers: Dict[str, str]) -> Tuple[int, str]:
         ans = answers.get(q_key)
         score += choices.get(ans, 0)
 
-    # Determine risk category
-    if 6 <= score <= 10:
+    # Determine risk category based on Grable & Lytton benchmarks:
+    # 13 - 18: Low tolerance (Conservative)
+    # 19 - 28: Below-average / Average tolerance (Moderate)
+    # 29 - 32: Above-average tolerance (Growth)
+    # 33 - 47: High tolerance (Aggressive)
+    if score <= 18:
         category = "Conservative"
-    elif 11 <= score <= 20:
+    elif score <= 28:
         category = "Moderate"
-    elif 21 <= score <= 24:
+    elif score <= 32:
         category = "Growth"
     else:
         category = "Aggressive"

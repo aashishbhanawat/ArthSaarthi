@@ -19,62 +19,125 @@ interface Question {
 const QUESTIONS: Question[] = [
     {
         id: 'q1',
-        text: 'What is your age?',
+        text: 'In general, how would your best friend describe you as a risk taker?',
         options: [
-            { value: 'A', text: 'I am less than 40 yrs old', points: 6 },
-            { value: 'B', text: 'I am between 40-55 yrs old', points: 4 },
-            { value: 'C', text: 'I am between 55-70 yrs old', points: 2 },
-            { value: 'D', text: 'I am > 70 yrs old', points: 1 },
+            { value: 'A', text: 'A real gambler', points: 4 },
+            { value: 'B', text: 'Willing to take risks after completing adequate research', points: 3 },
+            { value: 'C', text: 'Cautious', points: 2 },
+            { value: 'D', text: 'A real risk avoider', points: 1 },
         ],
     },
     {
         id: 'q2',
-        text: 'What best describes your income levels?',
+        text: 'You are on a TV game show and can choose one of the following. Which would you take?',
         options: [
-            { value: 'A', text: 'I expect my income to increase at a high rate', points: 6 },
-            { value: 'B', text: 'I expect my income to remain steady', points: 4 },
-            { value: 'C', text: 'I do not have a fixed monthly income', points: 2 },
-            { value: 'D', text: 'I am retired and/or do not have a source of income', points: 1 },
+            { value: 'A', text: '$1,000 in cash', points: 1 },
+            { value: 'B', text: 'A 50% chance at winning $5,000', points: 2 },
+            { value: 'C', text: 'A 25% chance at winning $10,000', points: 3 },
+            { value: 'D', text: 'A 5% chance at winning $100,000', points: 4 },
         ],
     },
     {
         id: 'q3',
-        text: 'What is your investment horizon and when do you plan to start withdrawing money from the portfolio?',
+        text: 'You have just finished saving for a "once-in-a-lifetime" vacation. Three weeks before you plan to leave, you lose your job. You would:',
         options: [
-            { value: 'A', text: 'Less than 1 year', points: 1 },
-            { value: 'B', text: 'From 1-3 years', points: 2 },
-            { value: 'C', text: 'Between 3-5 years', points: 3 },
-            { value: 'D', text: 'More than 5 years', points: 4 },
+            { value: 'A', text: 'Cancel the vacation', points: 1 },
+            { value: 'B', text: 'Take a much more modest vacation', points: 2 },
+            { value: 'C', text: 'Go as scheduled, reasoning that you need the time to prepare for a job search', points: 3 },
+            { value: 'D', text: 'Extend your vacation, because this might be your last chance to go first-class', points: 4 },
         ],
     },
     {
         id: 'q4',
-        text: 'If a few months after investing, the value of your investments declines by 20%, what would you do?',
+        text: 'If you unexpectedly received $20,000 to invest, what would you do?',
         options: [
-            { value: 'A', text: 'Cut losses immediately and liquidate all investments (Capital preservation is paramount)', points: 1 },
-            { value: 'B', text: 'I would be worried, but would give my investments a little more time', points: 2 },
-            { value: 'C', text: 'I will be ok with volatility and accept decline in portfolio value as a part of investing. I would keep my investments as they are', points: 3 },
-            { value: 'D', text: 'I would add to my investments. I am confident about my investments and will not be worried by notional losses', points: 4 },
+            { value: 'A', text: 'Deposit it in a bank account, money market account, or an insured CD', points: 1 },
+            { value: 'B', text: 'Invest it in safe high quality bonds or bond mutual funds', points: 2 },
+            { value: 'C', text: 'Invest it in stocks or stock mutual funds', points: 3 },
         ],
     },
     {
         id: 'q5',
-        text: 'Your investment knowledge is best described as:',
+        text: 'In terms of experience, how comfortable are you investing in stocks or stock mutual funds?',
         options: [
-            { value: 'A', text: 'Limited: I have little/no investment knowledge beyond traditional bank savings accounts and fixed deposits', points: 1 },
-            { value: 'B', text: 'Moderate: I have knowledge and understanding of financial products beyond traditional investments and am aware of related risks', points: 2 },
-            { value: 'C', text: 'Advanced: I have sufficient understanding of various financial products and am a regular investor', points: 3 },
-            { value: 'D', text: 'Extensive: I have extensive knowledge and understanding of investment products, and am comfortable making my own decisions', points: 4 },
+            { value: 'A', text: 'Not at all comfortable', points: 1 },
+            { value: 'B', text: 'Somewhat comfortable', points: 2 },
+            { value: 'C', text: 'Very comfortable', points: 3 },
         ],
     },
     {
         id: 'q6',
-        text: 'If you receive a lump sum amount of money, how would you invest it?',
+        text: 'When you think of the word "risk" which of the following words comes to mind first?',
         options: [
-            { value: 'A', text: 'I would invest in something that offered moderate current income and is conservative', points: 1 },
-            { value: 'B', text: 'I would invest in something that offered high current income with a moderate amount of risk', points: 2 },
-            { value: 'C', text: 'I would invest in something that offered high total return (current income + capital appreciation) with moderately high risk', points: 3 },
-            { value: 'D', text: 'I would invest in something that offered substantial capital appreciation even though it has high risk', points: 4 },
+            { value: 'A', text: 'Loss', points: 1 },
+            { value: 'B', text: 'Uncertainty', points: 2 },
+            { value: 'C', text: 'Opportunity', points: 3 },
+            { value: 'D', text: 'Thrill', points: 4 },
+        ],
+    },
+    {
+        id: 'q7',
+        text: 'Some experts are predicting prices of assets such as gold, jewels, collectibles, and real estate (hard assets) to increase in value; bond prices may fall, however, experts tend to agree that government bonds are relatively safe. Most of your investment assets are now in high-interest government bonds. What would you do?',
+        options: [
+            { value: 'A', text: 'Hold the bonds', points: 1 },
+            { value: 'B', text: 'Sell the bonds, put half the proceeds into money market accounts, and the other half into hard assets', points: 2 },
+            { value: 'C', text: 'Sell the bonds and put the total proceeds into hard assets', points: 3 },
+            { value: 'D', text: 'Sell the bonds, put all the money into hard assets, and borrow additional money to buy more', points: 4 },
+        ],
+    },
+    {
+        id: 'q8',
+        text: 'Given the best- and worst-case returns of the four investment choices below, which would you prefer?',
+        options: [
+            { value: 'A', text: '$200 gain best case; $0 gain/loss worst case', points: 1 },
+            { value: 'B', text: '$800 gain best case; $200 loss worst case', points: 2 },
+            { value: 'C', text: '$2,600 gain best case; $800 loss worst case', points: 3 },
+            { value: 'D', text: '$4,800 gain best case; $2,400 loss worst case', points: 4 },
+        ],
+    },
+    {
+        id: 'q9',
+        text: 'In addition to whatever you own, you have been given $1,000. You are now asked to choose between:',
+        options: [
+            { value: 'A', text: 'A sure gain of $500', points: 1 },
+            { value: 'B', text: 'A 50% chance to gain $1,000 and a 50% chance to gain nothing', points: 3 },
+        ],
+    },
+    {
+        id: 'q10',
+        text: 'In addition to whatever you own, you have been given $2,000. You are now asked to choose between:',
+        options: [
+            { value: 'A', text: 'A sure loss of $500', points: 1 },
+            { value: 'B', text: 'A 50% chance to lose $1,000 and a 50% chance to lose nothing', points: 3 },
+        ],
+    },
+    {
+        id: 'q11',
+        text: 'Suppose a relative left you an inheritance of $100,000, stipulating in the will that you invest ALL the money in ONE of the following choices. Which one would you select?',
+        options: [
+            { value: 'A', text: 'A savings account or money market mutual fund', points: 1 },
+            { value: 'B', text: 'A mutual fund that owns stocks and bonds', points: 2 },
+            { value: 'C', text: 'A portfolio of 15 common stocks', points: 3 },
+            { value: 'D', text: 'Commodities like gold, silver, and oil', points: 4 },
+        ],
+    },
+    {
+        id: 'q12',
+        text: 'If you had to invest $20,000, which of the following investment choices would you find most appealing?',
+        options: [
+            { value: 'A', text: '60% in low-risk investments, 30% in medium-risk investments, 10% in high-risk investments', points: 1 },
+            { value: 'B', text: '30% in low-risk investments, 40% in medium-risk investments, 30% in high-risk investments', points: 2 },
+            { value: 'C', text: '10% in low-risk investments, 40% in medium-risk investments, 50% in high-risk investments', points: 3 },
+        ],
+    },
+    {
+        id: 'q13',
+        text: 'Your trusted friend and neighbor, an experienced geologist, is putting together a group of investors to fund an exploratory gold mining venture. The venture could pay back 50 to 100 times the investment if successful. If the mine is a bust, the entire investment is worthless. Your friend estimates the chance of success is only 20%. If you had the money, how much would you invest?',
+        options: [
+            { value: 'A', text: 'Nothing', points: 1 },
+            { value: 'B', text: 'One month\'s salary', points: 2 },
+            { value: 'C', text: 'Three month\'s salary', points: 3 },
+            { value: 'D', text: 'Six month\'s salary', points: 4 },
         ],
     },
 ];
@@ -103,7 +166,7 @@ const RiskQuestionnaireWizard: React.FC<RiskQuestionnaireWizardProps> = ({ onSub
     };
 
     const activeQuestion = QUESTIONS[currentStep];
-    const progressPercent = ((currentStep + 1) / QUESTIONS.length) * 100;
+    const progressPercent = (currentStep / QUESTIONS.length) * 100;
     const currentAnswer = answers[activeQuestion.id];
 
     return (
