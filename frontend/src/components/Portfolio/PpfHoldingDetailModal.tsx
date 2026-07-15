@@ -1,5 +1,5 @@
 import { PencilSquareIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
 import { Holding } from '../../types/holding';
@@ -31,26 +31,46 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
 
   const { data: analytics, isLoading: isLoadingAnalytics } = useAssetAnalytics(portfolioId, holding.asset_id);
 
+  const {
+    totalContributions,
+    totalInterest,
+    reversedTransactions
+  } = useMemo(() => {
+    if (!isOpen) {
+      return { totalContributions: 0, totalInterest: 0, reversedTransactions: [] };
+    }
+
+    const txs = transactions || [];
+
+    let totalContributions = 0;
+    let totalInterest = 0;
+
+    for (const tx of txs) {
+      const amount = parseFloat(tx.quantity) || 0;
+      if (tx.transaction_type === 'CONTRIBUTION') {
+        totalContributions += amount;
+      } else if (tx.transaction_type === 'INTEREST_CREDIT') {
+        totalInterest += amount;
+      }
+    }
+
+    const sortedTransactions = [...txs].sort((a, b) =>
+      a.transaction_date < b.transaction_date ? -1 : a.transaction_date > b.transaction_date ? 1 : 0
+    );
+
+    let runningBalance = 0;
+    const transactionsWithBalance = sortedTransactions.map(tx => {
+      const amount = parseFloat(tx.quantity) || 0;
+      runningBalance += amount;
+      return { ...tx, amount, runningBalance };
+    });
+
+    const reversedTransactions = [...transactionsWithBalance].reverse();
+
+    return { totalContributions, totalInterest, reversedTransactions };
+  }, [transactions, isOpen]);
+
   if (!isOpen) return null;
-
-  const contributions = transactions?.filter(tx => tx.transaction_type === 'CONTRIBUTION') || [];
-  const interestCredits = transactions?.filter(tx => tx.transaction_type === 'INTEREST_CREDIT') || [];
-
-  const totalContributions = contributions.reduce((acc, tx) => acc + parseFloat(tx.quantity), 0);
-  const totalInterest = interestCredits.reduce((acc, tx) => acc + parseFloat(tx.quantity), 0);
-
-  const sortedTransactions = [...(transactions || [])].sort(
-    (a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
-  );
-
-  let runningBalance = 0;
-  const transactionsWithBalance = sortedTransactions.map(tx => {
-    const amount = parseFloat(tx.quantity);
-    runningBalance += amount;
-    return { ...tx, amount, runningBalance };
-  });
-
-  const reversedTransactions = [...transactionsWithBalance].reverse();
 
   const renderContent = () => {
     if (isLoading) {

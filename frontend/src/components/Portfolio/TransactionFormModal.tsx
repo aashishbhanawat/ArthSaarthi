@@ -399,7 +399,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ portfolioId
     }, [selectedAsset, transactionType, assetType, transactionToEdit, portfolioId]);
 
     // Helper to calculate total selected quantity
-    const totalSelectedQty = Object.values(lotSelections).reduce((sum, qty) => sum + qty, 0);
+    const totalSelectedQty = React.useMemo(() => {
+        return Object.values(lotSelections).reduce((sum, qty) => sum + qty, 0);
+    }, [lotSelections]);
 
     const handleLotChange = (lotId: string, qty: number) => {
         if (qty < 0) return;
