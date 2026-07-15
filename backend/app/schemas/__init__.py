@@ -80,6 +80,11 @@ from .recurring_deposit import (
     RecurringDepositDetails,
     RecurringDepositUpdate,
 )
+from .risk import (
+    UserRiskProfile,
+    UserRiskProfileCreate,
+    UserRiskProfileUpdate,
+)
 from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
@@ -183,6 +188,9 @@ __all__ = [
     "WatchlistItem",
     "WatchlistItemCreate",
     "WatchlistUpdate",
+    "UserRiskProfile",
+    "UserRiskProfileCreate",
+    "UserRiskProfileUpdate",
 ]
 
 # Manually update forward references to resolve circular dependencies

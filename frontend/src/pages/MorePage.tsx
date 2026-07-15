@@ -13,7 +13,8 @@ import {
 
     StarIcon,
     ChatBubbleLeftRightIcon,
-    BookOpenIcon
+    BookOpenIcon,
+    ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 const MenuItem = ({ to, href, icon: Icon, label, external }: { to?: string, href?: string, icon: React.ElementType, label: string, external?: boolean }) => {
@@ -60,6 +61,7 @@ const MorePage: React.FC = () => {
                         <MenuItem to="/capital-gains" icon={ScaleIcon} label="Capital Gains" />
                         <MenuItem to="/watchlists" icon={EyeIcon} label="Watchlists" />
                         <MenuItem to="/goals" icon={TrophyIcon} label="Goals" />
+                        <MenuItem to="/risk-profile" icon={ShieldCheckIcon} label="Risk Profile" />
                     </div>
                 </section>
 

@@ -23,6 +23,8 @@ import ProfilePage from './pages/ProfilePage';
 import MorePage from './pages/MorePage';
 import LogsPage from './pages/LogsPage';
 import UserGuidePage from './pages/UserGuidePage';
+import RiskProfilePage from './pages/RiskProfilePage';
+
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -69,6 +71,7 @@ function AppRoutes() {
           <Route path="/watchlists" element={<WatchlistsPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/goals/:goalId" element={<GoalDetailPage />} />
+          <Route path="/risk-profile" element={<RiskProfilePage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
             <Route path="/admin/interest-rates" element={<InterestRateManagementPage />} />

@@ -132,7 +132,7 @@ This document outlines the functional and non-functional requirements for the Ar
 
 ### FR12: Risk Profile Management
 
--   **FR12.1: Risk Profile Questionnaire.** The system must provide a questionnaire for users to assess their risk tolerance, risk capacity, investment horizon, and financial goals. `📝 Planned`
+-   **FR12.1: Risk Profile Questionnaire.** The system must provide a questionnaire for users to assess their risk tolerance, risk capacity, investment horizon, and financial goals. `✅ Done`
 -   **FR12.2: Risk Score Calculation.** Based on the questionnaire responses, the system must calculate a risk score and assign the user to a clear risk category (e.g., Conservative, Moderate, Aggressive). `📝 Planned`
 -   **FR12.3: Portfolio Risk Assessment.** The system must calculate the overall risk level of the user's current portfolio based on its asset composition and predefined risk factors for each asset class. `📝 Planned`
 -   **FR12.4: Risk Alignment Dashboard.** A dedicated page or dashboard section must: `📝 Planned`

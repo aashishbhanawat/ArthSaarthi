@@ -1,3 +1,30 @@
+## 2026-07-14: Risk Profile Questionnaire Implementation (Issue #76 / FR12.1)
+
+**Task:** Implement the Risk Profile Questionnaire feature (FR12.1) spanning database schema/migrations, backend APIs and CRUD, frontend wizard/results pages, security encryption, and test coverage.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Database Schema & Migrations:**
+   - Created the `user_risk_profiles` table in `backend/app/models/risk.py`.
+   - Enabled column-level encryption for the `answers` JSON string using `EncryptedString` (for SQLite compatibility in desktop mode).
+   - Registered the model in `db/base.py` and generated/executed the Alembic database migration.
+2. **Backend CRUD & APIs:**
+   - Added Pydantic schemas in `backend/app/schemas/risk.py` with custom field validation.
+   - Wrote CRUD logic in `backend/app/crud/crud_risk.py` to calculate risk score (out of 28) and classify the user (Conservative, Moderate, Growth, Aggressive).
+   - Created endpoints in `backend/app/api/v1/endpoints/risk.py` and registered them in `api.py`.
+3. **Frontend UI Components:**
+   - Created a multi-step questionnaire wizard in `frontend/src/components/Risk/RiskQuestionnaireWizard.tsx`.
+   - Created a results display component in `frontend/src/components/Risk/RiskProfileResults.tsx` visualizing score, profile, and indicative allocation.
+   - Built the page container in `frontend/src/pages/RiskProfilePage.tsx` and linked it via routing (`App.tsx`) and navigation (`NavBar.tsx`, `MorePage.tsx`).
+4. **Testing & Verification:**
+   - Authored backend integration tests (`test_risk.py`) verifying all GET/POST behaviors, inputs, and updates.
+   - Ran backend pytest and frontend build successfully.
+
+---
+
 ## 2026-07-14: Comprehensive unit test suite for Benchmark Service outflows and edge cases (Issue #371)
 
 **Task:** Provide a comprehensive unit test suite to address the coverage gaps in `BenchmarkService` for outflows, withdrawals, all transaction types, synthetic transactions (FDs/RDs), and negative balance clamping.

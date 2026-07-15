@@ -249,3 +249,13 @@ Based on the `product_backlog.md`, the next features to consider are:
     -   **Added Seed Data Verification Tests:** Implemented a verification test (`test_seed_interest_rates_correctness` in `test_admin_interest_rates.py`) to programmatically ensure interest rate seed data has no gaps, overlaps, contains only non-negative rates, is sorted chronologically, covers up to at least Q2-2026, and successfully seeds database tables.
 -   **Verification:** Verified that the new tests and the entire backend test suite pass without issues in both SQLite and Postgres environments, and passes strict ruff lints.
 
+## 14. Risk Profile Questionnaire (Issue #76 / FR12.1) (Updated 2026-07-14)
+
+-   **Issue #76 (FR12.1):** Implement the Risk Profile Questionnaire.
+-   **Fix:**
+    -   **Database Schema:** Created the `user_risk_profiles` table, storing answers as column-level encrypted JSON via `EncryptedString` in desktop SQLite database.
+    -   **Backend CRUD & API:** Added schemas, endpoints (`GET /api/v1/risk/` and `POST /api/v1/risk/`), and CRUD operations to calculate the risk score and classify the user (Conservative, Moderate, Growth, Aggressive).
+    -   **Frontend UI:** Implemented a multi-step questionnaire wizard with progress tracking, options cards, and back/next navigation, plus a results page visualizing the score and target allocation.
+    -   **Verification:** Authored backend integration tests (`test_risk.py`) verifying CRUD, validation, endpoints, and updates. Verified frontend compiles and builds successfully.
+
+

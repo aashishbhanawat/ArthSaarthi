@@ -13,3 +13,5 @@ from app.models.recurring_deposit import RecurringDeposit # noqa
 from app.models.watchlist import Watchlist, WatchlistItem # noqa
 from .bond import Bond # noqa
 from .audit_log import AuditLog # noqa
+from app.models.risk import UserRiskProfile  # noqa
+from app.models.portfolio_snapshot import DailyPortfolioSnapshot  # noqa

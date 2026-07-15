@@ -17,6 +17,7 @@ import {
     SunIcon,
     MoonIcon,
     ComputerDesktopIcon,
+    ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
@@ -123,6 +124,13 @@ const NavBar: React.FC = () => {
                 >
                     <TrophyIcon className="h-5 w-5" />
                     <span>Goals</span>
+                </NavLink>
+                <NavLink
+                    to="/risk-profile"
+                    className={({ isActive }) => linkClass(isActive)}
+                >
+                    <ShieldCheckIcon className="h-5 w-5" />
+                    <span>Risk Profile</span>
                 </NavLink>
                 {user?.is_admin && (
                     <>
