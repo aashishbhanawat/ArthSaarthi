@@ -36,21 +36,31 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
     totalInterest,
     reversedTransactions
   } = useMemo(() => {
+    if (!isOpen) {
+      return { totalContributions: 0, totalInterest: 0, reversedTransactions: [] };
+    }
+
     const txs = transactions || [];
 
-    const contributions = txs.filter(tx => tx.transaction_type === 'CONTRIBUTION');
-    const interestCredits = txs.filter(tx => tx.transaction_type === 'INTEREST_CREDIT');
+    let totalContributions = 0;
+    let totalInterest = 0;
 
-    const totalContributions = contributions.reduce((acc, tx) => acc + parseFloat(tx.quantity), 0);
-    const totalInterest = interestCredits.reduce((acc, tx) => acc + parseFloat(tx.quantity), 0);
+    for (const tx of txs) {
+      const amount = parseFloat(tx.quantity) || 0;
+      if (tx.transaction_type === 'CONTRIBUTION') {
+        totalContributions += amount;
+      } else if (tx.transaction_type === 'INTEREST_CREDIT') {
+        totalInterest += amount;
+      }
+    }
 
-    const sortedTransactions = [...txs].sort(
-      (a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
+    const sortedTransactions = [...txs].sort((a, b) =>
+      a.transaction_date < b.transaction_date ? -1 : a.transaction_date > b.transaction_date ? 1 : 0
     );
 
     let runningBalance = 0;
     const transactionsWithBalance = sortedTransactions.map(tx => {
-      const amount = parseFloat(tx.quantity);
+      const amount = parseFloat(tx.quantity) || 0;
       runningBalance += amount;
       return { ...tx, amount, runningBalance };
     });
@@ -58,7 +68,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
     const reversedTransactions = [...transactionsWithBalance].reverse();
 
     return { totalContributions, totalInterest, reversedTransactions };
-  }, [transactions]);
+  }, [transactions, isOpen]);
 
   if (!isOpen) return null;
 
