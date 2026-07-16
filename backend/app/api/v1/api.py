@@ -19,6 +19,7 @@ from app.api.v1.endpoints import (
     portfolios,
     ppf_accounts,
     recurring_deposits,
+    risk,
     schedule_fa,
     system,
     testing,
@@ -70,6 +71,8 @@ api_router.include_router(
     tags=["admin-aliases"],
 )
 api_router.include_router(fx.router, prefix="/fx-rate", tags=["fx-rate"])
+api_router.include_router(risk.router, prefix="/risk", tags=["risk"])
+
 
 # Conditionally include the testing router in test, android, or desktop environments
 if settings.ENVIRONMENT == "test" or settings.DEPLOYMENT_MODE in ("android", "desktop"):

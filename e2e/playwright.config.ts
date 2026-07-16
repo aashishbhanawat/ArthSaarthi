@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
+const baseURL = process.env.E2E_BASE_URL || 'http://frontend:3000';
+
 export default defineConfig({
   // Look for test files in the "tests" directory, relative to this configuration file.
   testDir: './tests',
@@ -12,8 +14,22 @@ export default defineConfig({
     timeout: 10 * 1000, // 10 seconds for assertions
   },
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://frontend:3000',
+    baseURL,
     trace: 'on',
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: new URL(baseURL).origin,
+          localStorage: [
+            {
+              name: 'skip_risk_redirect',
+              value: 'true',
+            },
+          ],
+        },
+      ],
+    },
   },
   timeout: 30 * 1000, // 30 seconds per test
 });

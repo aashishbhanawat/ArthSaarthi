@@ -25,6 +25,7 @@ const MobileHeader: React.FC = () => {
         if (path.startsWith('/import')) return 'Import';
         if (path.startsWith('/watchlists')) return 'Watchlists';
         if (path.startsWith('/goals')) return 'Goals';
+        if (path.startsWith('/risk-profile')) return 'Risk Profiling';
         if (path.startsWith('/profile')) return 'Profile';
         if (path.startsWith('/admin')) return 'Admin';
         return 'ArthSaarthi';

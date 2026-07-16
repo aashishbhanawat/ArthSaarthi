@@ -1,4 +1,8 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AxiosError } from 'axios';
 import { useDashboardSummary } from '../hooks/useDashboard';
+import { useRiskProfile } from '../hooks/useRisk';
 import SummaryCard from '../components/Dashboard/SummaryCard';
 import TopMoversTable from '../components/Dashboard/TopMoversTable';
 import PortfolioHistoryChart from '../components/Dashboard/PortfolioHistoryChart';
@@ -6,11 +10,29 @@ import AssetAllocationChart from '../components/Dashboard/AssetAllocationChart';
 import HelpLink from '../components/HelpLink';
 import { usePrivacy } from '../context/PrivacyContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../context/AuthContext';
 
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: summary, isLoading, isError } = useDashboardSummary();
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
+  const { error: riskError } = useRiskProfile();
+
+  useEffect(() => {
+    if (user?.is_admin) {
+      return;
+    }
+    const skipRiskRedirect = sessionStorage.getItem('skip_risk_redirect') === 'true' || 
+                             localStorage.getItem('skip_risk_redirect') === 'true';
+    if (skipRiskRedirect) {
+      return;
+    }
+    if (riskError && (riskError as AxiosError).response?.status === 404) {
+      navigate('/risk-profile', { replace: true });
+    }
+  }, [riskError, navigate, user]);
 
   if (isLoading) {
     return <div className="text-center p-8">Loading dashboard data...</div>;

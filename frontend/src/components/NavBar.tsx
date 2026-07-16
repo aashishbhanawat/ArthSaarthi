@@ -17,6 +17,7 @@ import {
     SunIcon,
     MoonIcon,
     ComputerDesktopIcon,
+    ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
@@ -34,7 +35,7 @@ const NavBar: React.FC = () => {
         `${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass} flex items-center gap-3`;
 
     return (
-        <aside className="hidden lg:flex bg-white flex flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <aside className="hidden lg:flex bg-white flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-full max-h-full overflow-hidden">
             {/* Header with Logo */}
             <div className="flex items-center gap-3 mb-4">
                 <img src="ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-16 w-16" />
@@ -78,7 +79,7 @@ const NavBar: React.FC = () => {
                 </button>
             </div>
 
-            <nav className="flex flex-col gap-2 flex-grow">
+            <nav className="flex flex-col gap-2 flex-grow overflow-y-auto min-h-0 pr-1">
                 <NavLink
                     to="/dashboard"
                     className={({ isActive }) => linkClass(isActive)}
@@ -123,6 +124,13 @@ const NavBar: React.FC = () => {
                 >
                     <TrophyIcon className="h-5 w-5" />
                     <span>Goals</span>
+                </NavLink>
+                <NavLink
+                    to="/risk-profile"
+                    className={({ isActive }) => linkClass(isActive)}
+                >
+                    <ShieldCheckIcon className="h-5 w-5" />
+                    <span>Risk Profile</span>
                 </NavLink>
                 {user?.is_admin && (
                     <>

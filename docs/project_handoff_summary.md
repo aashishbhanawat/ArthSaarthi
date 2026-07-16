@@ -1,23 +1,38 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-14
+**Last Updated:** 2026-07-16
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved PPF account creation collisions (#444) by introducing user-specific ticker symbols and refactoring the backup/restore engine with fallback compatibility.
+**Latest Achievement:** Upgraded the Risk Profiling questionnaire to the validated 13-question Grable & Lytton scale, including localized INR currencies, responsive scrollable sidebar navigation, and localStorage state persistence. Also successfully resolved all PR #481 review comments (cross-database migration compatibility, robust state-load validation, question-specific schema options validation, and Android public asset cleanup).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **346/349 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **346/349 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **344/347 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **344/347 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing** (Extracted shared transaction utilities)
 *   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Risk Profile PR #481 Review Fixes, E2E Stabilization & Asset Cleanup (Issue #76 / PR #481) (Updated 2026-07-16):**
+    - **Database Migration:** Switched from `sa.text('now()')` to `sa.func.now()` to ensure cross-database compatibility with SQLite.
+    - **Frontend State Load:** Wrapped `localStorage` parsing for `answers` in a `try-catch` block, and added bounds and type validation for `currentStep` in `RiskQuestionnaireWizard.tsx`.
+    - **Backend Schema Constraints:** Implemented question-specific option mappings in `validate_answers` inside `backend/app/schemas/risk.py` to prevent validation of invalid options for questions with fewer choices.
+    - **UI Correction:** Adjusted maximum score display denominator in `RiskProfileResults.tsx` to `/ 47`.
+    - **Asset Cleanup:** Removed all extraneous files accidentally committed under `frontend/android/app/src/main/assets/public/*`.
+    - **E2E Stabilization:** Added `skip_risk_redirect` sessionStorage/localStorage bypass to `DashboardPage.tsx` and explicitly exempted admin users. Configured Playwright globally in `playwright.config.ts` to pre-populate this flag to avoid test failures caused by onboarding redirects. Updated unit tests in `DashboardPage.test.tsx` to correctly mock `useAuth`.
+    - **Verification:** Added backend integration test validating invalid question choices, and successfully ran full Postgres, SQLite, Jest, and Playwright E2E test suites (100% pass rate).
+
+*   **Risk Profile 13-Question Grable & Lytton Upgrade (Issue #76) (Updated 2026-07-15):**
+    - **Backend:** Updated validation schemas to require 13 answers (`q1` to `q13`), refactored scoring logic in `crud_risk.py` with standard G&L points and benchmarks (Conservative, Moderate, Growth, Aggressive), and updated all integration unit tests.
+    - **Frontend:** Upgraded wizard questionnaire in `RiskQuestionnaireWizard.tsx` to display all 13 questions with localized INR (`₹`) currency, adjusted progress calculation to start at 0% complete, implemented `localStorage` progress caching to prevent losing state upon component unmounting, and added auto-redirect to `/risk-profile` on first login boarding in `DashboardPage.tsx`.
+    - **Responsiveness:** Corrected vertical overflow layout clipping of the sidebar navigation menu in `NavBar.tsx` and updated mobile header title mapping.
+    - **Verification:** All Jest and backend integration tests passed successfully with zero linter errors.
 
 *   **Benchmark Service Test Coverage (Issue #371) (Updated 2026-07-14):**
     - **Backend Fix:** Added comprehensive unit tests in `backend/tests/unit/backend/test_benchmark_service.py` verifying outflow/withdrawal reduction ratios, clamping negative invested amounts to zero under highly profitable sales, synthetic transactions generated for FDs and RDs (including interval mapping checks), and correct handling/ignoring of all other transaction types (`RSU_VEST`, `CONTRIBUTION`, `COUPON`, `DIVIDEND`, `BONUS`, `SPLIT`, etc.).
@@ -248,4 +263,14 @@ Based on the `product_backlog.md`, the next features to consider are:
     -   **Reverted PPF Interest Rate End Date:** Reverted the end date in `backend/app/db/seed_data/ppf_interest_rates.py` back to `2026-06-30` (representing Q2-2026) instead of `2026-03-31`.
     -   **Added Seed Data Verification Tests:** Implemented a verification test (`test_seed_interest_rates_correctness` in `test_admin_interest_rates.py`) to programmatically ensure interest rate seed data has no gaps, overlaps, contains only non-negative rates, is sorted chronologically, covers up to at least Q2-2026, and successfully seeds database tables.
 -   **Verification:** Verified that the new tests and the entire backend test suite pass without issues in both SQLite and Postgres environments, and passes strict ruff lints.
+
+## 14. Risk Profile Questionnaire (Issue #76 / FR12.1) (Updated 2026-07-14)
+
+-   **Issue #76 (FR12.1):** Implement the Risk Profile Questionnaire.
+-   **Fix:**
+    -   **Database Schema:** Created the `user_risk_profiles` table, storing answers as column-level encrypted JSON via `EncryptedString` in desktop SQLite database.
+    -   **Backend CRUD & API:** Added schemas, endpoints (`GET /api/v1/risk/` and `POST /api/v1/risk/`), and CRUD operations to calculate the risk score and classify the user (Conservative, Moderate, Growth, Aggressive).
+    -   **Frontend UI:** Implemented a multi-step questionnaire wizard with progress tracking, options cards, and back/next navigation, plus a results page visualizing the score and target allocation.
+    -   **Verification:** Authored backend integration tests (`test_risk.py`) verifying CRUD, validation, endpoints, and updates. Verified frontend compiles and builds successfully.
+
 
