@@ -13,6 +13,11 @@ import { useRiskProfile } from '../../hooks/useRisk';
 // Mock the hooks
 jest.mock('../../hooks/useDashboard');
 jest.mock('../../hooks/useRisk');
+jest.mock('../../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: { email: 'test@example.com', full_name: 'Test User', id: '1', is_active: true, is_admin: false },
+  }),
+}));
 jest.mock('../../components/Dashboard/PortfolioHistoryChart', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
