@@ -71,6 +71,19 @@ def test_create_risk_profile_invalid(client: TestClient, db: Session, get_auth_h
     )
     assert response.status_code == 422
 
+    # Invalid choice "D" for question "q4" (which only allows A, B, C)
+    answers_invalid_choice_q4 = {
+        "q1": "A", "q2": "A", "q3": "A", "q4": "D", "q5": "A", "q6": "A",
+        "q7": "A", "q8": "A", "q9": "A", "q10": "A", "q11": "A", "q12": "A",
+        "q13": "A"
+    }
+    response = client.post(
+        "/api/v1/risk/",
+        headers=headers,
+        json={"answers": answers_invalid_choice_q4},
+    )
+    assert response.status_code == 422
+
 
 def test_update_risk_profile(client: TestClient, db: Session, get_auth_headers):
     user, password = create_random_user(db)

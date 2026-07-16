@@ -21,7 +21,21 @@ class UserRiskProfileBase(BaseModel):
             raise ValueError("answers must be a dictionary")
 
         required_questions = {f"q{i}" for i in range(1, 14)}
-        valid_choices = {"A", "B", "C", "D"}
+        valid_choices_map = {
+            "q1": {"A", "B", "C", "D"},
+            "q2": {"A", "B", "C", "D"},
+            "q3": {"A", "B", "C", "D"},
+            "q4": {"A", "B", "C"},
+            "q5": {"A", "B", "C"},
+            "q6": {"A", "B", "C", "D"},
+            "q7": {"A", "B", "C", "D"},
+            "q8": {"A", "B", "C", "D"},
+            "q9": {"A", "B"},
+            "q10": {"A", "B"},
+            "q11": {"A", "B", "C", "D"},
+            "q12": {"A", "B", "C"},
+            "q13": {"A", "B", "C", "D"},
+        }
 
         # Check all questions are answered
         missing = required_questions - set(v.keys())
@@ -35,10 +49,11 @@ class UserRiskProfileBase(BaseModel):
 
         # Validate choices
         for q, ans in v.items():
-            if ans not in valid_choices:
+            allowed = valid_choices_map.get(q, set())
+            if ans not in allowed:
                 raise ValueError(
                     f"Invalid answer '{ans}' for question '{q}'. "
-                    f"Must be one of {sorted(valid_choices)}"
+                    f"Must be one of {sorted(allowed)}"
                 )
 
         return v

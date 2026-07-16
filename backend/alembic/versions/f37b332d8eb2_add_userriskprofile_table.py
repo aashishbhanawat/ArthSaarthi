@@ -29,7 +29,7 @@ def upgrade() -> None:
         sa.Column('answers', EncryptedString(), nullable=False),
         sa.Column('score', sa.Integer(), nullable=True),
         sa.Column('risk_category', sa.String(), nullable=True),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('user_id')

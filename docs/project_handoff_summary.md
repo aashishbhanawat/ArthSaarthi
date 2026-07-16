@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-15
+**Last Updated:** 2026-07-16
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Upgraded the Risk Profiling questionnaire to the validated 13-question Grable & Lytton scale, including localized INR currencies, responsive scrollable sidebar navigation, and localStorage state persistence.
+**Latest Achievement:** Upgraded the Risk Profiling questionnaire to the validated 13-question Grable & Lytton scale, including localized INR currencies, responsive scrollable sidebar navigation, and localStorage state persistence. Also successfully resolved all PR #481 review comments (cross-database migration compatibility, robust state-load validation, question-specific schema options validation, and Android public asset cleanup).
 
 ## 2. Test Suite Status
 
@@ -18,6 +18,14 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Risk Profile PR #481 Review Fixes & Asset Cleanup (Issue #76 / PR #481) (Updated 2026-07-16):**
+    - **Database Migration:** Switched from `sa.text('now()')` to `sa.func.now()` to ensure cross-database compatibility with SQLite.
+    - **Frontend State Load:** Wrapped `localStorage` parsing for `answers` in a `try-catch` block, and added bounds and type validation for `currentStep` in `RiskQuestionnaireWizard.tsx`.
+    - **Backend Schema Constraints:** Implemented question-specific option mappings in `validate_answers` inside `backend/app/schemas/risk.py` to prevent validation of invalid options for questions with fewer choices.
+    - **UI Correction:** Adjusted maximum score display denominator in `RiskProfileResults.tsx` to `/ 47`.
+    - **Asset Cleanup:** Removed all extraneous files accidentally committed under `frontend/android/app/src/main/assets/public/*`.
+    - **Verification:** Added backend integration test validating invalid question choices, and successfully ran full Postgres, SQLite, and Jest test suites.
 
 *   **Risk Profile 13-Question Grable & Lytton Upgrade (Issue #76) (Updated 2026-07-15):**
     - **Backend:** Updated validation schemas to require 13 answers (`q1` to `q13`), refactored scoring logic in `crud_risk.py` with standard G&L points and benchmarks (Conservative, Moderate, Growth, Aggressive), and updated all integration unit tests.

@@ -145,11 +145,21 @@ const QUESTIONS: Question[] = [
 const RiskQuestionnaireWizard: React.FC<RiskQuestionnaireWizardProps> = ({ onSubmit, isSubmitting }) => {
     const [currentStep, setCurrentStep] = useState<number>(() => {
         const saved = localStorage.getItem('risk_wizard_step');
-        return saved ? parseInt(saved, 10) : 0;
+        if (saved) {
+            const parsed = parseInt(saved, 10);
+            if (!isNaN(parsed) && parsed >= 0 && parsed < QUESTIONS.length) {
+                return parsed;
+            }
+        }
+        return 0;
     });
     const [answers, setAnswers] = useState<Record<string, string>>(() => {
-        const saved = localStorage.getItem('risk_wizard_answers');
-        return saved ? JSON.parse(saved) : {};
+        try {
+            const saved = localStorage.getItem('risk_wizard_answers');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            return {};
+        }
     });
 
     useEffect(() => {

@@ -1,3 +1,29 @@
+## 2026-07-16: Fix Risk Questionnaire Review Comments & Remove Extraneous Assets (PR #481)
+
+**Task:** Address review comments on PR #481: resolve PostgreSQL-specific migration compatibility issues, implement robust frontend wizard state loading validation, restrict backend schema question choices, fix maximum score display, and remove accidental Android public asset files.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Database Migration Compatibility:**
+   - Modified migration `f37b332d8eb2_add_userriskprofile_table.py` to use `sa.func.now()` instead of PostgreSQL-specific `sa.text('now()')`, ensuring SQLite compatibility.
+2. **Frontend State Load Validation:**
+   - Wrapped `localStorage` parsing for `answers` in a `try-catch` block inside `RiskQuestionnaireWizard.tsx`.
+   - Added bounds and type-checking validation for `currentStep` state loaded from `localStorage`.
+3. **Backend Schema & Validation:**
+   - Refactored `validate_answers` in `backend/app/schemas/risk.py` to use a mapping of allowed choices per question (e.g. restricting `q4` to only `{"A", "B", "C"}`), rejecting invalid options (e.g. 'D' for questions with fewer options) with a `422` error.
+4. **UI Refinement:**
+   - Corrected the maximum score denominator display in `RiskProfileResults.tsx` to `/ 47` (from `/ 28`).
+5. **Asset Cleanup:**
+   - Removed all accidentally added files under `frontend/android/app/src/main/assets/public/*` from the git index and working tree.
+6. **Testing:**
+   - Added a new backend unit test case in `backend/app/tests/api/v1/test_risk.py` to verify that invalid choices (e.g. 'D' for question 'q4') are successfully rejected.
+   - Ran all backend and frontend test suites, confirming 100% test passes.
+
+---
+
 ## 2026-07-15: Risk Profile Questionnaire Upgrade to Grable & Lytton 13-Question Scale (Issue #76 / FR12.1)
 
 **Task:** Upgrade the Risk Profile Questionnaire to the validated 13-question Grable & Lytton (1999) Financial Risk Tolerance scale, refine scoring & risk profile mapping, add local currency support, enable localStorage state persistence for multi-step progress, implement onboarding auto-redirect, and resolve ESLint explicit-any warnings.

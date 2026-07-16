@@ -66,7 +66,7 @@ const RiskProfileResults: React.FC<RiskProfileResultsProps> = ({ profile, onReta
                                 {category.toUpperCase()}
                             </span>
                             <span className="text-sm text-gray-600 dark:text-gray-400 block mt-2 font-medium">
-                                Score: {profile.score || 0} / 28
+                                Score: {profile.score || 0} / 47
                             </span>
                         </div>
 
