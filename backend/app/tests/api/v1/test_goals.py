@@ -349,3 +349,18 @@ def test_goal_sip_calculation_past_date(
     data = res.json()
     assert data["required_sip"] == 0.0
 
+
+def test_goal_expected_return_validation(
+    client: TestClient, db: Session, get_auth_headers
+):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    invalid_goal_data = {
+        "name": "Invalid Rate Goal",
+        "target_amount": 50000.0,
+        "target_date": "2030-01-01",
+        "expected_return": 150.0,  # Exceeds max 100.0
+    }
+    response = client.post("/api/v1/goals/", headers=headers, json=invalid_goal_data)
+    assert response.status_code == 422
+

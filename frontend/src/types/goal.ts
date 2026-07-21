@@ -7,7 +7,7 @@ export interface Goal {
   links: GoalLink[];
   current_amount: number;
   progress: number;
-  expected_return?: number;
+  expected_return?: number | null;
   required_sip?: number;
   calculated_return_rate?: number;
 }

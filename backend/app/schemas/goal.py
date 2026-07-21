@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # Schemas for Goal
@@ -10,7 +10,7 @@ class GoalBase(BaseModel):
     name: str
     target_amount: float
     target_date: date
-    expected_return: Optional[float] = None
+    expected_return: Optional[float] = Field(default=None, ge=0.0, le=100.0)
 
 
 class GoalCreate(GoalBase):
@@ -21,7 +21,7 @@ class GoalUpdate(BaseModel):
     name: Optional[str] = None
     target_amount: Optional[float] = None
     target_date: Optional[date] = None
-    expected_return: Optional[float] = None
+    expected_return: Optional[float] = Field(default=None, ge=0.0, le=100.0)
 
 
 class Goal(GoalBase):

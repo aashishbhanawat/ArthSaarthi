@@ -42,7 +42,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
         name,
         target_amount: parseFloat(targetAmount),
         target_date: targetDate,
-        expected_return: expectedReturn ? parseFloat(expectedReturn) : undefined,
+        expected_return: expectedReturn ? parseFloat(expectedReturn) : null,
       };
       onSubmit(goalData);
     }
