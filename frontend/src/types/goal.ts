@@ -7,6 +7,9 @@ export interface Goal {
   links: GoalLink[];
   current_amount: number;
   progress: number;
+  expected_return?: number;
+  required_sip?: number;
+  calculated_return_rate?: number;
 }
 
 interface LinkedAsset {

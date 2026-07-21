@@ -24,6 +24,7 @@ class Goal(Base):
     target_amount = Column(Numeric, nullable=False)
     target_date = Column(Date, nullable=False)
     user_id = Column(GUID, ForeignKey("users.id"), nullable=False)
+    expected_return = Column(Numeric(5, 2), nullable=True)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.now())
 
     user = relationship("User", back_populates="goals")

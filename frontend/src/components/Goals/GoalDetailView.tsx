@@ -56,6 +56,11 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
             <SummaryItem label="Target Amount" value={formatCurrency(goal.target_amount)} />
             <SummaryItem label="Current Amount" value={formatCurrency(goal.current_amount)} />
             <SummaryItem label="Target Date" value={formatDate(goal.target_date)} />
+            <SummaryItem label="Expected Return" value={`${(goal.calculated_return_rate ?? goal.expected_return ?? 10).toFixed(2)}%`} />
+            <SummaryItem
+              label="Required Monthly SIP"
+              value={goal.required_sip !== undefined ? `${formatCurrency(goal.required_sip)} / month` : 'N/A'}
+            />
           </div>
         </div>
       </div>

@@ -22,6 +22,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [targetDate, setTargetDate] = useState('');
+  const [expectedReturn, setExpectedReturn] = useState('10.0');
   const isEditMode = !!goal;
 
   useEffect(() => {
@@ -30,16 +31,18 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
       setTargetAmount(isEditMode ? goal.target_amount.toString() : '');
       // Format date for input type='date' which requires YYYY-MM-DD
       setTargetDate(isEditMode ? new Date(goal.target_date).toISOString().split('T')[0] : '');
+      setExpectedReturn(isEditMode && goal.expected_return !== undefined && goal.expected_return !== null ? goal.expected_return.toString() : '10.0');
     }
   }, [isOpen, isEditMode, goal]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim() && targetAmount && targetDate) {
-      const goalData = {
+      const goalData: GoalCreate | GoalUpdate = {
         name,
         target_amount: parseFloat(targetAmount),
         target_date: targetDate,
+        expected_return: expectedReturn ? parseFloat(expectedReturn) : undefined,
       };
       onSubmit(goalData);
     }
@@ -106,6 +109,23 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
                 onChange={(e) => setTargetDate(e.target.value)}
                 className="form-input"
                 required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="goal-expected-return" className="form-label">
+                Expected Annual Return (%)
+              </label>
+              <input
+                id="goal-expected-return"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={expectedReturn}
+                onChange={(e) => setExpectedReturn(e.target.value)}
+                className="form-input"
+                placeholder="E.g., 10.0"
               />
             </div>
 

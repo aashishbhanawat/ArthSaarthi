@@ -10,6 +10,7 @@ class GoalBase(BaseModel):
     name: str
     target_amount: float
     target_date: date
+    expected_return: Optional[float] = None
 
 
 class GoalCreate(GoalBase):
@@ -20,6 +21,7 @@ class GoalUpdate(BaseModel):
     name: Optional[str] = None
     target_amount: Optional[float] = None
     target_date: Optional[date] = None
+    expected_return: Optional[float] = None
 
 
 class Goal(GoalBase):
@@ -32,6 +34,8 @@ class Goal(GoalBase):
 class GoalWithAnalytics(Goal):
     current_amount: float
     progress: float
+    required_sip: float = 0.0
+    calculated_return_rate: float = 10.0
 
 
 # Schemas for GoalLink
