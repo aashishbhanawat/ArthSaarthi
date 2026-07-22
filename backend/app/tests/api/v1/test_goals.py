@@ -228,3 +228,139 @@ def test_read_goal_with_analytics(
     assert data["target_amount"] == 100000
     assert data["current_amount"] == 15000  # 100 shares * $150
     assert data["progress"] == 15.0
+
+
+def test_goal_sip_calculation_standard(
+    client: TestClient, db: Session, get_auth_headers
+):
+    from datetime import date, timedelta
+
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    # Target date 5 years (1825 days) into future
+    target_date_str = (date.today() + timedelta(days=1825)).strftime("%Y-%m-%d")
+    goal_data = {
+        "name": "Retirement Fund",
+        "target_amount": 1000000.0,
+        "target_date": target_date_str,
+        "expected_return": 12.0,
+    }
+    response = client.post("/api/v1/goals/", headers=headers, json=goal_data)
+    assert response.status_code == 201
+    goal_id = response.json()["id"]
+
+    res = client.get(f"/api/v1/goals/{goal_id}", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["expected_return"] == 12.0
+    assert data["calculated_return_rate"] == 12.0
+    # Expected SIP for 1,000,000 in 60 months @ 12% p.a. is approx 12244.45
+    assert 12000.0 <= data["required_sip"] <= 12500.0
+
+
+def test_goal_sip_calculation_pv_exceeds(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
+    from datetime import date, timedelta
+
+    mock_price_data = {"AAPL": {"current_price": 500.0, "previous_close": 500.0}}
+    mocker.patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value=mock_price_data,
+    )
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    target_date_str = (date.today() + timedelta(days=1095)).strftime("%Y-%m-%d")
+    resp = client.post(
+        "/api/v1/goals/",
+        headers=headers,
+        json={
+            "name": "Big Goal",
+            "target_amount": 500000.0,
+            "target_date": target_date_str,
+            "expected_return": 10.0,
+        },
+    )
+    goal_id = resp.json()["id"]
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Big Portfolio")
+    asset = create_test_asset(db, ticker_symbol="AAPL")
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="AAPL",
+        quantity=1000,
+        price_per_unit=500,
+    )
+    client.post(
+        f"/api/v1/goals/{goal_id}/links",
+        headers=headers,
+        json={"goal_id": str(goal_id), "asset_id": str(asset.id)},
+    )
+
+    res = client.get(f"/api/v1/goals/{goal_id}", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["current_amount"] == 500000
+    assert data["required_sip"] == 0.0
+
+
+def test_goal_sip_calculation_zero_rate(
+    client: TestClient, db: Session, get_auth_headers
+):
+    from datetime import date, timedelta
+
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    target_date_str = (date.today() + timedelta(days=365)).strftime("%Y-%m-%d")
+    goal_data = {
+        "name": "Zero Return Goal",
+        "target_amount": 120000.0,
+        "target_date": target_date_str,
+        "expected_return": 0.0,
+    }
+    response = client.post("/api/v1/goals/", headers=headers, json=goal_data)
+    assert response.status_code == 201
+    goal_id = response.json()["id"]
+
+    res = client.get(f"/api/v1/goals/{goal_id}", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    # 120,000 over ~12 months with 0% return rate -> ~10,000 / month
+    assert 9900.0 <= data["required_sip"] <= 10100.0
+
+
+def test_goal_sip_calculation_past_date(
+    client: TestClient, db: Session, get_auth_headers
+):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    goal_data = {
+        "name": "Past Goal",
+        "target_amount": 50000.0,
+        "target_date": "2020-01-01",
+        "expected_return": 10.0,
+    }
+    response = client.post("/api/v1/goals/", headers=headers, json=goal_data)
+    assert response.status_code == 201
+    goal_id = response.json()["id"]
+
+    res = client.get(f"/api/v1/goals/{goal_id}", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["required_sip"] == 0.0
+
+
+def test_goal_expected_return_validation(
+    client: TestClient, db: Session, get_auth_headers
+):
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    invalid_goal_data = {
+        "name": "Invalid Rate Goal",
+        "target_amount": 50000.0,
+        "target_date": "2030-01-01",
+        "expected_return": 150.0,  # Exceeds max 100.0
+    }
+    response = client.post("/api/v1/goals/", headers=headers, json=invalid_goal_data)
+    assert response.status_code == 422
+

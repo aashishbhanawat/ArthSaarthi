@@ -1,3 +1,28 @@
+## 2026-07-21: Calculate Goal Required Contribution Rate (SIP) (Issue #477 / FR13.3)
+
+**Task:** Implement backend calculation engine, database migration, and frontend UI components to compute and display the required monthly contribution (SIP) to reach financial goals.
+
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend Logic & Engine:**
+   - Modified `Goal` model in `backend/app/models/goal.py` to add nullable `expected_return` column (`Numeric(5, 2)`).
+   - Updated Pydantic schemas in `backend/app/schemas/goal.py` (`GoalBase`, `GoalCreate`, `GoalUpdate`, `GoalWithAnalytics`).
+   - Implemented ordinary annuity compounding SIP calculation engine in `backend/app/crud/crud_goal.py` (`get_goal_with_analytics`), accounting for target date duration, $PV$ asset growth, zero interest rate, and past target dates.
+2. **Database Migration:**
+   - Generated Alembic migration `c7e8f9a0b1c2_add_expected_return_to_goals.py` and executed upgrade head.
+3. **Frontend UI Components:**
+   - Updated TypeScript types in `frontend/src/types/goal.ts`.
+   - Updated `frontend/src/components/modals/GoalFormModal.tsx` to include an Expected Annual Return input field (default 10.0%).
+   - Updated `frontend/src/components/Goals/GoalDetailView.tsx` to render Expected Return and Privacy Mode-sensitive Required Monthly SIP cards.
+4. **Testing & Verification:**
+   - Wrote comprehensive backend test cases in `backend/app/tests/api/v1/test_goals.py` covering standard compounding, PV growth exceeding target ($PV_{\text{future}} \ge FV$), zero return rate, and past target dates.
+   - All 15 backend goal tests passed (`15 passed`).
+
+---
+
 ## 2026-07-16: Fix Risk Questionnaire Review Comments, E2E Stabilization & Asset Cleanup (PR #481)
 
 **Task:** Address review comments on PR #481: resolve PostgreSQL-specific migration compatibility issues, implement robust frontend wizard state loading validation, restrict backend schema question choices, fix maximum score display, remove accidental Android public asset files, and resolve E2E test failures caused by the automatic onboarding redirect.

@@ -41,7 +41,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
     *   **Schedule FA (Foreign Assets):** Generate reports compliant with Calendar Year rules, including Peak Value analysis (daily balance check) and specific field exports.
     *   **Capital Gains:** Comprehensive reports for Short-Term (STCG) and Long-Term (LTCG) capital gains.
     *   **Schedule 112A:** Dedicated support for Grandfathered Equity (acquired before 31 Jan 2018) with FMV lookup and CSV export for ITR-2 filing.
-*   **Goal Planning & Tracking (Core):** Define financial goals, link assets or portfolios to them, and track your current progress.
+*   **Goal Planning & Contribution Tracking (SIP):** Define financial goals, link assets/portfolios, specify custom or default expected annual return rates, and automatically calculate the required monthly contribution (ordinary annuity SIP) needed to reach your targets.
 *   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.

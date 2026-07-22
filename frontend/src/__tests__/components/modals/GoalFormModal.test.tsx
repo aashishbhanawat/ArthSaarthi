@@ -46,6 +46,7 @@ describe('GoalFormModal', () => {
           name: 'New Goal',
           target_amount: 50000,
           target_date: '2026-01-01',
+          expected_return: 10,
         });
       });
       // onClose is no longer called in handleSubmit, so we don't expect it here.
@@ -71,6 +72,7 @@ describe('GoalFormModal', () => {
           name: 'Updated Goal Name',
           target_amount: mockGoal.target_amount,
           target_date: mockGoal.target_date,
+          expected_return: 10,
         });
       });
       // onClose is no longer called in handleSubmit

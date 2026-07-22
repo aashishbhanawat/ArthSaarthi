@@ -1,23 +1,28 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-16
+**Last Updated:** 2026-07-21
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Upgraded the Risk Profiling questionnaire to the validated 13-question Grable & Lytton scale, including localized INR currencies, responsive scrollable sidebar navigation, and localStorage state persistence. Also successfully resolved all PR #481 review comments (cross-database migration compatibility, robust state-load validation, question-specific schema options validation, and Android public asset cleanup).
+**Latest Achievement:** Implemented Goal Required Contribution Rate (SIP) calculation engine (FR13.3 / Issue #477) featuring backend compounding math, database migration (`c7e8f9a0b1c2`), GoalFormModal Expected Return input, and GoalDetailView summary cards with Privacy Mode currency masking. Verified via comprehensive backend pytest suite (15/15 passing).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **344/347 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **344/347 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing** (Extracted shared transaction utilities)
-*   **E2E Playwright Tests (Import/Timeout):** ✅ **5/5 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **359/362 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **359/362 Passing** (3 expected skips)
+*   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing**
+*   **E2E Playwright Tests:** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Calculate Goal Required Contribution Rate (SIP) (Issue #477 / FR13.3) (Updated 2026-07-21):**
+    - **Backend & Database Migration:** Added `expected_return` column (`Numeric(5, 2)`) to `Goal` model and schema via migration `c7e8f9a0b1c2`. Updated `get_goal_with_analytics` in `crud_goal.py` to calculate ordinary annuity monthly SIP values taking into account target date remaining duration ($N$), present value asset appreciation ($PV_{\text{future}}$), 0% interest rate fallback, and past target dates ($N \le 0$).
+    - **Frontend UI & Privacy Support:** Added Expected Annual Return (%) input to `GoalFormModal.tsx` and added Expected Return & Required Monthly SIP cards to `GoalDetailView.tsx`. Masked values under Privacy Mode using `usePrivacySensitiveCurrency`.
+    - **Test Suite:** Added 4 backend test cases covering standard compounding, PV growth exceeding goal target, 0% rate, and past target dates in `test_goals.py`. All 15 tests passed cleanly.
 
 *   **Risk Profile PR #481 Review Fixes, E2E Stabilization & Asset Cleanup (Issue #76 / PR #481) (Updated 2026-07-16):**
     - **Database Migration:** Switched from `sa.text('now()')` to `sa.func.now()` to ensure cross-database compatibility with SQLite.

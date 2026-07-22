@@ -2,7 +2,20 @@
 
 This document provides a deep dive into the application's code structure and data flow. It's designed to help new contributors understand how the frontend and backend work together to deliver a feature.
 
-We will trace a key user story: **Adding a new transaction to a portfolio.**
+---
+
+## 0. Goal Contribution Planning Flow (FR13.3)
+
+When a user views a financial goal detail page (`GoalDetailView.tsx`), the frontend issues a `GET /api/v1/goals/{id}` request. The backend calculates analytics dynamically:
+
+1. **Current Valuation ($PV$):** `CRUDGoal.get_goal_with_analytics` fetches linked portfolios/assets and aggregates their live market value.
+2. **Duration Calculation ($N$):** Months remaining to `target_date` computed via $N = \max\left(0.0, \frac{(\text{target\_date} - \text{today}).days}{30.4375}\right)$.
+3. **Compounding SIP Engine:**
+   - Monthly interest rate $i = \frac{\text{expected\_return}}{100 \times 12}$.
+   - Projected future value of present holdings $PV_{\text{future}} = PV \times (1 + i)^N$.
+   - Required ordinary annuity monthly contribution:
+     $$\text{required\_sip} = (FV - PV_{\text{future}}) \times \frac{i}{(1 + i)^N - 1}$$
+4. **Frontend Formatting:** `GoalDetailView.tsx` renders the output via `usePrivacySensitiveCurrency`, supporting masked privacy view (`***`).
 
 ---
 

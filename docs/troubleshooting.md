@@ -4,6 +4,18 @@ This guide documents common setup and runtime issues and their solutions.
 
 ---
 
+### 1. Goal Required Contribution (SIP) Output Displays ₹0 / month Unexpectedly
+
+*   **Symptom:** The Goal Detail page displays `₹0 / month` for the Required Monthly SIP, even though the target date is in the future and the current linked balance is less than the target amount.
+
+*   **Cause:**
+    1. **Holdings Growth Exceeds Target:** At the expected annual return rate ($r$), the present value ($PV$) of currently linked portfolios is projected to grow to exceed the target amount ($FV$) by the target date ($PV \times (1 + i)^N \ge FV$). In this scenario, no additional monthly SIP is necessary.
+    2. **Past Target Date:** The goal's `target_date` is on or before today's date ($N \le 0$).
+
+*   **Solution:** Check the goal's target date and expected annual return percentage. If the growth projection is overly optimistic, adjust `expected_return` to a lower rate in the Edit Goal modal.
+
+---
+
 ### 1. Mixed Content Error on HTTPS
 
 *   **Symptom:** When accessing the application via a secure `https://` domain (e.g., through a Cloudflare tunnel), the browser console shows a "Mixed Content" error. The page loads, but API calls to the backend fail.
