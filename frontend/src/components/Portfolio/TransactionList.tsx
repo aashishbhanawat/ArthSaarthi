@@ -2,7 +2,7 @@ import React from 'react';
 import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
 import { isEditable, isDeletable, getDisabledTitle } from '../../utils/transaction';
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, TrashIcon, ListBulletIcon } from '@heroicons/react/24/outline';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -16,8 +16,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
 
   if (!transactions || transactions.length === 0) {
     return (
-      <div className="card text-center p-8">
-        <p className="text-gray-500">No transactions found for this portfolio.</p>
+      <div className="card text-center p-12">
+        <ListBulletIcon className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+        <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No transactions found</h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Add new transactions to see them here.</p>
       </div>
     );
   }
