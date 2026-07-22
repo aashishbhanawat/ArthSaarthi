@@ -113,7 +113,7 @@ pdfplumber==0.11.9
     # via -r requirements.in
 peewee==3.19.0
     # via yfinance
-pillow==12.1.1
+pillow==12.3.0
     # via pdfplumber
 platformdirs==4.7.0
     # via yfinance
