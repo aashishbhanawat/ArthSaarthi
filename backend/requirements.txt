@@ -125,7 +125,7 @@ psycopg2-binary==2.9.11
     # via -r requirements.in
 pyarrow==23.0.0
     # via -r requirements.in
-pyasn1==0.6.2
+pyasn1==0.6.4
     # via
     #   -r requirements.in
     #   python-jose

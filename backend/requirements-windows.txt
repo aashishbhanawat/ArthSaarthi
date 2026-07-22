@@ -116,7 +116,7 @@ pillow>=12.3.0
     # via pdfplumber
 pypdfium2>=4.18.0
     # via pdfplumber
-pyasn1==0.6.3
+pyasn1==0.6.4
     # via
     #   python-jose
     #   rsa
