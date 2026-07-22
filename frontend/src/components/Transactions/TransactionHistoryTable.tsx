@@ -3,7 +3,7 @@ import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
 import { isEditable, isDeletable, getDisabledTitle } from '../../utils/transaction';
 import TransactionDetailsModal from './TransactionDetailsModal';
-import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import { InformationCircleIcon, ListBulletIcon } from '@heroicons/react/24/outline';
 import TransactionCard from './TransactionCard';
 
 interface TransactionHistoryTableProps {
@@ -30,7 +30,13 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   if (transactions.length === 0) {
-    return <div className="text-center p-8 text-gray-500 card">No transactions found for the selected filters.</div>;
+    return (
+      <div className="card text-center p-12">
+        <ListBulletIcon className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+        <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No transactions found</h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Adjust your filters or add new transactions to see them here.</p>
+      </div>
+    );
   }
 
   return (
