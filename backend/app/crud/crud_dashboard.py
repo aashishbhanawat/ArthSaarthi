@@ -525,6 +525,7 @@ def _get_portfolio_history(
                                 simulate_only=True,
                                 transactions=asset_txns,
                                 ppf_rates=all_ppf_rates,
+                                user_id=user.id,
                             )
                             day_total_value += ppf_holding.current_value
                         except Exception as e:
