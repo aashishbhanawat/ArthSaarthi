@@ -8,7 +8,7 @@ from typing import List
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
+from app import crud, schemas
 from app.models import Asset, Transaction
 from app.models.historical_interest_rate import HistoricalInterestRate
 from app.schemas.asset import AssetType
