@@ -369,7 +369,7 @@ def test_goal_future_value_projection_and_status(
     client: TestClient, db: Session, get_auth_headers, mocker
 ):
     from datetime import date, timedelta
-    
+
     mock_price_data = {
         "AAPL": {"current_price": 150.0, "previous_close": 145.0},
     }
@@ -381,7 +381,7 @@ def test_goal_future_value_projection_and_status(
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
     target_date_str = (date.today() + timedelta(days=1095)).strftime("%Y-%m-%d")
-    
+
     goal_data = {
         "name": "Car Goal",
         "target_amount": 100000.0,
@@ -394,7 +394,7 @@ def test_goal_future_value_projection_and_status(
 
     portfolio = create_test_portfolio(db, user_id=user.id, name="Auto Portfolio")
     asset = create_test_asset(db, ticker_symbol="AAPL")
-    
+
     tx_date = date.today() - timedelta(days=365)
     create_test_transaction(
         db,
@@ -422,7 +422,7 @@ def test_goal_future_value_projection_and_status(
     assert data["projected_future_value"] > 75000.0
     assert data["status"] == "On Track"
     assert data["required_sip"] == 0.0
-    
+
     chart_data = data["projection_chart_data"]
     assert len(chart_data) >= 2
     assert chart_data[0]["projected_value"] == 75000.0
@@ -433,7 +433,7 @@ def test_goal_future_value_projection_fallback(
     client: TestClient, db: Session, get_auth_headers, mocker
 ):
     from datetime import date, timedelta
-    
+
     mock_price_data = {
         "AAPL": {"current_price": 50.0, "previous_close": 50.0},
     }
@@ -445,7 +445,7 @@ def test_goal_future_value_projection_fallback(
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
     target_date_str = (date.today() + timedelta(days=365)).strftime("%Y-%m-%d")
-    
+
     goal_data = {
         "name": "Car Goal",
         "target_amount": 100000.0,
@@ -458,7 +458,7 @@ def test_goal_future_value_projection_fallback(
 
     portfolio = create_test_portfolio(db, user_id=user.id, name="Auto Portfolio")
     asset = create_test_asset(db, ticker_symbol="AAPL")
-    
+
     tx_date = date.today() - timedelta(days=30)
     create_test_transaction(
         db,
