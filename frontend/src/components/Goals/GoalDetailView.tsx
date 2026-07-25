@@ -103,7 +103,7 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function(context: { dataset: { label?: string }; parsed: { y: number | null } }) {
             let label = context.dataset.label || '';
             if (label) {
               label += ': ';
@@ -131,8 +131,9 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
         },
         ticks: {
           color: 'rgba(156, 163, 175, 1)',
-          callback: function(value: any) {
-            return formatCurrency(value);
+          callback: function(value: string | number) {
+            const numericValue = typeof value === 'number' ? value : parseFloat(value);
+            return formatCurrency(numericValue);
           }
         }
       }
