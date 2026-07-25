@@ -910,7 +910,7 @@ class CRUDHolding:
 
         for ppf_asset in ppf_assets:
             logger.info(f"Processing PPF asset {ppf_asset.id}...")
-            ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id)
+            ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id=portfolio_id)
             if ppf_holding:
                 holdings_list.append(ppf_holding)
                 if ppf_holding.realized_pnl:
@@ -1089,7 +1089,9 @@ class CRUDHolding:
             # across all portfolios
             # NOTE: We may need to pass user_id to ensure it only grabs for this
             # user if the asset is shared, but usually PPF asset is per user.
-            ppf_holding = process_ppf_holding(db, ppf_asset, portfolio_id=None)
+            ppf_holding = process_ppf_holding(
+                db, ppf_asset, portfolio_id=None, user_id=user_id
+            )
             if ppf_holding:
                 holdings_list.append(ppf_holding)
                 if ppf_holding.realized_pnl:

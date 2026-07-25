@@ -145,10 +145,27 @@ def process_ppf_holding(
     calculation_date: date = None, simulate_only: bool = False,
     transactions: List[Transaction] = None,
     ppf_rates: List[HistoricalInterestRate] = None,
+    user_id: uuid.UUID | None = None,
 ) -> schemas.Holding:
     """Processes a single PPF asset to calculate its current value and generate interest transactions."""  # noqa: E501
     if transactions is None:
-        transactions = crud.transaction.get_multi_by_asset(db, asset_id=ppf_asset.id)
+        if portfolio_id:
+            transactions = crud.transaction.get_multi_by_portfolio_and_asset(
+                db, portfolio_id=portfolio_id, asset_id=ppf_asset.id
+            )
+        else:
+            transactions = crud.transaction.get_multi_by_asset(
+                db, asset_id=ppf_asset.id
+            )
+            if user_id:
+                from app.models.portfolio import Portfolio
+                user_portfolios = (
+                    db.query(Portfolio.id).filter(Portfolio.user_id == user_id).all()
+                )
+                portfolio_ids = {p.id for p in user_portfolios}
+                transactions = [
+                    t for t in transactions if t.portfolio_id in portfolio_ids
+                ]
     if calculation_date:
         transactions = [
             t for t in transactions
