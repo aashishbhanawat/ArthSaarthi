@@ -4,18 +4,25 @@ This document provides a deep dive into the application's code structure and dat
 
 ---
 
-## 0. Goal Contribution Planning Flow (FR13.3)
+## 0. Goal Planning, Projections & Track Status (FR13.3 / FR13.4)
 
 When a user views a financial goal detail page (`GoalDetailView.tsx`), the frontend issues a `GET /api/v1/goals/{id}` request. The backend calculates analytics dynamically:
 
 1. **Current Valuation ($PV$):** `CRUDGoal.get_goal_with_analytics` fetches linked portfolios/assets and aggregates their live market value.
-2. **Duration Calculation ($N$):** Months remaining to `target_date` computed via $N = \max\left(0.0, \frac{(\text{target\_date} - \text{today}).days}{30.4375}\right)$.
-3. **Compounding SIP Engine:**
-   - Monthly interest rate $i = \frac{\text{expected\_return}}{100 \times 12}$.
+2. **Unified Cash Flow & XIRR:**
+   - Compiles cash flows for all linked portfolios and standalone assets.
+   - Calculates the combined dynamic XIRR of linked assets. If the computed XIRR is valid (i.e. $> 0\%$ and $\le 100\%$), it is used as the `calculated_return_rate`.
+   - If XIRR is invalid or unavailable, it falls back to the goal's `expected_return` (if set) or a default rate ($10\%$).
+3. **Duration Calculation ($N$):** Months remaining to `target_date` computed via $N = \max\left(0.0, \frac{(\text{target\_date} - \text{today}).days}{30.4375}\right)$.
+4. **Compounding SIP & Projection Engine:**
+   - Monthly rate $i = \frac{\text{calculated\_return\_rate}}{100 \times 12}$.
    - Projected future value of present holdings $PV_{\text{future}} = PV \times (1 + i)^N$.
+   - Goal Status is `"On Track"` if $PV_{\text{future}} \ge \text{target\_amount}$, else `"Off Track"`.
    - Required ordinary annuity monthly contribution:
      $$\text{required\_sip} = (FV - PV_{\text{future}}) \times \frac{i}{(1 + i)^N - 1}$$
-4. **Frontend Formatting:** `GoalDetailView.tsx` renders the output via `usePrivacySensitiveCurrency`, supporting masked privacy view (`***`).
+5. **Projection Chart Points:**
+   - Generates dates, projected values (compounding $PV$ alone), and target values (compounding $PV$ and required SIP contributions) at monthly, quarterly, or yearly intervals.
+6. **Frontend Rendering:** `GoalDetailView.tsx` renders the summary cards (including XIRR, Projected Future Value, Status badge), progress bar, and a Chart.js Line chart displaying the projection path. It supports masked currency values in Privacy Mode (`***`).
 
 ---
 

@@ -4,15 +4,17 @@ This guide documents common setup and runtime issues and their solutions.
 
 ---
 
-### 1. Goal Required Contribution (SIP) Output Displays ₹0 / month Unexpectedly
+### 1. Goal Projections & Required Contribution (SIP) Output Displays Unexpected Values
 
-*   **Symptom:** The Goal Detail page displays `₹0 / month` for the Required Monthly SIP, even though the target date is in the future and the current linked balance is less than the target amount.
-
-*   **Cause:**
-    1. **Holdings Growth Exceeds Target:** At the expected annual return rate ($r$), the present value ($PV$) of currently linked portfolios is projected to grow to exceed the target amount ($FV$) by the target date ($PV \times (1 + i)^N \ge FV$). In this scenario, no additional monthly SIP is necessary.
+*   **Symptom 1:** The Goal Detail page displays `₹0 / month` for the Required Monthly SIP, even though the target date is in the future and the current linked balance is less than the target amount.
+*   **Cause 1:**
+    1. **Holdings Growth Exceeds Target:** At the calculated return rate ($r$), the present value ($PV$) of currently linked portfolios is projected to grow to exceed the target amount ($FV$) by the target date ($PV \times (1 + i)^N \ge FV$). In this scenario, no additional monthly SIP is necessary.
     2. **Past Target Date:** The goal's `target_date` is on or before today's date ($N \le 0$).
+*   **Solution 1:** Verify the goal's target date. If the projected return rate is overly optimistic, adjust the expected annual return percentage.
 
-*   **Solution:** Check the goal's target date and expected annual return percentage. If the growth projection is overly optimistic, adjust `expected_return` to a lower rate in the Edit Goal modal.
+*   **Symptom 2:** The calculated return rate defaults to a flat 10.0% or the goal's custom expected return, completely ignoring the linked assets' performance.
+*   **Cause 2:** The dynamic combined XIRR calculations fell outside of the safe boundary checks (i.e. XIRR is negative $\le 0\%$ or extremely high $> 100\%$, or there are insufficient transactions/cashflows to execute the IRR equations). In these scenarios, the system automatically falls back to the goal's custom return or the default 10.0% rate to prevent unrealistic compounding/runaway calculations.
+*   **Solution 2:** Inspect the transactions in the linked portfolios/assets. If there are no transactions or recent buys cause highly skewed short-term annualised returns, consider defining a custom return percentage under the Edit Goal modal.
 
 ---
 

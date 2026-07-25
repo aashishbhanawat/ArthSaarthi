@@ -1,3 +1,9 @@
+export interface GoalProjectionPoint {
+  date: string;
+  projected_value: number;
+  target_value: number;
+}
+
 export interface Goal {
   id: string;
   name: string;
@@ -10,7 +16,12 @@ export interface Goal {
   expected_return?: number | null;
   required_sip?: number;
   calculated_return_rate?: number;
+  linked_assets_xirr?: number;
+  projected_future_value?: number;
+  status?: string;
+  projection_chart_data?: GoalProjectionPoint[];
 }
+
 
 interface LinkedAsset {
     id: string;

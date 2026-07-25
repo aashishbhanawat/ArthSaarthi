@@ -1,3 +1,29 @@
+## 2026-07-25: Project Goal Future Value and Track Status (Issue #478 / FR13.4)
+
+**Task:** Implement backend calculations to compile linked assets/portfolios transactions, compute dynamic combined XIRR returns, compound current valuations to the target date, determine goal track status, and generate growth projection chart points. Update the frontend UI to display these analytics using an interactive Line chart and premium status badge cards.
+
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend Projections Engine:**
+   - Updated Pydantic schemas in `backend/app/schemas/goal.py` to support `GoalProjectionPoint` and add projection fields (`linked_assets_xirr`, `projected_future_value`, `status`, `projection_chart_data`) to `GoalWithAnalytics`.
+   - Modified `get_goal_with_analytics` in `backend/app/crud/crud_goal.py` to aggregate all linked transaction cash flows and calculate combined dynamic XIRR.
+   - Enforced return-rate boundaries (0% < XIRR <= 100%) and sanitized invalid results (NaN/Inf) returning `0.0` to ensure JSON compliance.
+   - Compounded current asset values to the target date using the calculated return rate or fallback return rate (expected return or default 10%).
+   - Determined track status and generated monthly, quarterly, or yearly projection data points representing the Projected Path and the Target Path.
+2. **Frontend UI Components:**
+   - Extended `Goal` interface in `frontend/src/types/goal.ts` to map new projection fields.
+   - Overwrote `frontend/src/components/Goals/GoalDetailView.tsx` to register Chart.js modules and render an interactive growth projection Line chart.
+   - Upgraded the summary cards layout to a responsive 4-column grid on desktop, displaying dynamic XIRR performance, projected future value, and a styled track status badge. Included full support for Privacy Mode masked values (`***`).
+3. **Testing & Verification:**
+   - Added 2 backend unit tests in `backend/app/tests/api/v1/test_goals.py` verifying transaction compilation, projections compounding, fallback return limits, and track status flags. All 18 pytest test cases passed successfully.
+   - Created `frontend/src/__tests__/components/Goals/GoalDetailView.test.tsx` verifying component structure, status badge styles, and Chart.js dataset coordinates. All 191 Jest test cases passed successfully.
+   - Updated documentation files `README.md`, `docs/requirements.md` (marked FR13.4 Done), `docs/code_flow_guide.md`, `docs/troubleshooting.md`, and `docs/project_handoff_summary.md`.
+
+---
+
 ## 2026-07-21: Calculate Goal Required Contribution Rate (SIP) (Issue #477 / FR13.3)
 
 **Task:** Implement backend calculation engine, database migration, and frontend UI components to compute and display the required monthly contribution (SIP) to reach financial goals.

@@ -41,7 +41,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
     *   **Schedule FA (Foreign Assets):** Generate reports compliant with Calendar Year rules, including Peak Value analysis (daily balance check) and specific field exports.
     *   **Capital Gains:** Comprehensive reports for Short-Term (STCG) and Long-Term (LTCG) capital gains.
     *   **Schedule 112A:** Dedicated support for Grandfathered Equity (acquired before 31 Jan 2018) with FMV lookup and CSV export for ITR-2 filing.
-*   **Goal Planning & Contribution Tracking (SIP):** Define financial goals, link assets/portfolios, specify custom or default expected annual return rates, and automatically calculate the required monthly contribution (ordinary annuity SIP) needed to reach your targets.
+*   **Goal Planning, Projections & Track Status:** Define financial goals (e.g. retirement, buy a car), link portfolios or individual assets, compute dynamic combined XIRR returns, project future value at the target date, determine "On Track" or "Off Track" status, visualize paths via dynamic charts, and calculate required monthly contributions (ordinary annuity SIP) needed to reach your targets.
 *   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
@@ -52,7 +52,6 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 *   **Corporate Actions & Income Tracking:** Automatically handle dividends, stock splits, and bonuses, and track income from interest payments.
 *   **Deeper Analytics:** Analyze diversification by sector, geography, and more.
-*   **Goal-Oriented Planning:** Define financial goals (e.g., "Retirement", "House Down Payment"), link assets to them, and track your progress with projections.
 *   **AI-Powered Insights:** Leverage AI to get suggestions for tax-loss harvesting, portfolio rebalancing, and receive a personalized daily digest of your financial world.
 *   **Market Insights:** Get relevant news feeds and perform deep-dive research on individual assets.
 
