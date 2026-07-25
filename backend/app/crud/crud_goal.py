@@ -45,10 +45,12 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
         status, and required monthly SIP.
         """
         import math
+
         from dateutil.relativedelta import relativedelta
+
         from app import crud
+        from app.crud.crud_analytics import _calculate_xirr, _get_portfolio_cash_flows
         from app.models.transaction import Transaction
-        from app.crud.crud_analytics import _get_portfolio_cash_flows, _calculate_xirr
 
         current_amount = Decimal("0.0")
 
@@ -80,10 +82,14 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                     all_fixed_deposits = crud.fixed_deposit.get_multi_by_portfolio(
                         db, portfolio_id=link.portfolio_id
                     )
-                    all_recurring_deposits = crud.recurring_deposit.get_multi_by_portfolio(
-                        db, portfolio_id=link.portfolio_id
+                    all_recurring_deposits = (
+                        crud.recurring_deposit.get_multi_by_portfolio(
+                            db, portfolio_id=link.portfolio_id
+                        )
                     )
-                    cfs = _get_portfolio_cash_flows(transactions, all_fixed_deposits, all_recurring_deposits)
+                    cfs = _get_portfolio_cash_flows(
+                        transactions, all_fixed_deposits, all_recurring_deposits
+                    )
                     all_cash_flows.extend(cfs)
 
             elif link.asset_id:
@@ -99,7 +105,9 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                 )
                 if transactions:
                     # Find all unique portfolio IDs containing this asset for this user
-                    portfolio_ids = list(set(tx.portfolio_id for tx in transactions if tx.portfolio_id))
+                    portfolio_ids = list(
+                        set(tx.portfolio_id for tx in transactions if tx.portfolio_id)
+                    )
                     for portfolio_id in portfolio_ids:
                         if portfolio_id not in portfolio_cache:
                             portfolio_cache[portfolio_id] = (
@@ -158,7 +166,11 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
         rate_of_return = (
             combined_xirr
             if is_xirr_valid
-            else (float(goal.expected_return) if goal.expected_return is not None else 10.0)
+            else (
+                float(goal.expected_return)
+                if goal.expected_return is not None
+                else 10.0
+            )
         )
 
         today = date.today()
@@ -172,7 +184,9 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
         projected_future_value = current_amt
         if months_remaining > 0 and rate_of_return > 0:
             monthly_rate = (rate_of_return / 100.0) / 12.0
-            projected_future_value = current_amt * ((1.0 + monthly_rate) ** months_remaining)
+            projected_future_value = current_amt * (
+                (1.0 + monthly_rate) ** months_remaining
+            )
 
         # Status determination
         status = "On Track" if projected_future_value >= target_amt else "Off Track"
@@ -213,12 +227,15 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
             while m < months_remaining:
                 point_date = today + relativedelta(months=int(m))
                 proj_val = current_amt * ((1.0 + monthly_rate) ** m)
-                
+
                 if monthly_rate == 0:
                     tgt_val = current_amt + (required_sip * m)
                 else:
-                    tgt_val = current_amt * ((1.0 + monthly_rate) ** m) + required_sip * (((1.0 + monthly_rate) ** m - 1.0) / monthly_rate)
-                
+                    tgt_val = current_amt * ((1.0 + monthly_rate) ** m) + (
+                        required_sip
+                        * (((1.0 + monthly_rate) ** m - 1.0) / monthly_rate)
+                    )
+
                 projection_chart_data.append({
                     "date": point_date.strftime("%Y-%m-%d"),
                     "projected_value": round(proj_val, 2),
