@@ -194,6 +194,9 @@ __all__ = [
 ]
 
 # Manually update forward references to resolve circular dependencies
-Asset.model_rebuild()
-
-Transaction.model_rebuild()
+if hasattr(Asset, "model_rebuild"):
+    Asset.model_rebuild()
+    Transaction.model_rebuild()
+else:
+    Asset.update_forward_refs()
+    Transaction.update_forward_refs()
