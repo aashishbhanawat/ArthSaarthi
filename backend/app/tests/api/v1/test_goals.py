@@ -364,3 +364,125 @@ def test_goal_expected_return_validation(
     response = client.post("/api/v1/goals/", headers=headers, json=invalid_goal_data)
     assert response.status_code == 422
 
+
+def test_goal_future_value_projection_and_status(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
+    from datetime import date, timedelta
+
+    mock_price_data = {
+        "AAPL": {"current_price": 150.0, "previous_close": 145.0},
+    }
+    mocker.patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value=mock_price_data,
+    )
+
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    target_date_str = (date.today() + timedelta(days=1095)).strftime("%Y-%m-%d")
+
+    goal_data = {
+        "name": "Car Goal",
+        "target_amount": 100000.0,
+        "target_date": target_date_str,
+        "expected_return": 10.0,
+    }
+    response = client.post("/api/v1/goals/", headers=headers, json=goal_data)
+    assert response.status_code == 201
+    goal_id = response.json()["id"]
+
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Auto Portfolio")
+    asset = create_test_asset(db, ticker_symbol="AAPL")
+
+    tx_date = date.today() - timedelta(days=365)
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="AAPL",
+        quantity=500,
+        price_per_unit=100,  # cost 50,000
+        transaction_date=tx_date,
+    )
+
+    client.post(
+        f"/api/v1/goals/{goal_id}/links",
+        headers=headers,
+        json={"goal_id": str(goal_id), "asset_id": str(asset.id)},
+    )
+
+    res = client.get(f"/api/v1/goals/{goal_id}", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["current_amount"] == 75000.0
+    assert data["linked_assets_xirr"] > 40.0
+    assert data["linked_assets_xirr"] < 60.0
+    assert data["calculated_return_rate"] == data["linked_assets_xirr"]
+    assert data["projected_future_value"] > 75000.0
+    assert data["status"] == "On Track"
+    assert data["required_sip"] == 0.0
+
+    chart_data = data["projection_chart_data"]
+    assert len(chart_data) >= 2
+    assert chart_data[0]["projected_value"] == 75000.0
+    assert chart_data[-1]["target_value"] == 100000.0
+
+
+def test_goal_future_value_projection_fallback(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
+    from datetime import date, timedelta
+
+    mock_price_data = {
+        "AAPL": {"current_price": 50.0, "previous_close": 50.0},
+    }
+    mocker.patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value=mock_price_data,
+    )
+
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    target_date_str = (date.today() + timedelta(days=365)).strftime("%Y-%m-%d")
+
+    goal_data = {
+        "name": "Car Goal",
+        "target_amount": 100000.0,
+        "target_date": target_date_str,
+        "expected_return": 8.0,
+    }
+    response = client.post("/api/v1/goals/", headers=headers, json=goal_data)
+    assert response.status_code == 201
+    goal_id = response.json()["id"]
+
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Auto Portfolio")
+    asset = create_test_asset(db, ticker_symbol="AAPL")
+
+    tx_date = date.today() - timedelta(days=30)
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio.id,
+        ticker="AAPL",
+        quantity=1000,
+        price_per_unit=60,  # 60,000 cost
+        transaction_date=tx_date,
+    )
+
+    client.post(
+        f"/api/v1/goals/{goal_id}/links",
+        headers=headers,
+        json={"goal_id": str(goal_id), "asset_id": str(asset.id)},
+    )
+
+    res = client.get(f"/api/v1/goals/{goal_id}", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["current_amount"] == 50000.0
+    assert data["calculated_return_rate"] == 8.0
+    assert data["status"] == "Off Track"
+    assert data["projected_future_value"] < 60000.0
+    assert data["required_sip"] > 0.0
+
+

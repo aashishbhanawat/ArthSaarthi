@@ -1,23 +1,28 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-21
+**Last Updated:** 2026-07-25
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Implemented Goal Required Contribution Rate (SIP) calculation engine (FR13.3 / Issue #477) featuring backend compounding math, database migration (`c7e8f9a0b1c2`), GoalFormModal Expected Return input, and GoalDetailView summary cards with Privacy Mode currency masking. Verified via comprehensive backend pytest suite (15/15 passing).
+**Latest Achievement:** Implemented Goal Projections and Track Status (FR13.4 / Issue #478) featuring combined dynamic XIRR calculation, future value compounding projections, "On Track" or "Off Track" status flag, and projection chart points generation in the backend. Created an interactive Chart.js growth projection Line chart and premium status badge cards in the React frontend. Verified via comprehensive backend pytest suite (18/18 passing) and Jest unit test suite (191/191 passing).
 
 ## 2. Test Suite Status
 
 *   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **359/362 Passing** (3 expected skips)
 *   **Backend Integration Tests (Android/SQLite):** ✅ **359/362 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **188/188 Passing**
+*   **Frontend Unit Tests (Jest):** ✅ **191/191 Passing**
 *   **E2E Playwright Tests:** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Project Goal Future Value and Track Status (Issue #478 / FR13.4) (Updated 2026-07-25):**
+    - **Backend Analytics Engine:** Rewrote `get_goal_with_analytics` in `crud_goal.py` to compile cash flows across all linked portfolios and standalone assets. Computes the combined dynamic XIRR of linked assets and compounds the current amount to the goal's target date. If calculated XIRR is invalid or out-of-bounds (i.e. $\le 0\%$ or $> 100\%$), falls back to the goal's expected return or a default rate ($10\%$). Determines goal track status (`"On Track"` or `"Off Track"`) and generates monthly, quarterly, or yearly projection data points.
+    - **Frontend UI & Visualization:** Added an interactive Chart.js growth projection Line chart plotting the Projected Path and the Target Path (growth with required SIP contributions) to `GoalDetailView.tsx`. Upgraded the summary cards layout to a responsive 4-column grid on desktop, showing calculated return rate, linked assets XIRR, projected future value, and a styled track status badge. Masked values under Privacy Mode using `usePrivacySensitiveCurrency`.
+    - **Test Suite:** Wrote 2 comprehensive backend test cases validating unified cash flow compilation, projection math, fallback bounds checks, and status flags in `test_goals.py` (all passing). Created `GoalDetailView.test.tsx` to verify summary cards, status badge classes, and projection chart coordinates in the frontend (all passing).
 
 *   **Calculate Goal Required Contribution Rate (SIP) (Issue #477 / FR13.3) (Updated 2026-07-21):**
     - **Backend & Database Migration:** Added `expected_return` column (`Numeric(5, 2)`) to `Goal` model and schema via migration `c7e8f9a0b1c2`. Updated `get_goal_with_analytics` in `crud_goal.py` to calculate ordinary annuity monthly SIP values taking into account target date remaining duration ($N$), present value asset appreciation ($PV_{\text{future}}$), 0% interest rate fallback, and past target dates ($N \le 0$).

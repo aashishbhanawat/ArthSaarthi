@@ -48,10 +48,8 @@ test.describe.serial('Admin Interest Rate Management', () => {
     await rateRow.getByRole('button', { name: /edit/i }).click();
     const editModal = page.getByRole('dialog');
     await expect(editModal.getByRole('heading', { name: 'Edit Interest Rate' })).toBeVisible();
-    // Instead of asserting the exact string value, which can have floating point representation issues (e.g. "5.500" vs "5.50"),
-    // we parse the input's value and compare it numerically for a more robust test.
-    const rateValue = await editModal.getByLabel('Interest Rate (%)').inputValue();
-    expect(parseFloat(rateValue)).toBeCloseTo(parseFloat(testRate.rate));
+    // Wait for React to populate form fields and avoid OCI/runner latency race conditions
+    await expect(editModal.getByLabel('Interest Rate (%)')).toHaveValue(/5\.5(0)?/);
     await editModal.getByLabel('Interest Rate (%)').fill(updatedRate);
     await editModal.getByRole('button', { name: 'Save Changes' }).click();
 

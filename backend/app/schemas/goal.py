@@ -31,11 +31,21 @@ class Goal(GoalBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class GoalProjectionPoint(BaseModel):
+    date: str
+    projected_value: float
+    target_value: float
+
+
 class GoalWithAnalytics(Goal):
     current_amount: float
     progress: float
     required_sip: float = 0.0
     calculated_return_rate: float = 10.0
+    linked_assets_xirr: float = 0.0
+    projected_future_value: float = 0.0
+    status: str = "Off Track"
+    projection_chart_data: List[GoalProjectionPoint] = []
 
 
 # Schemas for GoalLink
