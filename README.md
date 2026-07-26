@@ -45,7 +45,8 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.
 *   **Flexible Deployment:**
     *   **Server Mode:** A multi-user web service using Docker with PostgreSQL and Redis.
-    *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database and a file-based cache.
+    *   **Desktop Mode:** A single-user, privacy-focused native application using an encrypted SQLite database.
+    *   **Android App:** A fully native Capacitor-wrapped Android app running a local Python backend with background WorkManager for daily portfolio snapshots.
 *   **Performance:** Expensive analytics and holdings calculations are cached to improve UI responsiveness and reduce server load.
 
 ### On the Horizon (Future Features)

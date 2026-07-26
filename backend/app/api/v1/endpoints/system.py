@@ -348,3 +348,30 @@ def get_logs(
     except Exception as e:
         logger.error(f"Error reading log file: {e}")
         return {"msg": f"Error reading log file: {str(e)}"}
+
+
+# --- Android Background Snapshot Endpoint ---
+
+from datetime import date
+from app.services.snapshot_service import take_daily_snapshots_for_all
+from fastapi import HTTPException
+
+class SnapshotResponse(BaseModel):
+    """Response model for daily snapshot execution."""
+    updated: int
+    date: date
+
+@router.post("/snapshots/run-daily", response_model=SnapshotResponse)
+def run_daily_snapshots(db: Session = Depends(get_db)):
+    """
+    Run the daily portfolio snapshot process.
+    Used by Android WorkManager background task to automate daily snapshots.
+    """
+    try:
+        logger.info("Triggering daily portfolio snapshots via API...")
+        count = take_daily_snapshots_for_all(db)
+        logger.info(f"API daily snapshot completed. {count} portfolios updated.")
+        return SnapshotResponse(updated=count, date=date.today())
+    except Exception as e:
+        logger.error(f"Failed to run daily snapshots from API: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Snapshot process failed")

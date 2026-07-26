@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Implemented Goal Projections and Track Status (FR13.4 / Issue #478) featuring combined dynamic XIRR calculation, future value compounding projections, "On Track" or "Off Track" status flag, and projection chart points generation in the backend. Created an interactive Chart.js growth projection Line chart and premium status badge cards in the React frontend. Verified via comprehensive backend pytest suite (18/18 passing) and Jest unit test suite (191/191 passing).
+**Latest Achievement:** Implemented a battery-efficient daily background portfolio snapshot task for Android using Android WorkManager (Issue #492). Users can toggle this setting in the Profile page to keep portfolio values updated even when the app is closed.
 
 ## 2. Test Suite Status
 
@@ -18,6 +18,11 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Android Background Daily Portfolio Snapshot (Issue #492) (Updated 2026-07-26):**
+    - **Backend API:** Created `POST /api/v1/system/snapshots/run-daily` to trigger daily snapshots via local loopback.
+    - **Android/WorkManager:** Developed `SnapshotWorker.kt` utilizing `CoroutineWorker` to boot the `BackendService`, verify health, and invoke the daily snapshot API. Exposed this capability via `PythonBackendPlugin` to React.
+    - **Frontend Settings:** Added a native settings card `AndroidSettingsCard` in the Profile page allowing users to toggle background sync, persisting the state securely.
 
 *   **Project Goal Future Value and Track Status (Issue #478 / FR13.4) (Updated 2026-07-25):**
     - **Backend Analytics Engine:** Rewrote `get_goal_with_analytics` in `crud_goal.py` to compile cash flows across all linked portfolios and standalone assets. Computes the combined dynamic XIRR of linked assets and compounds the current amount to the goal's target date. If calculated XIRR is invalid or out-of-bounds (i.e. $\le 0\%$ or $> 100\%$), falls back to the goal's expected return or a default rate ($10\%$). Determines goal track status (`"On Track"` or `"Off Track"`) and generates monthly, quarterly, or yearly projection data points.

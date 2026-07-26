@@ -1,5 +1,17 @@
-## 2026-07-25: Project Goal Future Value and Track Status (Issue #478 / FR13.4)
+## 2026-07-26: Android Background Daily Portfolio Snapshot (Issue #492)
 
+**Task:** Implement a battery-efficient daily background portfolio snapshot task for Android using Android WorkManager.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend:** Created `POST /api/v1/system/snapshots/run-daily` to trigger snapshots via local HTTP call.
+2. **Android/Kotlin:** Created `SnapshotWorker.kt` leveraging `CoroutineWorker` to start `BackendService`, perform health check, and call the new API endpoint once a day. Exposed `enableDailySnapshot` and `disableDailySnapshot` via Capacitor plugin.
+3. **Frontend:** Added an `AndroidSettingsCard` toggle in the `ProfilePage` to allow users to enable or disable the background sync, saving state in `localStorage`.
+4. **Documentation:** Added detailed FR document `FR_android_background_snapshot.md` and updated `README.md`, `project_handoff_summary.md`, and `requirements.md`.
+
+## 2026-07-25: Project Goal Future Value and Track Status (Issue #478 / FR13.4)
 **Task:** Implement backend calculations to compile linked assets/portfolios transactions, compute dynamic combined XIRR returns, compound current valuations to the target date, determine goal track status, and generate growth projection chart points. Update the frontend UI to display these analytics using an interactive Line chart and premium status badge cards.
 
 **AI Assistant:** Antigravity  
