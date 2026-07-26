@@ -5,16 +5,18 @@ import logging
 import subprocess
 import sys
 import threading
+from datetime import date
 from enum import Enum
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.config import settings
 from app.db.session import get_db
+from app.services.snapshot_service import take_daily_snapshots_for_all
 
 logger = logging.getLogger(__name__)
 
@@ -351,10 +353,6 @@ def get_logs(
 
 
 # --- Android Background Snapshot Endpoint ---
-
-from datetime import date
-from app.services.snapshot_service import take_daily_snapshots_for_all
-from fastapi import HTTPException
 
 class SnapshotResponse(BaseModel):
     """Response model for daily snapshot execution."""

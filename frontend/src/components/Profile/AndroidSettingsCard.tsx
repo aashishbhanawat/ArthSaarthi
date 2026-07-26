@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import PythonBackend from '../../plugins/PythonBackend';
-import { toast } from 'react-hot-toast';
+import { useToast } from '../../context/ToastContext';
 import { Capacitor } from '@capacitor/core';
 
 const AndroidSettingsCard = () => {
     const { deploymentMode } = useAuth();
+    const { showToast } = useToast();
     const [enabled, setEnabled] = useState(true);
 
     useEffect(() => {
@@ -25,9 +26,9 @@ const AndroidSettingsCard = () => {
             await PythonBackend.enableDailySnapshot();
             localStorage.setItem('android_background_snapshot', 'true');
             setEnabled(true);
-            if (!isInit) toast.success('Background daily snapshots enabled');
-        } catch (e: any) {
-            if (!isInit) toast.error('Failed to enable: ' + e.message);
+            if (!isInit) showToast('Background daily snapshots enabled', 'success');
+        } catch (e: unknown) {
+            if (!isInit) showToast('Failed to enable: ' + (e as Error).message, 'error');
         }
     }
 
@@ -36,9 +37,9 @@ const AndroidSettingsCard = () => {
             await PythonBackend.disableDailySnapshot();
             localStorage.setItem('android_background_snapshot', 'false');
             setEnabled(false);
-            toast.success('Background daily snapshots disabled');
-        } catch (e: any) {
-            toast.error('Failed to disable: ' + e.message);
+            showToast('Background daily snapshots disabled', 'success');
+        } catch (e: unknown) {
+            showToast('Failed to disable: ' + (e as Error).message, 'error');
         }
     }
 
