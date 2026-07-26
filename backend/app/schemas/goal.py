@@ -2,7 +2,12 @@ import uuid
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
+
+try:
+    from pydantic import ConfigDict
+except ImportError:
+    ConfigDict = None
 
 
 # Schemas for Goal
@@ -28,7 +33,11 @@ class Goal(GoalBase):
     id: uuid.UUID
     user_id: uuid.UUID
     links: List["GoalLink"] = []
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 
 class GoalProjectionPoint(BaseModel):
@@ -71,12 +80,20 @@ class AssetInGoalLink(BaseModel):
     id: uuid.UUID
     name: str
     ticker_symbol: str
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 class PortfolioInGoalLink(BaseModel):
     id: uuid.UUID
     name: str
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 
 class GoalLink(GoalLinkBase):
@@ -84,4 +101,8 @@ class GoalLink(GoalLinkBase):
     user_id: uuid.UUID
     asset: Optional[AssetInGoalLink] = None
     portfolio: Optional[PortfolioInGoalLink] = None
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True

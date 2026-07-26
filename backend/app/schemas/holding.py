@@ -3,7 +3,16 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, root_validator
+
+try:
+    from pydantic import ConfigDict
+    def model_validator(pre=False, mode="after"):
+        return root_validator(pre=pre, skip_on_failure=True)
+except (ImportError, TypeError):
+    ConfigDict = None
+    def model_validator(pre=False, mode="after"):
+        return root_validator(pre=pre)
 
 from .bond import Bond as BondSchema
 
@@ -36,25 +45,35 @@ class Holding(BaseModel):
     class Config:
         from_attributes = True
 
-    @model_validator(mode="after")
-    def apply_fallbacks_and_enrich(self) -> "Holding":
-        if self.bond:
-            self.interest_rate = self.bond.coupon_rate
-            self.maturity_date = self.bond.maturity_date
-            if not self.isin:
-                self.isin = self.bond.isin
+    @model_validator(pre=False)
+    @classmethod
+    def apply_fallbacks_and_enrich(cls, values: dict) -> dict:
+        bond = values.get("bond")
+        if bond:
+            # Depending on pydantic version, bond might be a dict or a model instance
+            coupon_rate = bond.coupon_rate if hasattr(bond, "coupon_rate") else bond.get("coupon_rate")
+            maturity_date = bond.maturity_date if hasattr(bond, "maturity_date") else bond.get("maturity_date")
+            isin = bond.isin if hasattr(bond, "isin") else bond.get("isin")
+            
+            values["interest_rate"] = coupon_rate
+            values["maturity_date"] = maturity_date
+            if not values.get("isin"):
+                values["isin"] = isin
 
         # For certain asset types where a live price might not be available (e.g.,
         # unlisted bonds, RDs), fall back to using the average buy price to avoid
         # showing a 100% loss. This should NOT apply to stocks.
         if (
-            self.asset_type == "BOND"
-            and self.current_price == 0
+            values.get("asset_type") == "BOND"
+            and values.get("current_price") == 0
         ):
-            self.current_price = self.average_buy_price
-            self.current_value = self.quantity * self.average_buy_price
+            avg = values.get("average_buy_price")
+            values["current_price"] = avg
+            qty = values.get("quantity")
+            if qty is not None and avg is not None:
+                values["current_value"] = qty * avg
 
-        return self
+        return values
 
 
 class HoldingsResponse(BaseModel):

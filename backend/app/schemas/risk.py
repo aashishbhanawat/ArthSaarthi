@@ -2,7 +2,16 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel
+
+try:
+    from pydantic import ConfigDict, field_validator
+except ImportError:
+    ConfigDict = None
+    from pydantic import validator
+    def field_validator(*args, mode="before", **kwargs):
+        pre = (mode == "before")
+        return validator(*args, pre=pre, **kwargs)
 
 
 class UserRiskProfileBase(BaseModel):
@@ -74,4 +83,8 @@ class UserRiskProfile(UserRiskProfileBase):
     risk_category: Optional[str] = None
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            from_orm = True

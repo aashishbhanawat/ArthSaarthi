@@ -2,31 +2,52 @@ from datetime import date
 from decimal import Decimal
 from typing import List
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+
+try:
+    from pydantic import ConfigDict
+except ImportError:
+    ConfigDict = None
 
 
 # For Portfolio History Endpoint
 class PortfolioHistoryPoint(BaseModel):
     date: date
     value: Decimal
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 
 class PortfolioHistoryResponse(BaseModel):
     history: List[PortfolioHistoryPoint]
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 
 # For Asset Allocation Endpoint
 class AssetAllocation(BaseModel):
     ticker: str
     value: Decimal
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 
 class AssetAllocationResponse(BaseModel):
     allocation: List[AssetAllocation]
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 
 class TopMover(BaseModel):
@@ -44,4 +65,8 @@ class DashboardSummary(BaseModel):
     total_realized_pnl: Decimal
     top_movers: List[TopMover]
     asset_allocation: List[AssetAllocation]
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
