@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import PythonBackend from '../../plugins/PythonBackend';
 import { useToast } from '../../context/ToastContext';
@@ -10,7 +10,7 @@ const AndroidSettingsCard = () => {
     const [enabled, setEnabled] = useState(true);
 
     useEffect(() => {
-        if (deploymentMode === 'android' && Capacitor.isNativePlatform()) {
+        if (deploymentMode === 'desktop' && Capacitor.isNativePlatform()) {
             const stored = localStorage.getItem('android_background_snapshot');
             if (stored === null) {
                 // Default to true
@@ -51,7 +51,7 @@ const AndroidSettingsCard = () => {
         }
     }
 
-    if (deploymentMode !== 'android' || !Capacitor.isNativePlatform()) {
+    if (deploymentMode !== 'desktop' || !Capacitor.isNativePlatform()) {
         return null;
     }
 
