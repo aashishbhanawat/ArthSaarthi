@@ -23,10 +23,10 @@ const InterestRateCard: React.FC<InterestRateCardProps> = ({ rate, onEdit, onDel
                 </div>
                 <div className="flex items-center gap-1">
                     <button onClick={() => onEdit(rate)} className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label={`Edit rate for ${rate.scheme_name}`}>
-                        <PencilSquareIcon className="h-5 w-5" />
+                        <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                     <button onClick={() => onDelete(rate)} className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label={`Delete rate for ${rate.scheme_name}`}>
-                        <TrashIcon className="h-5 w-5" />
+                        <TrashIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                 </div>
             </div>

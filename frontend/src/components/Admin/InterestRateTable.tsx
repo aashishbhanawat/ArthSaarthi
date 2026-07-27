@@ -35,10 +35,10 @@ const InterestRateTable: React.FC<InterestRateTableProps> = ({ rates, onEdit, on
                             <td className="p-3">
                                 <div className="flex justify-center items-center space-x-4">
                                     <button onClick={() => onEdit(rate)} className="text-gray-500 hover:text-blue-600" aria-label={`Edit rate for ${rate.scheme_name}`}>
-                                        <PencilSquareIcon className="h-5 w-5" />
+                                        <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
                                     </button>
                                     <button onClick={() => onDelete(rate)} className="text-gray-500 hover:text-red-600" aria-label={`Delete rate for ${rate.scheme_name}`}>
-                                        <TrashIcon className="h-5 w-5" />
+                                        <TrashIcon className="h-5 w-5" aria-hidden="true" />
                                     </button>
                                 </div>
                             </td>

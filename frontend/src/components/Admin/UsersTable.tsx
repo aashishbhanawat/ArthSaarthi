@@ -34,10 +34,10 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete }) => {
                             <td className="text-right py-3 px-4">
                                 <div className="flex justify-end items-center space-x-4">
                                     <button type="button" onClick={() => onEdit(user)} className="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" aria-label={`Edit user ${user.email}`} title="Edit User">
-                                        <PencilSquareIcon className="h-5 w-5" />
+                                        <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
                                     </button>
                                     <button type="button" onClick={() => onDelete(user)} className="text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors" aria-label={`Delete user ${user.email}`} title="Delete User">
-                                        <TrashIcon className="h-5 w-5" />
+                                        <TrashIcon className="h-5 w-5" aria-hidden="true" />
                                     </button>
                                 </div>
                             </td>

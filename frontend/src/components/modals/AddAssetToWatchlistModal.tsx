@@ -77,7 +77,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Close"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
           </button>
         </div>
 
@@ -133,7 +133,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
                 aria-label="Clear selection"
                 disabled={isAdding}
               >
-                <XMarkIcon className="h-5 w-5" />
+                <XMarkIcon className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
           )}

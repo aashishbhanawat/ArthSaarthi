@@ -30,7 +30,7 @@ const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
         className="ml-2 p-1 hover:bg-white/20 rounded-full focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors"
         aria-label="Close notification"
       >
-        <XMarkIcon className="h-5 w-5" />
+        <XMarkIcon className="h-5 w-5" aria-hidden="true" />
       </button>
     </div>
   );

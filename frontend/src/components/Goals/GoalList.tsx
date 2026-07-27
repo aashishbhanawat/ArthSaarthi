@@ -68,7 +68,7 @@ const GoalList: React.FC<GoalListProps> = ({ goals }) => {
                     disabled={deleteGoalMutation.isPending && goalToDelete?.id === goal.id}
                     aria-label={`Delete ${goal.name}`}
                   >
-                    <TrashIcon className="h-5 w-5" />
+                    <TrashIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
                 </div>
               </div>

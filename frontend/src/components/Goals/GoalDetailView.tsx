@@ -206,7 +206,7 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
           <div className="flex justify-between items-center">
             <h2 className="card-title dark:text-gray-100">Linked Items</h2>
             <button onClick={() => setIsLinkModalOpen(true)} className="btn btn-secondary btn-sm">
-              <LinkIcon className="h-5 w-5 mr-2" />
+              <LinkIcon className="h-5 w-5 mr-2" aria-hidden="true" />
               Link Item
             </button>
           </div>
@@ -222,7 +222,7 @@ const GoalDetailView: React.FC<GoalDetailViewProps> = ({ goalId }) => {
                   className="btn btn-ghost btn-sm text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
                   disabled={deleteGoalLink.isPending}
                 >
-                  <TrashIcon className="h-5 w-5" />
+                  <TrashIcon className="h-5 w-5" aria-hidden="true" />
                 </button>
               </div>
             )) : (

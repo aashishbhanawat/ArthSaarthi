@@ -63,7 +63,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEd
                             onClick={() => onViewDetails(tx)}
                             className="text-blue-500 hover:text-blue-700 mt-2 flex items-center gap-1 text-[10px] font-medium"
                         >
-                            <InformationCircleIcon className="h-4 w-4" />
+                            <InformationCircleIcon className="h-4 w-4" aria-hidden="true" />
                             Details
                         </button>
                     )}
@@ -91,7 +91,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEd
                             className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                             aria-label="Edit transaction"
                         >
-                            <PencilIcon className="h-5 w-5" />
+                            <PencilIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
                     )}
                     {isDeletable(tx) && (
@@ -100,7 +100,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEd
                             className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                             aria-label="Delete transaction"
                         >
-                            <TrashIcon className="h-5 w-5" />
+                            <TrashIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
                     )}
                 </div>

@@ -93,3 +93,4 @@ local/*
 
 .gemini/
 gha-creds-*.json
+backend/*.db*

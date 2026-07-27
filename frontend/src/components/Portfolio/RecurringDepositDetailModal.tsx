@@ -24,7 +24,7 @@ const RecurringDepositDetailModal: React.FC<RecurringDepositDetailModalProps> = 
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-bold dark:text-gray-100">Holding Detail: {holding.asset_name}</h2>
                     <button aria-label="Close" onClick={onClose} className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors -mr-2 -mt-2">
-                        <XMarkIcon className="h-6 w-6" />
+                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
                 </div>
 

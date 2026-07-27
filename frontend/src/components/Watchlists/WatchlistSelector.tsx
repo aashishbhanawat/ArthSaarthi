@@ -75,7 +75,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-lg font-bold">My Watchlists</h2>
         <button className="btn btn-sm btn-primary" onClick={handleCreate} aria-label="Add new watchlist">
-          <PlusIcon className="h-4 w-4" />
+          <PlusIcon className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
       <ul className="menu bg-base-100 rounded-box">
@@ -103,7 +103,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
                   }}
                   aria-label={`Edit ${watchlist.name}`}
                 >
-                  <PencilIcon className="h-4 w-4" />
+                  <PencilIcon className="h-4 w-4" aria-hidden="true" />
                 </button>
                 <button
                   className="btn btn-ghost btn-xs"
@@ -113,7 +113,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
                   }}
                   aria-label={`Delete ${watchlist.name}`}
                 >
-                  <TrashIcon className="h-4 w-4 text-red-500" />
+                  <TrashIcon className="h-4 w-4 text-red-500" aria-hidden="true" />
                 </button>
               </div>
             </a>
