@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved a critical Android app startup crash caused by Pydantic V1 circular reference resolution failure during forward ref evaluation in Chaquopy. Patched schemas/__init__.py and verified 351 pytest tests pass.
+**Latest Achievement:** Resolved critical Android app startup crashes caused by Pydantic V1 circular reference resolution failure and eager redis client import in Chaquopy. Patched schemas/__init__.py and cache/factory.py, and verified 351 pytest tests pass.
 
 ## 2. Test Suite Status
 
@@ -19,9 +19,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
-*   **Android App Startup Pydantic Circular Reference Crash (Issue #493) (Updated 2026-07-28):**
-    - **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash that was caused because `Asset` was only imported inside a conditional `TYPE_CHECKING` block in `transaction.py` and thus missing from its runtime namespace.
+*   **Android App Startup Pydantic Circular Reference & Redis Import Crashes (Issue #493) (Updated 2026-07-28):**
+    - **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash.
+    - **Backend Cache Factory:** Wrapped the eager `redis` module import in `backend/app/cache/factory.py` inside a `try...except ImportError` block. Since the Android app runs with `CACHE_TYPE = "disk"` and doesn't install the `redis` package, this prevents a `ModuleNotFoundError: No module named 'redis'` crash on Android startup.
     - **Verification:** Verified 351 tests pass successfully under the SQLite/DiskCache local test suite.
+
 
 *   **Android Background Daily Portfolio Snapshot (Issue #492) (Updated 2026-07-26):**
     - **Backend API:** Created `POST /api/v1/system/snapshots/run-daily` to trigger daily snapshots via local loopback.

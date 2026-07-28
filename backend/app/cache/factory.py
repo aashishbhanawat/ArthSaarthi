@@ -3,7 +3,12 @@ from typing import Optional
 
 from app.cache.base import CacheClient
 from app.cache.disk_client import DiskCacheClient
-from app.cache.redis_client import RedisCacheClient
+
+try:
+    from app.cache.redis_client import RedisCacheClient
+except ImportError:
+    RedisCacheClient = None
+
 from app.core.config import settings
 
 
@@ -20,6 +25,8 @@ def get_cache_client() -> Optional[CacheClient]:
         or None if caching is disabled or fails to initialize.
     """
     if settings.CACHE_TYPE == "redis":
+        if RedisCacheClient is None:
+            raise ImportError("redis package is required when CACHE_TYPE is 'redis'")
         return RedisCacheClient(redis_url=settings.REDIS_URL)
     elif settings.CACHE_TYPE == "disk":
         return DiskCacheClient()
