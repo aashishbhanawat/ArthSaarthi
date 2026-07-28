@@ -1,14 +1,16 @@
-## 2026-07-28: Resolve Android App Startup Pydantic Circular Reference & Redis Import Crashes (Issue #493)
+## 2026-07-28: Resolve Android App Startup Pydantic Circular Reference, Redis/Pyxirr Import, and Backfill Script Crashes (Issue #493)
 
-**Task:** Fix startup crash of the Android application caused by Pydantic v1 forward reference resolution error and eager redis client import in Android (Chaquopy environment).
+**Task:** Fix multiple startup crashes of the Android application caused by Pydantic V1 forward reference resolution error, eager redis client import, missing pyxirr package import, and incorrect run_backfill name in Android (Chaquopy environment).
 **AI Assistant:** Antigravity  
 **Role:** Full-Stack Developer
 
 ### Summary
 
-1. **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash that was caused because `Asset` was only imported inside a conditional `TYPE_CHECKING` block in `transaction.py` and thus missing from its runtime namespace.
-2. **Backend Cache Factory:** Wrapped the eager `redis` module import in `backend/app/cache/factory.py` inside a `try...except ImportError` block. Since the Android app runs with `CACHE_TYPE = "disk"` and doesn't install the `redis` package, this prevents a `ModuleNotFoundError: No module named 'redis'` crash on Android startup while preserving normal Redis support on desktop/server.
-3. **Testing:** Ran full integration and unit tests on the SQLite/DiskCache backend (matching the Android/embedded settings) to verify compatibility with Pydantic V2/V1. All 351 tests passed successfully.
+1. **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash.
+2. **Backend Cache Factory:** Wrapped the eager `redis` module import in `backend/app/cache/factory.py` inside a `try...except ImportError` block. Since the Android app runs with `CACHE_TYPE = "disk"` and doesn't install the `redis` package, this prevents a `ModuleNotFoundError: No module named 'redis'` crash on Android startup.
+3. **Backend Benchmark Service:** Wrapped `pyxirr` import in `backend/app/services/benchmark_service.py` inside a `try...except ImportError` block, implementing a numpy-based Newton-Raphson fallback function for XIRR. Since Chaquopy doesn't support the compiled `pyxirr` package, this prevents `ModuleNotFoundError: No module named 'pyxirr'` on Android startup.
+4. **Backend Backfill Script:** Added `run_backfill = backfill_links` alias in `backend/app/scripts/backfill_transaction_links.py`. Since `initialization_service.py` attempts to import `run_backfill` from this script, this resolves `ImportError: cannot import name 'run_backfill'` on Android startup.
+5. **Testing:** Ran full integration and unit tests on the SQLite/DiskCache backend (matching the Android/embedded settings) to verify compatibility with Pydantic V2/V1. All 351 tests passed successfully.
 
 
 ## 2026-07-26: Android Background Daily Portfolio Snapshot (Issue #492)

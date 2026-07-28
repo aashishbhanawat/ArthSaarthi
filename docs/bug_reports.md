@@ -27,24 +27,28 @@ Copy and paste the template below to file a new bug report.
 ---
 
 **Bug ID:** 2026-07-28-01
-**Title:** Android App Startup Pydantic Circular Reference & Redis Module Load Crashes
-**Module:** Core Backend / Schemas / Cache
+**Title:** Android App Startup Crashes (Pydantic Circular Ref, Redis/Pyxirr Import, and Backfill Alias Crashes)
+**Module:** Core Backend / Schemas / Cache / Services / Scripts
 **Reported By:** User
 **Date Reported:** 2026-07-28
 **Classification:** Implementation (Backend)
 **Severity:** Critical
-**Description:** The Android app crashes on startup because of:
-1. Pydantic V1 forward reference resolution failure for Transaction when calling update_forward_refs() on Transaction inside schemas/__init__.py. Since Asset is only imported inside if TYPE_CHECKING: in transaction.py, it is not present in its runtime namespace, resulting in NameError: name 'Asset' is not defined.
-2. ModuleNotFoundError: No module named 'redis' when app/cache/factory.py eagerly imports RedisCacheClient from redis_client.py. The Android environment (Chaquopy) does not install the redis python library since it uses DiskCache rather than Redis.
+**Description:** The Android app crashes on startup in the Chaquopy environment due to:
+1. Pydantic V1 forward reference resolution failure for Transaction when calling update_forward_refs() on Transaction inside schemas/__init__.py because Asset is only imported inside if TYPE_CHECKING: in transaction.py.
+2. ModuleNotFoundError: No module named 'redis' due to eager module-level import of RedisCacheClient in cache/factory.py when CACHE_TYPE is set to "disk" (Android uses DiskCache).
+3. ModuleNotFoundError: No module named 'pyxirr' due to eager import of pyxirr in services/benchmark_service.py. Since pyxirr is a Rust C-extension not supported/packaged in Chaquopy, this crashed startup.
+4. ImportError: cannot import name 'run_backfill' from app.scripts.backfill_transaction_links during initialization_service.py loading because the script only defined backfill_links and did not have run_backfill alias.
 **Steps to Reproduce:**
 1. Clean user data on Android app.
 2. Launch the Android app in the Chaquopy environment.
-3. Observe that uvicorn/FastAPI fails to start and times out, routing the user to the Login page instead of the Setup page due to the schemas/cache crashes.
-**Expected Behavior:** The python backend starts up successfully and resolves all schemas, cache clients, and references without crash.
-**Actual Behavior:** FastAPI fails to start due to NameError: name 'Asset' is not defined and ModuleNotFoundError: No module named 'redis'.
+3. Observe that uvicorn/FastAPI fails to start and times out, routing the user to the Login page instead of the Setup page due to the crashes.
+**Expected Behavior:** The python backend starts up successfully and resolves all modules and references without crash.
+**Actual Behavior:** FastAPI fails to start due to NameError: name 'Asset' is not defined, ModuleNotFoundError for 'redis' and 'pyxirr', and ImportError for 'run_backfill'.
 **Resolution:**
 1. Passed Asset=Asset explicitly to Transaction.update_forward_refs(Asset=Asset) in schemas/__init__.py for Pydantic V1 environments.
-2. Wrapped the eager redis_client import in factory.py in a try-except ImportError block, setting RedisCacheClient to None if redis package is not installed and CACHE_TYPE is not redis.
+2. Wrapped eager redis_client import in factory.py in a try-except ImportError block.
+3. Wrapped eager pyxirr import in benchmark_service.py in a try-except ImportError block and implemented a custom numpy-based Newton-Raphson fallback function for XIRR.
+4. Added run_backfill = backfill_links alias in backfill_transaction_links.py.
 
 ---
 

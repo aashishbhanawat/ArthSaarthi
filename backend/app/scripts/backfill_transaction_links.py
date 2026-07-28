@@ -156,5 +156,9 @@ def backfill_links():
         db.close()
 
 
+# Alias for import compatibility with initialization_service.py
+run_backfill = backfill_links
+
+
 if __name__ == "__main__":
     backfill_links()

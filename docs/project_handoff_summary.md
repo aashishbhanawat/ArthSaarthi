@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved critical Android app startup crashes caused by Pydantic V1 circular reference resolution failure and eager redis client import in Chaquopy. Patched schemas/__init__.py and cache/factory.py, and verified 351 pytest tests pass.
+**Latest Achievement:** Resolved critical Android app startup crashes caused by Pydantic V1 circular reference resolution failure, eager redis client import, missing pyxirr library, and incorrect backfill script method name on Chaquopy. Patched schemas, cache factory, benchmark service, and backfill transaction links script, and verified 351 pytest tests pass.
 
 ## 2. Test Suite Status
 
@@ -19,9 +19,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
-*   **Android App Startup Pydantic Circular Reference & Redis Import Crashes (Issue #493) (Updated 2026-07-28):**
+*   **Android App Startup Crashes Stabilization (Issue #493) (Updated 2026-07-28):**
     - **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash.
     - **Backend Cache Factory:** Wrapped the eager `redis` module import in `backend/app/cache/factory.py` inside a `try...except ImportError` block. Since the Android app runs with `CACHE_TYPE = "disk"` and doesn't install the `redis` package, this prevents a `ModuleNotFoundError: No module named 'redis'` crash on Android startup.
+    - **Backend Benchmark Service:** Wrapped the eager `pyxirr` module import in `backend/app/services/benchmark_service.py` inside a `try...except ImportError` block with a numpy-based Newton-Raphson fallback function for XIRR. Since Chaquopy doesn't support the compiled `pyxirr` package, this prevents `ModuleNotFoundError: No module named 'pyxirr'` on Android startup.
+    - **Backend Backfill Script:** Added `run_backfill = backfill_links` alias in `backend/app/scripts/backfill_transaction_links.py`. Since `initialization_service.py` attempts to import `run_backfill` from this script, this resolves `ImportError: cannot import name 'run_backfill'` on Android startup.
     - **Verification:** Verified 351 tests pass successfully under the SQLite/DiskCache local test suite.
 
 
