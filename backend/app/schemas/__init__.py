@@ -199,4 +199,5 @@ if hasattr(Asset, "model_rebuild"):
     Transaction.model_rebuild()
 else:
     Asset.update_forward_refs()
-    Transaction.update_forward_refs()
+    Transaction.update_forward_refs(Asset=Asset)
+

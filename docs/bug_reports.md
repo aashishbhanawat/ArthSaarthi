@@ -26,6 +26,24 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-07-28-01
+**Title:** Android App Startup Pydantic Circular Reference Crash
+**Module:** Core Backend / Schemas
+**Reported By:** User
+**Date Reported:** 2026-07-28
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The Android app crashes on startup because the Pydantic V1 forward reference resolution fails for Transaction when calling update_forward_refs() on Transaction inside schemas/__init__.py. Since Asset is only imported inside if TYPE_CHECKING: in transaction.py, it is not present in its runtime namespace, resulting in NameError: name 'Asset' is not defined.
+**Steps to Reproduce:**
+1. Clean user data on Android app.
+2. Launch the Android app in the Chaquopy environment.
+3. Observe that uvicorn/FastAPI fails to start and times out, routing the user to the Login page instead of the Setup page due to the schemas circular reference exception on startup.
+**Expected Behavior:** The python backend starts up successfully and resolves all schemas and forward references without crash.
+**Actual Behavior:** FastAPI fails to start with NameError: name 'Asset' is not defined during Transaction.update_forward_refs().
+**Resolution:** Passed Asset=Asset explicitly to Transaction.update_forward_refs(Asset=Asset) in schemas/__init__.py for Pydantic V1 environments.
+
+---
+
 **Bug ID:** 2026-06-10-01
 **Title:** Sell Modal Displays Tax Lots Across All Portfolios
 **Module:** Portfolio Management / Core Backend / UI

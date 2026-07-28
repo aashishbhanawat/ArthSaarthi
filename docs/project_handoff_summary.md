@@ -1,17 +1,17 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-25
+**Last Updated:** 2026-07-28
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Implemented a battery-efficient daily background portfolio snapshot task for Android using Android WorkManager (Issue #492). Users can toggle this setting in the Profile page to keep portfolio values updated even when the app is closed.
+**Latest Achievement:** Resolved a critical Android app startup crash caused by Pydantic V1 circular reference resolution failure during forward ref evaluation in Chaquopy. Patched schemas/__init__.py and verified 351 pytest tests pass.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **359/362 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **359/362 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **351/354 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **351/354 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **191/191 Passing**
 *   **E2E Playwright Tests:** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
@@ -19,10 +19,15 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Android App Startup Pydantic Circular Reference Crash (Issue #493) (Updated 2026-07-28):**
+    - **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash that was caused because `Asset` was only imported inside a conditional `TYPE_CHECKING` block in `transaction.py` and thus missing from its runtime namespace.
+    - **Verification:** Verified 351 tests pass successfully under the SQLite/DiskCache local test suite.
+
 *   **Android Background Daily Portfolio Snapshot (Issue #492) (Updated 2026-07-26):**
     - **Backend API:** Created `POST /api/v1/system/snapshots/run-daily` to trigger daily snapshots via local loopback.
     - **Android/WorkManager:** Developed `SnapshotWorker.kt` utilizing `CoroutineWorker` to boot the `BackendService`, verify health, and invoke the daily snapshot API. Exposed this capability via `PythonBackendPlugin` to React.
     - **Frontend Settings:** Added a native settings card `AndroidSettingsCard` in the Profile page allowing users to toggle background sync, persisting the state securely.
+
 
 *   **Project Goal Future Value and Track Status (Issue #478 / FR13.4) (Updated 2026-07-25):**
     - **Backend Analytics Engine:** Rewrote `get_goal_with_analytics` in `crud_goal.py` to compile cash flows across all linked portfolios and standalone assets. Computes the combined dynamic XIRR of linked assets and compounds the current amount to the goal's target date. If calculated XIRR is invalid or out-of-bounds (i.e. $\le 0\%$ or $> 100\%$), falls back to the goal's expected return or a default rate ($10\%$). Determines goal track status (`"On Track"` or `"Off Track"`) and generates monthly, quarterly, or yearly projection data points.

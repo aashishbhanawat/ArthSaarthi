@@ -1,3 +1,14 @@
+## 2026-07-28: Resolve Android App Startup Pydantic Circular Reference Crash (Issue #493)
+
+**Task:** Fix startup crash of the Android application caused by Pydantic v1 forward reference resolution error in the schemas layer on Android (Chaquopy environment).
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash that was caused because `Asset` was only imported inside a conditional `TYPE_CHECKING` block in `transaction.py` and thus missing from its runtime namespace.
+2. **Testing:** Ran full integration and unit tests on the SQLite/DiskCache backend (matching the Android/embedded settings) to verify compatibility with Pydantic V2/V1. All 351 tests passed successfully.
+
 ## 2026-07-26: Android Background Daily Portfolio Snapshot (Issue #492)
 
 **Task:** Implement a battery-efficient daily background portfolio snapshot task for Android using Android WorkManager.
