@@ -51,7 +51,7 @@ const PortfolioList: React.FC<PortfolioListProps> = ({ portfolios }) => {
                             className="btn btn-sm btn-ghost text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
                             disabled={deletePortfolioMutation.isPending}
                             aria-label={`Delete portfolio ${portfolio.name}`}>
-                            <TrashIcon className="h-5 w-5" />
+                            <TrashIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
                     </div>
                 ))}

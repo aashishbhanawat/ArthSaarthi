@@ -98,7 +98,7 @@ const NavBar: React.FC = () => {
                     to="/transactions"
                     className={({ isActive }) => linkClass(isActive)}
                 >
-                    <ListBulletIcon className="h-5 w-5" />
+                    <ListBulletIcon className="h-5 w-5" aria-hidden="true" />
                     <span>Transactions</span>
                 </NavLink>
                 <NavLink
@@ -155,7 +155,7 @@ const NavBar: React.FC = () => {
                             <span>FMV Management</span>
                         </NavLink>
                         <NavLink to="/admin/aliases" className={({ isActive }) => linkClass(isActive)}>
-                            <ListBulletIcon className="h-5 w-5" />
+                            <ListBulletIcon className="h-5 w-5" aria-hidden="true" />
                             <span>Symbol Aliases</span>
                         </NavLink>
                     </>

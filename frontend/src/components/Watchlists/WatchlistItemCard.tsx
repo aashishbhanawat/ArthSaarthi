@@ -35,7 +35,7 @@ const WatchlistItemCard: React.FC<WatchlistItemCardProps> = ({ item, watchlistId
                     className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     aria-label={`Remove ${item.asset.ticker_symbol}`}
                 >
-                    <TrashIcon className="h-5 w-5" />
+                    <TrashIcon className="h-5 w-5" aria-hidden="true" />
                 </button>
             </div>
 

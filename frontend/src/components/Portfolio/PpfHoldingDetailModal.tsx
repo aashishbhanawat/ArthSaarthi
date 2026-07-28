@@ -150,7 +150,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
                           aria-label="Edit transaction"
                           onClick={() => onEdit(tx)}
                         >
-                          <PencilSquareIcon className="h-5 w-5" />
+                          <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
                         <button
                           className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
@@ -158,7 +158,7 @@ const PpfHoldingDetailModal: React.FC<PpfHoldingDetailModalProps> = ({
                           aria-label="Delete transaction"
                           onClick={() => onDelete(tx)}
                         >
-                          <TrashIcon className="h-5 w-5" />
+                          <TrashIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
                       </div>
                     ) : (

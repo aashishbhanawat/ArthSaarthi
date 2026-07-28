@@ -30,7 +30,7 @@ const MobileNav: React.FC = () => {
                 </NavLink>
 
                 <NavLink to="/transactions" className={({ isActive }) => linkClass(isActive)}>
-                    <ListBulletIcon className="h-6 w-6" />
+                    <ListBulletIcon className="h-6 w-6" aria-hidden="true" />
                     <span className="text-[10px] mt-1 font-medium">History</span>
                 </NavLink>
 

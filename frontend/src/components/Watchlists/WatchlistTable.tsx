@@ -50,7 +50,7 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
   if (!watchlist || watchlist.items.length === 0) {
     return (
       <div className="text-center p-8">
-        <ListBulletIcon className="mx-auto h-12 w-12 text-gray-400" />
+        <ListBulletIcon className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
         <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">This watchlist is empty</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Add assets to start tracking.</p>
       </div>
@@ -87,7 +87,7 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
                     className="btn btn-ghost btn-xs text-gray-400 hover:text-red-500"
                     aria-label={`Remove ${item.asset.ticker_symbol}`}
                   >
-                    <TrashIcon className="h-4 w-4" />
+                    <TrashIcon className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </td>
               </tr>

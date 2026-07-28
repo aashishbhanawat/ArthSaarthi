@@ -72,7 +72,7 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
                                             title="View Details"
                                             aria-label="View details"
                                         >
-                                            <InformationCircleIcon className="h-5 w-5" />
+                                            <InformationCircleIcon className="h-5 w-5" aria-hidden="true" />
                                         </button>
                                     )}
                                 </td>

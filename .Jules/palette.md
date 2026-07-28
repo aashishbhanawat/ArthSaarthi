@@ -4,3 +4,7 @@
 ## $(date +%Y-%m-%d) - Improve empty states for transaction lists
 **Learning:** Simple text empty states feel unpolished and don't provide a good visual cue for users when there is no data.
 **Action:** Replaced plain text empty states in `TransactionHistoryTable` and `TransactionList` with a standard empty state component using a Heroicon (`ListBulletIcon`), a heading, and helpful guidance text, matching the pattern established in the `WatchlistTable` component.
+
+## $(date +%Y-%m-%d) - Adding aria-hidden to decorative icons
+**Learning:** Decorative SVG icons (like Heroicons used inside buttons that already have `aria-label`s or adjacent text) were being redundantly parsed or announced by screen readers because they lacked `aria-hidden="true"`.
+**Action:** When adding or updating icon-only buttons or icons next to text, explicitly add `aria-hidden="true"` to the SVG component if the parent element already provides an accessible name (e.g., via `aria-label`).

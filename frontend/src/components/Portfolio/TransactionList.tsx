@@ -86,7 +86,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
                       title={getDisabledTitle(tx, 'edit')}
                       aria-label={`Edit transaction for ${tx.asset.ticker_symbol}`}
                     >
-                      <PencilSquareIcon className="h-5 w-5" />
+                      <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => onDelete(tx)}
@@ -95,7 +95,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
                       title={getDisabledTitle(tx, 'delete')}
                       aria-label={`Delete transaction for ${tx.asset.ticker_symbol}`}
                     >
-                      <TrashIcon className="h-5 w-5" />
+                      <TrashIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                   </div>
                 </td>
