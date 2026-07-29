@@ -38,7 +38,7 @@ def get_db():
         if isinstance(e, HTTPException) and e.status_code < 500:
             logger.debug(f"DB Session: Client error {e.status_code}, rolling back.")
         else:
-            logger.error(f"DB Session: Exception occurred, rolling back: {e}")
+            logger.error(f"DB Session: Exception occurred, rolling back: {e}", exc_info=True)
         db.rollback()
         raise
     finally:

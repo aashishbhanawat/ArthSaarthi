@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-28
+**Last Updated:** 2026-07-29
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved critical Android app startup crashes caused by Pydantic V1 circular reference resolution failure, eager redis client import, missing pyxirr library, and incorrect backfill script method name on Chaquopy. Patched schemas, cache factory, benchmark service, and backfill transaction links script, and verified 351 pytest tests pass.
+**Latest Achievement:** Resolved a critical Android initial admin setup error, enabled descriptive traceback diagnostics on database session rollbacks, resolved background thread concurrency and TypeError crashes in transaction backfilling, and restored the onboarding asset seeding splash screen.
 
 ## 2. Test Suite Status
 
@@ -18,6 +18,12 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Android Onboarding & Account Creation Fixes (Issue #494) (Updated 2026-07-29):**
+    - **Database Diagnostics:** Enhanced exception logging in `get_db` (`backend/app/db/session.py`) by passing `exc_info=True` to print full exception tracebacks during rollback events.
+    - **Admin Setup Endpoint:** Wrapped user creation and database commit in `setup_admin_user` (`backend/app/api/v1/endpoints/auth.py`) inside a `try...except` block, ensuring traceback capture and reporting descriptive 500 error messages back to the client.
+    - **Backfill Script Integration:** Updated `backfill_links` in `backend/app/scripts/backfill_transaction_links.py` to support optional session parameter. Corrected background thread in `initialization_service.py` to prevent threading arguments mismatch (`TypeError`).
+    - **Onboarding Splash Screen:** Restored the `MobileSeedingSplash` component and diagnostic logs link in `frontend/src/pages/AuthPage.tsx` to handle asset seeding elegantly on first mobile launch.
 
 *   **Android App Startup Crashes Stabilization (Issue #493) (Updated 2026-07-28):**
     - **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash.

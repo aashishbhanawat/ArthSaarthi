@@ -82,7 +82,6 @@ def check_and_seed_on_startup():
         # This ensures data consistency for capital gains reports
         threading.Thread(
             target=run_backfill,
-            args=(db,),
             daemon=True
         ).start()
     except Exception as e:

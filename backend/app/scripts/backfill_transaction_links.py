@@ -13,6 +13,8 @@ import sys
 # Add app to path
 sys.path.insert(0, "/app")
 
+from typing import Optional
+
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
@@ -84,8 +86,11 @@ def get_available_lots_for_backfill(
     return [lot for lot in lots if lot["available_quantity"] > 0]
 
 
-def backfill_links():
-    db = SessionLocal()
+def backfill_links(db: Optional[Session] = None):
+    own_session = False
+    if db is None:
+        db = SessionLocal()
+        own_session = True
     try:
         # Find all SELL transactions without links
         sell_txs = (
@@ -153,7 +158,8 @@ def backfill_links():
         logger.error(f"Backfill failed: {e}")
         raise
     finally:
-        db.close()
+        if own_session:
+            db.close()
 
 
 # Alias for import compatibility with initialization_service.py

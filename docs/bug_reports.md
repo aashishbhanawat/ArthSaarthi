@@ -26,6 +26,27 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-07-29-01
+**Title:** Android Account Creation Fail and Missing Seeding Splash Screen
+**Module:** Authentication / Database / UI
+**Reported By:** User
+**Date Reported:** 2026-07-29
+**Classification:** Implementation (Backend & Frontend)
+**Severity:** High
+**Description:** The user was unable to create an account on Android startup. Furthermore, the seeding splash screen was not rendered, meaning the user did not wait for the initial sqlite database seeding thread to finish. This background thread also crashed with TypeError: backfill_links() takes 0 positional arguments but 1 was given because the DB session was passed incorrectly to the background thread which then got closed.
+**Steps to Reproduce:**
+1. Start the Android app for the first time.
+2. Note that the splash/seeding screen is skipped entirely, landing straight on the login/signup screen.
+3. Try to register an admin user. The request fails with a 500 error and database rollback.
+**Expected Behavior:** Seeding splash screen appears, updates progress correctly, and once complete, admin account setup completes successfully.
+**Actual Behavior:** Splash screen is skipped. Background backfill thread throws TypeError. Creating admin user fails with 500.
+**Resolution:**
+1. Restored MobileSeedingSplash in AuthPage.tsx.
+2. Wrapped get_db error log with exc_info=True and setup_admin_user with a try-except traceback block.
+3. Fixed run_backfill thread invocation and signature in backfill_transaction_links.py and initialization_service.py.
+
+---
+
 **Bug ID:** 2026-07-28-01
 **Title:** Android App Startup Crashes (Pydantic Circular Ref, Redis/Pyxirr Import, and Backfill Alias Crashes)
 **Module:** Core Backend / Schemas / Cache / Services / Scripts

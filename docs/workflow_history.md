@@ -1,3 +1,17 @@
+## 2026-07-29: Fix Android Sign Up Error, Enable Diagnostic Trace, and Restore Seeding Splash (Issue #494)
+
+**Task:** Fix initial admin account setup failure on Android, enhance database error trace output, fix background backfill task signature clash, and restore the initial seeding splash screen.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Backend Database Session Diagnostics:** Modified the `get_db` exception logging block in `backend/app/db/session.py` to include `exc_info=True` for logging full tracebacks. This ensures database errors (e.g. key/unique violations or driver locking errors) are printed to diagnostic logs instead of being swallowed.
+2. **Backend Authentication Setup Endpoint:** Wrapped the user creation and commit sequence inside a `try...except` block in `setup_admin_user` (`backend/app/api/v1/endpoints/auth.py`), capturing tracebacks on failure and reporting descriptive 500 error details back to the client.
+3. **Backend Backfill Script Integration:** Updated the `backfill_links` function inside `backend/app/scripts/backfill_transaction_links.py` to take an optional `db: Optional[Session] = None` and cleanly manage session creation/deletion. Updated the background execution thread in `backend/app/services/initialization_service.py` to not pass the parent thread's closed `db` session, preventing `TypeError` thread execution failure.
+4. **Frontend Onboarding & Seeding Splash:** Restored the `MobileSeedingSplash` component and diagnostic logs link in `frontend/src/pages/AuthPage.tsx`. This ensures that first-time mobile boots display the proper asset import/seeding progress screen, preventing premature setup/login attempts while SQLite is heavily writing.
+5. **Testing:** Ran full integration and unit tests on the SQLite/DiskCache backend to verify correctness. All 25 auth/user tests passed successfully.
+
 ## 2026-07-28: Resolve Android App Startup Pydantic Circular Reference, Redis/Pyxirr Import, and Backfill Script Crashes (Issue #493)
 
 **Task:** Fix multiple startup crashes of the Android application caused by Pydantic V1 forward reference resolution error, eager redis client import, missing pyxirr package import, and incorrect run_backfill name in Android (Chaquopy environment).
