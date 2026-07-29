@@ -39,6 +39,12 @@ def get_db():
             logger.debug(f"DB Session: Client error {e.status_code}, rolling back.")
         else:
             logger.error(f"DB Session: Exception occurred, rolling back: {e}", exc_info=True)
+            try:
+                from fastapi.exceptions import ResponseValidationError
+                if isinstance(e, ResponseValidationError):
+                    logger.error(f"Detailed ResponseValidationError: {e.errors()}")
+            except Exception:
+                pass
         db.rollback()
         raise
     finally:

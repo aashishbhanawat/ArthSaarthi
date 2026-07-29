@@ -27,23 +27,28 @@ Copy and paste the template below to file a new bug report.
 ---
 
 **Bug ID:** 2026-07-29-01
-**Title:** Android Account Creation Fail and Missing Seeding Splash Screen
-**Module:** Authentication / Database / UI
+**Title:** Android Account Creation Fail, Missing Seeding Splash, and Response Validation Crashes
+**Module:** Authentication / Database / UI / Schemas
 **Reported By:** User
 **Date Reported:** 2026-07-29
 **Classification:** Implementation (Backend & Frontend)
-**Severity:** High
-**Description:** The user was unable to create an account on Android startup. Furthermore, the seeding splash screen was not rendered, meaning the user did not wait for the initial sqlite database seeding thread to finish. This background thread also crashed with TypeError: backfill_links() takes 0 positional arguments but 1 was given because the DB session was passed incorrectly to the background thread which then got closed.
+**Severity:** Critical
+**Description:** The user was unable to create an account on Android startup. The signup failed with a `ResponseValidationError` from FastAPI. Furthermore:
+1. The seeding splash screen was not rendered, meaning the user did not wait for the initial SQLite database seeding thread to finish. This background thread also crashed with TypeError because DB session was passed incorrectly to the background thread.
+2. In `android` mode, the `email` and `full_name` fields returned from SQLite can be `bytes` (if the columns were created as `BLOB` previously or due to driver type matching). This caused Pydantic v1 to fail validation against `EmailStr` and `str` types.
+3. In `android` mode, `/login` returned `deployment_mode: "android"` but the `Token` response schema restricted `deployment_mode` to `Literal["server", "desktop"]`, causing a validation error on login.
 **Steps to Reproduce:**
 1. Start the Android app for the first time.
 2. Note that the splash/seeding screen is skipped entirely, landing straight on the login/signup screen.
-3. Try to register an admin user. The request fails with a 500 error and database rollback.
-**Expected Behavior:** Seeding splash screen appears, updates progress correctly, and once complete, admin account setup completes successfully.
-**Actual Behavior:** Splash screen is skipped. Background backfill thread throws TypeError. Creating admin user fails with 500.
+3. Try to register an admin user. The request fails with a 500 error due to `ResponseValidationError`.
+**Expected Behavior:** Seeding splash screen appears, updates progress correctly, and once complete, admin account setup and login complete successfully.
+**Actual Behavior:** Splash screen is skipped. Background backfill thread throws TypeError. Creating admin user and login fail with `ResponseValidationError` (due to bytes values and Literal mismatch).
 **Resolution:**
-1. Restored MobileSeedingSplash in AuthPage.tsx.
-2. Wrapped get_db error log with exc_info=True and setup_admin_user with a try-except traceback block.
-3. Fixed run_backfill thread invocation and signature in backfill_transaction_links.py and initialization_service.py.
+1. Restored `MobileSeedingSplash` in `AuthPage.tsx`.
+2. Wrapped `get_db` error log with `exc_info=True` and log detailed field errors for `ResponseValidationError`.
+3. Updated `EncryptedString` in `custom_types.py` to automatically decode `bytes` to `utf-8` strings if not in `desktop` mode.
+4. Added `"android"` to `deployment_mode` `Literal` in `Token` model (`token.py`).
+5. Fixed `run_backfill` thread invocation and signature in `backfill_transaction_links.py` and `initialization_service.py`.
 
 ---
 

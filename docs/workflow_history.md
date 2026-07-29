@@ -6,11 +6,14 @@
 
 ### Summary
 
-1. **Backend Database Session Diagnostics:** Modified the `get_db` exception logging block in `backend/app/db/session.py` to include `exc_info=True` for logging full tracebacks. This ensures database errors (e.g. key/unique violations or driver locking errors) are printed to diagnostic logs instead of being swallowed.
+1. **Backend Database Session Diagnostics:** Modified the `get_db` exception logging block in `backend/app/db/session.py` to include `exc_info=True` and capture detailed `ResponseValidationError` field errors. This ensures response/request validation errors print their exact failure details to logs.
 2. **Backend Authentication Setup Endpoint:** Wrapped the user creation and commit sequence inside a `try...except` block in `setup_admin_user` (`backend/app/api/v1/endpoints/auth.py`), capturing tracebacks on failure and reporting descriptive 500 error details back to the client.
-3. **Backend Backfill Script Integration:** Updated the `backfill_links` function inside `backend/app/scripts/backfill_transaction_links.py` to take an optional `db: Optional[Session] = None` and cleanly manage session creation/deletion. Updated the background execution thread in `backend/app/services/initialization_service.py` to not pass the parent thread's closed `db` session, preventing `TypeError` thread execution failure.
-4. **Frontend Onboarding & Seeding Splash:** Restored the `MobileSeedingSplash` component and diagnostic logs link in `frontend/src/pages/AuthPage.tsx`. This ensures that first-time mobile boots display the proper asset import/seeding progress screen, preventing premature setup/login attempts while SQLite is heavily writing.
-5. **Testing:** Ran full integration and unit tests on the SQLite/DiskCache backend to verify correctness. All 25 auth/user tests passed successfully.
+3. **Backend EncryptedString Type Decorator:** Updated `EncryptedString` in `backend/app/db/custom_types.py` to automatically decode `bytes` values to `utf-8` strings when `DEPLOYMENT_MODE != "desktop"`. This ensures that even if SQLite columns are of binary/BLOB type on disk, they return as clean python strings, resolving `ResponseValidationError` on `email` and `full_name` fields.
+4. **Backend Token Schema:** Added `"android"` to the `deployment_mode` `Literal` in the `Token` response model (`backend/app/schemas/token.py`). This prevents `ResponseValidationError` during login on Android.
+5. **Backend Backfill Script Integration:** Updated the `backfill_links` function inside `backend/app/scripts/backfill_transaction_links.py` to take an optional `db: Optional[Session] = None` and cleanly manage session creation/deletion. Updated the background execution thread in `backend/app/services/initialization_service.py` to not pass the parent thread's closed `db` session, preventing `TypeError` thread execution failure.
+6. **Frontend Onboarding & Seeding Splash:** Restored the `MobileSeedingSplash` component and diagnostic logs link in `frontend/src/pages/AuthPage.tsx`. This ensures that first-time mobile boots display the proper asset import/seeding progress screen, preventing premature setup/login attempts while SQLite is heavily writing.
+7. **Testing:** Ran full integration and unit tests on the SQLite/DiskCache backend to verify correctness. All 25 auth/user tests passed successfully.
+
 
 ## 2026-07-28: Resolve Android App Startup Pydantic Circular Reference, Redis/Pyxirr Import, and Backfill Script Crashes (Issue #493)
 

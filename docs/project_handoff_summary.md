@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved a critical Android initial admin setup error, enabled descriptive traceback diagnostics on database session rollbacks, resolved background thread concurrency and TypeError crashes in transaction backfilling, and restored the onboarding asset seeding splash screen.
+**Latest Achievement:** Resolved critical ResponseValidationErrors on Android onboarding and login, resolved a critical Android initial admin setup error, enabled descriptive traceback diagnostics on database session rollbacks, resolved background thread concurrency and TypeError crashes in transaction backfilling, and restored the onboarding asset seeding splash screen.
 
 ## 2. Test Suite Status
 
@@ -20,7 +20,9 @@
 ## Recent Stabilization & Refinement Efforts
 
 *   **Android Onboarding & Account Creation Fixes (Issue #494) (Updated 2026-07-29):**
-    - **Database Diagnostics:** Enhanced exception logging in `get_db` (`backend/app/db/session.py`) by passing `exc_info=True` to print full exception tracebacks during rollback events.
+    - **Response Validation (Pydantic V1):** Updated `EncryptedString` database type decorator in `backend/app/db/custom_types.py` to dynamically decode `bytes` object to `utf-8` string when `DEPLOYMENT_MODE != "desktop"`. This resolves `ResponseValidationError` when SQLite reads `email` or `full_name` fields as `bytes` on Android.
+    - **Token Response Validation:** Added `"android"` to the `deployment_mode` Literal in `backend/app/schemas/token.py` to prevent `ResponseValidationError` during login when running in Android mode.
+    - **Database Diagnostics:** Enhanced exception logging in `get_db` (`backend/app/db/session.py`) by passing `exc_info=True` and log validation error details for `ResponseValidationError`.
     - **Admin Setup Endpoint:** Wrapped user creation and database commit in `setup_admin_user` (`backend/app/api/v1/endpoints/auth.py`) inside a `try...except` block, ensuring traceback capture and reporting descriptive 500 error messages back to the client.
     - **Backfill Script Integration:** Updated `backfill_links` in `backend/app/scripts/backfill_transaction_links.py` to support optional session parameter. Corrected background thread in `initialization_service.py` to prevent threading arguments mismatch (`TypeError`).
     - **Onboarding Splash Screen:** Restored the `MobileSeedingSplash` component and diagnostic logs link in `frontend/src/pages/AuthPage.tsx` to handle asset seeding elegantly on first mobile launch.
