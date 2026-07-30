@@ -74,6 +74,21 @@ class ParsedTransaction(BaseModel):
     fees: float
     isin: str | None = None
 
+    @validator("transaction_date", pre=True)
+    @classmethod
+    def parse_date(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            if len(v) == 10:
+                try:
+                    return datetime.strptime(v, "%Y-%m-%d")
+                except ValueError:
+                    pass
+            try:
+                return datetime.fromisoformat(v.replace("Z", "+00:00"))
+            except ValueError:
+                pass
+        return v
+
 
 # New schema for the categorized preview response
 class ImportSessionPreview(BaseModel):
