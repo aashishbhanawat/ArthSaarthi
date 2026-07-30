@@ -78,7 +78,7 @@ class User(UserBase):
         )
     else:
         class Config:
-            from_orm = True
+            orm_mode = True
             schema_extra = {
                 "example": {
                     "id": 1,

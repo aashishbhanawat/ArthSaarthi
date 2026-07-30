@@ -87,4 +87,4 @@ class UserRiskProfile(UserRiskProfileBase):
         model_config = ConfigDict(from_attributes=True)
     else:
         class Config:
-            from_orm = True
+            orm_mode = True

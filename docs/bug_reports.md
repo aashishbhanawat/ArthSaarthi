@@ -26,6 +26,24 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-07-30-01
+**Title:** ResponseValidationError: value is not a valid dict on Android Users Me and Onboarding Setup
+**Module:** Schemas / Pydantic V1
+**Reported By:** User
+**Date Reported:** 2026-07-30
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The user was still unable to create an account or load user data (resulting in 500 ResponseValidationError on GET /api/v1/users/me). On Android, where Pydantic V1 is installed, the fallback Config blocks of schemas were executed. However, multiple schemas used 'from_orm = True' instead of 'orm_mode = True' in their Config class. Since from_orm is a model method and not a Config option, Pydantic V1 failed to parse SQLAlchemy models as ORM objects, throwing value is not a valid dict.
+**Steps to Reproduce:**
+1. Log in or create an account on Android.
+2. Note the 500 Internal Server Error when querying /api/v1/users/me.
+**Expected Behavior:** The user model converts successfully to user schema and returns HTTP 200.
+**Actual Behavior:** FastAPI throws ResponseValidationError: value is not a valid dict.
+**Resolution:**
+Updated from_orm = True to orm_mode = True in fallback Config blocks across user.py, asset.py, import_session.py, portfolio.py, risk.py, transaction.py, and watchlist.py.
+
+---
+
 **Bug ID:** 2026-07-29-01
 **Title:** Android Account Creation Fail, Missing Seeding Splash, and Response Validation Crashes
 **Module:** Authentication / Database / UI / Schemas

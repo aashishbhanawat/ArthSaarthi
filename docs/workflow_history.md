@@ -1,3 +1,22 @@
+## 2026-07-30: Fix Pydantic V1 Config Option Clashing with Pydantic V2 (Issue #495)
+
+**Task:** Correct the fallback ORM config option in all Pydantic schemas to avoid ResponseValidationError on Android.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Pydantic V1 Compatibility:** Discovered that a previous implementation had written `class Config: from_orm = True` instead of `class Config: orm_mode = True` across multiple schemas. While Pydantic V2 ignores the `Config` block in favor of `model_config`, Pydantic V1 on Android runs this block and was unable to convert SQLAlchemy models to Pydantic objects, raising `fastapi.exceptions.ResponseValidationError: value is not a valid dict` when calling endpoints such as `/api/v1/users/me` or `/api/v1/auth/setup`.
+2. **Schema Corrections:** Updated `from_orm = True` to `orm_mode = True` in the fallback `Config` classes across:
+   - `backend/app/schemas/asset.py`
+   - `backend/app/schemas/import_session.py`
+   - `backend/app/schemas/portfolio.py`
+   - `backend/app/schemas/risk.py`
+   - `backend/app/schemas/transaction.py`
+   - `backend/app/schemas/user.py`
+   - `backend/app/schemas/watchlist.py`
+3. **Testing:** Verified that the entire local SQLite unit test suite continues to pass (351 tests).
+
 ## 2026-07-29: Fix Android Sign Up Error, Enable Diagnostic Trace, and Restore Seeding Splash (Issue #494)
 
 **Task:** Fix initial admin account setup failure on Android, enhance database error trace output, fix background backfill task signature clash, and restore the initial seeding splash screen.

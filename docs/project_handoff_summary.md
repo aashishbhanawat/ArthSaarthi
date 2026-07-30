@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-29
+**Last Updated:** 2026-07-30
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved critical ResponseValidationErrors on Android onboarding and login, resolved a critical Android initial admin setup error, enabled descriptive traceback diagnostics on database session rollbacks, resolved background thread concurrency and TypeError crashes in transaction backfilling, and restored the onboarding asset seeding splash screen.
+**Latest Achievement:** Corrected the Pydantic V1 fallback `Config` options from `from_orm = True` to `orm_mode = True` across all schemas, resolving `ResponseValidationError: value is not a valid dict` crashes on Android; also resolved signup and backfill crashes.
 
 ## 2. Test Suite Status
 
@@ -18,6 +18,9 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Pydantic V1 Fallback Config Stabilization (Issue #495) (Updated 2026-07-30):**
+    - **Pydantic V1/V2 Compatibility:** Corrected `from_orm = True` to `orm_mode = True` inside fallback `Config` classes across multiple Pydantic schema files (`asset.py`, `import_session.py`, `portfolio.py`, `risk.py`, `transaction.py`, `user.py`, and `watchlist.py`). This fixes conversion of SQLAlchemy model objects to Pydantic objects on Android where Pydantic V1 is used.
 
 *   **Android Onboarding & Account Creation Fixes (Issue #494) (Updated 2026-07-29):**
     - **Response Validation (Pydantic V1):** Updated `EncryptedString` database type decorator in `backend/app/db/custom_types.py` to dynamically decode `bytes` object to `utf-8` string when `DEPLOYMENT_MODE != "desktop"`. This resolves `ResponseValidationError` when SQLite reads `email` or `full_name` fields as `bytes` on Android.
