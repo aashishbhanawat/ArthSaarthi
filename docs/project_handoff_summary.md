@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Corrected the Pydantic V1 fallback `Config` options from `from_orm = True` to `orm_mode = True` across all schemas, resolving `ResponseValidationError: value is not a valid dict` crashes on Android; also resolved signup and backfill crashes.
+**Latest Achievement:** Corrected the Pydantic V1 fallback `Config` options and resolved the `ConfigDict` namespace pollution on Pydantic V1 by introducing strict version checks across all schemas, resolving `ResponseValidationError: value is not a valid dict` on Android.
 
 ## 2. Test Suite Status
 
@@ -20,7 +20,7 @@
 ## Recent Stabilization & Refinement Efforts
 
 *   **Pydantic V1 Fallback Config Stabilization (Issue #495) (Updated 2026-07-30):**
-    - **Pydantic V1/V2 Compatibility:** Corrected `from_orm = True` to `orm_mode = True` inside fallback `Config` classes across multiple Pydantic schema files (`asset.py`, `import_session.py`, `portfolio.py`, `risk.py`, `transaction.py`, `user.py`, and `watchlist.py`). This fixes conversion of SQLAlchemy model objects to Pydantic objects on Android where Pydantic V1 is used.
+    - **Pydantic V1/V2 Compatibility:** Discovered that `from pydantic import ConfigDict` does not throw `ImportError` on Pydantic V1 (since it is defined internally as a `TypedDict`), bypassing fallback blocks. Resolved by performing a strict `VERSION.startswith("2.")` check across all schemas, and corrected all fallback configuration keys from `from_orm = True` to `orm_mode = True` (`asset.py`, `import_session.py`, `portfolio.py`, `risk.py`, `transaction.py`, `user.py`, `watchlist.py`, etc.). This ensures successful conversion of SQLAlchemy objects to Pydantic schemas under Pydantic V1.
 
 *   **Android Onboarding & Account Creation Fixes (Issue #494) (Updated 2026-07-29):**
     - **Response Validation (Pydantic V1):** Updated `EncryptedString` database type decorator in `backend/app/db/custom_types.py` to dynamically decode `bytes` object to `utf-8` string when `DEPLOYMENT_MODE != "desktop"`. This resolves `ResponseValidationError` when SQLite reads `email` or `full_name` fields as `bytes` on Android.

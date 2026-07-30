@@ -5,8 +5,13 @@ from typing import List, Optional
 
 from pydantic import BaseModel, root_validator
 
+from pydantic.version import VERSION
+
 try:
-    from pydantic import ConfigDict
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        raise ImportError
     def model_validator(pre=False, mode="after"):
         return root_validator(pre=pre, skip_on_failure=True)
 except (ImportError, TypeError):

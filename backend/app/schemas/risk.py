@@ -4,8 +4,13 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
+from pydantic.version import VERSION
+
 try:
-    from pydantic import ConfigDict, field_validator
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict, field_validator
+    else:
+        raise ImportError
 except ImportError:
     ConfigDict = None
     from pydantic import validator

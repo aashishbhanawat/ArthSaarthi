@@ -5,8 +5,13 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from pydantic.version import VERSION
+
 try:
-    from pydantic import ConfigDict
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        raise ImportError
 except ImportError:
     ConfigDict = None
 

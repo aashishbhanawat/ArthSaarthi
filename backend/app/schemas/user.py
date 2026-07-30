@@ -4,8 +4,13 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
+from pydantic.version import VERSION
+
 try:
-    from pydantic import ConfigDict, field_validator
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict, field_validator
+    else:
+        raise ImportError
 except ImportError:
     ConfigDict = None
     from pydantic import validator as field_validator

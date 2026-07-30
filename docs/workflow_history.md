@@ -6,9 +6,14 @@
 
 ### Summary
 
-1. **Pydantic V1 Compatibility:** Discovered that a previous implementation had written `class Config: from_orm = True` instead of `class Config: orm_mode = True` across multiple schemas. While Pydantic V2 ignores the `Config` block in favor of `model_config`, Pydantic V1 on Android runs this block and was unable to convert SQLAlchemy models to Pydantic objects, raising `fastapi.exceptions.ResponseValidationError: value is not a valid dict` when calling endpoints such as `/api/v1/users/me` or `/api/v1/auth/setup`.
-2. **Schema Corrections:** Updated `from_orm = True` to `orm_mode = True` in the fallback `Config` classes across:
+1. **Pydantic V1 Compatibility:** Discovered that a previous implementation had written `class Config: from_orm = True` instead of `class Config: orm_mode = True` across multiple schemas. Furthermore, discovered that `from pydantic import ConfigDict` does NOT raise an `ImportError` on Pydantic V1 (since Pydantic 1.10.x exposes a `config.ConfigDict` internal class). This caused the Pydantic V2 check `if ConfigDict:` to falsely evaluate to `True` on Android, skipping the fallback V1 configuration entirely and causing `fastapi.exceptions.ResponseValidationError: value is not a valid dict` when returning SQLAlchemy objects.
+2. **Schema Corrections:** Fixed the fallback import guard to perform a strict version check using `from pydantic.version import VERSION` and checking `VERSION.startswith("2.")` in all schemas. Updated `from_orm = True` to `orm_mode = True` in the fallback `Config` classes across:
    - `backend/app/schemas/asset.py`
+   - `backend/app/schemas/dashboard.py`
+   - `backend/app/schemas/dividends.py`
+   - `backend/app/schemas/fixed_deposit.py`
+   - `backend/app/schemas/goal.py`
+   - `backend/app/schemas/holding.py`
    - `backend/app/schemas/import_session.py`
    - `backend/app/schemas/portfolio.py`
    - `backend/app/schemas/risk.py`
