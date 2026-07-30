@@ -5,6 +5,17 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel
 
 
+from pydantic.version import VERSION
+
+try:
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        ConfigDict = None
+except ImportError:
+    ConfigDict = None
+
+
 # Base schema for audit log entries
 class AuditLogBase(BaseModel):
     event_type: str
@@ -21,5 +32,9 @@ class AuditLog(AuditLogBase):
     id: uuid.UUID
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+

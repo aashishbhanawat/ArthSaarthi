@@ -20,12 +20,16 @@ from .asset_alias import (
     AssetAliasUpdate,
     AssetAliasWithAsset,
 )
+from .audit_log import AuditLog, AuditLogCreate
+
 from .bond import (
     Bond,
     BondCreate,
     BondUpdate,
     BondWithTransactionCreate,
 )
+from .capital_gains import CapitalGainsSummary
+
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,
@@ -106,11 +110,14 @@ from .watchlist import (
 )
 
 __all__ = [
+    "AuditLog",
+    "AuditLogCreate",
     "RecurringDeposit",
     "RecurringDepositAnalytics",
     "RecurringDepositCreate",
     "RecurringDepositDetails",
     "RecurringDepositUpdate",
+
     "TransactionType",
     "AssetType",
     "Asset",
@@ -129,6 +136,8 @@ __all__ = [
     "AssetSearchResult",
     "AssetUpdate",
     "AssetAnalytics",
+    "CapitalGainsSummary",
+
     "DiversificationResponse",
     "DiversificationSegment",
     "FixedDepositAnalytics",

@@ -4,6 +4,17 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+from pydantic.version import VERSION
+
+try:
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        ConfigDict = None
+except ImportError:
+    ConfigDict = None
+
+
 class AssetAliasBase(BaseModel):
     alias_symbol: str
     source: str
@@ -20,8 +31,12 @@ class AssetAlias(AssetAliasBase):
     id: uuid.UUID
     asset_id: uuid.UUID
 
-    class Config:
-        from_attributes = True
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
 
 class AssetAliasWithAsset(AssetAlias):
     """Alias response enriched with asset name and ticker for display."""

@@ -23,11 +23,26 @@ class HistoricalInterestRateUpdate(HistoricalInterestRateBase):
     rate: Optional[Decimal] = None
 
 
+from pydantic.version import VERSION
+
+try:
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        ConfigDict = None
+except ImportError:
+    ConfigDict = None
+
+
 class HistoricalInterestRateInDBBase(HistoricalInterestRateBase):
     id: uuid.UUID
 
-    class Config:
-        from_attributes = True
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
 
 
 class HistoricalInterestRate(HistoricalInterestRateInDBBase):

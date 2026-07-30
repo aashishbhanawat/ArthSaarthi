@@ -59,8 +59,12 @@ class FixedDeposit(FixedDepositBase):
     portfolio_id: uuid.UUID
     user_id: uuid.UUID
 
-    class Config:
-        from_attributes = True
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
 
 
 class FixedDepositDetails(FixedDeposit):

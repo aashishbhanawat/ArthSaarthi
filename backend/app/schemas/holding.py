@@ -47,8 +47,12 @@ class Holding(BaseModel):
     investment_style: Optional[str] = None  # Value, Growth, Blend
     bond: Optional[BondSchema] = None
 
-    class Config:
-        from_attributes = True
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
 
     @model_validator(pre=False)
     @classmethod
@@ -92,11 +96,21 @@ class PortfolioSummary(BaseModel):
     total_unrealized_pnl: Decimal
     total_realized_pnl: Decimal
 
-    class Config:
-        from_attributes = True
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
 
 
 class PortfolioHoldingsAndSummary(BaseModel):
     summary: PortfolioSummary
     holdings: List[Holding]
-    model_config = {"from_attributes": True}
+    
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
