@@ -3,6 +3,15 @@ from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from pydantic.version import VERSION
+
+try:
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        ConfigDict = None
+except ImportError:
+    ConfigDict = None
 
 from app.schemas.transaction import TransactionCreate
 
@@ -46,15 +55,6 @@ class BondUpdate(BondBase):
     pass
 
 
-from pydantic.version import VERSION
-
-try:
-    if VERSION.startswith("2."):
-        from pydantic import ConfigDict
-    else:
-        ConfigDict = None
-except ImportError:
-    ConfigDict = None
 
 
 # Properties shared by models stored in DB

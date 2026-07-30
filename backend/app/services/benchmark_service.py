@@ -13,7 +13,9 @@ try:
     from pyxirr import xirr
 except ImportError:
     logger = logging.getLogger(__name__)
-    logger.warning("pyxirr not found, using numpy fallback for XIRR in benchmark_service")
+    logger.warning(
+        "pyxirr not found, using numpy fallback for XIRR in benchmark_service"
+    )
 
     def xirr(dates, payments):
         if not dates or not payments or len(dates) != len(payments):

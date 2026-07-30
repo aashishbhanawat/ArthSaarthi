@@ -308,4 +308,14 @@ Based on the `product_backlog.md`, the next features to consider are:
     -   **Frontend UI:** Implemented a multi-step questionnaire wizard with progress tracking, options cards, and back/next navigation, plus a results page visualizing the score and target allocation.
     -   **Verification:** Authored backend integration tests (`test_risk.py`) verifying CRUD, validation, endpoints, and updates. Verified frontend compiles and builds successfully.
 
+## 15. Android Pydantic V1 Compatibility Fixes (Updated 2026-07-30)
 
+-   **Issue:** Android build crashes/malfunctions on Chaquopy (which runs Pydantic v1.10.13) due to Pydantic v2 incompatibilities in model configuration and forward references.
+-   **Fixes:**
+    -   **Strict Pydantic Version Check:** Discovered that importing `ConfigDict` did not throw an `ImportError` under Pydantic V1 (it was present internally in `pydantic.config`), bypassing try-except checks. Standardized all schemas to check `from pydantic.version import VERSION` to resolve import namespaces dynamically.
+    -   **Eager Forward References:** Appended `update_forward_refs()` calls to the bottom of `goal.py` and `capital_gains.py` to compile ForwardRefs eagerly under Pydantic V1.
+    -   **Config Fallback Block Standardization:** Added standard Pydantic V1 (`class Config: orm_mode = True`) and V2 (`model_config = ConfigDict(from_attributes=True)`) compatibility blocks to all database schemas: `AssetAlias`, `AuditLog`, `Bond`, `FixedDeposit`, `RecurringDeposit`, `HistoricalInterestRate`, and `Holding` (including helper models `PortfolioSummary` and `PortfolioHoldingsAndSummary`).
+    -   **Date Validator Fallback:** Added a pre-validator to `ParsedTransaction.transaction_date` in `import_session.py` to parse plain date strings on V1.
+    -   **AuditLog & CapitalGains Exports:** Added `AuditLog`, `AuditLogCreate`, and `CapitalGainsSummary` imports and exports to `backend/app/schemas/__init__.py`.
+    -   **Lint and Eslint Fixes:** Fixed long logging lines in `session.py` and `benchmark_service.py`, moved imports to the top of schema files, and resolved a React Hook dependency warning in `AndroidSettingsCard.tsx`.
+-   **Verification Script:** Authored `test_schemas.py` in the project root to compile and run from_orm/dict mock instantiation tests for all 16 database schemas. Verified 100% success rate (`Passed: 16, Failed: 0`) under a simulated Pydantic v1.10.13 environment.

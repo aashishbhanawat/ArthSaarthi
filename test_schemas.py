@@ -1,3 +1,16 @@
+# Pydantic V1/Android Compatibility Verification Script
+#
+# Use this script to verify that all schemas compile and parse successfully under Pydantic V1.
+# This prevents regression errors on Android (Chaquopy runs Pydantic 1.10.x).
+#
+# Setup instructions:
+#   python3 -m venv test_env_v1
+#   test_env_v1/bin/pip install pydantic==1.10.13 email-validator==1.3.1
+#
+# Run instructions:
+#   test_env_v1/bin/python test_schemas.py
+#
+
 import sys
 import uuid
 from datetime import datetime, date

@@ -26,6 +26,7 @@ __pycache__/
 .pytest_cache/
 venv/
 .venv/
+test_env_v1/
 *.pdf
 *.xls
 *.xlsx

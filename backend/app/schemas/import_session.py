@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, validator
-
 from pydantic.version import VERSION
 
 try:

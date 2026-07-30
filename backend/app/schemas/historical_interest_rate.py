@@ -4,6 +4,15 @@ from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, Field
+from pydantic.version import VERSION
+
+try:
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        ConfigDict = None
+except ImportError:
+    ConfigDict = None
 
 
 class HistoricalInterestRateBase(BaseModel):
@@ -23,15 +32,6 @@ class HistoricalInterestRateUpdate(HistoricalInterestRateBase):
     rate: Optional[Decimal] = None
 
 
-from pydantic.version import VERSION
-
-try:
-    if VERSION.startswith("2."):
-        from pydantic import ConfigDict
-    else:
-        ConfigDict = None
-except ImportError:
-    ConfigDict = None
 
 
 class HistoricalInterestRateInDBBase(HistoricalInterestRateBase):

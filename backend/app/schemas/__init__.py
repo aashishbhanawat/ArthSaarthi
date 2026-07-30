@@ -21,7 +21,6 @@ from .asset_alias import (
     AssetAliasWithAsset,
 )
 from .audit_log import AuditLog, AuditLogCreate
-
 from .bond import (
     Bond,
     BondCreate,
@@ -29,7 +28,6 @@ from .bond import (
     BondWithTransactionCreate,
 )
 from .capital_gains import CapitalGainsSummary
-
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,

@@ -3,7 +3,6 @@ from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel, root_validator
-
 from pydantic.version import VERSION
 
 try:

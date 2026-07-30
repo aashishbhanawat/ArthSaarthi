@@ -19,6 +19,7 @@ const AndroidSettingsCard = () => {
                 setEnabled(stored === 'true');
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deploymentMode]);
 
     const enableSnapshot = async (isInit = false) => {

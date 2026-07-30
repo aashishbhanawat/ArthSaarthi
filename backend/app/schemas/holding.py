@@ -4,7 +4,6 @@ from decimal import Decimal
 from typing import List, Optional
 
 from pydantic import BaseModel, root_validator
-
 from pydantic.version import VERSION
 
 try:
@@ -60,10 +59,18 @@ class Holding(BaseModel):
         bond = values.get("bond")
         if bond:
             # Depending on pydantic version, bond might be a dict or a model instance
-            coupon_rate = bond.coupon_rate if hasattr(bond, "coupon_rate") else bond.get("coupon_rate")
-            maturity_date = bond.maturity_date if hasattr(bond, "maturity_date") else bond.get("maturity_date")
+            coupon_rate = (
+                bond.coupon_rate
+                if hasattr(bond, "coupon_rate")
+                else bond.get("coupon_rate")
+            )
+            maturity_date = (
+                bond.maturity_date
+                if hasattr(bond, "maturity_date")
+                else bond.get("maturity_date")
+            )
             isin = bond.isin if hasattr(bond, "isin") else bond.get("isin")
-            
+
             values["interest_rate"] = coupon_rate
             values["maturity_date"] = maturity_date
             if not values.get("isin"):
@@ -107,7 +114,7 @@ class PortfolioSummary(BaseModel):
 class PortfolioHoldingsAndSummary(BaseModel):
     summary: PortfolioSummary
     holdings: List[Holding]
-    
+
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:

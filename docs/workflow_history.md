@@ -1932,3 +1932,50 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 ### Outcome
 **Success.** The Q2-2026 interest rate end date has been reverted, and automated verification tests ensure that future changes to seed data will not introduce gaps, overlaps, or date coverage regressions.
 
+## 2026-07-30: Fix Android Pydantic V1 Compatibility (#450)
+
+**Task:** Resolve application crashes and parsing failures under Android (Chaquopy running Pydantic v1.10.13) by fixing V2 config attributes, date pre-validators, and eager forward reference updates across all backend database schemas, and create a V1 verification test script.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Strict Version Checked ConfigDict Import:** Refactored the Config import guards across all schema files to dynamically check `pydantic.version.VERSION` instead of relying on `try...except ImportError` checks, resolving an issue where Pydantic V1 exposes `pydantic.config.ConfigDict` internally as a TypedDict namespace without throwing an exception.
+2. **Standardized Schema Compatibility Blocks:** Implemented standard fallback blocks in all database schemas (`AssetAlias`, `AuditLog`, `Bond`, `FixedDeposit`, `RecurringDeposit`, `HistoricalInterestRate`, and `Holding` along with helper models `PortfolioSummary` and `PortfolioHoldingsAndSummary`). The blocks fall back to `class Config: orm_mode = True` on Pydantic V1 and use `model_config = ConfigDict(from_attributes=True)` on Pydantic V2.
+3. **Pre-Validator for Date Parsing:** Appended a pre-validator to `ParsedTransaction.transaction_date` in `import_session.py` to parse plain date strings on V1.
+4. **Eager ForwardRef Resolution:** Added `update_forward_refs()` calls to the bottom of `goal.py` and `capital_gains.py` modules.
+5. **Import/Export Alignment:** Imported and exported `AuditLog`, `AuditLogCreate`, and `CapitalGainsSummary` in `backend/app/schemas/__init__.py`.
+6. **Codebase Lint and warnings:** Split long logging lines in `session.py` and `benchmark_service.py` under 88 chars. Moved all module level imports to the top of schema files to fix E402. Resolved a React Hook dependency warning in `AndroidSettingsCard.tsx` with a selective dependency ignore comment.
+7. **Verification Script:** Added `test_schemas.py` in the workspace root to check syntax, compile, and validate model instantiation for all 16 database schemas under a Pydantic V1 virtual environment.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/db/session.py` — Fixed line length limit lint error.
+*   **Modified:** `backend/app/services/benchmark_service.py` — Fixed line length limit lint error.
+*   **Modified:** `backend/app/schemas/__init__.py` — Registered and exported missing schemas.
+*   **Modified:** `backend/app/schemas/asset.py` — Fixed version check namespaces.
+*   **Modified:** `backend/app/schemas/asset_alias.py` — Added Config compatibility block.
+*   **Modified:** `backend/app/schemas/audit_log.py` — Added Config compatibility block.
+*   **Modified:** `backend/app/schemas/bond.py` — Added Config compatibility block and moved imports.
+*   **Modified:** `backend/app/schemas/dashboard.py` — Fixed version check namespaces.
+*   **Modified:** `backend/app/schemas/dividends.py` — Fixed version check namespaces.
+*   **Modified:** `backend/app/schemas/fixed_deposit.py` — Added Config compatibility block.
+*   **Modified:** `backend/app/schemas/goal.py` — Added Config compatibility block.
+*   **Modified:** `backend/app/schemas/historical_interest_rate.py` — Added Config compatibility block and moved imports.
+*   **Modified:** `backend/app/schemas/holding.py` — Added Config compatibility block and resolved line length limits.
+*   **Modified:** `backend/app/schemas/import_session.py` — Added Config compatibility block and date pre-validator.
+*   **Modified:** `backend/app/schemas/portfolio.py` — Fixed version check namespaces.
+*   **Modified:** `backend/app/schemas/recurring_deposit.py` — Added Config compatibility block and moved imports.
+*   **Modified:** `backend/app/schemas/risk.py` — Fixed version check namespaces.
+*   **Modified:** `backend/app/schemas/transaction.py` — Fixed version check namespaces.
+*   **Modified:** `backend/app/schemas/user.py` — Fixed version check namespaces.
+*   **Modified:** `backend/app/schemas/watchlist.py` — Fixed version check namespaces.
+*   **Modified:** `backend/app/schemas/capital_gains.py` — Added Config compatibility block.
+*   **New:** `test_schemas.py` — Sandbox verification script for all 16 database schemas.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/Profile/AndroidSettingsCard.tsx` — Fixed useEffect React Hook missing dependency warning.
+
+### Outcome
+**Success.** All database schemas compile and validate successfully on Pydantic V1/Chaquopy and Pydantic V2 host environments. The `test_schemas.py` verification test passes 100% green (`16 passed, 0 failed`) under Pydantic 1.10.x. All ruff linting errors and frontend typescript compiler warnings are fully resolved.

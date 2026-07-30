@@ -2,7 +2,6 @@ import uuid
 from typing import List, Optional
 
 from pydantic import BaseModel
-
 from pydantic.version import VERSION
 
 try:
