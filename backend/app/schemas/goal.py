@@ -111,3 +111,12 @@ class GoalLink(GoalLinkBase):
     else:
         class Config:
             orm_mode = True
+
+
+# Resolve forward references for Pydantic V1/V2
+if hasattr(Goal, "model_rebuild"):
+    Goal.model_rebuild()
+    GoalWithAnalytics.model_rebuild()
+else:
+    Goal.update_forward_refs(GoalLink=GoalLink)
+    GoalWithAnalytics.update_forward_refs(GoalLink=GoalLink)
