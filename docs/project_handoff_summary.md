@@ -319,3 +319,5 @@ Based on the `product_backlog.md`, the next features to consider are:
     -   **AuditLog & CapitalGains Exports:** Added `AuditLog`, `AuditLogCreate`, and `CapitalGainsSummary` imports and exports to `backend/app/schemas/__init__.py`.
     -   **Lint and Eslint Fixes:** Fixed long logging lines in `session.py` and `benchmark_service.py`, moved imports to the top of schema files, and resolved a React Hook dependency warning in `AndroidSettingsCard.tsx`.
 -   **Verification Script:** Authored `test_schemas.py` in the project root to compile and run from_orm/dict mock instantiation tests for all 16 database schemas. Verified 100% success rate (`Passed: 16, Failed: 0`) under a simulated Pydantic v1.10.13 environment.
+-   **E2E Test Suite Resolution:** Resolved E2E test failures caused by `MobileSeedingSplash` hanging indefinitely during test execution when asset seeding is disabled (`ENVIRONMENT=test`). Updated `/api/v1/system/seeding-status` in `system.py` to bypass splash screen during testing mode. Full Playwright E2E suite executed via Docker Compose with 100% pass rate (`34 passed, 0 failed`).
+

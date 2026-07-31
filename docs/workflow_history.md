@@ -1974,8 +1974,9 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 *   **Modified:** `backend/app/schemas/capital_gains.py` — Added Config compatibility block.
 *   **New:** `test_schemas.py` — Sandbox verification script for all 16 database schemas.
 
-**Frontend:**
+*   **Modified:** `backend/app/api/v1/endpoints/system.py` — Bypass asset database splash screen in test mode.
 *   **Modified:** `frontend/src/components/Profile/AndroidSettingsCard.tsx` — Fixed useEffect React Hook missing dependency warning.
 
 ### Outcome
-**Success.** All database schemas compile and validate successfully on Pydantic V1/Chaquopy and Pydantic V2 host environments. The `test_schemas.py` verification test passes 100% green (`16 passed, 0 failed`) under Pydantic 1.10.x. All ruff linting errors and frontend typescript compiler warnings are fully resolved.
+**Success.** All database schemas compile and validate successfully on Pydantic V1/Chaquopy and Pydantic V2 host environments. The `test_schemas.py` verification test passes 100% green (`16 passed, 0 failed`) under Pydantic 1.10.x. All ruff linting errors and frontend typescript compiler warnings are fully resolved. Furthermore, the Playwright E2E test suite running via Docker Compose passed 100% green (`34 passed, 0 failed`).
+
