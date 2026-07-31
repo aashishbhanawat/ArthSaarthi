@@ -92,6 +92,7 @@ ArthSaarthi uses publicly available data from the following sources for asset ma
 *   **[NSDL (National Securities Depository Limited)](https://nsdl.co.in/)** - Debt instruments master data
 *   **[BSE (Bombay Stock Exchange)](https://www.bseindia.com/)** - Equity and debt bhavcopy, bond data, index data
 *   **[NSE (National Stock Exchange)](https://www.nseindia.com/)** - Equity bhavcopy, debt listings
+*   **[Upstox Developer API](https://upstox.com/developer/api-documentation/)** - Public unauthenticated historical market candles, trading holidays, and instrument master metadata
 *   **[ICICI Direct](https://www.icicidirect.com/)** - Security master data (fallback source)
 
 This application downloads and processes publicly available data from these exchanges for informational purposes only. ArthSaarthi is not affiliated with, endorsed by, or sponsored by any of these organizations.

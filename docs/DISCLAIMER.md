@@ -7,6 +7,7 @@ This application retrieves financial data from multiple publicly available sourc
 *   **[NSDL (National Securities Depository Limited)](https://nsdl.co.in/):** For debt instruments master data including bonds, debentures, and government securities.
 *   **[BSE (Bombay Stock Exchange)](https://www.bseindia.com/):** For equity bhavcopy, debt bhavcopy, public bond listings, and index summary data.
 *   **[NSE (National Stock Exchange)](https://www.nseindia.com/):** For equity bhavcopy and debt/bond listings.
+*   **[Upstox API](https://upstox.com/developer/api-documentation/):** For public unauthenticated historical candle data (v3), market trading holidays (v2), and instrument master metadata (`NSE.json.gz`).
 *   **[ICICI Direct](https://www.icicidirect.com/):** For comprehensive security master data (used as fallback source).
 *   **[Yahoo Finance](https://finance.yahoo.com/)** (via `yfinance` library): For real-time and historical stock prices.
 *   **[AMFI India](https://www.amfiindia.com/):** For the latest Mutual Fund Net Asset Values (NAVs).
