@@ -1,3 +1,16 @@
+## 2026-07-31: Integrate Upstox Provider for Unauthenticated Market Data & Market Holidays (Issue #498)
+
+**Task:** Integrate Upstox V3 Historical Candle API and V2 Market Holidays API as primary market data provider to eliminate yfinance rate limits.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Upstox Metadata Service (`UpstoxMetadataService`):** Created `app/services/upstox_metadata_service.py` to fetch, decompress, and cache `NSE.json.gz` from Upstox public CDN. Built 0-cost $O(1)$ lookup maps for ISIN $\leftrightarrow$ Symbol $\leftrightarrow$ `instrument_key`. Integrated `GET /v2/market/holidays` for weekend and holiday detection (`is_market_closed`).
+2. **Upstox Provider (`UpstoxProvider`):** Created `app/services/providers/upstox_provider.py` implementing `FinancialDataProvider`. Queries public V3 historical candles (`GET /v3/historical-candle/...`) without authentication headers. Enforces 50 req/sec throttling and utilizes Redis caching (`CACHE_TTL_CURRENT_PRICE = 900`, `CACHE_TTL_HISTORICAL_PRICE = 86400`).
+3. **Financial Data Service (`FinancialDataService`):** Integrated `UpstoxProvider` as the primary stock & ETF provider in `app/services/financial_data_service.py`, using `yfinance` as fallback for foreign/unmapped assets.
+4. **Testing:** Added 5 new unit tests in `app/tests/services/test_upstox_provider.py`. All tests passed cleanly.
+
 ## 2026-07-30: Fix Pydantic V1 Config Option Clashing with Pydantic V2 (Issue #495)
 
 **Task:** Correct the fallback ORM config option in all Pydantic schemas to avoid ResponseValidationError on Android.

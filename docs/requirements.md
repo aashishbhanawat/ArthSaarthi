@@ -74,6 +74,7 @@ This document outlines the functional and non-functional requirements for the Ar
     -   **FR5.2.1:** Provide live price updates for Stocks and ETFs (e.g., with a 15-minute delay). `✅ Done`
     -   **FR5.2.2:** Provide daily NAV updates for Mutual Funds and daily price updates for Listed Bonds. `✅ Done`
 -   **FR5.3: Foreign Currency Support.** Automatically fetch historical and real-time FX rates to convert foreign asset values (e.g., USD) to the portfolio's base currency (INR). `✅ Done`
+-   **FR5.4: Upstox Provider Integration (Unauthenticated Market Data & Market Holidays).** Integrate Upstox V3 historical candle API and V2 market holidays API into `FinancialDataService` as a primary/fallback provider for Indian equities to eliminate yfinance rate-limiting. `📝 Planned`
 
 ### FR6: Performance & Risk Analytics
 -   **FR6.1: Performance Metrics.** The system must calculate and display key performance metrics: `⚠️ Partially Implemented`

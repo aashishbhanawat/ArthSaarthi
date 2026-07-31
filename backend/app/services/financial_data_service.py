@@ -8,6 +8,7 @@ from app.core.config import settings
 
 from .providers.amfi_provider import AmfiIndiaProvider  # type: ignore
 from .providers.nse_bhavcopy_provider import NseBhavcopyProvider
+from .providers.upstox_provider import UpstoxProvider
 from .providers.yfinance_provider import YFinanceProvider  # type: ignore
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class FinancialDataService:
     def __init__(self, cache_client: Optional[CacheClient]):
+        self.upstox_provider = UpstoxProvider(cache_client)
         self.yfinance_provider = YFinanceProvider(cache_client)
         self.amfi_provider = AmfiIndiaProvider(cache_client)
         self.nse_provider = NseBhavcopyProvider(cache_client)
@@ -28,7 +30,7 @@ class FinancialDataService:
         """
         Fetches current prices by delegating to the best provider for each asset type.
         The order of priority is now asset-specific for better accuracy:
-        - Stocks: yfinance -> NSE
+        - Stocks: Upstox -> yfinance -> NSE
         - Mutual Funds: AMFI -> NSE
         - Bonds: NSE
         """
@@ -36,7 +38,6 @@ class FinancialDataService:
         prices_data: Dict[str, Dict[str, Decimal]] = {}
 
         # 1. Separate assets by type for different providers
-        # Robust check for "Mutual Fund", "MUTUAL_FUND", "MUTUAL FUND"
         mf_assets = [
             a for a in assets
             if str(a.get("asset_type")).upper().replace("_", " ") == "MUTUAL FUND"
@@ -58,20 +59,27 @@ class FinancialDataService:
             prices_data.update(self.amfi_provider.get_current_prices(mf_assets))
             logger.debug(f"Prices after AMFI: {prices_data.keys()}")
 
-        # 3. Stocks: yfinance is the primary source for real-time data.
-        #    Append .NS for Indian stocks as required by yfinance.
+        # 3. Stocks: Upstox is the primary source (unauthenticated, 0 rate limit blocking).
+        #    yfinance is the fallback for unmapped or international assets.
         if stock_assets:
             logger.debug(
-                f"Processing {len(stock_assets)} stock assets with yfinance provider."
+                f"Processing {len(stock_assets)} stock assets with Upstox provider."
             )
-            logger.debug(
-                "Tickers sent to yfinance: "
-                f"{[a['ticker_symbol'] for a in stock_assets]}"
-            )
-            prices_data.update(
-                self.yfinance_provider.get_current_prices(stock_assets)
-            )
-            logger.debug(f"Prices after yfinance: {prices_data.keys()}")
+            upstox_prices = self.upstox_provider.get_current_prices(stock_assets)
+            prices_data.update(upstox_prices)
+            logger.debug(f"Prices after Upstox: {upstox_prices.keys()}")
+
+            # Fallback to yfinance for any stock assets not resolved by Upstox
+            missing_stocks = [
+                a for a in stock_assets
+                if a.get("ticker_symbol") not in prices_data
+                and a.get("ticker_symbol", "").replace(".NS", "") not in prices_data
+            ]
+            if missing_stocks:
+                logger.debug(
+                    f"Processing {len(missing_stocks)} missing stock assets with yfinance provider."
+                )
+                prices_data.update(self.yfinance_provider.get_current_prices(missing_stocks))
 
         # 4. Bonds: NSE is the primary source.
         if bond_assets:
@@ -81,10 +89,7 @@ class FinancialDataService:
             prices_data.update(self.nse_provider.get_current_prices(bond_assets))
             logger.debug(f"Prices after NSE (for bonds): {prices_data.keys()}")
 
-        # 5. NSE Fallback: For any stocks or MFs not found by their primary provider,
-        #    try the NSE provider.
-        # We need to strip the '.NS' suffix from the found tickers for a correct
-        # comparison.
+        # 5. NSE Fallback: For any stocks or MFs not found by primary providers
         found_tickers_cleaned = {t.replace('.NS', '') for t in prices_data.keys()}
 
         nse_fallback_candidates = stock_assets + mf_assets
@@ -96,10 +101,6 @@ class FinancialDataService:
         if nse_fallback_needed:
             logger.debug(
                 f"Found {len(nse_fallback_needed)} assets needing NSE fallback."
-            )
-            logger.debug(
-                "Tickers for NSE fallback: "
-                f"{[a['ticker_symbol'] for a in nse_fallback_needed]}"
             )
             prices_data.update(
                 self.nse_provider.get_current_prices(nse_fallback_needed)
@@ -117,8 +118,6 @@ class FinancialDataService:
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
-        # Separate assets by type for different providers
-        # Robust check for "Mutual Fund", "MUTUAL_FUND", "MUTUAL FUND"
         mf_assets = [
             a for a in assets
             if str(a.get("asset_type")).upper().replace("_", " ") == "MUTUAL FUND"
@@ -131,9 +130,20 @@ class FinancialDataService:
         historical_data: Dict[str, Dict[date, Decimal]] = {}
 
         if other_assets:
-            historical_data.update(self.yfinance_provider.get_historical_prices(
+            # 1. Try Upstox provider first
+            upstox_history = self.upstox_provider.get_historical_prices(
                 other_assets, start_date, end_date
-            ))
+            )
+            historical_data.update(upstox_history)
+
+            # 2. Fall back to yfinance for assets not returned by Upstox
+            missing_assets = [
+                a for a in other_assets if a.get("ticker_symbol") not in historical_data
+            ]
+            if missing_assets:
+                historical_data.update(self.yfinance_provider.get_historical_prices(
+                    missing_assets, start_date, end_date
+                ))
 
         if mf_assets:
             historical_data.update(self.amfi_provider.get_historical_prices(
