@@ -7,9 +7,10 @@
 ### Summary
 
 1. **Upstox Metadata Service (`UpstoxMetadataService`):** Created `app/services/upstox_metadata_service.py` to fetch, decompress, and cache `NSE.json.gz` from Upstox public CDN. Built 0-cost $O(1)$ lookup maps for ISIN $\leftrightarrow$ Symbol $\leftrightarrow$ `instrument_key`. Integrated `GET /v2/market/holidays` for weekend and holiday detection (`is_market_closed`).
-2. **Upstox Provider (`UpstoxProvider`):** Created `app/services/providers/upstox_provider.py` implementing `FinancialDataProvider`. Queries public V3 historical candles (`GET /v3/historical-candle/...`) without authentication headers. Enforces 50 req/sec throttling and utilizes Redis caching (`CACHE_TTL_CURRENT_PRICE = 900`, `CACHE_TTL_HISTORICAL_PRICE = 86400`).
-3. **Financial Data Service (`FinancialDataService`):** Integrated `UpstoxProvider` as the primary stock & ETF provider in `app/services/financial_data_service.py`, using `yfinance` as fallback for foreign/unmapped assets.
-4. **Testing:** Added 5 new unit tests in `app/tests/services/test_upstox_provider.py`. All tests passed cleanly.
+2. **Upstox Asset Seeding & Cross-Verification (`AssetSeeder`):** Integrated Phase 6 `process_upstox_metadata()` in `app/services/asset_seeder.py` and `app/utils/financial_utils.py` to automatically seed new equities/ETFs from `NSE.json.gz` and cross-verify/populate missing ISINs and exchange tags on existing assets.
+3. **Upstox Provider (`UpstoxProvider`):** Created `app/services/providers/upstox_provider.py` implementing `FinancialDataProvider`. Queries public V3 historical candles (`GET /v3/historical-candle/...`) without authentication headers. Enforces 50 req/sec throttling and utilizes Redis caching (`CACHE_TTL_CURRENT_PRICE = 900`, `CACHE_TTL_HISTORICAL_PRICE = 86400`).
+4. **Financial Data Service (`FinancialDataService`):** Integrated `UpstoxProvider` as the primary stock & ETF provider in `app/services/financial_data_service.py`, using `yfinance` as fallback for foreign/unmapped assets.
+5. **Testing:** Added 6 unit tests in `app/tests/services/test_upstox_provider.py` covering candles, holidays, fallback, and asset seeding/cross-verification. All 6 tests passed cleanly.
 
 ## 2026-07-30: Fix Pydantic V1 Config Option Clashing with Pydantic V2 (Issue #495)
 

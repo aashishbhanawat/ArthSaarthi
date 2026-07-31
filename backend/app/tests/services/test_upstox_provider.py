@@ -125,3 +125,46 @@ def test_financial_data_service_upstox_primary_with_yfinance_fallback(
     assert res["RELIANCE"]["current_price"] == Decimal("1315.5")
     assert "AAPL" in res
     assert res["AAPL"]["current_price"] == Decimal("220.0")
+
+
+@patch("app.services.upstox_metadata_service.UpstoxMetadataService.load_metadata_if_needed")
+def test_asset_seeder_process_upstox_metadata(mock_load, db):
+    """Test process_upstox_metadata seeding and cross-verification."""
+    from app.models.asset import Asset
+    from app.services.asset_seeder import AssetSeeder
+
+    seeder = AssetSeeder(db=db, debug=True)
+
+    # Pre-populate DB with an asset missing ISIN
+    existing_asset = Asset(
+        ticker_symbol="INFY",
+        name="INFY",
+        asset_type="STOCK",
+        currency="INR",
+        exchange="N/A",
+        isin=None
+    )
+    db.add(existing_asset)
+    db.commit()
+
+    with patch("app.services.upstox_metadata_service.UpstoxMetadataService") as mock_service_cls:
+        instance = MagicMock()
+        mock_service_cls.return_value = instance
+        instance._symbol_to_isin_map = {
+            "INFY": "INE009A01021",
+            "TCS": "INE467B01029"
+        }
+        instance._symbol_to_key_map = {
+            "INFY": "NSE_EQ|INE009A01021",
+            "TCS": "NSE_EQ|INE467B01029"
+        }
+
+        stats = seeder.process_upstox_metadata()
+
+        assert stats["created"] >= 1  # TCS created
+        assert stats["updated"] >= 1  # INFY updated with ISIN and exchange="NSE"
+
+        updated_infy = db.query(Asset).filter_by(ticker_symbol="INFY").first()
+        assert updated_infy.isin == "INE009A01021"
+        assert updated_infy.exchange == "NSE"
+

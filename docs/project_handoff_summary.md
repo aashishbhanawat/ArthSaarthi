@@ -21,9 +21,10 @@
 
 *   **Upstox Provider Integration & Market Holidays (Issue #498) (Updated 2026-07-31):**
     - **Upstox Metadata Service (`UpstoxMetadataService`):** Downloaded and cached `NSE.json.gz` from Upstox CDN to build 0-cost $O(1)$ lookup maps for ISIN $\leftrightarrow$ Symbol $\leftrightarrow$ `instrument_key`. Integrated `GET /v2/market/holidays` for weekend and trading holiday detection (`is_market_closed`).
+    - **Asset Seeding & Cross-Verification (`AssetSeeder`):** Integrated `process_upstox_metadata()` in `app/services/asset_seeder.py` to seed active stocks/ETFs directly from `NSE.json.gz` during server boot / manual admin sync, while cross-verifying and backfilling missing ISINs and exchange tags on existing assets.
     - **Upstox Provider (`UpstoxProvider`):** Implemented `FinancialDataProvider` using public V3 historical candles (`GET /v3/historical-candle/...`) without requiring access keys or authorization headers. Enforces 50 req/sec throttling and Redis caching (`CACHE_TTL_CURRENT_PRICE = 900`, `CACHE_TTL_HISTORICAL_PRICE = 86400`).
     - **Financial Data Service (`FinancialDataService`):** Configured Upstox as the primary stock & ETF provider, with `yfinance` as fallback for foreign/unmapped assets.
-    - **Test Suite:** Added 5 new unit tests in `test_upstox_provider.py` (100% passing).
+    - **Test Suite:** Added 6 unit tests in `test_upstox_provider.py` (100% passing).
 
 *   **Pydantic V1 Fallback Config Stabilization (Issue #495) (Updated 2026-07-30):**
     - **Pydantic V1/V2 Compatibility:** Discovered that `from pydantic import ConfigDict` does not throw `ImportError` on Pydantic V1 (since it is defined internally as a `TypedDict`), bypassing fallback blocks. Resolved by performing a strict `VERSION.startswith("2.")` check across all schemas, and corrected all fallback configuration keys from `from_orm = True` to `orm_mode = True` (`asset.py`, `import_session.py`, `portfolio.py`, `risk.py`, `transaction.py`, `user.py`, `watchlist.py`, etc.). This ensures successful conversion of SQLAlchemy objects to Pydantic schemas under Pydantic V1.

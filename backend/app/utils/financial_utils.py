@@ -172,3 +172,10 @@ def process_all_sources(
     # Phase 5: Fallback
     if "icici" in files:
         seeder.process_icici_fallback(files["icici"])
+
+    # Phase 6: Upstox Metadata Integration & Cross-Verification
+    try:
+        seeder.process_upstox_metadata()
+    except Exception as e:
+        if log:
+            log.warning(f"Upstox metadata processing skipped/failed: {e}")
