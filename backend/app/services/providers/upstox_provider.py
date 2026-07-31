@@ -62,11 +62,12 @@ class UpstoxProvider(FinancialDataProvider):
                     return payload.get("data", {}).get("candles", [])
                 else:
                     logger.warning(
-                        f"Upstox API returned error status for {instrument_key}: {payload}"
+                        "Upstox API returned error status for "
+                        f"{instrument_key}: {payload}"
                     )
         except Exception as e:
             logger.warning(
-                f"Error fetching Upstox V3 historical candles for {instrument_key}: {e}"
+                f"Error fetching Upstox V3 candles for {instrument_key}: {e}"
             )
 
         return []
