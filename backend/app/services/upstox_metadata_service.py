@@ -1,19 +1,21 @@
 """
 Metadata service for Upstox integration.
-Handles downloading & caching of instrument master files (NSE.json.gz) and market holidays.
+Handles downloading & caching of instrument master files (NSE.json.gz).
 """
 import gzip
 import json
 import logging
-from datetime import date, datetime
-from typing import Any, Dict, Optional, Set
 import urllib.request
+from datetime import date
+from typing import Dict, Optional, Set
 
 from app.cache.base import CacheClient
 
 logger = logging.getLogger(__name__)
 
-NSE_INSTRUMENTS_URL = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz"
+NSE_INSTRUMENTS_URL = (
+    "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz"
+)
 MARKET_HOLIDAYS_URL = "https://api.upstox.com/v2/market/holidays"
 
 CACHE_TTL_HOLIDAYS = 86400  # 24 hours
@@ -57,18 +59,23 @@ class UpstoxMetadataService:
                 data = json.loads(response.read().decode("utf-8"))
                 if data.get("status") == "success":
                     holiday_dates = set()
+                    valid_types = ("TRADING_HOLIDAY", "SETTLEMENT_HOLIDAY")
                     for item in data.get("data", []):
-                        if item.get("holiday_type") in ("TRADING_HOLIDAY", "SETTLEMENT_HOLIDAY"):
+                        if item.get("holiday_type") in valid_types:
                             date_str = item.get("date")
                             if date_str:
                                 holiday_dates.add(date.fromisoformat(date_str))
 
                     self._holidays = holiday_dates
-                    logger.info(f"Loaded {len(self._holidays)} market holidays from Upstox API")
+                    logger.info(
+                        f"Loaded {len(self._holidays)} market holidays from Upstox API"
+                    )
 
                     if self.cache_client:
                         iso_dates = [d.isoformat() for d in holiday_dates]
-                        self.cache_client.set_json(cache_key, iso_dates, expire=CACHE_TTL_HOLIDAYS)
+                        self.cache_client.set_json(
+                            cache_key, iso_dates, expire=CACHE_TTL_HOLIDAYS
+                        )
         except Exception as e:
             logger.warning(f"Failed to fetch market holidays from Upstox: {e}")
 
@@ -145,7 +152,9 @@ class UpstoxMetadataService:
             return True
         return check_date in self._holidays
 
-    def get_instrument_key(self, ticker_symbol: str, isin: Optional[str] = None) -> Optional[str]:
+    def get_instrument_key(
+        self, ticker_symbol: str, isin: Optional[str] = None
+    ) -> Optional[str]:
         """
         Resolves an Upstox instrument key for a given ticker or ISIN.
         Example outputs:
@@ -173,7 +182,7 @@ class UpstoxMetadataService:
         if upper_ticker in self._symbol_to_key_map:
             return self._symbol_to_key_map[upper_ticker]
 
-        # Direct construction fallback if ticker is already an ISIN (starts with INE/INF/IN)
+        # Direct construction fallback for ISINs (starts with INE/INF/IN)
         if upper_ticker.startswith("IN"):
             return f"NSE_EQ|{upper_ticker}"
 

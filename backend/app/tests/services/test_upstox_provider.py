@@ -49,7 +49,8 @@ def test_upstox_metadata_service_instrument_key_resolution():
     metadata_service._loaded = True
 
     # ISIN resolution
-    assert metadata_service.get_instrument_key("RELIANCE", "INE002A01018") == "NSE_EQ|INE002A01018"
+    key_res = metadata_service.get_instrument_key("RELIANCE", "INE002A01018")
+    assert key_res == "NSE_EQ|INE002A01018"
     # Ticker resolution
     assert metadata_service.get_instrument_key("RELIANCE") == "NSE_EQ|INE002A01018"
     # Index resolution
@@ -70,7 +71,11 @@ def test_upstox_provider_get_current_prices(mock_fetch, mock_cache_client):
         ["2026-07-30T00:00:00+05:30", 1280.0, 1305.0, 1275.0, 1298.0, 95000, 0],
     ]
 
-    assets = [{"ticker_symbol": "RELIANCE", "isin": "INE002A01018", "asset_type": "STOCK"}]
+    assets = [{
+        "ticker_symbol": "RELIANCE",
+        "isin": "INE002A01018",
+        "asset_type": "STOCK",
+    }]
     prices = provider.get_current_prices(assets)
 
     assert "RELIANCE" in prices
@@ -91,7 +96,9 @@ def test_upstox_provider_get_historical_prices(mock_fetch, mock_cache_client):
     ]
 
     assets = [{"ticker_symbol": "RELIANCE", "isin": "INE002A01018"}]
-    history = provider.get_historical_prices(assets, date(2026, 7, 30), date(2026, 7, 31))
+    history = provider.get_historical_prices(
+        assets, date(2026, 7, 30), date(2026, 7, 31)
+    )
 
     assert "RELIANCE" in history
     assert history["RELIANCE"][date(2026, 7, 31)] == Decimal("1315.5")
@@ -103,15 +110,21 @@ def test_upstox_provider_get_historical_prices(mock_fetch, mock_cache_client):
 def test_financial_data_service_upstox_primary_with_yfinance_fallback(
     mock_yf_prices, mock_upstox_prices, mock_cache_client
 ):
-    """Test that FinancialDataService uses Upstox as primary and falls back to yfinance if needed."""
+    """Test FinancialDataService uses Upstox as primary with yfinance fallback."""
     service = FinancialDataService(cache_client=mock_cache_client)
 
     # Upstox resolves RELIANCE, but fails to resolve AAPL (foreign stock)
     mock_upstox_prices.return_value = {
-        "RELIANCE": {"current_price": Decimal("1315.5"), "previous_close": Decimal("1298.0")}
+        "RELIANCE": {
+            "current_price": Decimal("1315.5"),
+            "previous_close": Decimal("1298.0"),
+        }
     }
     mock_yf_prices.return_value = {
-        "AAPL": {"current_price": Decimal("220.0"), "previous_close": Decimal("218.0")}
+        "AAPL": {
+            "current_price": Decimal("220.0"),
+            "previous_close": Decimal("218.0"),
+        }
     }
 
     assets = [
@@ -127,7 +140,9 @@ def test_financial_data_service_upstox_primary_with_yfinance_fallback(
     assert res["AAPL"]["current_price"] == Decimal("220.0")
 
 
-@patch("app.services.upstox_metadata_service.UpstoxMetadataService.load_metadata_if_needed")
+@patch(
+    "app.services.upstox_metadata_service.UpstoxMetadataService.load_metadata_if_needed"
+)
 def test_asset_seeder_process_upstox_metadata(mock_load, db):
     """Test process_upstox_metadata seeding and cross-verification."""
     from app.models.asset import Asset
@@ -147,7 +162,9 @@ def test_asset_seeder_process_upstox_metadata(mock_load, db):
     db.add(existing_asset)
     db.commit()
 
-    with patch("app.services.upstox_metadata_service.UpstoxMetadataService") as mock_service_cls:
+    with patch(
+        "app.services.upstox_metadata_service.UpstoxMetadataService"
+    ) as mock_service_cls:
         instance = MagicMock()
         mock_service_cls.return_value = instance
         instance._symbol_to_isin_map = {

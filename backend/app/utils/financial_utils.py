@@ -141,7 +141,10 @@ def download_all_sources(
         if source not in files and log:
             log.warning(f"Could not download {source} after trying all dates.")
 
+    # Enable Upstox metadata processing during full online download
+    files["upstox"] = "upstox_metadata"
     return files
+
 
 def process_all_sources(
     seeder, files: Dict[str, str], log: Optional[logging.Logger] = None
@@ -174,8 +177,9 @@ def process_all_sources(
         seeder.process_icici_fallback(files["icici"])
 
     # Phase 6: Upstox Metadata Integration & Cross-Verification
-    try:
-        seeder.process_upstox_metadata()
-    except Exception as e:
-        if log:
-            log.warning(f"Upstox metadata processing skipped/failed: {e}")
+    if "upstox" in files:
+        try:
+            seeder.process_upstox_metadata()
+        except Exception as e:
+            if log:
+                log.warning(f"Upstox metadata processing skipped/failed: {e}")

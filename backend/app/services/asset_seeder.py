@@ -970,8 +970,11 @@ class AssetSeeder:
 
             # 1. Seed new equities from Upstox metadata
             for symbol, isin in symbol_to_isin.items():
-                if isin not in self.existing_isins and symbol not in self.existing_tickers:
-                    asset_type = "ETF" if ("ETF" in symbol or "BEES" in symbol) else "STOCK"
+                is_new_isin = isin not in self.existing_isins
+                is_new_ticker = symbol not in self.existing_tickers
+                if is_new_isin and is_new_ticker:
+                    is_etf = "ETF" in symbol or "BEES" in symbol
+                    asset_type = "ETF" if is_etf else "STOCK"
                     data = {
                         "isin": isin,
                         "ticker_symbol": symbol,
@@ -998,7 +1001,10 @@ class AssetSeeder:
 
             self.flush_pending()
             self.db.commit()
-            print(f"Upstox Metadata Completed: Created={stats['created']}, Verified={stats['verified']}, Updated={stats['updated']}")
+            print(
+                f"Upstox Metadata Completed: Created={stats['created']}, "
+                f"Verified={stats['verified']}, Updated={stats['updated']}"
+            )
         except Exception as e:
             print(f"Error in process_upstox_metadata: {e}")
 

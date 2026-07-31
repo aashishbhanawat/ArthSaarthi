@@ -8,7 +8,7 @@ import time
 import urllib.parse
 import urllib.request
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
@@ -30,11 +30,16 @@ class UpstoxProvider(FinancialDataProvider):
         self.metadata_service = UpstoxMetadataService(cache_client)
 
     def _fetch_upstox_candles(
-        self, instrument_key: str, unit: str, interval: str, to_date: date, from_date: date
+        self,
+        instrument_key: str,
+        unit: str,
+        interval: str,
+        to_date: date,
+        from_date: date,
     ) -> List[List[Any]]:
         """
-        Fetches OHLCV candle data from Upstox V3 public API endpoint without authorization header.
-        URL format: GET /v3/historical-candle/{instrument_key}/{unit}/{interval}/{to_date}/{from_date}
+        Fetches OHLCV candle data from Upstox V3 public API endpoint without auth.
+        URL format: GET /v3/historical-candle/:key/:unit/:interval/:to/:from
         """
         encoded_key = urllib.parse.quote(instrument_key, safe="")
         url = (
@@ -56,9 +61,13 @@ class UpstoxProvider(FinancialDataProvider):
                 if payload.get("status") == "success":
                     return payload.get("data", {}).get("candles", [])
                 else:
-                    logger.warning(f"Upstox API returned error status for {instrument_key}: {payload}")
+                    logger.warning(
+                        f"Upstox API returned error status for {instrument_key}: {payload}"
+                    )
         except Exception as e:
-            logger.warning(f"Error fetching Upstox V3 historical candles for {instrument_key}: {e}")
+            logger.warning(
+                f"Error fetching Upstox V3 historical candles for {instrument_key}: {e}"
+            )
 
         return []
 
@@ -109,16 +118,20 @@ class UpstoxProvider(FinancialDataProvider):
             inst_key = self.metadata_service.get_instrument_key(ticker, isin)
 
             if not inst_key:
-                logger.debug(f"Upstox: Could not resolve instrument key for ticker {ticker}")
+                logger.debug(
+                    f"Upstox: Could not resolve instrument key for ticker {ticker}"
+                )
                 continue
 
             # Respect rate limits: 50 req/sec max -> 20ms sleep between requests
             time.sleep(0.02)
 
-            candles = self._fetch_upstox_candles(inst_key, "days", "1", today, from_date)
+            candles = self._fetch_upstox_candles(
+                inst_key, "days", "1", today, from_date
+            )
 
             if candles and len(candles) >= 1:
-                # Candle structure: [timestamp, open, high, low, close, volume, open_interest]
+                # Structure: [timestamp, open, high, low, close, volume, oi]
                 latest_close = Decimal(str(candles[0][4]))
                 previous_close = (
                     Decimal(str(candles[1][4])) if len(candles) >= 2 else latest_close
@@ -164,17 +177,22 @@ class UpstoxProvider(FinancialDataProvider):
             if not inst_key:
                 continue
 
-            cache_key = f"history:upstox:{inst_key}:{start_date.isoformat()}:{end_date.isoformat()}"
+            s_iso = start_date.isoformat()
+            e_iso = end_date.isoformat()
+            cache_key = f"history:upstox:{inst_key}:{s_iso}:{e_iso}"
             if self.cache_client:
                 cached_data = self.cache_client.get_json(cache_key)
                 if cached_data:
                     for dt_str, price_str in cached_data.items():
-                        historical_data[ticker][date.fromisoformat(dt_str)] = Decimal(price_str)
+                        c_dt = date.fromisoformat(dt_str)
+                        historical_data[ticker][c_dt] = Decimal(price_str)
                     continue
 
             # Respect rate limits: 20ms sleep
             time.sleep(0.02)
-            candles = self._fetch_upstox_candles(inst_key, "days", "1", end_date, start_date)
+            candles = self._fetch_upstox_candles(
+                inst_key, "days", "1", end_date, start_date
+            )
 
             if candles:
                 asset_history = {}

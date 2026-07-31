@@ -59,7 +59,7 @@ class FinancialDataService:
             prices_data.update(self.amfi_provider.get_current_prices(mf_assets))
             logger.debug(f"Prices after AMFI: {prices_data.keys()}")
 
-        # 3. Stocks: Upstox is the primary source (unauthenticated, 0 rate limit blocking).
+        # 3. Stocks: Upstox is primary source (unauthenticated 0-rate limit).
         #    yfinance is the fallback for unmapped or international assets.
         if stock_assets:
             logger.debug(
@@ -77,9 +77,12 @@ class FinancialDataService:
             ]
             if missing_stocks:
                 logger.debug(
-                    f"Processing {len(missing_stocks)} missing stock assets with yfinance provider."
+                    f"Processing {len(missing_stocks)} missing stock assets "
+                    "with yfinance provider."
                 )
-                prices_data.update(self.yfinance_provider.get_current_prices(missing_stocks))
+                prices_data.update(
+                    self.yfinance_provider.get_current_prices(missing_stocks)
+                )
 
         # 4. Bonds: NSE is the primary source.
         if bond_assets:
