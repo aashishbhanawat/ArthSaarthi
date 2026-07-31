@@ -4,10 +4,42 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Dict, Tuple
 
+import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-from pyxirr import xirr
 from sqlalchemy.orm import Session
+
+try:
+    from pyxirr import xirr
+except ImportError:
+    logger = logging.getLogger(__name__)
+    logger.warning(
+        "pyxirr not found, using numpy fallback for XIRR in benchmark_service"
+    )
+
+    def xirr(dates, payments):
+        if not dates or not payments or len(dates) != len(payments):
+            return 0.0
+        try:
+            d0 = dates[0]
+            years = np.array([(d - d0).days / 365.0 for d in dates])
+            pmts = np.array(payments, dtype=float)
+            rate = 0.1
+            for _ in range(50):
+                npv = np.sum(pmts / (1 + rate) ** years)
+                deriv = np.sum(-years * pmts / (1 + rate) ** (years + 1))
+                if abs(deriv) < 1e-9:
+                    break
+                new_rate = rate - npv / deriv
+                if abs(new_rate - rate) < 1e-6:
+                    return new_rate
+                rate = new_rate
+                if abs(rate) > 100:
+                    break
+            return rate
+        except Exception as e:
+            logging.getLogger(__name__).error(f"XIRR fallback failed: {e}")
+            return 0.0
 
 from app import crud
 from app.crud.crud_holding import (

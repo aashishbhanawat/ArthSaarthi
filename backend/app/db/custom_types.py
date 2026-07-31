@@ -71,7 +71,9 @@ class EncryptedString(TypeDecorator):
         if value is None:
             return None
         if settings.DEPLOYMENT_MODE != "desktop":
-            return value
+            if isinstance(value, bytes):
+                return value.decode("utf-8")
+            return str(value)
 
         if not key_manager.is_key_loaded:
             raise RuntimeError(
@@ -91,7 +93,9 @@ class EncryptedString(TypeDecorator):
         if value is None:
             return None
         if settings.DEPLOYMENT_MODE != "desktop":
-            return value
+            if isinstance(value, bytes):
+                return value.decode("utf-8")
+            return str(value)
 
         if not key_manager.is_key_loaded:
             raise RuntimeError(

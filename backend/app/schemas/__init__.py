@@ -20,12 +20,14 @@ from .asset_alias import (
     AssetAliasUpdate,
     AssetAliasWithAsset,
 )
+from .audit_log import AuditLog, AuditLogCreate
 from .bond import (
     Bond,
     BondCreate,
     BondUpdate,
     BondWithTransactionCreate,
 )
+from .capital_gains import CapitalGainsSummary
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,
@@ -106,11 +108,14 @@ from .watchlist import (
 )
 
 __all__ = [
+    "AuditLog",
+    "AuditLogCreate",
     "RecurringDeposit",
     "RecurringDepositAnalytics",
     "RecurringDepositCreate",
     "RecurringDepositDetails",
     "RecurringDepositUpdate",
+
     "TransactionType",
     "AssetType",
     "Asset",
@@ -129,6 +134,8 @@ __all__ = [
     "AssetSearchResult",
     "AssetUpdate",
     "AssetAnalytics",
+    "CapitalGainsSummary",
+
     "DiversificationResponse",
     "DiversificationSegment",
     "FixedDepositAnalytics",
@@ -194,6 +201,10 @@ __all__ = [
 ]
 
 # Manually update forward references to resolve circular dependencies
-Asset.model_rebuild()
+if hasattr(Asset, "model_rebuild"):
+    Asset.model_rebuild()
+    Transaction.model_rebuild()
+else:
+    Asset.update_forward_refs()
+    Transaction.update_forward_refs(Asset=Asset)
 
-Transaction.model_rebuild()

@@ -2,7 +2,16 @@ import uuid
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
+from pydantic.version import VERSION
+
+try:
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        raise ImportError
+except ImportError:
+    ConfigDict = None
 
 
 # Schemas for Goal
@@ -28,7 +37,11 @@ class Goal(GoalBase):
     id: uuid.UUID
     user_id: uuid.UUID
     links: List["GoalLink"] = []
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 
 class GoalProjectionPoint(BaseModel):
@@ -71,12 +84,20 @@ class AssetInGoalLink(BaseModel):
     id: uuid.UUID
     name: str
     ticker_symbol: str
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 class PortfolioInGoalLink(BaseModel):
     id: uuid.UUID
     name: str
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
 
 
 class GoalLink(GoalLinkBase):
@@ -84,4 +105,17 @@ class GoalLink(GoalLinkBase):
     user_id: uuid.UUID
     asset: Optional[AssetInGoalLink] = None
     portfolio: Optional[PortfolioInGoalLink] = None
-    model_config = ConfigDict(from_attributes=True)
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
+
+# Resolve forward references for Pydantic V1/V2
+if hasattr(Goal, "model_rebuild"):
+    Goal.model_rebuild()
+    GoalWithAnalytics.model_rebuild()
+else:
+    Goal.update_forward_refs(GoalLink=GoalLink)
+    GoalWithAnalytics.update_forward_refs(GoalLink=GoalLink)

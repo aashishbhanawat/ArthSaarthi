@@ -137,4 +137,53 @@ class PythonBackendPlugin : Plugin() {
             isServiceBound = false
         }
     }
+
+    /**
+     * Enables daily background snapshots using WorkManager.
+     */
+    @PluginMethod
+    fun enableDailySnapshot(call: PluginCall) {
+        try {
+            val constraints = androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                .build()
+
+            val snapshotRequest = androidx.work.PeriodicWorkRequestBuilder<SnapshotWorker>(
+                1, java.util.concurrent.TimeUnit.DAYS
+            )
+            .setConstraints(constraints)
+            .build()
+
+            androidx.work.WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "daily_portfolio_snapshot",
+                androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+                snapshotRequest
+            )
+            
+            Log.i(TAG, "Daily background snapshot enabled via WorkManager")
+            val result = JSObject()
+            result.put("success", true)
+            call.resolve(result)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to enable daily snapshot", e)
+            call.reject("Error enabling background snapshot: ${e.message}")
+        }
+    }
+
+    /**
+     * Disables daily background snapshots.
+     */
+    @PluginMethod
+    fun disableDailySnapshot(call: PluginCall) {
+        try {
+            androidx.work.WorkManager.getInstance(context).cancelUniqueWork("daily_portfolio_snapshot")
+            Log.i(TAG, "Daily background snapshot disabled")
+            val result = JSObject()
+            result.put("success", true)
+            call.resolve(result)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to disable daily snapshot", e)
+            call.reject("Error disabling background snapshot: ${e.message}")
+        }
+    }
 }

@@ -4,9 +4,13 @@ from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel
+from pydantic.version import VERSION
 
 try:
-    from pydantic import ConfigDict
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        raise ImportError
 except ImportError:
     ConfigDict = None
 
@@ -66,7 +70,7 @@ class AssetInDBBase(AssetCreate):
         model_config = ConfigDict(from_attributes=True)
     else:
         class Config:
-            from_orm = True
+            orm_mode = True
 
 
 # Properties to return to client

@@ -26,6 +26,76 @@ Copy and paste the template below to file a new bug report.
 
 ---
 
+**Bug ID:** 2026-07-30-01
+**Title:** ResponseValidationError: value is not a valid dict on Android Users Me and Onboarding Setup
+**Module:** Schemas / Pydantic V1
+**Reported By:** User
+**Date Reported:** 2026-07-30
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The user was still unable to create an account or load user data (resulting in 500 ResponseValidationError on GET /api/v1/users/me). On Android, where Pydantic V1 is installed, the fallback Config blocks of schemas were executed. However, multiple schemas used 'from_orm = True' instead of 'orm_mode = True' in their Config class. Since from_orm is a model method and not a Config option, Pydantic V1 failed to parse SQLAlchemy models as ORM objects, throwing value is not a valid dict.
+**Steps to Reproduce:**
+1. Log in or create an account on Android.
+2. Note the 500 Internal Server Error when querying /api/v1/users/me.
+**Expected Behavior:** The user model converts successfully to user schema and returns HTTP 200.
+**Actual Behavior:** FastAPI throws ResponseValidationError: value is not a valid dict.
+**Resolution:**
+Updated from_orm = True to orm_mode = True in fallback Config blocks across user.py, asset.py, import_session.py, portfolio.py, risk.py, transaction.py, and watchlist.py.
+
+---
+
+**Bug ID:** 2026-07-29-01
+**Title:** Android Account Creation Fail, Missing Seeding Splash, and Response Validation Crashes
+**Module:** Authentication / Database / UI / Schemas
+**Reported By:** User
+**Date Reported:** 2026-07-29
+**Classification:** Implementation (Backend & Frontend)
+**Severity:** Critical
+**Description:** The user was unable to create an account on Android startup. The signup failed with a `ResponseValidationError` from FastAPI. Furthermore:
+1. The seeding splash screen was not rendered, meaning the user did not wait for the initial SQLite database seeding thread to finish. This background thread also crashed with TypeError because DB session was passed incorrectly to the background thread.
+2. In `android` mode, the `email` and `full_name` fields returned from SQLite can be `bytes` (if the columns were created as `BLOB` previously or due to driver type matching). This caused Pydantic v1 to fail validation against `EmailStr` and `str` types.
+3. In `android` mode, `/login` returned `deployment_mode: "android"` but the `Token` response schema restricted `deployment_mode` to `Literal["server", "desktop"]`, causing a validation error on login.
+**Steps to Reproduce:**
+1. Start the Android app for the first time.
+2. Note that the splash/seeding screen is skipped entirely, landing straight on the login/signup screen.
+3. Try to register an admin user. The request fails with a 500 error due to `ResponseValidationError`.
+**Expected Behavior:** Seeding splash screen appears, updates progress correctly, and once complete, admin account setup and login complete successfully.
+**Actual Behavior:** Splash screen is skipped. Background backfill thread throws TypeError. Creating admin user and login fail with `ResponseValidationError` (due to bytes values and Literal mismatch).
+**Resolution:**
+1. Restored `MobileSeedingSplash` in `AuthPage.tsx`.
+2. Wrapped `get_db` error log with `exc_info=True` and log detailed field errors for `ResponseValidationError`.
+3. Updated `EncryptedString` in `custom_types.py` to automatically decode `bytes` to `utf-8` strings if not in `desktop` mode.
+4. Added `"android"` to `deployment_mode` `Literal` in `Token` model (`token.py`).
+5. Fixed `run_backfill` thread invocation and signature in `backfill_transaction_links.py` and `initialization_service.py`.
+
+---
+
+**Bug ID:** 2026-07-28-01
+**Title:** Android App Startup Crashes (Pydantic Circular Ref, Redis/Pyxirr Import, and Backfill Alias Crashes)
+**Module:** Core Backend / Schemas / Cache / Services / Scripts
+**Reported By:** User
+**Date Reported:** 2026-07-28
+**Classification:** Implementation (Backend)
+**Severity:** Critical
+**Description:** The Android app crashes on startup in the Chaquopy environment due to:
+1. Pydantic V1 forward reference resolution failure for Transaction when calling update_forward_refs() on Transaction inside schemas/__init__.py because Asset is only imported inside if TYPE_CHECKING: in transaction.py.
+2. ModuleNotFoundError: No module named 'redis' due to eager module-level import of RedisCacheClient in cache/factory.py when CACHE_TYPE is set to "disk" (Android uses DiskCache).
+3. ModuleNotFoundError: No module named 'pyxirr' due to eager import of pyxirr in services/benchmark_service.py. Since pyxirr is a Rust C-extension not supported/packaged in Chaquopy, this crashed startup.
+4. ImportError: cannot import name 'run_backfill' from app.scripts.backfill_transaction_links during initialization_service.py loading because the script only defined backfill_links and did not have run_backfill alias.
+**Steps to Reproduce:**
+1. Clean user data on Android app.
+2. Launch the Android app in the Chaquopy environment.
+3. Observe that uvicorn/FastAPI fails to start and times out, routing the user to the Login page instead of the Setup page due to the crashes.
+**Expected Behavior:** The python backend starts up successfully and resolves all modules and references without crash.
+**Actual Behavior:** FastAPI fails to start due to NameError: name 'Asset' is not defined, ModuleNotFoundError for 'redis' and 'pyxirr', and ImportError for 'run_backfill'.
+**Resolution:**
+1. Passed Asset=Asset explicitly to Transaction.update_forward_refs(Asset=Asset) in schemas/__init__.py for Pydantic V1 environments.
+2. Wrapped eager redis_client import in factory.py in a try-except ImportError block.
+3. Wrapped eager pyxirr import in benchmark_service.py in a try-except ImportError block and implemented a custom numpy-based Newton-Raphson fallback function for XIRR.
+4. Added run_backfill = backfill_links alias in backfill_transaction_links.py.
+
+---
+
 **Bug ID:** 2026-06-10-01
 **Title:** Sell Modal Displays Tax Lots Across All Portfolios
 **Module:** Portfolio Management / Core Backend / UI

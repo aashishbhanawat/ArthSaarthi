@@ -4,9 +4,13 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, root_validator
+from pydantic.version import VERSION
 
 try:
-    from pydantic import ConfigDict
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        raise ImportError
     def model_validator(pre=False):
         return root_validator(pre=pre, skip_on_failure=True)
 except (ImportError, TypeError):
@@ -116,7 +120,7 @@ class TransactionLink(BaseModel):
         model_config = ConfigDict(from_attributes=True)
     else:
         class Config:
-            from_orm = True
+            orm_mode = True
 
 
 class Transaction(TransactionBase):
@@ -128,7 +132,7 @@ class Transaction(TransactionBase):
         model_config = ConfigDict(from_attributes=True)
     else:
         class Config:
-            from_orm = True
+            orm_mode = True
 
 
 

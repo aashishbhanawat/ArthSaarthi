@@ -146,6 +146,9 @@ dependencies {
     // Capacitor (aligned with package.json v7)
     implementation("com.capacitorjs:core:7.0.0")
 
+    // WorkManager for background snapshots
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+
     // AndroidX
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")

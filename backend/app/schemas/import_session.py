@@ -4,9 +4,13 @@ from datetime import datetime
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, validator
+from pydantic.version import VERSION
 
 try:
-    from pydantic import ConfigDict
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        raise ImportError
 except ImportError:
     ConfigDict = None
 
@@ -50,7 +54,7 @@ class ImportSessionInDBBase(ImportSessionBase):
         model_config = ConfigDict(from_attributes=True)
     else:
         class Config:
-            from_orm = True
+            orm_mode = True
 
 
 # Properties to return to client
@@ -68,6 +72,21 @@ class ParsedTransaction(BaseModel):
     price_per_unit: float
     fees: float
     isin: str | None = None
+
+    @validator("transaction_date", pre=True)
+    @classmethod
+    def parse_date(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            if len(v) == 10:
+                try:
+                    return datetime.strptime(v, "%Y-%m-%d")
+                except ValueError:
+                    pass
+            try:
+                return datetime.fromisoformat(v.replace("Z", "+00:00"))
+            except ValueError:
+                pass
+        return v
 
 
 # New schema for the categorized preview response

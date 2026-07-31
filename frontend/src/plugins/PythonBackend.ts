@@ -28,6 +28,16 @@ export interface PythonBackendPlugin {
    * Get the current backend service status.
    */
   getBackendStatus(): Promise<BackendStatus>;
+
+  /**
+   * Enable daily background snapshots via Android WorkManager
+   */
+  enableDailySnapshot(): Promise<{success: boolean}>;
+
+  /**
+   * Disable daily background snapshots
+   */
+  disableDailySnapshot(): Promise<{success: boolean}>;
 }
 
 const PythonBackend = registerPlugin<PythonBackendPlugin>('PythonBackend');

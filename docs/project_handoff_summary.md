@@ -1,23 +1,48 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-25
+**Last Updated:** 2026-07-30
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Implemented Goal Projections and Track Status (FR13.4 / Issue #478) featuring combined dynamic XIRR calculation, future value compounding projections, "On Track" or "Off Track" status flag, and projection chart points generation in the backend. Created an interactive Chart.js growth projection Line chart and premium status badge cards in the React frontend. Verified via comprehensive backend pytest suite (18/18 passing) and Jest unit test suite (191/191 passing).
+**Latest Achievement:** Corrected the Pydantic V1 fallback `Config` options and resolved the `ConfigDict` namespace pollution on Pydantic V1 by introducing strict version checks across all schemas, resolving `ResponseValidationError: value is not a valid dict` on Android.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **359/362 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **359/362 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **351/354 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **351/354 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **191/191 Passing**
 *   **E2E Playwright Tests:** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Pydantic V1 Fallback Config Stabilization (Issue #495) (Updated 2026-07-30):**
+    - **Pydantic V1/V2 Compatibility:** Discovered that `from pydantic import ConfigDict` does not throw `ImportError` on Pydantic V1 (since it is defined internally as a `TypedDict`), bypassing fallback blocks. Resolved by performing a strict `VERSION.startswith("2.")` check across all schemas, and corrected all fallback configuration keys from `from_orm = True` to `orm_mode = True` (`asset.py`, `import_session.py`, `portfolio.py`, `risk.py`, `transaction.py`, `user.py`, `watchlist.py`, etc.). This ensures successful conversion of SQLAlchemy objects to Pydantic schemas under Pydantic V1.
+
+*   **Android Onboarding & Account Creation Fixes (Issue #494) (Updated 2026-07-29):**
+    - **Response Validation (Pydantic V1):** Updated `EncryptedString` database type decorator in `backend/app/db/custom_types.py` to dynamically decode `bytes` object to `utf-8` string when `DEPLOYMENT_MODE != "desktop"`. This resolves `ResponseValidationError` when SQLite reads `email` or `full_name` fields as `bytes` on Android.
+    - **Token Response Validation:** Added `"android"` to the `deployment_mode` Literal in `backend/app/schemas/token.py` to prevent `ResponseValidationError` during login when running in Android mode.
+    - **Database Diagnostics:** Enhanced exception logging in `get_db` (`backend/app/db/session.py`) by passing `exc_info=True` and log validation error details for `ResponseValidationError`.
+    - **Admin Setup Endpoint:** Wrapped user creation and database commit in `setup_admin_user` (`backend/app/api/v1/endpoints/auth.py`) inside a `try...except` block, ensuring traceback capture and reporting descriptive 500 error messages back to the client.
+    - **Backfill Script Integration:** Updated `backfill_links` in `backend/app/scripts/backfill_transaction_links.py` to support optional session parameter. Corrected background thread in `initialization_service.py` to prevent threading arguments mismatch (`TypeError`).
+    - **Onboarding Splash Screen:** Restored the `MobileSeedingSplash` component and diagnostic logs link in `frontend/src/pages/AuthPage.tsx` to handle asset seeding elegantly on first mobile launch.
+
+*   **Android App Startup Crashes Stabilization (Issue #493) (Updated 2026-07-28):**
+    - **Backend schemas:** Patched `backend/app/schemas/__init__.py` to pass the `Asset` class parameter dynamically during the `Transaction.update_forward_refs()` call in Pydantic v1 environments. This resolves the `NameError: name 'Asset' is not defined` crash.
+    - **Backend Cache Factory:** Wrapped the eager `redis` module import in `backend/app/cache/factory.py` inside a `try...except ImportError` block. Since the Android app runs with `CACHE_TYPE = "disk"` and doesn't install the `redis` package, this prevents a `ModuleNotFoundError: No module named 'redis'` crash on Android startup.
+    - **Backend Benchmark Service:** Wrapped the eager `pyxirr` module import in `backend/app/services/benchmark_service.py` inside a `try...except ImportError` block with a numpy-based Newton-Raphson fallback function for XIRR. Since Chaquopy doesn't support the compiled `pyxirr` package, this prevents `ModuleNotFoundError: No module named 'pyxirr'` on Android startup.
+    - **Backend Backfill Script:** Added `run_backfill = backfill_links` alias in `backend/app/scripts/backfill_transaction_links.py`. Since `initialization_service.py` attempts to import `run_backfill` from this script, this resolves `ImportError: cannot import name 'run_backfill'` on Android startup.
+    - **Verification:** Verified 351 tests pass successfully under the SQLite/DiskCache local test suite.
+
+
+*   **Android Background Daily Portfolio Snapshot (Issue #492) (Updated 2026-07-26):**
+    - **Backend API:** Created `POST /api/v1/system/snapshots/run-daily` to trigger daily snapshots via local loopback.
+    - **Android/WorkManager:** Developed `SnapshotWorker.kt` utilizing `CoroutineWorker` to boot the `BackendService`, verify health, and invoke the daily snapshot API. Exposed this capability via `PythonBackendPlugin` to React.
+    - **Frontend Settings:** Added a native settings card `AndroidSettingsCard` in the Profile page allowing users to toggle background sync, persisting the state securely.
+
 
 *   **Project Goal Future Value and Track Status (Issue #478 / FR13.4) (Updated 2026-07-25):**
     - **Backend Analytics Engine:** Rewrote `get_goal_with_analytics` in `crud_goal.py` to compile cash flows across all linked portfolios and standalone assets. Computes the combined dynamic XIRR of linked assets and compounds the current amount to the goal's target date. If calculated XIRR is invalid or out-of-bounds (i.e. $\le 0\%$ or $> 100\%$), falls back to the goal's expected return or a default rate ($10\%$). Determines goal track status (`"On Track"` or `"Off Track"`) and generates monthly, quarterly, or yearly projection data points.
@@ -283,4 +308,16 @@ Based on the `product_backlog.md`, the next features to consider are:
     -   **Frontend UI:** Implemented a multi-step questionnaire wizard with progress tracking, options cards, and back/next navigation, plus a results page visualizing the score and target allocation.
     -   **Verification:** Authored backend integration tests (`test_risk.py`) verifying CRUD, validation, endpoints, and updates. Verified frontend compiles and builds successfully.
 
+## 15. Android Pydantic V1 Compatibility Fixes (Updated 2026-07-30)
+
+-   **Issue:** Android build crashes/malfunctions on Chaquopy (which runs Pydantic v1.10.13) due to Pydantic v2 incompatibilities in model configuration and forward references.
+-   **Fixes:**
+    -   **Strict Pydantic Version Check:** Discovered that importing `ConfigDict` did not throw an `ImportError` under Pydantic V1 (it was present internally in `pydantic.config`), bypassing try-except checks. Standardized all schemas to check `from pydantic.version import VERSION` to resolve import namespaces dynamically.
+    -   **Eager Forward References:** Appended `update_forward_refs()` calls to the bottom of `goal.py` and `capital_gains.py` to compile ForwardRefs eagerly under Pydantic V1.
+    -   **Config Fallback Block Standardization:** Added standard Pydantic V1 (`class Config: orm_mode = True`) and V2 (`model_config = ConfigDict(from_attributes=True)`) compatibility blocks to all database schemas: `AssetAlias`, `AuditLog`, `Bond`, `FixedDeposit`, `RecurringDeposit`, `HistoricalInterestRate`, and `Holding` (including helper models `PortfolioSummary` and `PortfolioHoldingsAndSummary`).
+    -   **Date Validator Fallback:** Added a pre-validator to `ParsedTransaction.transaction_date` in `import_session.py` to parse plain date strings on V1.
+    -   **AuditLog & CapitalGains Exports:** Added `AuditLog`, `AuditLogCreate`, and `CapitalGainsSummary` imports and exports to `backend/app/schemas/__init__.py`.
+    -   **Lint and Eslint Fixes:** Fixed long logging lines in `session.py` and `benchmark_service.py`, moved imports to the top of schema files, and resolved a React Hook dependency warning in `AndroidSettingsCard.tsx`.
+-   **Verification Script:** Authored `test_schemas.py` in the project root to compile and run from_orm/dict mock instantiation tests for all 16 database schemas. Verified 100% success rate (`Passed: 16, Failed: 0`) under a simulated Pydantic v1.10.13 environment.
+-   **E2E Test Suite Resolution:** Resolved E2E test failures caused by `MobileSeedingSplash` hanging indefinitely during test execution when asset seeding is disabled (`ENVIRONMENT=test`). Updated `/api/v1/system/seeding-status` in `system.py` to bypass splash screen during testing mode. Full Playwright E2E suite executed via Docker Compose with 100% pass rate (`34 passed, 0 failed`).
 

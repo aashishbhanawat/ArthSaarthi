@@ -5,16 +5,18 @@ import logging
 import subprocess
 import sys
 import threading
+from datetime import date
 from enum import Enum
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.config import settings
 from app.db.session import get_db
+from app.services.snapshot_service import take_daily_snapshots_for_all
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +137,14 @@ def get_seeding_status(db: Session = Depends(get_db)):
     # Check asset count in database
     try:
         asset_count = db.query(models.Asset).count()
+
+        if settings.ENVIRONMENT == "test":
+            return SeedingStatusResponse(
+                status=SeedingStatus.COMPLETE,
+                progress=100,
+                message="Asset database ready (Test Mode)",
+                asset_count=asset_count,
+            )
 
         is_large_enough = asset_count >= MIN_ASSETS_FOR_COMPLETE
         is_idle = _seeding_state["status"] == SeedingStatus.IDLE
@@ -348,3 +358,26 @@ def get_logs(
     except Exception as e:
         logger.error(f"Error reading log file: {e}")
         return {"msg": f"Error reading log file: {str(e)}"}
+
+
+# --- Android Background Snapshot Endpoint ---
+
+class SnapshotResponse(BaseModel):
+    """Response model for daily snapshot execution."""
+    updated: int
+    date: date
+
+@router.post("/snapshots/run-daily", response_model=SnapshotResponse)
+def run_daily_snapshots(db: Session = Depends(get_db)):
+    """
+    Run the daily portfolio snapshot process.
+    Used by Android WorkManager background task to automate daily snapshots.
+    """
+    try:
+        logger.info("Triggering daily portfolio snapshots via API...")
+        count = take_daily_snapshots_for_all(db)
+        logger.info(f"API daily snapshot completed. {count} portfolios updated.")
+        return SnapshotResponse(updated=count, date=date.today())
+    except Exception as e:
+        logger.error(f"Failed to run daily snapshots from API: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Snapshot process failed")

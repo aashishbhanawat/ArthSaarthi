@@ -4,6 +4,15 @@ from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel
+from pydantic.version import VERSION
+
+try:
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        ConfigDict = None
+except ImportError:
+    ConfigDict = None
 
 
 class RecurringDepositBase(BaseModel):
@@ -28,13 +37,19 @@ class RecurringDepositUpdate(BaseModel):
     tenure_months: Optional[int] = None
 
 
+
+
 class RecurringDeposit(RecurringDepositBase):
     id: uuid.UUID
     portfolio_id: uuid.UUID
     user_id: uuid.UUID
 
-    class Config:
-        from_attributes = True
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
 
 
 class RecurringDepositDetails(RecurringDeposit):

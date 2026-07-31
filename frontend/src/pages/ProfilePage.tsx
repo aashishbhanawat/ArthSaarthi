@@ -1,6 +1,7 @@
 import UpdateProfileForm from '../components/Profile/UpdateProfileForm';
 import ChangePasswordForm from '../components/Profile/ChangePasswordForm';
 import BackupRestoreCard from '../components/Profile/BackupRestoreCard';
+import AndroidSettingsCard from '../components/Profile/AndroidSettingsCard';
 
 const ProfilePage = () => {
   return (
@@ -10,6 +11,7 @@ const ProfilePage = () => {
         <UpdateProfileForm />
         <ChangePasswordForm />
         <BackupRestoreCard />
+        <AndroidSettingsCard />
       </div>
     </div>
   );

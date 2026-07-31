@@ -1,21 +1,43 @@
 import axios from "axios";
 
+import { Capacitor } from '@capacitor/core';
+import PythonBackend from '../plugins/PythonBackend';
+
 const apiClient = axios.create({
   // Base URL is determined dynamically by an interceptor.
   // In a standard web build, this will be empty (relying on relative paths).
   // In Electron, it will be set to http://localhost:<port>.
+  // In Android, it will be set by Capacitor PythonBackend plugin.
 });
 
 // Only log in development mode
 const isDev = import.meta.env.DEV;
 
-// This interceptor dynamically sets the baseURL when running in Electron.
+// This interceptor dynamically sets the baseURL when running in Electron or Android.
 // It runs only once and then is ejected.
 apiClient.interceptors.request.use(
   async (config) => {
     // If the baseURL is already set, we don't need to do anything.
     if (apiClient.defaults.baseURL) {
       return config;
+    }
+
+    // Check if running natively on Capacitor (Android/iOS)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const apiConfig = await PythonBackend.getApiConfig();
+        const baseUrl = `http://${apiConfig.host}:${apiConfig.port}`;
+        if (isDev) {
+          console.log(`Capacitor environment detected. Setting API base URL to: ${baseUrl}`);
+        }
+        apiClient.defaults.baseURL = baseUrl;
+        config.baseURL = baseUrl;
+        return config;
+      } catch (error) {
+        if (isDev) {
+          console.error("Failed to get API config from Capacitor PythonBackend:", error);
+        }
+      }
     }
 
     // Check if the electronAPI is exposed on the window object
@@ -34,12 +56,6 @@ apiClient.interceptors.request.use(
         }
       }
     }
-
-    // After the first run, we can remove this interceptor if we want,
-    // but leaving it is fine as it will just pass through on subsequent requests.
-    // For cleanliness, let's eject it after it has run once.
-    // Note: This might cause issues if the first request fails for other reasons.
-    // A safer approach is to just let it be. We'll keep it simple for now.
 
     return config;
   },

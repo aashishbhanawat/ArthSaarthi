@@ -3,6 +3,15 @@ from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from pydantic.version import VERSION
+
+try:
+    if VERSION.startswith("2."):
+        from pydantic import ConfigDict
+    else:
+        ConfigDict = None
+except ImportError:
+    ConfigDict = None
 
 from app.schemas.transaction import TransactionCreate
 
@@ -46,13 +55,19 @@ class BondUpdate(BondBase):
     pass
 
 
+
+
 # Properties shared by models stored in DB
 class BondInDBBase(BondBase):
     id: UUID
     asset_id: UUID
 
-    class Config:
-        from_attributes = True
+    if ConfigDict:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
 
 
 # Properties to return to client

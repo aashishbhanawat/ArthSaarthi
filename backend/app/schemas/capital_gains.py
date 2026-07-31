@@ -102,3 +102,9 @@ class ForeignGainEntry(BaseModel):
     gain_type: Literal["STCG", "LTCG"]
     holding_days: int
     country_code: str = ""  # For Schedule FA reference
+
+
+if hasattr(CapitalGainsSummary, "model_rebuild"):
+    CapitalGainsSummary.model_rebuild()
+else:
+    CapitalGainsSummary.update_forward_refs(ForeignGainEntry=ForeignGainEntry)

@@ -99,6 +99,7 @@ This document outlines the functional and non-functional requirements for the Ar
     -   **FR6.6.1:** Users must be able to generate and export reports in PDF/CSV format. `📝 Planned`
     -   **FR6.6.2:** Available reports include: Income, Due Dates, Transactions, Holding Period, and Asset Allocation. `📝 Planned`
 -   **FR6.7: Historical Data.** The system must maintain and display historical end-of-month valuations for Stock and MF portfolios. `📝 Planned`
+    -   **FR6.7.1:** For Android/Desktop platforms, a daily background task (e.g. WorkManager) ensures snapshot accuracy even if the user does not open the app. `✅ Done`
 
 ### FR7: Data Import
 -   **FR7.1: Automated Import.** The system must support direct import of statements to automate transaction logging. `⚠️ Partially Implemented`
