@@ -1,23 +1,30 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-07-31
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Corrected the Pydantic V1 fallback `Config` options and resolved the `ConfigDict` namespace pollution on Pydantic V1 by introducing strict version checks across all schemas, resolving `ResponseValidationError: value is not a valid dict` on Android.
+**Latest Achievement:** Integrated Upstox V3 Historical Candle API and V2 Market Holidays API as the primary market data provider for Indian stocks & ETFs. Eliminates `yfinance` rate-limiting (429 errors) using public unauthenticated GET endpoints and 0-cost `NSE.json.gz` metadata indexing.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **351/354 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **351/354 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **356/359 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **356/359 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **191/191 Passing**
 *   **E2E Playwright Tests:** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Upstox Provider Integration & Market Holidays (Issue #498) (Updated 2026-07-31):**
+    - **Upstox Metadata Service (`UpstoxMetadataService`):** Downloaded and cached `NSE.json.gz` from Upstox CDN to build 0-cost $O(1)$ lookup maps for ISIN $\leftrightarrow$ Symbol $\leftrightarrow$ `instrument_key`. Integrated `GET /v2/market/holidays` for weekend and trading holiday detection (`is_market_closed`).
+    - **Asset Seeding & Cross-Verification (`AssetSeeder`):** Integrated `process_upstox_metadata()` in `app/services/asset_seeder.py` to seed active stocks/ETFs directly from `NSE.json.gz` during server boot / manual admin sync, while cross-verifying and backfilling missing ISINs and exchange tags on existing assets.
+    - **Upstox Provider (`UpstoxProvider`):** Implemented `FinancialDataProvider` using public V3 historical candles (`GET /v3/historical-candle/...`) without requiring access keys or authorization headers. Enforces 50 req/sec throttling and Redis caching (`CACHE_TTL_CURRENT_PRICE = 900`, `CACHE_TTL_HISTORICAL_PRICE = 86400`).
+    - **Financial Data Service (`FinancialDataService`):** Configured Upstox as the primary stock & ETF provider, with `yfinance` as fallback for foreign/unmapped assets.
+    - **Test Suite:** Added 6 unit tests in `test_upstox_provider.py` (100% passing).
 
 *   **Pydantic V1 Fallback Config Stabilization (Issue #495) (Updated 2026-07-30):**
     - **Pydantic V1/V2 Compatibility:** Discovered that `from pydantic import ConfigDict` does not throw `ImportError` on Pydantic V1 (since it is defined internally as a `TypedDict`), bypassing fallback blocks. Resolved by performing a strict `VERSION.startswith("2.")` check across all schemas, and corrected all fallback configuration keys from `from_orm = True` to `orm_mode = True` (`asset.py`, `import_session.py`, `portfolio.py`, `risk.py`, `transaction.py`, `user.py`, `watchlist.py`, etc.). This ensures successful conversion of SQLAlchemy objects to Pydantic schemas under Pydantic V1.

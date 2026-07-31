@@ -948,6 +948,68 @@ class AssetSeeder:
         # Pass 6: Default (Handled by caller or return None)
         return None, None
 
+    def process_upstox_metadata(self) -> dict:
+        """
+        Phase 6: Upstox Metadata Integration & Cross-Verification.
+        - Downloads/loads Upstox instrument master (NSE.json.gz).
+        - Seeds new active equities and ETFs into assets DB.
+        - Cross-verifies existing assets missing ISINs or full company names.
+        """
+        print("Processing Upstox Metadata Seeding & Cross-Verification...")
+        stats = {"created": 0, "verified": 0, "updated": 0}
+        try:
+            from app.cache.factory import get_cache_client
+            from app.services.upstox_metadata_service import UpstoxMetadataService
+
+            metadata_service = UpstoxMetadataService(cache_client=get_cache_client())
+            metadata_service.load_metadata_if_needed()
+
+            # Access loaded instrument maps
+            symbol_to_isin = metadata_service._symbol_to_isin_map
+            symbol_to_key = metadata_service._symbol_to_key_map
+
+            # 1. Seed new equities from Upstox metadata
+            for symbol, isin in symbol_to_isin.items():
+                is_new_isin = isin not in self.existing_isins
+                is_new_ticker = symbol not in self.existing_tickers
+                if is_new_isin and is_new_ticker:
+                    is_etf = "ETF" in symbol or "BEES" in symbol
+                    asset_type = "ETF" if is_etf else "STOCK"
+                    data = {
+                        "isin": isin,
+                        "ticker_symbol": symbol,
+                        "name": symbol,
+                        "asset_type": asset_type,
+                        "exchange": "NSE"
+                    }
+                    if self._create_asset(data):
+                        stats["created"] += 1
+
+            # 2. Cross-Verify existing assets in DB
+            db_assets = self.db.query(models.Asset).filter(
+                models.Asset.exchange.in_(["NSE", "N/A"])
+            ).all()
+
+            for asset in db_assets:
+                ticker = (asset.ticker_symbol or "").upper().replace(".NS", "")
+                if not asset.isin and ticker in symbol_to_isin:
+                    asset.isin = symbol_to_isin[ticker]
+                    asset.exchange = "NSE"
+                    stats["updated"] += 1
+                elif asset.isin and ticker in symbol_to_key:
+                    stats["verified"] += 1
+
+            self.flush_pending()
+            self.db.commit()
+            print(
+                f"Upstox Metadata Completed: Created={stats['created']}, "
+                f"Verified={stats['verified']}, Updated={stats['updated']}"
+            )
+        except Exception as e:
+            print(f"Error in process_upstox_metadata: {e}")
+
+        return stats
+
     # --- Phase 6: Diversification Enrichment (FR6.4) ---
     def enrich_assets(self, max_assets: int = 50) -> dict:
         """

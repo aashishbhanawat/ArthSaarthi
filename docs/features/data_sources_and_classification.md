@@ -99,3 +99,13 @@ The asset seeder operates on a **multi-source, authoritative-first** strategy. I
 *   **URL:** `https://www.icicidirect.com/mailimages/NewSecurityMaster.zip`
 *   **Type:** Delimited Text
 *   **Classification:** This source is only used for assets not found in any of the above sources. A multi-pass heuristic classification logic is applied based on keywords in the asset's name.
+
+### Phase 6: Upstox Metadata Integration & Cross-Verification
+
+#### Source 9: Upstox Instrument Master & Public Market Data
+*   **URL:** `https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz`
+*   **Type:** Gzip-compressed JSON (`NSE.json.gz`)
+*   **Purpose:**
+    *   Seeds active NSE equities and ETFs with official ISINs and trading symbols.
+    *   Cross-verifies existing database records to backfill missing ISINs and set `exchange="NSE"`.
+    *   Provides public V3 historical candles (`GET /v3/historical-candle/...`) and market holidays (`GET /v2/market/holidays`) with 0 API key dependency.
