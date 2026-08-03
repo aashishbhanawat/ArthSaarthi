@@ -245,10 +245,10 @@ const AdminAliasesPage: React.FC = () => {
                                                 <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-blue-600 dark:text-blue-400">{alias.asset_ticker}</td>
                                                 <td className="px-4 py-3 text-sm">{alias.asset_name}</td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-right">
-                                                    <button onClick={() => openEditForm(alias)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Edit">
+                                                    <button aria-label={`Edit alias for ${alias.alias_symbol}`} onClick={() => openEditForm(alias)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Edit">
                                                         <PencilIcon className="h-4 w-4 inline" />
                                                     </button>
-                                                    <button onClick={() => { setDeletingAlias(alias); setDeleteOpen(true); }} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Delete">
+                                                    <button aria-label={`Delete alias for ${alias.alias_symbol}`} onClick={() => { setDeletingAlias(alias); setDeleteOpen(true); }} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Delete">
                                                         <TrashIcon className="h-4 w-4 inline" />
                                                     </button>
                                                 </td>
