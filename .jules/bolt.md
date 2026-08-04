@@ -17,3 +17,6 @@
 ## 2024-05-30 - Prevent Expensive Array Recalculations on Render
 **Learning:** React components dealing with historical data arrays (like `transactions` in `PpfHoldingDetailModal.tsx` and `lotSelections` in `TransactionFormModal.tsx`) often perform multiple chained array operations (`filter`, `reduce`, `sort`, `map`, `reverse`) directly within the render body. Since these components can re-render frequently during UI interactions or parent updates, this leads to unnecessary O(N) and O(N log N) recalculations every render cycle.
 **Action:** Always extract complex chained array transformations and aggregations into a `useMemo` block, declaring the source array as the dependency. This guarantees the expensive processing only happens when the underlying data actually changes, yielding measurable render performance improvements for large data sets.
+## 2024-08-04 - Memoize sorted transactions in BondDetailModal
+**Learning:** `BondDetailModal` was sorting `transactions` on every render without a `useMemo` hook, causing unnecessary O(N log N) recalculations even when `transactions` had not changed.
+**Action:** Wrapped the sorting logic in a `useMemo` hook dependent on `transactions`.

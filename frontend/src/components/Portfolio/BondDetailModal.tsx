@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Holding } from '../../types/holding';
 import { Transaction } from '../../types/portfolio';
 import { useAssetAnalytics, useAssetTransactions } from '../../hooks/usePortfolios';
@@ -24,9 +24,11 @@ const BondDetailModal: React.FC<BondDetailModalProps> = ({
     const { data: transactions, isLoading: isLoadingTransactions } = useAssetTransactions(portfolioId, holding.asset_id);
     const { data: analytics, isLoading: isLoadingAnalytics } = useAssetAnalytics(portfolioId, holding.asset_id);
 
-    const sortedTransactions = transactions
-        ? [...transactions].sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
-        : [];
+    const sortedTransactions = useMemo(() => {
+        return transactions
+            ? [...transactions].sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+            : [];
+    }, [transactions]);
 
     return (
         <div className="modal-overlay" onClick={onClose}>
