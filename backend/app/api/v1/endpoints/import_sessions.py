@@ -555,6 +555,8 @@ def commit_import_session(
 
         return {"msg": f"Successfully committed {transactions_created} transactions."}
 
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         error_msg = str(e)
@@ -807,6 +809,8 @@ def commit_fd_import_session(
 
         return {"msg": f"Successfully imported {fds_created} Fixed Deposits."}
 
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         error_msg = str(e)

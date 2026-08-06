@@ -1991,6 +1991,36 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 *   **Modified:** `backend/app/api/v1/endpoints/system.py` — Bypass asset database splash screen in test mode.
 *   **Modified:** `frontend/src/components/Profile/AndroidSettingsCard.tsx` — Fixed useEffect React Hook missing dependency warning.
 
+
+
+---
+
+## Date: 2026-08-06
+**Issue Reference:** #504
+
+**Task:** Resolve 4 manual testing bugs across backend and frontend (Import Session 500 error display, Risk Profile auto-redirect on 404, Login page diagnostics link removal, and Server mode seeding splash bypass).
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **BUG 1 (Import Session Error Detail):** Re-raised `HTTPException` directly in `commit_import_session` and `commit_fd_import_session` in `import_sessions.py` prior to the outer `except Exception as e:` block. Prevents swallowing specific 400 Bad Request error messages (such as insufficient holdings validation errors) into 500 Internal Server Errors.
+2. **BUG 2 (Risk Profile Auto-Redirect):** Removed the automatic navigation to `/risk-profile` on 404 risk profile errors from `DashboardPage.tsx`. Users without a risk profile can access the dashboard normally without forced redirection to the risk wizard.
+3. **BUG 3 (Login Page System Logs Link):** Removed the broken "View System Logs (Diagnostics)" footer link from `AuthPage.tsx` which previously attempted to navigate unauthenticated users to `/admin/logs` (resulting in a redirect back to `/login`). Admins access system logs via authenticated routes.
+4. **BUG 4 (Server Mode Seeding Splash):** Updated `get_seeding_status` in `system.py` to return `status: COMPLETE` when `DEPLOYMENT_MODE == "server"`. Updated `AuthPage.tsx` to set `seedingComplete` to `true` when not running natively on mobile, and updated `MobileSeedingSplash.tsx` to call `onComplete()` on fetch error, preventing server mode logins from getting stuck on "Connecting to Engine...".
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Added `except HTTPException: raise` before `except Exception as e:` in commit endpoints.
+*   **Modified:** `backend/app/api/v1/endpoints/system.py` — Returned `SeedingStatus.COMPLETE` when `settings.DEPLOYMENT_MODE == "server"`.
+
+**Frontend:**
+*   **Modified:** `frontend/src/pages/DashboardPage.tsx` — Removed risk error check and auto-redirect to `/risk-profile`.
+*   **Modified:** `frontend/src/__tests__/pages/DashboardPage.test.tsx` — Cleaned up unused `useRiskProfile` mock.
+*   **Modified:** `frontend/src/pages/AuthPage.tsx` — Removed System Logs footer link and bypassed seeding splash when not running on native mobile.
+*   **Modified:** `frontend/src/components/auth/MobileSeedingSplash.tsx` — Added fallback `onComplete()` call on seeding status fetch errors.
+
 ### Outcome
-**Success.** All database schemas compile and validate successfully on Pydantic V1/Chaquopy and Pydantic V2 host environments. The `test_schemas.py` verification test passes 100% green (`16 passed, 0 failed`) under Pydantic 1.10.x. All ruff linting errors and frontend typescript compiler warnings are fully resolved. Furthermore, the Playwright E2E test suite running via Docker Compose passed 100% green (`34 passed, 0 failed`).
+**Success.** All 4 bugs resolved. Import validation error details are properly propagated to the frontend, dashboard loading no longer forces risk profile redirects, login page UI is cleaned up, and server mode splash screen blocking is bypassed.
 

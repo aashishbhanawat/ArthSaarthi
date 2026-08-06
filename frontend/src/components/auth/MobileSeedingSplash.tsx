@@ -27,7 +27,8 @@ const MobileSeedingSplash: React.FC<MobileSeedingSplashProps> = ({ onComplete })
                 onComplete();
             }
         } catch (error) {
-            console.error("Failed to fetch seeding status", error);
+            console.error("Failed to fetch seeding status, bypassing splash:", error);
+            onComplete();
         }
     }, [onComplete]);
 
