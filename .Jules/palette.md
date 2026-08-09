@@ -8,3 +8,6 @@
 ## $(date +%Y-%m-%d) - Adding aria-hidden to decorative icons
 **Learning:** Decorative SVG icons (like Heroicons used inside buttons that already have `aria-label`s or adjacent text) were being redundantly parsed or announced by screen readers because they lacked `aria-hidden="true"`.
 **Action:** When adding or updating icon-only buttons or icons next to text, explicitly add `aria-hidden="true"` to the SVG component if the parent element already provides an accessible name (e.g., via `aria-label`).
+## 2025-02-20 - Contextual ARIA labels for icon-only action buttons in lists/tables
+**Learning:** Icon-only action buttons (like Edit/Delete) inside data tables or lists often rely only on generic `title` attributes (e.g., `title="Edit"`). This is insufficient for accessibility, as screen reader users tabbing through the page will hear "Edit button", "Edit button" repeatedly without knowing *which* item they are acting upon.
+**Action:** When adding or auditing icon-only buttons in mapped arrays (like table rows), always explicitly add an `aria-label` that interpolates row-specific context (e.g., `aria-label={\`Edit alias for ${alias.alias_symbol}\`}`).
