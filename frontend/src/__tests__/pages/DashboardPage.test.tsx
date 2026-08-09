@@ -8,9 +8,11 @@ import {
   useDashboardHistory,
   useDashboardAllocation,
 } from '../../hooks/useDashboard';
+import { useRiskProfile } from '../../hooks/useRisk';
 
 // Mock the hooks
 jest.mock('../../hooks/useDashboard');
+jest.mock('../../hooks/useRisk');
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
     user: { email: 'test@example.com', full_name: 'Test User', id: '1', is_active: true, is_admin: false },
@@ -40,6 +42,7 @@ jest.mock('../../components/HelpLink', () => {
 const mockUseDashboardSummary = useDashboardSummary as jest.Mock;
 const mockUseDashboardHistory = useDashboardHistory as jest.Mock;
 const mockUseDashboardAllocation = useDashboardAllocation as jest.Mock;
+const mockUseRiskProfile = useRiskProfile as jest.Mock;
 
 describe('DashboardPage', () => {
   beforeEach(() => {
@@ -72,6 +75,13 @@ describe('DashboardPage', () => {
       isError: false,
       error: null,
       data: { allocation: [] },
+    });
+
+    mockUseRiskProfile.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      error: null,
+      data: { answers: {}, score: 32, risk_category: 'Growth' },
     });
   });
 
