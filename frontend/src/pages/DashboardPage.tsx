@@ -18,14 +18,16 @@ const DashboardPage = () => {
   const { user } = useAuth();
   const { data: summary, isLoading, isError } = useDashboardSummary();
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
-  const { error: riskError } = useRiskProfile();
+
+  const skipRiskRedirect = Boolean(
+    user?.is_admin ||
+    sessionStorage.getItem('skip_risk_redirect') === 'true' || 
+    localStorage.getItem('skip_risk_redirect') === 'true'
+  );
+
+  const { error: riskError } = useRiskProfile(!skipRiskRedirect);
 
   useEffect(() => {
-    if (user?.is_admin) {
-      return;
-    }
-    const skipRiskRedirect = sessionStorage.getItem('skip_risk_redirect') === 'true' || 
-                             localStorage.getItem('skip_risk_redirect') === 'true';
     if (skipRiskRedirect) {
       return;
     }
@@ -33,7 +35,7 @@ const DashboardPage = () => {
     if (riskError && (status === 404 || String(riskError).includes('404'))) {
       navigate('/risk-profile', { replace: true });
     }
-  }, [riskError, navigate, user]);
+  }, [riskError, navigate, skipRiskRedirect]);
 
   if (isLoading) {
     return <div className="text-center p-8">Loading dashboard data...</div>;
