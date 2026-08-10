@@ -163,10 +163,10 @@ def test_seed_interest_rates_correctness(db: Session) -> None:
                 f"expected start {expected_start}, got {rate['start_date']}"
             )
 
-    # Verify that the latest rates cover up to 2026-06-30 (Q2-2026)
+    # Verify that the latest rates cover up to 2026-09-30 (Q3-2026)
     last_rate = HISTORICAL_PPF_RATES[-1]
-    assert last_rate["end_date"] >= date(2026, 6, 30), (
-        f"Seed data does not cover Q2-2026. Got: {last_rate['end_date']}"
+    assert last_rate["end_date"] >= date(2026, 9, 30), (
+        f"Seed data does not cover Q3-2026. Got: {last_rate['end_date']}"
     )
 
     # 2. Test database seeding logic

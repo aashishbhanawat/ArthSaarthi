@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-06
+**Last Updated:** 2026-08-10
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Resolved 4 manual testing bugs (#504): fixed import session validation 500 error display to return 400 Bad Request with detail, removed risk profile auto-redirect on 404 from dashboard page, removed non-functional diagnostics link from login page, and added server mode bypass for seeding splash screen.
+**Latest Achievement:** Updated PPF interest rate seed data to 7.1% through 2026-09-30 (Q3-2026) (Issue #508) and verified test coverage.
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,10 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **PPF Interest Rate Update (Issue #508) (Updated 2026-08-10):**
+    - Updated historical PPF interest rate seed data end date in `backend/app/db/seed_data/ppf_interest_rates.py` to `2026-09-30` (Q3-2026) at `7.1%`.
+    - Updated `test_seed_interest_rates_correctness` in `backend/app/tests/api/v1/test_admin_interest_rates.py` to verify seed data validity and coverage through Q3-2026.
 
 *   **Manual Testing Bug Fixes (Issue #504) (Updated 2026-08-06):**
     - **Import Session Error Detail (Bug 1):** Fixed error handling in `commit_import_session` and `commit_fd_import_session` in `backend/app/api/v1/endpoints/import_sessions.py` by adding `except HTTPException: raise` before the outer `except Exception as e:` block. Now returns HTTP 400 with exact error details (e.g. insufficient holdings to sell) instead of swallowing it into a 500 Internal Server Error.
