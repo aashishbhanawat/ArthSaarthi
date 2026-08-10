@@ -31,7 +31,8 @@ const DashboardPage = () => {
     if (skipRiskRedirect) {
       return;
     }
-    const status = (riskError as AxiosError)?.response?.status || (riskError as any)?.status || (riskError as any)?.statusCode;
+    const axiosError = riskError as AxiosError | null;
+    const status = axiosError?.response?.status;
     if (riskError && (status === 404 || String(riskError).includes('404'))) {
       navigate('/risk-profile', { replace: true });
     }
