@@ -1,3 +1,14 @@
+## 2026-08-10: Update PPF Interest Rate to 7.1 till 2026-09-30 (Q3-2026) (Issue #508)
+
+**Task:** Update PPF historical interest rate seed data end date to 2026-09-30 (Q3-2026) and update test validation.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **PPF Interest Rate Seed Data:** Updated the end date of the 7.1% interest rate record in `backend/app/db/seed_data/ppf_interest_rates.py` from `2026-06-30` (Q2-2026) to `2026-09-30` (Q3-2026).
+2. **Seed Data Validation Test:** Updated `test_seed_interest_rates_correctness` in `backend/app/tests/api/v1/test_admin_interest_rates.py` to assert that seed data covers up to `2026-09-30` (Q3-2026).
+
 ## 2026-07-31: Integrate Upstox Provider for Unauthenticated Market Data & Market Holidays (Issue #498)
 
 **Task:** Integrate Upstox V3 Historical Candle API and V2 Market Holidays API as primary market data provider to eliminate yfinance rate limits.
