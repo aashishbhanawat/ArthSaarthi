@@ -138,11 +138,11 @@ def get_seeding_status(db: Session = Depends(get_db)):
     try:
         asset_count = db.query(models.Asset).count()
 
-        if settings.ENVIRONMENT == "test":
+        if settings.ENVIRONMENT == "test" or settings.DEPLOYMENT_MODE == "server":
             return SeedingStatusResponse(
                 status=SeedingStatus.COMPLETE,
                 progress=100,
-                message="Asset database ready (Test Mode)",
+                message="Asset database ready",
                 asset_count=asset_count,
             )
 

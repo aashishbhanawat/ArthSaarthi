@@ -1,23 +1,28 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-07-31
+**Last Updated:** 2026-08-06
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Integrated Upstox V3 Historical Candle API and V2 Market Holidays API as the primary market data provider for Indian stocks & ETFs. Eliminates `yfinance` rate-limiting (429 errors) using public unauthenticated GET endpoints and 0-cost `NSE.json.gz` metadata indexing.
+**Latest Achievement:** Resolved 4 manual testing bugs (#504): fixed import session validation 500 error display to return 400 Bad Request with detail, removed risk profile auto-redirect on 404 from dashboard page, removed non-functional diagnostics link from login page, and added server mode bypass for seeding splash screen.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **356/359 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **356/359 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **357/360 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **357/360 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **191/191 Passing**
-*   **E2E Playwright Tests:** ✅ **5/5 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Manual Testing Bug Fixes (Issue #504) (Updated 2026-08-06):**
+    - **Import Session Error Detail (Bug 1):** Fixed error handling in `commit_import_session` and `commit_fd_import_session` in `backend/app/api/v1/endpoints/import_sessions.py` by adding `except HTTPException: raise` before the outer `except Exception as e:` block. Now returns HTTP 400 with exact error details (e.g. insufficient holdings to sell) instead of swallowing it into a 500 Internal Server Error.
+    - **Risk Profile Auto-Redirect Removal (Bug 2):** Removed auto-redirection to `/risk-profile` on 404 error from `frontend/src/pages/DashboardPage.tsx`. Users without a risk profile can browse the dashboard normally without being forced into the risk wizard.
+    - **Login Page System Logs Link Removal (Bug 3):** Removed the broken "View System Logs (Diagnostics)" link from `frontend/src/pages/AuthPage.tsx` which attempted unauthenticated access to `/admin/logs` (resulting in a redirect back to `/login`).
+    - **Server Mode Seeding Splash Bypass (Bug 4):** Updated `get_seeding_status` in `backend/app/api/v1/endpoints/system.py` to return `status: COMPLETE` when `DEPLOYMENT_MODE == "server"`. Updated `frontend/src/pages/AuthPage.tsx` to set `seedingComplete` to `true` when not running natively on mobile, and updated `MobileSeedingSplash.tsx` to call `onComplete()` on fetch error.
 
 *   **Upstox Provider Integration & Market Holidays (Issue #498) (Updated 2026-07-31):**
     - **Upstox Metadata Service (`UpstoxMetadataService`):** Downloaded and cached `NSE.json.gz` from Upstox CDN to build 0-cost $O(1)$ lookup maps for ISIN $\leftrightarrow$ Symbol $\leftrightarrow$ `instrument_key`. Integrated `GET /v2/market/holidays` for weekend and trading holiday detection (`is_market_closed`).

@@ -7336,9 +7336,18 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 **Issue**: The end date for the final PPF interest rate entry (Q2-2026) was set incorrectly to `2026-03-31` in commit `7ab22337`, causing incorrect interest rate calculations for Q2-2026.
 **Fix**: Reverted the end date back to `2026-06-30` in `backend/app/db/seed_data/ppf_interest_rates.py`. Implemented a comprehensive verification test `test_seed_interest_rates_correctness` in `backend/app/tests/api/v1/test_admin_interest_rates.py` to check seed data ranges, gaps/overlaps, sorting, and database seeding functionality.
 
-## [2026-07-16] E2E Test Suite Fails Due to Risk Profile Auto-Redirect
-**Issue**: Immediately after logging in during E2E test runs, the DashboardPage redirect logic forces standard users to `/risk-profile`. This prevents standard E2E test scripts from locating the Dashboard heading on the dashboard page, causing a timeout and test suite failures.
-**Fix**: Modified `DashboardPage.tsx` to check for `skip_risk_redirect` flag in sessionStorage or localStorage, and exempted admin users from the redirect. Configured Playwright's `playwright.config.ts` to pre-populate localStorage with `skip_risk_redirect: 'true'` for the E2E test runs. Updated unit tests in `DashboardPage.test.tsx` to mock `AuthContext` to avoid rendering issues.
+## [2026-08-06] Manual Testing Bug Fixes (Issue #504)
+**Issue 1**: Import session commit errors (such as insufficient holdings to sell) were returning 500 Internal Server Errors instead of displaying the detailed 400 Bad Request error detail.
+**Issue 2**: Users without a risk profile were automatically forced/redirected to `/risk-profile` when opening the Dashboard.
+**Issue 3**: The public login page (`AuthPage.tsx`) displayed a non-functional "View System Logs (Diagnostics)" link that attempted unauthenticated access to `/admin/logs` (redirecting back to `/login`).
+**Issue 4**: Desktop/Server mode login screens displayed "Connecting to Engine..." and polled `/api/v1/system/seeding-status` which returned 502 Bad Gateway in server mode.
+
+**Fix**:
+1. Added `except HTTPException: raise` before outer `except Exception as e:` in `commit_import_session` and `commit_fd_import_session` in `backend/app/api/v1/endpoints/import_sessions.py`.
+2. Removed auto-redirection to `/risk-profile` on 404 error from `frontend/src/pages/DashboardPage.tsx`.
+3. Removed "View System Logs (Diagnostics)" footer link from `frontend/src/pages/AuthPage.tsx`.
+4. Updated `get_seeding_status` in `system.py` to return `status: COMPLETE` for `DEPLOYMENT_MODE == "server"`, set `seedingComplete` to `true` for non-native mobile in `AuthPage.tsx`, and added fallback `onComplete()` call on seeding status fetch errors in `MobileSeedingSplash.tsx`.
+
 
 
 

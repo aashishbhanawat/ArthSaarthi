@@ -2,10 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as riskApi from '../services/riskApi';
 import { UserRiskProfileCreate } from '../types/risk';
 
-export const useRiskProfile = () => {
+export const useRiskProfile = (enabled: boolean = true) => {
     return useQuery({
         queryKey: ['riskProfile'],
         queryFn: riskApi.getRiskProfile,
+        enabled,
         retry: false,
     });
 };
