@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-10
+**Last Updated:** 2026-08-11
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Ready for PR / Release Candidate
 
-**Latest Achievement:** Updated PPF interest rate seed data to 7.1% through 2026-09-30 (Q3-2026) (Issue #508) and verified test coverage.
+**Latest Achievement:** Fixed `ResponseValidationError` on `GET /api/v1/transactions/` when returning synthetic `FD_DEPOSIT` and `FD_MATURITY` transactions by adding enum values to backend `TransactionType` schema (Issue #510).
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,11 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **FD Transaction Types ResponseValidationError Fix (Issue #510) (Updated 2026-08-11):**
+    - Added `FD_DEPOSIT` and `FD_MATURITY` to `TransactionType` enum in `backend/app/schemas/enums.py`.
+    - Removed restrictive `enum=["BUY", "SELL"]` query parameter constraint on `read_transactions` in `backend/app/api/v1/endpoints/transactions.py`.
+    - Added `test_read_transactions_with_synthetic_fd_types` to `backend/app/tests/api/v1/test_transactions.py` (passing cleanly).
 
 *   **PPF Interest Rate Update (Issue #508) (Updated 2026-08-10):**
     - Updated historical PPF interest rate seed data end date in `backend/app/db/seed_data/ppf_interest_rates.py` to `2026-09-30` (Q3-2026) at `7.1%`.
