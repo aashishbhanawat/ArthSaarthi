@@ -82,7 +82,7 @@ if settings.DEPLOYMENT_MODE in ("desktop", "android") and settings.LOG_FILE:
 
 app = FastAPI(
     title="Personal Portfolio Management System",
-    version="1.2.0",
+    version="1.3.0",
     openapi_url="/api/v1/openapi.json",
 )
 

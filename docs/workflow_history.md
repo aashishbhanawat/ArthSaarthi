@@ -1,3 +1,18 @@
+## 2026-08-13: Prepare Release v1.3.0
+
+**Task:** Synchronize and bump version strings across backend, frontend, and Android build configs to `v1.3.0` in preparation for tagging.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Version Synchronization:** Synchronized version strings across:
+   - `backend/app/main.py`: Updated FastAPI version to `1.3.0`.
+   - `backend/app/api/v1/endpoints/system.py`: Updated `APP_VERSION` to `1.3.0`.
+   - `frontend/package.json`: Updated version to `1.3.0`.
+   - `frontend/src/pages/MorePage.tsx`: Updated footer version display string to `ArthSaarthi v1.3.0`.
+   - `frontend/android/app/build.gradle.kts`: Bumped `versionCode = 4` and `versionName = "1.3.0"`.
+
 ## 2026-08-11: Fix FD_DEPOSIT and FD_MATURITY Enum ResponseValidationError in Transactions Endpoint (Issue #510)
 
 **Task:** Add missing `FD_DEPOSIT` and `FD_MATURITY` enum members to backend `TransactionType` schema to fix FastAPI `ResponseValidationError` when listing transactions.

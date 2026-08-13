@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-11
+**Last Updated:** 2026-08-13
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Ready for PR / Release Candidate
+*   **Overall Status:** Release Candidate v1.3.0
 
-**Latest Achievement:** Fixed `ResponseValidationError` on `GET /api/v1/transactions/` when returning synthetic `FD_DEPOSIT` and `FD_MATURITY` transactions by adding enum values to backend `TransactionType` schema (Issue #510).
+**Latest Achievement:** Prepared Release v1.3.0 by bumping version strings across backend, frontend, and Android build configs.
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,9 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Release v1.3.0 Preparation (Updated 2026-08-13):**
+    - Synchronized version numbers across `backend/app/main.py`, `backend/app/api/v1/endpoints/system.py`, `frontend/package.json`, `frontend/src/pages/MorePage.tsx`, and `frontend/android/app/build.gradle.kts`.
 
 *   **FD Transaction Types ResponseValidationError Fix (Issue #510) (Updated 2026-08-11):**
     - Added `FD_DEPOSIT` and `FD_MATURITY` to `TransactionType` enum in `backend/app/schemas/enums.py`.
