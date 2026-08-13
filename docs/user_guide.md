@@ -486,10 +486,22 @@ Set and track your financial goals in the **Goals** section.
 ![Goals Page](./images/goals_page_1768318441380.png)
 
 **Features:**
-- Create goals with target amounts and dates
-- Link portfolios to specific goals
-- Track progress with visual indicators
-- Get insights on whether you're on track
+- **Goal Creation:** Define financial goals with target amounts, target dates, and expected returns (%).
+- **Asset & Portfolio Linking:** Link whole portfolios or standalone assets directly to individual goals.
+- **Required Monthly Contribution (SIP Calculator):** Computes exact ordinary annuity monthly SIP values taking into account remaining duration ($N$), asset appreciation ($PV_{\text{future}}$), and interest rates.
+- **Future Value Projection & Dynamic XIRR:** Compiles unified cash flows across linked portfolios/assets, calculates dynamic combined XIRR returns, and plots the projected path against the target path on an interactive chart.
+- **Track Status Indicators:** Automatically determines whether you're **On Track** or **Off Track** based on your projected path relative to your target.
+
+---
+
+## Risk Profile
+
+Assess your financial risk tolerance using the built-in **Grable & Lytton 13-Question Risk Scale**.
+
+**Features:**
+- **13-Question Wizard:** Multi-step questionnaire covering investment horizon, financial reaction to market volatility, and liquidity preferences.
+- **Risk Score & Classification:** Calculates a score (out of 47 points) classifying your risk profile into **Conservative**, **Moderate**, **Growth**, or **Aggressive**.
+- **Target Asset Allocation:** Displays recommended percentage split between Equity, Debt, Gold, and Liquid assets tailored to your risk profile.
 
 ---
 

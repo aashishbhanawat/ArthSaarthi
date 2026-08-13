@@ -72,8 +72,26 @@ This document tracks features and improvements identified during v1.0.0 developm
 
 ---
 
-## Completed in v1.0.0
+## Completed Releases
 
+### Completed in v1.3.0
+- ✅ Goal Required Contribution Rate (Ordinary Annuity Monthly SIP)
+- ✅ Goal Future Value Projections, Dynamic XIRR & Track Status ("On Track" / "Off Track")
+- ✅ Upstox V3 Market Data Provider (0-cost unauthenticated historical candles & trading holidays)
+- ✅ Grable & Lytton 13-Question Risk Scale & Asset Allocation Breakdown
+- ✅ Android Background Daily Portfolio Snapshot via WorkManager (`SnapshotWorker.kt`)
+- ✅ Strict Tenant Isolation & IDOR protections on Tax Reports, Goal Links, and PPF Accounts
+- ✅ Immutability on system-generated PPF interest credits and multi-user ticker isolation
+
+### Completed in v1.2.0 & v1.1.0
+- ✅ Advanced Benchmarking with Hybrid Indices & Risk-Free Rate Overlay
+- ✅ Dark mode theme support & Privacy Mode
+- ✅ Fixed Income lifecycle tracking (matured FDs, RDs, PPF, Bonds)
+- ✅ Bank Statement PDF Import (HDFC, ICICI, SBI) & Asset Alias Mapping
+- ✅ Automated update check endpoint & background snapshot engine
+- ✅ Multi-platform desktop builds & native Android app wrapper
+
+### Completed in v1.0.0
 - ✅ Multi-platform desktop builds (Windows, macOS Intel/ARM, Linux x64/ARM)
 - ✅ SQLite WAL mode for concurrent access
 - ✅ Background asset seeding (non-blocking)
