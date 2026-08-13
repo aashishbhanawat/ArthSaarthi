@@ -1,3 +1,15 @@
+## 2026-08-11: Fix FD_DEPOSIT and FD_MATURITY Enum ResponseValidationError in Transactions Endpoint (Issue #510)
+
+**Task:** Add missing `FD_DEPOSIT` and `FD_MATURITY` enum members to backend `TransactionType` schema to fix FastAPI `ResponseValidationError` when listing transactions.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **TransactionType Enum:** Added `FD_DEPOSIT` and `FD_MATURITY` to `TransactionType` enum in `backend/app/schemas/enums.py`. This resolves the `ResponseValidationError` when `GET /api/v1/transactions/` injects synthetic FD deposit and maturity transactions into the response model.
+2. **Transaction Query Filtering:** Updated `transaction_type` parameter in `read_transactions` endpoint (`backend/app/api/v1/endpoints/transactions.py`) from restrictive `Query(None, enum=["BUY", "SELL"])` to `Query(None)` allowing filtering by any valid transaction type.
+3. **Test Suite Coverage:** Added `test_read_transactions_with_synthetic_fd_types` to `backend/app/tests/api/v1/test_transactions.py` to verify response serialization of synthetic `FD_DEPOSIT` and `FD_MATURITY` records.
+
 ## 2026-08-10: Update PPF Interest Rate to 7.1 till 2026-09-30 (Q3-2026) (Issue #508)
 
 **Task:** Update PPF historical interest rate seed data end date to 2026-09-30 (Q3-2026) and update test validation.

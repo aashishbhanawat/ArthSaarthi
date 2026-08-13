@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Callable, Dict
 
 import pytest
@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app import crud
 from app.core.config import settings
+from app.schemas.fixed_deposit import FixedDepositCreate
 from app.schemas.transaction import TransactionCreate
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.portfolio import create_test_portfolio
@@ -273,3 +274,45 @@ def test_get_available_lots_multi_portfolio(
     )
     assert response.status_code == 404, response.json()
     assert "Portfolio not found" in response.json()["detail"]
+
+
+def test_read_transactions_with_synthetic_fd_types(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+) -> None:
+    """
+    Test that GET /api/v1/transactions/ correctly serializes synthetic FD_DEPOSIT
+    and FD_MATURITY transaction types without raising ResponseValidationError.
+    """
+    user, password = create_random_user(db)
+    user_headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="FD Test Portfolio")
+
+    # Create a matured fixed deposit in this portfolio
+    fd_in = FixedDepositCreate(
+        name="Test FD",
+        account_number="FD-12345",
+        principal_amount=100000,
+        interest_rate=7.5,
+        start_date=date(2023, 1, 1),
+        maturity_date=date(2024, 1, 1),
+        portfolio_id=portfolio.id,
+        compounding_frequency="ANNUALLY",
+        interest_payout="CUMULATIVE",
+    )
+    crud.fixed_deposit.create_with_portfolio(
+        db=db, obj_in=fd_in, user_id=user.id
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
+        headers=user_headers,
+    )
+    assert response.status_code == 200, response.json()
+    data = response.json()
+    assert "transactions" in data
+    types = [t["transaction_type"] for t in data["transactions"]]
+    assert "FD_DEPOSIT" in types
+    assert "FD_MATURITY" in types
+

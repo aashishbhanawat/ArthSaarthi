@@ -27,7 +27,7 @@ def read_transactions(
     db: Session = Depends(dependencies.get_db),
     portfolio_id: Optional[uuid.UUID] = None,
     asset_id: Optional[uuid.UUID] = None,
-    transaction_type: Optional[str] = Query(None, enum=["BUY", "SELL"]),
+    transaction_type: Optional[str] = Query(None),
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     skip: int = 0,
