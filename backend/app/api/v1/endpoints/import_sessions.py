@@ -413,7 +413,9 @@ def get_import_session_preview(
         )
     except Exception as e:
         log.error(f"Error in get_import_session_preview: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500, detail="Could not retrieve import session preview."
+        )
 
 
 @router.post("/{session_id}/commit", response_model=Msg)
@@ -574,7 +576,7 @@ def commit_import_session(
         )
         db.commit()
         raise HTTPException(
-            status_code=500, detail=f"Could not commit transactions: {error_msg}"
+            status_code=500, detail="Could not commit transactions."
         )
 
 
@@ -749,7 +751,9 @@ def get_fd_import_session_preview(
         )
     except Exception as e:
         log.error(f"Error in get_fd_import_session_preview: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500, detail="Could not retrieve FD import session preview."
+        )
 
 
 @router.post("/{session_id}/fd-commit", response_model=Msg)
@@ -828,5 +832,5 @@ def commit_fd_import_session(
         )
         db.commit()
         raise HTTPException(
-            status_code=500, detail=f"Could not commit FDs: {error_msg}"
+            status_code=500, detail="Could not commit FDs."
         )
