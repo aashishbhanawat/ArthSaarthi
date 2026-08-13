@@ -307,7 +307,7 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'Profile' }).click();
+        await page.getByRole('link', { name: 'Profile', exact: true }).click();
         await page.waitForTimeout(500);
         await screenshot(page, '16_profile_page');
     });
@@ -455,5 +455,30 @@ test.describe.serial('User Guide Screenshots', () => {
 
         // Take screenshot of the analytics section
         await screenshot(page, '26_investment_style');
+    });
+
+    // ========== v1.3.0 Features ==========
+
+    test('30 - Goal Projections & Required Monthly SIP', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Goals' }).click();
+        await expect(page.getByRole('heading', { name: 'Goals', exact: true })).toBeVisible();
+        await page.waitForTimeout(1000);
+        await screenshot(page, '30_goal_projections_and_sip');
+    });
+
+    test('31 - Risk Profile Questionnaire & Assessment', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Risk Profile' }).click();
+        await page.waitForTimeout(1000);
+        await screenshot(page, '31_risk_profile_questionnaire');
     });
 });
