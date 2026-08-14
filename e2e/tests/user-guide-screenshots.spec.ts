@@ -467,7 +467,46 @@ test.describe.serial('User Guide Screenshots', () => {
 
         await page.getByRole('link', { name: 'Goals' }).click();
         await expect(page.getByRole('heading', { name: 'Goals', exact: true })).toBeVisible();
-        await page.waitForTimeout(1000);
+
+        // Create a new goal with target amount and date
+        const goalName = 'Retirement Fund Goal';
+        await page.getByRole('button', { name: 'Create Goal' }).click();
+        const createModal = page.locator('.modal-content');
+        await expect(createModal.getByRole('heading', { name: 'Create New Goal' })).toBeVisible();
+        await createModal.getByLabel('Goal Name').fill(goalName);
+        await createModal.getByLabel('Target Amount').fill('10000000');
+        await createModal.getByLabel('Target Date').fill('2035-12-31');
+        await createModal.getByRole('button', { name: 'Create Goal' }).click();
+
+        // Open goal detail view
+        const goalInList = page.locator(`li:has-text("${goalName}")`);
+        await expect(goalInList).toBeVisible();
+        await goalInList.getByRole('link').click();
+        await expect(page).toHaveURL(/.*\/goals\/.*/);
+
+        // Link asset if button available
+        const linkBtn = page.getByRole('button', { name: 'Link Item' });
+        if (await linkBtn.isVisible()) {
+            await linkBtn.click();
+            const linkModal = page.locator('.modal-content');
+            if (await linkModal.isVisible()) {
+                const searchInput = linkModal.getByLabel('Search Assets');
+                if (await searchInput.isVisible()) {
+                    await searchInput.fill('RELIANCE');
+                    await page.waitForTimeout(1000);
+                    const searchResult = linkModal.locator('li', { hasText: 'RELIANCE' });
+                    if (await searchResult.isVisible()) {
+                        await searchResult.getByRole('button', { name: 'Link' }).click();
+                    } else {
+                        await page.keyboard.press('Escape');
+                    }
+                } else {
+                    await page.keyboard.press('Escape');
+                }
+            }
+        }
+
+        await page.waitForTimeout(1500);
         await screenshot(page, '30_goal_projections_and_sip');
     });
 
