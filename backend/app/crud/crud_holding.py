@@ -684,27 +684,33 @@ def _process_market_traded_assets(
                     from unittest.mock import MagicMock
 
                     sector = enrichment.get("sector")
-                    if not isinstance(sector, MagicMock):
+                    if not isinstance(sector, MagicMock) and sector:
                         asset.sector = sector
 
                     industry = enrichment.get("industry")
-                    if not isinstance(industry, MagicMock):
+                    if not isinstance(industry, MagicMock) and industry:
                         asset.industry = industry
 
                     country = enrichment.get("country")
-                    if not isinstance(country, MagicMock):
+                    if not isinstance(country, MagicMock) and country:
                         asset.country = country
 
                     market_cap = enrichment.get("market_cap")
-                    if not isinstance(market_cap, MagicMock):
+                    if not isinstance(market_cap, MagicMock) and market_cap:
                         asset.market_cap = market_cap
 
                     investment_style = enrichment.get("investment_style")
-                    if not isinstance(investment_style, MagicMock):
+                    if not isinstance(investment_style, MagicMock) and investment_style:
                         asset.investment_style = investment_style
 
-                    db.add(asset)
-                    needs_commit = True
+                # Fallback to defaults if enrichment failed or returned NULL fields
+                # to prevent re-triggering network calls on every single request
+                if asset.sector is None:
+                    asset.sector = "Other"
+                if asset.investment_style is None:
+                    asset.investment_style = "Blend"
+                db.add(asset)
+                needs_commit = True
         except Exception as e:
             logger.error(f"Failed during YahooQuery batch enrichment: {e}")
     if needs_commit:

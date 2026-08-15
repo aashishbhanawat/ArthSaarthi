@@ -1,3 +1,16 @@
+## 2026-08-15: Fix YFinance Batch Enrichment Rate-Limiting Lag (200s Timeout) & Chaquopy Android Startup Crash
+
+**Task:** Resolve 200-second holdings calculation lag and Uvicorn/ASGI socket disconnect exceptions (`LocalProtocolError: Can't send data when our state is ERROR`) caused by Yahoo Finance API rate-limiting loops, and fix Android Chaquopy `ModuleNotFoundError: No module named 'sqlalchemy_utils'` on app boot.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **YFinance Rate Limit Negative Caching & Early Abort:** Added negative caching (`enrichment_failed:{ticker}`) in `YFinanceProvider.get_enrichment_data` (cached for 15 minutes) and early loop termination on HTTP 429 / `Too Many Requests` in `get_enrichment_data_batch`.
+2. **Fallback Sector & Style Population:** Added fallback default assignments (`asset.sector = "Other"`, `asset.investment_style = "Blend"`) in `backend/app/crud/crud_holding.py` when stock enrichment is unavailable or rate-limited. Ensures database records are updated and prevents holdings calculation from re-triggering batch network requests on every single request.
+3. **Android Chaquopy Lazy Import:** Made `sqlalchemy_utils` import lazy inside `init()` in `backend/app/db/init_db.py`, guarded by `if settings.DATABASE_TYPE != "sqlite"`. Allows Android Chaquopy to boot FastAPI cleanly without throwing `ModuleNotFoundError`.
+4. **Testing & Verification:** Fixed all `ruff` lint errors (100% clean). Verified all 362 backend unit tests pass in Docker across Postgres and SQLite test suites.
+
 ## 2026-08-15: Fix Holding Decimal('NaN') ValidationError, Upstox SSL Fallback, Android SQLite DB Migration & Foreground Service Idle Fix
 
 **Task:** Prevent HTTP 500 crashes on `GET /api/v1/dashboard/summary` caused by Pydantic `Decimal('NaN')` validation errors, resolve Upstox SSL certificate verification failures, fix `sqlite3.OperationalError: no such column: goals.expected_return` on SQLite upgrade, and promote Android `BackendService` to a Foreground Service to eliminate `ActivityManager` app idle service terminations.

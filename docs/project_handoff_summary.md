@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release Candidate v1.3.0
 
-**Latest Achievement:** Fixed Holding `Decimal('NaN')` schema validation crashes and Upstox SSL certificate verification failures on macOS/desktop environments.
+**Latest Achievement:** Fixed YFinance batch enrichment rate-limiting loop (200s timeout lag) and Chaquopy `sqlalchemy_utils` Android startup crash.
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,10 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **YFinance Batch Enrichment Rate-Limiting & Lag Fix (Updated 2026-08-15):**
+    - Added negative caching (`enrichment_failed:{ticker}`) in `YFinanceProvider.get_enrichment_data` (cached for 15 minutes) and early loop termination on HTTP 429 / `Too Many Requests` in `get_enrichment_data_batch`.
+    - Added default fallback assignment (`asset.sector = "Other"`, `asset.investment_style = "Blend"`) in `backend/app/crud/crud_holding.py` when stock enrichment is unavailable or rate-limited. Prevents holdings calculation from hanging for 200+ seconds and triggering HTTP client / ASGI socket disconnects.
 
 *   **Holding `Decimal('NaN')` ValidationError, Upstox SSL Fallback, Android DB Migration & Foreground Service Fixes (Updated 2026-08-15):**
     - Added `_to_finite_decimal` and `_to_finite_float` helpers in `backend/app/crud/crud_holding.py` to sanitize all holding calculation fields before instantiating `schemas.Holding` and `schemas.PortfolioSummary`.
