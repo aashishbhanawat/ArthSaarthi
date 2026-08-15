@@ -4,8 +4,10 @@
 
     <!-- Internet permission is needed for localhost HTTP between WebView and backend -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Foreground service permission for the backend server -->
+    <!-- Foreground service permissions for the backend server -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- WorkManager persistence across reboots -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -32,7 +34,12 @@
         <!-- BackendService: hosts the Python/FastAPI server via Chaquopy -->
         <service
             android:name=".BackendService"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Local Python financial management backend server" />
+        </service>
 
     </application>
 </manifest>

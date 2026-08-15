@@ -5,6 +5,7 @@ Handles downloading & caching of instrument master files (NSE.json.gz).
 import gzip
 import json
 import logging
+import ssl
 import urllib.request
 from datetime import date
 from typing import Dict, Optional, Set
@@ -20,6 +21,21 @@ MARKET_HOLIDAYS_URL = "https://api.upstox.com/v2/market/holidays"
 
 CACHE_TTL_HOLIDAYS = 86400  # 24 hours
 CACHE_TTL_INSTRUMENTS = 86400  # 24 hours
+
+
+def _urlopen_safe(req: urllib.request.Request, timeout: float = 10):
+    try:
+        ctx = ssl.create_default_context()
+        return urllib.request.urlopen(req, timeout=timeout, context=ctx)
+    except Exception as e:
+        err_msg = str(e)
+        if (
+            "CERTIFICATE_VERIFY_FAILED" in err_msg
+            or "certificate verify failed" in err_msg
+        ):
+            unverified_ctx = ssl._create_unverified_context()
+            return urllib.request.urlopen(req, timeout=timeout, context=unverified_ctx)
+        raise
 
 
 class UpstoxMetadataService:
@@ -55,7 +71,7 @@ class UpstoxMetadataService:
                 MARKET_HOLIDAYS_URL,
                 headers={"User-Agent": "Mozilla/5.0"}
             )
-            with urllib.request.urlopen(req, timeout=10) as response:
+            with _urlopen_safe(req, timeout=10) as response:
                 data = json.loads(response.read().decode("utf-8"))
                 if data.get("status") == "success":
                     holiday_dates = set()
@@ -96,7 +112,7 @@ class UpstoxMetadataService:
                 NSE_INSTRUMENTS_URL,
                 headers={"User-Agent": "Mozilla/5.0"}
             )
-            with urllib.request.urlopen(req, timeout=15) as response:
+            with _urlopen_safe(req, timeout=15) as response:
                 compressed_data = response.read()
                 decompressed_data = gzip.decompress(compressed_data)
                 instruments = json.loads(decompressed_data.decode("utf-8"))

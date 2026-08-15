@@ -188,6 +188,7 @@ class YFinanceProvider(FinancialDataProvider):
         """
         yf_ticker = self._get_yfinance_ticker(ticker_symbol, exchange)
         cache_key = f"enrichment:{yf_ticker}"
+        failed_cache_key = f"enrichment_failed:{yf_ticker}"
 
         # Check cache first
         if self.cache_client:
@@ -195,6 +196,12 @@ class YFinanceProvider(FinancialDataProvider):
             if cached:
                 logger.debug(f"Enrichment cache HIT for {yf_ticker}")
                 return cached
+            if self.cache_client.get_json(failed_cache_key):
+                logger.debug(
+                    f"Enrichment failure cache HIT for {yf_ticker}. "
+                    "Skipping network fetch."
+                )
+                return None
 
         try:
             ticker_obj = yf.Ticker(yf_ticker)
@@ -228,7 +235,17 @@ class YFinanceProvider(FinancialDataProvider):
                 )
                 return enrichment_data
         except Exception as e:
+            err_msg = str(e).lower()
             logger.warning(f"Error fetching enrichment for {ticker_symbol}: {e}")
+            if self.cache_client:
+                # Negative cache for 15 mins to avoid spamming rate-limited endpoints
+                self.cache_client.set_json(
+                    failed_cache_key,
+                    {"failed": True},
+                    expire=CACHE_TTL_CURRENT_PRICE,
+                )
+            if "too many requests" in err_msg or "429" in err_msg:
+                raise RuntimeError(f"YFinance Rate Limited: {e}") from e
 
         return None
 
@@ -590,7 +607,7 @@ class YFinanceProvider(FinancialDataProvider):
     ) -> Dict[str, Dict[str, Any]]:
         """
         Fetches enrichment data for multiple tickers.
-        Uses cache to avoid redundant network calls.
+        Uses cache to avoid redundant network calls. Aborts batch early if rate limited.
         """
         results = {}
         for asset in assets:
@@ -598,8 +615,22 @@ class YFinanceProvider(FinancialDataProvider):
             if not ticker:
                 continue
 
-            enrichment = self.get_enrichment_data(ticker, asset.get("exchange"))
-            if enrichment:
-                results[ticker] = enrichment
+            try:
+                enrichment = self.get_enrichment_data(ticker, asset.get("exchange"))
+                if enrichment:
+                    results[ticker] = enrichment
+            except Exception as e:
+                err_msg = str(e).lower()
+                is_rate_limit = (
+                    "rate limit" in err_msg
+                    or "429" in err_msg
+                    or "too many requests" in err_msg
+                )
+                if is_rate_limit:
+                    logger.warning(
+                        "Aborting batch enrichment early due to Yahoo rate limit: "
+                        f"{e}"
+                    )
+                    break
 
         return results

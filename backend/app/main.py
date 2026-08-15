@@ -11,7 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.middleware import SecurityHeadersMiddleware
+from app.db.init_db import run_db_migrations
 from app.db.session import SessionLocal
+from app.services.initialization_service import check_and_seed_on_startup
 from app.services.snapshot_service import take_daily_snapshots_for_all
 
 # --- Background Task for Desktop App ---
@@ -86,9 +88,21 @@ app = FastAPI(
     openapi_url="/api/v1/openapi.json",
 )
 
+
 @app.on_event("startup")
 async def startup_event() -> None:
     global _snapshot_task
+    # Run DB schema migrations and column auto-sync for upgraded databases
+    try:
+        run_db_migrations()
+    except Exception as e:
+        logging.error(f"Error during startup DB migrations: {e}", exc_info=True)
+
+    try:
+        check_and_seed_on_startup()
+    except Exception as e:
+        logging.error(f"Error during startup seeding check: {e}", exc_info=True)
+
     if settings.DEPLOYMENT_MODE in ("desktop", "android"):
         logging.info(f"DEBUG: DEPLOYMENT_MODE is '{settings.DEPLOYMENT_MODE}'")
         logging.info(

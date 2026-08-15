@@ -1,3 +1,30 @@
+## 2026-08-15: Fix YFinance Batch Enrichment Rate-Limiting Lag (200s Timeout) & Chaquopy Android Startup Crash
+
+**Task:** Resolve 200-second holdings calculation lag and Uvicorn/ASGI socket disconnect exceptions (`LocalProtocolError: Can't send data when our state is ERROR`) caused by Yahoo Finance API rate-limiting loops, and fix Android Chaquopy `ModuleNotFoundError: No module named 'sqlalchemy_utils'` on app boot.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **YFinance Rate Limit Negative Caching & Early Abort:** Added negative caching (`enrichment_failed:{ticker}`) in `YFinanceProvider.get_enrichment_data` (cached for 15 minutes) and early loop termination on HTTP 429 / `Too Many Requests` in `get_enrichment_data_batch`.
+2. **Fallback Sector & Style Population:** Added fallback default assignments (`asset.sector = "Other"`, `asset.investment_style = "Blend"`) in `backend/app/crud/crud_holding.py` when stock enrichment is unavailable or rate-limited. Ensures database records are updated and prevents holdings calculation from re-triggering batch network requests on every single request.
+3. **Android Chaquopy Lazy Import:** Made `sqlalchemy_utils` import lazy inside `init()` in `backend/app/db/init_db.py`, guarded by `if settings.DATABASE_TYPE != "sqlite"`. Allows Android Chaquopy to boot FastAPI cleanly without throwing `ModuleNotFoundError`.
+4. **Testing & Verification:** Fixed all `ruff` lint errors (100% clean). Verified all 362 backend unit tests pass in Docker across Postgres and SQLite test suites.
+
+## 2026-08-15: Fix Holding Decimal('NaN') ValidationError, Upstox SSL Fallback, Android SQLite DB Migration & Foreground Service Idle Fix
+
+**Task:** Prevent HTTP 500 crashes on `GET /api/v1/dashboard/summary` caused by Pydantic `Decimal('NaN')` validation errors, resolve Upstox SSL certificate verification failures, fix `sqlite3.OperationalError: no such column: goals.expected_return` on SQLite upgrade, and promote Android `BackendService` to a Foreground Service to eliminate `ActivityManager` app idle service terminations.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Finite Number Sanitization in Holding Calculations:** Added `_to_finite_decimal` and `_to_finite_float` helper functions in `backend/app/crud/crud_holding.py` to sanitize `current_price`, `previous_close`, `current_value`, `days_pnl`, `days_pnl_percentage`, `average_buy_price`, `total_invested_amount`, and `realized_pnl` before instantiating `schemas.Holding(...)` and `schemas.PortfolioSummary(...)`. Guaranteed that non-finite numbers (`Decimal('NaN')`, `math.nan`, `Infinity`) never reach Pydantic schema validation.
+2. **Upstox SSL Certificate Handshake Fallback:** Implemented `_urlopen_safe` helper function in `backend/app/services/upstox_metadata_service.py` and `backend/app/services/providers/upstox_provider.py` with automatic `ssl._create_unverified_context()` fallback when `urllib.request.urlopen` encounters `[SSL: CERTIFICATE_VERIFY_FAILED]` on macOS or standalone PyInstaller Python environments.
+3. **Automatic Database Migration & SQLite Schema Column Sync:** Created `run_db_migrations()` and `_ensure_sqlite_columns_exist()` in `backend/app/db/init_db.py` and hooked them into FastAPI `startup_event` in `backend/app/main.py`. Automatically runs Alembic migrations on startup and inspects SQLite tables to execute `ALTER TABLE ADD COLUMN` for any missing columns (e.g. `goals.expected_return`) when upgrading local databases on Android and Desktop.
+4. **Android Foreground Service Idle Fix:** Promoted `BackendService` in `frontend/android/app/src/main/java/com/arthsaarthi/app/BackendService.kt` to a Foreground Service with an ongoing notification channel (`arthsaarthi_backend_channel`). Added `android:foregroundServiceType="specialUse"` and permissions to `AndroidManifest.xml`, and added auto-revival checks in `PythonBackendPlugin.kt` to prevent Android `ActivityManager` from killing the Python process due to app idle.
+5. **Testing & Verification:** Fixed all 21 `ruff` lint errors (100% clean). Verified all 362 backend unit tests pass in Docker (359 passed, 3 skipped).
+
 ## 2026-08-13: Prepare Release v1.3.0
 
 **Task:** Synchronize and bump version strings across backend, frontend, and Android build configs to `v1.3.0` in preparation for tagging.
