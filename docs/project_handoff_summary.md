@@ -18,10 +18,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
-*   **Holding `Decimal('NaN')` ValidationError, Upstox SSL Fallback & Android Database Migration Fixes (Updated 2026-08-15):**
+*   **Holding `Decimal('NaN')` ValidationError, Upstox SSL Fallback, Android DB Migration & Foreground Service Fixes (Updated 2026-08-15):**
     - Added `_to_finite_decimal` and `_to_finite_float` helpers in `backend/app/crud/crud_holding.py` to sanitize all holding calculation fields before instantiating `schemas.Holding` and `schemas.PortfolioSummary`.
     - Added `_urlopen_safe` helper in `backend/app/services/upstox_metadata_service.py` and `backend/app/services/providers/upstox_provider.py` with automatic `ssl._create_unverified_context()` fallback to prevent `[SSL: CERTIFICATE_VERIFY_FAILED]` crashes on macOS / standalone PyInstaller builds.
     - Added `run_db_migrations()` and `_ensure_sqlite_columns_exist()` in `backend/app/db/init_db.py` and hooked them into FastAPI `startup_event` in `backend/app/main.py`. Automatically runs Alembic migrations and performs SQLite column auto-sync (`ALTER TABLE ADD COLUMN`) on app startup to upgrade local databases on Android and Desktop without missing column errors (e.g. `goals.expected_return`).
+    - Promoted `BackendService` in `frontend/android/app/src/main/java/com/arthsaarthi/app/BackendService.kt` to an Android Foreground Service (`startForeground(1001, notification)`) with `android:foregroundServiceType="specialUse"` in `AndroidManifest.xml` and auto-revival checks in `PythonBackendPlugin.kt` to eliminate Android `ActivityManager` app idle service terminations.
 
 *   **Release v1.3.0 Preparation (Updated 2026-08-13):**
     - Synchronized version numbers across `backend/app/main.py`, `backend/app/api/v1/endpoints/system.py`, `frontend/package.json`, `frontend/src/pages/MorePage.tsx`, and `frontend/android/app/build.gradle.kts`.

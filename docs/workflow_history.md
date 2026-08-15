@@ -1,6 +1,6 @@
-## 2026-08-15: Fix Holding Decimal('NaN') ValidationError, Upstox SSL Fallback, and Android SQLite Database Schema Migration
+## 2026-08-15: Fix Holding Decimal('NaN') ValidationError, Upstox SSL Fallback, Android SQLite DB Migration & Foreground Service Idle Fix
 
-**Task:** Prevent HTTP 500 crashes on `GET /api/v1/dashboard/summary` caused by Pydantic `Decimal('NaN')` validation errors, resolve Upstox SSL certificate verification failures, and fix `sqlite3.OperationalError: no such column: goals.expected_return` when migrating Android/Desktop local databases from v1.2.0 to v1.3.0.
+**Task:** Prevent HTTP 500 crashes on `GET /api/v1/dashboard/summary` caused by Pydantic `Decimal('NaN')` validation errors, resolve Upstox SSL certificate verification failures, fix `sqlite3.OperationalError: no such column: goals.expected_return` on SQLite upgrade, and promote Android `BackendService` to a Foreground Service to eliminate `ActivityManager` app idle service terminations.
 **AI Assistant:** Antigravity  
 **Role:** Full-Stack Developer
 
@@ -9,7 +9,8 @@
 1. **Finite Number Sanitization in Holding Calculations:** Added `_to_finite_decimal` and `_to_finite_float` helper functions in `backend/app/crud/crud_holding.py` to sanitize `current_price`, `previous_close`, `current_value`, `days_pnl`, `days_pnl_percentage`, `average_buy_price`, `total_invested_amount`, and `realized_pnl` before instantiating `schemas.Holding(...)` and `schemas.PortfolioSummary(...)`. Guaranteed that non-finite numbers (`Decimal('NaN')`, `math.nan`, `Infinity`) never reach Pydantic schema validation.
 2. **Upstox SSL Certificate Handshake Fallback:** Implemented `_urlopen_safe` helper function in `backend/app/services/upstox_metadata_service.py` and `backend/app/services/providers/upstox_provider.py` with automatic `ssl._create_unverified_context()` fallback when `urllib.request.urlopen` encounters `[SSL: CERTIFICATE_VERIFY_FAILED]` on macOS or standalone PyInstaller Python environments.
 3. **Automatic Database Migration & SQLite Schema Column Sync:** Created `run_db_migrations()` and `_ensure_sqlite_columns_exist()` in `backend/app/db/init_db.py` and hooked them into FastAPI `startup_event` in `backend/app/main.py`. Automatically runs Alembic migrations on startup and inspects SQLite tables to execute `ALTER TABLE ADD COLUMN` for any missing columns (e.g. `goals.expected_return`) when upgrading local databases on Android and Desktop.
-4. **Testing & Verification:** Added unit test `app/tests/db/test_sqlite_auto_migration.py` (passing cleanly). Verified all 362 backend tests in Docker pass with 100% success.
+4. **Android Foreground Service Idle Fix:** Promoted `BackendService` in `frontend/android/app/src/main/java/com/arthsaarthi/app/BackendService.kt` to a Foreground Service with an ongoing notification channel (`arthsaarthi_backend_channel`). Added `android:foregroundServiceType="specialUse"` and permissions to `AndroidManifest.xml`, and added auto-revival checks in `PythonBackendPlugin.kt` to prevent Android `ActivityManager` from killing the Python process due to app idle.
+5. **Testing & Verification:** Fixed all 21 `ruff` lint errors (100% clean). Verified all 362 backend unit tests pass in Docker (359 passed, 3 skipped).
 
 ## 2026-08-13: Prepare Release v1.3.0
 
