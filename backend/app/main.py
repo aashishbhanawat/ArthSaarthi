@@ -11,7 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.middleware import SecurityHeadersMiddleware
+from app.db.init_db import run_db_migrations
 from app.db.session import SessionLocal
+from app.services.initialization_service import check_and_seed_on_startup
 from app.services.snapshot_service import take_daily_snapshots_for_all
 
 # --- Background Task for Desktop App ---
@@ -86,8 +88,6 @@ app = FastAPI(
     openapi_url="/api/v1/openapi.json",
 )
 
-from app.db.init_db import run_db_migrations
-from app.services.initialization_service import check_and_seed_on_startup
 
 @app.on_event("startup")
 async def startup_event() -> None:

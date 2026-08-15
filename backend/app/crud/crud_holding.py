@@ -801,7 +801,9 @@ def _process_market_traded_assets(
         else:
             current_price = raw_price
 
-        previous_close = raw_prev if raw_prev > 0 and not raw_prev.is_nan() else current_price
+        previous_close = (
+            raw_prev if raw_prev > 0 and not raw_prev.is_nan() else current_price
+        )
         average_buy_price = _to_finite_decimal(
             total_invested / quantity if quantity > 0 else Decimal(0)
         )

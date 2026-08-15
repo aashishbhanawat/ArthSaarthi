@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Numeric, String, create_engine, inspect, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import declarative_base
 
 from app.db.init_db import _ensure_sqlite_columns_exist
@@ -56,7 +56,8 @@ def test_sqlite_auto_column_addition(monkeypatch):
     assert "expected_return" in cols_after
 
     with test_engine.begin() as conn:
-        result = conn.execute(text("SELECT id, name, expected_return FROM goals WHERE id = 'g1'")).fetchone()
+        query = text("SELECT id, name, expected_return FROM goals WHERE id = 'g1'")
+        result = conn.execute(query).fetchone()
         assert result[0] == "g1"
         assert result[1] == "Retirement"
         assert result[2] is None

@@ -1,12 +1,12 @@
 import logging
-
 import os
+
+from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy_utils import create_database, database_exists
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from alembic import command
-from alembic.config import Config
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine as db_engine
@@ -40,14 +40,17 @@ def _ensure_sqlite_columns_exist() -> None:
                         col_type = col.type.compile(db_engine.dialect)
                         nullable_str = " NULL" if col.nullable else ""
                         default_str = ""
-                        if col.default is not None and getattr(col.default, "is_scalar", False):
+                        if col.default is not None and getattr(
+                            col.default, "is_scalar", False
+                        ):
                             default_str = f" DEFAULT {col.default.arg!r}"
                         stmt = (
                             f'ALTER TABLE "{table_name}" ADD COLUMN "{col.name}" '
-                            f'{col_type}{nullable_str}{default_str}'
+                            f"{col_type}{nullable_str}{default_str}"
                         )
                         logger.info(
-                            f"SQLite auto-migration: Adding missing column '{table_name}.{col.name}' ({col_type})"
+                            f"SQLite auto-migration: Adding missing column "
+                            f"'{table_name}.{col.name}' ({col_type})"
                         )
                         conn.execute(text(stmt))
     except Exception as e:
@@ -69,18 +72,22 @@ def run_db_migrations() -> None:
         alembic_ini_path = os.path.join(backend_dir, "alembic.ini")
 
         if os.path.exists(alembic_ini_path):
-            logger.info(f"Running Alembic database migrations from {alembic_ini_path}...")
+            logger.info(
+                f"Running Alembic database migrations from {alembic_ini_path}..."
+            )
             alembic_cfg = Config(alembic_ini_path)
             alembic_cfg.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
             command.upgrade(alembic_cfg, "head")
             logger.info("Alembic database migrations completed successfully.")
         else:
             logger.warning(
-                f"alembic.ini not found at {alembic_ini_path}. Skipping Alembic CLI runner."
+                f"alembic.ini not found at {alembic_ini_path}. "
+                "Skipping Alembic CLI runner."
             )
     except Exception as e:
         logger.warning(
-            f"Programmatic Alembic migration warning (running fallback column check): {e}"
+            "Programmatic Alembic migration warning "
+            f"(running fallback column check): {e}"
         )
 
     if settings.DATABASE_TYPE == "sqlite":

@@ -1,10 +1,12 @@
 import logging
 import shutil
+import sys
 import tempfile
 import threading
 
 import urllib3
 
+from app.core.config import settings
 from app.db.initial_data import seed_interest_rates
 from app.db.session import SessionLocal
 from app.models import Asset
@@ -58,6 +60,10 @@ def _run_initial_seeding():
 
 def check_and_seed_on_startup():
     """Checks if database is empty and triggers background seeding if so."""
+    if settings.ENVIRONMENT in ("test", "testing") or "pytest" in sys.modules:
+        logger.info("Test environment detected. Skipping startup background seeding.")
+        return
+
     from app.api.v1.endpoints.system import SeedingStatus, _seeding_state
     db = SessionLocal()
     try:

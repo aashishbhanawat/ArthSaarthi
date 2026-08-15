@@ -5,6 +5,7 @@ Handles downloading & caching of instrument master files (NSE.json.gz).
 import gzip
 import json
 import logging
+import ssl
 import urllib.request
 from datetime import date
 from typing import Dict, Optional, Set
@@ -22,14 +23,16 @@ CACHE_TTL_HOLIDAYS = 86400  # 24 hours
 CACHE_TTL_INSTRUMENTS = 86400  # 24 hours
 
 
-import ssl
-
 def _urlopen_safe(req: urllib.request.Request, timeout: float = 10):
     try:
         ctx = ssl.create_default_context()
         return urllib.request.urlopen(req, timeout=timeout, context=ctx)
     except Exception as e:
-        if "CERTIFICATE_VERIFY_FAILED" in str(e) or "certificate verify failed" in str(e):
+        err_msg = str(e)
+        if (
+            "CERTIFICATE_VERIFY_FAILED" in err_msg
+            or "certificate verify failed" in err_msg
+        ):
             unverified_ctx = ssl._create_unverified_context()
             return urllib.request.urlopen(req, timeout=timeout, context=unverified_ctx)
         raise
