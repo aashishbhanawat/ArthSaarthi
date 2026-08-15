@@ -3,13 +3,18 @@ import os
 
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
-from sqlalchemy_utils import create_database, database_exists
-from tenacity import retry, stop_after_attempt, wait_fixed
 
 from alembic import command
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine as db_engine
+
+try:
+    from tenacity import retry, stop_after_attempt, wait_fixed
+except ImportError:
+    # Tenacity retry decorator fallback if absent in minimal embedded environments
+    def retry(*args, **kwargs):
+        return lambda func: func
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -101,11 +106,22 @@ def run_db_migrations() -> None:
 def init() -> None:
     try:
         db_url = str(settings.DATABASE_URL)
-        engine = create_engine(db_url, isolation_level="AUTOCOMMIT")
-        if not database_exists(engine.url):
-            logger.info(f"Database {engine.url.database} does not exist. Creating...")
-            create_database(engine.url)
-            logger.info("Database created.")
+        if settings.DATABASE_TYPE != "sqlite":
+            try:
+                from sqlalchemy_utils import create_database, database_exists
+
+                engine = create_engine(db_url, isolation_level="AUTOCOMMIT")
+                if not database_exists(engine.url):
+                    logger.info(
+                        f"Database {engine.url.database} does not exist. Creating..."
+                    )
+                    create_database(engine.url)
+                    logger.info("Database created.")
+            except ImportError:
+                logger.warning(
+                    "sqlalchemy_utils not available. "
+                    "Skipping automatic database creation."
+                )
         run_db_migrations()
     except Exception as e:
         logger.error(e)
