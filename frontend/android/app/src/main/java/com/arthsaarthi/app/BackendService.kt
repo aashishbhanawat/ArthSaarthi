@@ -1,30 +1,33 @@
 package com.arthsaarthi.app
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Android Service that hosts the FastAPI/Uvicorn backend via Chaquopy.
+ * Android Foreground Service that hosts the FastAPI/Uvicorn backend via Chaquopy.
  *
- * This service:
- * 1. Finds a free port
- * 2. Starts the Python FastAPI server on that port
- * 3. Exposes the port to the Capacitor plugin
- *
- * The architecture mirrors the Electron desktop app where a child process
- * runs the backend and the frontend connects via HTTP to localhost.
+ * Runs as a Foreground Service to prevent Android ActivityManager from killing
+ * the local Python HTTP server due to app idle or background state.
  */
 class BackendService : Service() {
 
     companion object {
         private const val TAG = "BackendService"
+        private const val CHANNEL_ID = "arthsaarthi_backend_channel"
+        private const val NOTIFICATION_ID = 1001
+
         var backendPort: Int = 0
             private set
         val isRunning = AtomicBoolean(false)
@@ -48,13 +51,42 @@ class BackendService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.i(TAG, "BackendService onCreate")
+        createNotificationChannel()
+        startForegroundNotification()
         startBackendServer()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "BackendService onStartCommand")
+        startForegroundNotification()
         startBackendServer()
         return START_STICKY
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "ArthSaarthi Engine"
+            val descriptionText = "Hosts the local Python backend server"
+            val importance = NotificationManager.IMPORTANCE_LOW
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun startForegroundNotification() {
+        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("ArthSaarthi Local Server")
+            .setContentText("Local financial engine active")
+            .setSmallIcon(android.R.drawable.stat_notify_sync)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .build()
+
+        startForeground(NOTIFICATION_ID, notification)
     }
 
     private fun startBackendServer() {

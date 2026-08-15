@@ -14,6 +14,8 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import java.net.HttpURLConnection
 import java.net.URL
 
+import androidx.core.content.ContextCompat
+
 /**
  * Capacitor plugin that bridges the React frontend to the Python backend.
  *
@@ -55,21 +57,28 @@ class PythonBackendPlugin : Plugin() {
 
     override fun load() {
         super.load()
-        // Start and bind to the BackendService when the plugin loads
+        // Start as foreground service and bind to BackendService when plugin loads
         val intent = Intent(context, BackendService::class.java)
-        context.startService(intent)
+        ContextCompat.startForegroundService(context, intent)
         context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-        Log.i(TAG, "PythonBackendPlugin loaded — starting BackendService")
+        Log.i(TAG, "PythonBackendPlugin loaded — starting BackendService as Foreground Service")
     }
 
     /**
      * Returns the API configuration (host and port) for the frontend.
-     * Waits until the backend is fully ready (health check passes).
+     * Ensures BackendService is started, then waits until backend is ready.
      */
     @PluginMethod
     fun getApiConfig(call: PluginCall) {
         Thread {
             try {
+                // Ensure service is running
+                if (!BackendService.isRunning.get()) {
+                    Log.i(TAG, "BackendService is not running; starting foreground service...")
+                    val intent = Intent(context, BackendService::class.java)
+                    ContextCompat.startForegroundService(context, intent)
+                }
+
                 // Wait for the backend to start
                 val port = waitForBackendReady()
                 if (port > 0) {
