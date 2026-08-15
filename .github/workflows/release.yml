@@ -318,12 +318,16 @@ jobs:
             ./gradlew assembleRelease -PbuildPython="$PYTHON_PATH" --no-parallel
           fi
 
+      - name: Find Android Release APK
+        id: find_apk
+        run: echo "path=$(find frontend/android/app/build/outputs/apk/release -name '*.apk' -type f | head -n 1)" >> $GITHUB_OUTPUT
+
       - name: Upload Android Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: frontend/android/app/build/outputs/apk/release/ArthSaarthi-v1.2.0-android.apk
+          asset_path: ${{ steps.find_apk.outputs.path }}
           asset_name: ArthSaarthi-Android-${{ github.ref_name }}.apk
           asset_content_type: application/vnd.android.package-archive
