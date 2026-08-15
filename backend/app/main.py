@@ -86,9 +86,23 @@ app = FastAPI(
     openapi_url="/api/v1/openapi.json",
 )
 
+from app.db.init_db import run_db_migrations
+from app.services.initialization_service import check_and_seed_on_startup
+
 @app.on_event("startup")
 async def startup_event() -> None:
     global _snapshot_task
+    # Run DB schema migrations and column auto-sync for upgraded databases
+    try:
+        run_db_migrations()
+    except Exception as e:
+        logging.error(f"Error during startup DB migrations: {e}", exc_info=True)
+
+    try:
+        check_and_seed_on_startup()
+    except Exception as e:
+        logging.error(f"Error during startup seeding check: {e}", exc_info=True)
+
     if settings.DEPLOYMENT_MODE in ("desktop", "android"):
         logging.info(f"DEBUG: DEPLOYMENT_MODE is '{settings.DEPLOYMENT_MODE}'")
         logging.info(
