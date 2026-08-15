@@ -82,3 +82,8 @@ docker compose -f docker-compose.yml -f docker-compose.e2e.yml run --build --rm 
 * [ ] **`docs/bug_reports.md`**: Consolidate any temporary bugs.
 * [ ] **`docs/project_handoff_summary.md`**: **CRITICAL.** Update this with the completed feature so future AI chat sessions retain the project's current state.
 
+## 5. Security & Sensitive Data Protection Policy
+* **CRITICAL:** NEVER commit `.env`, `.env.local`, passwords, private keys, API secrets, database dumps (`.db`, `.sqlite`), real financial statements (`.pdf`, `.xls`, `.xlsx`), or personal user data (PII) to the repository.
+* Always check `git status` and verify `.gitignore` before running `git add` / `git commit`.
+
+

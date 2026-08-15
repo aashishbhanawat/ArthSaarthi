@@ -307,7 +307,7 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'Profile' }).click();
+        await page.getByRole('link', { name: 'Profile', exact: true }).click();
         await page.waitForTimeout(500);
         await screenshot(page, '16_profile_page');
     });
@@ -455,5 +455,69 @@ test.describe.serial('User Guide Screenshots', () => {
 
         // Take screenshot of the analytics section
         await screenshot(page, '26_investment_style');
+    });
+
+    // ========== v1.3.0 Features ==========
+
+    test('30 - Goal Projections & Required Monthly SIP', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Goals' }).click();
+        await expect(page.getByRole('heading', { name: 'Goals', exact: true })).toBeVisible();
+
+        // Create a new goal with target amount and date
+        const goalName = 'Retirement Fund Goal';
+        await page.getByRole('button', { name: 'Create Goal' }).click();
+        const createModal = page.locator('.modal-content');
+        await expect(createModal.getByRole('heading', { name: 'Create New Goal' })).toBeVisible();
+        await createModal.getByLabel('Goal Name').fill(goalName);
+        await createModal.getByLabel('Target Amount').fill('10000000');
+        await createModal.getByLabel('Target Date').fill('2035-12-31');
+        await createModal.getByRole('button', { name: 'Create Goal' }).click();
+
+        // Open goal detail view
+        const goalInList = page.locator(`li:has-text("${goalName}")`);
+        await expect(goalInList).toBeVisible();
+        await goalInList.getByRole('link').click();
+        await expect(page).toHaveURL(/.*\/goals\/.*/);
+
+        // Link asset if button available
+        const linkBtn = page.getByRole('button', { name: 'Link Item' });
+        if (await linkBtn.isVisible()) {
+            await linkBtn.click();
+            const linkModal = page.locator('.modal-content');
+            if (await linkModal.isVisible()) {
+                const searchInput = linkModal.getByLabel('Search Assets');
+                if (await searchInput.isVisible()) {
+                    await searchInput.fill('RELIANCE');
+                    await page.waitForTimeout(1000);
+                    const searchResult = linkModal.locator('li', { hasText: 'RELIANCE' });
+                    if (await searchResult.isVisible()) {
+                        await searchResult.getByRole('button', { name: 'Link' }).click();
+                    } else {
+                        await page.keyboard.press('Escape');
+                    }
+                } else {
+                    await page.keyboard.press('Escape');
+                }
+            }
+        }
+
+        await page.waitForTimeout(1500);
+        await screenshot(page, '30_goal_projections_and_sip');
+    });
+
+    test('31 - Risk Profile Questionnaire & Assessment', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: 'Risk Profile' }).click();
+        await page.waitForTimeout(1000);
+        await screenshot(page, '31_risk_profile_questionnaire');
     });
 });

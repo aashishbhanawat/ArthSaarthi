@@ -2,17 +2,18 @@
 
 Download ArthSaarthi for your platform.
 
-## Desktop Application (v1.1.0)
+## Desktop & Mobile Application (v1.3.0)
 
-Self-contained desktop app with embedded database - no server setup required.
+Self-contained desktop and mobile apps - no server setup required.
 
 | Platform | Architecture | Download |
 |----------|--------------|----------|
-| **Windows** | x64 (Intel/AMD) | [ArthSaarthi-Windows-x64-Setup-v1.1.0.exe](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.1.0/ArthSaarthi-Windows-x64-Setup-v1.1.0.exe) |
-| **macOS** | Apple Silicon (M1/M2/M3) | [ArthSaarthi-macOS-arm64-v1.1.0.dmg](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.1.0/ArthSaarthi-macOS-arm64-v1.1.0.dmg) |
-| **macOS** | Intel | [ArthSaarthi-macOS-x64-v1.1.0.dmg](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.1.0/ArthSaarthi-macOS-x64-v1.1.0.dmg) |
-| **Linux** | x64 | [ArthSaarthi-Linux-x64-v1.1.0.AppImage](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.1.0/ArthSaarthi-Linux-x64-v1.1.0.AppImage) |
-| **Linux** | ARM64 | [ArthSaarthi-Linux-arm64-v1.1.0.AppImage](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.1.0/ArthSaarthi-Linux-arm64-v1.1.0.AppImage) |
+| **Android** | ARM64 / x86_64 | [ArthSaarthi-Android-v1.3.0.apk](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.3.0/ArthSaarthi-Android-v1.3.0.apk) |
+| **Windows** | x64 (Intel/AMD) | [ArthSaarthi-Windows-x64-Setup-v1.3.0.exe](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.3.0/ArthSaarthi-Windows-x64-Setup-v1.3.0.exe) |
+| **macOS** | Apple Silicon (M1/M2/M3) | [ArthSaarthi-macOS-arm64-v1.3.0.dmg](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.3.0/ArthSaarthi-macOS-arm64-v1.3.0.dmg) |
+| **macOS** | Intel | [ArthSaarthi-macOS-x64-v1.3.0.dmg](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.3.0/ArthSaarthi-macOS-x64-v1.3.0.dmg) |
+| **Linux** | x64 | [ArthSaarthi-Linux-x64-v1.3.0.AppImage](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.3.0/ArthSaarthi-Linux-x64-v1.3.0.AppImage) |
+| **Linux** | ARM64 | [ArthSaarthi-Linux-arm64-v1.3.0.AppImage](https://github.com/aashishbhanawat/ArthSaarthi/releases/download/v1.3.0/ArthSaarthi-Linux-arm64-v1.3.0.AppImage) |
 
 [View all releases on GitHub →](https://github.com/aashishbhanawat/ArthSaarthi/releases)
 
@@ -26,8 +27,8 @@ For self-hosted server deployment with multi-user support.
 
 ```bash
 # Pull images
-docker pull aashishbhanawat/arthsaarthi-backend:v1.1.0
-docker pull aashishbhanawat/arthsaarthi-frontend:v1.1.0
+docker pull aashishbhanawat/arthsaarthi-backend:v1.3.0
+docker pull aashishbhanawat/arthsaarthi-frontend:v1.3.0
 
 # Or use Docker Compose
 curl -O https://raw.githubusercontent.com/aashishbhanawat/ArthSaarthi/main/docker-compose.prod.yml
@@ -38,8 +39,8 @@ docker compose -f docker-compose.prod.yml up -d
 
 | Image | Architectures | Tags |
 |-------|---------------|------|
-| [arthsaarthi-backend](https://hub.docker.com/r/aashishbhanawat/arthsaarthi-backend) | amd64, arm64 | `latest`, `v1.1.0`, `v1.0.0` |
-| [arthsaarthi-frontend](https://hub.docker.com/r/aashishbhanawat/arthsaarthi-frontend) | amd64, arm64 | `latest`, `v1.1.0`, `v1.0.0` |
+| [arthsaarthi-backend](https://hub.docker.com/r/aashishbhanawat/arthsaarthi-backend) | amd64, arm64 | `latest`, `v1.3.0`, `v1.2.0`, `v1.1.0` |
+| [arthsaarthi-frontend](https://hub.docker.com/r/aashishbhanawat/arthsaarthi-frontend) | amd64, arm64 | `latest`, `v1.3.0`, `v1.2.0`, `v1.1.0` |
 
 ### Requirements
 

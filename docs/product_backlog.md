@@ -188,14 +188,17 @@ The goal of this release was to build a robust and user-friendly system for impo
 ## Detailed Future Release Plan
 
 ### Release v1.3.0: Context & Risk Foundations
-**Focus: Establishing user intent and risk boundaries before AI integration.**
--   **Risk Profile Management (FR12):**
-    -   Risk Profile Questionnaire to determine risk tolerance (Conservative, Moderate, Aggressive).
-    -   Portfolio Risk Assessment (calculating current allocation risk).
-    -   Risk Alignment Dashboard to flag mismatches.
--   **Goal Projections & Analytics (FR13 Phase 2):**
-    -   Calculate required contribution rates (SIPs) to hit goal targets.
-    -   Project future value of linked assets using current XIRR to determine "On-Track" status.
+**Status: ✅ COMPLETE (as of 2026-08-15)**
+- **Risk Profile Management (FR12 / FR12.1):**
+    - Grable & Lytton 13-question risk questionnaire to determine risk tolerance (Conservative, Moderate, Growth, Aggressive). **✅ Complete**
+    - Risk Score calculation (/47 points) and target asset allocation breakdown. **✅ Complete**
+- **Goal Projections & Analytics (FR13.3 & FR13.4):**
+    - Required monthly contribution rate calculation (ordinary annuity SIP). **✅ Complete**
+    - Projected future value of linked assets using current dynamic XIRR and target path chart visualization to determine "On Track" or "Off Track" status. **✅ Complete**
+- **Market Data Provider Integration (#498):**
+    - Upstox V3 historical candles & trading holidays API integration with zero cost and public CDN asset seeding. **✅ Complete**
+- **Android Background Enablement (#492, #493, #494):**
+    - Native WorkManager background snapshot task (`SnapshotWorker.kt`) & Profile settings toggle. **✅ Complete**
 
 ### Release v1.4.0: Tax Readiness & Full Financial Picture
 **Focus: Providing the system with all tax-related context necessary for future AI tax-saving recommendations.**

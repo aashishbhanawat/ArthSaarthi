@@ -5,6 +5,36 @@ All notable changes to ArthSaarthi will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-15
+
+### Added
+
+#### Goals & Analytics
+- **Required Monthly Contribution (SIP Calculator):** Ordinary annuity monthly SIP calculation accounting for target date duration, PV compounding, zero-rate fallbacks, and past target dates (FR13.3).
+- **Goal Projections & Track Status:** Future value compounding using linked asset dynamic XIRR, target path chart plotting, and dynamic status badges (`On Track` / `Off Track`) (FR13.4).
+
+#### Market Data & Asset Master
+- **Upstox V3 Provider Integration:** Free zero-cost unauthenticated historical candles (`GET /v3/historical-candle/...`) and trading holidays API (`GET /v2/market/holidays`) with rate limiting (#498).
+- **CDN Asset Master Seeding:** Download and cache `NSE.json.gz` from Upstox CDN for 0-cost $O(1)$ ISIN $\leftrightarrow$ Symbol lookups.
+
+#### Risk Profiling
+- **Grable & Lytton 13-Question Risk Scale:** Upgraded risk questionnaire with score calculation (/47 points) classifying users into Conservative, Moderate, Growth, and Aggressive risk profiles with target asset allocation (FR12.1 / #76).
+
+#### Android & Mobile Enablement
+- **Background Portfolio Snapshot:** Native WorkManager `SnapshotWorker.kt` for daily background portfolio valuations (#492).
+- **Native Settings Toggle:** Integrated `AndroidSettingsCard` in user profile page.
+- **Pydantic V1 & Chaquopy Compatibility:** Restored SQLite/DiskCache compatibility layer for embedded Android Python environment (#495).
+
+#### Security & Tenant Isolation
+- **Tax Report Endpoint Authorization:** Enforced user authentication and strict tenant filtering on Capital Gains and Dividend report endpoints (#423).
+- **Goal Asset IDOR Protection:** Secured goal asset linking endpoints against IDOR vulnerability (#434, #467).
+- **PPF Immutability & Scoping:** Restricted update/delete on system-generated PPF interest credits and introduced user-scoped PPF account tickers (`PPF-{user_id_short}-{account_number}`).
+
+### Fixed
+- **Transaction Enum Serialization:** Added `FD_DEPOSIT` and `FD_MATURITY` to `TransactionType` schema to fix FastAPI `ResponseValidationError` (#510).
+- **Sell Modal Tax Lot Scoping & Splits:** Filtered sell modal available tax lots to active portfolio and replayed corporate action splits chronologically (#442, #443).
+- **Asset Seeding Classification:** Fixed misclassifying equity stocks with month-like names as bonds (#438).
+
 ## [1.2.0] - 2026-02-27
 
 ### Added
