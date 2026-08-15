@@ -1,3 +1,15 @@
+## 2026-08-15: Fix Holding Decimal('NaN') ValidationError and Upstox SSL Certificate Handshake Failures
+
+**Task:** Prevent HTTP 500 crashes on `GET /api/v1/dashboard/summary` caused by Pydantic `Decimal('NaN')` validation errors and resolve Upstox SSL certificate verification failures in desktop/macOS environments.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Finite Number Sanitization in Holding Calculations:** Added `_to_finite_decimal` and `_to_finite_float` helper functions in `backend/app/crud/crud_holding.py` to sanitize `current_price`, `previous_close`, `current_value`, `days_pnl`, `days_pnl_percentage`, `average_buy_price`, `total_invested_amount`, and `realized_pnl` before instantiating `schemas.Holding(...)` and `schemas.PortfolioSummary(...)`. Guaranteed that non-finite numbers (`Decimal('NaN')`, `math.nan`, `Infinity`) never reach Pydantic schema validation.
+2. **Upstox SSL Certificate Handshake Fallback:** Implemented `_urlopen_safe` helper function in `backend/app/services/upstox_metadata_service.py` and `backend/app/services/providers/upstox_provider.py` with automatic `ssl._create_unverified_context()` fallback when `urllib.request.urlopen` encounters `[SSL: CERTIFICATE_VERIFY_FAILED]` on macOS or standalone PyInstaller Python environments.
+3. **Testing & Verification:** Verified all 361 backend tests run in Docker pass cleanly with 100% success (358 passed, 3 skipped).
+
 ## 2026-08-13: Prepare Release v1.3.0
 
 **Task:** Synchronize and bump version strings across backend, frontend, and Android build configs to `v1.3.0` in preparation for tagging.

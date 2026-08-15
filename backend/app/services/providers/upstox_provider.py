@@ -24,6 +24,19 @@ UPSTOX_V3_CANDLE_URL = "https://api.upstox.com/v3/historical-candle"
 logger = logging.getLogger(__name__)
 
 
+import ssl
+
+def _urlopen_safe(req: urllib.request.Request, timeout: float = 10):
+    try:
+        ctx = ssl.create_default_context()
+        return urllib.request.urlopen(req, timeout=timeout, context=ctx)
+    except Exception as e:
+        if "CERTIFICATE_VERIFY_FAILED" in str(e) or "certificate verify failed" in str(e):
+            unverified_ctx = ssl._create_unverified_context()
+            return urllib.request.urlopen(req, timeout=timeout, context=unverified_ctx)
+        raise
+
+
 class UpstoxProvider(FinancialDataProvider):
     def __init__(self, cache_client: Optional[CacheClient] = None):
         self.cache_client = cache_client
@@ -56,7 +69,7 @@ class UpstoxProvider(FinancialDataProvider):
                 },
                 method="GET",
             )
-            with urllib.request.urlopen(req, timeout=10) as response:
+            with _urlopen_safe(req, timeout=10) as response:
                 payload = json.loads(response.read().decode("utf-8"))
                 if payload.get("status") == "success":
                     return payload.get("data", {}).get("candles", [])

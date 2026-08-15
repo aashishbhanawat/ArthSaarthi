@@ -24,6 +24,31 @@ from app.utils.pydantic_compat import model_dump_json
 logger = logging.getLogger(__name__)
 
 
+def _to_finite_decimal(val: object, default: Decimal = Decimal("0.0")) -> Decimal:
+    if val is None:
+        return default
+    try:
+        d = Decimal(str(val))
+        if d.is_nan() or d.is_infinite():
+            return default
+        return d
+    except Exception:
+        return default
+
+
+def _to_finite_float(val: object, default: float = 0.0) -> float:
+    if val is None:
+        return default
+    try:
+        f = float(val)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f
+    except Exception:
+        return default
+
+
+
 def _calculate_fd_current_value(
     principal: Decimal,
     interest_rate: Decimal,
@@ -731,16 +756,19 @@ def _process_market_traded_assets(
         total_invested = data["total_invested"]
 
         days_pnl = Decimal("0.0")
+        raw_price = _to_finite_decimal(price_info.get("current_price"), Decimal(0))
+        raw_prev = _to_finite_decimal(price_info.get("previous_close"), Decimal(0))
+
         if asset.asset_type == "BOND" and asset.bond:
             bond_details = asset.bond
-            current_price = Decimal(str(price_info["current_price"]))
+            current_price = raw_price
 
             if current_price == 0 and asset.ticker_symbol:
                 yf_price = financial_data_service.get_price_from_yfinance(
                     asset.ticker_symbol
                 )
                 if yf_price:
-                    current_price = yf_price
+                    current_price = _to_finite_decimal(yf_price, Decimal(0))
 
             if current_price == 0 and bond_details.bond_type == BondType.TBILL:
                 first_buy = min(
@@ -761,42 +789,54 @@ def _process_market_traded_assets(
                             Decimal(str(bond_details.face_value))
                             - first_buy.price_per_unit
                         ) * (Decimal(days_elapsed) / Decimal(total_days))
-                        current_price = first_buy.price_per_unit + price_increase
+                        current_price = _to_finite_decimal(
+                            first_buy.price_per_unit + price_increase, Decimal(0)
+                        )
 
             if current_price == 0:
                 current_price = (
                     total_invested / quantity if quantity > 0 else Decimal(0)
                 )
-                price_info["previous_close"] = current_price.quantize(Decimal("0.01"))
+                raw_prev = current_price.quantize(Decimal("0.01"))
         else:
-            current_price = Decimal(str(price_info["current_price"]))
+            current_price = raw_price
 
-        previous_close = Decimal(str(price_info["previous_close"]))
-        average_buy_price = total_invested / quantity if quantity > 0 else Decimal(0)
-        days_pnl = (current_price - previous_close) * quantity
-        days_pnl_percentage = (
+        previous_close = raw_prev if raw_prev > 0 and not raw_prev.is_nan() else current_price
+        average_buy_price = _to_finite_decimal(
+            total_invested / quantity if quantity > 0 else Decimal(0)
+        )
+        days_pnl = _to_finite_decimal((current_price - previous_close) * quantity)
+        days_pnl_percentage = _to_finite_float(
             float((current_price - previous_close) / previous_close)
             if previous_close > 0
             else 0.0
         )
-        current_value = quantity * current_price
+        current_value = _to_finite_decimal(quantity * current_price)
 
         # --- FX Conversion for Current Value ---
         # If the asset is not in INR, its current value must be converted
         # using the REAL-TIME rate.
         if asset.currency != "INR":
             # 1. Convert current value using real-time FX rate
-            live_fx_rate = fx_rates.get(asset.currency, Decimal(1))
-            current_value_inr = current_value * live_fx_rate
+            live_fx_rate = _to_finite_decimal(fx_rates.get(asset.currency), Decimal(1))
+            if live_fx_rate <= 0:
+                live_fx_rate = Decimal(1)
+            current_value_inr = _to_finite_decimal(current_value * live_fx_rate)
 
             # 2. Convert days_pnl using real-time FX rate
             # days_pnl is (current_price - prev_close) * qty * fx_rate
             # Note: We approximate by applying today's FX rate to the
             # change in asset currency.
-            days_pnl_inr = days_pnl * live_fx_rate
+            days_pnl_inr = _to_finite_decimal(days_pnl * live_fx_rate)
 
             current_value = current_value_inr
             days_pnl = days_pnl_inr
+
+        current_price = _to_finite_decimal(current_price)
+        current_value = _to_finite_decimal(current_value)
+        days_pnl = _to_finite_decimal(days_pnl)
+        total_invested = _to_finite_decimal(total_invested)
+        realized_pnl_val = _to_finite_decimal(data.get("realized_pnl", Decimal("0.0")))
 
         holdings_list.append(
             schemas.Holding(
@@ -814,7 +854,7 @@ def _process_market_traded_assets(
                 days_pnl=days_pnl,
                 days_pnl_percentage=days_pnl_percentage,
                 unrealized_pnl=Decimal("0.0"),
-                realized_pnl=data.get("realized_pnl", Decimal("0.0")),
+                realized_pnl=realized_pnl_val,
                 unrealized_pnl_percentage=0.0,
                 investment_style=asset.investment_style,
                 bond=asset.bond,

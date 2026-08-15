@@ -22,6 +22,19 @@ CACHE_TTL_HOLIDAYS = 86400  # 24 hours
 CACHE_TTL_INSTRUMENTS = 86400  # 24 hours
 
 
+import ssl
+
+def _urlopen_safe(req: urllib.request.Request, timeout: float = 10):
+    try:
+        ctx = ssl.create_default_context()
+        return urllib.request.urlopen(req, timeout=timeout, context=ctx)
+    except Exception as e:
+        if "CERTIFICATE_VERIFY_FAILED" in str(e) or "certificate verify failed" in str(e):
+            unverified_ctx = ssl._create_unverified_context()
+            return urllib.request.urlopen(req, timeout=timeout, context=unverified_ctx)
+        raise
+
+
 class UpstoxMetadataService:
     def __init__(self, cache_client: Optional[CacheClient] = None):
         self.cache_client = cache_client
@@ -55,7 +68,7 @@ class UpstoxMetadataService:
                 MARKET_HOLIDAYS_URL,
                 headers={"User-Agent": "Mozilla/5.0"}
             )
-            with urllib.request.urlopen(req, timeout=10) as response:
+            with _urlopen_safe(req, timeout=10) as response:
                 data = json.loads(response.read().decode("utf-8"))
                 if data.get("status") == "success":
                     holiday_dates = set()
@@ -96,7 +109,7 @@ class UpstoxMetadataService:
                 NSE_INSTRUMENTS_URL,
                 headers={"User-Agent": "Mozilla/5.0"}
             )
-            with urllib.request.urlopen(req, timeout=15) as response:
+            with _urlopen_safe(req, timeout=15) as response:
                 compressed_data = response.read()
                 decompressed_data = gzip.decompress(compressed_data)
                 instruments = json.loads(decompressed_data.decode("utf-8"))

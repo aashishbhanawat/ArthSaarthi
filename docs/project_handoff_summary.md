@@ -1,22 +1,26 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-13
+**Last Updated:** 2026-08-15
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Release Candidate v1.3.0
 
-**Latest Achievement:** Prepared Release v1.3.0 by bumping version strings across backend, frontend, and Android build configs.
+**Latest Achievement:** Fixed Holding `Decimal('NaN')` schema validation crashes and Upstox SSL certificate verification failures on macOS/desktop environments.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **357/360 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **357/360 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **358/361 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **358/361 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **191/191 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Holding `Decimal('NaN')` ValidationError & Upstox SSL Fallback Fixes (Updated 2026-08-15):**
+    - Added `_to_finite_decimal` and `_to_finite_float` helpers in `backend/app/crud/crud_holding.py` to sanitize all holding calculation fields before instantiating `schemas.Holding` and `schemas.PortfolioSummary`.
+    - Added `_urlopen_safe` helper in `backend/app/services/upstox_metadata_service.py` and `backend/app/services/providers/upstox_provider.py` with automatic `ssl._create_unverified_context()` fallback to prevent `[SSL: CERTIFICATE_VERIFY_FAILED]` crashes on macOS / standalone PyInstaller builds.
 
 *   **Release v1.3.0 Preparation (Updated 2026-08-13):**
     - Synchronized version numbers across `backend/app/main.py`, `backend/app/api/v1/endpoints/system.py`, `frontend/package.json`, `frontend/src/pages/MorePage.tsx`, and `frontend/android/app/build.gradle.kts`.
