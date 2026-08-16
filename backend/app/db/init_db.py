@@ -82,6 +82,12 @@ def run_db_migrations() -> None:
             )
             alembic_cfg = Config(alembic_ini_path)
             alembic_cfg.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
+
+            # Set absolute script_location path for PyInstaller frozen app bundles
+            alembic_script_dir = os.path.join(backend_dir, "alembic")
+            if os.path.exists(alembic_script_dir):
+                alembic_cfg.set_main_option("script_location", alembic_script_dir)
+
             command.upgrade(alembic_cfg, "head")
             logger.info("Alembic database migrations completed successfully.")
         else:

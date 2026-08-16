@@ -44,7 +44,7 @@ def _get_app_dir() -> Path:
             if legacy_uploads.exists() and not new_uploads.exists():
                 shutil.copytree(legacy_uploads, new_uploads)
 
-            for key_file in ("master.key", "master.key.wrapped"):
+            for key_file in ("master.key", "master.key.wrapped", "secret.key"):
                 legacy_key = legacy_dir / key_file
                 new_key = new_dir / key_file
                 if legacy_key.exists() and not new_key.exists():
@@ -57,8 +57,28 @@ def _get_app_dir() -> Path:
     return new_dir
 
 
+def _get_or_create_secret_key() -> str:
+    """
+    Returns a persistent secret key for local/desktop/android deployments.
+    Prevents JWT token signature verification failures across application restarts.
+    """
+    try:
+        app_dir = _get_app_dir()
+        key_file = app_dir / "secret.key"
+        if key_file.exists():
+            stored_key = key_file.read_text().strip()
+            if stored_key:
+                return stored_key
+
+        new_key = secrets.token_urlsafe(32)
+        key_file.write_text(new_key)
+        return new_key
+    except Exception:
+        return secrets.token_urlsafe(32)
+
+
 class Settings(BaseSettings):
-    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    SECRET_KEY: str = Field(default_factory=_get_or_create_secret_key)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
