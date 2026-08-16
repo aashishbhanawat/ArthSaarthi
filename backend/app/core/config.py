@@ -29,7 +29,35 @@ def _get_app_dir() -> Path:
     legacy_db = legacy_dir / "arthsaarthi.db"
     new_db = new_dir / "arthsaarthi.db"
 
-    if legacy_db.exists() and not new_db.exists():
+    should_migrate = False
+    if legacy_db.exists():
+        if not new_db.exists():
+            should_migrate = True
+        else:
+            # Check if new_db was created as a blank 0-user DB
+            # while legacy_db has users
+            import sqlite3
+
+            try:
+                conn_new = sqlite3.connect(str(new_db))
+                cur_new = conn_new.cursor()
+                cur_new.execute("SELECT count(*) FROM users")
+                new_users = cur_new.fetchone()[0]
+                conn_new.close()
+
+                if new_users == 0:
+                    conn_leg = sqlite3.connect(str(legacy_db))
+                    cur_leg = conn_leg.cursor()
+                    cur_leg.execute("SELECT count(*) FROM users")
+                    leg_users = cur_leg.fetchone()[0]
+                    conn_leg.close()
+
+                    if leg_users > 0:
+                        should_migrate = True
+            except Exception:
+                pass
+
+    if should_migrate:
         import logging
         import shutil
 
@@ -38,7 +66,10 @@ def _get_app_dir() -> Path:
             f"Migrating legacy v1.2.0 database from {legacy_db} to {new_dir}..."
         )
         try:
+            if new_db.exists():
+                shutil.copy2(new_db, new_dir / "arthsaarthi.db.bak")
             shutil.copy2(legacy_db, new_db)
+
             legacy_uploads = legacy_dir / "uploads"
             new_uploads = new_dir / "uploads"
             if legacy_uploads.exists() and not new_uploads.exists():
