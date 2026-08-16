@@ -18,6 +18,10 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **SECRET_KEY Persistence & PyInstaller Alembic Path Fix (Updated 2026-08-16):**
+    - Implemented `_get_or_create_secret_key()` in `backend/app/core/config.py` to persist `SECRET_KEY` to `secret.key` in the app data directory (`_get_app_dir()`). Eliminates `jose.exceptions.JWTError: Signature verification failed` and HTTP 401 unauthenticated redirects across application restarts on desktop/mobile environments.
+    - Updated `run_db_migrations()` in `backend/app/db/init_db.py` to set absolute `script_location` on `Alembic Config` object, preventing `Path doesn't exist: alembic` warning in PyInstaller standalone app bundles on macOS.
+
 *   **YFinance Batch Enrichment Rate-Limiting & Lag Fix (Updated 2026-08-15):**
     - Added negative caching (`enrichment_failed:{ticker}`) in `YFinanceProvider.get_enrichment_data` (cached for 15 minutes) and early loop termination on HTTP 429 / `Too Many Requests` in `get_enrichment_data_batch`.
     - Added default fallback assignment (`asset.sector = "Other"`, `asset.investment_style = "Blend"`) in `backend/app/crud/crud_holding.py` when stock enrichment is unavailable or rate-limited. Prevents holdings calculation from hanging for 200+ seconds and triggering HTTP client / ASGI socket disconnects.

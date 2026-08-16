@@ -1,3 +1,16 @@
+## 2026-08-16: Fix Desktop SECRET_KEY Persistence & Alembic Frozen Bundle Migration Path
+
+**Task:** Fix `jose.exceptions.JWTError: Signature verification failed` and unauthenticated redirects on desktop/mobile restarts caused by ephemeral `SECRET_KEY` generation, and eliminate `Path doesn't exist: alembic` warning in macOS PyInstaller app bundles.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Persistent Secret Key (`secret.key`):** Added `_get_or_create_secret_key()` in `backend/app/core/config.py` to persist `SECRET_KEY` to `secret.key` in `_get_app_dir()`. Prevents `jose.exceptions.JWTError: Signature verification failed` and 401 unauthenticated redirects across app restarts.
+2. **PyInstaller Alembic Path Fix:** Updated `run_db_migrations()` in `backend/app/db/init_db.py` to set absolute `script_location` on `alembic_cfg` when running inside PyInstaller app bundles (`_internal/alembic`).
+3. **Legacy Migration Support:** Included `secret.key` in legacy `~/.arthsaarthi` auto-migration routine.
+4. **Testing:** Added `test_config_secret_key.py` (passing cleanly).
+
 ## 2026-08-15: Fix YFinance Batch Enrichment Rate-Limiting Lag (200s Timeout) & Chaquopy Android Startup Crash
 
 **Task:** Resolve 200-second holdings calculation lag and Uvicorn/ASGI socket disconnect exceptions (`LocalProtocolError: Can't send data when our state is ERROR`) caused by Yahoo Finance API rate-limiting loops, and fix Android Chaquopy `ModuleNotFoundError: No module named 'sqlalchemy_utils'` on app boot.

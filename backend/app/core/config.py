@@ -1,4 +1,5 @@
 import secrets
+from pathlib import Path
 from typing import Literal, Optional
 
 from pydantic import Field, validator
@@ -17,8 +18,98 @@ def _is_local_mode(values: dict) -> bool:
            values.get("DATABASE_TYPE") == "sqlite"
 
 
+def _get_app_dir() -> Path:
+    from platformdirs import user_data_dir
+
+    new_dir = Path(user_data_dir("arthsaarthi", "arthsaarthi-app"))
+    new_dir.mkdir(parents=True, exist_ok=True)
+
+    # Legacy migration check: v1.2.0 stored database in ~/.arthsaarthi/arthsaarthi.db
+    legacy_dir = Path.home() / ".arthsaarthi"
+    legacy_db = legacy_dir / "arthsaarthi.db"
+    new_db = new_dir / "arthsaarthi.db"
+
+    should_migrate = False
+    if legacy_db.exists():
+        if not new_db.exists():
+            should_migrate = True
+        else:
+            # Check if new_db was created as a blank 0-user DB
+            # while legacy_db has users
+            import sqlite3
+
+            try:
+                conn_new = sqlite3.connect(str(new_db))
+                cur_new = conn_new.cursor()
+                cur_new.execute("SELECT count(*) FROM users")
+                new_users = cur_new.fetchone()[0]
+                conn_new.close()
+
+                if new_users == 0:
+                    conn_leg = sqlite3.connect(str(legacy_db))
+                    cur_leg = conn_leg.cursor()
+                    cur_leg.execute("SELECT count(*) FROM users")
+                    leg_users = cur_leg.fetchone()[0]
+                    conn_leg.close()
+
+                    if leg_users > 0:
+                        should_migrate = True
+            except Exception:
+                pass
+
+    if should_migrate:
+        import logging
+        import shutil
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"Migrating legacy v1.2.0 database from {legacy_db} to {new_dir}..."
+        )
+        try:
+            if new_db.exists():
+                shutil.copy2(new_db, new_dir / "arthsaarthi.db.bak")
+            shutil.copy2(legacy_db, new_db)
+
+            legacy_uploads = legacy_dir / "uploads"
+            new_uploads = new_dir / "uploads"
+            if legacy_uploads.exists() and not new_uploads.exists():
+                shutil.copytree(legacy_uploads, new_uploads)
+
+            for key_file in ("master.key", "master.key.wrapped", "secret.key"):
+                legacy_key = legacy_dir / key_file
+                new_key = new_dir / key_file
+                if legacy_key.exists() and not new_key.exists():
+                    shutil.copy2(legacy_key, new_key)
+
+            logger.info("Legacy v1.2.0 data migration completed successfully.")
+        except Exception as e:
+            logger.error(f"Failed to migrate legacy data from {legacy_dir}: {e}")
+
+    return new_dir
+
+
+def _get_or_create_secret_key() -> str:
+    """
+    Returns a persistent secret key for local/desktop/android deployments.
+    Prevents JWT token signature verification failures across application restarts.
+    """
+    try:
+        app_dir = _get_app_dir()
+        key_file = app_dir / "secret.key"
+        if key_file.exists():
+            stored_key = key_file.read_text().strip()
+            if stored_key:
+                return stored_key
+
+        new_key = secrets.token_urlsafe(32)
+        key_file.write_text(new_key)
+        return new_key
+    except Exception:
+        return secrets.token_urlsafe(32)
+
+
 class Settings(BaseSettings):
-    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    SECRET_KEY: str = Field(default_factory=_get_or_create_secret_key)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
@@ -66,12 +157,9 @@ class Settings(BaseSettings):
             # use it as-is
             if isinstance(v, str) and v.startswith("sqlite"):
                 return v
-            from pathlib import Path
 
-            from platformdirs import user_data_dir
             # Use a stable, platform-appropriate directory for the database
-            app_dir = Path(user_data_dir("arthsaarthi", "arthsaarthi-app"))
-            app_dir.mkdir(parents=True, exist_ok=True)
+            app_dir = _get_app_dir()
             db_path = app_dir / "arthsaarthi.db"
             return f"sqlite:///{db_path.resolve()}"
 
@@ -92,13 +180,8 @@ class Settings(BaseSettings):
     @validator("IMPORT_UPLOAD_DIR", pre=True, always=True)
     def set_upload_dir_for_desktop(cls, v, values):
         if values.get("DEPLOYMENT_MODE") in ("desktop", "android"):
-            from pathlib import Path
-
-            from platformdirs import user_data_dir
             # Use a stable directory for uploads
-            upload_dir = (
-                Path(user_data_dir("arthsaarthi", "arthsaarthi-app")) / "uploads"
-            )
+            upload_dir = _get_app_dir() / "uploads"
             upload_dir.mkdir(parents=True, exist_ok=True)
             return str(upload_dir)
         return v
