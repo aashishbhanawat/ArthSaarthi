@@ -67,10 +67,17 @@ def _ensure_sqlite_columns_exist() -> None:
 
 def run_db_migrations() -> None:
     """
-    Executes Alembic migrations programmatically on app startup.
-    For SQLite (desktop/android), also performs auto-column addition as a fallback
-    to guarantee existing databases on disk are upgraded without losing data.
+    Executes Alembic migrations programmatically on app startup for PostgreSQL.
+    For SQLite (desktop/android), runs _ensure_sqlite_columns_exist to upgrade
+    database tables instantaneously without Alembic CLI file locking deadlocks.
     """
+    if settings.DATABASE_TYPE == "sqlite":
+        logger.info(
+            "SQLite database detected: Running automatic column upgrade check..."
+        )
+        _ensure_sqlite_columns_exist()
+        return
+
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         backend_dir = os.path.dirname(os.path.dirname(current_dir))
@@ -96,13 +103,7 @@ def run_db_migrations() -> None:
                 "Skipping Alembic CLI runner."
             )
     except Exception as e:
-        logger.warning(
-            "Programmatic Alembic migration warning "
-            f"(running fallback column check): {e}"
-        )
-
-    if settings.DATABASE_TYPE == "sqlite":
-        _ensure_sqlite_columns_exist()
+        logger.warning(f"Programmatic Alembic migration warning: {e}")
 
 
 @retry(
