@@ -1,4 +1,5 @@
 import secrets
+from pathlib import Path
 from typing import Literal, Optional
 
 from pydantic import Field, validator
@@ -15,6 +16,45 @@ def _is_local_mode(values: dict) -> bool:
     """Check if running in a local/embedded mode (desktop or android)."""
     return values.get("DEPLOYMENT_MODE") in ("desktop", "android") or \
            values.get("DATABASE_TYPE") == "sqlite"
+
+
+def _get_app_dir() -> Path:
+    from platformdirs import user_data_dir
+
+    new_dir = Path(user_data_dir("arthsaarthi", "arthsaarthi-app"))
+    new_dir.mkdir(parents=True, exist_ok=True)
+
+    # Legacy migration check: v1.2.0 stored database in ~/.arthsaarthi/arthsaarthi.db
+    legacy_dir = Path.home() / ".arthsaarthi"
+    legacy_db = legacy_dir / "arthsaarthi.db"
+    new_db = new_dir / "arthsaarthi.db"
+
+    if legacy_db.exists() and not new_db.exists():
+        import logging
+        import shutil
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"Migrating legacy v1.2.0 database from {legacy_db} to {new_dir}..."
+        )
+        try:
+            shutil.copy2(legacy_db, new_db)
+            legacy_uploads = legacy_dir / "uploads"
+            new_uploads = new_dir / "uploads"
+            if legacy_uploads.exists() and not new_uploads.exists():
+                shutil.copytree(legacy_uploads, new_uploads)
+
+            for key_file in ("master.key", "master.key.wrapped"):
+                legacy_key = legacy_dir / key_file
+                new_key = new_dir / key_file
+                if legacy_key.exists() and not new_key.exists():
+                    shutil.copy2(legacy_key, new_key)
+
+            logger.info("Legacy v1.2.0 data migration completed successfully.")
+        except Exception as e:
+            logger.error(f"Failed to migrate legacy data from {legacy_dir}: {e}")
+
+    return new_dir
 
 
 class Settings(BaseSettings):
@@ -66,12 +106,9 @@ class Settings(BaseSettings):
             # use it as-is
             if isinstance(v, str) and v.startswith("sqlite"):
                 return v
-            from pathlib import Path
 
-            from platformdirs import user_data_dir
             # Use a stable, platform-appropriate directory for the database
-            app_dir = Path(user_data_dir("arthsaarthi", "arthsaarthi-app"))
-            app_dir.mkdir(parents=True, exist_ok=True)
+            app_dir = _get_app_dir()
             db_path = app_dir / "arthsaarthi.db"
             return f"sqlite:///{db_path.resolve()}"
 
@@ -92,13 +129,8 @@ class Settings(BaseSettings):
     @validator("IMPORT_UPLOAD_DIR", pre=True, always=True)
     def set_upload_dir_for_desktop(cls, v, values):
         if values.get("DEPLOYMENT_MODE") in ("desktop", "android"):
-            from pathlib import Path
-
-            from platformdirs import user_data_dir
             # Use a stable directory for uploads
-            upload_dir = (
-                Path(user_data_dir("arthsaarthi", "arthsaarthi-app")) / "uploads"
-            )
+            upload_dir = _get_app_dir() / "uploads"
             upload_dir.mkdir(parents=True, exist_ok=True)
             return str(upload_dir)
         return v
