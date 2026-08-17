@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-15
+**Last Updated:** 2026-08-17
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release Candidate v1.3.0
+*   **Overall Status:** Planning & Specification Phase — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Fixed YFinance batch enrichment rate-limiting loop (200s timeout lag) and Chaquopy `sqlalchemy_utils` Android startup crash.
+**Latest Achievement:** Created GitHub Issues (#516, #517, #518, #519), FR feature specifications, detailed 11-point architectural blueprint, database encryption model, and execution roadmap for Release v1.4.0.
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,11 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Release v1.4.0 Architecture & Issue Seeding (Updated 2026-08-17):**
+    - Published official GitHub issues [#516](https://github.com/aashishbhanawat/ArthSaarthi/issues/516) (Unrealized Capital Gains & Exemption Pooling), [#517](https://github.com/aashishbhanawat/ArthSaarthi/issues/517) (Income & TDS Management), [#518](https://github.com/aashishbhanawat/ArthSaarthi/issues/518) (Tax Deductions Chapter VI-A), and [#519](https://github.com/aashishbhanawat/ArthSaarthi/issues/519) (Structured Tax Summary Report & Old vs New Regime Comparison).
+    - Created detailed 11-point architectural specifications [`docs/v1.4.0_detailed_plan.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/v1.4.0_detailed_plan.md) and [`docs/v1.4.0.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/v1.4.0.md).
+    - Created updated FR feature specifications [`docs/features/FR6.5.7_unrealized_capital_gains.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR6.5.7_unrealized_capital_gains.md), [`docs/features/FR16.1_income_data_management.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR16.1_income_data_management.md), [`docs/features/FR16.3_tax_deductible_expenses.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR16.3_tax_deductible_expenses.md), and [`docs/features/FR16.4_structured_tax_summary.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR16.4_structured_tax_summary.md).
 
 *   **SECRET_KEY Persistence & PyInstaller Alembic Path Fix (Updated 2026-08-16):**
     - Implemented `_get_or_create_secret_key()` in `backend/app/core/config.py` to persist `SECRET_KEY` to `secret.key` in the app data directory (`_get_app_dir()`). Eliminates `jose.exceptions.JWTError: Signature verification failed` and HTTP 401 unauthenticated redirects across application restarts on desktop/mobile environments.
