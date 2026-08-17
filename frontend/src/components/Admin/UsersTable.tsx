@@ -62,4 +62,5 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete }) => {
   );
 };
 
-export default UsersTable;
+// Memoize to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+export default React.memo(UsersTable);

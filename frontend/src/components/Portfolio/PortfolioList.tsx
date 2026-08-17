@@ -67,4 +67,5 @@ const PortfolioList: React.FC<PortfolioListProps> = ({ portfolios }) => {
     );
 };
 
-export default PortfolioList;
+// Memoize to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+export default React.memo(PortfolioList);
