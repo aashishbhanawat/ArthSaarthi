@@ -12,8 +12,8 @@ android {
         applicationId = "com.arthsaarthi.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 5
+        versionName = "1.3.1"
 
         ndk {
             // Support ARM64 and x86_64 (for emulator)
