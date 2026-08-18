@@ -1,3 +1,15 @@
+## 2026-08-18: Fix Upstox Metadata Unique ISIN Conflict & Session PendingRollbackError Server Crash Loop
+
+**Task:** Fix PostgreSQL container restart crash loop on Server mode (`psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "ix_assets_isin"`) caused by Upstox metadata updating existing assets with duplicate ISINs, and resolve uncaught `PendingRollbackError` in asset seeder.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Duplicate ISIN Prevention:** Updated `process_upstox_metadata()` in `backend/app/services/asset_seeder.py` to check `candidate_isin not in self.existing_isins` before updating `asset.isin` on existing database records.
+2. **Session Rollback Guard:** Added explicit `self.db.rollback()` handling in `process_upstox_metadata()` and `enrich_assets()` exception blocks so SQL exceptions do not leave the session in a broken state (`PendingRollbackError`).
+3. **Unit Test:** Added `test_asset_seeder_upstox_unique_isin.py` (passing cleanly).
+
 ## 2026-08-17: Release v1.4.0 Planning, GitHub Issue Creation & 11-Point FR Architecture Specifications
 
 **Task:** Define the detailed roadmap, create GitHub issues (#516, #517, #518, #519), and write comprehensive 11-point Functional Requirement (FR) specifications and database encryption policies for Release v1.4.0 (Tax Readiness & Full Financial Picture).

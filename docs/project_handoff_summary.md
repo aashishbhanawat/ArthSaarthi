@@ -18,6 +18,10 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Upstox Metadata Seeder Unique ISIN & Session Rollback Fix (Updated 2026-08-18):**
+    - Added `candidate_isin not in self.existing_isins` validation in `process_upstox_metadata()` in `backend/app/services/asset_seeder.py` to prevent assigning duplicate ISINs to existing asset records during server startup.
+    - Added explicit `self.db.rollback()` in `process_upstox_metadata()` and `enrich_assets()` exception handlers to prevent SQLAlchemy `PendingRollbackError` container restart crash loops in Server / PostgreSQL mode.
+
 *   **Release v1.4.0 Architecture & Issue Seeding (Updated 2026-08-17):**
     - Published official GitHub issues [#516](https://github.com/aashishbhanawat/ArthSaarthi/issues/516) (Unrealized Capital Gains & Exemption Pooling), [#517](https://github.com/aashishbhanawat/ArthSaarthi/issues/517) (Income & TDS Management), [#518](https://github.com/aashishbhanawat/ArthSaarthi/issues/518) (Tax Deductions Chapter VI-A), and [#519](https://github.com/aashishbhanawat/ArthSaarthi/issues/519) (Structured Tax Summary Report & Old vs New Regime Comparison).
     - Created detailed 11-point architectural specifications [`docs/v1.4.0_detailed_plan.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/v1.4.0_detailed_plan.md) and [`docs/v1.4.0.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/v1.4.0.md).
