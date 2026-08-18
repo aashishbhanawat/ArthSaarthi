@@ -28,9 +28,6 @@ export const UnrealizedGainsCard: React.FC<UnrealizedGainsCardProps> = ({ summar
                             <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
                                 📊 Unrealized Capital Gains & Exemption Headroom
                             </h3>
-                            <span className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                                FR6.5 Phase 2
-                            </span>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Estimated gains and statutory Section 112A pooling for active open positions.
