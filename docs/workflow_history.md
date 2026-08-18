@@ -1,3 +1,15 @@
+## 2026-08-18: Fix Upstox Metadata Unique ISIN Conflict & Session PendingRollbackError Server Crash Loop
+
+**Task:** Fix PostgreSQL container restart crash loop on Server mode (`psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "ix_assets_isin"`) caused by Upstox metadata updating existing assets with duplicate ISINs, and resolve uncaught `PendingRollbackError` in asset seeder.
+**AI Assistant:** Antigravity  
+**Role:** Full-Stack Developer
+
+### Summary
+
+1. **Duplicate ISIN Prevention:** Updated `process_upstox_metadata()` in `backend/app/services/asset_seeder.py` to check `candidate_isin not in self.existing_isins` before updating `asset.isin` on existing database records.
+2. **Session Rollback Guard:** Added explicit `self.db.rollback()` handling in `process_upstox_metadata()` and `enrich_assets()` exception blocks so SQL exceptions do not leave the session in a broken state (`PendingRollbackError`).
+3. **Unit Test:** Added `test_asset_seeder_upstox_unique_isin.py` (passing cleanly).
+
 ## 2026-08-16: Fix Desktop SECRET_KEY Persistence & Alembic Frozen Bundle Migration Path
 
 **Task:** Fix `jose.exceptions.JWTError: Signature verification failed` and unauthenticated redirects on desktop/mobile restarts caused by ephemeral `SECRET_KEY` generation, and eliminate `Path doesn't exist: alembic` warning in macOS PyInstaller app bundles.

@@ -18,6 +18,10 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Upstox Metadata Seeder Unique ISIN & Session Rollback Fix (Updated 2026-08-18):**
+    - Added `candidate_isin not in self.existing_isins` validation in `process_upstox_metadata()` in `backend/app/services/asset_seeder.py` to prevent assigning duplicate ISINs to existing asset records during server startup.
+    - Added explicit `self.db.rollback()` in `process_upstox_metadata()` and `enrich_assets()` exception handlers to prevent SQLAlchemy `PendingRollbackError` container restart crash loops in Server / PostgreSQL mode.
+
 *   **SECRET_KEY Persistence & PyInstaller Alembic Path Fix (Updated 2026-08-16):**
     - Implemented `_get_or_create_secret_key()` in `backend/app/core/config.py` to persist `SECRET_KEY` to `secret.key` in the app data directory (`_get_app_dir()`). Eliminates `jose.exceptions.JWTError: Signature verification failed` and HTTP 401 unauthenticated redirects across application restarts on desktop/mobile environments.
     - Updated `run_db_migrations()` in `backend/app/db/init_db.py` to set absolute `script_location` on `Alembic Config` object, preventing `Path doesn't exist: alembic` warning in PyInstaller standalone app bundles on macOS.
