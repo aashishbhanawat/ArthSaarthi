@@ -62,7 +62,21 @@ class UnrealizedTaxService:
         # Calculate 112A realized gains used
         realized_112a_ltcg = Decimal("0.0")
         for g in realized_summary.gains:
-            if g.gain_type == "LTCG" and "112A" in g.tax_rate and g.gain > 0:
+            asset_cat = (g.asset_type or "").upper()
+            is_equity = (
+                asset_cat in [
+                    "STOCKS",
+                    "STOCK",
+                    "EQUITY",
+                    "MUTUAL_FUND_EQUITY",
+                    "ETF",
+                    "INDIAN_STOCKS",
+                    "MF_EQUITY",
+                    "EQUITY_LISTED",
+                ]
+                or "112A" in g.tax_rate
+            )
+            if g.gain_type == "LTCG" and is_equity and g.gain > Decimal("0.0"):
                 realized_112a_ltcg += g.gain
 
         section_112a_realized_used = min(

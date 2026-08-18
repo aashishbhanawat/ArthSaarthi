@@ -15,8 +15,9 @@
    - Added `UnrealizedTaxLot`, `UnrealizedGainsSummary`, and `useUnrealizedCapitalGains` query hook to `frontend/src/hooks/useCapitalGains.ts`.
    - Created `UnrealizedGainsModal.tsx` displaying summary metric cards, Section 112A exemption utilization progress bar (Realized Used vs Unrealized Usable vs Remaining Headroom), and interactive tax lot breakdown table with Privacy Mode support (`usePrivacy`).
    - Created `UnrealizedGainsCard.tsx` and integrated it into `frontend/src/pages/CapitalGainsPage.tsx`.
-4. **Automated Testing & Verification:**
-   - Authored backend test suite `backend/app/tests/api/v1/test_unrealized_tax.py` verifying empty portfolios, open equity lots, 112A exemption headroom calculations, and API endpoint response schemas (3/3 tests passed).
+4. **Automated Testing & Verification & Bug Triage:**
+   - Fixed Section 112A exemption headroom reduction for realized equity LTCG transactions in `UnrealizedTaxService` and updated `CapitalGainsService._determine_tax_rate_label` to tag `EQUITY_LISTED` LTCG as `"LTCG 12.5% (Sec 112A)"`.
+   - Authored backend test suite `backend/app/tests/api/v1/test_unrealized_tax.py` verifying empty portfolios, open equity lots, 112A exemption headroom calculations, realized 112A headroom deduction, and API endpoint response schemas (4/4 tests passed).
    - Authored frontend component test `frontend/src/components/CapitalGains/UnrealizedGainsModal.test.tsx` (all 47 frontend test suites / 193 tests passed 100%).
 
 ## 2026-08-17: Release v1.4.0 Planning, GitHub Issue Creation & 11-Point FR Architecture Specifications
