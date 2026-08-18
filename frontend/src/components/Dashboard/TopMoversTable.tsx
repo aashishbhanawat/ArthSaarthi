@@ -71,4 +71,5 @@ const TopMoversTable: React.FC<TopMoversTableProps> = ({ assets }) => {
   );
 };
 
-export default TopMoversTable;
+// Memoize to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+export default React.memo(TopMoversTable);

@@ -108,4 +108,5 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
   );
 };
 
-export default TransactionList;
+// Memoize to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+export default React.memo(TransactionList);

@@ -63,4 +63,5 @@ const InterestRateTable: React.FC<InterestRateTableProps> = ({ rates, onEdit, on
   );
 };
 
-export default InterestRateTable;
+// Memoize to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+export default React.memo(InterestRateTable);

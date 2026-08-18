@@ -133,4 +133,5 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
   );
 };
 
-export default TransactionHistoryTable;
+// Memoize to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+export default React.memo(TransactionHistoryTable);

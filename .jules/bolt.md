@@ -20,3 +20,8 @@
 ## 2024-08-04 - Memoize sorted transactions in BondDetailModal
 **Learning:** `BondDetailModal` was sorting `transactions` on every render without a `useMemo` hook, causing unnecessary O(N log N) recalculations even when `transactions` had not changed.
 **Action:** Wrapped the sorting logic in a `useMemo` hook dependent on `transactions`.
+## 2024-08-17 - Optimize React table renders with React.memo
+**Learning:** Purely presentational table/list components (like `TransactionHistoryTable`, `TransactionList`, `UsersTable`, `InterestRateTable`, `WatchlistTable`, `TopMoversTable`, `PortfolioList`) frequently receive large arrays of data. Re-rendering them when parent components update state that doesn't affect the table's props (e.g. modals opening, unrelated parent re-renders) creates an unnecessary performance overhead.
+**Action:** Always wrap the default export of such presentational table/list components in `React.memo()`. Also ensure parent components pass stable function references (using `useCallback`) to make `React.memo` fully effective. Add a comment explaining the memoization.
+
+**Action:** Ensure that the parent components pass stable function references using `useCallback` when using `React.memo` on these presentational components.

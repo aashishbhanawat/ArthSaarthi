@@ -106,5 +106,6 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
   );
 };
 
-export default WatchlistTable;
+// Memoize to prevent unnecessary re-renders when parent state changes (e.g. modals opening)
+export default React.memo(WatchlistTable);
 
