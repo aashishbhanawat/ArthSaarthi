@@ -82,11 +82,11 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         db_user = crud.user.create(db=db, obj_in=user, is_admin=True)
         db.commit()
-    except Exception as e:
+    except Exception:
         logger.exception("Error during setup_admin_user:")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Admin setup failed: {str(e)}"
+            detail="Admin setup failed."
         )
 
     # Note: Asset seeding is now triggered by the splash screen before login,

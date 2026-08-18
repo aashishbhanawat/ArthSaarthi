@@ -357,7 +357,7 @@ def get_logs(
             return {"msg": "".join(last_lines)}
     except Exception as e:
         logger.error(f"Error reading log file: {e}")
-        return {"msg": f"Error reading log file: {str(e)}"}
+        return {"msg": "Error reading log file."}
 
 
 # --- Android Background Snapshot Endpoint ---
