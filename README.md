@@ -38,6 +38,7 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Tax Compliance & Reporting:**
     *   **Schedule FA (Foreign Assets):** Generate reports compliant with Calendar Year rules, including Peak Value analysis (daily balance check) and specific field exports.
     *   **Capital Gains:** Comprehensive reports for Short-Term (STCG) and Long-Term (LTCG) capital gains.
+    *   **Unrealized Capital Gains & Exemption Pooling (FR6.5 Phase 2):** Compute lot-level FIFO unrealized STCG/LTCG across active holdings and pool Section 112A LTCG exemption headroom (₹1,25,000 threshold per FY) with interactive tax lot breakdown modals and Privacy Mode currency masking.
     *   **Schedule 112A:** Dedicated support for Grandfathered Equity (acquired before 31 Jan 2018) with FMV lookup and CSV export for ITR-2 filing.
 *   **Goal Planning, Projections & Track Status:** Define financial goals (e.g. retirement, buy a car), link portfolios or individual assets, compute dynamic combined XIRR returns, project future value at the target date, determine "On Track" or "Off Track" status, visualize paths via dynamic charts, and calculate required monthly contributions (ordinary annuity SIP) needed to reach your targets.
 *   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.

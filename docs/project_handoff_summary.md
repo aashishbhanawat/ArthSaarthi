@@ -1,22 +1,28 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-17
+**Last Updated:** 2026-08-18
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Planning & Specification Phase — Release v1.4.0 (Tax Readiness & Full Financial Picture)
+*   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Created GitHub Issues (#516, #517, #518, #519), FR feature specifications, detailed 11-point architectural blueprint, database encryption model, and execution roadmap for Release v1.4.0.
+**Latest Achievement:** Completed FR6.5 Phase 2 (Issue #516: Unrealized Capital Gains Calculation & Section 112A Exemption Pooling). Implemented `UnrealizedTaxService`, REST endpoint `GET /api/v1/capital-gains/unrealized`, `UnrealizedGainsCard`, `UnrealizedGainsModal`, Privacy Mode support, and 100% passing automated backend & frontend tests.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **358/361 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **358/361 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **191/191 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **361/364 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **361/364 Passing** (3 expected skips)
+*   **Frontend Unit Tests (Jest):** ✅ **193/193 Passing** (47/47 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Unrealized Capital Gains & Section 112A Exemption Pooling (Issue #516 / FR6.5 Phase 2) (Updated 2026-08-18):**
+    - **Backend Engine & Schemas (`UnrealizedTaxService`):** Created `backend/app/services/unrealized_tax_service.py` and `UnrealizedTaxLot`/`UnrealizedGainsSummary` schemas. Computes lot-level unsold quantities using `TransactionLink` references, fetches live market prices via `FinancialDataService.get_current_prices`, classifies STCG/LTCG holding period thresholds (12m for equity, 24m for debt/unlisted), applies Section 55(2)(ac) grandfathering rules, and pools Section 112A LTCG exemptions (₹1,25,000 threshold/FY).
+    - **REST API Endpoint:** Exposed `GET /api/v1/capital-gains/unrealized` in `backend/app/api/v1/endpoints/capital_gains.py`.
+    - **Frontend Components:** Added `useUnrealizedCapitalGains` query hook to `useCapitalGains.ts`. Created `UnrealizedGainsCard.tsx` and `UnrealizedGainsModal.tsx` on `CapitalGainsPage.tsx` with Section 112A exemption progress bar (Realized Used vs Unrealized Usable vs Remaining Headroom) and Privacy Mode support (`usePrivacy`).
+    - **Automated Tests:** Authored `backend/app/tests/api/v1/test_unrealized_tax.py` (3/3 passing) and `frontend/src/components/CapitalGains/UnrealizedGainsModal.test.tsx` (193/193 tests passing across 47 suites).
 
 *   **Release v1.4.0 Architecture & Issue Seeding (Updated 2026-08-17):**
     - Published official GitHub issues [#516](https://github.com/aashishbhanawat/ArthSaarthi/issues/516) (Unrealized Capital Gains & Exemption Pooling), [#517](https://github.com/aashishbhanawat/ArthSaarthi/issues/517) (Income & TDS Management), [#518](https://github.com/aashishbhanawat/ArthSaarthi/issues/518) (Tax Deductions Chapter VI-A), and [#519](https://github.com/aashishbhanawat/ArthSaarthi/issues/519) (Structured Tax Summary Report & Old vs New Regime Comparison).

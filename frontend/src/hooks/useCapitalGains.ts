@@ -109,3 +109,62 @@ export const useCapitalGains = (params: CapitalGainsParams) => {
         refetchOnMount: 'always',
     });
 };
+
+export interface UnrealizedTaxLot {
+    holding_id: string;
+    asset_id: string;
+    asset_ticker: string;
+    asset_name: string;
+    asset_type: string;
+    buy_date: string;
+    quantity: number;
+    buy_price: number;
+    current_price: number;
+    total_cost: number;
+    market_value: number;
+    unrealized_gain: number;
+    gain_type: 'STCG' | 'LTCG';
+    holding_days: number;
+    tax_rate: string;
+    estimated_tax: number;
+    is_grandfathered: boolean;
+    is_foreign: boolean;
+    currency: string;
+}
+
+export interface UnrealizedGainsSummary {
+    financial_year: string;
+    total_unrealized_stcg: number;
+    total_unrealized_ltcg: number;
+    total_unrealized_gain: number;
+    section_112a_realized_used: number;
+    section_112a_remaining_headroom: number;
+    section_112a_unrealized_eligible: number;
+    section_112a_unrealized_exemption_used: number;
+    estimated_unrealized_stcg_tax: number;
+    estimated_unrealized_ltcg_tax: number;
+    total_estimated_tax: number;
+    lots: UnrealizedTaxLot[];
+}
+
+export const useUnrealizedCapitalGains = (params: CapitalGainsParams) => {
+    return useQuery<UnrealizedGainsSummary>({
+        queryKey: ['unrealized-capital-gains', params.fy, params.portfolio_id, params.slab_rate],
+        queryFn: async () => {
+            const queryParams = new URLSearchParams({
+                fy: params.fy,
+                slab_rate: params.slab_rate.toString()
+            });
+            if (params.portfolio_id) {
+                queryParams.append('portfolio_id', params.portfolio_id);
+            }
+            const response = await api.get(`/api/v1/capital-gains/unrealized?${queryParams.toString()}`);
+            return response.data;
+        },
+        enabled: !!params.fy,
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+    });
+};
+

@@ -1,3 +1,24 @@
+## 2026-08-18: Implement Unrealized Capital Gains & Section 112A Exemption Pooling (FR6.5 Phase 2 / Issue #516)
+
+**Task:** Implement lot-level FIFO unrealized capital gains calculation, statutory Section 112A LTCG exemption pooling (₹1,25,000 threshold/FY), REST endpoint `GET /api/v1/capital-gains/unrealized`, frontend summary card & drilldown modal with Privacy Mode currency masking, and complete automated tests.
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feature Branch:** Created feature branch `feat/unrealized-capital-gains-fr6.5`.
+2. **Backend Schemas & Service Engine:**
+   - Added `UnrealizedTaxLot` and `UnrealizedGainsSummary` schemas to `backend/app/schemas/capital_gains.py` and exported them in `backend/app/schemas/__init__.py`.
+   - Created `UnrealizedTaxService` in `backend/app/services/unrealized_tax_service.py` to query open buy transactions, calculate lot-level unsold quantities using `TransactionLink` references, fetch live asset market prices via `FinancialDataService.get_current_prices`, compute STCG/LTCG holding period thresholds (12m for equity, 24m for debt/unlisted), apply Section 55(2)(ac) grandfathering rules, and perform statutory Section 112A LTCG exemption pooling (₹1,25,000 threshold per FY).
+   - Exposed REST endpoint `GET /api/v1/capital-gains/unrealized` in `backend/app/api/v1/endpoints/capital_gains.py`.
+3. **Frontend Integration:**
+   - Added `UnrealizedTaxLot`, `UnrealizedGainsSummary`, and `useUnrealizedCapitalGains` query hook to `frontend/src/hooks/useCapitalGains.ts`.
+   - Created `UnrealizedGainsModal.tsx` displaying summary metric cards, Section 112A exemption utilization progress bar (Realized Used vs Unrealized Usable vs Remaining Headroom), and interactive tax lot breakdown table with Privacy Mode support (`usePrivacy`).
+   - Created `UnrealizedGainsCard.tsx` and integrated it into `frontend/src/pages/CapitalGainsPage.tsx`.
+4. **Automated Testing & Verification:**
+   - Authored backend test suite `backend/app/tests/api/v1/test_unrealized_tax.py` verifying empty portfolios, open equity lots, 112A exemption headroom calculations, and API endpoint response schemas (3/3 tests passed).
+   - Authored frontend component test `frontend/src/components/CapitalGains/UnrealizedGainsModal.test.tsx` (all 47 frontend test suites / 193 tests passed 100%).
+
 ## 2026-08-17: Release v1.4.0 Planning, GitHub Issue Creation & 11-Point FR Architecture Specifications
 
 **Task:** Define the detailed roadmap, create GitHub issues (#516, #517, #518, #519), and write comprehensive 11-point Functional Requirement (FR) specifications and database encryption policies for Release v1.4.0 (Tax Readiness & Full Financial Picture).
