@@ -1,3 +1,17 @@
+## 2026-08-17: Release v1.4.0 Planning, GitHub Issue Creation & 11-Point FR Architecture Specifications
+
+**Task:** Define the detailed roadmap, create GitHub issues (#516, #517, #518, #519), and write comprehensive 11-point Functional Requirement (FR) specifications and database encryption policies for Release v1.4.0 (Tax Readiness & Full Financial Picture).
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **GitHub Issues Created:** Published GitHub issues [#516](https://github.com/aashishbhanawat/ArthSaarthi/issues/516), [#517](https://github.com/aashishbhanawat/ArthSaarthi/issues/517), [#518](https://github.com/aashishbhanawat/ArthSaarthi/issues/518), and [#519](https://github.com/aashishbhanawat/ArthSaarthi/issues/519) using `gh issue create`.
+2. **Detailed Architectural Blueprint:** Authored [`docs/v1.4.0_detailed_plan.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/v1.4.0_detailed_plan.md) covering sub-task breakdowns, backend/frontend responsibilities, test plans, UX specs, SQLite `EncryptedString` security model, data sources, file/API contracts, mobile UI rules, and Chaquopy Android compatibility guidelines.
+3. **Issue Tracking Documentation:** Created tracking files [`docs/issues/42_calculate_unrealized_capital_gains.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/issues/42_calculate_unrealized_capital_gains.md), [`docs/issues/43_implement_income_data_management.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/issues/43_implement_income_data_management.md), [`docs/issues/44_implement_tax_deductible_expenses.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/issues/44_implement_tax_deductible_expenses.md), and [`docs/issues/45_implement_structured_tax_summary.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/issues/45_implement_structured_tax_summary.md).
+4. **Comprehensive FR Feature Specifications:** Authored self-contained 11-point FR feature specs [`docs/features/FR6.5.7_unrealized_capital_gains.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR6.5.7_unrealized_capital_gains.md), [`docs/features/FR16.1_income_data_management.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR16.1_income_data_management.md), [`docs/features/FR16.3_tax_deductible_expenses.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR16.3_tax_deductible_expenses.md), and [`docs/features/FR16.4_structured_tax_summary.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR16.4_structured_tax_summary.md).
+5. **Project Roadmap Synchronization:** Updated [`docs/v1.4.0.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/v1.4.0.md) and [`docs/project_handoff_summary.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/project_handoff_summary.md).
+
 ## 2026-08-16: Fix Desktop SECRET_KEY Persistence & Alembic Frozen Bundle Migration Path
 
 **Task:** Fix `jose.exceptions.JWTError: Signature verification failed` and unauthenticated redirects on desktop/mobile restarts caused by ephemeral `SECRET_KEY` generation, and eliminate `Path doesn't exist: alembic` warning in macOS PyInstaller app bundles.
