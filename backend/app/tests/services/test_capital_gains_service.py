@@ -126,14 +126,14 @@ class TestDetermineTaxRateLabel:
         result = self.service._determine_tax_rate_label(
             "LTCG", "EQUITY_LISTED", date(2024, 8, 1), date(2022, 1, 1)
         )
-        assert result == "LTCG 12.5%"
+        assert result == "LTCG 12.5% (Sec 112A)"
 
     def test_ltcg_equity_pre_july_is_10_percent(self):
         """Equity LTCG before July 2024 should be 10%."""
         result = self.service._determine_tax_rate_label(
             "LTCG", "EQUITY_LISTED", date(2024, 7, 22), date(2022, 1, 1)
         )
-        assert result == "LTCG 10%"
+        assert result == "LTCG 10% (Sec 112A)"
 
     def test_ltcg_gold_post_july_is_12_5_percent(self):
         """Gold LTCG after July 2024 should be 12.5% (no indexation)."""
@@ -172,6 +172,12 @@ class TestClassifyAssetCategory:
 
     def test_stock_inr_is_equity_listed(self):
         asset = self._make_asset("STOCK")
+        result = self.service._classify_asset_category(asset)
+        assert result == "EQUITY_LISTED"
+
+    def test_stock_with_overseas_in_name_is_equity_listed(self):
+        asset = self._make_asset("STOCK")
+        asset.name = "LAHOTI OVERSEAS LTD"
         result = self.service._classify_asset_category(asset)
         assert result == "EQUITY_LISTED"
 

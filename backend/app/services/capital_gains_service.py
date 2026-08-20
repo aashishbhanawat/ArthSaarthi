@@ -568,11 +568,14 @@ class CapitalGainsService:
         if asset.currency != "INR":
             return "FOREIGN"
 
-        # 2. Equity / ETF / Stock
-        if atype in ["STOCK", "ETF"] or "MUTUAL" in atype:
+        # 2. Individual Indian Stocks
+        if atype in ["STOCK", "STOCKS", "EQUITY", "INDIAN_STOCKS"]:
+            return "EQUITY_LISTED"
+
+        # 3. ETFs and Mutual Funds
+        if atype in ["ETF"] or "MUTUAL" in atype:
             name_upper = str(asset.name).upper()
             sector_upper = str(asset.sector).upper() if asset.sector else ""
-
 
             # A. Gold / Silver ETFs
             if (
@@ -590,20 +593,21 @@ class CapitalGainsService:
             ):
                 return "DEBT"
 
-            # C. International / Overseas ETFs
-            # Treated as Debt for tax if > Apr 2023, else LTCG 20%/12.5%
-            # Examples: MAHKTECH, MON100, NASDAQ, HANG SENG, FANG, US EQUITY
+            # C. International / Overseas ETFs & Mutual Funds
+            # Examples: MAHKTECH, MON100, NASDAQ, HANG SENG, FANG, US EQUITY, S&P 500
             intl_keywords = [
                 "NASDAQ",
                 "HANG SENG",
                 "US EQUITY",
-                "Global",
-                "WORLD",
-                "OVERSEAS",
-                "INTERNATIONAL",
+                "S&P 500",
+                "S&P500",
                 "MAHKTECH",
                 "MON100",
                 "FANG+",
+                "OVERSEAS FUND",
+                "INTERNATIONAL FUND",
+                "GLOBAL FUND",
+                "WORLD FUND",
             ]
             if any(k in name_upper for k in intl_keywords) or any(
                 k in sector_upper for k in intl_keywords
@@ -620,7 +624,7 @@ class CapitalGainsService:
                     return "EQUITY_LISTED"
                 return "DEBT"  # Default for MFs is Debt unless Equity sector
 
-            # E. Default for Stock/ETF -> Equity Listed
+            # E. Default for ETF -> Equity Listed
             return "EQUITY_LISTED"
 
         # 3. Bonds
