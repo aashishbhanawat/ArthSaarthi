@@ -10,28 +10,12 @@ from sqlalchemy.orm import Session
 from app.models import Transaction, TransactionLink
 from app.schemas.capital_gains import UnrealizedGainsSummary, UnrealizedTaxLot
 from app.schemas.enums import TransactionType
-from app.services.capital_gains_service import (
-    DATE_2018_01_31,
-    HOLDING_PERIOD_EQUITY_LTCG,
-    HOLDING_PERIOD_GENERAL_LTCG_NEW,
-    CapitalGainsService,
-)
+from app.services.capital_gains_service import DATE_2018_01_31, CapitalGainsService
 from app.services.financial_data_service import financial_data_service
 
 logger = logging.getLogger(__name__)
 
 SECTION_112A_EXEMPTION_LIMIT = Decimal("125000.00")
-
-EQUITY_ASSET_TYPES = {
-    "STOCKS",
-    "STOCK",
-    "EQUITY",
-    "MUTUAL_FUND_EQUITY",
-    "ETF",
-    "INDIAN_STOCKS",
-    "MF_EQUITY",
-    "EQUITY_LISTED",
-}
 
 
 def _safe_decimal(val, default: Decimal = Decimal("0.0")) -> Decimal:
@@ -44,11 +28,6 @@ def _safe_decimal(val, default: Decimal = Decimal("0.0")) -> Decimal:
         return d
     except (InvalidOperation, ValueError, TypeError):
         return default
-
-
-def _is_equity_type(asset_type_str: str, tax_rate: str = "") -> bool:
-    cat = (asset_type_str or "").upper()
-    return cat in EQUITY_ASSET_TYPES or "112A" in tax_rate or "111A" in tax_rate
 
 
 class UnrealizedTaxService:
@@ -88,17 +67,12 @@ class UnrealizedTaxService:
                 user_id=user_id,
             )
             for g in realized_summary.gains:
-                currency_val = getattr(g, "currency", "INR") or "INR"
-                is_foreign_gain = currency_val != "INR"
-                is_domestic_equity = (
-                    _is_equity_type(g.asset_type, g.tax_rate) and not is_foreign_gain
-                )
-                is_ltcg_and_equity = (
+                is_domestic_112a = "112A" in (g.tax_rate or "")
+                if (
                     g.gain_type == "LTCG"
-                    and is_domestic_equity
+                    and is_domestic_112a
                     and g.gain > Decimal("0.0")
-                )
-                if is_ltcg_and_equity:
+                ):
                     realized_112a_ltcg += _safe_decimal(g.gain)
         except Exception as exc:
             logger.error(
@@ -218,33 +192,22 @@ class UnrealizedTaxService:
             )
             holding_days = (today - tx_date).days
 
-            # Determine STCG vs LTCG
-            is_foreign = bool(asset.currency and asset.currency != "INR")
-            is_domestic_equity = _is_equity_type(asset_cat) and not is_foreign
+            # Determine STCG vs LTCG using CapitalGainsService (Single Source of Truth)
+            category = cg_service._classify_asset_category(asset)
+            is_foreign = category == "FOREIGN"
+            is_domestic_equity = category == "EQUITY_LISTED"
+
+            is_ltcg = cg_service._is_ltcg(category, holding_days, today, tx_date)
+            gain_type = "LTCG" if is_ltcg else "STCG"
+            tax_rate = cg_service._determine_tax_rate_label(
+                gain_type, category, today, tx_date
+            )
+            if tax_rate == "STCG Slab":
+                tax_rate = f"Slab ({slab_rate}%)"
 
             is_grandfathered = False
             if is_domestic_equity and tx_date <= DATE_2018_01_31:
                 is_grandfathered = True
-
-            if is_domestic_equity:
-                gain_type = (
-                    "LTCG" if holding_days > HOLDING_PERIOD_EQUITY_LTCG else "STCG"
-                )
-                tax_rate = (
-                    "LTCG 12.5% (Sec 112A)"
-                    if gain_type == "LTCG"
-                    else "STCG 20% (Sec 111A)"
-                )
-            else:
-                gain_type = (
-                    "LTCG" if holding_days > HOLDING_PERIOD_GENERAL_LTCG_NEW else "STCG"
-                )
-                if is_foreign and gain_type == "LTCG":
-                    tax_rate = "LTCG 12.5% (Foreign)"
-                elif gain_type == "LTCG":
-                    tax_rate = "LTCG 12.5%"
-                else:
-                    tax_rate = f"Slab ({slab_rate}%)"
 
             # Calculate estimated lot tax
             lot_tax = Decimal("0.0")
