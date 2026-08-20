@@ -144,11 +144,20 @@ def get_unrealized_capital_gains(
         if portfolio.user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    service = UnrealizedTaxService(db)
-    return service.calculate_unrealized_gains(
-        user_id=str(current_user.id),
-        fy_year=fy,
-        portfolio_id=portfolio_id,
-        slab_rate=slab_rate,
-    )
+    try:
+        service = UnrealizedTaxService(db)
+        return service.calculate_unrealized_gains(
+            user_id=str(current_user.id),
+            fy_year=fy,
+            portfolio_id=portfolio_id,
+            slab_rate=slab_rate,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error calculating unrealized capital gains: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to calculate unrealized capital gains: {str(exc)}",
+        )
 
