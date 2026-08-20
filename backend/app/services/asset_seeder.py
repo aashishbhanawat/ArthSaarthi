@@ -993,20 +993,30 @@ class AssetSeeder:
             for asset in db_assets:
                 ticker = (asset.ticker_symbol or "").upper().replace(".NS", "")
                 if not asset.isin and ticker in symbol_to_isin:
-                    asset.isin = symbol_to_isin[ticker]
-                    asset.exchange = "NSE"
-                    stats["updated"] += 1
+                    candidate_isin = symbol_to_isin[ticker]
+                    # Check if candidate_isin is already assigned to another asset
+                    if candidate_isin not in self.existing_isins:
+                        asset.isin = candidate_isin
+                        asset.exchange = "NSE"
+                        self.existing_isins.add(candidate_isin)
+                        stats["updated"] += 1
                 elif asset.isin and ticker in symbol_to_key:
                     stats["verified"] += 1
 
             self.flush_pending()
-            self.db.commit()
+            try:
+                self.db.commit()
+            except Exception as e:
+                self.db.rollback()
+                logger.error(f"Error committing Upstox metadata updates: {e}")
+
             print(
                 f"Upstox Metadata Completed: Created={stats['created']}, "
                 f"Verified={stats['verified']}, Updated={stats['updated']}"
             )
         except Exception as e:
-            print(f"Error in process_upstox_metadata: {e}")
+            self.db.rollback()
+            logger.error(f"Error in process_upstox_metadata: {e}")
 
         return stats
 
@@ -1033,12 +1043,18 @@ class AssetSeeder:
 
         stats = {"enriched": 0, "skipped": 0, "errors": 0}
 
-        # Query each asset type separately to ensure equities get enriched
-        # (otherwise fixed income assets would dominate due to their volume)
-        equities = self.db.query(models.Asset).filter(
-            models.Asset.sector.is_(None),
-            models.Asset.asset_type.in_(["STOCK", "ETF"])
-        ).limit(max_assets).all()
+        try:
+            equities = self.db.query(models.Asset).filter(
+                models.Asset.sector.is_(None),
+                models.Asset.asset_type.in_(["STOCK", "ETF"])
+            ).limit(max_assets).all()
+        except Exception as e:
+            self.db.rollback()
+            logger.warning(f"Session rollback triggered before enrich_assets: {e}")
+            equities = self.db.query(models.Asset).filter(
+                models.Asset.sector.is_(None),
+                models.Asset.asset_type.in_(["STOCK", "ETF"])
+            ).limit(max_assets).all()
 
         mutual_funds = self.db.query(models.Asset).filter(
             models.Asset.sector.is_(None),

@@ -24,6 +24,10 @@
     - **FR6.5 Phase 3 Planning:** Authored [`docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md) and [`docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md).
     - **Linter & Test Verification:** Fixed 19 python `ruff` lints and 2 typescript `eslint` lints. All 33 backend pytest test cases and 47/47 frontend Jest test suites (193/193 tests) passing cleanly.
 
+*   **Upstox Metadata Seeder Unique ISIN & Session Rollback Fix (Updated 2026-08-18):**
+    - Added `candidate_isin not in self.existing_isins` validation in `process_upstox_metadata()` in `backend/app/services/asset_seeder.py` to prevent assigning duplicate ISINs to existing asset records during server startup.
+    - Added explicit `self.db.rollback()` in `process_upstox_metadata()` and `enrich_assets()` exception handlers to prevent SQLAlchemy `PendingRollbackError` container restart crash loops in Server / PostgreSQL mode.
+
 *   **Unrealized Capital Gains & Section 112A Exemption Pooling (Issue #516 / FR6.5 Phase 2) (Updated 2026-08-18):**
     - **Backend Engine & Schemas (`UnrealizedTaxService`):** Created `backend/app/services/unrealized_tax_service.py` and `UnrealizedTaxLot`/`UnrealizedGainsSummary` schemas. Computes lot-level unsold quantities using `TransactionLink` references, fetches live market prices via `FinancialDataService.get_current_prices`, classifies STCG/LTCG holding period thresholds (12m for equity, 24m for debt/unlisted), applies Section 55(2)(ac) grandfathering rules, and pools Section 112A LTCG exemptions (₹1,25,000 threshold/FY).
     - **REST API Endpoint:** Exposed `GET /api/v1/capital-gains/unrealized` in `backend/app/api/v1/endpoints/capital_gains.py`.
