@@ -7,8 +7,7 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import crud
-from app.models import Asset, Transaction, TransactionLink
+from app.models import Transaction, TransactionLink
 from app.schemas.capital_gains import UnrealizedGainsSummary, UnrealizedTaxLot
 from app.schemas.enums import TransactionType
 from app.services.capital_gains_service import (
@@ -94,10 +93,19 @@ class UnrealizedTaxService:
                 is_domestic_equity = (
                     _is_equity_type(g.asset_type, g.tax_rate) and not is_foreign_gain
                 )
-                if g.gain_type == "LTCG" and is_domestic_equity and g.gain > Decimal("0.0"):
+                is_ltcg_and_equity = (
+                    g.gain_type == "LTCG"
+                    and is_domestic_equity
+                    and g.gain > Decimal("0.0")
+                )
+                if is_ltcg_and_equity:
                     realized_112a_ltcg += _safe_decimal(g.gain)
         except Exception as exc:
-            logger.error("Error calculating realized capital gains baseline for FY %s: %s", fy_year, exc)
+            logger.error(
+                "Error calculating realized capital gains baseline for FY %s: %s",
+                fy_year,
+                exc,
+            )
 
         section_112a_realized_used = min(
             SECTION_112A_EXEMPTION_LIMIT, max(Decimal("0.0"), realized_112a_ltcg)
@@ -140,7 +148,9 @@ class UnrealizedTaxService:
                 )
             ).all()
             for link in links:
-                sold_qty_by_buy_tx[link.buy_transaction_id] += _safe_decimal(link.quantity)
+                sold_qty_by_buy_tx[link.buy_transaction_id] += _safe_decimal(
+                    link.quantity
+                )
 
         today = date.today()
         lots: List[UnrealizedTaxLot] = []
@@ -176,16 +186,25 @@ class UnrealizedTaxService:
             # Determine current market price
             if asset.ticker_symbol:
                 try:
-                    prices_res = financial_data_service.get_current_prices(
-                        [{"ticker_symbol": asset.ticker_symbol, "asset_type": asset_cat}]
-                    )
-                    live_val = (prices_res.get(asset.ticker_symbol) or {}).get("current_price")
+                    query_params = [
+                        {
+                            "ticker_symbol": asset.ticker_symbol,
+                            "asset_type": asset_cat,
+                        }
+                    ]
+                    prices_res = financial_data_service.get_current_prices(query_params)
+                    ticker_data = prices_res.get(asset.ticker_symbol) or {}
+                    live_val = ticker_data.get("current_price")
                     if live_val is not None:
                         parsed_live = _safe_decimal(live_val)
                         if parsed_live > Decimal("0.0"):
                             current_price = parsed_live
                 except Exception as exc:
-                    logger.warning("Error fetching market price for asset %s: %s", asset.ticker_symbol, exc)
+                    logger.warning(
+                        "Error fetching market price for asset %s: %s",
+                        asset.ticker_symbol,
+                        exc,
+                    )
 
             total_cost = buy_price * rem_qty
             market_value = current_price * rem_qty
@@ -295,7 +314,9 @@ class UnrealizedTaxService:
         estimated_unrealized_stcg_tax = sum(
             lot.estimated_tax for lot in lots if lot.gain_type == "STCG"
         )
-        total_estimated_tax = estimated_unrealized_stcg_tax + estimated_unrealized_ltcg_tax
+        total_estimated_tax = (
+            estimated_unrealized_stcg_tax + estimated_unrealized_ltcg_tax
+        )
 
         return UnrealizedGainsSummary(
             financial_year=fy_year,
@@ -309,5 +330,5 @@ class UnrealizedTaxService:
             estimated_unrealized_stcg_tax=estimated_unrealized_stcg_tax,
             estimated_unrealized_ltcg_tax=estimated_unrealized_ltcg_tax,
             total_estimated_tax=total_estimated_tax,
-            lots=sorted(lots, key=lambda l: l.buy_date),
+            lots=sorted(lots, key=lambda lot: lot.buy_date),
         )

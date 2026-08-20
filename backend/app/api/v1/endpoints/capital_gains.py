@@ -1,7 +1,8 @@
+import logging
 from io import StringIO
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,7 @@ from app.schemas.capital_gains import CapitalGainsSummary, UnrealizedGainsSummar
 from app.services.capital_gains_service import CapitalGainsService
 from app.services.unrealized_tax_service import UnrealizedTaxService
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -155,7 +157,9 @@ def get_unrealized_capital_gains(
     except HTTPException:
         raise
     except Exception as exc:
-        logger.error("Error calculating unrealized capital gains: %s", exc, exc_info=True)
+        logger.error(
+            "Error calculating unrealized capital gains: %s", exc, exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to calculate unrealized capital gains: {str(exc)}",

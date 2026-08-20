@@ -64,7 +64,7 @@ describe('UnrealizedGainsModal', () => {
     });
 
     it('does not render when isOpen is false', () => {
-        const { container } = render(
+        render(
             <PrivacyProvider>
                 <UnrealizedGainsModal
                     isOpen={false}
@@ -73,6 +73,6 @@ describe('UnrealizedGainsModal', () => {
                 />
             </PrivacyProvider>
         );
-        expect(container.firstChild).toBeNull();
+        expect(screen.queryByText('Unrealized Capital Gains Tax Lots')).not.toBeInTheDocument();
     });
 });

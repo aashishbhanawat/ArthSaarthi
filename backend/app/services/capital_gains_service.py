@@ -684,7 +684,9 @@ class CapitalGainsService:
 
         if gain_type == "LTCG":
             if category == "EQUITY_LISTED":
-                return "LTCG 12.5% (Sec 112A)" if is_post_july else "LTCG 10% (Sec 112A)"
+                if is_post_july:
+                    return "LTCG 12.5% (Sec 112A)"
+                return "LTCG 10% (Sec 112A)"
 
             if category in ["GOLD", "FOREIGN", "EQUITY_UNLISTED"]:
                 # New Rule: 12.5% without indexation

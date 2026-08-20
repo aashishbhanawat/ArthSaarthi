@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-import pytest
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -205,7 +205,9 @@ def test_unrealized_tax_foreign_stock_classification(db: Session):
     assert summary.section_112a_unrealized_eligible == Decimal("0.0")
 
 
-def test_unrealized_gains_api_endpoint(client: TestClient, db: Session, get_auth_headers):
+def test_unrealized_gains_api_endpoint(
+    client: TestClient, db: Session, get_auth_headers
+):
     password = "TestPassword123!"
     user = create_test_user(db, password)
     headers = get_auth_headers(user.email, password)

@@ -1,22 +1,28 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-18
+**Last Updated:** 2026-08-20
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Completed FR6.5 Phase 2 (Issue #516: Unrealized Capital Gains Calculation & Section 112A Exemption Pooling). Implemented `UnrealizedTaxService`, REST endpoint `GET /api/v1/capital-gains/unrealized`, `UnrealizedGainsCard`, `UnrealizedGainsModal`, Privacy Mode support, and 100% passing automated backend & frontend tests.
+**Latest Achievement:** Fixed Foreign stock tax rules (CSCO: 24m holding, Slab STCG rate, no 112A pooling) and Indian stock keyword classification (LAHOTI OVERSEAS LTD: `EQUITY_LISTED`). Resolved all ruff and eslint lints. Authored FR6.5 Phase 3 feature specification and issue tracking doc. All 33 backend pytest cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **361/364 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **361/364 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **366/369 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **366/369 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **193/193 Passing** (47/47 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
-*   **Linters (Code Quality):** ✅ **Passing (0 Errors)**
+*   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Foreign & Indian Stock Tax Classification & Linter Hardening (Updated 2026-08-20):**
+    - **Foreign Stock Tax Rules (`UnrealizedTaxService`):** Enforced 24-month (730-day) holding period for non-INR assets (CSCO, USD currency). Classifies holding period ≤ 730 days as `STCG`, assigns `Slab (30.0%)` tax rate, and excludes from Section 112A exemption pooling.
+    - **Indian Stock Keyword Misclassification (`CapitalGainsService`):** Updated `_classify_asset_category` to return `EQUITY_LISTED` directly for Indian stocks (`atype in ["STOCK", "STOCKS", "EQUITY"]`) without matching generic keywords (`OVERSEAS`, `GLOBAL`, `WORLD`) in company names. Corrected classification for LAHOTI OVERSEAS LTD (`LAHOTIOV`).
+    - **FR6.5 Phase 3 Planning:** Authored [`docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md) and [`docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md).
+    - **Linter & Test Verification:** Fixed 19 python `ruff` lints and 2 typescript `eslint` lints. All 33 backend pytest test cases and 47/47 frontend Jest test suites (193/193 tests) passing cleanly.
 
 *   **Unrealized Capital Gains & Section 112A Exemption Pooling (Issue #516 / FR6.5 Phase 2) (Updated 2026-08-18):**
     - **Backend Engine & Schemas (`UnrealizedTaxService`):** Created `backend/app/services/unrealized_tax_service.py` and `UnrealizedTaxLot`/`UnrealizedGainsSummary` schemas. Computes lot-level unsold quantities using `TransactionLink` references, fetches live market prices via `FinancialDataService.get_current_prices`, classifies STCG/LTCG holding period thresholds (12m for equity, 24m for debt/unlisted), applies Section 55(2)(ac) grandfathering rules, and pools Section 112A LTCG exemptions (₹1,25,000 threshold/FY).
