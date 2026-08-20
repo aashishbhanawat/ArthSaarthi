@@ -9,6 +9,7 @@ import { PlusIcon } from '@heroicons/react/24/solid';
 const WatchlistsPage: React.FC = () => {
   const [selectedWatchlistId, setSelectedWatchlistId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const { data: selectedWatchlist, isLoading, error } = useWatchlist(selectedWatchlistId);
   const addWatchlistItem = useAddWatchlistItem();
@@ -26,6 +27,8 @@ const WatchlistsPage: React.FC = () => {
           <WatchlistSelector
             selectedWatchlistId={selectedWatchlistId}
             onSelectWatchlist={setSelectedWatchlistId}
+            isCreateModalOpen={isCreateModalOpen}
+            onCreateModalClose={() => setIsCreateModalOpen(false)}
           />
         </div>
         <div className="lg:col-span-3">
@@ -52,7 +55,7 @@ const WatchlistsPage: React.FC = () => {
             </div>
           ) : (
             <div className="bg-base-100 p-4 rounded-lg shadow h-full flex items-center justify-center">
-              <WatchlistEmptyState onCreateClick={() => document.querySelector<HTMLButtonElement>('[aria-label="Add new watchlist"]')?.click()} />
+              <WatchlistEmptyState onCreateClick={() => setIsCreateModalOpen(true)} />
             </div>
           )}
         </div>

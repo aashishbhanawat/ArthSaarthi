@@ -1,7 +1,5 @@
 import React from 'react';
-import { EyeIcon } from '@heroicons/react/24/outline';
-
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 interface WatchlistEmptyStateProps {
   onCreateClick?: () => void;
