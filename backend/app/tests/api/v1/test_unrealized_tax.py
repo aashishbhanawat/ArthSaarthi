@@ -156,6 +156,55 @@ def test_realized_ltcg_reduces_112a_headroom(db: Session):
     assert summary.section_112a_remaining_headroom == Decimal("71000.00")
 
 
+def test_unrealized_tax_foreign_stock_classification(db: Session):
+    user = create_test_user(db)
+    portfolio = Portfolio(user_id=user.id, name="US Tech Portfolio")
+    db.add(portfolio)
+    db.commit()
+    db.refresh(portfolio)
+
+    csco_asset = Asset(
+        name="Cisco Systems, Inc.",
+        ticker_symbol="CSCO",
+        asset_type="STOCK",
+        currency="USD",
+    )
+    db.add(csco_asset)
+    db.commit()
+    db.refresh(csco_asset)
+
+    # Buy CSCO on 12 Dec 2024 (~616 days held, <= 730 days)
+    csco_tx = Transaction(
+        user_id=user.id,
+        portfolio_id=portfolio.id,
+        asset_id=csco_asset.id,
+        transaction_type=TransactionType.ESPP_PURCHASE,
+        transaction_date=datetime(2024, 12, 12),
+        quantity=Decimal("10"),
+        price_per_unit=Decimal("50.00"),
+    )
+    db.add(csco_tx)
+    db.commit()
+
+    service = UnrealizedTaxService(db)
+    summary = service.calculate_unrealized_gains(
+        user_id=str(user.id),
+        fy_year="2026-27",
+        slab_rate=30.0,
+    )
+
+    assert len(summary.lots) == 1
+    lot = summary.lots[0]
+    assert lot.asset_ticker == "CSCO"
+    assert lot.currency == "USD"
+    assert lot.is_foreign is True
+    # 616 days <= 730 days -> Foreign STCG (Slab Rate)
+    assert lot.gain_type == "STCG"
+    assert lot.tax_rate == "Slab (30.0%)"
+    assert "112A" not in lot.tax_rate
+    assert summary.section_112a_unrealized_eligible == Decimal("0.0")
+
+
 def test_unrealized_gains_api_endpoint(client: TestClient, db: Session, get_auth_headers):
     password = "TestPassword123!"
     user = create_test_user(db, password)

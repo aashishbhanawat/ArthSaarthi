@@ -89,8 +89,12 @@ class UnrealizedTaxService:
                 user_id=user_id,
             )
             for g in realized_summary.gains:
-                is_equity = _is_equity_type(g.asset_type, g.tax_rate)
-                if g.gain_type == "LTCG" and is_equity and g.gain > Decimal("0.0"):
+                currency_val = getattr(g, "currency", "INR") or "INR"
+                is_foreign_gain = currency_val != "INR"
+                is_domestic_equity = (
+                    _is_equity_type(g.asset_type, g.tax_rate) and not is_foreign_gain
+                )
+                if g.gain_type == "LTCG" and is_domestic_equity and g.gain > Decimal("0.0"):
                     realized_112a_ltcg += _safe_decimal(g.gain)
         except Exception as exc:
             logger.error("Error calculating realized capital gains baseline for FY %s: %s", fy_year, exc)
@@ -196,13 +200,14 @@ class UnrealizedTaxService:
             holding_days = (today - tx_date).days
 
             # Determine STCG vs LTCG
-            is_equity = _is_equity_type(asset_cat)
+            is_foreign = bool(asset.currency and asset.currency != "INR")
+            is_domestic_equity = _is_equity_type(asset_cat) and not is_foreign
 
             is_grandfathered = False
-            if is_equity and tx_date <= DATE_2018_01_31:
+            if is_domestic_equity and tx_date <= DATE_2018_01_31:
                 is_grandfathered = True
 
-            if is_equity:
+            if is_domestic_equity:
                 gain_type = (
                     "LTCG" if holding_days > HOLDING_PERIOD_EQUITY_LTCG else "STCG"
                 )
@@ -215,9 +220,12 @@ class UnrealizedTaxService:
                 gain_type = (
                     "LTCG" if holding_days > HOLDING_PERIOD_GENERAL_LTCG_NEW else "STCG"
                 )
-                tax_rate = (
-                    "LTCG 12.5%" if gain_type == "LTCG" else f"Slab ({slab_rate}%)"
-                )
+                if is_foreign and gain_type == "LTCG":
+                    tax_rate = "LTCG 12.5% (Foreign)"
+                elif gain_type == "LTCG":
+                    tax_rate = "LTCG 12.5%"
+                else:
+                    tax_rate = f"Slab ({slab_rate}%)"
 
             # Calculate estimated lot tax
             lot_tax = Decimal("0.0")
@@ -232,7 +240,7 @@ class UnrealizedTaxService:
                         lot_tax = unrealized_gain * slab_decimal
                 else:
                     total_unrealized_ltcg += unrealized_gain
-                    if is_equity:
+                    if is_domestic_equity:
                         section_112a_unrealized_eligible += unrealized_gain
                         lot_tax = Decimal("0.0")
                     else:
@@ -242,8 +250,6 @@ class UnrealizedTaxService:
                     total_unrealized_stcg += unrealized_gain
                 else:
                     total_unrealized_ltcg += unrealized_gain
-
-            is_foreign = bool(asset.currency and asset.currency != "INR")
 
             lots.append(
                 UnrealizedTaxLot(
