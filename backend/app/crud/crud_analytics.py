@@ -362,6 +362,31 @@ def _get_realized_and_unrealized_cash_flows(
                 )
             )
 
+    # --- Pre-calculate running sums for fast income proration ---
+    import bisect
+
+    acquisition_types = {"BUY", "ESPP_PURCHASE", "RSU_VEST"}
+    buy_dates = []
+    buy_cumulative = []
+    current_buys = Decimal("0.0")
+
+    for t in sorted_txs:
+        if t.transaction_type in acquisition_types:
+            current_buys += t.quantity
+            buy_dates.append(t.transaction_date.date())
+            buy_cumulative.append(current_buys)
+
+    sell_dates = []
+    sell_cumulative = []
+    current_sells = Decimal("0.0")
+
+    for s in sells:
+        current_sells += s.quantity
+        sell_dates.append(s.transaction_date.date())
+        sell_cumulative.append(current_sells)
+
+    total_sells = current_sells
+
     # Prorate each income event based on the holding status AT THAT TIME.
     for income_tx in income_flows:
         # Calculate Total Dividend Income (sum of all dividends)
@@ -378,22 +403,20 @@ def _get_realized_and_unrealized_cash_flows(
 
         total_dividend_income += amount_val
         amount = float(amount_val)
+        income_date = income_tx.transaction_date.date()
 
-        # Find total shares bought up to the date of this income event.
-        acquisition_types = ("BUY", "ESPP_PURCHASE", "RSU_VEST")
-        bought_at_income_date = sum(
-            t.quantity
-            for t in sorted_txs
-            if t.transaction_type in acquisition_types
-            and t.transaction_date.date() <= income_tx.transaction_date.date()
-        )
+        # Find total shares bought up to the date of this income event using bisect
+        idx_buy = bisect.bisect_right(buy_dates, income_date)
+        if idx_buy == 0:
+            continue
+        bought_at_income_date = buy_cumulative[idx_buy - 1]
 
-        # Find total shares sold out of that specific lot.
-        sold_from_that_lot = sum(
-            s.quantity
-            for s in sells
-            if s.transaction_date.date() > income_tx.transaction_date.date()
-        )
+        # Find total shares sold AFTER this specific income date
+        idx_sell = bisect.bisect_right(sell_dates, income_date)
+        if idx_sell == 0:
+            sold_from_that_lot = total_sells
+        else:
+            sold_from_that_lot = total_sells - sell_cumulative[idx_sell - 1]
 
         if bought_at_income_date <= 0:
             continue
@@ -405,10 +428,8 @@ def _get_realized_and_unrealized_cash_flows(
         realized_income = amount * proportion_realized
         unrealized_income = amount * proportion_unrealized
 
-        realized_cash_flows.append((income_tx.transaction_date.date(), realized_income))
-        unrealized_cash_flows.append(
-            (income_tx.transaction_date.date(), unrealized_income)
-        )
+        realized_cash_flows.append((income_date, realized_income))
+        unrealized_cash_flows.append((income_date, unrealized_income))
 
     # Contributions (like for PPF) are outflows and are always part of the
     # "unrealized" stream as they can't be "sold".
