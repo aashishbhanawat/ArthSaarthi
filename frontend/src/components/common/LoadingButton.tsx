@@ -22,6 +22,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
       {...props}
     >
       {isLoading && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
+      {isLoading && !loadingText && <span className="sr-only">Loading...</span>}
       {isLoading && loadingText ? loadingText : children}
     </button>
   );

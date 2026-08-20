@@ -52,7 +52,7 @@ const WatchlistsPage: React.FC = () => {
             </div>
           ) : (
             <div className="bg-base-100 p-4 rounded-lg shadow h-full flex items-center justify-center">
-              <WatchlistEmptyState />
+              <WatchlistEmptyState onCreateClick={() => document.querySelector<HTMLButtonElement>('[aria-label="Add new watchlist"]')?.click()} />
             </div>
           )}
         </div>
