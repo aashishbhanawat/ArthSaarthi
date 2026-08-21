@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -12,6 +13,8 @@ from app.models.transaction_link import TransactionLink
 from app.models.user import User
 from app.schemas.enums import TransactionType
 from app.services.unrealized_tax_service import UnrealizedTaxService
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def create_test_user(db: Session, password: str = "TestPassword123!") -> User:
