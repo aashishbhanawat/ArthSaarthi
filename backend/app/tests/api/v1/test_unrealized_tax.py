@@ -44,7 +44,11 @@ def test_unrealized_tax_service_no_holdings(db: Session):
     assert len(summary.lots) == 0
 
 
-def test_unrealized_tax_service_with_equity_lots(db: Session):
+def test_unrealized_tax_service_with_equity_lots(db: Session, mocker):
+    mocker.patch(
+        "app.services.financial_data_service.financial_data_service.get_current_prices",
+        return_value={"RELIANCE": {"current_price": 2550.00}},
+    )
     user = create_test_user(db)
     # Setup Portfolio & Asset
     portfolio = Portfolio(
