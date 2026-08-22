@@ -92,7 +92,7 @@ mdurl==0.1.2
     # via markdown-it-py
 multitasking==0.0.12
     # via yfinance
-numpy==2.4.2
+numpy==1.26.4
     # via
     #   -r requirements.in
     #   pandas
