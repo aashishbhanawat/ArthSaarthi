@@ -95,3 +95,6 @@ local/*
 .gemini/
 gha-creds-*.json
 backend/*.db*
+.gradle/
+**/android/.gradle/
+

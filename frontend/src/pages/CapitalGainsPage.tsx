@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useCapitalGains, GainEntry, ForeignGainEntry, ITRRow, Schedule112AEntry } from '../hooks/useCapitalGains';
+import { useCapitalGains, useUnrealizedCapitalGains, GainEntry, ForeignGainEntry, ITRRow, Schedule112AEntry } from '../hooks/useCapitalGains';
+import { UnrealizedGainsCard } from '../components/CapitalGains/UnrealizedGainsCard';
 import { useScheduleFA, ScheduleFAEntry } from '../hooks/useScheduleFA';
 import { useDividends, DividendEntry } from '../hooks/useDividends';
 import { formatCurrency } from '../utils/formatting';
@@ -286,6 +287,7 @@ const CapitalGainsPage: React.FC = () => {
     const calendarYearOptions = useMemo(() => generateCalendarYearOptions(), []);
 
     const { data, isLoading, isError, error } = useCapitalGains({ fy: selectedFY, slab_rate: slabRate });
+    const { data: unrealizedData } = useUnrealizedCapitalGains({ fy: selectedFY, slab_rate: slabRate });
     const { data: faData, isLoading: faLoading, isError: faError, error: faErrorObj } = useScheduleFA({ calendar_year: selectedCalendarYear });
     const { data: dividendData, isLoading: divLoading, isError: divError, error: divErrorObj } = useDividends({ fy: selectedFY });
 
@@ -408,6 +410,9 @@ const CapitalGainsPage: React.FC = () => {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Unrealized Capital Gains & Exemption Headroom Card (FR6.5 Phase 2) */}
+                            {unrealizedData && <UnrealizedGainsCard summary={unrealizedData} />}
 
                             {/* ITR-2 Schedule CG Matrix */}
                             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8">

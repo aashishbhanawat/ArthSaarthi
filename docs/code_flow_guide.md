@@ -371,3 +371,24 @@ def create_bond(...):
 ```
 
 This function is called from any API endpoint that creates, updates, or deletes data for a portfolio (e.g., creating a transaction, importing a file, adding a bond). It constructs and deletes all cache keys associated with that `portfolio_id` and its `user_id`, ensuring that the next request will trigger a fresh calculation.
+
+---
+
+## 8. Unrealized Capital Gains & Exemption Pooling Flow (FR6.5 Phase 2)
+
+When a user visits the Capital Gains page (`CapitalGainsPage.tsx`), the frontend issues a `GET /api/v1/capital-gains/unrealized?fy={FY}` request managed by the `useUnrealizedCapitalGains` query hook.
+
+### Step 1: Backend Calculation (`UnrealizedTaxService.py`)
+1. **Realized 112A Baseline:** The backend invokes `CapitalGainsService.calculate_capital_gains` for the FY to calculate realized LTCG under Section 112A. Realized 112A exemption used is `min(125000, realized_112a_ltcg)`, yielding `section_112a_remaining_headroom = max(0, 125000 - realized_112a_used)`.
+2. **Open Lot Aggregation:** Queries all active open BUY/ESPP/RSU/BONUS transactions for the user/portfolio. Deducts quantities already matched via `TransactionLink` to determine unsold lot quantities.
+3. **Market Price & Unrealized Gain:** Queries live asset prices via `FinancialDataService.get_current_prices` (with transaction cost fallback). Computes lot holding days `(today - buy_date).days`, market value, and unrealized gain/loss `(current_price - buy_price) * quantity`.
+4. **Tax Classification:** Classifies lots into STCG vs LTCG (Equity/ETF/Equity MF: 365 days; Debt/Bonds/Unlisted: 730 days). Applies Section 55(2)(ac) grandfathering flag if acquired on/before Jan 31, 2018.
+5. **Statutory 112A Pooling:** Pools all positive unrealized LTCG for eligible equity assets (`section_112a_unrealized_eligible`). Applies `section_112a_unrealized_exemption_used = min(remaining_headroom, section_112a_unrealized_eligible)`. Taxable unrealized 112A LTCG is taxed at 12.5% above the pooled exemption limit.
+
+### Step 2: Frontend Rendering & Interaction
+1. **`UnrealizedGainsCard.tsx`:** Renders summary metric cards showing total Unrealized STCG, Unrealized LTCG, Section 112A Remaining Headroom, and Total Estimated Tax Liability.
+2. **`UnrealizedGainsModal.tsx`:** Clicking "View Lot Breakdown" launches an interactive modal displaying:
+   - Progress bar showing Section 112A exemption utilization (Realized Used vs Unrealized Usable vs Remaining Headroom out of ₹1,25,000).
+   - Detailed tax lot breakdown table with buy date, holding days, quantity, buy price, current price, gain/loss, tax rate badge, and estimated tax.
+   - Fully supports global Privacy Mode currency masking (`usePrivacy`).
+

@@ -108,3 +108,43 @@ if hasattr(CapitalGainsSummary, "model_rebuild"):
     CapitalGainsSummary.model_rebuild()
 else:
     CapitalGainsSummary.update_forward_refs(ForeignGainEntry=ForeignGainEntry)
+
+
+class UnrealizedTaxLot(BaseModel):
+    """Details of an unsold/open tax lot with unrealized gains"""
+    holding_id: str
+    asset_id: str
+    asset_ticker: str
+    asset_name: str
+    asset_type: str
+    buy_date: date
+    quantity: Decimal
+    buy_price: Decimal
+    current_price: Decimal
+    total_cost: Decimal
+    market_value: Decimal
+    unrealized_gain: Decimal
+    gain_type: Literal["STCG", "LTCG"]
+    holding_days: int
+    tax_rate: str
+    estimated_tax: Decimal
+    is_grandfathered: bool = False
+    is_foreign: bool = False
+    currency: str = "INR"
+
+
+class UnrealizedGainsSummary(BaseModel):
+    """Summary of unrealized capital gains and Section 112A exemption headroom"""
+    financial_year: str
+    total_unrealized_stcg: Decimal = Decimal("0.0")
+    total_unrealized_ltcg: Decimal = Decimal("0.0")
+    total_unrealized_gain: Decimal = Decimal("0.0")
+    section_112a_realized_used: Decimal = Decimal("0.0")
+    section_112a_remaining_headroom: Decimal = Decimal("0.0")
+    section_112a_unrealized_eligible: Decimal = Decimal("0.0")
+    section_112a_unrealized_exemption_used: Decimal = Decimal("0.0")
+    estimated_unrealized_stcg_tax: Decimal = Decimal("0.0")
+    estimated_unrealized_ltcg_tax: Decimal = Decimal("0.0")
+    total_estimated_tax: Decimal = Decimal("0.0")
+    lots: List[UnrealizedTaxLot] = []
+

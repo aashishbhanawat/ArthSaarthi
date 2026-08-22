@@ -1,3 +1,47 @@
+## 2026-08-20: Fix Foreign & Indian Stock Tax Classification in Unrealized & Realized Gains Engine
+
+**Task:** Fix tax classification bugs for Foreign stocks (e.g. CSCO, USD currency: enforce 24m holding period, Slab STCG rate, zero 112A pooling) and Indian stocks whose company names contain keywords like `"OVERSEAS"` or `"GLOBAL"` (e.g. LAHOTI OVERSEAS LTD: classify directly as `EQUITY_LISTED`).
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Foreign Stock Tax Rules Enforced (`UnrealizedTaxService`):**
+   - Fixed `backend/app/services/unrealized_tax_service.py` to isolate assets with non-INR currencies (`asset.currency != 'INR'`).
+   - Foreign assets (e.g. CSCO, USD currency) now use 24-month (730-day) holding period threshold, classify holding period ≤ 730 days as `STCG`, set tax rate to `Slab (30.0%)`, and exclude them from Section 112A exemption pooling.
+   - Added unit test `test_unrealized_tax_foreign_stock_classification` in `backend/app/tests/api/v1/test_unrealized_tax.py`.
+2. **Indian Stock False-Positive Keyword Fix (`CapitalGainsService`):**
+   - Fixed `backend/app/services/capital_gains_service.py` `_classify_asset_category` to directly return `EQUITY_LISTED` for Indian stocks (`atype in ["STOCK", "STOCKS", "EQUITY"]`) without running generic substring matches (`"OVERSEAS"`, `"GLOBAL"`, `"WORLD"`) against company names.
+   - Resolved tax misclassification for LAHOTI OVERSEAS LTD (`LAHOTIOV`), restoring holding period (3,386 days), Section 55(2)(ac) grandfathering, and `LTCG 12.5% (Sec 112A)` tax label.
+   - Added unit test `test_stock_with_overseas_in_name_is_equity_listed` in `backend/app/tests/services/test_capital_gains_service.py`.
+3. **FR6.5 Phase 3 Planning:**
+   - Authored feature specification `docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md` and issue tracking file `docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md`.
+4. **Code Quality & Testing Verification:**
+   - Resolved all 19 python `ruff` lints and 2 typescript `eslint` lints.
+   - Verified 33/33 backend pytest test cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
+
+## 2026-08-18: Implement Unrealized Capital Gains & Section 112A Exemption Pooling (FR6.5 Phase 2 / Issue #516)
+
+**Task:** Implement lot-level FIFO unrealized capital gains calculation, statutory Section 112A LTCG exemption pooling (₹1,25,000 threshold/FY), REST endpoint `GET /api/v1/capital-gains/unrealized`, frontend summary card & drilldown modal with Privacy Mode currency masking, and complete automated tests.
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feature Branch:** Created feature branch `feat/unrealized-capital-gains-fr6.5`.
+2. **Backend Schemas & Service Engine:**
+   - Added `UnrealizedTaxLot` and `UnrealizedGainsSummary` schemas to `backend/app/schemas/capital_gains.py` and exported them in `backend/app/schemas/__init__.py`.
+   - Created `UnrealizedTaxService` in `backend/app/services/unrealized_tax_service.py` to query open buy transactions, calculate lot-level unsold quantities using `TransactionLink` references, fetch live asset market prices via `FinancialDataService.get_current_prices`, compute STCG/LTCG holding period thresholds (12m for equity, 24m for debt/unlisted), apply Section 55(2)(ac) grandfathering rules, and perform statutory Section 112A LTCG exemption pooling (₹1,25,000 threshold per FY).
+   - Exposed REST endpoint `GET /api/v1/capital-gains/unrealized` in `backend/app/api/v1/endpoints/capital_gains.py`.
+3. **Frontend Integration:**
+   - Added `UnrealizedTaxLot`, `UnrealizedGainsSummary`, and `useUnrealizedCapitalGains` query hook to `frontend/src/hooks/useCapitalGains.ts`.
+   - Created `UnrealizedGainsModal.tsx` displaying summary metric cards, Section 112A exemption utilization progress bar (Realized Used vs Unrealized Usable vs Remaining Headroom), and interactive tax lot breakdown table with Privacy Mode support (`usePrivacy`).
+   - Created `UnrealizedGainsCard.tsx` and integrated it into `frontend/src/pages/CapitalGainsPage.tsx`.
+4. **Automated Testing & Verification & Bug Triage:**
+   - Fixed Section 112A exemption headroom reduction for realized equity LTCG transactions in `UnrealizedTaxService` and updated `CapitalGainsService._determine_tax_rate_label` to tag `EQUITY_LISTED` LTCG as `"LTCG 12.5% (Sec 112A)"`.
+   - Authored backend test suite `backend/app/tests/api/v1/test_unrealized_tax.py` verifying empty portfolios, open equity lots, 112A exemption headroom calculations, realized 112A headroom deduction, and API endpoint response schemas (4/4 tests passed).
+   - Authored frontend component test `frontend/src/components/CapitalGains/UnrealizedGainsModal.test.tsx` (all 47 frontend test suites / 193 tests passed 100%).
+
 ## 2026-08-18: Fix Upstox Metadata Unique ISIN Conflict & Session PendingRollbackError Server Crash Loop
 
 **Task:** Fix PostgreSQL container restart crash loop on Server mode (`psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "ix_assets_isin"`) caused by Upstox metadata updating existing assets with duplicate ISINs, and resolve uncaught `PendingRollbackError` in asset seeder.

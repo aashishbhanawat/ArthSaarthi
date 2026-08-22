@@ -27,7 +27,11 @@ from .bond import (
     BondUpdate,
     BondWithTransactionCreate,
 )
-from .capital_gains import CapitalGainsSummary
+from .capital_gains import (
+    CapitalGainsSummary,
+    UnrealizedGainsSummary,
+    UnrealizedTaxLot,
+)
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,
@@ -194,6 +198,9 @@ __all__ = [
     "WatchlistCreate",
     "WatchlistItem",
     "WatchlistItemCreate",
+    "CapitalGainsSummary",
+    "UnrealizedGainsSummary",
+    "UnrealizedTaxLot",
     "WatchlistUpdate",
     "UserRiskProfile",
     "UserRiskProfileCreate",

@@ -1,7 +1,8 @@
+import logging
 from io import StringIO
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -9,9 +10,11 @@ from app import crud
 from app.core import dependencies as deps
 from app.db.session import get_db
 from app.models import User
-from app.schemas.capital_gains import CapitalGainsSummary
+from app.schemas.capital_gains import CapitalGainsSummary, UnrealizedGainsSummary
 from app.services.capital_gains_service import CapitalGainsService
+from app.services.unrealized_tax_service import UnrealizedTaxService
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -121,3 +124,44 @@ def export_capital_gains_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
+@router.get("/unrealized", response_model=UnrealizedGainsSummary)
+def get_unrealized_capital_gains(
+    fy: Optional[str] = Query(None, description="Financial Year (e.g., '2025-26')"),
+    portfolio_id: Optional[str] = Query(None, description="Filter by Portfolio ID"),
+    slab_rate: float = Query(
+        30.0, description="User's Income Tax Slab Rate (e.g. 30.0)"
+    ),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user),
+):
+    """
+    Get Unrealized Capital Gains and Section 112A Exemption Headroom.
+    """
+    if portfolio_id:
+        portfolio = crud.portfolio.get(db=db, id=portfolio_id)
+        if not portfolio:
+            raise HTTPException(status_code=404, detail="Portfolio not found")
+        if portfolio.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    try:
+        service = UnrealizedTaxService(db)
+        return service.calculate_unrealized_gains(
+            user_id=str(current_user.id),
+            fy_year=fy,
+            portfolio_id=portfolio_id,
+            slab_rate=slab_rate,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(
+            "Error calculating unrealized capital gains: %s", exc, exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to calculate unrealized capital gains: {str(exc)}",
+        )
+
