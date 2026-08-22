@@ -13,11 +13,15 @@ import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 interface WatchlistSelectorProps {
   selectedWatchlistId: string | null;
   onSelectWatchlist: (id: string | null) => void;
+  isCreateModalOpen?: boolean;
+  onCreateModalClose?: () => void;
 }
 
 const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
   selectedWatchlistId,
   onSelectWatchlist,
+  isCreateModalOpen,
+  onCreateModalClose,
 }) => {
   const { data: watchlists, isLoading, error } = useWatchlists();
   const createWatchlist = useCreateWatchlist();
@@ -54,6 +58,12 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
       });
     }
   };
+
+  React.useEffect(() => {
+    if (isCreateModalOpen) {
+      handleCreate();
+    }
+  }, [isCreateModalOpen]);
 
   const handleFormSubmit = (name: string) => {
     if (editingWatchlist) {
@@ -122,7 +132,10 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
       </ul>
       <WatchlistFormModal
         isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          if (onCreateModalClose) onCreateModalClose();
+        }}
         onSubmit={handleFormSubmit}
         watchlist={editingWatchlist}
         isPending={createWatchlist.isPending || updateWatchlist.isPending}

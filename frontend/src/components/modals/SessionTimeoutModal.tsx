@@ -46,12 +46,14 @@ const SessionTimeoutModal = ({ isOpen, onClose, onLogout, countdownSeconds = 120
           <p id="session-timeout-desc" className="mb-4 text-gray-700 dark:text-gray-300">You will be logged out in {countdown} seconds due to inactivity.</p>
           <div className="flex justify-end space-x-4">
             <button
+              type="button"
               onClick={onClose}
               className="btn btn-secondary"
             >
               Stay Logged In
             </button>
             <button
+              type="button"
               onClick={onLogout}
               className="btn btn-danger"
             >
