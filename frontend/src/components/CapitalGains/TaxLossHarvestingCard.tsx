@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TaxLossHarvestingItem, useTaxLossHarvesting } from '../../hooks/useCapitalGains';
+import React from 'react';
+import { useTaxLossHarvesting } from '../../hooks/useCapitalGains';
 
 interface TaxLossHarvestingCardProps {
   fy: string;
@@ -14,9 +14,8 @@ export const TaxLossHarvestingCard: React.FC<TaxLossHarvestingCardProps> = ({
   slabRate,
   isPrivacyMode = false,
 }) => {
-  const [selectedOpportunity, setSelectedOpportunity] = useState<TaxLossHarvestingItem | null>(null);
-
   const { data: harvestingData, isLoading } = useTaxLossHarvesting({
+
     fy,
     portfolio_id: portfolioId,
     slab_rate: slabRate,

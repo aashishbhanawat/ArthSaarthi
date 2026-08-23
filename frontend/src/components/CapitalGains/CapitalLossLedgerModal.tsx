@@ -48,8 +48,9 @@ export const CapitalLossLedgerModal: React.FC<CapitalLossLedgerModalProps> = ({
       setStclAmount(0);
       setLtclAmount(0);
       setNotes('');
-    } catch (err: any) {
-      setErrorMsg(err?.response?.data?.detail || 'Failed to add loss ledger entry.');
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setErrorMsg(error?.response?.data?.detail || 'Failed to add loss ledger entry.');
     } finally {
       setIsSubmitting(false);
     }
@@ -60,10 +61,12 @@ export const CapitalLossLedgerModal: React.FC<CapitalLossLedgerModalProps> = ({
       await api.delete(`/api/v1/capital-gains/loss-ledger/${id}`);
       queryClient.invalidateQueries({ queryKey: ['loss-ledger'] });
       queryClient.invalidateQueries({ queryKey: ['capital-setoff'] });
-    } catch (err: any) {
-      alert(err?.response?.data?.detail || 'Failed to delete loss entry.');
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      alert(error?.response?.data?.detail || 'Failed to delete loss entry.');
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
