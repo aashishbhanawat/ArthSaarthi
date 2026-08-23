@@ -99,7 +99,10 @@ def test_ltcl_cannot_setoff_against_stcg(db, monkeypatch):
     assert result.breakdown.unabsorbed_ltcl_to_carry_forward == Decimal("30000.00")
 
 
-def test_brought_forward_loss_setoff_and_expiry(db, monkeypatch):
+def test_brought_forward_loss_setoff_and_expiry(
+    db, pre_unlocked_key_manager, monkeypatch
+):
+
 
     """
     Scenario 3: User has brought-forward loss entries:
