@@ -1,13 +1,11 @@
 import uuid
 from decimal import Decimal
-import pytest
 
 from app.models.capital_loss_ledger import CapitalLossLedger
 from app.services.tax_setoff_service import (
     TaxSetOffService,
     calculate_years_remaining,
     fy_to_ay,
-    parse_fy,
 )
 
 
@@ -64,11 +62,12 @@ def test_stcl_setoff_against_stcg_and_ltcg(db, monkeypatch):
 
 
 def test_ltcl_cannot_setoff_against_stcg(db, monkeypatch):
-
     """
     Scenario 2: User has LTCL ₹30,000 and STCG ₹40,000.
-    LTCL is NOT set off against STCG. LTCL remains unabsorbed (₹30,000) to carry forward.
+    LTCL is NOT set off against STCG.
+    LTCL remains unabsorbed (₹30,000) to carry forward.
     """
+
     user_id = str(uuid.uuid4())
     fy_year = "2025-26"
 
@@ -115,8 +114,8 @@ def test_brought_forward_loss_setoff_and_expiry(db, monkeypatch):
     - BF STCL ₹15,000 offsets STCG ₹20,000 -> Net STCG ₹5,000.
     - BF LTCL ₹25,000 offsets LTCG ₹30,000 -> Net LTCG ₹5,000.
     """
-    from app.models.user import User
     from app.core.security import get_password_hash
+    from app.models.user import User
 
     test_user = User(
         email="test_loss_ledger@example.com",
@@ -201,9 +200,11 @@ def test_tax_loss_harvesting_recommendations(db, monkeypatch):
     - Lot A: STCL ₹10,000
     - Lot B: LTCL ₹15,000
 
-    Net taxable gains before harvesting: STCG ₹12,000 (Slab 30%), LTCG ₹200,000 (12.5% over 1.25L).
-    Engine recommends harvesting Lot A (saving ₹3,000 at 30%) and Lot B (saving ₹1,875 at 12.5%).
+    Net taxable gains before harvesting: STCG ₹12,000 (Slab 30%),
+    LTCG ₹200,000 (12.5% over 1.25L). Engine recommends harvesting
+    Lot A (saving ₹3,000 at 30%) and Lot B (saving ₹1,875 at 12.5%).
     """
+
     user_id = str(uuid.uuid4())
     fy_year = "2025-26"
 

@@ -3,7 +3,6 @@ from io import StringIO
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -23,7 +22,6 @@ from app.schemas.capital_gains import (
 from app.services.capital_gains_service import CapitalGainsService
 from app.services.tax_setoff_service import TaxSetOffService
 from app.services.unrealized_tax_service import UnrealizedTaxService
-
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -188,7 +186,8 @@ def get_capital_gains_setoff(
     current_user: User = Depends(deps.get_current_user),
 ):
     """
-    Get Net Capital Gains after statutory intra-head set-off and brought-forward loss ledger offset.
+    Get Net Capital Gains after statutory intra-head set-off
+    and brought-forward loss ledger offset.
     """
     if portfolio_id:
         portfolio = crud.portfolio.get(db=db, id=portfolio_id)
@@ -208,7 +207,9 @@ def get_capital_gains_setoff(
 
 @router.get("/loss-ledger", response_model=List[CapitalLossLedgerResponse])
 def get_loss_ledger_entries(
-    fy: str = Query("2025-26", description="Current Financial Year for countdown calculation"),
+    fy: str = Query(
+        "2025-26", description="Current Financial Year for countdown calculation"
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(deps.get_current_user),
 ):
@@ -216,7 +217,9 @@ def get_loss_ledger_entries(
     Get user's brought-forward capital loss ledger entries with 8-year countdown meters.
     """
     service = TaxSetOffService(db)
-    return service.get_loss_ledger_entries(user_id=str(current_user.id), current_fy=fy)
+    return service.get_loss_ledger_entries(
+        user_id=str(current_user.id), current_fy=fy
+    )
 
 
 @router.post("/loss-ledger", response_model=CapitalLossLedgerResponse)
@@ -235,14 +238,19 @@ def create_loss_ledger_entry(
     if existing:
         raise HTTPException(
             status_code=400,
-            detail=f"Loss ledger record for Assessment Year {entry_in.assessment_year} already exists.",
+            detail=(
+                f"Loss ledger record for Assessment Year {entry_in.assessment_year} "
+                f"already exists."
+            ),
         )
 
     db_obj = crud.capital_loss_ledger.create_with_owner(
         db, obj_in=entry_in, user_id=current_user.id
     )
     service = TaxSetOffService(db)
-    entries = service.get_loss_ledger_entries(user_id=str(current_user.id), current_fy=current_fy)
+    entries = service.get_loss_ledger_entries(
+        user_id=str(current_user.id), current_fy=current_fy
+    )
     for e in entries:
         if e.id == str(db_obj.id):
             return e
@@ -268,11 +276,14 @@ def update_loss_ledger_entry(
 
     db_obj = crud.capital_loss_ledger.update(db, db_obj=db_obj, obj_in=entry_in)
     service = TaxSetOffService(db)
-    entries = service.get_loss_ledger_entries(user_id=str(current_user.id), current_fy=current_fy)
+    entries = service.get_loss_ledger_entries(
+        user_id=str(current_user.id), current_fy=current_fy
+    )
     for e in entries:
         if e.id == str(db_obj.id):
             return e
     return CapitalLossLedgerResponse.from_orm(db_obj)
+
 
 
 @router.delete("/loss-ledger/{ledger_id}")

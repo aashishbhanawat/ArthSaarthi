@@ -1,6 +1,8 @@
 import logging
+import uuid
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
+
 from sqlalchemy.orm import Session
 
 from app.models.capital_loss_ledger import CapitalLossLedger
@@ -52,13 +54,18 @@ class TaxSetOffService:
         self.db = db
 
     def get_loss_ledger_entries(
-        self, user_id: str, current_fy: str
+        self, user_id: Union[str, uuid.UUID], current_fy: str
     ) -> List[CapitalLossLedgerResponse]:
-        """Fetches all loss ledger entries for user with calculated countdown meters."""
+        """Fetches all loss ledger entries for user with countdown meters."""
         current_ay = fy_to_ay(current_fy)
+        user_uuid = (
+            uuid.UUID(str(user_id))
+            if isinstance(user_id, (str, uuid.UUID))
+            else user_id
+        )
         entries = (
             self.db.query(CapitalLossLedger)
-            .filter(CapitalLossLedger.user_id == user_id)
+            .filter(CapitalLossLedger.user_id == user_uuid)
             .order_by(CapitalLossLedger.assessment_year.asc())
             .all()
         )
@@ -141,7 +148,7 @@ class TaxSetOffService:
         total_bf_stcl = Decimal("0.0")
         total_bf_ltcl = Decimal("0.0")
 
-        # Eligible brought-forward losses (strictly prior AY, filed on time, not expired)
+        # Eligible brought-forward losses (strictly prior AY, filed on time, active)
         for entry in ledger_entries:
             entry_start, _ = parse_fy(entry.assessment_year)
             curr_start, _ = parse_fy(current_ay)
@@ -186,7 +193,9 @@ class TaxSetOffService:
         net_ltcg_tax = taxable_net_ltcg * Decimal("0.125")
         net_estimated_tax = net_stcg_tax + net_ltcg_tax
 
-        tax_saved_via_setoff = max(Decimal("0.0"), gross_estimated_tax - net_estimated_tax)
+        tax_saved_via_setoff = max(
+            Decimal("0.0"), gross_estimated_tax - net_estimated_tax
+        )
 
         breakdown = SetOffBreakdown(
             gross_stcg=gross_stcg,
@@ -222,7 +231,8 @@ class TaxSetOffService:
         slab_rate: float = 30.0,
     ) -> TaxLossHarvestingSummary:
         """
-        Scans unsold tax lots with negative unrealized gains and computes potential tax savings.
+        Scans unsold tax lots with negative unrealized gains
+        and computes potential tax savings.
         """
         # Get net taxable gains before harvesting
         setoff_summary = self.calculate_net_capital_gains(
@@ -262,21 +272,24 @@ class TaxSetOffService:
                         offset_amount = min(unrealized_loss, net_stcg)
                         tax_saved = offset_amount * stcg_tax_rate
                         reason = (
-                            f"Harvest ₹{unrealized_loss:,.2f} STCL to offset taxable STCG. "
-                            f"Saves ~₹{tax_saved:,.2f} tax at {slab_rate}% rate."
+                            f"Harvest ₹{unrealized_loss:,.2f} STCL to offset "
+                            f"taxable STCG. Saves ~₹{tax_saved:,.2f} tax at "
+                            f"{slab_rate}% rate."
                         )
                     elif net_ltcg > 0:
                         offset_amount = min(unrealized_loss, net_ltcg)
                         tax_saved = offset_amount * Decimal("0.125")
                         reason = (
-                            f"Harvest ₹{unrealized_loss:,.2f} STCL to offset taxable LTCG. "
-                            f"Saves ~₹{tax_saved:,.2f} tax at 12.5% rate."
+                            f"Harvest ₹{unrealized_loss:,.2f} STCL to offset "
+                            f"taxable LTCG. Saves ~₹{tax_saved:,.2f} tax at "
+                            f"12.5% rate."
                         )
                     else:
                         tax_saved = Decimal("0.0")
                         reason = (
-                            f"Harvest ₹{unrealized_loss:,.2f} STCL to carry forward for up to 8 years "
-                            f"to offset future capital gains."
+                            f"Harvest ₹{unrealized_loss:,.2f} STCL to carry "
+                            f"forward for up to 8 years to offset future "
+                            f"capital gains."
                         )
                 else:
                     total_harvestable_ltcl += unrealized_loss
@@ -284,14 +297,15 @@ class TaxSetOffService:
                         offset_amount = min(unrealized_loss, net_ltcg)
                         tax_saved = offset_amount * Decimal("0.125")
                         reason = (
-                            f"Harvest ₹{unrealized_loss:,.2f} LTCL to offset taxable LTCG. "
-                            f"Saves ~₹{tax_saved:,.2f} tax at 12.5% rate."
+                            f"Harvest ₹{unrealized_loss:,.2f} LTCL to offset "
+                            f"taxable LTCG. Saves ~₹{tax_saved:,.2f} tax at "
+                            f"12.5% rate."
                         )
                     else:
                         tax_saved = Decimal("0.0")
                         reason = (
-                            f"Harvest ₹{unrealized_loss:,.2f} LTCL to carry forward for up to 8 years "
-                            f"to offset future LTCG."
+                            f"Harvest ₹{unrealized_loss:,.2f} LTCL to carry "
+                            f"forward for up to 8 years to offset future LTCG."
                         )
 
                 total_potential_tax_savings += tax_saved
@@ -318,8 +332,10 @@ class TaxSetOffService:
                     )
                 )
 
-        # Sort harvesting opportunities by potential tax saved descending, then loss amount
-        items.sort(key=lambda x: (x.potential_tax_saved, x.unrealized_loss), reverse=True)
+        # Sort opportunities by potential tax saved descending, then loss amount
+        items.sort(
+            key=lambda x: (x.potential_tax_saved, x.unrealized_loss), reverse=True
+        )
 
         return TaxLossHarvestingSummary(
             financial_year=fy_year,
