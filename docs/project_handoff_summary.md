@@ -1,24 +1,32 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-20
+**Last Updated:** 2026-08-23
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Fixed Foreign stock tax rules (CSCO: 24m holding, Slab STCG rate, no 112A pooling) and Indian stock keyword classification (LAHOTI OVERSEAS LTD: `EQUITY_LISTED`). Resolved all ruff and eslint lints. Authored FR6.5 Phase 3 feature specification and issue tracking doc. All 33 backend pytest cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
+**Latest Achievement:** Implemented Intra-Head Capital Loss Set-Off Engine (Section 70/71/74: STCL vs STCG/LTCG, LTCL vs LTCG only), Carry-Forward Loss Ledger model with 8-year countdown meter, and Tax-Loss Harvesting Recommendations Engine for open tax lots (Issue #526 / FR6.5 Phase 3). All 6 backend pytest test cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **366/369 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **366/369 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **372/375 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **372/375 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **193/193 Passing** (47/47 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Intra-Head Capital Loss Set-Off, Loss Ledger & Tax-Loss Harvesting (Issue #526 / FR6.5 Phase 3) (Updated 2026-08-23):**
+    - **Database Model & Migration:** Added `CapitalLossLedger` model (`backend/app/models/capital_loss_ledger.py`) tracking `user_id`, `financial_year`, `assessment_year`, `stcl_amount`, `ltcl_amount`, `is_itr_filed_on_time`, and `notes`. Generated Alembic migration `f67e8f9a0b1c_add_capital_loss_ledgers_table.py` and executed database upgrade cycle.
+    - **Service Engine (`TaxSetOffService`):** Created `backend/app/services/tax_setoff_service.py` to calculate statutory Section 70/71/74 intra-head capital loss set-offs (STCL against STCG/LTCG; LTCL against LTCG only), 8-year brought-forward loss countdown meters, and tax-loss harvesting recommendations on open tax lots.
+    - **REST API Endpoints:** Added `/api/v1/capital-gains/set-off`, `/api/v1/capital-gains/loss-ledger` (CRUD), and `/api/v1/capital-gains/tax-loss-harvesting` in `backend/app/api/v1/endpoints/capital_gains.py`.
+    - **Frontend Components:** Created `CapitalLossLedgerModal.tsx`, `CapitalGainsNetSummaryCard.tsx`, and `TaxLossHarvestingCard.tsx` on `CapitalGainsPage.tsx` with Privacy Mode support.
+    - **Automated Tests:** Authored 6 backend pytest test cases (`test_tax_setoff_service.py`) and Jest unit tests (`CapitalLossLedgerModal.test.tsx`). Verified 100% test pass rate across backend and frontend suites.
+
 *   **Foreign & Indian Stock Tax Classification & Linter Hardening (Updated 2026-08-20):**
+
     - **Foreign Stock Tax Rules (`UnrealizedTaxService`):** Enforced 24-month (730-day) holding period for non-INR assets (CSCO, USD currency). Classifies holding period ≤ 730 days as `STCG`, assigns `Slab (30.0%)` tax rate, and excludes from Section 112A exemption pooling.
     - **Indian Stock Keyword Misclassification (`CapitalGainsService`):** Updated `_classify_asset_category` to return `EQUITY_LISTED` directly for Indian stocks (`atype in ["STOCK", "STOCKS", "EQUITY"]`) without matching generic keywords (`OVERSEAS`, `GLOBAL`, `WORLD`) in company names. Corrected classification for LAHOTI OVERSEAS LTD (`LAHOTIOV`).
     - **FR6.5 Phase 3 Planning:** Authored [`docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md) and [`docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md).

@@ -168,3 +168,137 @@ export const useUnrealizedCapitalGains = (params: CapitalGainsParams) => {
     });
 };
 
+export interface CapitalLossLedgerEntry {
+    id: string;
+    user_id: string;
+    financial_year: string;
+    assessment_year: string;
+    stcl_amount: number;
+    ltcl_amount: number;
+    is_itr_filed_on_time: boolean;
+    notes?: string;
+    years_remaining: number;
+    is_expired: boolean;
+}
+
+export interface CapitalLossLedgerCreate {
+    financial_year: string;
+    assessment_year: string;
+    stcl_amount: number;
+    ltcl_amount: number;
+    is_itr_filed_on_time: boolean;
+    notes?: string;
+}
+
+export interface SetOffBreakdown {
+    gross_stcg: number;
+    gross_stcl: number;
+    gross_ltcg: number;
+    gross_ltcl: number;
+    cy_stcl_offset_against_stcg: number;
+    cy_stcl_offset_against_ltcg: number;
+    cy_ltcl_offset_against_ltcg: number;
+    bf_stcl_used: number;
+    bf_ltcl_used: number;
+    net_taxable_stcg: number;
+    net_taxable_ltcg: number;
+    unabsorbed_stcl_to_carry_forward: number;
+    unabsorbed_ltcl_to_carry_forward: number;
+    gross_estimated_tax: number;
+    net_estimated_tax: number;
+    tax_saved_via_setoff: number;
+}
+
+export interface CapitalSetOffSummary {
+    financial_year: string;
+    assessment_year: string;
+    breakdown: SetOffBreakdown;
+    loss_ledger_entries: CapitalLossLedgerEntry[];
+}
+
+export interface TaxLossHarvestingItem {
+    holding_id: string;
+    asset_id: string;
+    asset_ticker: string;
+    asset_name: string;
+    asset_type: string;
+    buy_date: string;
+    quantity: number;
+    buy_price: number;
+    current_price: number;
+    total_cost: number;
+    market_value: number;
+    unrealized_loss: number;
+    loss_type: 'STCL' | 'LTCL';
+    holding_days: number;
+    potential_tax_saved: number;
+    recommended_sell_quantity: number;
+    recommendation_reason: string;
+}
+
+export interface TaxLossHarvestingSummary {
+    financial_year: string;
+    total_harvestable_stcl: number;
+    total_harvestable_ltcl: number;
+    total_potential_tax_savings: number;
+    net_taxable_stcg_before_harvesting: number;
+    net_taxable_ltcg_before_harvesting: number;
+    harvesting_opportunities: TaxLossHarvestingItem[];
+}
+
+export const useCapitalSetOff = (params: CapitalGainsParams) => {
+    return useQuery<CapitalSetOffSummary>({
+        queryKey: ['capital-setoff', params.fy, params.portfolio_id, params.slab_rate],
+        queryFn: async () => {
+            const queryParams = new URLSearchParams({
+                fy: params.fy,
+                slab_rate: params.slab_rate.toString()
+            });
+            if (params.portfolio_id) {
+                queryParams.append('portfolio_id', params.portfolio_id);
+            }
+            const response = await api.get(`/api/v1/capital-gains/set-off?${queryParams.toString()}`);
+            return response.data;
+        },
+        enabled: !!params.fy,
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+    });
+};
+
+export const useCapitalLossLedger = (fy: string = '2025-26') => {
+    return useQuery<CapitalLossLedgerEntry[]>({
+        queryKey: ['loss-ledger', fy],
+        queryFn: async () => {
+            const response = await api.get(`/api/v1/capital-gains/loss-ledger?fy=${fy}`);
+            return response.data;
+        },
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+    });
+};
+
+export const useTaxLossHarvesting = (params: CapitalGainsParams) => {
+    return useQuery<TaxLossHarvestingSummary>({
+        queryKey: ['tax-loss-harvesting', params.fy, params.portfolio_id, params.slab_rate],
+        queryFn: async () => {
+            const queryParams = new URLSearchParams({
+                fy: params.fy,
+                slab_rate: params.slab_rate.toString()
+            });
+            if (params.portfolio_id) {
+                queryParams.append('portfolio_id', params.portfolio_id);
+            }
+            const response = await api.get(`/api/v1/capital-gains/tax-loss-harvesting?${queryParams.toString()}`);
+            return response.data;
+        },
+        enabled: !!params.fy,
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+    });
+};
+
+

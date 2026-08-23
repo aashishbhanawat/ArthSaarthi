@@ -1,4 +1,33 @@
+## 2026-08-23: Implement Intra-Head Capital Loss Set-Off, Loss Ledger & Tax-Loss Harvesting (FR6.5 Phase 3 / Issue #526)
+
+**Task:** Implement statutory intra-head capital loss set-off engine (Section 70/71/74: STCL vs STCG/LTCG, LTCL vs LTCG only), carry-forward loss ledger model & 8-year countdown meter, tax-loss harvesting recommendations engine for open lots, REST API endpoints, frontend Net Summary & Loss Harvesting cards, Loss Ledger modal, and automated tests.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **GitHub Issue & Feature Branch:** Created GitHub Issue [#526](https://github.com/aashishbhanawat/ArthSaarthi/issues/526) and branch `feat/526-tax-loss-setoff-harvesting`.
+2. **Database Model & Migration:**
+   - Created `CapitalLossLedger` model in `backend/app/models/capital_loss_ledger.py` tracking `user_id`, `financial_year`, `assessment_year`, `stcl_amount`, `ltcl_amount`, `is_itr_filed_on_time`, and `notes`.
+   - Exported model in `backend/app/models/__init__.py`.
+   - Created Alembic migration `backend/alembic/versions/f67e8f9a0b1c_add_capital_loss_ledgers_table.py` and executed safe upgrade cycle inside Docker container.
+3. **Schemas & Service Engine (`TaxSetOffService`):**
+   - Added loss ledger, net gains set-off summary, and tax loss harvesting schemas in `backend/app/schemas/capital_gains.py`.
+   - Built `CRUDCapitalLossLedger` in `backend/app/crud/crud_capital_loss_ledger.py`.
+   - Implemented `TaxSetOffService` in `backend/app/services/tax_setoff_service.py` performing statutory Section 70/71/74 intra-head set-off matrix (STCL against STCG/LTCG; LTCL against LTCG only), 8-year brought-forward loss countdown meter, and ranking tax loss harvesting opportunities on open tax lots.
+4. **API Endpoints:**
+   - Registered `/api/v1/capital-gains/set-off`, `/api/v1/capital-gains/loss-ledger` (CRUD), and `/api/v1/capital-gains/tax-loss-harvesting` in `backend/app/api/v1/endpoints/capital_gains.py`.
+5. **Frontend UI Components & Hooks:**
+   - Added API hooks `useCapitalSetOff`, `useCapitalLossLedger`, and `useTaxLossHarvesting` in `frontend/src/hooks/useCapitalGains.ts`.
+   - Built `CapitalLossLedgerModal.tsx`, `CapitalGainsNetSummaryCard.tsx`, and `TaxLossHarvestingCard.tsx` with Privacy Mode support.
+   - Integrated components on `frontend/src/pages/CapitalGainsPage.tsx`.
+6. **Automated Testing & Verification:**
+   - Added 6 backend pytest test cases in `backend/app/tests/services/test_tax_setoff_service.py` covering all corner cases (STCL setoff, LTCL restrictions, 8-year countdown, late ITR disallowance, harvesting ranking).
+   - Added frontend Jest unit tests in `frontend/src/components/CapitalGains/CapitalLossLedgerModal.test.tsx`.
+   - Verified 6/6 pytest cases passing and 47/47 frontend Jest test suites passing (193/193 tests).
+
 ## 2026-08-20: Fix Foreign & Indian Stock Tax Classification in Unrealized & Realized Gains Engine
+
 
 **Task:** Fix tax classification bugs for Foreign stocks (e.g. CSCO, USD currency: enforce 24m holding period, Slab STCG rate, zero 112A pooling) and Indian stocks whose company names contain keywords like `"OVERSEAS"` or `"GLOBAL"` (e.g. LAHOTI OVERSEAS LTD: classify directly as `EQUITY_LISTED`).
 **AI Assistant:** Antigravity  

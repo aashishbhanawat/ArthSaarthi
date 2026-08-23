@@ -148,3 +148,106 @@ class UnrealizedGainsSummary(BaseModel):
     total_estimated_tax: Decimal = Decimal("0.0")
     lots: List[UnrealizedTaxLot] = []
 
+
+# --- Capital Loss Ledger Schemas ---
+
+class CapitalLossLedgerBase(BaseModel):
+    financial_year: str  # e.g., "2023-24"
+    assessment_year: str  # e.g., "2024-25"
+    stcl_amount: Decimal = Decimal("0.0")
+    ltcl_amount: Decimal = Decimal("0.0")
+    is_itr_filed_on_time: bool = True
+    notes: Optional[str] = None
+
+
+class CapitalLossLedgerCreate(CapitalLossLedgerBase):
+    pass
+
+
+class CapitalLossLedgerUpdate(BaseModel):
+    financial_year: Optional[str] = None
+    assessment_year: Optional[str] = None
+    stcl_amount: Optional[Decimal] = None
+    ltcl_amount: Optional[Decimal] = None
+    is_itr_filed_on_time: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class CapitalLossLedgerResponse(CapitalLossLedgerBase):
+    id: str
+    user_id: str
+    years_remaining: int  # 8-year countdown meter
+    is_expired: bool
+
+    class Config:
+        from_attributes = True
+
+
+# --- Net Capital Gains Set-Off Schemas ---
+
+class SetOffBreakdown(BaseModel):
+    gross_stcg: Decimal = Decimal("0.0")
+    gross_stcl: Decimal = Decimal("0.0")
+    gross_ltcg: Decimal = Decimal("0.0")
+    gross_ltcl: Decimal = Decimal("0.0")
+
+    # Current Year Intra-Head Set-off
+    cy_stcl_offset_against_stcg: Decimal = Decimal("0.0")
+    cy_stcl_offset_against_ltcg: Decimal = Decimal("0.0")
+    cy_ltcl_offset_against_ltcg: Decimal = Decimal("0.0")
+
+    # Brought-Forward Set-off
+    bf_stcl_used: Decimal = Decimal("0.0")
+    bf_ltcl_used: Decimal = Decimal("0.0")
+
+    # Net Taxable Gains & Carried Forward Losses
+    net_taxable_stcg: Decimal = Decimal("0.0")
+    net_taxable_ltcg: Decimal = Decimal("0.0")
+    unabsorbed_stcl_to_carry_forward: Decimal = Decimal("0.0")
+    unabsorbed_ltcl_to_carry_forward: Decimal = Decimal("0.0")
+
+    # Tax Amounts
+    gross_estimated_tax: Decimal = Decimal("0.0")
+    net_estimated_tax: Decimal = Decimal("0.0")
+    tax_saved_via_setoff: Decimal = Decimal("0.0")
+
+
+class CapitalSetOffSummaryResponse(BaseModel):
+    financial_year: str
+    assessment_year: str
+    breakdown: SetOffBreakdown
+    loss_ledger_entries: List[CapitalLossLedgerResponse] = []
+
+
+# --- Tax Loss Harvesting Schemas ---
+
+class TaxLossHarvestingItem(BaseModel):
+    holding_id: str
+    asset_id: str
+    asset_ticker: str
+    asset_name: str
+    asset_type: str
+    buy_date: date
+    quantity: Decimal
+    buy_price: Decimal
+    current_price: Decimal
+    total_cost: Decimal
+    market_value: Decimal
+    unrealized_loss: Decimal  # Positive number representing loss amount
+    loss_type: Literal["STCL", "LTCL"]
+    holding_days: int
+    potential_tax_saved: Decimal
+    recommended_sell_quantity: Decimal
+    recommendation_reason: str
+
+
+class TaxLossHarvestingSummary(BaseModel):
+    financial_year: str
+    total_harvestable_stcl: Decimal = Decimal("0.0")
+    total_harvestable_ltcl: Decimal = Decimal("0.0")
+    total_potential_tax_savings: Decimal = Decimal("0.0")
+    net_taxable_stcg_before_harvesting: Decimal = Decimal("0.0")
+    net_taxable_ltcg_before_harvesting: Decimal = Decimal("0.0")
+    harvesting_opportunities: List[TaxLossHarvestingItem] = []
+
+

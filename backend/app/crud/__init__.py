@@ -17,6 +17,7 @@ from .crud_transaction import transaction
 from .crud_user import user
 from .crud_watchlist import watchlist
 from .crud_watchlist_item import watchlist_item
+from .crud_capital_loss_ledger import capital_loss_ledger
 
 __all__ = [
     "analytics",
@@ -39,4 +40,6 @@ __all__ = [
     "watchlist",
     "watchlist_item",
     "risk_profile",
+    "capital_loss_ledger",
 ]
+
