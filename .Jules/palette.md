@@ -11,3 +11,6 @@
 ## 2025-02-20 - Contextual ARIA labels for icon-only action buttons in lists/tables
 **Learning:** Icon-only action buttons (like Edit/Delete) inside data tables or lists often rely only on generic `title` attributes (e.g., `title="Edit"`). This is insufficient for accessibility, as screen reader users tabbing through the page will hear "Edit button", "Edit button" repeatedly without knowing *which* item they are acting upon.
 **Action:** When adding or auditing icon-only buttons in mapped arrays (like table rows), always explicitly add an `aria-label` that interpolates row-specific context (e.g., `aria-label={\`Edit alias for ${alias.alias_symbol}\`}`).
+## 2026-08-24 - Replace raw HTML entities with SVG icons
+**Learning:** Raw text characters like '×' for dismiss buttons are often misread by screen readers (e.g., as 'times').
+**Action:** Always use semantic SVG components (like Heroicons' XMarkIcon) along with appropriate aria-labels and aria-hidden attributes for UI icon buttons.
