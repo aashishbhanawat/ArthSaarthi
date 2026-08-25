@@ -88,24 +88,25 @@ export const CapitalGainsNetSummaryCard: React.FC<CapitalGainsNetSummaryCardProp
           </div>
 
           <div className="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800">
-            <span className="text-[11px] text-slate-400 uppercase font-medium">Net Taxable STCG</span>
+            <span className="text-[11px] text-slate-400 uppercase font-medium">Net Realized STCG</span>
             <div className="text-base font-bold text-emerald-400 mt-1 font-mono">
               {maskValue(breakdown.net_taxable_stcg)}
             </div>
             <div className="text-[10px] text-slate-400 mt-1">
-              After CY & BF Set-off
+              After Loss Set-Off
             </div>
           </div>
 
           <div className="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800">
-            <span className="text-[11px] text-slate-400 uppercase font-medium">Net Taxable LTCG</span>
+            <span className="text-[11px] text-slate-400 uppercase font-medium">Net Realized LTCG</span>
             <div className="text-base font-bold text-emerald-400 mt-1 font-mono">
               {maskValue(breakdown.net_taxable_ltcg)}
             </div>
             <div className="text-[10px] text-slate-400 mt-1">
-              After CY & BF Set-off
+              After Loss Set-Off (Taxable: {maskValue(Math.max(0, parseNum(breakdown.net_taxable_ltcg) - 125000))})
             </div>
           </div>
+
         </div>
 
         {/* Set-off Breakdown & Tax Savings Banner */}
