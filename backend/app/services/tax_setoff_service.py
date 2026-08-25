@@ -179,8 +179,14 @@ class TaxSetOffService:
         unabsorbed_bf_ltcl = total_bf_ltcl - bf_ltcl_used
 
         # Step C: Net Tax Computations
-        # Gross estimated tax before set-off
-        gross_stcg_tax = gross_stcg * (Decimal(str(slab_rate)) / Decimal("100.0"))
+        # Use actual effective STCG rate from CapitalGainsService (e.g. 20% for Equity 111A vs slab)
+        estimated_stcg_tax = getattr(summary, "estimated_stcg_tax", Decimal("0.0"))
+        if gross_stcg > 0 and estimated_stcg_tax > 0:
+            stcg_tax_rate = estimated_stcg_tax / gross_stcg
+        else:
+            stcg_tax_rate = Decimal(str(slab_rate)) / Decimal("100.0")
+
+        gross_stcg_tax = gross_stcg * stcg_tax_rate
         # Section 112A headroom: LTCG exemption threshold 1.25L (125000)
         exemption_112a = Decimal("125000.00")
         taxable_gross_ltcg = max(Decimal("0.0"), gross_ltcg - exemption_112a)
@@ -188,7 +194,7 @@ class TaxSetOffService:
         gross_estimated_tax = gross_stcg_tax + gross_ltcg_tax
 
         # Net estimated tax after set-off
-        net_stcg_tax = rem_stcg * (Decimal(str(slab_rate)) / Decimal("100.0"))
+        net_stcg_tax = rem_stcg * stcg_tax_rate
         taxable_net_ltcg = max(Decimal("0.0"), rem_ltcg - exemption_112a)
         net_ltcg_tax = taxable_net_ltcg * Decimal("0.125")
         net_estimated_tax = net_stcg_tax + net_ltcg_tax
@@ -251,6 +257,21 @@ class TaxSetOffService:
             net_ltcg - exemption_112a,
         )
 
+        # Compute effective STCG rate for loss harvesting
+        cg_service = CapitalGainsService(self.db)
+        cg_summary = cg_service.calculate_capital_gains(
+            portfolio_id=portfolio_id,
+            user_id=user_id,
+            fy_year=fy_year,
+            slab_rate=slab_rate,
+        )
+        est_stcg_tax = getattr(cg_summary, "estimated_stcg_tax", Decimal("0.0"))
+        tot_stcg = getattr(cg_summary, "total_stcg", Decimal("0.0"))
+        if tot_stcg > 0 and est_stcg_tax > 0:
+            stcg_tax_rate = est_stcg_tax / tot_stcg
+        else:
+            stcg_tax_rate = Decimal(str(slab_rate)) / Decimal("100.0")
+
 
         # Fetch open lots
         unrealized_service = UnrealizedTaxService(self.db)
@@ -274,17 +295,20 @@ class TaxSetOffService:
 
                 if is_stcl:
                     total_harvestable_stcl += unrealized_loss
-                    stcg_tax_rate = Decimal(str(slab_rate)) / Decimal("100.0")
                     if rem_taxable_stcg > 0:
                         offset_amount = min(unrealized_loss, rem_taxable_stcg)
                         tax_saved = offset_amount * stcg_tax_rate
                         rem_taxable_stcg -= offset_amount
+                        stcg_rate_pct = (stcg_tax_rate * Decimal("100.0")).quantize(
+                            Decimal("0.1")
+                        )
                         reason = (
                             f"Harvest ₹{unrealized_loss:,.2f} STCL to offset "
                             f"taxable STCG. Saves ~₹{tax_saved:,.2f} tax at "
-                            f"{slab_rate}% rate."
+                            f"{stcg_rate_pct}% rate."
                         )
                     elif rem_taxable_ltcg > 0:
+
                         offset_amount = min(unrealized_loss, rem_taxable_ltcg)
                         tax_saved = offset_amount * Decimal("0.125")
                         rem_taxable_ltcg -= offset_amount
