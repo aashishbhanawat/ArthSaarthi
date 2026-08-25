@@ -179,8 +179,10 @@ class TaxSetOffService:
         unabsorbed_bf_ltcl = total_bf_ltcl - bf_ltcl_used
 
         # Step C: Net Tax Computations
-        # Use actual effective STCG rate from CapitalGainsService (e.g. 20% for Equity 111A vs slab)
+        # Use actual effective STCG rate from CapitalGainsService
+        # (e.g., 20% for Equity 111A vs slab rate)
         estimated_stcg_tax = getattr(summary, "estimated_stcg_tax", Decimal("0.0"))
+
         if gross_stcg > 0 and estimated_stcg_tax > 0:
             stcg_tax_rate = estimated_stcg_tax / gross_stcg
         else:

@@ -340,9 +340,11 @@ def test_tax_loss_harvesting_when_ltcg_below_125k_threshold(db, monkeypatch):
 
 def test_tax_loss_harvesting_with_equity_stcg_20_percent_rate(db, monkeypatch):
     """
-    Scenario 6 (Corner Case): Realized STCG is Equity 111A ₹5,000 (taxed at 20% = ₹1,000 tax).
-    Harvesting ₹10,000 STCL offsets ₹5,000 STCG at 20% (saving ₹1,000 tax, NOT 30% slab rate ₹1,500).
+    Scenario 6 (Corner Case): Realized STCG is Equity 111A ₹5,000
+    (taxed at 20% = ₹1,000 tax). Harvesting ₹10,000 STCL offsets
+    ₹5,000 STCG at 20% (saving ₹1,000 tax, NOT 30% slab rate ₹1,500).
     """
+
     user_id = str(uuid.uuid4())
     fy_year = "2026-27"
 
