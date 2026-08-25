@@ -418,7 +418,6 @@ const CapitalGainsPage: React.FC = () => {
                             <div className="mb-6">
                                 <CapitalGainsNetSummaryCard
                                     fy={selectedFY}
-                                    portfolioId={selectedPortfolio}
                                     slabRate={slabRate}
                                 />
                             </div>
@@ -430,10 +429,10 @@ const CapitalGainsPage: React.FC = () => {
                             <div className="mb-8">
                                 <TaxLossHarvestingCard
                                     fy={selectedFY}
-                                    portfolioId={selectedPortfolio}
                                     slabRate={slabRate}
                                 />
                             </div>
+
 
 
                             {/* ITR-2 Schedule CG Matrix */}
