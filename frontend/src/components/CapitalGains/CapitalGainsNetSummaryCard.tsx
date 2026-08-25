@@ -22,7 +22,13 @@ export const CapitalGainsNetSummaryCard: React.FC<CapitalGainsNetSummaryCardProp
     slab_rate: slabRate,
   });
 
-  const maskValue = (val: number) => (isPrivacyMode ? '••••••' : `₹${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  const maskValue = (val: number | string) => {
+    if (isPrivacyMode) return '••••••';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    return `₹${(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const parseNum = (val: number | string) => (typeof val === 'string' ? parseFloat(val) : val) || 0;
 
   if (isLoading || !setOffData) {
     return (
@@ -107,7 +113,7 @@ export const CapitalGainsNetSummaryCard: React.FC<CapitalGainsNetSummaryCardProp
           <div className="text-xs space-y-1">
             <div className="text-slate-300 font-semibold">Statutory Set-off Applied:</div>
             <div className="text-slate-400">
-              • Current Year STCL Offset: <span className="text-slate-200 font-mono">{maskValue(breakdown.cy_stcl_offset_against_stcg + breakdown.cy_stcl_offset_against_ltcg)}</span>
+              • Current Year STCL Offset: <span className="text-slate-200 font-mono">{maskValue(parseNum(breakdown.cy_stcl_offset_against_stcg) + parseNum(breakdown.cy_stcl_offset_against_ltcg))}</span>
               {' | '} LTCL Offset: <span className="text-slate-200 font-mono">{maskValue(breakdown.cy_ltcl_offset_against_ltcg)}</span>
             </div>
             <div className="text-slate-400">
@@ -127,6 +133,7 @@ export const CapitalGainsNetSummaryCard: React.FC<CapitalGainsNetSummaryCardProp
           </div>
         </div>
       </div>
+
 
       <CapitalLossLedgerModal
         isOpen={isLedgerModalOpen}

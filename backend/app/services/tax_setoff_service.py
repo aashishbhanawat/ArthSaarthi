@@ -243,6 +243,14 @@ class TaxSetOffService:
         )
         net_stcg = setoff_summary.breakdown.net_taxable_stcg
         net_ltcg = setoff_summary.breakdown.net_taxable_ltcg
+        rem_taxable_stcg = net_stcg
+        # Section 112A exemption: LTCG below 1.25L has ₹0 tax
+        exemption_112a = Decimal("125000.00")
+        rem_taxable_ltcg = max(
+            Decimal("0.0"),
+            net_ltcg - exemption_112a,
+        )
+
 
         # Fetch open lots
         unrealized_service = UnrealizedTaxService(self.db)
@@ -266,19 +274,20 @@ class TaxSetOffService:
 
                 if is_stcl:
                     total_harvestable_stcl += unrealized_loss
-                    # Rate for STCG tax savings
                     stcg_tax_rate = Decimal(str(slab_rate)) / Decimal("100.0")
-                    if net_stcg > 0:
-                        offset_amount = min(unrealized_loss, net_stcg)
+                    if rem_taxable_stcg > 0:
+                        offset_amount = min(unrealized_loss, rem_taxable_stcg)
                         tax_saved = offset_amount * stcg_tax_rate
+                        rem_taxable_stcg -= offset_amount
                         reason = (
                             f"Harvest ₹{unrealized_loss:,.2f} STCL to offset "
                             f"taxable STCG. Saves ~₹{tax_saved:,.2f} tax at "
                             f"{slab_rate}% rate."
                         )
-                    elif net_ltcg > 0:
-                        offset_amount = min(unrealized_loss, net_ltcg)
+                    elif rem_taxable_ltcg > 0:
+                        offset_amount = min(unrealized_loss, rem_taxable_ltcg)
                         tax_saved = offset_amount * Decimal("0.125")
+                        rem_taxable_ltcg -= offset_amount
                         reason = (
                             f"Harvest ₹{unrealized_loss:,.2f} STCL to offset "
                             f"taxable LTCG. Saves ~₹{tax_saved:,.2f} tax at "
@@ -293,9 +302,10 @@ class TaxSetOffService:
                         )
                 else:
                     total_harvestable_ltcl += unrealized_loss
-                    if net_ltcg > 0:
-                        offset_amount = min(unrealized_loss, net_ltcg)
+                    if rem_taxable_ltcg > 0:
+                        offset_amount = min(unrealized_loss, rem_taxable_ltcg)
                         tax_saved = offset_amount * Decimal("0.125")
+                        rem_taxable_ltcg -= offset_amount
                         reason = (
                             f"Harvest ₹{unrealized_loss:,.2f} LTCL to offset "
                             f"taxable LTCG. Saves ~₹{tax_saved:,.2f} tax at "
@@ -309,6 +319,7 @@ class TaxSetOffService:
                         )
 
                 total_potential_tax_savings += tax_saved
+
 
                 items.append(
                     TaxLossHarvestingItem(

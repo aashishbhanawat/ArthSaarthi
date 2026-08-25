@@ -21,7 +21,16 @@ export const TaxLossHarvestingCard: React.FC<TaxLossHarvestingCardProps> = ({
     slab_rate: slabRate,
   });
 
-  const maskValue = (val: number) => (isPrivacyMode ? '••••••' : `₹${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  const maskValue = (val: number | string) => {
+    if (isPrivacyMode) return '••••••';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    return `₹${(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formatQty = (val: number | string) => {
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    return (num || 0).toLocaleString('en-IN', { maximumFractionDigits: 4 });
+  };
 
   if (isLoading || !harvestingData) {
     return (
@@ -108,7 +117,7 @@ export const TaxLossHarvestingCard: React.FC<TaxLossHarvestingCardProps> = ({
                     </span>
                   </td>
                   <td className="p-3 text-right font-mono text-slate-300">
-                    {isPrivacyMode ? '••••' : item.quantity}
+                    {isPrivacyMode ? '••••' : formatQty(item.quantity)}
                   </td>
                   <td className="p-3 text-right font-mono text-rose-400 font-semibold">
                     -{maskValue(item.unrealized_loss)}
@@ -125,6 +134,7 @@ export const TaxLossHarvestingCard: React.FC<TaxLossHarvestingCardProps> = ({
           </table>
         </div>
       )}
+
     </div>
   );
 };
