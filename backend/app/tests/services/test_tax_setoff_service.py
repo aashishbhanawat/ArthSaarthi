@@ -272,3 +272,167 @@ def test_tax_loss_harvesting_recommendations(db, monkeypatch):
     second_item = harvesting.harvesting_opportunities[1]
     assert second_item.asset_ticker == "INFY"
     assert second_item.potential_tax_saved == Decimal("1875.00")
+
+
+def test_tax_loss_harvesting_when_ltcg_below_125k_threshold(db, monkeypatch):
+    """
+    Scenario 5 (Corner Case): Realized LTCG is ₹28,070 (< ₹125,000 exemption limit).
+    Current LTCG tax is ₹0. Harvesting losses yields ₹0 current tax savings,
+    and recommendations advise carrying forward losses up to 8 years.
+    """
+    user_id = str(uuid.uuid4())
+    fy_year = "2026-27"
+
+    class MockGain:
+        def __init__(self, gain, gain_type):
+            self.gain = Decimal(str(gain))
+            self.gain_type = gain_type
+
+    class MockCGSummary:
+        gains = [MockGain(28070, "LTCG")]
+        estimated_stcg_tax = Decimal("0.0")
+        estimated_ltcg_tax = Decimal("0.0")
+        total_stcg = Decimal("0.0")
+        total_ltcg = Decimal("28070.0")
+
+    class MockLot:
+        def __init__(self, ticker, unrealized_gain, gain_type):
+            self.holding_id = str(uuid.uuid4())
+            self.asset_id = str(uuid.uuid4())
+            self.asset_ticker = ticker
+            self.asset_name = ticker
+            self.asset_type = "EQUITY"
+            self.buy_date = "2025-05-01"
+            self.quantity = Decimal("100")
+            self.buy_price = Decimal("200.0")
+            self.current_price = Decimal("100.0")
+            self.total_cost = Decimal("20000.0")
+            self.market_value = Decimal("10000.0")
+            self.unrealized_gain = Decimal(str(unrealized_gain))
+            self.gain_type = gain_type
+            self.holding_days = 100
+
+    class MockUnrealizedSummary:
+        lots = [
+            MockLot("SILVERBEES", -35760, "STCG"),
+            MockLot("VIVIMEDLAB", -18655.8, "LTCG"),
+        ]
+
+    monkeypatch.setattr(
+        "app.services.tax_setoff_service.CapitalGainsService.calculate_capital_gains",
+        lambda self, portfolio_id, user_id, fy_year, slab_rate: MockCGSummary(),
+    )
+    monkeypatch.setattr(
+        "app.services.tax_setoff_service.UnrealizedTaxService.calculate_unrealized_gains",
+        lambda self, user_id, fy_year, portfolio_id, slab_rate: MockUnrealizedSummary(),
+    )
+
+    service = TaxSetOffService(db)
+    harvesting = service.get_loss_harvesting_opportunities(
+        user_id=user_id, fy_year=fy_year, slab_rate=30.0
+    )
+
+    assert harvesting.total_potential_tax_savings == Decimal("0.00")
+    for item in harvesting.harvesting_opportunities:
+        assert item.potential_tax_saved == Decimal("0.00")
+        assert "carry forward for up to 8 years" in item.recommendation_reason
+
+
+def test_tax_loss_harvesting_with_equity_stcg_20_percent_rate(db, monkeypatch):
+    """
+    Scenario 6 (Corner Case): Realized STCG is Equity 111A ₹5,000 (taxed at 20% = ₹1,000 tax).
+    Harvesting ₹10,000 STCL offsets ₹5,000 STCG at 20% (saving ₹1,000 tax, NOT 30% slab rate ₹1,500).
+    """
+    user_id = str(uuid.uuid4())
+    fy_year = "2026-27"
+
+    class MockGain:
+        def __init__(self, gain, gain_type):
+            self.gain = Decimal(str(gain))
+            self.gain_type = gain_type
+
+    class MockCGSummary:
+        gains = [MockGain(5000, "STCG")]
+        estimated_stcg_tax = Decimal("1000.00")  # 20% rate
+        estimated_ltcg_tax = Decimal("0.0")
+        total_stcg = Decimal("5000.0")
+        total_ltcg = Decimal("0.0")
+
+    class MockLot:
+        def __init__(self, ticker, unrealized_gain, gain_type):
+            self.holding_id = str(uuid.uuid4())
+            self.asset_id = str(uuid.uuid4())
+            self.asset_ticker = ticker
+            self.asset_name = ticker
+            self.asset_type = "EQUITY"
+            self.buy_date = "2025-05-01"
+            self.quantity = Decimal("100")
+            self.buy_price = Decimal("200.0")
+            self.current_price = Decimal("100.0")
+            self.total_cost = Decimal("20000.0")
+            self.market_value = Decimal("10000.0")
+            self.unrealized_gain = Decimal(str(unrealized_gain))
+            self.gain_type = gain_type
+            self.holding_days = 100
+
+    class MockUnrealizedSummary:
+        lots = [MockLot("GICRE", -10000, "STCG")]
+
+    monkeypatch.setattr(
+        "app.services.tax_setoff_service.CapitalGainsService.calculate_capital_gains",
+        lambda self, portfolio_id, user_id, fy_year, slab_rate: MockCGSummary(),
+    )
+    monkeypatch.setattr(
+        "app.services.tax_setoff_service.UnrealizedTaxService.calculate_unrealized_gains",
+        lambda self, user_id, fy_year, portfolio_id, slab_rate: MockUnrealizedSummary(),
+    )
+
+    service = TaxSetOffService(db)
+    harvesting = service.get_loss_harvesting_opportunities(
+        user_id=user_id, fy_year=fy_year, slab_rate=30.0
+    )
+
+    item = harvesting.harvesting_opportunities[0]
+    assert item.potential_tax_saved == Decimal("1000.00")
+    assert "20.0%" in item.recommendation_reason
+
+
+def test_setoff_and_harvesting_empty_portfolio_or_no_losses(db, monkeypatch):
+    """
+    Scenario 7 (Corner Case): User has no realized gains, no brought forward losses,
+    and no open negative lots.
+    """
+    user_id = str(uuid.uuid4())
+    fy_year = "2026-27"
+
+    class MockCGSummary:
+        gains = []
+        estimated_stcg_tax = Decimal("0.0")
+        estimated_ltcg_tax = Decimal("0.0")
+        total_stcg = Decimal("0.0")
+        total_ltcg = Decimal("0.0")
+
+    class MockUnrealizedSummary:
+        lots = []
+
+    monkeypatch.setattr(
+        "app.services.tax_setoff_service.CapitalGainsService.calculate_capital_gains",
+        lambda self, portfolio_id, user_id, fy_year, slab_rate: MockCGSummary(),
+    )
+    monkeypatch.setattr(
+        "app.services.tax_setoff_service.UnrealizedTaxService.calculate_unrealized_gains",
+        lambda self, user_id, fy_year, portfolio_id, slab_rate: MockUnrealizedSummary(),
+    )
+
+    service = TaxSetOffService(db)
+    setoff = service.calculate_net_capital_gains(user_id=user_id, fy_year=fy_year)
+    harvesting = service.get_loss_harvesting_opportunities(
+        user_id=user_id, fy_year=fy_year
+    )
+
+    assert setoff.breakdown.net_taxable_stcg == Decimal("0.0")
+    assert setoff.breakdown.net_taxable_ltcg == Decimal("0.0")
+    assert setoff.breakdown.net_estimated_tax == Decimal("0.0")
+    assert len(harvesting.harvesting_opportunities) == 0
+    assert harvesting.total_potential_tax_savings == Decimal("0.0")
+
