@@ -1,24 +1,32 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-20
+**Last Updated:** 2026-08-26
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Fixed Foreign stock tax rules (CSCO: 24m holding, Slab STCG rate, no 112A pooling) and Indian stock keyword classification (LAHOTI OVERSEAS LTD: `EQUITY_LISTED`). Resolved all ruff and eslint lints. Authored FR6.5 Phase 3 feature specification and issue tracking doc. All 33 backend pytest cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
+**Latest Achievement:** Implemented Intra-Head Capital Loss Set-Off Engine (Section 70/71/74: STCL vs STCG/LTCG, LTCL vs LTCG only), Carry-Forward Loss Ledger model with 8-year countdown meter, and Tax-Loss Harvesting Recommendations Engine for open tax lots (Issue #526 / FR6.5 Phase 3). Refined Section 112A ₹1,25,000 exemption threshold accounting, aligned Section 111A equity STCG 20% tax rate, resolved string addition & NaN% progress bar frontend artifacts, and expanded unit test suite. All 37/37 backend pytest test cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **366/369 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **366/369 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **377/380 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **377/380 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **193/193 Passing** (47/47 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Capital Loss Set-Off, Loss Harvesting Refinement & Section 112A Pooling (Issue #526 / FR6.5 Phase 3) (Updated 2026-08-26):**
+    - **Section 112A Exemption Threshold:** Accounting for Section 112A annual ₹1,25,000 exemption threshold across set-off and tax-loss harvesting recommendation engines. Realized LTCG below ₹1.25L correctly yields ₹0.00 current tax liability and advises carrying forward losses for up to 8 years.
+    - **Section 111A Equity STCG Rate Alignment:** Aligned `TaxSetOffService` to fetch the actual effective STCG rate from `CapitalGainsService` (e.g. 20% for Equity 111A vs 30% slab rate), ensuring accurate calculation of tax savings when setting off STCL against Equity STCG.
+    - **Frontend Formatting & Modal Enhancements:** Fixed string addition artifact (`₹0.00.0`), resolved `NaN% Used` progress bar in `UnrealizedGainsModal.tsx` by parsing decimal strings, and updated open lot table to render **`Pooled (112A)`** with tooltip for 112A equity LTCG profit lots instead of `₹0.00`.
+    - **Automated Tests:** Expanded unit test suite with 4 new corner cases. All 37/37 backend unit tests passing 100%.
+
+
 *   **Foreign & Indian Stock Tax Classification & Linter Hardening (Updated 2026-08-20):**
+
     - **Foreign Stock Tax Rules (`UnrealizedTaxService`):** Enforced 24-month (730-day) holding period for non-INR assets (CSCO, USD currency). Classifies holding period ≤ 730 days as `STCG`, assigns `Slab (30.0%)` tax rate, and excludes from Section 112A exemption pooling.
     - **Indian Stock Keyword Misclassification (`CapitalGainsService`):** Updated `_classify_asset_category` to return `EQUITY_LISTED` directly for Indian stocks (`atype in ["STOCK", "STOCKS", "EQUITY"]`) without matching generic keywords (`OVERSEAS`, `GLOBAL`, `WORLD`) in company names. Corrected classification for LAHOTI OVERSEAS LTD (`LAHOTIOV`).
     - **FR6.5 Phase 3 Planning:** Authored [`docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR6.5.8_capital_loss_setoff_and_harvesting.md) and [`docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/issues/46_implement_tax_loss_harvesting_and_loss_ledger.md).

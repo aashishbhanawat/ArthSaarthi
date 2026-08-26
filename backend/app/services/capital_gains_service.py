@@ -143,6 +143,10 @@ class CapitalGainsService:
         # Slab rate as decimal
         slab_decimal = Decimal(str(slab_rate)) / Decimal(100)
 
+        total_112a_10_ltcg = Decimal(0)
+        total_112a_125_ltcg = Decimal(0)
+        other_ltcg_tax = Decimal(0)
+
         for g in gains:
             if g.gain <= 0:
                 continue
@@ -157,19 +161,29 @@ class CapitalGainsService:
                 else:
                     # Slab Rate STCG
                     est_stcg_tax += g.gain * slab_decimal
-            else: # LTCG
+            else:  # LTCG
                 if "Exempt" in g.tax_rate:
                     continue
                 elif "LTCG 10%" in g.tax_rate:
-                     # 1L Exemption not handled per stock, this is gross est
-                     est_ltcg_tax += g.gain * Decimal("0.10")
+                    total_112a_10_ltcg += g.gain
                 elif "LTCG 12.5%" in g.tax_rate:
-                    est_ltcg_tax += g.gain * Decimal("0.125")
+                    total_112a_125_ltcg += g.gain
                 elif "LTCG 20%" in g.tax_rate:
-                    est_ltcg_tax += g.gain * Decimal("0.20")
+                    other_ltcg_tax += g.gain * Decimal("0.20")
                 else:
-                     # Fallback or Slab? Assuming 20% for unknown
-                     est_ltcg_tax += g.gain * Decimal("0.20")
+                    # Fallback or Slab? Assuming 20% for unknown
+                    other_ltcg_tax += g.gain * Decimal("0.20")
+
+        # Exemption thresholds: ₹1.25L for 12.5% (Sec 112A), ₹1L for 10%
+        taxable_112a_125 = max(Decimal(0), total_112a_125_ltcg - Decimal("125000.00"))
+        taxable_112a_10 = max(Decimal(0), total_112a_10_ltcg - Decimal("100000.00"))
+
+        est_ltcg_tax = (
+            (taxable_112a_125 * Decimal("0.125"))
+            + (taxable_112a_10 * Decimal("0.10"))
+            + other_ltcg_tax
+        )
+
 
         return CapitalGainsSummary(
             financial_year=fy_year,

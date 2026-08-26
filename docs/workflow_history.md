@@ -1,4 +1,62 @@
+## 2026-08-26: Refine Capital Loss Set-Off, Loss Harvesting Engine & Section 112A Pooling (FR6.5 Phase 3 / Issue #526)
+
+**Task:** Refine Section 112A ₹1,25,000 exemption threshold accounting across set-off and tax-loss harvesting recommendation engines, align Section 111A equity STCG 20% tax rate in loss harvesting, fix frontend currency string addition & NaN% progress bar bugs, clarify lot breakdown 112A pooled tax table display, and expand unit test suite with 4 new corner cases.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Section 112A Exemption Threshold in Tax Loss Harvesting (`TaxSetOffService`):**
+   - Updated `backend/app/services/tax_setoff_service.py` to account for Section 112A annual ₹1,25,000 exemption threshold (`rem_taxable_ltcg = max(0, net_ltcg - 125000)`).
+   - When realized LTCG is within the ₹1.25L exemption, the harvesting recommendation engine now correctly computes `potential_tax_saved = ₹0.00` in the current FY and advises carrying forward losses for up to 8 years.
+2. **Section 111A Equity STCG Rate Alignment (`TaxSetOffService`):**
+   - Aligned `TaxSetOffService` to fetch the actual effective STCG rate from `CapitalGainsService` (e.g. 20% for Equity 111A vs 30% slab rate).
+   - Corrected `Total Potential Tax Savings` and `Net Estimated Tax` calculations when setting off STCL against Equity STCG.
+3. **Capital Gains Gross LTCG Tax Estimation (`CapitalGainsService`):**
+   - Updated `backend/app/services/capital_gains_service.py` to pool Section 112A equity LTCG transactions per FY and subtract the statutory ₹1,25,000 exemption threshold before applying the 12.5% tax rate.
+   - Ensures consistency between `Est. LTCG Tax` in the top card (`₹0.00` for gains < ₹1.25L) and `Net Estimated Tax` in the summary card.
+4. **Frontend Formatting & Progress Bar Fixes (`CapitalGainsNetSummaryCard`, `TaxLossHarvestingCard`, `UnrealizedGainsModal`):**
+   - Fixed string addition artifact (`₹0.00.0`) by parsing numeric strings with `parseNum()` prior to addition.
+   - Fixed `NaN% Used` in `UnrealizedGainsModal.tsx` by converting decimal string properties (`section_112a_realized_used`, `section_112a_unrealized_exemption_used`) to numbers before computing percentage.
+   - Formatted currency values cleanly with `toLocaleString('en-IN')` and lot quantities to max 4 fraction digits.
+   - Clarified the `Est. Tax` column in the open lot breakdown table by rendering **`Pooled (112A)`** with a hover tooltip for Section 112A equity profit lots instead of confusing `₹0.00`.
+5. **Automated Unit Testing & Quality Assurance:**
+   - Expanded `backend/app/tests/services/test_tax_setoff_service.py` with 4 new corner case test scenarios: 112A LTCG exemption headroom ceiling, Section 111A 20% equity STCG rate, zero gains / empty portfolio, and loss ledger priority.
+   - All 37/37 backend pytest test cases passing cleanly.
+   - ESLint & Ruff linters passing with **0 errors**.
+   - Pushed commits `b0e83059`, `973e1503`, `c557ac0f`, `3b427ec0`, `563d360f`, `984c2cb1`, `96a612f3`, `c20d1442` to branch `feat/526-tax-loss-setoff-harvesting` (PR #527).
+
+## 2026-08-23: Implement Intra-Head Capital Loss Set-Off, Loss Ledger & Tax-Loss Harvesting (FR6.5 Phase 3 / Issue #526)
+
+
+**Task:** Implement statutory intra-head capital loss set-off engine (Section 70/71/74: STCL vs STCG/LTCG, LTCL vs LTCG only), carry-forward loss ledger model & 8-year countdown meter, tax-loss harvesting recommendations engine for open lots, REST API endpoints, frontend Net Summary & Loss Harvesting cards, Loss Ledger modal, and automated tests.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **GitHub Issue & Feature Branch:** Created GitHub Issue [#526](https://github.com/aashishbhanawat/ArthSaarthi/issues/526) and branch `feat/526-tax-loss-setoff-harvesting`.
+2. **Database Model & Migration:**
+   - Created `CapitalLossLedger` model in `backend/app/models/capital_loss_ledger.py` tracking `user_id`, `financial_year`, `assessment_year`, `stcl_amount`, `ltcl_amount`, `is_itr_filed_on_time`, and `notes`.
+   - Exported model in `backend/app/models/__init__.py`.
+   - Created Alembic migration `backend/alembic/versions/f67e8f9a0b1c_add_capital_loss_ledgers_table.py` and executed safe upgrade cycle inside Docker container.
+3. **Schemas & Service Engine (`TaxSetOffService`):**
+   - Added loss ledger, net gains set-off summary, and tax loss harvesting schemas in `backend/app/schemas/capital_gains.py`.
+   - Built `CRUDCapitalLossLedger` in `backend/app/crud/crud_capital_loss_ledger.py`.
+   - Implemented `TaxSetOffService` in `backend/app/services/tax_setoff_service.py` performing statutory Section 70/71/74 intra-head set-off matrix (STCL against STCG/LTCG; LTCL against LTCG only), 8-year brought-forward loss countdown meter, and ranking tax loss harvesting opportunities on open tax lots.
+4. **API Endpoints:**
+   - Registered `/api/v1/capital-gains/set-off`, `/api/v1/capital-gains/loss-ledger` (CRUD), and `/api/v1/capital-gains/tax-loss-harvesting` in `backend/app/api/v1/endpoints/capital_gains.py`.
+5. **Frontend UI Components & Hooks:**
+   - Added API hooks `useCapitalSetOff`, `useCapitalLossLedger`, and `useTaxLossHarvesting` in `frontend/src/hooks/useCapitalGains.ts`.
+   - Built `CapitalLossLedgerModal.tsx`, `CapitalGainsNetSummaryCard.tsx`, and `TaxLossHarvestingCard.tsx` with Privacy Mode support.
+   - Integrated components on `frontend/src/pages/CapitalGainsPage.tsx`.
+6. **Automated Testing & Verification:**
+   - Added 6 backend pytest test cases in `backend/app/tests/services/test_tax_setoff_service.py` covering all corner cases (STCL setoff, LTCL restrictions, 8-year countdown, late ITR disallowance, harvesting ranking).
+   - Added frontend Jest unit tests in `frontend/src/components/CapitalGains/CapitalLossLedgerModal.test.tsx`.
+   - Verified 6/6 pytest cases passing and 47/47 frontend Jest test suites passing (193/193 tests).
+
 ## 2026-08-20: Fix Foreign & Indian Stock Tax Classification in Unrealized & Realized Gains Engine
+
 
 **Task:** Fix tax classification bugs for Foreign stocks (e.g. CSCO, USD currency: enforce 24m holding period, Slab STCG rate, zero 112A pooling) and Indian stocks whose company names contain keywords like `"OVERSEAS"` or `"GLOBAL"` (e.g. LAHOTI OVERSEAS LTD: classify directly as `EQUITY_LISTED`).
 **AI Assistant:** Antigravity  

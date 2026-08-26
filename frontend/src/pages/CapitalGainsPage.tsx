@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useCapitalGains, useUnrealizedCapitalGains, GainEntry, ForeignGainEntry, ITRRow, Schedule112AEntry } from '../hooks/useCapitalGains';
 import { UnrealizedGainsCard } from '../components/CapitalGains/UnrealizedGainsCard';
+import { CapitalGainsNetSummaryCard } from '../components/CapitalGains/CapitalGainsNetSummaryCard';
+import { TaxLossHarvestingCard } from '../components/CapitalGains/TaxLossHarvestingCard';
+
 import { useScheduleFA, ScheduleFAEntry } from '../hooks/useScheduleFA';
 import { useDividends, DividendEntry } from '../hooks/useDividends';
 import { formatCurrency } from '../utils/formatting';
@@ -411,8 +414,26 @@ const CapitalGainsPage: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Statutory Loss Set-Off Net Summary Card & Loss Ledger Modal (FR6.5 Phase 3) */}
+                            <div className="mb-6">
+                                <CapitalGainsNetSummaryCard
+                                    fy={selectedFY}
+                                    slabRate={slabRate}
+                                />
+                            </div>
+
                             {/* Unrealized Capital Gains & Exemption Headroom Card (FR6.5 Phase 2) */}
                             {unrealizedData && <UnrealizedGainsCard summary={unrealizedData} />}
+
+                            {/* Tax Loss Harvesting Card (FR6.5 Phase 3) */}
+                            <div className="mb-8">
+                                <TaxLossHarvestingCard
+                                    fy={selectedFY}
+                                    slabRate={slabRate}
+                                />
+                            </div>
+
+
 
                             {/* ITR-2 Schedule CG Matrix */}
                             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8">

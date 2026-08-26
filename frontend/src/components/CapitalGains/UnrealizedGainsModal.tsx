@@ -18,16 +18,27 @@ export const UnrealizedGainsModal: React.FC<UnrealizedGainsModalProps> = ({
 
     if (!isOpen) return null;
 
-    const formatVal = (val: number, currency: string = 'INR') => {
-        if (isPrivacyMode) return '₹ ••••••';
-        return formatCurrency(val, currency);
+    const parseNum = (val: number | string | null | undefined) => {
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string') return parseFloat(val) || 0;
+        return 0;
     };
+
+    const formatVal = (val: number | string | null | undefined, currency: string = 'INR') => {
+        if (isPrivacyMode) return '₹ ••••••';
+        return formatCurrency(parseNum(val), currency);
+    };
+
+
+    const realizedUsed = parseNum(summary.section_112a_realized_used);
+    const unrealizedUsed = parseNum(summary.section_112a_unrealized_exemption_used);
+    const remainingHeadroom = parseNum(summary.section_112a_remaining_headroom);
 
     const headroomPercentage = Math.min(
         100,
         Math.max(
             0,
-            ((summary.section_112a_realized_used + summary.section_112a_unrealized_exemption_used) / 125000) * 100
+            ((realizedUsed + unrealizedUsed) / 125000) * 100
         )
     );
 
@@ -87,7 +98,7 @@ export const UnrealizedGainsModal: React.FC<UnrealizedGainsModalProps> = ({
                                 112A Headroom Left
                             </span>
                             <p className="text-xl font-bold text-blue-900 dark:text-blue-100 mt-1">
-                                {formatVal(summary.section_112a_remaining_headroom)}
+                                {formatVal(remainingHeadroom)}
                             </p>
                             <span className="text-[10px] text-blue-500 dark:text-blue-400">
                                 Total Cap: ₹1,25,000 / FY
@@ -120,10 +131,7 @@ export const UnrealizedGainsModal: React.FC<UnrealizedGainsModalProps> = ({
                         <div className="w-full bg-gray-200 dark:bg-gray-600 h-2.5 rounded-full overflow-hidden flex">
                             <div
                                 style={{
-                                    width: `${Math.min(
-                                        100,
-                                        (summary.section_112a_realized_used / 125000) * 100
-                                    )}%`,
+                                    width: `${Math.min(100, (realizedUsed / 125000) * 100)}%`,
                                 }}
                                 className="bg-emerald-500 h-full"
                                 title="Realized LTCG 112A Exemption"
@@ -131,8 +139,8 @@ export const UnrealizedGainsModal: React.FC<UnrealizedGainsModalProps> = ({
                             <div
                                 style={{
                                     width: `${Math.min(
-                                        100 - (summary.section_112a_realized_used / 125000) * 100,
-                                        (summary.section_112a_unrealized_exemption_used / 125000) * 100
+                                        100 - (realizedUsed / 125000) * 100,
+                                        (unrealizedUsed / 125000) * 100
                                     )}%`,
                                 }}
                                 className="bg-blue-400 h-full"
@@ -140,11 +148,12 @@ export const UnrealizedGainsModal: React.FC<UnrealizedGainsModalProps> = ({
                             />
                         </div>
                         <div className="flex justify-between text-[10px] text-gray-500 dark:text-gray-400 mt-2">
-                            <span>Realized Used: {formatVal(summary.section_112a_realized_used)}</span>
-                            <span>Unrealized Usable: {formatVal(summary.section_112a_unrealized_exemption_used)}</span>
-                            <span>Remaining Headroom: {formatVal(summary.section_112a_remaining_headroom)}</span>
+                            <span>Realized Used: {formatVal(realizedUsed)}</span>
+                            <span>Unrealized Usable: {formatVal(unrealizedUsed)}</span>
+                            <span>Remaining Headroom: {formatVal(remainingHeadroom)}</span>
                         </div>
                     </div>
+
 
                     {/* Tax Lots Breakdown Table */}
                     <div>
@@ -228,7 +237,13 @@ export const UnrealizedGainsModal: React.FC<UnrealizedGainsModalProps> = ({
                                                         </span>
                                                     </td>
                                                     <td className="p-3 text-right font-mono font-semibold text-gray-800 dark:text-gray-200">
-                                                        {formatVal(lot.estimated_tax, lot.currency)}
+                                                        {lot.gain_type === 'LTCG' && lot.tax_rate?.includes('112A') && isGain ? (
+                                                            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-sans" title="Pooled under Section 112A global ₹1,25,000 exemption cap">
+                                                                Pooled (112A)
+                                                            </span>
+                                                        ) : (
+                                                            formatVal(lot.estimated_tax, lot.currency)
+                                                        )}
                                                     </td>
                                                 </tr>
                                             );
