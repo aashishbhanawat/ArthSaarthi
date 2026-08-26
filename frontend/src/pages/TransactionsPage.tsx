@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTransactions } from '../hooks/useTransactions';
@@ -52,13 +52,13 @@ const TransactionsPage: React.FC = () => {
     });
   };
 
-  const handleEdit = (transaction: Transaction) => {
+  const handleEdit = useCallback((transaction: Transaction) => {
     setTransactionToEdit(transaction);
-  };
+  }, []);
 
-  const handleDelete = (transaction: Transaction) => {
+  const handleDelete = useCallback((transaction: Transaction) => {
     setTransactionToDelete(transaction);
-  };
+  }, []);
 
   const handleConfirmDelete = () => {
     if (transactionToDelete) {

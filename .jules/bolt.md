@@ -29,3 +29,6 @@
 ## 2025-03-02 - Optimize cashflow analytics prorating in backend
 **Learning:** `_get_realized_and_unrealized_cash_flows` had `O(I * (B + S))` complexity where `I` is income flows, `B` is buys, and `S` is sells, because of list comprehensions doing sequential iteration to find quantities for specific dates inside a loop over income flows. This creates a severe performance bottleneck scaling super-linearly with large transaction history.
 **Action:** Replaced O(N) subset sums with running cumulative sums and `bisect` logic (`O(log B + log S)`) per income event, bringing the overall performance from quadratic behavior (O(N^2)) to O(N log N). Always favor pre-computed prefix-sums + bisect over nested iteration for time series lookups.
+## 2024-05-31 - Memoize event handlers passed to React.memo components
+**Learning:** Wrapping a presentational component in `React.memo` (like `TransactionHistoryTable`) is completely ineffective if the parent component passes inline functions as props, because new function references are created on every parent render.
+**Action:** Always wrap event handlers (like `onEdit`, `onDelete`) with `useCallback` in the parent component when passing them to memoized child components to ensure stable references and actually prevent unnecessary re-renders.
