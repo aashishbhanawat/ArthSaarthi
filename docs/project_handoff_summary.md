@@ -1,29 +1,29 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-23
+**Last Updated:** 2026-08-26
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Implemented Intra-Head Capital Loss Set-Off Engine (Section 70/71/74: STCL vs STCG/LTCG, LTCL vs LTCG only), Carry-Forward Loss Ledger model with 8-year countdown meter, and Tax-Loss Harvesting Recommendations Engine for open tax lots (Issue #526 / FR6.5 Phase 3). All 6 backend pytest test cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
+**Latest Achievement:** Implemented Intra-Head Capital Loss Set-Off Engine (Section 70/71/74: STCL vs STCG/LTCG, LTCL vs LTCG only), Carry-Forward Loss Ledger model with 8-year countdown meter, and Tax-Loss Harvesting Recommendations Engine for open tax lots (Issue #526 / FR6.5 Phase 3). Refined Section 112A ₹1,25,000 exemption threshold accounting, aligned Section 111A equity STCG 20% tax rate, resolved string addition & NaN% progress bar frontend artifacts, and expanded unit test suite. All 37/37 backend pytest test cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **372/375 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **372/375 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **377/380 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **377/380 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **193/193 Passing** (47/47 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
 
-*   **Intra-Head Capital Loss Set-Off, Loss Ledger & Tax-Loss Harvesting (Issue #526 / FR6.5 Phase 3) (Updated 2026-08-23):**
-    - **Database Model & Migration:** Added `CapitalLossLedger` model (`backend/app/models/capital_loss_ledger.py`) tracking `user_id`, `financial_year`, `assessment_year`, `stcl_amount`, `ltcl_amount`, `is_itr_filed_on_time`, and `notes`. Generated Alembic migration `f67e8f9a0b1c_add_capital_loss_ledgers_table.py` and executed database upgrade cycle.
-    - **Service Engine (`TaxSetOffService`):** Created `backend/app/services/tax_setoff_service.py` to calculate statutory Section 70/71/74 intra-head capital loss set-offs (STCL against STCG/LTCG; LTCL against LTCG only), 8-year brought-forward loss countdown meters, and tax-loss harvesting recommendations on open tax lots.
-    - **REST API Endpoints:** Added `/api/v1/capital-gains/set-off`, `/api/v1/capital-gains/loss-ledger` (CRUD), and `/api/v1/capital-gains/tax-loss-harvesting` in `backend/app/api/v1/endpoints/capital_gains.py`.
-    - **Frontend Components:** Created `CapitalLossLedgerModal.tsx`, `CapitalGainsNetSummaryCard.tsx`, and `TaxLossHarvestingCard.tsx` on `CapitalGainsPage.tsx` with Privacy Mode support.
-    - **Automated Tests:** Authored 6 backend pytest test cases (`test_tax_setoff_service.py`) and Jest unit tests (`CapitalLossLedgerModal.test.tsx`). Verified 100% test pass rate across backend and frontend suites.
+*   **Capital Loss Set-Off, Loss Harvesting Refinement & Section 112A Pooling (Issue #526 / FR6.5 Phase 3) (Updated 2026-08-26):**
+    - **Section 112A Exemption Threshold:** Accounting for Section 112A annual ₹1,25,000 exemption threshold across set-off and tax-loss harvesting recommendation engines. Realized LTCG below ₹1.25L correctly yields ₹0.00 current tax liability and advises carrying forward losses for up to 8 years.
+    - **Section 111A Equity STCG Rate Alignment:** Aligned `TaxSetOffService` to fetch the actual effective STCG rate from `CapitalGainsService` (e.g. 20% for Equity 111A vs 30% slab rate), ensuring accurate calculation of tax savings when setting off STCL against Equity STCG.
+    - **Frontend Formatting & Modal Enhancements:** Fixed string addition artifact (`₹0.00.0`), resolved `NaN% Used` progress bar in `UnrealizedGainsModal.tsx` by parsing decimal strings, and updated open lot table to render **`Pooled (112A)`** with tooltip for 112A equity LTCG profit lots instead of `₹0.00`.
+    - **Automated Tests:** Expanded unit test suite with 4 new corner cases. All 37/37 backend unit tests passing 100%.
+
 
 *   **Foreign & Indian Stock Tax Classification & Linter Hardening (Updated 2026-08-20):**
 
