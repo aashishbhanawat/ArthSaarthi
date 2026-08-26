@@ -62,10 +62,6 @@ const PortfolioDetailPage: React.FC = () => {
         setSelectedHolding(holding);
     }, []);
 
-    if (isLoading) return <div className="text-center p-8">Loading portfolio details...</div>;
-    if (isError) return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
-    if (!portfolio) return <div className="text-center p-8">Portfolio not found.</div>;
-
     const handleCloseDetailModal = useCallback(() => {
         setSelectedHolding(null);
     }, []);
@@ -94,6 +90,10 @@ const PortfolioDetailPage: React.FC = () => {
     const handleOpenDeleteModal = useCallback((transaction: Transaction) => {
         setTransactionToDelete(transaction);
     }, []);
+
+    if (isLoading) return <div className="text-center p-8">Loading portfolio details...</div>;
+    if (isError) return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
+    if (!portfolio) return <div className="text-center p-8">Portfolio not found.</div>;
 
     const handleCloseDeleteModal = () => {
         setTransactionToDelete(null);
