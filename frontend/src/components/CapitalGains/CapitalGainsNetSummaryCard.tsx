@@ -133,7 +133,16 @@ export const CapitalGainsNetSummaryCard: React.FC<CapitalGainsNetSummaryCardProp
             </div>
           </div>
         </div>
+
+        {/* Foreign Asset Warning Notice */}
+        <div className="mt-3 text-[11px] text-amber-300/90 bg-amber-950/40 border border-amber-800/50 rounded-lg p-2.5 flex items-start sm:items-center gap-2">
+          <span className="text-sm shrink-0">⚠️</span>
+          <span>
+            <strong>Foreign Currency Notice:</strong> The Set-Off Engine calculates set-offs for INR-denominated assets. Realized transactions in foreign currencies (e.g. USD) are reported separately in native currency under Foreign Capital Gains (Schedule FA) and should be converted to INR as per IT Rule 115 for set-off adjustment during ITR filing.
+          </span>
+        </div>
       </div>
+
 
 
       <CapitalLossLedgerModal
