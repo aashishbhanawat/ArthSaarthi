@@ -18,16 +18,17 @@ export const UnrealizedGainsModal: React.FC<UnrealizedGainsModalProps> = ({
 
     if (!isOpen) return null;
 
-    const parseNum = (val: any) => {
+    const parseNum = (val: number | string | null | undefined) => {
         if (typeof val === 'number') return val;
         if (typeof val === 'string') return parseFloat(val) || 0;
         return 0;
     };
 
-    const formatVal = (val: any, currency: string = 'INR') => {
+    const formatVal = (val: number | string | null | undefined, currency: string = 'INR') => {
         if (isPrivacyMode) return '₹ ••••••';
         return formatCurrency(parseNum(val), currency);
     };
+
 
     const realizedUsed = parseNum(summary.section_112a_realized_used);
     const unrealizedUsed = parseNum(summary.section_112a_unrealized_exemption_used);
