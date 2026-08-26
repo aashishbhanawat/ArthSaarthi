@@ -52,3 +52,6 @@ class User(Base):
     recurring_deposits = relationship(
         "RecurringDeposit", back_populates="user", cascade="all, delete-orphan"
     )
+    income_sources = relationship(
+        "IncomeSource", back_populates="user", cascade="all, delete-orphan"
+    )

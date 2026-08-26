@@ -13,6 +13,7 @@ import {
     TrophyIcon,
     UserCircleIcon,
     ScaleIcon,
+    BanknotesIcon,
     WrenchScrewdriverIcon,
     SunIcon,
     MoonIcon,
@@ -107,6 +108,13 @@ const NavBar: React.FC = () => {
                 >
                     <ScaleIcon className="h-5 w-5" />
                     <span>Capital Gains</span>
+                </NavLink>
+                <NavLink
+                    to="/income"
+                    className={({ isActive }) => linkClass(isActive)}
+                >
+                    <BanknotesIcon className="h-5 w-5" />
+                    <span>Income & TDS</span>
                 </NavLink>
                 <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
                     <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>

@@ -12,6 +12,7 @@ from .crud_holding import holding
 from .crud_import_session import import_session
 from .crud_portfolio import portfolio
 from .crud_recurring_deposit import recurring_deposit
+from .crud_income import crud_income_entry, crud_income_source
 from .crud_risk import risk_profile
 from .crud_testing import testing
 from .crud_transaction import transaction
@@ -41,5 +42,7 @@ __all__ = [
     "watchlist_item",
     "risk_profile",
     "capital_loss_ledger",
+    "crud_income_source",
+    "crud_income_entry",
 ]
 

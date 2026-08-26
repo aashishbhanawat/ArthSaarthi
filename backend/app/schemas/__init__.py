@@ -77,6 +77,15 @@ from .import_session import (
     ParsedFixedDeposit,
     ParsedTransaction,
 )
+from .income import (
+    IncomeEntry,
+    IncomeEntryCreate,
+    IncomeEntryUpdate,
+    IncomeFYSummary,
+    IncomeSource,
+    IncomeSourceCreate,
+    IncomeSourceUpdate,
+)
 from .msg import Msg
 from .portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
 from .recurring_deposit import (
@@ -205,6 +214,13 @@ __all__ = [
     "UserRiskProfile",
     "UserRiskProfileCreate",
     "UserRiskProfileUpdate",
+    "IncomeSource",
+    "IncomeSourceCreate",
+    "IncomeSourceUpdate",
+    "IncomeEntry",
+    "IncomeEntryCreate",
+    "IncomeEntryUpdate",
+    "IncomeFYSummary",
 ]
 
 # Manually update forward references to resolve circular dependencies

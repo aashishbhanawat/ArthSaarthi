@@ -162,8 +162,8 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR15.4: Expense Dashboard & Analytics.** A dedicated dashboard will provide visualizations of spending habits, including charts showing expenses by category, vendor, and time period. `📝 Planned`
 
 ### FR16: Income & Tax Data Management
--   **FR16.1: Income Source Management.** Users must be able to define and manage various sources of income (e.g., "Primary Salary", "Freelance Work", "Rental Income"). `📝 Planned`
--   **FR16.2: Income Entry.** Users must be able to log individual income entries against their defined sources, including details such as gross amount, date received, and any tax deducted at source (TDS). `📝 Planned`
+-   **FR16.1: Income Source Management.** Users must be able to define and manage various sources of income (e.g., "Primary Salary", "Freelance Work", "Rental Income"). `✅ Done`
+-   **FR16.2: Income Entry.** Users must be able to log individual income entries against their defined sources, including details such as gross amount, date received, and any tax deducted at source (TDS). `✅ Done`
 -   **FR16.3: Tax-Deductible Expense & Investment Logging.** Users must be able to log expenses and investments that are eligible for tax deductions (e.g., Section 80C investments, medical expenses, rent). `📝 Planned`
 -   **FR16.4: Structured Tax Summary Report.** The system must generate a structured report for a given financial year that consolidates all logged income sources, TDS, and potential deductions. `📝 Planned`
     -   **FR16.4.1:** The report must clearly state that it is for informational purposes only and does not constitute financial or tax advice. `📝 Planned`

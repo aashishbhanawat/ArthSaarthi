@@ -6,17 +6,25 @@
 
 *   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Implemented Intra-Head Capital Loss Set-Off Engine (Section 70/71/74: STCL vs STCG/LTCG, LTCL vs LTCG only), Carry-Forward Loss Ledger model with 8-year countdown meter, and Tax-Loss Harvesting Recommendations Engine for open tax lots (Issue #526 / FR6.5 Phase 3). Refined Section 112A ₹1,25,000 exemption threshold accounting, aligned Section 111A equity STCG 20% tax rate, resolved string addition & NaN% progress bar frontend artifacts, and expanded unit test suite. All 37/37 backend pytest test cases and 47/47 frontend Jest test suites (193/193 tests) passing 100%.
+**Latest Achievement:** Implemented Income Source & Entry Data Management with TDS Tracking (Issue #517 / FR16.1 & FR16.2). Added `IncomeSource` and `IncomeEntry` SQLAlchemy models with `EncryptedString` columns, Alembic migration, Pydantic schemas, CRUD operations with tenant isolation, REST API endpoints, React Query hooks, `IncomeSourceModal`, `IncomeEntryModal`, `IncomePage` with dual-layout (desktop table / mobile card grid), Privacy Mode integration (`usePrivacy`), and automated backend (4 pytest cases) and frontend (3 Jest tests) test suites.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **377/380 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **377/380 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **193/193 Passing** (47/47 Test Suites)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **381/384 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **381/384 Passing** (3 expected skips)
+*   **Frontend Unit Tests (Jest):** ✅ **196/196 Passing** (48/48 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Income Source & Entry Data Management (Issue #517 / FR16.1 & FR16.2) (Updated 2026-08-26):**
+    - **Backend Models & Encryption:** Created `IncomeSource` and `IncomeEntry` models in `backend/app/models/income.py` using `EncryptedString` for privacy protection on desktop/mobile SQLite databases.
+    - **Alembic Migration:** Created database migration script `g78f9a0b1c2d_add_income_sources_and_income_entries_tables.py`.
+    - **Pydantic Schemas & CRUD:** Created `IncomeSource` and `IncomeEntry` schemas with Pydantic validator `tds_amount <= gross_amount`, and CRUD operations enforcing `user_id` tenant isolation (IDOR protection).
+    - **REST API Endpoints:** Exposed `/api/v1/income/sources`, `/api/v1/income/entries`, and `/api/v1/income/summary` endpoints in `backend/app/api/v1/endpoints/income.py`.
+    - **Frontend Components & Navigation:** Built `IncomeSourceModal.tsx`, `IncomeEntryModal.tsx` with auto-calculated net amount (`gross - tds`), `IncomePage.tsx` with top summary cards (Gross, TDS, Net), source list, dual-layout entry ledger table/cards, and Privacy Mode (`usePrivacy`) integration. Added `/income` route and navbar link.
+    - **Automated Tests:** Authored `backend/app/tests/api/v1/test_income.py` (4/4 passing) and `frontend/src/__tests__/pages/IncomePage.test.tsx` (3/3 passing). All linters passing 100%.
 
 *   **Capital Loss Set-Off, Loss Harvesting Refinement & Section 112A Pooling (Issue #526 / FR6.5 Phase 3) (Updated 2026-08-26):**
     - **Section 112A Exemption Threshold:** Accounting for Section 112A annual ₹1,25,000 exemption threshold across set-off and tax-loss harvesting recommendation engines. Realized LTCG below ₹1.25L correctly yields ₹0.00 current tax liability and advises carrying forward losses for up to 8 years.

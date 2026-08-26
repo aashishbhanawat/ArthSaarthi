@@ -1,3 +1,37 @@
+## 2026-08-26: Implement Income Source & Entry Data Management with TDS Tracking (FR16.1 & FR16.2 / Issue #517)
+
+**Task:** Implement database models, Pydantic schemas, CRUD operations, REST API endpoints, Alembic migration, frontend TypeScript types, API service, custom hooks, modals, dual-layout page, and test suite for Income Sources and Entry logging with Tax Deducted at Source (TDS).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feature Branch:** Created feature branch `feature/issue-517-income-tax-data`.
+2. **Database Models & Encryption (`backend/app/models/income.py`):**
+   - Created `IncomeSource` model with `id` (GUID), `user_id` (GUID), `name` (`EncryptedString`), `category` (`SALARY`, `FREELANCE`, `RENTAL`, `DIVIDEND`, `INTEREST`, `BUSINESS`, `OTHER`), `payer_name` (`EncryptedString`), and timestamps.
+   - Created `IncomeEntry` model linked to `IncomeSource` via `source_id`, storing `financial_year`, `entry_date`, `gross_amount` (`EncryptedString`), `tds_amount` (`EncryptedString`), `net_amount` (`EncryptedString`), and `notes` (`EncryptedString`).
+3. **Database Migration (`backend/alembic/versions/g78f9a0b1c2d_add_income_sources_and_income_entries_tables.py`):**
+   - Created Alembic migration script for `income_sources` and `income_entries` tables with tenant foreign keys and indexes.
+4. **Pydantic Schemas & Validation (`backend/app/schemas/income.py`):**
+   - Implemented `IncomeSourceBase`, `IncomeSourceCreate`, `IncomeSourceUpdate`, `IncomeSource`, `IncomeEntryBase`, `IncomeEntryCreate`, `IncomeEntryUpdate`, `IncomeEntry`, and `IncomeFYSummary`.
+   - Enforced Pydantic validator `tds_amount <= gross_amount` and `gross_amount > 0`.
+5. **CRUD & Tenant Isolation (`backend/app/crud/crud_income.py`):**
+   - Implemented `crud_income_source` and `crud_income_entry` with strict `user_id` authorization filters for IDOR protection.
+   - Added `get_summary_by_fy` aggregating gross income, TDS credited, net income received, and breakdown per source for any financial year.
+6. **REST API Endpoints (`backend/app/api/v1/endpoints/income.py`):**
+   - Exposed `GET /api/v1/income/sources`, `POST /api/v1/income/sources`, `PUT /api/v1/income/sources/{id}`, `DELETE /api/v1/income/sources/{id}`.
+   - Exposed `GET /api/v1/income/entries`, `POST /api/v1/income/entries`, `PUT /api/v1/income/entries/{id}`, `DELETE /api/v1/income/entries/{id}`, `GET /api/v1/income/summary`.
+7. **Frontend Pages & Components:**
+   - Authored `frontend/src/types/income.ts`, `frontend/src/services/incomeApi.ts`, `frontend/src/hooks/useIncome.ts`.
+   - Built `IncomeSourceModal.tsx` for adding/editing sources.
+   - Built `IncomeEntryModal.tsx` with auto-calculated net amount (`gross - tds`).
+   - Built `IncomePage.tsx` with top summary cards (Gross, TDS, Net), FY filter, source list, dual-layout entry table (desktop) / touch-friendly card grid (mobile), and Privacy Mode (`usePrivacy`) integration.
+   - Added `/income` route to `App.tsx` and navbar link in `NavBar.tsx`.
+8. **Automated Testing & Quality Assurance:**
+   - Authored `backend/app/tests/api/v1/test_income.py` testing source CRUD, entry CRUD, TDS validation, tenant isolation, and FY summary (4/4 pytest test cases passing 100%).
+   - Authored `frontend/src/__tests__/pages/IncomePage.test.tsx` testing component rendering, form modals, and summary cards (3/3 Jest tests passing 100%).
+   - ESLint and Ruff linters passing with **0 errors**.
+
 ## 2026-08-26: Refine Capital Loss Set-Off, Loss Harvesting Engine & Section 112A Pooling (FR6.5 Phase 3 / Issue #526)
 
 **Task:** Refine Section 112A ₹1,25,000 exemption threshold accounting across set-off and tax-loss harvesting recommendation engines, align Section 111A equity STCG 20% tax rate in loss harvesting, fix frontend currency string addition & NaN% progress bar bugs, clarify lot breakdown 112A pooled tax table display, and expand unit test suite with 4 new corner cases.  
