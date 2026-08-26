@@ -66,19 +66,19 @@ const PortfolioDetailPage: React.FC = () => {
     if (isError) return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
     if (!portfolio) return <div className="text-center p-8">Portfolio not found.</div>;
 
-    const handleCloseDetailModal = () => {
+    const handleCloseDetailModal = useCallback(() => {
         setSelectedHolding(null);
-    };
+    }, []);
 
     const handleOpenCreateTransactionModal = () => {
         setTransactionToEdit(undefined);
         setTransactionFormOpen(true);
     };
 
-    const handleOpenEditTransactionModal = (transaction: Transaction) => {
+    const handleOpenEditTransactionModal = useCallback((transaction: Transaction) => {
         setTransactionToEdit(transaction);
         setTransactionFormOpen(true);
-    };
+    }, []);
 
     const handleCloseTransactionModal = () => {
         setTransactionToEdit(undefined);
@@ -91,9 +91,9 @@ const PortfolioDetailPage: React.FC = () => {
         setAddAwardModalOpen(false);
     };
 
-    const handleOpenDeleteModal = (transaction: Transaction) => {
+    const handleOpenDeleteModal = useCallback((transaction: Transaction) => {
         setTransactionToDelete(transaction);
-    };
+    }, []);
 
     const handleCloseDeleteModal = () => {
         setTransactionToDelete(null);
