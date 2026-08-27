@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { usePrivacy } from '../context/PrivacyContext';
+import { getCurrentFinancialYear, getFinancialYearOptions } from '../utils/formatting';
 import { DeductionEntryModal } from '../components/DeductionEntryModal';
 import {
   createTaxDeduction,
@@ -48,8 +49,10 @@ const SECTION_COLOR_MAP: Record<string, { bg: string; bar: string; text: string 
 };
 
 export const DeductionsPage: React.FC = () => {
-  const [selectedFY, setSelectedFY] = useState<string>('2025-2026');
+  const [selectedFY, setSelectedFY] = useState<string>(getCurrentFinancialYear());
   const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('');
+  const fyOptions = getFinancialYearOptions();
+
 
   const [deductions, setDeductions] = useState<TaxDeduction[]>([]);
   const [summary, setSummary] = useState<TaxDeductionFYSummary | null>(null);
@@ -131,11 +134,13 @@ export const DeductionsPage: React.FC = () => {
               onChange={(e) => setSelectedFY(e.target.value)}
               className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
-              <option value="2026-2027">2026-2027</option>
-              <option value="2025-2026">2025-2026</option>
-              <option value="2024-2025">2024-2025</option>
-              <option value="2023-2024">2023-2024</option>
+              {fyOptions.map((fy) => (
+                <option key={fy} value={fy}>
+                  {fy}
+                </option>
+              ))}
             </select>
+
           </div>
 
           <button

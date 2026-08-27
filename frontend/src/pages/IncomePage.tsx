@@ -15,12 +15,15 @@ import { IncomeEntry, IncomeEntryPayload, IncomeSource, IncomeSourcePayload } fr
 import { IncomeSourceModal } from '../components/IncomeSourceModal';
 import { IncomeEntryModal } from '../components/IncomeEntryModal';
 
+import { getCurrentFinancialYear, getFinancialYearOptions } from '../utils/formatting';
 import DeductionsPage from './DeductionsPage';
 
 export const IncomePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'income' | 'deductions'>('income');
-  const [selectedFY, setSelectedFY] = useState('2025-2026');
+  const [selectedFY, setSelectedFY] = useState<string>(getCurrentFinancialYear());
   const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>('');
+  const fyOptions = getFinancialYearOptions();
+
 
   // Modals state
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
@@ -141,10 +144,13 @@ export const IncomePage: React.FC = () => {
               onChange={(e) => setSelectedFY(e.target.value)}
               className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
-              <option value="2024-2025">2024-2025</option>
-              <option value="2025-2026">2025-2026</option>
-              <option value="2026-2027">2026-2027</option>
+              {fyOptions.map((fy) => (
+                <option key={fy} value={fy}>
+                  {fy}
+                </option>
+              ))}
             </select>
+
           </div>
 
           <button

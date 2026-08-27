@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { getFinancialYearOptions } from '../utils/formatting';
 import { TaxDeduction, TaxDeductionCreate } from '../types/tax_deduction';
+
 
 interface DeductionEntryModalProps {
   isOpen: boolean;
@@ -127,11 +129,13 @@ export const DeductionEntryModal: React.FC<DeductionEntryModalProps> = ({
               onChange={(e) => setFinancialYear(e.target.value)}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 min-h-[44px] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             >
-              <option value="2026-2027">2026-2027</option>
-              <option value="2025-2026">2025-2026</option>
-              <option value="2024-2025">2024-2025</option>
-              <option value="2023-2024">2023-2024</option>
+              {getFinancialYearOptions().map((fy) => (
+                <option key={fy} value={fy}>
+                  {fy}
+                </option>
+              ))}
             </select>
+
           </div>
 
           <div>
