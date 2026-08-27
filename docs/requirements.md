@@ -167,6 +167,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR16.3: Tax-Deductible Expense & Investment Logging.** Users must be able to log expenses and investments that are eligible for tax deductions (e.g., Section 80C investments, medical expenses, rent). `📝 Planned`
 -   **FR16.4: Structured Tax Summary Report.** The system must generate a structured report for a given financial year that consolidates all logged income sources, TDS, and potential deductions. `📝 Planned`
     -   **FR16.4.1:** The report must clearly state that it is for informational purposes only and does not constitute financial or tax advice. `📝 Planned`
+-   **FR16.5: Salary Component Breakdown & Section 10(13A) HRA Exemption.** Users must be able to log salary components (Basic Salary, DA, HRA, Rent Paid, Metro location) to compute statutory Section 10(13A) HRA exemptions. `📝 Planned`
 
 ## 3. Non-Functional Requirements
 
