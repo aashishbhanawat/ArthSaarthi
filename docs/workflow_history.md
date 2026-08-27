@@ -24,7 +24,9 @@
    - Authored `frontend/src/types/tax_deduction.ts`, `frontend/src/services/taxDeductionService.ts`.
    - Built `DeductionEntryModal.tsx` with mobile-friendly keypad support (`inputMode="decimal"`).
    - Built `DeductionsPage.tsx` with top summary cards (Claimed vs Eligible Deduction), FY filter, statutory limit progress meters (80C blue, 80D teal, 80CCD_1B purple, 80TTA/TTB amber), dual-layout deduction ledger (desktop table / mobile card grid), and Privacy Mode (`usePrivacy`) integration.
+   - Integrated tabbed navigation bar (`Income & TDS Ledger` | `Tax Deductions (Chapter VI-A)`) on the `/income` hub page for a unified tax management user experience.
    - Added `/deductions` route in `App.tsx` and links in `NavBar.tsx` & `MorePage.tsx`.
+
 8. **Automated Testing & Verification:**
    - Added backend API test suite `backend/app/tests/api/v1/test_tax_deductions.py` covering full CRUD, statutory capping (80C ₹2L capped at ₹1.5L, 80D ₹30k capped at ₹25k), and tenant isolation. Passed 2/2 tests cleanly.
    - Added frontend unit test `frontend/src/__tests__/pages/DeductionsPage.test.tsx`. Passed 2/2 tests cleanly.

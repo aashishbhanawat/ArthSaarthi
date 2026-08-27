@@ -15,7 +15,10 @@ import { IncomeEntry, IncomeEntryPayload, IncomeSource, IncomeSourcePayload } fr
 import { IncomeSourceModal } from '../components/IncomeSourceModal';
 import { IncomeEntryModal } from '../components/IncomeEntryModal';
 
+import DeductionsPage from './DeductionsPage';
+
 export const IncomePage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'income' | 'deductions'>('income');
   const [selectedFY, setSelectedFY] = useState('2025-2026');
   const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>('');
 
@@ -89,16 +92,45 @@ export const IncomePage: React.FC = () => {
 
   return (
     <div className="container mx-auto space-y-6 p-4 pt-safe md:p-6">
-      {/* Header */}
-      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Income & TDS Data Management
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Log salary, freelance income, rental yield, and track Tax Deducted at Source (TDS).
-          </p>
-        </div>
+      {/* Top Tab Bar Navigation */}
+      <div className="flex border-b border-slate-200 dark:border-slate-700">
+        <button
+          onClick={() => setActiveTab('income')}
+          className={`px-5 py-3 text-sm font-bold transition-colors border-b-2 ${
+            activeTab === 'income'
+              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          Income & TDS Ledger
+        </button>
+        <button
+          onClick={() => setActiveTab('deductions')}
+          className={`px-5 py-3 text-sm font-bold transition-colors border-b-2 ${
+            activeTab === 'deductions'
+              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          Tax Deductions (Chapter VI-A)
+        </button>
+      </div>
+
+      {activeTab === 'deductions' ? (
+        <DeductionsPage />
+      ) : (
+        <>
+          {/* Header */}
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                Income & TDS Data Management
+              </h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Log salary, freelance income, rental yield, and track Tax Deducted at Source (TDS).
+              </p>
+            </div>
+
 
         <div className="flex flex-wrap items-center gap-3">
           {/* FY Dropdown */}
@@ -400,8 +432,11 @@ export const IncomePage: React.FC = () => {
         selectedFY={selectedFY}
         initialEntry={editingEntry}
       />
+        </>
+      )}
     </div>
   );
 };
+
 
 export default IncomePage;
