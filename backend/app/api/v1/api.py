@@ -15,6 +15,7 @@ from app.api.v1.endpoints import (
     fx,
     goals,
     import_sessions,
+    income,
     me,
     portfolios,
     ppf_accounts,
@@ -98,4 +99,9 @@ api_router.include_router(
 # Schedule FA - Foreign Assets (Calendar Year)
 api_router.include_router(
     schedule_fa.router, prefix="/schedule-fa", tags=["schedule-fa"]
+)
+
+# Income & TDS Management (FR16.1 & FR16.2)
+api_router.include_router(
+    income.router, prefix="/income", tags=["income"]
 )
