@@ -23,6 +23,7 @@ from app.api.v1.endpoints import (
     risk,
     schedule_fa,
     system,
+    tax_deductions,
     testing,
     transactions,
     users,
@@ -105,3 +106,9 @@ api_router.include_router(
 api_router.include_router(
     income.router, prefix="/income", tags=["income"]
 )
+
+# Tax Deductions under Chapter VI-A (FR16.3)
+api_router.include_router(
+    tax_deductions.router, prefix="/tax/deductions", tags=["tax-deductions"]
+)
+

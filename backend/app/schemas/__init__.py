@@ -120,7 +120,22 @@ from .watchlist import (
     WatchlistUpdate,
 )
 
+from .tax_deduction import (
+    SectionLimitSummary,
+    TaxDeductionBase,
+    TaxDeductionCreate,
+    TaxDeductionFYSummary,
+    TaxDeductionResponse,
+    TaxDeductionUpdate,
+)
+
 __all__ = [
+    "SectionLimitSummary",
+    "TaxDeductionBase",
+    "TaxDeductionCreate",
+    "TaxDeductionFYSummary",
+    "TaxDeductionResponse",
+    "TaxDeductionUpdate",
     "AuditLog",
     "AuditLogCreate",
     "RecurringDeposit",

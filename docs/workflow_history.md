@@ -1,3 +1,36 @@
+## 2026-08-27: Implement Tax-Deductible Expense & Investment Logging under Chapter VI-A (FR16.3 / Issue #518)
+
+**Task:** Implement database model, Pydantic schemas, CRUD operations with statutory ceiling capping, REST API endpoints, Alembic migration, frontend TypeScript types, API service, entry modal, dual-layout page, privacy masking, navigation, and automated unit test suite for Chapter VI-A Tax Deductions.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feature Branch:** Created feature branch `feat/518-tax-deductible-expenses`.
+2. **Database Models & Security Encryption (`backend/app/models/tax_deduction.py`):**
+   - Created `TaxDeduction` model with `id` (GUID), `user_id` (GUID), `financial_year` (indexed string), `section` (`80C`, `80D`, `80CCD_1B`, `80TTA`, `80TTB`, `80G`, `80E`, `OTHER`), `title` (`EncryptedString`), `amount` (`EncryptedString`), `deduction_date` (`Date`), `proof_notes` (`EncryptedString`), and timestamps.
+   - Updated `backend/app/models/__init__.py`, `backend/app/db/base.py`, and `backend/app/models/user.py`.
+3. **Database Migration (`backend/alembic/versions/h89a0b1c2d3e_add_tax_deductions_table.py`):**
+   - Created Alembic migration script for `tax_deductions` table with tenant foreign keys and indexes.
+4. **Pydantic Schemas (`backend/app/schemas/tax_deduction.py`):**
+   - Implemented `TaxDeductionBase`, `TaxDeductionCreate`, `TaxDeductionUpdate`, `TaxDeductionResponse`, `SectionLimitSummary`, and `TaxDeductionFYSummary`.
+5. **CRUD & Statutory Ceiling Capping (`backend/app/crud/crud_tax_deduction.py`):**
+   - Implemented statutory section limits (80C: ₹1.5L, 80D: ₹25k, 80CCD_1B: ₹50k, 80TTA: ₹10k, 80TTB: ₹50k, 80G/80E/OTHER: uncapped).
+   - Implemented `get_summary_by_fy` calculating total invested vs statutory capped eligible deduction per section and FY.
+6. **REST API Endpoints (`backend/app/api/v1/endpoints/tax_deductions.py`):**
+   - Exposed `GET /api/v1/tax/deductions`, `POST /api/v1/tax/deductions`, `PUT /api/v1/tax/deductions/{id}`, `DELETE /api/v1/tax/deductions/{id}`, and `GET /api/v1/tax/deductions/summary`.
+   - Registered router under `prefix="/tax/deductions"` in `backend/app/api/v1/api.py`.
+7. **Frontend Pages & Components:**
+   - Authored `frontend/src/types/tax_deduction.ts`, `frontend/src/services/taxDeductionService.ts`.
+   - Built `DeductionEntryModal.tsx` with mobile-friendly keypad support (`inputMode="decimal"`).
+   - Built `DeductionsPage.tsx` with top summary cards (Claimed vs Eligible Deduction), FY filter, statutory limit progress meters (80C blue, 80D teal, 80CCD_1B purple, 80TTA/TTB amber), dual-layout deduction ledger (desktop table / mobile card grid), and Privacy Mode (`usePrivacy`) integration.
+   - Added `/deductions` route in `App.tsx` and links in `NavBar.tsx` & `MorePage.tsx`.
+8. **Automated Testing & Verification:**
+   - Added backend API test suite `backend/app/tests/api/v1/test_tax_deductions.py` covering full CRUD, statutory capping (80C ₹2L capped at ₹1.5L, 80D ₹30k capped at ₹25k), and tenant isolation. Passed 2/2 tests cleanly.
+   - Added frontend unit test `frontend/src/__tests__/pages/DeductionsPage.test.tsx`. Passed 2/2 tests cleanly.
+
+---
+
 ## 2026-08-26: Implement Income Source & Entry Data Management with TDS Tracking (FR16.1 & FR16.2 / Issue #517)
 
 **Task:** Implement database models, Pydantic schemas, CRUD operations, REST API endpoints, Alembic migration, frontend TypeScript types, API service, custom hooks, modals, dual-layout page, and test suite for Income Sources and Entry logging with Tax Deducted at Source (TDS).  

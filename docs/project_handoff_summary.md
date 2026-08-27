@@ -1,22 +1,31 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-26
+**Last Updated:** 2026-08-27
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Implemented Income Source & Entry Data Management with TDS Tracking (Issue #517 / FR16.1 & FR16.2). Added `IncomeSource` and `IncomeEntry` SQLAlchemy models with `EncryptedString` columns, Alembic migration, Pydantic schemas, CRUD operations with tenant isolation, REST API endpoints, React Query hooks, `IncomeSourceModal`, `IncomeEntryModal`, `IncomePage` with dual-layout (desktop table / mobile card grid), Privacy Mode integration (`usePrivacy`), and automated backend (4 pytest cases) and frontend (3 Jest tests) test suites.
+**Latest Achievement:** Implemented Tax-Deductible Expense & Investment Logging under Chapter VI-A (Issue #518 / FR16.3). Added `TaxDeduction` SQLAlchemy model with `EncryptedString` columns, Alembic migration `h89a0b1c2d3e`, Pydantic schemas, CRUD operations with statutory ceiling limit capping (80C ₹1.5L, 80D ₹25k/50k, 80CCD_1B ₹50k, 80TTA ₹10k, 80TTB ₹50k, 80G/80E/OTHER uncapped), REST API endpoints under `/api/v1/tax/deductions`, `DeductionEntryModal`, `DeductionsPage` with statutory limit progress meters (80C blue, 80D teal, 80CCD_1B purple, 80TTA/TTB amber), dual-layout (desktop table / mobile card grid), Privacy Mode integration (`usePrivacy`), and automated backend pytest (2/2) and frontend Jest (2/2) test suites.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **381/384 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **381/384 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **196/196 Passing** (48/48 Test Suites)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **383/386 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **383/386 Passing** (3 expected skips)
+*   **Frontend Unit Tests (Jest):** ✅ **198/198 Passing** (49/49 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Tax-Deductible Expense & Investment Logging under Chapter VI-A (Issue #518 / FR16.3) (Updated 2026-08-27):**
+    - **Backend Model & Security Encryption:** Created `TaxDeduction` model in `backend/app/models/tax_deduction.py` using `EncryptedString` for privacy protection on local desktop/mobile SQLite databases.
+    - **Alembic Migration:** Created database migration script `h89a0b1c2d3e_add_tax_deductions_table.py`.
+    - **Pydantic Schemas & CRUD Capping:** Created `TaxDeduction` schemas and CRUD with statutory ceiling limit calculation (`80C` ₹1,50,000, `80D` ₹25,000, `80CCD_1B` ₹50,000, `80TTA` ₹10,000, `80TTB` ₹50,000, `80G`/`80E`/`OTHER` uncapped), tenant isolation, and FY summary aggregation.
+    - **REST API Endpoints:** Exposed `/api/v1/tax/deductions` and `/api/v1/tax/deductions/summary` endpoints in `backend/app/api/v1/endpoints/tax_deductions.py`.
+    - **Frontend Components & Navigation:** Built `DeductionEntryModal.tsx` with mobile keypad support (`inputMode="decimal"`), `DeductionsPage.tsx` with summary cards (Claimed vs Eligible Deduction), statutory limit progress meters, dual-layout entry ledger (desktop table / mobile card grid), and Privacy Mode (`usePrivacy`) integration. Added `/deductions` route and navbar/menu links.
+    - **Automated Tests:** Authored `backend/app/tests/api/v1/test_tax_deductions.py` (2/2 passing) and `frontend/src/__tests__/pages/DeductionsPage.test.tsx` (2/2 passing). All linters passing 100%.
+
 
 *   **Income Source & Entry Data Management (Issue #517 / FR16.1 & FR16.2) (Updated 2026-08-26):**
     - **Backend Models & Encryption:** Created `IncomeSource` and `IncomeEntry` models in `backend/app/models/income.py` using `EncryptedString` for privacy protection on desktop/mobile SQLite databases.
