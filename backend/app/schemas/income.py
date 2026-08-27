@@ -49,7 +49,9 @@ class IncomeEntryBase(BaseModel):
     financial_year: str
     entry_date: date
     gross_amount: Decimal = Field(gt=0, description="Gross income amount")
-    tds_amount: Decimal = Field(default=Decimal("0.00"), ge=0, description="TDS deducted at source")
+    tds_amount: Decimal = Field(
+        default=Decimal("0.00"), ge=0, description="TDS deducted at source"
+    )
     notes: Optional[str] = None
 
     @validator("tds_amount")

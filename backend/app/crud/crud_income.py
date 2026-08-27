@@ -80,7 +80,7 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
         obj_in: IncomeEntryUpdate,
     ) -> IncomeEntry:
         update_data = model_dump(obj_in, exclude_unset=True)
-        
+
         # Calculate new amounts if gross or tds are updated
         gross_val = update_data.get("gross_amount", db_obj.gross_amount)
         tds_val = update_data.get("tds_amount", db_obj.tds_amount)
@@ -91,11 +91,11 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
             raise ValueError("TDS amount cannot exceed gross income amount")
 
         net = gross - tds
-        
+
         for field, value in update_data.items():
             if field in ["gross_amount", "tds_amount"]:
                 setattr(db_obj, field, str(value))
-            elif field == "notes" or field == "financial_year" or field == "entry_date" or field == "source_id":
+            elif field in ["notes", "financial_year", "entry_date", "source_id"]:
                 setattr(db_obj, field, value)
 
         db_obj.net_amount = str(net)

@@ -148,7 +148,8 @@ def create_income_entry(
     )
     if not source:
         raise HTTPException(
-            status_code=400, detail="Invalid source_id or source does not belong to user"
+            status_code=400,
+            detail="Invalid source_id or source does not belong to user",
         )
 
     entry = crud_income_entry.create_with_owner(
@@ -192,7 +193,8 @@ def update_income_entry(
         )
         if not source:
             raise HTTPException(
-                status_code=400, detail="Invalid source_id or source does not belong to user"
+                status_code=400,
+                detail="Invalid source_id or source does not belong to user",
             )
 
     try:
@@ -201,6 +203,9 @@ def update_income_entry(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    src_name = updated_entry.source.name if updated_entry.source else None
+    src_cat = updated_entry.source.category if updated_entry.source else None
 
     return {
         "id": updated_entry.id,
@@ -212,8 +217,8 @@ def update_income_entry(
         "tds_amount": updated_entry.tds_amount,
         "net_amount": updated_entry.net_amount,
         "notes": updated_entry.notes,
-        "source_name": updated_entry.source.name if updated_entry.source else None,
-        "source_category": updated_entry.source.category if updated_entry.source else None,
+        "source_name": src_name,
+        "source_category": src_cat,
     }
 
 

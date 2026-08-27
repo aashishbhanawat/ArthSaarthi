@@ -13,7 +13,8 @@ class IncomeSource(Base):
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     user_id = Column(GUID, ForeignKey("users.id"), nullable=False)
     name = Column(EncryptedString, nullable=False)
-    category = Column(String, nullable=False)  # SALARY, FREELANCE, RENTAL, DIVIDEND, INTEREST, BUSINESS, OTHER
+    # SALARY, FREELANCE, RENTAL, DIVIDEND, INTEREST, BUSINESS, OTHER
+    category = Column(String, nullable=False)
     payer_name = Column(EncryptedString, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(
