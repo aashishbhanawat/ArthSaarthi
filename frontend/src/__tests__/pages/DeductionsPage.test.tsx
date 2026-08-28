@@ -63,8 +63,9 @@ describe('DeductionsPage Component', () => {
 
     await waitFor(() => {
       expect(screen.getAllByText('LIC Policy Premium')[0]).toBeInTheDocument();
-      expect(screen.getByText('Policy #123456')).toBeInTheDocument();
     });
+    expect(screen.getByText('Policy #123456')).toBeInTheDocument();
+
   });
 
   test('opens add deduction modal when button is clicked', async () => {

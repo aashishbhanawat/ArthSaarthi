@@ -91,9 +91,13 @@ export const DeductionEntryModal: React.FC<DeductionEntryModalProps> = ({
         editingDeduction?.id
       );
       onClose();
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Failed to save deduction entry');
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'Failed to save deduction entry';
+      setError(errorMsg);
     } finally {
+
       setIsSubmitting(false);
     }
   };
