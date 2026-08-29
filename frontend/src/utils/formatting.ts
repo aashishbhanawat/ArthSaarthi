@@ -56,3 +56,25 @@ export const usePrivacySensitiveCurrency = () => {
 
   return format;
 };
+
+export const getCurrentFinancialYear = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0-indexed: April is 3
+  const startYear = month >= 3 ? year : year - 1;
+  return `${startYear}-${startYear + 1}`;
+};
+
+export const getFinancialYearOptions = (
+  currentDate: Date = new Date(),
+  count: number = 4
+): string[] => {
+  const currentFY = getCurrentFinancialYear(currentDate);
+  const startYear = parseInt(currentFY.split('-')[0], 10);
+  const options: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const y = startYear - i;
+    options.push(`${y}-${y + 1}`);
+  }
+  return options;
+};

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { getFinancialYearOptions } from '../utils/formatting';
 import { IncomeEntry, IncomeEntryPayload, IncomeSource } from '../types/income';
+
 
 interface IncomeEntryModalProps {
   isOpen: boolean;
@@ -136,14 +138,19 @@ export const IncomeEntryModal: React.FC<IncomeEntryModalProps> = ({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Financial Year *
               </label>
-              <input
-                type="text"
+              <select
                 required
-                placeholder="2025-2026"
                 value={financialYear}
                 onChange={(e) => setFinancialYear(e.target.value)}
                 className="mt-1 block w-full min-h-[44px] rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-              />
+              >
+                {getFinancialYearOptions().map((fy) => (
+                  <option key={fy} value={fy}>
+                    {fy}
+                  </option>
+                ))}
+              </select>
+
             </div>
 
             <div>

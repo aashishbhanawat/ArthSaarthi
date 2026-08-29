@@ -16,4 +16,5 @@ from .audit_log import AuditLog # noqa
 from app.models.risk import UserRiskProfile  # noqa
 from app.models.portfolio_snapshot import DailyPortfolioSnapshot  # noqa
 from app.models.capital_loss_ledger import CapitalLossLedger  # noqa
+from app.models.tax_deduction import TaxDeduction  # noqa
 

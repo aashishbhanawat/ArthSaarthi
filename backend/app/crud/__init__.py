@@ -14,6 +14,7 @@ from .crud_income import crud_income_entry, crud_income_source
 from .crud_portfolio import portfolio
 from .crud_recurring_deposit import recurring_deposit
 from .crud_risk import risk_profile
+from .crud_tax_deduction import crud_tax_deduction
 from .crud_testing import testing
 from .crud_transaction import transaction
 from .crud_user import user
@@ -44,5 +45,7 @@ __all__ = [
     "capital_loss_ledger",
     "crud_income_source",
     "crud_income_entry",
+    "crud_tax_deduction",
 ]
+
 
