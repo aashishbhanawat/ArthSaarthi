@@ -100,6 +100,14 @@ from .risk import (
     UserRiskProfileCreate,
     UserRiskProfileUpdate,
 )
+from .tax_deduction import (
+    SectionLimitSummary,
+    TaxDeductionBase,
+    TaxDeductionCreate,
+    TaxDeductionFYSummary,
+    TaxDeductionResponse,
+    TaxDeductionUpdate,
+)
 from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
@@ -118,15 +126,6 @@ from .watchlist import (
     WatchlistItem,
     WatchlistItemCreate,
     WatchlistUpdate,
-)
-
-from .tax_deduction import (
-    SectionLimitSummary,
-    TaxDeductionBase,
-    TaxDeductionCreate,
-    TaxDeductionFYSummary,
-    TaxDeductionResponse,
-    TaxDeductionUpdate,
 )
 
 __all__ = [
