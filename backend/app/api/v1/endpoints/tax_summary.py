@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@router.get("", response_model=TaxSummaryResponse)
 @router.get("/", response_model=TaxSummaryResponse)
 def get_tax_summary(
     financial_year: str = Query("2024-25", description="Financial Year (e.g. '2024-25')"),
