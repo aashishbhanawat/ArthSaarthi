@@ -148,9 +148,23 @@ TAX_RULES_BY_FY: Dict[str, FinancialYearTaxRules] = {
 }
 
 
+def get_fy_variations(financial_year: str) -> List[str]:
+    """Return both short ('2026-27') and long ('2026-2027') variations for FY matching."""
+    parts = financial_year.strip().split("-")
+    if len(parts) == 2:
+        start, end = parts[0], parts[1]
+        if len(start) == 4:
+            if len(end) == 2:
+                return [financial_year, f"{start}-{start[:2]}{end}"]
+            elif len(end) == 4:
+                return [f"{start}-{end[-2:]}", financial_year]
+    return [financial_year]
+
+
 def get_tax_rules(financial_year: str) -> FinancialYearTaxRules:
     """Retrieve statutory tax rules for a specified financial year."""
-    if financial_year not in TAX_RULES_BY_FY:
-        # Fallback to current default FY 2024-25 if unsupported FY is requested
-        return TAX_RULES_BY_FY["2024-25"]
-    return TAX_RULES_BY_FY[financial_year]
+    for fy in get_fy_variations(financial_year):
+        if fy in TAX_RULES_BY_FY:
+            return TAX_RULES_BY_FY[fy]
+    return TAX_RULES_BY_FY["2024-25"]
+

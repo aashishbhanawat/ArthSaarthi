@@ -6,13 +6,14 @@ import {
   getExportPdfUrl,
 } from '../services/taxSummaryService';
 import { RegimeComparisonCard } from '../components/RegimeComparisonCard';
-import { formatCurrency } from '../utils/formatting';
+import { formatCurrency, getCurrentFinancialYear, getFinancialYearOptions } from '../utils/formatting';
 
 export const TaxSummaryDashboard: React.FC = () => {
-  const [financialYear, setFinancialYear] = useState<string>('2024-25');
+  const [financialYear, setFinancialYear] = useState<string>(getCurrentFinancialYear());
   const [summary, setSummary] = useState<TaxSummaryResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const fyOptions = getFinancialYearOptions(new Date(), 6);
 
   const fetchSummary = async (fy: string) => {
     try {
@@ -50,12 +51,11 @@ export const TaxSummaryDashboard: React.FC = () => {
             onChange={(e) => setFinancialYear(e.target.value)}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           >
-            <option value="2026-27">FY 2026-27</option>
-            <option value="2025-26">FY 2025-26</option>
-            <option value="2024-25">FY 2024-25</option>
-            <option value="2023-24">FY 2023-24</option>
-            <option value="2022-23">FY 2022-23</option>
-            <option value="2021-22">FY 2021-22</option>
+            {fyOptions.map((fy) => (
+              <option key={fy} value={fy}>
+                FY {fy}
+              </option>
+            ))}
           </select>
 
           <a
