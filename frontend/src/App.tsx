@@ -71,9 +71,9 @@ function AppRoutes() {
           <Route path="/import/fd/:sessionId/preview" element={<FDImportPreviewPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/capital-gains" element={<CapitalGainsPage />} />
-          <Route path="/income" element={<IncomePage />} />
-          <Route path="/deductions" element={<DeductionsPage />} />
-          <Route path="/tax-summary" element={<TaxSummaryDashboard />} />
+          <Route path="/income" element={<IncomePage initialTab="income" />} />
+          <Route path="/deductions" element={<IncomePage initialTab="deductions" />} />
+          <Route path="/tax-summary" element={<IncomePage initialTab="summary" />} />
           <Route path="/watchlists" element={<WatchlistsPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/goals/:goalId" element={<GoalDetailPage />} />

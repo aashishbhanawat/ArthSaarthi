@@ -17,9 +17,14 @@ import { IncomeEntryModal } from '../components/IncomeEntryModal';
 
 import { getCurrentFinancialYear, getFinancialYearOptions } from '../utils/formatting';
 import DeductionsPage from './DeductionsPage';
+import { TaxSummaryDashboard } from './TaxSummaryDashboard';
 
-export const IncomePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'income' | 'deductions'>('income');
+interface IncomePageProps {
+  initialTab?: 'income' | 'deductions' | 'summary';
+}
+
+export const IncomePage: React.FC<IncomePageProps> = ({ initialTab = 'income' }) => {
+  const [activeTab, setActiveTab] = useState<'income' | 'deductions' | 'summary'>(initialTab);
   const [selectedFY, setSelectedFY] = useState<string>(getCurrentFinancialYear());
   const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>('');
   const fyOptions = getFinancialYearOptions();
@@ -62,7 +67,7 @@ export const IncomePage: React.FC = () => {
   const handleDeleteSource = async (source: IncomeSource) => {
     if (
       window.confirm(
-        `Are you sure you want to delete source "${source.name}"? All associated income entries will be deleted.`
+        `Are you sure you want to delete source "${source.name}"? This will fail if entries exist.`
       )
     ) {
       await deleteSourceMutation.mutateAsync(source.id);
@@ -117,10 +122,22 @@ export const IncomePage: React.FC = () => {
         >
           Tax Deductions (Chapter VI-A)
         </button>
+        <button
+          onClick={() => setActiveTab('summary')}
+          className={`px-5 py-3 text-sm font-bold transition-colors border-b-2 ${
+            activeTab === 'summary'
+              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          Tax Readiness Summary
+        </button>
       </div>
 
       {activeTab === 'deductions' ? (
         <DeductionsPage />
+      ) : activeTab === 'summary' ? (
+        <TaxSummaryDashboard />
       ) : (
         <>
           {/* Header */}
