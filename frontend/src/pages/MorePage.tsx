@@ -59,7 +59,7 @@ const MorePage: React.FC = () => {
                     <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">Features</h2>
                     <div className="space-y-2">
                         <MenuItem to="/capital-gains" icon={ScaleIcon} label="Capital Gains" />
-                        <MenuItem to="/deductions" icon={ScaleIcon} label="Tax Deductions" />
+                        <MenuItem to="/income" icon={ScaleIcon} label="Income & Tax Hub" />
                         <MenuItem to="/watchlists" icon={EyeIcon} label="Watchlists" />
 
                         <MenuItem to="/goals" icon={TrophyIcon} label="Goals" />

@@ -116,7 +116,9 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
     ) -> List[IncomeEntry]:
         query = db.query(IncomeEntry).filter(IncomeEntry.user_id == user_id)
         if financial_year:
-            query = query.filter(IncomeEntry.financial_year == financial_year)
+            from app.core.tax_rules_registry import get_fy_variations
+            fy_list = get_fy_variations(financial_year)
+            query = query.filter(IncomeEntry.financial_year.in_(fy_list))
         if source_id:
             query = query.filter(IncomeEntry.source_id == source_id)
 

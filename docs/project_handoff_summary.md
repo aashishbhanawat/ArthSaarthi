@@ -1,22 +1,30 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-27
+**Last Updated:** 2026-08-29
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Implemented Tax-Deductible Expense & Investment Logging under Chapter VI-A (Issue #518 / FR16.3). Added `TaxDeduction` SQLAlchemy model with `EncryptedString` columns, Alembic migration `h89a0b1c2d3e`, Pydantic schemas, CRUD operations with statutory ceiling limit capping (80C ₹1.5L, 80D ₹25k/50k, 80CCD_1B ₹50k, 80TTA ₹10k, 80TTB ₹50k, 80G/80E/OTHER uncapped), REST API endpoints under `/api/v1/tax/deductions`, `DeductionEntryModal`, `DeductionsPage` with statutory limit progress meters (80C blue, 80D teal, 80CCD_1B purple, 80TTA/TTB amber), dual-layout (desktop table / mobile card grid), Privacy Mode integration (`usePrivacy`), and automated backend pytest (2/2) and frontend Jest (2/2) test suites.
+**Latest Achievement:** Implemented Structured Tax Summary Report & Tax Profile Dashboard (Issue #519 / FR16.4 & FR16.4.1). Added `TaxRulesRegistry` (`backend/app/core/tax_rules_registry.py`) pre-seeded with historical tax rules for FY 2021-22 through FY 2026-27 derived from Excel benchmarks, dual-regime tax computation engine (`TaxRegimeService`), mandatory legal warning disclaimer engine (FR16.4.1), REST API endpoints (`GET /api/v1/tax/summary`, `/export/csv`, `/export/pdf`), ReportLab PDF generator, `RegimeComparisonCard`, `TaxSummaryDashboard` UI with FY selector, and automated backend pytest (4/4) and frontend Jest (1/1) test suites.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **383/386 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **383/386 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **198/198 Passing** (49/49 Test Suites)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **387/390 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **387/390 Passing** (3 expected skips)
+*   **Frontend Unit Tests (Jest):** ✅ **199/199 Passing** (50/50 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Structured Tax Summary Report & Profile Dashboard (Issue #519 / FR16.4 & FR16.4.1) (Updated 2026-08-29):**
+    - **Versioned Tax Rules Registry:** Created statutory rules engine in `backend/app/core/tax_rules_registry.py` configured for FY 2021-22 to FY 2026-27 (Standard Deductions, Section 87A rebate limits, slab brackets, 4% Cess, and `MANDATORY_TAX_DISCLAIMER`).
+    - **Dual Regime Calculation Engine:** Built `TaxRegimeService` computing Old Regime vs New Regime (Section 115BAC) tax liabilities, identifying lower tax recommendation, and calculating tax savings.
+    - **API Endpoints & Exporters:** Built `/api/v1/tax/summary` JSON API, `/api/v1/tax/summary/export/csv` (embedded disclaimer in rows 1-4), and `/api/v1/tax/summary/export/pdf` (ReportLab canvas PDF with legal disclaimer).
+    - **Frontend Dashboard:** Built `RegimeComparisonCard.tsx`, `TaxSummaryDashboard.tsx` with FY selector dropdown, export buttons, and prominent amber legal notice banner (FR16.4.1). Added `/tax-summary` route and navbar link.
+    - **Automated Tests:** Authored `backend/app/tests/api/v1/test_tax_summary.py` (4/4 passing) and `frontend/src/__tests__/pages/TaxSummaryDashboard.test.tsx` (1/1 passing).
+
 
 *   **Tax-Deductible Expense & Investment Logging under Chapter VI-A (Issue #518 / FR16.3) (Updated 2026-08-27):**
     - **Backend Model & Security Encryption:** Created `TaxDeduction` model in `backend/app/models/tax_deduction.py` using `EncryptedString` for privacy protection on local desktop/mobile SQLite databases.

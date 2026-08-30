@@ -9,6 +9,7 @@ from app.core import dependencies
 router = APIRouter()
 
 
+@router.get("", response_model=schemas.UserRiskProfile)
 @router.get("/", response_model=schemas.UserRiskProfile)
 def read_risk_profile(
     db: Session = Depends(dependencies.get_db),
@@ -26,6 +27,7 @@ def read_risk_profile(
     return profile
 
 
+@router.post("", response_model=schemas.UserRiskProfile, status_code=201)
 @router.post("/", response_model=schemas.UserRiskProfile, status_code=201)
 def create_or_update_risk_profile(
     *,
