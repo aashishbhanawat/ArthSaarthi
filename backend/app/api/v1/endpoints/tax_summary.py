@@ -208,10 +208,10 @@ def export_tax_summary_pdf(
     summary = TaxRegimeService.compute_tax_summary(
         db, user_id=current_user.id, financial_year=financial_year
     )
+    tot_gross_inc = summary.income_summary.total_gross_income
 
     if not REPORTLAB_AVAILABLE:
         # Fallback text PDF content
-        tot_gross_inc = summary.income_summary.total_gross_income
         text_content = (
             f"=== ArthSaarthi - Tax Summary ({summary.financial_year}) ===\n"
             f"RECOMMENDED REGIME: {summary.recommended_regime}\n\n"
