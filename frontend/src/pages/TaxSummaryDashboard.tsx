@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { TaxSummaryResponse } from '../types/tax_summary';
 import {
   getTaxSummary,
-  getExportCsvUrl,
-  getExportPdfUrl,
+  downloadExportCsv,
+  downloadExportPdf,
 } from '../services/taxSummaryService';
 import { RegimeComparisonCard } from '../components/RegimeComparisonCard';
 import { formatCurrency, getCurrentFinancialYear, getFinancialYearOptions } from '../utils/formatting';
@@ -12,6 +12,8 @@ export const TaxSummaryDashboard: React.FC = () => {
   const [financialYear, setFinancialYear] = useState<string>(getCurrentFinancialYear());
   const [summary, setSummary] = useState<TaxSummaryResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isExportingCsv, setIsExportingCsv] = useState<boolean>(false);
+  const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const fyOptions = getFinancialYearOptions(new Date(), 6);
 
@@ -25,6 +27,28 @@ export const TaxSummaryDashboard: React.FC = () => {
       setError(err?.response?.data?.detail || 'Failed to load tax summary.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      setIsExportingCsv(true);
+      await downloadExportCsv(financialYear);
+    } catch (err: any) {
+      alert('Failed to download CSV report. Please try again.');
+    } finally {
+      setIsExportingCsv(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      setIsExportingPdf(true);
+      await downloadExportPdf(financialYear);
+    } catch (err: any) {
+      alert('Failed to download PDF report. Please try again.');
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -58,21 +82,21 @@ export const TaxSummaryDashboard: React.FC = () => {
             ))}
           </select>
 
-          <a
-            href={getExportCsvUrl(financialYear)}
-            download
-            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          <button
+            onClick={handleExportCsv}
+            disabled={isExportingCsv}
+            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 disabled:opacity-50"
           >
-            📥 CSV Export
-          </a>
+            {isExportingCsv ? '⏳ Exporting...' : '📥 CSV Export'}
+          </button>
 
-          <a
-            href={getExportPdfUrl(financialYear)}
-            download
-            className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+          <button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
           >
-            📄 PDF Report
-          </a>
+            {isExportingPdf ? '⏳ Generating...' : '📄 PDF Report'}
+          </button>
         </div>
       </div>
 
