@@ -23,8 +23,11 @@ export const TaxSummaryDashboard: React.FC = () => {
       setError(null);
       const data = await getTaxSummary(fy);
       setSummary(data);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Failed to load tax summary.');
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'Failed to load tax summary.';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -34,7 +37,7 @@ export const TaxSummaryDashboard: React.FC = () => {
     try {
       setIsExportingCsv(true);
       await downloadExportCsv(financialYear);
-    } catch (err: any) {
+    } catch {
       alert('Failed to download CSV report. Please try again.');
     } finally {
       setIsExportingCsv(false);
@@ -45,7 +48,7 @@ export const TaxSummaryDashboard: React.FC = () => {
     try {
       setIsExportingPdf(true);
       await downloadExportPdf(financialYear);
-    } catch (err: any) {
+    } catch {
       alert('Failed to download PDF report. Please try again.');
     } finally {
       setIsExportingPdf(false);

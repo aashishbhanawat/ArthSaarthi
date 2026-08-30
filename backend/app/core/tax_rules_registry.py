@@ -149,7 +149,7 @@ TAX_RULES_BY_FY: Dict[str, FinancialYearTaxRules] = {
 
 
 def get_fy_variations(financial_year: str) -> List[str]:
-    """Return both short ('2026-27') and long ('2026-2027') variations for FY matching."""
+    """Return short ('2026-27') and long ('2026-2027') FY variations."""
     parts = financial_year.strip().split("-")
     if len(parts) == 2:
         start, end = parts[0], parts[1]

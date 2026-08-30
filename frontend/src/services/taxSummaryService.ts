@@ -20,9 +20,7 @@ export const downloadExportCsv = async (financialYear: string): Promise<void> =>
   const link = document.createElement('a');
   link.href = url;
   link.setAttribute('download', `tax_summary_${financialYear}.csv`);
-  document.body.appendChild(link);
   link.click();
-  link.remove();
   window.URL.revokeObjectURL(url);
 };
 
@@ -36,8 +34,6 @@ export const downloadExportPdf = async (financialYear: string): Promise<void> =>
   const link = document.createElement('a');
   link.href = url;
   link.setAttribute('download', `tax_summary_${financialYear}.pdf`);
-  document.body.appendChild(link);
   link.click();
-  link.remove();
   window.URL.revokeObjectURL(url);
 };

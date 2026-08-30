@@ -110,6 +110,8 @@ from .tax_deduction import (
 )
 from .tax_summary import (
     CapitalGainsSummary as TaxSummaryCapitalGains,
+)
+from .tax_summary import (
     DeductionSummary,
     ExemptionsSummary,
     IncomeSummary,

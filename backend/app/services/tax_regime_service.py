@@ -1,12 +1,12 @@
 import uuid
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional, Tuple
 
 from sqlalchemy.orm import Session
 
 from app.core.tax_rules_registry import (
-    FinancialYearTaxRules,
     MANDATORY_TAX_DISCLAIMER,
+    FinancialYearTaxRules,
     get_tax_rules,
 )
 from app.crud.crud_income import crud_income_entry
@@ -74,7 +74,9 @@ class TaxRegimeService:
             else:
                 other_income += gross
 
-        total_gross_income = gross_salary + business_income + dividend_income + other_income
+        total_gross_income = (
+            gross_salary + business_income + dividend_income + other_income
+        )
 
         income_summary = IncomeSummary(
             gross_salary=gross_salary,
@@ -116,7 +118,9 @@ class TaxRegimeService:
             else:
                 other_ded += elig
 
-        total_chapter_via = Decimal(str(deduction_data.get("total_eligible_deduction", "0.00")))
+        total_chapter_via = Decimal(
+            str(deduction_data.get("total_eligible_deduction", "0.00"))
+        )
 
         deduction_summary = DeductionSummary(
             section_80c=sec_80c,
@@ -169,7 +173,8 @@ class TaxRegimeService:
             old_rebate = Decimal("0.00")
 
         old_tax_after_rebate = max(Decimal("0.00"), old_slab_tax - old_rebate)
-        old_cess = (old_tax_after_rebate * rules.health_and_education_cess_rate).quantize(
+        cess_rate = rules.health_and_education_cess_rate
+        old_cess = (old_tax_after_rebate * cess_rate).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
         old_total_tax = old_tax_after_rebate + old_cess
@@ -221,7 +226,7 @@ class TaxRegimeService:
             new_rebate = Decimal("0.00")
 
         new_tax_after_rebate = max(Decimal("0.00"), new_slab_tax - new_rebate)
-        new_cess = (new_tax_after_rebate * rules.health_and_education_cess_rate).quantize(
+        new_cess = (new_tax_after_rebate * cess_rate).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
         new_total_tax = new_tax_after_rebate + new_cess

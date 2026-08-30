@@ -20,8 +20,6 @@ import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
 import CapitalGainsPage from './pages/CapitalGainsPage';
 import IncomePage from './pages/IncomePage';
-import DeductionsPage from './pages/DeductionsPage';
-import { TaxSummaryDashboard } from './pages/TaxSummaryDashboard';
 import ProfilePage from './pages/ProfilePage';
 import MorePage from './pages/MorePage';
 import LogsPage from './pages/LogsPage';
