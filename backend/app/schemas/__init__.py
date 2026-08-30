@@ -108,6 +108,14 @@ from .tax_deduction import (
     TaxDeductionResponse,
     TaxDeductionUpdate,
 )
+from .tax_summary import (
+    CapitalGainsSummary as TaxSummaryCapitalGains,
+    DeductionSummary,
+    ExemptionsSummary,
+    IncomeSummary,
+    RegimeCalculation,
+    TaxSummaryResponse,
+)
 from .token import Token, TokenPayload
 from .transaction import (
     Transaction,
@@ -129,6 +137,12 @@ from .watchlist import (
 )
 
 __all__ = [
+    "TaxSummaryResponse",
+    "RegimeCalculation",
+    "ExemptionsSummary",
+    "IncomeSummary",
+    "DeductionSummary",
+    "TaxSummaryCapitalGains",
     "SectionLimitSummary",
     "TaxDeductionBase",
     "TaxDeductionCreate",

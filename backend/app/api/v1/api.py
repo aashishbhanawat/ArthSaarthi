@@ -24,6 +24,7 @@ from app.api.v1.endpoints import (
     schedule_fa,
     system,
     tax_deductions,
+    tax_summary,
     testing,
     transactions,
     users,
@@ -111,4 +112,10 @@ api_router.include_router(
 api_router.include_router(
     tax_deductions.router, prefix="/tax/deductions", tags=["tax-deductions"]
 )
+
+# Tax Summary Report & Profile Dashboard (FR16.4)
+api_router.include_router(
+    tax_summary.router, prefix="/tax/summary", tags=["tax-summary"]
+)
+
 

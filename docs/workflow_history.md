@@ -1,3 +1,36 @@
+## 2026-08-29: Implement Structured Tax Summary Report & Tax Profile Dashboard (FR16.4 & FR16.4.1 / Issue #519)
+
+**Task:** Implement statutory tax rules registry for FY 2021-22 through FY 2026-27, dual regime (Old vs New Sec 115BAC) tax computation service, mandatory legal warning disclaimer engine (FR16.4.1), Pydantic schemas, REST API endpoints, PDF export builder (ReportLab), CSV export builder, frontend TypeScript types, API service, RegimeComparisonCard, TaxSummaryDashboard page, navigation links, and automated test suite.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feature Branch:** Created feature branch `feat/519-structured-tax-summary`.
+2. **Versioned Statutory Tax Rules Registry (`backend/app/core/tax_rules_registry.py`):**
+   - Implemented `FinancialYearTaxRules` model and `TAX_RULES_BY_FY` dictionary pre-seeded with historical tax rules derived directly from `local/TaxCalc_2022.xlsx` to `local/TaxCalc_2027.xlsx` for FY 2021-22 through FY 2026-27.
+   - Configured Standard Deductions (Old: ₹50k, New: ₹0 in FY21-23, ₹50k in FY23-24, ₹75k in FY24-27), Section 87A rebate limits (Old: ₹5L, New: ₹5L in FY21-23, ₹7L in FY23-25, ₹7.5L in FY25-27), tax slab brackets, 4% Health & Education Cess, and `MANDATORY_TAX_DISCLAIMER`.
+3. **Pydantic Schemas (`backend/app/schemas/tax_summary.py`):**
+   - Defined `IncomeSummary`, `ExemptionsSummary`, `DeductionSummary`, `CapitalGainsSummary`, `RegimeCalculation`, and `TaxSummaryResponse` containing mandatory `disclaimer`. Exported schemas in `backend/app/schemas/__init__.py`.
+4. **Tax Computation & Dual Regime Engine (`backend/app/services/tax_regime_service.py`):**
+   - Implemented `TaxRegimeService.compute_tax_summary` aggregating gross income and TDS credits from `IncomeEntry`, Chapter VI-A deductions from `TaxDeduction`, standard deductions/exemptions, slab taxes, Section 87A rebates, and cess.
+   - Computes side-by-side Old Regime vs New Regime (Section 115BAC) tax liabilities, identifies the recommended regime, and calculates tax savings.
+5. **REST API Endpoints & Exporters (`backend/app/api/v1/endpoints/tax_summary.py`):**
+   - Exposed `GET /api/v1/tax/summary` supporting multi-year `financial_year` query parameter.
+   - Exposed `GET /api/v1/tax/summary/export/csv` generating CSV downloads with FR16.4.1 legal warning headers embedded in rows 1-4.
+   - Exposed `GET /api/v1/tax/summary/export/pdf` generating PDF reports with ReportLab canvas drawing and embedded legal disclaimers.
+   - Registered router under `prefix="/tax/summary"` in `backend/app/api/v1/api.py`.
+6. **Frontend Dashboard & Components:**
+   - Authored `frontend/src/types/tax_summary.ts` and `frontend/src/services/taxSummaryService.ts`.
+   - Built `RegimeComparisonCard.tsx` rendering side-by-side dual regime cards with recommended badge, savings tag, income breakdowns, rebates, cess, and net tax payable.
+   - Built `TaxSummaryDashboard.tsx` with top FY dropdown selector (FY 2021-22 to FY 2026-27), CSV & PDF report export buttons, high-visibility amber legal warning banner (FR16.4.1), side-by-side dual regime comparison, income breakdown card, and Chapter VI-A deductions card.
+   - Added `/tax-summary` route in `App.tsx` and navbar link in `NavBar.tsx`.
+7. **Automated Testing & Verification:**
+   - Added backend API test suite `backend/app/tests/api/v1/test_tax_summary.py` evaluating multi-year statutory rules (2021-22 to 2026-27), `GET /api/v1/tax/summary` JSON response, CSV export disclaimer presence, and PDF export binary header. Passed 4/4 tests cleanly.
+   - Added frontend Jest unit test suite `frontend/src/__tests__/pages/TaxSummaryDashboard.test.tsx` verifying dashboard title, disclaimer banner, and dual regime comparison cards. Passed 1/1 test suite cleanly.
+
+---
+
 ## 2026-08-27: Implement Tax-Deductible Expense & Investment Logging under Chapter VI-A (FR16.3 / Issue #518)
 
 **Task:** Implement database model, Pydantic schemas, CRUD operations with statutory ceiling capping, REST API endpoints, Alembic migration, frontend TypeScript types, API service, entry modal, dual-layout page, privacy masking, navigation, and automated unit test suite for Chapter VI-A Tax Deductions.  

@@ -123,6 +123,13 @@ const NavBar: React.FC = () => {
                     <ScaleIcon className="h-5 w-5" />
                     <span>Tax Deductions</span>
                 </NavLink>
+                <NavLink
+                    to="/tax-summary"
+                    className={({ isActive }) => linkClass(isActive)}
+                >
+                    <BanknotesIcon className="h-5 w-5" />
+                    <span>Tax Summary</span>
+                </NavLink>
 
                 <NavLink to="/import" className={({ isActive }) => linkClass(isActive)}>
                     <ArrowUpTrayIcon className="h-5 w-5" /> <span>Import</span>
