@@ -1,3 +1,4 @@
+/* eslint-disable testing-library/no-node-access */
 import apiClient from './api';
 import { TaxSummaryResponse } from '../types/tax_summary';
 
