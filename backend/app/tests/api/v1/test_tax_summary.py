@@ -116,8 +116,8 @@ def test_export_tax_summary_csv(
     assert response.headers["content-type"].startswith("text/csv")
     content = response.content.decode("utf-8")
 
-    # Assert mandatory disclaimer FR16.4.1 presence in CSV export
-    assert "IMPORTANT LEGAL NOTICE & TAX DISCLAIMER (FR16.4.1)" in content
+    # Assert mandatory disclaimer presence in CSV export
+    assert "IMPORTANT LEGAL NOTICE & TAX DISCLAIMER" in content
     assert "Calculations shown do NOT represent actual final tax liabilities" in content
 
 

@@ -62,7 +62,7 @@ export const TaxSummaryDashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Tax Readiness Summary (FR16.4)
+            Tax Readiness Summary
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Consolidated Financial Year Tax Profile & Old vs New Regime Comparison
@@ -100,13 +100,13 @@ export const TaxSummaryDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* FR16.4.1 Prominent Legal Warning Disclaimer Banner */}
+      {/* Prominent Legal Warning Disclaimer Banner */}
       <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/60 dark:bg-amber-950/30">
         <div className="flex items-start gap-3">
           <span className="text-xl">⚠️</span>
           <div className="space-y-1 text-xs text-amber-900 dark:text-amber-200">
             <h4 className="font-bold text-sm text-amber-950 dark:text-amber-100">
-              IMPORTANT LEGAL NOTICE & TAX DISCLAIMER (FR16.4.1)
+              IMPORTANT LEGAL NOTICE & TAX DISCLAIMER
             </h4>
             <p>
               This Tax Readiness Summary and Tax Estimation tool is provided strictly for{' '}

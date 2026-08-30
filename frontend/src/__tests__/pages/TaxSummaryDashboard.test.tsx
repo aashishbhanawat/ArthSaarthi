@@ -96,11 +96,11 @@ describe('TaxSummaryDashboard Component', () => {
     render(<TaxSummaryDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Tax Readiness Summary (FR16.4)')).toBeInTheDocument();
+      expect(screen.getByText('Tax Readiness Summary')).toBeInTheDocument();
     });
 
     // Check Legal Disclaimer Banner
-    expect(screen.getByText('IMPORTANT LEGAL NOTICE & TAX DISCLAIMER (FR16.4.1)')).toBeInTheDocument();
+    expect(screen.getByText('IMPORTANT LEGAL NOTICE & TAX DISCLAIMER')).toBeInTheDocument();
     expect(screen.getByText(/INFORMATIONAL, EDUCATIONAL, AND TAX\/INVESTMENT PLANNING PURPOSES ONLY/i)).toBeInTheDocument();
 
     // Check Regime Cards

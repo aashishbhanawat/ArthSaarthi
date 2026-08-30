@@ -57,8 +57,8 @@ def export_tax_summary_csv(
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # Mandatory FR16.4.1 Legal Disclaimer Headers
-    writer.writerow(["=== IMPORTANT LEGAL NOTICE & TAX DISCLAIMER (FR16.4.1) ==="])
+    # Mandatory Legal Disclaimer Headers
+    writer.writerow(["=== IMPORTANT LEGAL NOTICE & TAX DISCLAIMER ==="])
     writer.writerow([MANDATORY_TAX_DISCLAIMER])
     writer.writerow(["1. Calculations shown do NOT represent actual final tax liabilities payable to IT Department."])
     writer.writerow(["2. For official tax filing, users MUST consult a qualified Chartered Accountant (CA)."])
@@ -249,7 +249,7 @@ def export_tax_summary_pdf(
     # Footer Disclaimer
     p.setFont("Helvetica-Oblique", 7)
     p.setFillColorRGB(0.4, 0.4, 0.4)
-    p.drawString(50, 30, "ArthSaarthi FR16.4.1 Legal Notice: Generated for planning purposes only. Consult a Chartered Accountant for ITR filing.")
+    p.drawString(50, 30, "ArthSaarthi Legal Notice: Generated for planning purposes only. Consult a Chartered Accountant for ITR filing.")
 
     p.showPage()
     p.save()
