@@ -1,5 +1,6 @@
 import React from 'react';
 import { UnrealizedGainsSummary, UnrealizedTaxLot } from '../../hooks/useCapitalGains';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../utils/formatting';
 import { usePrivacy } from '../../context/PrivacyContext';
 
@@ -60,9 +61,10 @@ export const UnrealizedGainsModal: React.FC<UnrealizedGainsModalProps> = ({
                     </div>
                     <button
                         onClick={onClose}
+                        aria-label="Close"
                         className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
-                        ✕
+                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
                 </div>
 

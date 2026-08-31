@@ -58,7 +58,7 @@ describe('UnrealizedGainsModal', () => {
         expect(screen.getByText(/Tata Consultancy Services/i)).toBeInTheDocument();
 
         // Close button
-        const closeBtn = screen.getByText('✕');
+        const closeBtn = screen.getByRole('button', { name: /close/i });
         fireEvent.click(closeBtn);
         expect(handleClose).toHaveBeenCalledTimes(1);
     });

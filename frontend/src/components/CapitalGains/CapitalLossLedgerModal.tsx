@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import api from '../../services/api';
 import { CapitalLossLedgerEntry, useCapitalLossLedger } from '../../hooks/useCapitalGains';
 
@@ -82,9 +83,10 @@ export const CapitalLossLedgerModal: React.FC<CapitalLossLedgerModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-slate-400 hover:text-slate-200 text-lg p-2 rounded-lg hover:bg-slate-800 transition"
           >
-            ✕
+            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
           </button>
         </div>
 
