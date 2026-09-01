@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, root_validator, validator
 from pydantic.version import VERSION
 
 try:
@@ -92,6 +92,26 @@ class IncomeEntryBase(BaseModel):
             if v > values["gross_amount"]:
                 raise ValueError("Basic amount cannot exceed gross income amount")
         return v
+
+    @root_validator(skip_on_failure=True)
+    def salary_components_sum_must_not_exceed_gross(cls, values):
+        gross = values.get("gross_amount")
+        if gross is None:
+            return values
+
+        basic = values.get("basic_amount") or Decimal("0")
+        hra = values.get("hra_amount") or Decimal("0")
+        da = values.get("da_amount") or Decimal("0")
+        spec = values.get("special_allowance_amount") or Decimal("0")
+        other_allow = values.get("other_allowances_amount") or Decimal("0")
+        other_ben = values.get("other_benefits_amount") or Decimal("0")
+
+        total_components = basic + hra + da + spec + other_allow + other_ben
+        if total_components > gross:
+            raise ValueError(
+                "Sum of salary components cannot exceed gross income amount"
+            )
+        return values
 
 
 class IncomeEntryCreate(IncomeEntryBase):

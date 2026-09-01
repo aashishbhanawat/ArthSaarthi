@@ -144,6 +144,18 @@ export const IncomeEntryModal: React.FC<IncomeEntryModalProps> = ({
         setError('HRA Received cannot exceed Gross Income Amount.');
         return;
       }
+
+      const specVal = parseFloat(specialAllowance) || 0;
+      const otherAllowVal = parseFloat(otherAllowances) || 0;
+      const otherBenVal = parseFloat(otherBenefits) || 0;
+      const totalComponents = basicVal + hraVal + daVal + specVal + otherAllowVal + otherBenVal;
+
+      if (totalComponents > grossVal) {
+        setError(
+          `Sum of salary breakdown components (₹${totalComponents.toLocaleString('en-IN')}) cannot exceed Gross Income Amount (₹${grossVal.toLocaleString('en-IN')}).`
+        );
+        return;
+      }
     }
 
     try {
