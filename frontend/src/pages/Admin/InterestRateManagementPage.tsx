@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useInterestRates, useDeleteInterestRate } from '../../hooks/useInterestRates';
 import { useQueryClient } from '@tanstack/react-query';
 import InterestRateTable from '../../components/Admin/InterestRateTable';
@@ -23,15 +23,15 @@ const InterestRateManagementPage: React.FC = () => {
     setFormModalOpen(true);
   };
 
-  const handleOpenEditModal = (rate: HistoricalInterestRate) => {
+  const handleOpenEditModal = useCallback((rate: HistoricalInterestRate) => {
     setRateToEdit(rate);
     setFormModalOpen(true);
-  };
+  }, []);
 
-  const handleOpenDeleteModal = (rate: HistoricalInterestRate) => {
+  const handleOpenDeleteModal = useCallback((rate: HistoricalInterestRate) => {
     setRateToDelete(rate);
     setDeleteModalOpen(true);
-  };
+  }, []);
 
   const handleConfirmDelete = () => {
     if (rateToDelete) {
