@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Date, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -44,6 +44,18 @@ class IncomeEntry(Base):
     tds_amount = Column(EncryptedString, nullable=False, default="0.00")
     net_amount = Column(EncryptedString, nullable=False)
     notes = Column(EncryptedString, nullable=True)
+
+    # FR16.5: Optional Salary Breakdown & Section 10(13A) HRA Exemption fields
+    basic_amount = Column(EncryptedString, nullable=True)
+    hra_amount = Column(EncryptedString, nullable=True)
+    da_amount = Column(EncryptedString, nullable=True)
+    special_allowance_amount = Column(EncryptedString, nullable=True)
+    other_allowances_amount = Column(EncryptedString, nullable=True)
+    other_benefits_amount = Column(EncryptedString, nullable=True)
+    rent_paid = Column(EncryptedString, nullable=True)
+    is_metro = Column(Boolean, default=False, nullable=True)
+    hra_exemption = Column(EncryptedString, nullable=True, default="0.00")
+
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime,
@@ -54,3 +66,4 @@ class IncomeEntry(Base):
 
     user = relationship("User")
     source = relationship("IncomeSource", back_populates="entries")
+

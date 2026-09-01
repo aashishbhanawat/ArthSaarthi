@@ -1,22 +1,30 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-08-29
+**Last Updated:** 2026-09-01
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Implemented Structured Tax Summary Report & Tax Profile Dashboard (Issue #519 / FR16.4 & FR16.4.1). Added `TaxRulesRegistry` (`backend/app/core/tax_rules_registry.py`) pre-seeded with historical tax rules for FY 2021-22 through FY 2026-27 derived from Excel benchmarks, dual-regime tax computation engine (`TaxRegimeService`), mandatory legal warning disclaimer engine (FR16.4.1), REST API endpoints (`GET /api/v1/tax/summary`, `/export/csv`, `/export/pdf`), ReportLab PDF generator, `RegimeComparisonCard`, `TaxSummaryDashboard` UI with FY selector, and automated backend pytest (4/4) and frontend Jest (1/1) test suites.
+**Latest Achievement:** Implemented Salary Component Breakdown & Section 10(13A) HRA Exemption Logging (Issue #532 / FR16.5). Added statutory Section 10(13A) HRA calculation service (`SalaryExemptionService`) with 100% mathematical parity against benchmark Excel spreadsheet `local/TaxCalc_2027.xlsx` cell D101, extended `IncomeEntry` database model with AES-256 encrypted columns (`basic_amount`, `hra_amount`, `da_amount`, `special_allowance_amount`, `other_allowances_amount`, `other_benefits_amount`, `rent_paid`, `is_metro`, `hra_exemption`), added Alembic migration `i90b1c2d3e4f`, Pydantic schemas, CRUD operations, REST API serialization, frontend collapsible drawer modal with live exemption preview box, row ledger badges, and unit test suites.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **387/390 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **387/390 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **199/199 Passing** (50/50 Test Suites)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **394/397 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **394/397 Passing** (3 expected skips)
+*   **Frontend Unit Tests (Jest):** ✅ **201/201 Passing** (51/51 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Salary Component Breakdown & Section 10(13A) HRA Exemption (Issue #532 / FR16.5) (Updated 2026-09-01):**
+    - **Statutory Section 10(13A) Calculation Engine:** Created `SalaryExemptionService` in `backend/app/services/salary_exemption_service.py` enforcing statutory HRA exemption formula: $\text{HRA Exemption} = \max(0, \min(\text{Actual HRA Received}, \text{Rent Paid} - 10\% \times (\text{Basic} + \text{DA}), (50\% \text{ if Metro else } 40\%) \times (\text{Basic} + \text{DA})))$ with 100% math parity against `local/TaxCalc_2027.xlsx` cell D101.
+    - **Backend Model Extension & Security Encryption:** Extended `IncomeEntry` model in `backend/app/models/income.py` with AES-256 `EncryptedString` columns for Basic, HRA, DA, Special/Flexible Allowance, Other Allowances, Other Benefits, Rent Paid, Metro City toggle, and calculated HRA Exemption.
+    - **Alembic Migration:** Created and executed Alembic migration `i90b1c2d3e4f_add_salary_breakdown_columns.py`.
+    - **Pydantic Schemas & CRUD:** Extended Pydantic schemas in `backend/app/schemas/income.py` and integrated auto-calculation into `CRUDIncomeEntry` (`create_with_owner`, `update_with_owner`, `get_summary_by_fy`).
+    - **REST API & Frontend Drawer UI:** Mapped salary breakdown fields in `/api/v1/income/entries` REST endpoints. Extended TypeScript types in `frontend/src/types/income.ts`, built collapsible "Salary Breakdown & Section 10(13A) HRA Exemption" drawer with live calculation preview box in `IncomeEntryModal.tsx`, and rendered `Sec 10(13A) HRA Exempt` visual badges on desktop table rows and mobile card grid in `IncomePage.tsx`.
+    - **Automated Tests:** Authored math parity unit tests in `backend/app/tests/services/test_salary_exemption.py` and API test case in `backend/app/tests/api/v1/test_income.py`. Passed 7/7 backend pytest test cases and 51/51 frontend Jest test suites (201/201 tests).
 
 *   **Structured Tax Summary Report & Profile Dashboard (Issue #519 / FR16.4 & FR16.4.1) (Updated 2026-08-29):**
     - **Versioned Tax Rules Registry:** Created statutory rules engine in `backend/app/core/tax_rules_registry.py` configured for FY 2021-22 to FY 2026-27 (Standard Deductions, Section 87A rebate limits, slab brackets, 4% Cess, and `MANDATORY_TAX_DISCLAIMER`).

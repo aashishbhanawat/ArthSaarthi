@@ -54,11 +54,43 @@ class IncomeEntryBase(BaseModel):
     )
     notes: Optional[str] = None
 
+    # FR16.5: Optional Salary Breakdown fields
+    basic_amount: Optional[Decimal] = Field(default=None, ge=0)
+    hra_amount: Optional[Decimal] = Field(default=None, ge=0)
+    da_amount: Optional[Decimal] = Field(default=None, ge=0)
+    special_allowance_amount: Optional[Decimal] = Field(default=None, ge=0)
+    other_allowances_amount: Optional[Decimal] = Field(default=None, ge=0)
+    other_benefits_amount: Optional[Decimal] = Field(default=None, ge=0)
+    rent_paid: Optional[Decimal] = Field(default=None, ge=0)
+    is_metro: Optional[bool] = False
+
     @validator("tds_amount")
     def tds_must_not_exceed_gross(cls, v, values):
         if "gross_amount" in values and values["gross_amount"] is not None:
             if v > values["gross_amount"]:
                 raise ValueError("TDS amount cannot exceed gross income amount")
+        return v
+
+    @validator("hra_amount")
+    def hra_must_not_exceed_gross(cls, v, values):
+        if (
+            v is not None
+            and "gross_amount" in values
+            and values["gross_amount"] is not None
+        ):
+            if v > values["gross_amount"]:
+                raise ValueError("HRA amount cannot exceed gross income amount")
+        return v
+
+    @validator("basic_amount")
+    def basic_must_not_exceed_gross(cls, v, values):
+        if (
+            v is not None
+            and "gross_amount" in values
+            and values["gross_amount"] is not None
+        ):
+            if v > values["gross_amount"]:
+                raise ValueError("Basic amount cannot exceed gross income amount")
         return v
 
 
@@ -74,11 +106,21 @@ class IncomeEntryUpdate(BaseModel):
     tds_amount: Optional[Decimal] = None
     notes: Optional[str] = None
 
+    basic_amount: Optional[Decimal] = Field(default=None, ge=0)
+    hra_amount: Optional[Decimal] = Field(default=None, ge=0)
+    da_amount: Optional[Decimal] = Field(default=None, ge=0)
+    special_allowance_amount: Optional[Decimal] = Field(default=None, ge=0)
+    other_allowances_amount: Optional[Decimal] = Field(default=None, ge=0)
+    other_benefits_amount: Optional[Decimal] = Field(default=None, ge=0)
+    rent_paid: Optional[Decimal] = Field(default=None, ge=0)
+    is_metro: Optional[bool] = None
+
 
 class IncomeEntry(IncomeEntryBase):
     id: uuid.UUID
     user_id: uuid.UUID
     net_amount: Decimal
+    hra_exemption: Optional[Decimal] = Decimal("0.00")
     source_name: Optional[str] = None
     source_category: Optional[str] = None
 
@@ -94,4 +136,6 @@ class IncomeFYSummary(BaseModel):
     total_gross: Decimal
     total_tds: Decimal
     total_net: Decimal
+    total_hra_exemption: Optional[Decimal] = Decimal("0.00")
     source_breakdown: List[Dict[str, Any]] = []
+

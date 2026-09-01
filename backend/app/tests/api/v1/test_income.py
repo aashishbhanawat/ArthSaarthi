@@ -242,3 +242,69 @@ def test_income_tenant_isolation(
         headers=headers_b,
     )
     assert res_b_entry.status_code == 400
+
+
+def test_income_entry_salary_breakdown_and_hra_exemption(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+) -> None:
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+
+    res_src = client.post(
+        f"{settings.API_V1_STR}/income/sources",
+        json={
+            "name": "Primary Salary Source",
+            "category": "SALARY",
+            "payer_name": "Tech Corp",
+        },
+        headers=headers,
+    )
+    assert res_src.status_code == 201
+    source_id = res_src.json()["id"]
+
+    # Log income entry with salary components
+    # (Basic, HRA, DA, Special, Other Allowances, Benefits, Rent Paid, Metro)
+    entry_payload = {
+        "source_id": source_id,
+        "financial_year": "2026-2027",
+        "entry_date": date.today().isoformat(),
+        "gross_amount": 100000.0,
+        "tds_amount": 10000.0,
+        "basic_amount": 50000.0,
+        "hra_amount": 25000.0,
+        "da_amount": 0.0,
+        "special_allowance_amount": 15000.0,
+        "other_allowances_amount": 5000.0,
+        "other_benefits_amount": 5000.0,
+        "rent_paid": 20000.0,
+        "is_metro": True,
+        "notes": "May 2026 Monthly Salary with HRA Exemption",
+    }
+    res = client.post(
+        f"{settings.API_V1_STR}/income/entries",
+        json=entry_payload,
+        headers=headers,
+    )
+    assert res.status_code == 201
+    data = res.json()
+
+    assert data["source_id"] == source_id
+    assert float(data["gross_amount"]) == 100000.0
+    assert float(data["basic_amount"]) == 50000.0
+    assert float(data["hra_amount"]) == 25000.0
+    assert float(data["special_allowance_amount"]) == 15000.0
+    assert float(data["other_allowances_amount"]) == 5000.0
+    assert float(data["other_benefits_amount"]) == 5000.0
+    assert float(data["rent_paid"]) == 20000.0
+    assert data["is_metro"] is True
+
+    # Check HRA Exemption math:
+    # Basic + DA = 50,000
+    # Opt 1: Actual HRA = 25,000
+    # Opt 2: Rent Paid - 10% Basic = 20,000 - 5,000 = 15,000
+    # Opt 3: 50% Basic (Metro) = 25,000
+    # Minimum = 15,000
+    assert float(data["hra_exemption"]) == 15000.0
+

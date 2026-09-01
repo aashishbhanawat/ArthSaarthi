@@ -31,6 +31,15 @@ export interface IncomeEntry {
   tds_amount: number;
   net_amount: number;
   notes?: string | null;
+  basic_amount?: number | null;
+  hra_amount?: number | null;
+  da_amount?: number | null;
+  special_allowance_amount?: number | null;
+  other_allowances_amount?: number | null;
+  other_benefits_amount?: number | null;
+  rent_paid?: number | null;
+  is_metro?: boolean | null;
+  hra_exemption?: number | null;
   source_name?: string | null;
   source_category?: IncomeCategory | null;
 }
@@ -42,6 +51,14 @@ export interface IncomeEntryPayload {
   gross_amount: number;
   tds_amount: number;
   notes?: string | null;
+  basic_amount?: number | null;
+  hra_amount?: number | null;
+  da_amount?: number | null;
+  special_allowance_amount?: number | null;
+  other_allowances_amount?: number | null;
+  other_benefits_amount?: number | null;
+  rent_paid?: number | null;
+  is_metro?: boolean | null;
 }
 
 export interface IncomeSourceBreakdown {
@@ -59,5 +76,7 @@ export interface IncomeFYSummary {
   total_gross: number;
   total_tds: number;
   total_net: number;
+  total_hra_exemption?: number;
   source_breakdown: IncomeSourceBreakdown[];
 }
+

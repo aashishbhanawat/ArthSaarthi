@@ -12,6 +12,7 @@ from app.schemas.income import (
     IncomeSourceCreate,
     IncomeSourceUpdate,
 )
+from app.services.salary_exemption_service import SalaryExemptionService
 from app.utils.pydantic_compat import model_dump
 
 
@@ -57,6 +58,51 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
         tds = Decimal(str(data.get("tds_amount", 0) or 0))
         net = gross - tds
 
+        basic_amt = (
+            Decimal(str(data["basic_amount"]))
+            if data.get("basic_amount") is not None
+            else None
+        )
+        hra_amt = (
+            Decimal(str(data["hra_amount"]))
+            if data.get("hra_amount") is not None
+            else None
+        )
+        da_amt = (
+            Decimal(str(data["da_amount"]))
+            if data.get("da_amount") is not None
+            else None
+        )
+        spec_amt = (
+            Decimal(str(data["special_allowance_amount"]))
+            if data.get("special_allowance_amount") is not None
+            else None
+        )
+        other_allow_amt = (
+            Decimal(str(data["other_allowances_amount"]))
+            if data.get("other_allowances_amount") is not None
+            else None
+        )
+        other_ben_amt = (
+            Decimal(str(data["other_benefits_amount"]))
+            if data.get("other_benefits_amount") is not None
+            else None
+        )
+        rent_amt = (
+            Decimal(str(data["rent_paid"]))
+            if data.get("rent_paid") is not None
+            else None
+        )
+        is_metro = bool(data.get("is_metro", False))
+
+        hra_exemption = SalaryExemptionService.calculate_hra_exemption(
+            basic_amount=basic_amt,
+            hra_amount=hra_amt,
+            da_amount=da_amt,
+            rent_paid=rent_amt,
+            is_metro=is_metro,
+        )
+
         db_obj = IncomeEntry(
             user_id=user_id,
             source_id=data["source_id"],
@@ -66,6 +112,21 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
             tds_amount=str(tds),
             net_amount=str(net),
             notes=data.get("notes"),
+            basic_amount=str(basic_amt) if basic_amt is not None else None,
+            hra_amount=str(hra_amt) if hra_amt is not None else None,
+            da_amount=str(da_amt) if da_amt is not None else None,
+            special_allowance_amount=(
+                str(spec_amt) if spec_amt is not None else None
+            ),
+            other_allowances_amount=(
+                str(other_allow_amt) if other_allow_amt is not None else None
+            ),
+            other_benefits_amount=(
+                str(other_ben_amt) if other_ben_amt is not None else None
+            ),
+            rent_paid=str(rent_amt) if rent_amt is not None else None,
+            is_metro=is_metro,
+            hra_exemption=str(hra_exemption),
         )
         db.add(db_obj)
         db.commit()
@@ -81,7 +142,6 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
     ) -> IncomeEntry:
         update_data = model_dump(obj_in, exclude_unset=True)
 
-        # Calculate new amounts if gross or tds are updated
         gross_val = update_data.get("gross_amount", db_obj.gross_amount)
         tds_val = update_data.get("tds_amount", db_obj.tds_amount)
 
@@ -95,10 +155,59 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
         for field, value in update_data.items():
             if field in ["gross_amount", "tds_amount"]:
                 setattr(db_obj, field, str(value))
-            elif field in ["notes", "financial_year", "entry_date", "source_id"]:
+            elif field in [
+                "basic_amount",
+                "hra_amount",
+                "da_amount",
+                "special_allowance_amount",
+                "other_allowances_amount",
+                "other_benefits_amount",
+                "rent_paid",
+            ]:
+                setattr(db_obj, field, str(value) if value is not None else None)
+            elif field in [
+                "notes",
+                "financial_year",
+                "entry_date",
+                "source_id",
+                "is_metro",
+            ]:
                 setattr(db_obj, field, value)
 
         db_obj.net_amount = str(net)
+
+        # Recalculate HRA exemption
+        basic_amt = (
+            Decimal(str(db_obj.basic_amount))
+            if db_obj.basic_amount is not None
+            else None
+        )
+        hra_amt = (
+            Decimal(str(db_obj.hra_amount))
+            if db_obj.hra_amount is not None
+            else None
+        )
+        da_amt = (
+            Decimal(str(db_obj.da_amount))
+            if db_obj.da_amount is not None
+            else None
+        )
+        rent_amt = (
+            Decimal(str(db_obj.rent_paid))
+            if db_obj.rent_paid is not None
+            else None
+        )
+        is_metro = bool(db_obj.is_metro or False)
+
+        hra_exemption = SalaryExemptionService.calculate_hra_exemption(
+            basic_amount=basic_amt,
+            hra_amount=hra_amt,
+            da_amount=da_amt,
+            rent_paid=rent_amt,
+            is_metro=is_metro,
+        )
+        db_obj.hra_exemption = str(hra_exemption)
+
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
@@ -148,16 +257,19 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
         total_gross = Decimal("0.00")
         total_tds = Decimal("0.00")
         total_net = Decimal("0.00")
+        total_hra_exemption = Decimal("0.00")
         source_totals: Dict[str, Dict[str, Any]] = {}
 
         for entry in entries:
             g = Decimal(str(entry.gross_amount))
             t = Decimal(str(entry.tds_amount))
             n = Decimal(str(entry.net_amount))
+            h_ex = Decimal(str(entry.hra_exemption or "0.00"))
 
             total_gross += g
             total_tds += t
             total_net += n
+            total_hra_exemption += h_ex
 
             sid = str(entry.source_id)
             s_name = entry.source.name if entry.source else "Unknown"
@@ -183,8 +295,10 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
             "total_gross": total_gross,
             "total_tds": total_tds,
             "total_net": total_net,
+            "total_hra_exemption": total_hra_exemption,
             "source_breakdown": list(source_totals.values()),
         }
+
 
 
 crud_income_source = CRUDIncomeSource(IncomeSource)

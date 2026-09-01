@@ -1,3 +1,40 @@
+## 2026-09-01: Implement Salary Component Breakdown & Section 10(13A) HRA Exemption Logging (FR16.5 / Issue #532)
+
+**Task:** Implement salary breakdown fields (Basic, HRA, DA, Special/Flexible Allowance, Other Allowances, Other Benefits), statutory Section 10(13A) HRA exemption math engine (matching Excel benchmark `local/TaxCalc_2027.xlsx` cell D101 parity), AES-256 encrypted database model extension, Alembic migration, Pydantic schemas, CRUD operations, REST API endpoint serialization, frontend drawer modal with live exemption preview, ledger badges, and automated test suite.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feature Branch:** Created feature branch `feat/532-salary-hra-breakdown`.
+2. **Feature Specification & Requirements Update:**
+   - Extended `docs/features/FR16.5_salary_components_hra_exemption.md` to specify salary components: Basic Salary, House Rent Allowance (HRA), Dearness Allowance (DA), Flexible/Special Allowance, Other Allowances, Other Benefits/Perquisites, Rent Paid, and Metro City toggle.
+3. **Statutory Section 10(13A) HRA Exemption Engine (`backend/app/services/salary_exemption_service.py`):**
+   - Created calculation service enforcing formula:  
+     $$\text{HRA Exemption} = \max\left(0, \min\left(\text{Actual HRA Received},\; \text{Rent Paid} - 10\% \times (\text{Basic} + \text{DA}),\; (50\% \text{ if Metro else } 40\%) \times (\text{Basic} + \text{DA})\right)\right)$$
+   - Verified 100% mathematical parity against benchmark Excel spreadsheet `local/TaxCalc_2027.xlsx` cell `D101`.
+4. **Database Model Extension (`backend/app/models/income.py`):**
+   - Added AES-256 encrypted columns to `IncomeEntry`: `basic_amount`, `hra_amount`, `da_amount`, `special_allowance_amount`, `other_allowances_amount`, `other_benefits_amount`, `rent_paid`, `is_metro`, and `hra_exemption`.
+5. **Alembic Migration (`backend/alembic/versions/i90b1c2d3e4f_add_salary_breakdown_columns.py`):**
+   - Created and executed Alembic migration `i90b1c2d3e4f` extending `income_entries` table.
+6. **Pydantic Schemas (`backend/app/schemas/income.py`):**
+   - Updated `IncomeEntryBase`, `IncomeEntryCreate`, `IncomeEntryUpdate`, `IncomeEntry`, and `IncomeFYSummary` with optional breakdown fields and validators (`hra_amount <= gross_amount`, `basic_amount <= gross_amount`).
+7. **CRUD & Summary Aggregation (`backend/app/crud/crud_income.py`):**
+   - Integrated `SalaryExemptionService` into `create_with_owner` and `update_with_owner` to auto-calculate and persist `hra_exemption`.
+   - Aggregated `total_hra_exemption` across income entries in `get_summary_by_fy`.
+8. **REST API Endpoint Serialization (`backend/app/api/v1/endpoints/income.py`):**
+   - Mapped all salary breakdown fields across GET, POST, PUT, DELETE endpoints.
+9. **Frontend UI Components (`frontend/src/types/income.ts`, `frontend/src/components/IncomeEntryModal.tsx`, `frontend/src/pages/IncomePage.tsx`):**
+   - Extended TypeScript interfaces `IncomeEntry`, `IncomeEntryPayload`, and `IncomeFYSummary`.
+   - Added collapsible "Salary Breakdown & Section 10(13A) HRA Exemption" drawer in `IncomeEntryModal.tsx` with live calculation preview box for instant user feedback.
+   - Rendered visual badges (`Sec 10(13A) HRA Exempt: ₹X`) on `IncomePage.tsx` table rows and mobile card grid.
+10. **Automated Testing & Verification:**
+    - Authored `backend/app/tests/services/test_salary_exemption.py` testing Excel parity (`local/TaxCalc_2027.xlsx` cell D101) and corner cases.
+    - Updated `backend/app/tests/api/v1/test_income.py` with `test_income_entry_salary_breakdown_and_hra_exemption`.
+    - Passed 7/7 backend pytest test cases and 51/51 frontend Jest test suites (201/201 tests) with 0 errors.
+
+---
+
 ## 2026-08-29: Implement Structured Tax Summary Report & Tax Profile Dashboard (FR16.4 & FR16.4.1 / Issue #519)
 
 **Task:** Implement statutory tax rules registry for FY 2021-22 through FY 2026-27, dual regime (Old vs New Sec 115BAC) tax computation service, mandatory legal warning disclaimer engine (FR16.4.1), Pydantic schemas, REST API endpoints, PDF export builder (ReportLab), CSV export builder, frontend TypeScript types, API service, RegimeComparisonCard, TaxSummaryDashboard page, navigation links, and automated test suite.  
