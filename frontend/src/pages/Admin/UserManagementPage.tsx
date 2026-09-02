@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useUsers, useDeleteUser } from '../../hooks/useUsers';
 import UsersTable from '../../components/Admin/UsersTable'; // Corrected path
 import UserFormModal from '../../components/Admin/UserFormModal'; // Corrected path
@@ -18,15 +18,15 @@ const UserManagementPage: React.FC = () => {
     setFormModalOpen(true);
   };
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = useCallback((user: User) => {
     setSelectedUser(user);
     setFormModalOpen(true);
-  };
+  }, []);
 
-  const handleDeleteUser = (user: User) => {
+  const handleDeleteUser = useCallback((user: User) => {
     setSelectedUser(user);
     setDeleteModalOpen(true);
-  };
+  }, []);
 
   const confirmDelete = () => {
     if (selectedUser) {

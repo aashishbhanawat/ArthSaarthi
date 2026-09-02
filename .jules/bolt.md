@@ -32,3 +32,6 @@
 ## 2024-05-31 - Memoize event handlers passed to React.memo components
 **Learning:** Wrapping a presentational component in `React.memo` (like `TransactionHistoryTable`) is completely ineffective if the parent component passes inline functions as props, because new function references are created on every parent render.
 **Action:** Always wrap event handlers (like `onEdit`, `onDelete`) with `useCallback` in the parent component when passing them to memoized child components to ensure stable references and actually prevent unnecessary re-renders.
+## 2026-09-01 - Memoize event handlers passed to UsersTable and InterestRateTable
+**Learning:** Wrapping a presentational component in `React.memo` (like `UsersTable` and `InterestRateTable`) is completely ineffective if the parent component passes inline functions as props, because new function references are created on every parent render.
+**Action:** Always wrap event handlers (like `handleEditUser`, `handleDeleteUser`, `handleOpenEditModal`, `handleOpenDeleteModal`) with `useCallback` in the parent component when passing them to memoized child components to ensure stable references and actually prevent unnecessary re-renders.
