@@ -14,3 +14,6 @@
 ## 2026-08-24 - Replace raw HTML entities with SVG icons
 **Learning:** Raw text characters like '×' for dismiss buttons are often misread by screen readers (e.g., as 'times').
 **Action:** Always use semantic SVG components (like Heroicons' XMarkIcon) along with appropriate aria-labels and aria-hidden attributes for UI icon buttons.
+## 2024-11-20 - Ensure standard icons for modal close buttons
+**Learning:** Some custom modals used a plain text "✕" for their close button which lacks screen reader context. Standard Heroicons (`XMarkIcon`) with `aria-label="Close"` are generally used elsewhere in the codebase.
+**Action:** Always replace plain text close symbols with semantic `XMarkIcon` from `@heroicons` and add an `aria-label="Close"` to improve accessibility consistency.
