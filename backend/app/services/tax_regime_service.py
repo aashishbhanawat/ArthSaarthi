@@ -148,18 +148,23 @@ class TaxRegimeService:
             gross_salary if gross_salary > 0 else total_gross_income,
             rules.old_regime_standard_deduction,
         )
+        total_hra_exemption = Decimal(
+            str(income_data.get("total_hra_exemption", "0.00"))
+        )
         old_exemptions_summary = ExemptionsSummary(
             standard_deduction=old_std_ded,
-            hra_exemption=Decimal("0.00"),
+            hra_exemption=total_hra_exemption,
             professional_tax=Decimal("0.00"),
             children_education_allowance=Decimal("0.00"),
             employer_nps=Decimal("0.00"),
-            total_exemptions=old_std_ded,
+            total_exemptions=old_std_ded + total_hra_exemption,
         )
 
         old_taxable_income = max(
             Decimal("0.00"),
-            total_gross_income - old_std_ded - total_chapter_via,
+            total_gross_income
+            - old_exemptions_summary.total_exemptions
+            - total_chapter_via,
         )
 
         old_slab_tax = cls._calculate_slab_tax(

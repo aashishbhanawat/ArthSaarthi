@@ -168,7 +168,7 @@ This document outlines the functional and non-functional requirements for the Ar
 
 -   **FR16.4: Structured Tax Summary Report.** The system must generate a structured report for a given financial year that consolidates all logged income sources, TDS, and potential deductions. `✅ Done`
     -   **FR16.4.1:** The report must clearly state that it is for informational purposes only and does not constitute financial or tax advice. `✅ Done`
--   **FR16.5: Salary Component Breakdown & Section 10(13A) HRA Exemption.** Users must be able to log salary components (Basic Salary, DA, HRA, Rent Paid, Metro location) to compute statutory Section 10(13A) HRA exemptions. `📝 Planned`
+-   **FR16.5: Salary Component Breakdown & Section 10(13A) HRA Exemption.** Users must be able to log salary components (Basic Salary, DA, HRA, Flexible Allowance, Other Allowances, Other Benefits, Rent Paid, Metro location) to compute statutory Section 10(13A) HRA exemptions. `✅ Done`
 
 ## 3. Non-Functional Requirements
 

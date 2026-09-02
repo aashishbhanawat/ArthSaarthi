@@ -147,12 +147,14 @@ export const TaxSummaryDashboard: React.FC = () => {
               regime={summary.old_regime}
               isRecommended={summary.recommended_regime === 'OLD'}
               savings={summary.recommended_regime === 'OLD' ? summary.tax_savings : 0}
+              exemptionsSummary={summary.exemptions_summary_old}
             />
             <RegimeComparisonCard
               title="New Tax Regime (Section 115BAC)"
               regime={summary.new_regime}
               isRecommended={summary.recommended_regime === 'NEW'}
               savings={summary.recommended_regime === 'NEW' ? summary.tax_savings : 0}
+              exemptionsSummary={summary.exemptions_summary_new}
             />
           </div>
 

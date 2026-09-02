@@ -1,5 +1,5 @@
 import React from 'react';
-import { RegimeCalculation } from '../types/tax_summary';
+import { ExemptionsSummary, RegimeCalculation } from '../types/tax_summary';
 import { formatCurrency } from '../utils/formatting';
 
 interface RegimeComparisonCardProps {
@@ -7,6 +7,7 @@ interface RegimeComparisonCardProps {
   regime: RegimeCalculation;
   isRecommended: boolean;
   savings?: number;
+  exemptionsSummary?: ExemptionsSummary;
 }
 
 export const RegimeComparisonCard: React.FC<RegimeComparisonCardProps> = ({
@@ -14,6 +15,7 @@ export const RegimeComparisonCard: React.FC<RegimeComparisonCardProps> = ({
   regime,
   isRecommended,
   savings = 0,
+  exemptionsSummary,
 }) => {
   return (
     <div
@@ -49,13 +51,31 @@ export const RegimeComparisonCard: React.FC<RegimeComparisonCardProps> = ({
           </span>
         </div>
 
-        <div className="flex justify-between pt-2">
-          <span className="text-slate-600 dark:text-slate-400">
-            Standard Deduction / Exemptions
-          </span>
-          <span className="font-medium text-emerald-600 dark:text-emerald-400">
-            - {formatCurrency(regime.exemptions)}
-          </span>
+        <div className="pt-2 space-y-1">
+          <div className="flex justify-between">
+            <span className="text-slate-600 dark:text-slate-400">
+              Standard Deduction & Exemptions
+            </span>
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">
+              - {formatCurrency(regime.exemptions)}
+            </span>
+          </div>
+          {exemptionsSummary && (Number(exemptionsSummary.hra_exemption || 0) > 0 || Number(exemptionsSummary.standard_deduction || 0) > 0) && (
+            <div className="ml-3 space-y-0.5 text-xs text-slate-500 dark:text-slate-400 border-l-2 border-slate-200 dark:border-slate-700 pl-2">
+              {Number(exemptionsSummary.standard_deduction || 0) > 0 && (
+                <div className="flex justify-between">
+                  <span>Standard Deduction:</span>
+                  <span>{formatCurrency(exemptionsSummary.standard_deduction)}</span>
+                </div>
+              )}
+              {Number(exemptionsSummary.hra_exemption || 0) > 0 && (
+                <div className="flex justify-between font-medium text-emerald-600 dark:text-emerald-400">
+                  <span>Sec 10(13A) HRA Exemption:</span>
+                  <span>{formatCurrency(exemptionsSummary.hra_exemption)}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between pt-2">

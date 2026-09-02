@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, root_validator, validator
 from pydantic.version import VERSION
 
 try:
@@ -54,12 +54,64 @@ class IncomeEntryBase(BaseModel):
     )
     notes: Optional[str] = None
 
+    # FR16.5: Optional Salary Breakdown fields
+    basic_amount: Optional[Decimal] = Field(default=None, ge=0)
+    hra_amount: Optional[Decimal] = Field(default=None, ge=0)
+    da_amount: Optional[Decimal] = Field(default=None, ge=0)
+    special_allowance_amount: Optional[Decimal] = Field(default=None, ge=0)
+    other_allowances_amount: Optional[Decimal] = Field(default=None, ge=0)
+    other_benefits_amount: Optional[Decimal] = Field(default=None, ge=0)
+    rent_paid: Optional[Decimal] = Field(default=None, ge=0)
+    is_metro: Optional[bool] = False
+
     @validator("tds_amount")
     def tds_must_not_exceed_gross(cls, v, values):
         if "gross_amount" in values and values["gross_amount"] is not None:
             if v > values["gross_amount"]:
                 raise ValueError("TDS amount cannot exceed gross income amount")
         return v
+
+    @validator("hra_amount")
+    def hra_must_not_exceed_gross(cls, v, values):
+        if (
+            v is not None
+            and "gross_amount" in values
+            and values["gross_amount"] is not None
+        ):
+            if v > values["gross_amount"]:
+                raise ValueError("HRA amount cannot exceed gross income amount")
+        return v
+
+    @validator("basic_amount")
+    def basic_must_not_exceed_gross(cls, v, values):
+        if (
+            v is not None
+            and "gross_amount" in values
+            and values["gross_amount"] is not None
+        ):
+            if v > values["gross_amount"]:
+                raise ValueError("Basic amount cannot exceed gross income amount")
+        return v
+
+    @root_validator(skip_on_failure=True)
+    def salary_components_sum_must_not_exceed_gross(cls, values):
+        gross = values.get("gross_amount")
+        if gross is None:
+            return values
+
+        basic = values.get("basic_amount") or Decimal("0")
+        hra = values.get("hra_amount") or Decimal("0")
+        da = values.get("da_amount") or Decimal("0")
+        spec = values.get("special_allowance_amount") or Decimal("0")
+        other_allow = values.get("other_allowances_amount") or Decimal("0")
+        other_ben = values.get("other_benefits_amount") or Decimal("0")
+
+        total_components = basic + hra + da + spec + other_allow + other_ben
+        if total_components > gross:
+            raise ValueError(
+                "Sum of salary components cannot exceed gross income amount"
+            )
+        return values
 
 
 class IncomeEntryCreate(IncomeEntryBase):
@@ -74,11 +126,21 @@ class IncomeEntryUpdate(BaseModel):
     tds_amount: Optional[Decimal] = None
     notes: Optional[str] = None
 
+    basic_amount: Optional[Decimal] = Field(default=None, ge=0)
+    hra_amount: Optional[Decimal] = Field(default=None, ge=0)
+    da_amount: Optional[Decimal] = Field(default=None, ge=0)
+    special_allowance_amount: Optional[Decimal] = Field(default=None, ge=0)
+    other_allowances_amount: Optional[Decimal] = Field(default=None, ge=0)
+    other_benefits_amount: Optional[Decimal] = Field(default=None, ge=0)
+    rent_paid: Optional[Decimal] = Field(default=None, ge=0)
+    is_metro: Optional[bool] = None
+
 
 class IncomeEntry(IncomeEntryBase):
     id: uuid.UUID
     user_id: uuid.UUID
     net_amount: Decimal
+    hra_exemption: Optional[Decimal] = Decimal("0.00")
     source_name: Optional[str] = None
     source_category: Optional[str] = None
 
@@ -94,4 +156,6 @@ class IncomeFYSummary(BaseModel):
     total_gross: Decimal
     total_tds: Decimal
     total_net: Decimal
+    total_hra_exemption: Optional[Decimal] = Decimal("0.00")
     source_breakdown: List[Dict[str, Any]] = []
+
