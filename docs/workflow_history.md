@@ -1,3 +1,21 @@
+## 2026-09-02: Release v1.4.0 Comprehensive Documentation & Architectural Blueprint Synchronization
+
+**Task:** Update all core application documentation files (`README.md`, `docs/code_flow_guide.md`, `docs/architecture.md`, `docs/troubleshooting.md`, `CHANGELOG.md`, `docs/workflow_history.md`) to reflect Release v1.4.0 (Tax Readiness & Full Financial Picture) features, AES-256 encryption architecture (`EncryptedString`), statutory Section 10(13A) HRA calculations, Chapter VI-A statutory caps, and dual tax regime estimation.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Technical Writer
+
+### Summary
+
+1. **Feature Branch:** Created branch `docs/update-v1.4.0-documentation`.
+2. **`README.md` Update:** Expanded Core Features under Tax Compliance & Reporting to document Income Source & Entry Ledger, Salary Component Breakdown & Sec 10(13A) HRA Exemption Engine, Chapter VI-A Deductions, and Structured Tax Readiness Summary & Regime Comparison.
+3. **`docs/code_flow_guide.md` Update:** Authored Section 0.1 detailing end-to-end data flow for `UnrealizedTaxService`, `SalaryExemptionService`, `CRUDTaxDeduction`, and `TaxRegimeService` with statutory disclaimers and export pipelines.
+4. **`docs/architecture.md` Update:** Added Section 2.4 (Security & Sensitive Data Protection using `EncryptedString` field-level AES-256-GCM encryption) and Section 2.5 (Tax Engine & Versioned Statutory Rules Registry architecture).
+5. **`docs/troubleshooting.md` Update:** Added Section 19 (`SECRET_KEY` persistence for desktop/mobile JWT session stability) and Section 20 (`EncryptedString` binary byte decoding on SQLite/Android drivers).
+6. **`CHANGELOG.md` Update:** Published official `[1.4.0]` release changelog entry covering all tax readiness sub-epics, security enhancements, and mobile compatibility fixes.
+7. **Verification:** Verified git working state and alignment across all core documentation files per Playbook rules.
+
+---
+
 ## 2026-09-01: Implement Salary Component Breakdown & Section 10(13A) HRA Exemption Logging (FR16.5 / Issue #532)
 
 **Task:** Implement salary breakdown fields (Basic, HRA, DA, Special/Flexible Allowance, Other Allowances, Other Benefits), statutory Section 10(13A) HRA exemption math engine (matching Excel benchmark `local/TaxCalc_2027.xlsx` cell D101 parity), AES-256 encrypted database model extension, Alembic migration, Pydantic schemas, CRUD operations, REST API endpoint serialization, frontend drawer modal with live exemption preview, ledger badges, and automated test suite.  

@@ -5,6 +5,24 @@ All notable changes to ArthSaarthi will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-09-02
+
+### Added
+
+#### Tax Readiness & Income Management
+- **Unrealized Capital Gains & Sec 112A Pooling:** FIFO lot-level STCG/LTCG unrealized gains calculator with grandfathering support and Section 112A ₹1,25,000 LTCG exemption headroom pooling (FR6.5 Phase 2 / #516).
+- **Intra-Head Capital Loss Set-Off:** Section 70/71/74 statutory capital loss set-off rules (STCL against STCG/LTCG; LTCL against LTCG only) and effective rate alignment (FR6.5 Phase 3 / #526).
+- **Income Source & Entry Data Management:** Custom income sources (Salary, Freelance, Rental, Dividends, Business) and income entry transactions with gross, TDS, net, and AES-256 encrypted fields (`EncryptedString`) (FR16.1, FR16.2 / #517).
+- **Salary Component Breakdown & Sec 10(13A) HRA Exemption:** Detailed salary components (Basic, DA, HRA, Flexible Allowances, Rent Paid, Metro toggle) and statutory HRA exemption engine (`SalaryExemptionService`) with 100% mathematical parity against benchmark Excel spreadsheet `local/TaxCalc_2027.xlsx` cell D101 (FR16.5 / #532).
+- **Tax-Deductible Expense & Investment Logging:** Chapter VI-A investment logging (Section 80C ₹1.5L, Section 80D medical, Section 80CCD(1B) NPS, Section 80TTA/80TTB interest) with statutory ceiling limit progress meters and capping (FR16.3 / #518).
+- **Structured Tax Readiness Summary & Regime Comparison:** Consolidated Financial Year tax readiness report comparing Old Tax Regime vs New Tax Regime (Section 115BAC), displaying potential tax savings, non-advisory legal notice banners, and CSV/PDF report exporters (FR16.4, FR16.4.1 / #519).
+
+#### Security & Desktop/Mobile Protection
+- **`SECRET_KEY` Persistence:** Local file persistence of application `SECRET_KEY` to `secret.key` in app data directory to prevent JWT session invalidation across app restarts.
+- **SQLite Bytes Decoding:** Dynamic string decoding in `EncryptedString` database decorator for mobile SQLite drivers.
+
+---
+
 ## [1.3.0] - 2026-08-15
 
 ### Added

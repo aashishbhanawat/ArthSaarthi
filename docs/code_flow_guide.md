@@ -26,6 +26,47 @@ When a user views a financial goal detail page (`GoalDetailView.tsx`), the front
 
 ---
 
+## 0.1. Tax Readiness, Salary Exemption & Regime Comparison (Release v1.4.0)
+
+Release v1.4.0 equips ArthSaarthi with a full tax readiness pipeline spanning unrealized capital gains, income logging, statutory Section 10(13A) HRA calculations, Chapter VI-A deductions, and Old vs New Tax Regime comparisons.
+
+### 1. Unrealized Capital Gains & Sec 112A Pooling (`UnrealizedTaxService`)
+* **Endpoint:** `GET /api/v1/capital-gains/unrealized`
+* **Data Flow:**
+  1. `UnrealizedTaxService.get_unrealized_gains_summary` builds un-allocated tax lots for unsold quantities by cross-referencing `TransactionLink` references.
+  2. Fetches live market prices via `FinancialDataService.get_current_prices` (Upstox V3 primary / yfinance fallback).
+  3. Classifies holding periods (12m equity, 24m debt/foreign) to separate STCG and LTCG lots, and applies Section 55(2)(ac) grandfathering rules for equity acquired before Jan 31, 2018.
+  4. Pools Section 112A equity LTCG exemption headroom ($\text{Headroom} = \max(0, ₹1,25,000 - \text{Realized 112A LTCG})$) and renders remaining headroom on the frontend (`UnrealizedGainsModal.tsx`).
+
+### 2. Salary Breakdown & Section 10(13A) HRA Exemption (`SalaryExemptionService`)
+* **Endpoint:** `POST /api/v1/income/entries` & `PUT /api/v1/income/entries/{id}`
+* **Data Flow:**
+  1. User enters salary breakdown fields (Basic, DA, HRA, Rent Paid, Metro toggle) in `IncomeEntryModal.tsx`.
+  2. `SalaryExemptionService.calculate_hra_exemption` enforces statutory formula:
+     $$\text{HRA Exemption} = \max\left(0, \min\left(\text{HRA}, \text{Rent Paid} - 10\%(\text{Basic} + \text{DA}), (50\% \text{ if Metro else } 40\%)\times(\text{Basic} + \text{DA})\right)\right)$$
+  3. Parity verified against benchmark spreadsheet `local/TaxCalc_2027.xlsx` cell D101.
+  4. Encrypts sensitive fields via AES-256 (`EncryptedString`) before database persistence in `income_entries` table.
+
+### 3. Tax Deductions & Statutory Section Capping (`CRUDTaxDeduction`)
+* **Endpoints:** `/api/v1/tax/deductions` & `/api/v1/tax/deductions/summary`
+* **Data Flow:**
+  1. Logs investments/expenses under Chapter VI-A (Section 80C, 80D, 80CCD(1B), 80TTA/80TTB).
+  2. CRUD aggregates logged amounts and calculates statutory eligible deductions:
+     - Section 80C: Capped at ₹1,50,000
+     - Section 80D: Capped at ₹25,000 (Self) / ₹50,000 (Senior Parents)
+     - Section 80CCD(1B): Capped at ₹50,000
+     - Section 80TTA: Capped at ₹10,000 / Section 80TTB: Capped at ₹50,000
+  3. Frontend renders statutory progress meters and claimed vs eligible summary cards in `DeductionsPage.tsx`.
+
+### 4. Dual Regime Tax Engine & Export (`TaxRegimeService` & `TaxRulesRegistry`)
+* **Endpoints:** `GET /api/v1/tax/summary`, `GET /api/v1/tax/summary/export/csv`, `GET /api/v1/tax/summary/export/pdf`
+* **Data Flow:**
+  1. `TaxRulesRegistry` supplies statutory tax brackets, standard deductions, 87A rebate thresholds, and Cess rates for FY 2021-22 through FY 2026-27.
+  2. `TaxRegimeService` calculates net tax payable under Old Tax Regime vs New Tax Regime (Section 115BAC), identifies tax savings, and recommends the lower liability regime.
+  3. Exports embed prominent legal non-advisory disclaimer banners (`MANDATORY_TAX_DISCLAIMER`) on UI dashboards, CSV files, and ReportLab PDF documents.
+
+---
+
 ## 1. Frontend Flow: Adding a Transaction
 
 The user journey starts on the `PortfolioDetailPage`, where they click the "Add Transaction" button.
