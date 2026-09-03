@@ -51,7 +51,7 @@ test.describe("Tax Readiness & Financial Picture Workflow (Release v1.4.0)", () 
 
     // Verify non-advisory legal notice banner (FR16.4.1)
     await expect(
-      page.getByText(/informational purposes only|does not constitute financial or tax advice/i).first(),
+      page.getByText(/IMPORTANT LEGAL NOTICE|TAX DISCLAIMER/i).first(),
     ).toBeVisible();
 
     // Verify Old Regime vs New Regime comparison cards
