@@ -23,12 +23,12 @@ test.describe("Tax Readiness & Financial Picture Workflow (Release v1.4.0)", () 
     // 1. Navigate to Income Data Management Page
     await page.goto("/income");
     await expect(
-      page.getByRole("heading", { name: /Income Data Management|Income Sources/i }),
+      page.getByRole("heading", { name: /Income & TDS Data Management|Income Data Management|Income Sources/i }),
     ).toBeVisible({ timeout: 10000 });
 
     // Verify key summary elements on Income Page
-    await expect(page.getByText(/Total Gross Income|Gross Income/i)).toBeVisible();
-    await expect(page.getByText(/Total TDS Credit|TDS Deducted/i)).toBeVisible();
+    await expect(page.getByText(/Total Gross Income|Gross Income/i).first()).toBeVisible();
+    await expect(page.getByText(/Total TDS Credit|TDS Credited|TDS Deducted/i).first()).toBeVisible();
 
     // 2. Navigate to Tax Deductions Page (Chapter VI-A)
     await page.goto("/deductions");
