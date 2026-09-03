@@ -20,39 +20,42 @@ test.describe("Tax Readiness & Financial Picture Workflow (Release v1.4.0)", () 
   test("should navigate through Income, Deductions, and Tax Summary dashboards", async ({
     page,
   }) => {
-    // 1. Navigate to Income Data Management Page
-    await page.goto("/income");
+    // 1. Navigate to Income & Tax Hub via navbar link
+    await page.getByRole("link", { name: "Income & Tax Hub" }).click();
+    await expect(page).toHaveURL(/.*\/income/);
+
+    // Verify heading on Income Tab
     await expect(
-      page.getByRole("heading", { name: /Income & TDS Data Management|Income Data Management|Income Sources/i }),
+      page.getByRole("heading", { name: /Income & TDS Data Management/i }),
     ).toBeVisible({ timeout: 10000 });
 
     // Verify key summary elements on Income Page
-    await expect(page.getByText(/Total Gross Income|Gross Income/i).first()).toBeVisible();
-    await expect(page.getByText(/Total TDS Credit|TDS Credited|TDS Deducted/i).first()).toBeVisible();
+    await expect(page.getByText(/Gross Income/i).first()).toBeVisible();
+    await expect(page.getByText(/TDS Credited/i).first()).toBeVisible();
 
-    // 2. Navigate to Tax Deductions Page (Chapter VI-A)
-    await page.goto("/deductions");
+    // 2. Switch to Tax Deductions Tab (Chapter VI-A)
+    await page.getByRole("button", { name: "Tax Deductions (Chapter VI-A)" }).click();
     await expect(
-      page.getByRole("heading", { name: /Tax Deductions|Chapter VI-A/i }),
+      page.getByRole("heading", { name: /Tax Deductions & Chapter VI-A/i }),
     ).toBeVisible({ timeout: 10000 });
 
     // Verify statutory capping progress meters
-    await expect(page.getByText(/Section 80C/i)).toBeVisible();
-    await expect(page.getByText(/Section 80D/i)).toBeVisible();
+    await expect(page.getByText(/Section 80C/i).first()).toBeVisible();
+    await expect(page.getByText(/Section 80D/i).first()).toBeVisible();
 
-    // 3. Navigate to Consolidated Tax Summary Dashboard
-    await page.goto("/tax-summary");
+    // 3. Switch to Consolidated Tax Readiness Summary Tab
+    await page.getByRole("button", { name: "Tax Readiness Summary" }).click();
     await expect(
-      page.getByRole("heading", { name: /Tax Readiness Summary|Tax Profile/i }),
+      page.getByRole("heading", { name: /Tax Readiness Summary/i }),
     ).toBeVisible({ timeout: 10000 });
 
     // Verify non-advisory legal notice banner (FR16.4.1)
     await expect(
-      page.getByText(/informational purposes only|does not constitute financial or tax advice/i),
+      page.getByText(/informational purposes only|does not constitute financial or tax advice/i).first(),
     ).toBeVisible();
 
     // Verify Old Regime vs New Regime comparison cards
-    await expect(page.getByText(/Old Tax Regime/i)).toBeVisible();
-    await expect(page.getByText(/New Tax Regime/i)).toBeVisible();
+    await expect(page.getByText(/Old Tax Regime/i).first()).toBeVisible();
+    await expect(page.getByText(/New Tax Regime/i).first()).toBeVisible();
   });
 });
