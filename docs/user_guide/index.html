@@ -13,13 +13,14 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <h1>ArthSaarthi</h1>
-      <p class="version">User Guide v1.3</p>
+      <p class="version">User Guide v1.4</p>
       <nav>
         <ul>
           <li><a href="#getting-started">Getting Started</a></li>
           <li><a href="#dashboard">Dashboard</a></li>
           <li><a href="#portfolios">Portfolios</a></li>
           <li><a href="#transactions">Transactions</a></li>
+          <li><a href="#tax-readiness">Tax & Income Hub</a></li>
           <li><a href="#asset-types">Asset Types</a></li>
           <li><a href="#employee-plans">RSU & ESPP</a></li>
           <li><a href="#import">Data Import</a></li>
@@ -28,7 +29,7 @@
           <li><a href="#profile">Profile & Backup</a></li>
           <li><a href="#admin">Admin Features</a></li>
           <li><a href="#getting-help">Getting Help</a></li>
-          <li><a href="#whats-new">What's New in v1.3</a></li>
+          <li><a href="#whats-new">What's New in v1.4</a></li>
         </ul>
       </nav>
     </aside>
@@ -553,6 +554,27 @@
         </div>
       </section>
 
+      <!-- Tax Compliance & Tax Readiness Hub -->
+      <section id="tax-readiness" class="section">
+        <h2>Tax Compliance & Tax Readiness Hub (Release v1.4.0)</h2>
+        <p>ArthSaarthi's <strong>Income & Tax Hub</strong> equips you with complete tax context and automated statutory calculators for managing income, tax deductions, capital gains exemptions, and tax regime comparisons.</p>
+
+        <h3>1. Income & TDS Data Management</h3>
+        <p>Log salary, freelance, rental yield, dividends, and business income. Encrypts sensitive fields (gross, TDS, net, notes) via AES-256 (<code>EncryptedString</code>) for privacy on local desktop and mobile devices.</p>
+
+        <h3>2. Salary Breakdown & Section 10(13A) HRA Exemption</h3>
+        <p>Calculates statutory HRA exemptions using Basic Salary, HRA Received, Dearness Allowance (DA), Rent Paid, and Metro location toggle with 100% mathematical parity against statutory benchmark tax calculators (<code>local/TaxCalc_2027.xlsx</code> cell D101).</p>
+
+        <h3>3. Chapter VI-A Tax Deductions</h3>
+        <p>Log tax-saving investments under Section 80C (₹1.5L cap), Section 80D (₹25k/50k medical insurance cap), Section 80CCD(1B) (₹50k NPS cap), and Section 80TTA/80TTB interest deductions with visual statutory progress meters.</p>
+
+        <h3>4. Dual Tax Regime Estimation & PDF/CSV Exporters</h3>
+        <p>Consolidates income, TDS credits, deductions, and capital gains to compare estimated tax liabilities between the <strong>Old Tax Regime</strong> and <strong>New Tax Regime (Section 115BAC)</strong>. Export full reports in CSV or PDF format with embedded statutory legal disclaimer banners.</p>
+
+        <h3>5. Unrealized Capital Gains & Sec 112A Exemption Pooling</h3>
+        <p>Track lot-level unrealized STCG/LTCG across active holdings and pool Section 112A equity LTCG exemption headroom (₹1,25,000 threshold/FY) with Section 55(2)(ac) grandfathering and statutory capital loss set-off rules (Section 70/71/74).</p>
+      </section>
+
       <!-- Getting Help -->
       <section id="getting-help" class="section">
         <h2>12. Getting Help & Reporting Bugs</h2>
@@ -570,7 +592,26 @@
         <h2>13. What's New & Release Highlights</h2>
 
         <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px dashed var(--border);">
-          <h3 style="color: var(--primary-dark); font-size: 1.4rem; margin-bottom: 12px;">🌟 What's New in Release v1.3.0</h3>
+          <h3 style="color: var(--primary-dark); font-size: 1.4rem; margin-bottom: 12px;">🌟 What's New in Release v1.4.0 (Tax Readiness & Full Financial Picture)</h3>
+
+          <h4>Income Source & Entry Data Management (FR16.1 & FR16.2)</h4>
+          <p>Define custom income sources (Salary, Freelance, Rental, Dividends, Business) and log income entry transactions with gross amount, TDS, net amount, and AES-256 encrypted fields (<code>EncryptedString</code>).</p>
+
+          <h4>Statutory Section 10(13A) HRA Exemption Engine (FR16.5)</h4>
+          <p>Log detailed salary component breakdowns (Basic, DA, HRA, Rent Paid, Metro toggle) to calculate statutory Section 10(13A) HRA tax exemptions with 100% mathematical parity against benchmark Excel tax calculators.</p>
+
+          <h4>Chapter VI-A Tax Deductions & Statutory Progress Capping (FR16.3)</h4>
+          <p>Track tax-deductible investments and expenses (Section 80C ₹1.5L cap, Section 80D medical insurance, Section 80CCD(1B) NPS, Section 80TTA/80TTB interest) with visual statutory limit progress meters.</p>
+
+          <h4>Structured Tax Readiness Summary & Regime Comparison (FR16.4)</h4>
+          <p>Consolidate gross income, TDS credits, eligible deductions, and capital gains to compare tax liability between the <strong>Old Tax Regime</strong> and <strong>New Tax Regime (Section 115BAC)</strong> with CSV/PDF report exporters and legal notice banners.</p>
+
+          <h4>Unrealized Capital Gains & Sec 112A Exemption Pooling (FR6.5 Phase 2 & 3)</h4>
+          <p>FIFO lot unrealized STCG/LTCG tax engine, Section 112A equity LTCG exemption headroom pooling (₹1,25,000 threshold/FY), and Section 70/71/74 capital loss set-off rules.</p>
+        </div>
+
+        <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px dashed var(--border);">
+          <h3 style="color: var(--primary-dark); font-size: 1.4rem; margin-bottom: 12px;">🚀 What's New in Release v1.3.0</h3>
 
           <h4>Goal Projections & Monthly SIP Calculator</h4>
           <p>Project long-term corpus growth and calculate required monthly contributions (ordinary annuity SIP) with dynamic track status badges (<strong>On Track</strong> / <strong>Off Track</strong>):</p>

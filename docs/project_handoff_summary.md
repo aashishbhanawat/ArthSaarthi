@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-09-01
+**Last Updated:** 2026-09-02
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Active Feature Implementation — Release v1.4.0 (Tax Readiness & Full Financial Picture)
+*   **Overall Status:** Release Candidate v1.4.0 Code-Complete & Verified — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Implemented Salary Component Breakdown & Section 10(13A) HRA Exemption Logging (Issue #532 / FR16.5). Added statutory Section 10(13A) HRA calculation service (`SalaryExemptionService`) with 100% mathematical parity against benchmark Excel spreadsheet `local/TaxCalc_2027.xlsx` cell D101, extended `IncomeEntry` database model with AES-256 encrypted columns (`basic_amount`, `hra_amount`, `da_amount`, `special_allowance_amount`, `other_allowances_amount`, `other_benefits_amount`, `rent_paid`, `is_metro`, `hra_exemption`), added Alembic migration `i90b1c2d3e4f`, Pydantic schemas, CRUD operations, REST API serialization, frontend collapsible drawer modal with live exemption preview box, row ledger badges, and unit test suites.
+**Latest Achievement:** Release Candidate v1.4.0 Finalization & Full System Synchronization. Synchronized version string (`1.4.0`) across `backend/app/main.py`, `backend/app/api/v1/endpoints/system.py`, `frontend/package.json`, `frontend/src/pages/MorePage.tsx`, `frontend/android/app/build.gradle.kts` (`versionCode = 5`), and `frontend/electron/splash.html`. Authored Playwright E2E test spec (`e2e/tests/tax-readiness-workflow.spec.ts`) covering Income, Chapter VI-A Deductions, and Tax Summary dashboards. Completed full architectural documentation sync across `README.md`, `docs/code_flow_guide.md`, `docs/architecture.md`, `docs/troubleshooting.md`, `CHANGELOG.md`, and `docs/workflow_history.md`.
 
 ## 2. Test Suite Status
 

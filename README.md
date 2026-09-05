@@ -35,10 +35,14 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV/Excel/PDF files.
     *   Includes pre-built parsers for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS Statement, Zerodha Coin MF, KFintech PDF, generic format, and **Fixed Deposit (FD) PDFs** (HDFC, ICICI, SBI).
     *   Features an advanced UI for on-the-fly **asset alias mapping** for unrecognized ticker symbols, with admin management (view, edit, delete) of all aliases.
-*   **Tax Compliance & Reporting:**
+*   **Tax Compliance & Tax Readiness (Release v1.4.0):**
     *   **Schedule FA (Foreign Assets):** Generate reports compliant with Calendar Year rules, including Peak Value analysis (daily balance check) and specific field exports.
-    *   **Capital Gains:** Comprehensive reports for Short-Term (STCG) and Long-Term (LTCG) capital gains.
+    *   **Capital Gains & Loss Set-Off:** Comprehensive reports for Short-Term (STCG) and Long-Term (LTCG) capital gains with statutory intra-head loss set-off rules (Section 70/71/74).
     *   **Unrealized Capital Gains & Exemption Pooling (FR6.5 Phase 2):** Compute lot-level FIFO unrealized STCG/LTCG across active holdings and pool Section 112A LTCG exemption headroom (₹1,25,000 threshold per FY) with interactive tax lot breakdown modals and Privacy Mode currency masking.
+    *   **Income Source & Entry Ledger (FR16.1 & FR16.2):** Define income sources (Salary, Freelance, Rental, Dividends, Business) and log entry transactions with gross amount, TDS, net amount, and AES-256 encrypted fields (`EncryptedString`).
+    *   **Salary Component Breakdown & Sec 10(13A) HRA Exemption (FR16.5):** Statutory HRA exemption engine computing Basic, DA, HRA, Rent Paid, Metro status, and calculated HRA exemption with 100% mathematical parity against benchmark Excel tax calculators (`local/TaxCalc_2027.xlsx`).
+    *   **Tax-Deductible Expense & Investment Logging (FR16.3):** Track Chapter VI-A investments (Sec 80C ₹1.5L, Sec 80D medical insurance, Sec 80CCD(1B) NPS, Sec 80TTA/80TTB interest) with statutory limit progress meters and capping.
+    *   **Structured Tax Readiness Summary & Regime Comparison (FR16.4):** Consolidate gross income, TDS credits, eligible deductions, and capital gains to compare tax liability between Old Tax Regime and New Tax Regime (Section 115BAC) with CSV/PDF report exporters and legal non-advisory banners.
     *   **Schedule 112A:** Dedicated support for Grandfathered Equity (acquired before 31 Jan 2018) with FMV lookup and CSV export for ITR-2 filing.
 *   **Goal Planning, Projections & Track Status:** Define financial goals (e.g. retirement, buy a car), link portfolios or individual assets, compute dynamic combined XIRR returns, project future value at the target date, determine "On Track" or "Off Track" status, visualize paths via dynamic charts, and calculate required monthly contributions (ordinary annuity SIP) needed to reach your targets.
 *   **Market Insights (Watchlists):** Create and manage custom watchlists to monitor assets you don't own.
@@ -50,7 +54,6 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ### On the Horizon (Future Features)
 
-*   **Corporate Actions & Income Tracking:** Automatically handle dividends, stock splits, and bonuses, and track income from interest payments.
 *   **Deeper Analytics:** Analyze diversification by sector, geography, and more.
 *   **AI-Powered Insights:** Leverage AI to get suggestions for tax-loss harvesting, portfolio rebalancing, and receive a personalized daily digest of your financial world.
 *   **Market Insights:** Get relevant news feeds and perform deep-dive research on individual assets.

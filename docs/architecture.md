@@ -59,4 +59,19 @@ The entire application will be containerized using **Docker** and orchestrated w
 *   A reverse proxy will manage incoming traffic, directing API calls to the backend and all other requests to the frontend.
 *   This strategy directly supports the requirement for flexible deployment, including local offline use and self-hosting via services like Cloudflare Tunnels.
 
-```
+### 2.4. Security & Sensitive Data Protection (`EncryptedString` Model)
+
+To guarantee strict user data privacy on local single-user desktop deployments (PyInstaller) and mobile devices (Android SQLite), all sensitive PII and financial ledger fields are protected using field-level encryption:
+
+*   **Custom SQLAlchemy Type Decorator:** `EncryptedString` (`backend/app/db/custom_types.py`) transparently encrypts data before database write and decrypts upon read using AES-256-GCM symmetric encryption keys managed by `KeyManager`.
+*   **Key Persistence & Rotation:** Secret keys are generated and persisted locally in `secret.key` within the user's app data directory (`_get_app_dir()`), preventing unauthenticated decryption across application restarts.
+*   **Encrypted Columns:** Applied to `IncomeSource.name`, `IncomeSource.payer_name`, `IncomeEntry.gross_amount`, `IncomeEntry.tds_amount`, `IncomeEntry.net_amount`, `IncomeEntry.notes`, `IncomeEntry.basic_amount`, `IncomeEntry.hra_amount`, `IncomeEntry.rent_paid`, `TaxDeduction.title`, `TaxDeduction.amount`, and `TaxDeduction.proof_notes`.
+
+### 2.5. Tax Engine & Versioned Statutory Rules Registry
+
+Tax analytics and regime estimations are driven by modular, decoupled services:
+
+*   **Statutory Tax Rules Registry (`TaxRulesRegistry`):** `backend/app/core/tax_rules_registry.py` maintains year-over-year statutory rules for Financial Years 2021-22 through 2026-27 (tax slab brackets, standard deduction limits, Section 87A rebate ceilings, 4% Cess, and Section 80C/80D caps).
+*   **Unrealized Tax Service (`UnrealizedTaxService`):** Computes lot-level unsold FIFO unrealized STCG/LTCG across equity, debt, foreign stocks, and mutual funds, pooling Section 112A equity LTCG exemption headroom (₹1,25,000 threshold/FY).
+*   **Salary Exemption Service (`SalaryExemptionService`):** Enforces statutory Section 10(13A) HRA exemption rules with 100% mathematical parity against benchmark Excel tax calculators (`local/TaxCalc_2027.xlsx`).
+*   **Dual Regime Tax Service (`TaxRegimeService`):** Aggregates gross income, TDS credits, Chapter VI-A deductions, and capital gains to compute net tax liability under the Old Tax Regime vs. New Tax Regime (Section 115BAC), exporting results with embedded legal non-advisory disclaimer banners (`MANDATORY_TAX_DISCLAIMER`).

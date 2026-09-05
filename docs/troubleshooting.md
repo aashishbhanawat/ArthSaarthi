@@ -369,3 +369,24 @@ This guide documents common setup and runtime issues and their solutions.
     3.  **Developer Action (Manual Invalidation):** To debug, you can manually clear the cache.
         *   If using Redis: `docker compose exec redis redis-cli FLUSHALL`
         *   If using DiskCache (e.g., in `desktop` or `sqlite` mode), you will need to find and delete the `cache` directory created by the application.
+
+---
+
+### 19. HTTP 401 Unauthenticated Redirects or `jose.exceptions.JWTError` on App Restart
+
+*   **Symptom:** On standalone Desktop (PyInstaller) or Mobile (Android) builds, restarting the application invalidates existing user JWT sessions, resulting in `Signature verification failed` errors and forcing users back to the login screen.
+
+*   **Cause:** By default, `SECRET_KEY` was generated dynamically in-memory on every application launch if not explicitly configured in environment variables.
+
+*   **Solution:** `SECRET_KEY` is now persisted to `secret.key` inside the app data directory (`_get_or_create_secret_key()` in `backend/app/core/config.py`). Ensure the app process has write permissions to the user app data folder.
+
+---
+
+### 20. `ResponseValidationError` when Reading Encrypted String Columns on SQLite/Android
+
+*   **Symptom:** Backend endpoints returning `IncomeEntry`, `IncomeSource`, or `TaxDeduction` fail with FastAPI `ResponseValidationError` when running in `desktop` or `android` SQLite mode.
+
+*   **Cause:** Python `sqlite3` driver returns binary encrypted columns (`EncryptedString`) as raw `bytes` objects on certain mobile platforms instead of `str`. Pydantic schema validation fails when expecting `str`.
+
+*   **Solution:** `EncryptedString` decorator in `backend/app/db/custom_types.py` uses dynamic UTF-8 string decoding (`bytes.decode('utf-8')`) when `DEPLOYMENT_MODE != "desktop"`, converting SQLite byte payloads to standard strings before schema serialization.
+

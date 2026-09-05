@@ -22,14 +22,19 @@ ArthSaarthi is a powerful web-based application designed to help you track, mana
    - Dividends & Income
    - Stock Splits & Bonus Shares
 5. [Viewing Transaction History](#viewing-transaction-history)
-6. [Import Data](#import-data)
-   - Supported Formats (v1.1)
-7. [Goals](#goals)
-8. [Watchlists](#watchlists)
-9. [Profile & Settings](#profile--settings)
-   - Backup & Restore
-10. [Admin Features](#admin-features)
-11. [Themes & Privacy](#themes--privacy)
+6. [Tax Compliance & Tax Readiness Hub](#tax-compliance--tax-readiness-hub-release-v140)
+   - Income & TDS Data Management
+   - Salary Breakdown & Sec 10(13A) HRA Exemption
+   - Tax Deductions (Chapter VI-A)
+   - Dual Regime Tax Comparison
+   - Unrealized Capital Gains & Sec 112A Exemption Pooling
+7. [Import Data](#import-data)
+8. [Goals](#goals)
+9. [Risk Profile](#risk-profile)
+10. [Watchlists](#watchlists)
+11. [Profile & Settings](#profile--settings)
+12. [Admin Features](#admin-features)
+13. [Themes & Privacy](#themes--privacy)
 
 ---
 
@@ -427,6 +432,65 @@ Navigate to **Transactions** from the sidebar to see all transactions across por
 - Filter by date range, asset type, or transaction type
 - Quick edit or delete transactions
 - Export transaction data
+
+---
+
+## Tax Compliance & Tax Readiness Hub (Release v1.4.0)
+
+The **Income & Tax Hub** equips you with complete tax context and automated statutory calculators, allowing you to track all income streams, manage tax-deductible expenses, monitor unrealized capital gains exemptions, and compare tax liabilities between the **Old Tax Regime** and **New Tax Regime (Section 115BAC)**.
+
+### 1. Income & TDS Data Management (`/income`)
+
+Track all your revenue streams and Tax Deducted at Source (TDS) credits in one unified ledger.
+
+* **Income Sources:** Define custom income categories (Primary Salary, Freelance Work, Rental Yield, Dividends, Business/Professional).
+* **Income Entry Logger:** Log individual income transactions with entry date, gross amount, TDS deducted, net amount received, and notes.
+* **AES-256 Field Encryption (`EncryptedString`):** Sensitive financial entries, notes, and payer details are encrypted before database storage on local desktop (SQLite) and mobile devices.
+
+### 2. Salary Breakdown & Section 10(13A) HRA Exemption
+
+For salaried individuals, ArthSaarthi includes a statutory Section 10(13A) HRA Exemption engine with 100% mathematical parity against benchmark tax calculators (`local/TaxCalc_2027.xlsx`).
+
+* **Salary Components:** When logging salary income entries, open the collapsible **Salary Breakdown** drawer to enter:
+  * Basic Salary & Dearness Allowance (DA)
+  * Actual HRA Received
+  * Flexible & Other Allowances / Benefits
+  * Rent Paid & Metro City toggle (50% for Metro cities like Mumbai, Delhi, Kolkata, Chennai; 40% for Non-Metro)
+* **Automated HRA Calculation:** Computes statutory HRA exemption as:
+  $$\text{HRA Exemption} = \max\left(0, \min\left(\text{Actual HRA Received},\; \text{Rent Paid} - 10\%(\text{Basic} + \text{DA}),\; (50\% \text{ if Metro else } 40\%)\times(\text{Basic} + \text{DA})\right)\right)$$
+* **Visual Badges:** Displays `Sec 10(13A) HRA Exempt` visual badges on desktop table rows and mobile card ledgers.
+
+### 3. Tax Deductions & Chapter VI-A Statutory Capping (`/deductions`)
+
+Log tax-saving investments and eligible expenses under Chapter VI-A of the Income-tax Act.
+
+* **Statutory Section Progress Meters:** Visual progress bars track logged investments against statutory ceiling limits:
+  * **Section 80C:** Capped at ₹1,50,000 (PPF, ELSS, EPF, NPS 80CCD(1), Home Loan Principal, SSY, Tuitions).
+  * **Section 80D:** Capped at ₹25,000 (Self/Family) and ₹50,000 (Senior Citizen Parents) for health insurance premiums and preventive health checkups.
+  * **Section 80CCD(1B):** Additional ₹50,000 deduction for voluntary NPS contributions.
+  * **Section 80TTA / 80TTB:** Capped at ₹10,000 (Savings Account Interest for individuals) and ₹50,000 (Senior Citizen Interest income).
+* **Claimed vs. Eligible Summary Cards:** Highlights total investments logged versus net statutory deduction eligible for tax reduction.
+
+### 4. Consolidated Tax Readiness Summary & Dual Regime Comparison (`/tax-summary`)
+
+Compare your estimated net tax liability side-by-side between the **Old Tax Regime** and **New Tax Regime (Section 115BAC)** for Financial Years 2021-22 through 2026-27.
+
+* **Dual Regime Comparison Engine:**
+  * Calculates gross total income across salary, freelance, rental, interest, and capital gains.
+  * Applies standard deductions (₹50,000 for Old Regime; ₹75,000 for New Regime in FY 2024-25+).
+  * Applies Chapter VI-A deductions (Old Regime) and Section 87A tax rebates.
+  * Computes 4% Health & Education Cess and highlights recommended lower tax regime with estimated net savings.
+* **CSV & PDF Exporters:** Download official tax readiness summary reports in CSV or formatted PDF format.
+* **Legal Non-Advisory Disclaimer Banner:** Displays prominent non-advisory legal notice stating calculations are for informational and planning purposes only and do not constitute professional tax advice.
+
+### 5. Unrealized Capital Gains & Sec 112A Exemption Pooling (`/capital-gains`)
+
+Estimate tax liabilities on open holding positions before selling assets.
+
+* **FIFO Lot Tax Engine:** Computes lot-level unrealized STCG and LTCG across active holdings using live market prices.
+* **Section 112A Exemption Pooling:** Monitors Section 112A equity LTCG exemption headroom (₹1,25,000 threshold per FY). Calculates remaining usable exemption headroom taking into account already realized LTCG.
+* **Section 55(2)(ac) Grandfathering:** Automatically applies Jan 31, 2018 Fair Market Value (FMV) grandfathering rules for equity acquired before Feb 1, 2018.
+* **Capital Loss Set-Off (Section 70/71/74):** Applies statutory intra-head set-off rules (STCL against STCG/LTCG; LTCL against LTCG only).
 
 ---
 
