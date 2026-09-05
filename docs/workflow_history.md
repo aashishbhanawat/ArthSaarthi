@@ -1,3 +1,21 @@
+## 2026-09-04: Release v1.4.0 User Guide Documentation Update
+
+**Task:** Update `docs/user_guide.md` and interactive HTML user guide `docs/user_guide/index.html` to document all Release v1.4.0 features (Income & TDS Data Management, Salary Breakdown & Sec 10(13A) HRA Exemption, Chapter VI-A Tax Deductions, Old vs New Tax Regime Estimation, CSV/PDF exporters, and Unrealized Capital Gains & Sec 112A Exemption Pooling).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Technical Writer
+
+### Summary
+
+1. **`docs/user_guide.md` Update:**
+   - Added Section 6 (`Tax Compliance & Tax Readiness Hub`) covering Income logging, Salary breakdown & statutory HRA formula, Chapter VI-A statutory caps, Dual regime comparison, and Unrealized capital gains exemption pooling.
+   - Updated Table of Contents.
+2. **`docs/user_guide/index.html` Update:**
+   - Bumped version tag to `User Guide v1.4`.
+   - Added `Tax & Income Hub` and `What's New in v1.4` links to the sidebar navigation menu.
+   - Added `Tax Compliance & Tax Readiness Hub` section and `🌟 What's New in Release v1.4.0 (Tax Readiness & Full Financial Picture)` release highlights.
+
+---
+
 ## 2026-09-02: Release v1.4.0 Comprehensive Documentation & Architectural Blueprint Synchronization
 
 **Task:** Update all core application documentation files (`README.md`, `docs/code_flow_guide.md`, `docs/architecture.md`, `docs/troubleshooting.md`, `CHANGELOG.md`, `docs/workflow_history.md`) to reflect Release v1.4.0 (Tax Readiness & Full Financial Picture) features, AES-256 encryption architecture (`EncryptedString`), statutory Section 10(13A) HRA calculations, Chapter VI-A statutory caps, and dual tax regime estimation.  
