@@ -1,3 +1,23 @@
+## 2026-09-05: Fix Cross-Tenant Data Leakage in Bond Ownership Check & Shared Metadata Deletion (Issue #544)
+
+**Task:** Refactor `_check_bond_ownership` in `backend/app/api/v1/endpoints/bonds.py` to use direct SQL JOIN database queries filtering by user ID, eliminating $N+1$ query traversal over shared asset transaction lists and preventing cross-tenant session memory leakage. Enforce protection against deleting shared bond master metadata when other users hold active transactions for the asset.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Security Engineer
+
+### Summary
+
+1. **Feature Branch:** Created branch `fix/544-bond-ownership-cross-tenant-leakage`.
+2. **Database Query Refactoring (`backend/app/api/v1/endpoints/bonds.py`):**
+   - Replaced in-memory Python iteration over `bond.asset.transactions` in `_check_bond_ownership` with a single parameterized SQL query: `db.query(models.Transaction.id).join(models.Portfolio).filter(models.Transaction.asset_id == bond.asset_id, models.Portfolio.user_id == user_id).first()`.
+   - Prevents loading other users' transaction records into SQLAlchemy session memory.
+3. **Deletion Protection (`delete_bond`):**
+   - Added validation check in `delete_bond` to return HTTP 400 Bad Request if another user holds transactions for the shared `bond.asset_id`.
+4. **Security Unit Test Coverage (`backend/app/tests/api/v1/test_bonds_security.py`):**
+   - Added `test_delete_bond_prevented_when_other_users_hold_transactions` to verify 400 error response when attempting to delete shared bond metadata.
+5. **Verification:** All 11 unit & security tests passed 100% in Docker test environment.
+
+---
+
 ## 2026-09-04: Release v1.4.0 User Guide Documentation Update
 
 **Task:** Update `docs/user_guide.md` and interactive HTML user guide `docs/user_guide/index.html` to document all Release v1.4.0 features (Income & TDS Data Management, Salary Breakdown & Sec 10(13A) HRA Exemption, Chapter VI-A Tax Deductions, Old vs New Tax Regime Estimation, CSV/PDF exporters, and Unrealized Capital Gains & Sec 112A Exemption Pooling).  

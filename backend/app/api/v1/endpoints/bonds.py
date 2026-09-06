@@ -14,17 +14,19 @@ from app.utils.pydantic_compat import model_dump
 router = APIRouter()
 
 def _check_bond_ownership(db: Session, bond: models.Bond, user_id: uuid.UUID) -> None:
-    if not bond.asset.transactions:
+    has_ownership = (
+        db.query(models.Transaction.id)
+        .join(models.Portfolio, models.Transaction.portfolio_id == models.Portfolio.id)
+        .filter(
+            models.Transaction.asset_id == bond.asset_id,
+            models.Portfolio.user_id == user_id,
+        )
+        .first()
+    )
+    if not has_ownership:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
         )
-    for transaction in bond.asset.transactions:
-        portfolio = crud.portfolio.get(db=db, id=transaction.portfolio_id)
-        if portfolio and portfolio.user_id == user_id:
-            return
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
-    )
 
 
 
@@ -167,6 +169,21 @@ def delete_bond(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Bond not found")
     _check_bond_ownership(db, bond, current_user.id)
+    # Check if other users also hold transactions for this shared asset
+    other_users_tx = (
+        db.query(models.Transaction.id)
+        .join(models.Portfolio, models.Transaction.portfolio_id == models.Portfolio.id)
+        .filter(
+            models.Transaction.asset_id == bond.asset_id,
+            models.Portfolio.user_id != current_user.id,
+        )
+        .first()
+    )
+    if other_users_tx:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete bond metadata while other users hold transactions for this asset.",
+        )
     crud.bond.remove(db=db, id=bond_id)
     db.commit()
     return {"msg": "Bond deleted successfully"}

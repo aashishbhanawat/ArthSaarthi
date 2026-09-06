@@ -154,3 +154,57 @@ def test_bond_no_transactions_authorization(
         headers=headers_b,
     )
     assert response.status_code == 403
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_delete_bond_prevented_when_other_users_hold_transactions(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+) -> None:
+    # Setup user A and portfolio A
+    user_a, password_a = create_random_user(db)
+    portfolio_a = create_test_portfolio(db, user_id=user_a.id, name="Portfolio A")
+    headers_a = get_auth_headers(user_a.email, password_a)
+
+    asset = create_test_asset(db, ticker_symbol="TEST-BOND-SHARED")
+    asset.asset_type = "BOND"
+    db.commit()
+
+    # Create transaction for User A
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio_a.id,
+        ticker=asset.ticker_symbol,
+        asset_id=str(asset.id),
+    )
+
+    # Setup user B and portfolio B, create transaction for User B
+    user_b, _ = create_random_user(db)
+    portfolio_b = create_test_portfolio(db, user_id=user_b.id, name="Portfolio B")
+    create_test_transaction(
+        db,
+        portfolio_id=portfolio_b.id,
+        ticker=asset.ticker_symbol,
+        asset_id=str(asset.id),
+    )
+
+    bond = Bond(
+        asset_id=asset.id,
+        bond_type=BondType.CORPORATE,
+        face_value=Decimal("1000"),
+        coupon_rate=Decimal("5"),
+        maturity_date=date(2030, 1, 1),
+    )
+    db.add(bond)
+    db.commit()
+    db.refresh(bond)
+
+    # User A attempts to delete shared bond master metadata while User B also holds transactions
+    response_delete = client.delete(
+        f"{settings.API_V1_STR}/portfolios/{portfolio_a.id}/bonds/{bond.id}",
+        headers=headers_a,
+    )
+    assert response_delete.status_code == 400
+    assert "Cannot delete bond metadata" in response_delete.json()["detail"]
+
