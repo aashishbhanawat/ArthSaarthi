@@ -1,9 +1,4 @@
-## 2025-07-22 - Fix IDOR/Data Leakage in PPF Holdings Calculation
-**Vulnerability:** The `process_ppf_holding` function aggregated all transactions globally for a shared asset when `portfolio_id` was `None` because it failed to filter by the requesting `user_id`.
-**Learning:** Shared global entities like `Asset` require strict tenant isolation queries when retrieving linked context models. Global utility methods frequently lack implicit authorization context.
-**Prevention:** Always verify that `get_multi_by_*` methods include a `user_id` or join through a user-owned entity (like `Portfolio`) to guarantee tenant separation, even in aggregation scopes.
-
-## 2024-05-18 - Fix Information Leakage in Error Responses
-**Vulnerability:** Several endpoints were catching generic exceptions and returning `str(e)` directly in the HTTP response JSON (e.g., `detail=f"Error: {str(e)}"`), which could leak sensitive internal database details or stack traces to malicious actors.
-**Learning:** Returning raw exception strings directly to the client violates secure coding practices because it exposes internal implementation details.
-**Prevention:** Catch exceptions, log them internally using `logger.error(..., exc_info=True)` to retain context for debugging, and return safe, generic error messages to the client.
+## 2025-02-28 - Cross-Tenant Data Leakage in Bond Ownership Check
+**Vulnerability:** The `_check_bond_ownership` function in `backend/app/api/v1/endpoints/bonds.py` previously verified ownership by iterating through `bond.asset.transactions` and manually checking if the `portfolio.user_id` matched the current user. This exposed an N+1 query issue and, more importantly, could potentially leak data or raise errors if transaction data was shared improperly. It didn't correctly isolate the check to only the user's specific context.
+**Learning:** Checking ownership of globally shared entities (like `Asset` via `asset_id`) requires robust, direct database queries that scope by the current user's ID to prevent IDOR and inefficient data access.
+**Prevention:** Always verify ownership of shared assets by constructing a direct query joining the `Transaction` and `Portfolio` tables, filtering strictly by the authenticated `user_id`. Do not rely on iterating through ORM relationships (like `asset.transactions`).

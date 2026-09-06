@@ -14,17 +14,24 @@ from app.utils.pydantic_compat import model_dump
 router = APIRouter()
 
 def _check_bond_ownership(db: Session, bond: models.Bond, user_id: uuid.UUID) -> None:
-    if not bond.asset.transactions:
+    # Use a direct database query to check for asset ownership
+    # to prevent IDOR and N+1 query issues
+    from app.models.portfolio import Portfolio
+    from app.models.transaction import Transaction
+
+    user_owns_bond = (
+        db.query(Transaction.id)
+        .join(Portfolio, Transaction.portfolio_id == Portfolio.id)
+        .filter(Transaction.asset_id == bond.asset_id)
+        .filter(Portfolio.user_id == user_id)
+        .limit(1)
+        .first()
+    )
+
+    if not user_owns_bond:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
         )
-    for transaction in bond.asset.transactions:
-        portfolio = crud.portfolio.get(db=db, id=transaction.portfolio_id)
-        if portfolio and portfolio.user_id == user_id:
-            return
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
-    )
 
 
 
