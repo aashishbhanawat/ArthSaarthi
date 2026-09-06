@@ -1,3 +1,26 @@
+## 2026-09-06: Resolve Dependabot Security Vulnerabilities (Issue #546)
+
+**Task:** Upgrade vulnerable dependencies across backend (Python cryptography, pydantic-settings, soupsieve) and frontend (npm package overrides for fast-uri, @xmldom/xmldom, browserslist, postcss-selector-parser, js-yaml, tar, brace-expansion, @babel/core, nanoid, ws) to fix Dependabot security advisories.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Security & Full-Stack Developer
+
+### Summary
+
+1. **Issue & Branch:** Created issue `#546` and feature branch `fix/dependabot-security-updates`.
+2. **Backend Security Upgrades (`backend/requirements.in` & `requirements.txt`):**
+   - Upgraded `cryptography` to `>=50.0.0` (compiled `50.0.1`, fixing GHSA-r95h-96pc-x337, CVE Bleichenbacher oracle).
+   - Upgraded `pydantic-settings` to `>=2.14.2` (compiled `2.15.0`, fixing GHSA-566m-v24f-96jc).
+   - Upgraded `soupsieve` to `>=2.8.4` (compiled `2.9.2`, fixing ReDoS / Memory Exhaustion advisories).
+3. **Frontend Security Overrides (`frontend/package.json`, `package-lock.json`, `pnpm-lock.yaml`):**
+   - Configured `overrides` in `frontend/package.json` for `fast-uri` (^3.1.6), `@xmldom/xmldom` (^0.8.15), `browserslist` (^4.28.7), `postcss-selector-parser` (^6.1.3), `js-yaml` (^4.3.1), `tar` (^7.5.18), `brace-expansion` (^2.1.2), `@babel/core` (^7.26.10), `nanoid` (^3.3.18), and `ws` (^8.20.2).
+   - Regenerated lockfiles via `npm install --package-lock-only` and `pnpm install --lockfile-only`.
+4. **Verification & Audit:**
+   - Ran backend pytest suite via Docker (`391 passed` clean).
+   - Ran frontend Jest unit test suite via Docker (`51 passed`, 201 tests passed clean).
+   - Verified linters (`eslint` and `ruff check` passed clean).
+
+---
+
 ## 2026-09-04: Release v1.4.0 User Guide Documentation Update
 
 **Task:** Update `docs/user_guide.md` and interactive HTML user guide `docs/user_guide/index.html` to document all Release v1.4.0 features (Income & TDS Data Management, Salary Breakdown & Sec 10(13A) HRA Exemption, Chapter VI-A Tax Deductions, Old vs New Tax Regime Estimation, CSV/PDF exporters, and Unrealized Capital Gains & Sec 112A Exemption Pooling).  

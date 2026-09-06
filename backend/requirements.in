@@ -5,7 +5,7 @@ fastapi  # CVE-2025-62727 (starlette ReDoS) - pending FastAPI update to starlett
 httpx
 passlib[bcrypt]
 psycopg2-binary
-pydantic-settings
+pydantic-settings>=2.14.2
 pytest
 pytest-mock
 python-jose[cryptography]>=3.5.0  # CVE-2025-61152 alg=none bypass fix
@@ -17,7 +17,7 @@ typer
 uvicorn[standard]
 yfinance
 tenacity
-cryptography
+cryptography>=50.0.0
 pyxirr
 numpy
 pyarrow
@@ -34,3 +34,5 @@ diskcache>=5.6.3  # GHSA-w8v5-vhqr-4h9v
 python-multipart>=0.0.31  # CVE-2026-24486
 pyasn1>=0.6.4  # CVE-2026-23490
 pdfminer.six>=20251230  # CVE-2025-70559
+pydantic-settings>=2.14.2  # GHSA-566m-v24f-96jc
+soupsieve>=2.8.4  # GHSA-r95h-96pc-x337
