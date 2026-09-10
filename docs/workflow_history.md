@@ -1,3 +1,17 @@
+## 2026-09-10: Release Notes File Addition for v1.4.0 GitHub Release Workflow (Issue #553)
+
+**Task:** Add `release_notes/v1.4.0.md` matching `docs/release_notes_v1.4.0.md` to resolve missing release notes file error in GitHub Actions release workflow.  
+**AI Assistant:** Antigravity  
+**Role:** Release Engineer
+
+### Summary
+
+1. **Issue & Branch:** Created issue `#553` and fix branch `fix/553-release-notes-v1.4.0`.
+2. **Release Notes File:** Created `release_notes/v1.4.0.md` with complete v1.4.0 release notes details.
+3. **Workflow Preparation:** Verified `release_notes/v1.4.0.md` path matches `.github/workflows/release.yml` specification (`body_path: release_notes/${{ env.VERSION }}.md`).
+
+---
+
 ## 2026-09-10: Official Release v1.4.0 Finalization & Package Verification (Issue #550)
 
 **Task:** Prepare official Release v1.4.0 (Tax Readiness & Full Financial Picture) incorporating all tax readiness sub-epics, statutory HRA exemption engine, Chapter VI-A deductions, dual regime comparison, Dependabot security vulnerability resolutions, and updated release documentation.  

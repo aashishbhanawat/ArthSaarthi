@@ -1,10 +1,10 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-09-06
+**Last Updated:** 2026-09-10
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release Candidate v1.4.0 Code-Complete & Verified — Security Audited & Dependabot Vulnerabilities Resolved (Issue #546)
+*   **Overall Status:** Release v1.4.0 Published & Tagged — Tax Readiness & Full Financial Picture (Issue #550 / Issue #553)
 
 **Latest Achievement:** Resolved high/medium Dependabot security vulnerabilities across backend Python packages (`cryptography` 50.0.1, `pydantic-settings` 2.15.0, `soupsieve` 2.9.2) and frontend npm/pnpm package overrides (`fast-uri` ^3.1.6, `@xmldom/xmldom` ^0.8.15, `browserslist` ^4.28.7, `postcss-selector-parser` ^6.1.3, `js-yaml` ^4.3.1, `tar` ^7.5.18, `brace-expansion` ^2.1.2, `@babel/core` ^7.26.10, `nanoid` ^3.3.18, `ws` ^8.20.2). Verified 100% test pass rate across backend pytest (391 passing) and frontend Jest (201 passing) test suites.
 
