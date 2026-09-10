@@ -1,3 +1,16 @@
+## 2026-09-10: Update Downloads & Release Assets Table in v1.4.0 Release Notes (Issue #555)
+
+**Task:** Expand the `Downloads & Release Assets` section in `release_notes/v1.4.0.md` and `docs/release_notes_v1.4.0.md` to include Windows (x64), macOS (Apple Silicon & Intel), Linux (x64 & ARM64), Android, and Docker binaries.  
+**AI Assistant:** Antigravity  
+**Role:** Technical Writer & Release Manager
+
+### Summary
+
+1. **Issue & Branch:** Created issue `#555` and fix branch `fix/555-downloads-table-v1.4.0`.
+2. **Release Notes Update:** Updated `release_notes/v1.4.0.md` and `docs/release_notes_v1.4.0.md` with complete platform download assets matrix including `ArthSaarthi-Windows-x64-Setup-v1.4.0.exe`, `ArthSaarthi-macOS-arm64-v1.4.0.dmg`, `ArthSaarthi-macOS-x64-v1.4.0.dmg`, `ArthSaarthi-Linux-x64-v1.4.0.AppImage`, `ArthSaarthi-Linux-x64-v1.4.0.deb`, `ArthSaarthi-Linux-arm64-v1.4.0.AppImage`, `ArthSaarthi-Linux-arm64-v1.4.0.deb`, `ArthSaarthi-Android-v1.4.0.apk`, `source-code-v1.4.0.zip`, and Docker multi-arch images.
+
+---
+
 ## 2026-09-10: Release Notes File Addition for v1.4.0 GitHub Release Workflow (Issue #553)
 
 **Task:** Add `release_notes/v1.4.0.md` matching `docs/release_notes_v1.4.0.md` to resolve missing release notes file error in GitHub Actions release workflow.  

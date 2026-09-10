@@ -70,10 +70,16 @@ ArthSaarthi **v1.4.0 (Tax Readiness & Full Financial Picture)** transforms the p
 
 | Target Platform | Package Format | Binary File Name |
 | :--- | :--- | :--- |
-| **Linux (ARM64)** | AppImage | `dist-electron/ArthSaarthi-1.4.0-arm64.AppImage` |
-| **Linux (ARM64)** | Debian Package | `dist-electron/arthsaarthi-frontend_1.4.0_arm64.deb` |
-| **Android Mobile** | APK | `android/app/build/outputs/apk/release/app-release.apk` |
-| **Docker Server** | Docker Image | `docker compose -f docker-compose.yml up -d` |
+| **Windows (x64)** | Setup Installer (.exe) | `ArthSaarthi-Windows-x64-Setup-v1.4.0.exe` |
+| **macOS (Apple Silicon)** | Disk Image (.dmg) | `ArthSaarthi-macOS-arm64-v1.4.0.dmg` |
+| **macOS (Intel)** | Disk Image (.dmg) | `ArthSaarthi-macOS-x64-v1.4.0.dmg` |
+| **Linux (x64)** | AppImage | `ArthSaarthi-Linux-x64-v1.4.0.AppImage` |
+| **Linux (x64)** | Debian Package | `ArthSaarthi-Linux-x64-v1.4.0.deb` |
+| **Linux (ARM64)** | AppImage | `ArthSaarthi-Linux-arm64-v1.4.0.AppImage` |
+| **Linux (ARM64)** | Debian Package | `ArthSaarthi-Linux-arm64-v1.4.0.deb` |
+| **Android Mobile** | APK | `ArthSaarthi-Android-v1.4.0.apk` |
+| **Docker Server** | Multi-Arch Image | `aashishbhanawat/arthsaarthi-backend:v1.4.0` / `arthsaarthi-frontend:v1.4.0` |
+| **Source Code** | Archive (.zip) | `source-code-v1.4.0.zip` |
 
 ---
 
