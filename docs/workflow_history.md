@@ -1,3 +1,18 @@
+## 2026-09-10: Official Release v1.4.0 Finalization & Package Verification (Issue #550)
+
+**Task:** Prepare official Release v1.4.0 (Tax Readiness & Full Financial Picture) incorporating all tax readiness sub-epics, statutory HRA exemption engine, Chapter VI-A deductions, dual regime comparison, Dependabot security vulnerability resolutions, and updated release documentation.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Release Manager
+
+### Summary
+
+1. **Issue & Branch:** Created issue `#550` and release branch `release/v1.4.0`.
+2. **Version Synchronization:** Verified version string (`1.4.0`) across `backend/app/main.py`, `backend/app/api/v1/endpoints/system.py`, `frontend/package.json`, `frontend/src/pages/MorePage.tsx`, `frontend/android/app/build.gradle.kts` (`versionCode = 5`), and `frontend/electron/splash.html`.
+3. **Changelog & Documentation Update:** Updated `CHANGELOG.md` with official release date `2026-09-10` and Dependabot security fixes summary.
+4. **Desktop Packaging Verification:** Executed `./scripts/build-linux-arm64.sh` locally, producing verified `.AppImage` and `.deb` release binaries in `frontend/dist-electron/`.
+
+---
+
 ## 2026-09-06: Resolve Dependabot Security Vulnerabilities (Issue #546)
 
 **Task:** Upgrade vulnerable dependencies across backend (Python cryptography, pydantic-settings, soupsieve) and frontend (npm package overrides for fast-uri, @xmldom/xmldom, browserslist, postcss-selector-parser, js-yaml, tar, brace-expansion, @babel/core, nanoid, ws) to fix Dependabot security advisories.  
