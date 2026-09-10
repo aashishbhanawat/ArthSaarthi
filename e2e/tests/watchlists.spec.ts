@@ -34,14 +34,14 @@ test.describe('Watchlists Feature', () => {
     await expect(page.getByText(watchlistName)).toBeVisible();
 
     // Rename
-    await page.getByRole('button', { name: `Edit ${watchlistName}` }).click();
+    await page.getByRole('button', { name: `Edit ${watchlistName}`, exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Rename Watchlist' })).toBeVisible();
     await page.getByLabel('Watchlist Name').fill(renamedWatchlistName);
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText(renamedWatchlistName)).toBeVisible();
 
     // Delete
-    await page.getByRole('button', { name: `Delete ${renamedWatchlistName}` }).click();
+    await page.getByRole('button', { name: `Delete ${renamedWatchlistName}`, exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Delete Watchlist' })).toBeVisible();
     await page.getByRole('button', { name: 'Confirm Delete' }).click();
     // Wait for modal to close to ensure deletion is complete
@@ -97,7 +97,7 @@ test.describe('Watchlists Feature', () => {
     await expect(page.getByText('AAPL').first()).not.toBeVisible();
 
     // Cleanup
-    await page.getByRole('button', { name: `Delete ${watchlistName}` }).click();
+    await page.getByRole('button', { name: `Delete ${watchlistName}`, exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Delete Watchlist' })).toBeVisible();
     await page.getByRole('button', { name: 'Confirm Delete' }).click();
 
