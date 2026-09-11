@@ -5,7 +5,7 @@ All notable changes to ArthSaarthi will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] - 2026-09-10
+## [1.4.0] - 2026-09-02
 
 ### Added
 
@@ -17,9 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tax-Deductible Expense & Investment Logging:** Chapter VI-A investment logging (Section 80C ₹1.5L, Section 80D medical, Section 80CCD(1B) NPS, Section 80TTA/80TTB interest) with statutory ceiling limit progress meters and capping (FR16.3 / #518).
 - **Structured Tax Readiness Summary & Regime Comparison:** Consolidated Financial Year tax readiness report comparing Old Tax Regime vs New Tax Regime (Section 115BAC), displaying potential tax savings, non-advisory legal notice banners, and CSV/PDF report exporters (FR16.4, FR16.4.1 / #519).
 
-#### Security & Dependabot Vulnerability Resolution
-- **Backend Dependency Upgrades:** Upgraded `cryptography` (50.0.1), `pydantic-settings` (2.15.0), and `soupsieve` (2.9.2) resolving high and medium severity security advisories (#546).
-- **Frontend Overrides:** Implemented package overrides for `fast-uri`, `@xmldom/xmldom`, `browserslist`, `postcss-selector-parser`, `js-yaml`, `tar`, `@babel/core`, `nanoid`, and `ws` (#546).
+#### Security & Desktop/Mobile Protection
 - **`SECRET_KEY` Persistence:** Local file persistence of application `SECRET_KEY` to `secret.key` in app data directory to prevent JWT session invalidation across app restarts.
 - **SQLite Bytes Decoding:** Dynamic string decoding in `EncryptedString` database decorator for mobile SQLite drivers.
 

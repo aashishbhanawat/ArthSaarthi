@@ -201,14 +201,13 @@ The goal of this release was to build a robust and user-friendly system for impo
     - Native WorkManager background snapshot task (`SnapshotWorker.kt`) & Profile settings toggle. **✅ Complete**
 
 ### Release v1.4.0: Tax Readiness & Full Financial Picture
-**Status: ✅ COMPLETE (as of 2026-09-10)**
-- **Unrealized Capital Gains (FR6.5 Phase 2 / #516):** FIFO lot-level STCG/LTCG unrealized gains calculator, Section 112A ₹1,25,000 LTCG exemption headroom pooling. **✅ Complete**
-- **Intra-Head Capital Loss Set-Off (FR6.5 Phase 3 / #526):** Statutory Section 70/71/74 capital loss set-off rules and effective rate alignment. **✅ Complete**
-- **Income Source & Entry Data Management (FR16.1 & FR16.2 / #517):** Custom income categories and income entry transaction ledger with AES-256 field-level encryption. **✅ Complete**
-- **Salary Component Breakdown & Sec 10(13A) HRA Exemption (FR16.5 / #532):** Granular salary components and statutory HRA exemption engine matching Excel D101 benchmark parity. **✅ Complete**
-- **Tax-Deductible Expense & Investment Logging (FR16.3 / #518):** Chapter VI-A investment logging (80C, 80D, 80CCD(1B), 80TTA, 80TTB) with statutory ceiling meters. **✅ Complete**
-- **Structured Tax Readiness Summary & Regime Comparison (FR16.4 / #519):** Dual tax regime (Old vs New Section 115BAC) comparative analytics, legal notice banners, and CSV/PDF exporters. **✅ Complete**
-- **Dependabot Security Vulnerability Resolutions (#546):** Upgraded Python `cryptography` (50.0.1), `pydantic-settings` (2.15.0), `soupsieve` (2.9.2), and npm package overrides. **✅ Complete**
+**Focus: Providing the system with all tax-related context necessary for future AI tax-saving recommendations.**
+-   **Unrealized Capital Gains (FR6.5 Phase 2):**
+    -   Calculate and display unrealized STCG/LTCG for active holdings.
+    -   Implement precise exemption pooling (e.g., ₹1.25L equity LTCG exemption).
+-   **Income & Tax Data Management (FR16):**
+    -   Log income sources (Salary, Freelance, TDS).
+    -   Log tax-deductible expenses (Section 80C, Medical).
 
 ### Release v1.5.0: Infrastructure, Data & Automation
 **Focus: Integrating official data sources, enabling background processing, and improving automation.**

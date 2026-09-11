@@ -1,27 +1,22 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-09-10
+**Last Updated:** 2026-09-02
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.4.0 Published & Tagged — Tax Readiness & Full Financial Picture (Issue #550 / Issue #553)
+*   **Overall Status:** Release Candidate v1.4.0 Code-Complete & Verified — Release v1.4.0 (Tax Readiness & Full Financial Picture)
 
-**Latest Achievement:** Resolved high/medium Dependabot security vulnerabilities across backend Python packages (`cryptography` 50.0.1, `pydantic-settings` 2.15.0, `soupsieve` 2.9.2) and frontend npm/pnpm package overrides (`fast-uri` ^3.1.6, `@xmldom/xmldom` ^0.8.15, `browserslist` ^4.28.7, `postcss-selector-parser` ^6.1.3, `js-yaml` ^4.3.1, `tar` ^7.5.18, `brace-expansion` ^2.1.2, `@babel/core` ^7.26.10, `nanoid` ^3.3.18, `ws` ^8.20.2). Verified 100% test pass rate across backend pytest (391 passing) and frontend Jest (201 passing) test suites.
+**Latest Achievement:** Release Candidate v1.4.0 Finalization & Full System Synchronization. Synchronized version string (`1.4.0`) across `backend/app/main.py`, `backend/app/api/v1/endpoints/system.py`, `frontend/package.json`, `frontend/src/pages/MorePage.tsx`, `frontend/android/app/build.gradle.kts` (`versionCode = 5`), and `frontend/electron/splash.html`. Authored Playwright E2E test spec (`e2e/tests/tax-readiness-workflow.spec.ts`) covering Income, Chapter VI-A Deductions, and Tax Summary dashboards. Completed full architectural documentation sync across `README.md`, `docs/code_flow_guide.md`, `docs/architecture.md`, `docs/troubleshooting.md`, `CHANGELOG.md`, and `docs/workflow_history.md`.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **391/394 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **391/394 Passing** (3 expected skips)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **394/397 Passing** (3 expected skips)
+*   **Backend Integration Tests (Android/SQLite):** ✅ **394/397 Passing** (3 expected skips)
 *   **Frontend Unit Tests (Jest):** ✅ **201/201 Passing** (51/51 Test Suites)
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
-
-*   **Dependabot Security Vulnerability Resolution (Issue #546) (Updated 2026-09-06):**
-    - **Backend Security Updates:** Updated `backend/requirements.in` with security bounds (`cryptography>=50.0.0`, `pydantic-settings>=2.14.2`, `soupsieve>=2.8.4`) and compiled `backend/requirements.txt` (`cryptography==50.0.1`, `pydantic-settings==2.15.0`, `soupsieve==2.9.2`).
-    - **Frontend Security Overrides:** Configured package overrides in `frontend/package.json` for `fast-uri`, `@xmldom/xmldom`, `browserslist`, `postcss-selector-parser`, `js-yaml`, `tar`, `brace-expansion`, `@babel/core`, `nanoid`, and `ws`. Regenerated lockfiles (`package-lock.json` and `pnpm-lock.yaml`).
-    - **Verification:** Verified 100% test pass rate across backend pytest (`391 passed` clean) and frontend Jest (`51 passed`, 201 tests passed clean). Linters (`eslint` and `ruff check`) running clean.
 
 *   **Salary Component Breakdown & Section 10(13A) HRA Exemption (Issue #532 / FR16.5) (Updated 2026-09-01):**
     - **Statutory Section 10(13A) Calculation Engine:** Created `SalaryExemptionService` in `backend/app/services/salary_exemption_service.py` enforcing statutory HRA exemption formula: $\text{HRA Exemption} = \max(0, \min(\text{Actual HRA Received}, \text{Rent Paid} - 10\% \times (\text{Basic} + \text{DA}), (50\% \text{ if Metro else } 40\%) \times (\text{Basic} + \text{DA})))$ with 100% math parity against `local/TaxCalc_2027.xlsx` cell D101.

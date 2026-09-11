@@ -36,13 +36,12 @@ cffi==2.0.0
 charset-normalizer==3.4.4
     # via
     #   pdfminer-six
-    #   reportlab
     #   requests
 click==8.3.1
     # via
     #   typer
     #   uvicorn
-cryptography==50.0.1
+cryptography==46.0.5
     # via
     #   -r requirements.in
     #   pdfminer-six
@@ -115,9 +114,7 @@ pdfplumber==0.11.9
 peewee==3.19.0
     # via yfinance
 pillow==12.3.0
-    # via
-    #   pdfplumber
-    #   reportlab
+    # via pdfplumber
 platformdirs==4.7.0
     # via yfinance
 pluggy==1.6.0
@@ -141,7 +138,7 @@ pydantic==2.12.5
     #   pydantic-settings
 pydantic-core==2.41.5
     # via pydantic
-pydantic-settings==2.15.0
+pydantic-settings==2.12.0
     # via -r requirements.in
 pygments==2.19.2
     # via
@@ -173,8 +170,6 @@ pyyaml==6.0.3
     # via uvicorn
 redis==7.1.1
     # via -r requirements.in
-reportlab==4.4.10
-    # via -r requirements.in
 requests==2.32.5
     # via
     #   -r requirements.in
@@ -189,10 +184,8 @@ six==1.17.0
     # via
     #   ecdsa
     #   python-dateutil
-soupsieve==2.9.2
-    # via
-    #   -r requirements.in
-    #   beautifulsoup4
+soupsieve==2.8.3
+    # via beautifulsoup4
 sqlalchemy==2.0.46
     # via
     #   -r requirements.in
@@ -241,4 +234,6 @@ websockets==16.0
 xlrd==2.0.2
     # via -r requirements.in
 yfinance==1.1.0
+    # via -r requirements.in
+reportlab==4.4.10
     # via -r requirements.in

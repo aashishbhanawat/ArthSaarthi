@@ -12,7 +12,6 @@ This application retrieves financial data from multiple publicly available sourc
 *   **[Yahoo Finance](https://finance.yahoo.com/)** (via `yfinance` library): For real-time and historical stock prices.
 *   **[AMFI India](https://www.amfiindia.com/):** For the latest Mutual Fund Net Asset Values (NAVs).
 *   **[MFAPI](https://mfapi.in/):** For historical Mutual Fund NAV data. *Note: `mfapi.in` is an open-source, unofficial API. While highly reliable, it is not an official AMFI service.*
-*   **[Income Tax Department (India)](https://incometaxindia.gov.in/):** Statutory tax rules registry baseline for Section 10(13A) HRA exemption calculations, Chapter VI-A statutory deduction ceilings (Sections 80C, 80D, 80CCD(1B), 80TTA, 80TTB), Section 115BAC regime slabs, Section 112A equity LTCG limits, and Sections 70/71/74 capital loss set-off rules.
 *   **[Exchange Rate API](https://exchangerate-api.com/):** For foreign exchange rates.
 
 ArthSaarthi is **not affiliated with, endorsed by, or sponsored by** any of these organizations. Data is used for informational purposes only.
@@ -79,4 +78,4 @@ ArthSaarthi is open-source software licensed under the MIT License. You are free
 
 ---
 
-*Last updated: September 2026*
+*Last updated: August 2026*

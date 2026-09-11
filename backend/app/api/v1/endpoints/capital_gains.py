@@ -171,7 +171,10 @@ def get_unrealized_capital_gains(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to calculate unrealized capital gains: {str(exc)}",
+            detail=(
+                "Failed to calculate unrealized capital gains "
+                "due to an internal error."
+            ),
         )
 
 
