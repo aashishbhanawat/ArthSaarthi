@@ -99,15 +99,9 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
             key={watchlist.id}
             className={selectedWatchlistId === watchlist.id ? 'bordered' : ''}
           >
-             <div role="button" tabIndex={0}
+            <a
               onClick={() => onSelectWatchlist(watchlist.id)}
-              className="flex justify-between items-center w-full text-left cursor-pointer"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelectWatchlist(watchlist.id);
-                }
-              }}
+              className="flex justify-between items-center"
             >
               <span>{watchlist.name}</span>
               <div className="flex items-center gap-2">
@@ -132,7 +126,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
                   <TrashIcon className="h-4 w-4 text-red-500" aria-hidden="true" />
                 </button>
               </div>
-            </div>
+            </a>
           </li>
         ))}
       </ul>
