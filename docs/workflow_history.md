@@ -1,3 +1,18 @@
+## 2026-09-11: Sentinel Security Review & Verification - Fix Information Leakage in Error Response (Issue #549)
+
+**Task:** Review and verify Sentinel PR #549 fixing information exposure in `get_unrealized_capital_gains` endpoint (`backend/app/api/v1/endpoints/capital_gains.py`), document security learning in `.jules/sentinel.md`, and add dedicated error message sanitization unit test in `backend/app/tests/api/v1/test_unrealized_tax.py`.  
+**AI Assistant:** Antigravity  
+**Role:** Security Auditor & Lead Developer
+
+### Summary
+
+1. **Vulnerability Audit:** Inspected `get_unrealized_capital_gains` in `backend/app/api/v1/endpoints/capital_gains.py`. Verified replacing `detail=f"Failed to calculate unrealized capital gains: {str(exc)}"` with a generic error detail (`Failed to calculate unrealized capital gains due to an internal error.`) prevents raw exception strings and potential stack trace/implementation details from leaking to clients.
+2. **Sentinel Knowledge Base:** Verified `.jules/sentinel.md` entry documenting the vulnerability, key learning, and prevention guidance.
+3. **Unit Test Addition:** Added `test_unrealized_gains_api_endpoint_internal_error_sanitized` to `backend/app/tests/api/v1/test_unrealized_tax.py` using `unittest.mock` / `pytest-mock` to confirm HTTP 500 responses return generic sanitized detail messages without leaking raw exception content.
+4. **Verification:** Executed pytest test suite (`test_unrealized_tax.py`). All 6 tests passed cleanly.
+
+---
+
 ## 2026-09-04: Release v1.4.0 User Guide Documentation Update
 
 **Task:** Update `docs/user_guide.md` and interactive HTML user guide `docs/user_guide/index.html` to document all Release v1.4.0 features (Income & TDS Data Management, Salary Breakdown & Sec 10(13A) HRA Exemption, Chapter VI-A Tax Deductions, Old vs New Tax Regime Estimation, CSV/PDF exporters, and Unrealized Capital Gains & Sec 112A Exemption Pooling).  
