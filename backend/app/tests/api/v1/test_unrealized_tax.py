@@ -228,3 +228,22 @@ def test_unrealized_gains_api_endpoint(
     assert "total_unrealized_ltcg" in data
     assert "section_112a_remaining_headroom" in data
     assert "lots" in data
+
+
+def test_unrealized_gains_api_endpoint_internal_error_sanitized(
+    client: TestClient, db: Session, get_auth_headers, mocker
+):
+    mocker.patch(
+        "app.services.unrealized_tax_service.UnrealizedTaxService.calculate_unrealized_gains",
+        side_effect=RuntimeError("Sensitive internal database detail: postgres://user:secret@localhost/db"),
+    )
+    user = create_test_user(db)
+    headers = get_auth_headers(user.email, "TestPassword123!")
+    response = client.get(
+        "/api/v1/capital-gains/unrealized?fy=2025-26",
+        headers=headers,
+    )
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Failed to calculate unrealized capital gains due to an internal error."
+    assert "Sensitive internal database detail" not in response.json()["detail"]
+
