@@ -132,8 +132,10 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, portfo
             : 1;
 
         // Include RSU_VEST and ESPP_PURCHASE as acquisition types alongside BUY
-        const buys = JSON.parse(JSON.stringify(sortedTxs.filter(tx => acquisitionTypes.includes(tx.transaction_type))));
-        const sells = JSON.parse(JSON.stringify(sortedTxs.filter(tx => tx.transaction_type === 'SELL')));
+        // Optimize: Replace expensive O(N) JSON.parse(JSON.stringify(...)) with a shallow copy via .map()
+        // since we only need to mutate top-level fields (like quantity) on the cloned objects.
+        const buys = sortedTxs.filter(tx => acquisitionTypes.includes(tx.transaction_type)).map(tx => ({ ...tx }));
+        const sells = sortedTxs.filter(tx => tx.transaction_type === 'SELL').map(tx => ({ ...tx }));
 
         // Create a Map for O(1) lookup of buy transactions by ID
         const buyMap = new Map<string, Transaction>();
