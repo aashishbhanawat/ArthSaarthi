@@ -23,6 +23,10 @@
 * Route stock, ETF, and bond market data requests from `FinancialDataService` to user's active broker provider.
 * Implement graceful fallback to AMFI/NSE Bhavcopy/Upstox if broker API session is unauthenticated or encounters an error.
 
+### Core Privacy & Data Isolation Rules
+* **Strict User Credentials Isolation:** User A's API Key, API Secret, and OAuth Access Token are **strictly private to User A**. An API Key/Token belonging to User A MUST NEVER be used to send API requests for another user.
+* **Shared Market Data Cache:** While API keys are strictly unshared, market data price responses (e.g. symbol LTPs/NAVs) are cached at the application level (`Redis`/`DiskCache`) so that price lookups can be served from cache without making unnecessary external API calls.
+
 ---
 
 ## 2. Technical Specification (Backend & Frontend)

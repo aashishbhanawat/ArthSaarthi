@@ -22,6 +22,10 @@
 * Group single-symbol asset price requests into bulk multi-symbol requests (e.g. 50 tickers per Kite quote request).
 * Transparent async request debouncer aggregating concurrent calls over a 50ms window.
 
+### Core Data Security & Cache Policy
+* **API Credentials Are Private to Each User:** API Keys, API Secrets, and OAuth Tokens are **strictly isolated per-user** and never shared across user accounts.
+* **Price Cache Is Shared:** Market price values (e.g., `NSE:RELIANCE` LTP) fetched from public or authenticated sources are cached centrally (`Redis`/`DiskCache`), ensuring subsequent price lookups for any user are served instantly from cache without consuming extra API quota.
+
 ---
 
 ## 2. Technical Specification (Backend & Frontend)
