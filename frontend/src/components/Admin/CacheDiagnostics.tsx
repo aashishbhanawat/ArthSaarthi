@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../../services/api';
+import apiClient from '../../services/api';
 
 interface RateLimitInfo {
   provider: string;
@@ -29,7 +29,7 @@ export const CacheDiagnostics: React.FC = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const res = await api.get<CacheStatsResponse>('/admin/cache/stats');
+      const res = await apiClient.get<CacheStatsResponse>('/api/v1/admin/cache/stats');
       setData(res.data);
     } catch (err: unknown) {
       console.error('Failed to fetch cache stats:', err);
@@ -45,7 +45,7 @@ export const CacheDiagnostics: React.FC = () => {
     try {
       setClearing(true);
       setMessage(null);
-      await api.post('/admin/cache/clear');
+      await apiClient.post('/api/v1/admin/cache/clear');
       setMessage('Cache flushed successfully!');
       await fetchStats();
     } catch (err: unknown) {
