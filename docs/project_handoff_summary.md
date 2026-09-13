@@ -1,22 +1,30 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-09-02
+**Last Updated:** 2026-09-13
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release Candidate v1.4.0 Code-Complete & Verified — Release v1.4.0 (Tax Readiness & Full Financial Picture)
+*   **Overall Status:** Release v1.5.0 In Progress — Feature #559 (API Rate Limiting, Caching, and Request Batching) Implemented & Verified.
 
-**Latest Achievement:** Release Candidate v1.4.0 Finalization & Full System Synchronization. Synchronized version string (`1.4.0`) across `backend/app/main.py`, `backend/app/api/v1/endpoints/system.py`, `frontend/package.json`, `frontend/src/pages/MorePage.tsx`, `frontend/android/app/build.gradle.kts` (`versionCode = 5`), and `frontend/electron/splash.html`. Authored Playwright E2E test spec (`e2e/tests/tax-readiness-workflow.spec.ts`) covering Income, Chapter VI-A Deductions, and Tax Summary dashboards. Completed full architectural documentation sync across `README.md`, `docs/code_flow_guide.md`, `docs/architecture.md`, `docs/troubleshooting.md`, `CHANGELOG.md`, and `docs/workflow_history.md`.
+**Latest Achievement:** Implemented NFR13 (Issue #559: API Rate Limiting, Caching, and Request Batching). Added two-tiered sliding-window rate limiter (`ProviderRateLimiter`) supporting shared global provider limits and individual per-user quota buckets. Implemented `BatchQuoteFetcher` for request payload partitioning. Added dynamic market-aware TTL calculation (`get_market_aware_ttl`) and cache diagnostics REST API + frontend Admin component (`CacheDiagnostics.tsx`).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **394/397 Passing** (3 expected skips)
-*   **Backend Integration Tests (Android/SQLite):** ✅ **394/397 Passing** (3 expected skips)
-*   **Frontend Unit Tests (Jest):** ✅ **201/201 Passing** (51/51 Test Suites)
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **402/405 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **402/405 Passing**
+*   **Frontend Unit Tests (Jest):** ✅ **201/201 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **API Rate Limiting, Caching, and Request Batching (Issue #559 / NFR13) (Updated 2026-09-13):**
+    - **Two-Tiered Rate Limiter (`ProviderRateLimiter`):** Built sliding-window rate limiter in `backend/app/services/rate_limiter.py` supporting both shared global provider rate limits (e.g. Zerodha 10/s total) and individual per-user quotas (e.g. User A 3/s). Raises `RateLimitExceededException` to trigger data service fallbacks cleanly.
+    - **Request Batching Engine (`BatchQuoteFetcher`):** Implemented request aggregator in `backend/app/services/request_batcher.py` partitioning large asset request lists into optimal sub-batches (default 50 items/batch).
+    - **Dynamic Market-Aware TTLs & Cache Performance Tracking:** Extended `backend/app/cache/utils.py` with `get_market_aware_ttl` dynamically calculating cache TTL based on trading session hours (15m market session, 12h off-market, 24h MF NAVs, 6h FX rates) and tracking hit/miss ratios.
+    - **Admin Cache Diagnostics API & UI:** Added `/api/v1/admin/cache/stats` and `/api/v1/admin/cache/clear` REST endpoints in `cache_diagnostics.py` and built `CacheDiagnostics.tsx` component in `frontend/src/components/Admin/`.
+    - **Automated Tests:** Authored unit test suite `backend/app/tests/services/test_rate_limiting_caching.py` (8/8 tests passing).
+
 
 *   **Salary Component Breakdown & Section 10(13A) HRA Exemption (Issue #532 / FR16.5) (Updated 2026-09-01):**
     - **Statutory Section 10(13A) Calculation Engine:** Created `SalaryExemptionService` in `backend/app/services/salary_exemption_service.py` enforcing statutory HRA exemption formula: $\text{HRA Exemption} = \max(0, \min(\text{Actual HRA Received}, \text{Rent Paid} - 10\% \times (\text{Basic} + \text{DA}), (50\% \text{ if Metro else } 40\%) \times (\text{Basic} + \text{DA})))$ with 100% math parity against `local/TaxCalc_2027.xlsx` cell D101.

@@ -1,3 +1,28 @@
+## 2026-09-13: Implement API Rate Limiting, Caching, and Request Batching (NFR13 / Issue #559)
+
+**Task:** Implement two-tiered sliding-window rate limiter (shared global provider limit + per-user limit quotas), `BatchQuoteFetcher` request aggregation engine, dynamic market-aware TTL calculation (15m market session, 12h off-market, 24h MF NAVs, 6h FX rates), admin cache diagnostics endpoint (`GET /api/v1/admin/cache/stats`, `POST /api/v1/admin/cache/clear`), frontend `CacheDiagnostics.tsx` component, and automated unit test suite.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feature Branch:** Created feature branch `feature/559-api-rate-limiting-caching`.
+2. **Provider Rate Limiter (`backend/app/services/rate_limiter.py`):**
+   - Implemented `ProviderRateLimiter` class supporting both shared global provider rate limits and individual per-user rate limit quotas.
+   - Raises `RateLimitExceededException` when rate limits are breached to trigger data service fallbacks.
+3. **Request Batching Engine (`backend/app/services/request_batcher.py`):**
+   - Implemented `BatchQuoteFetcher` to partition large asset request lists into sub-batches (default 50 items/batch).
+4. **Dynamic Market-Aware TTLs & Cache Performance Tracking (`backend/app/cache/utils.py`):**
+   - Implemented `get_market_aware_ttl` dynamically calculating cache TTL based on trading session hours (Mon-Fri 09:15-15:30 IST).
+   - Added cache hit/miss ratio tracking and metric aggregation.
+5. **Admin Cache Diagnostics API & UI Component:**
+   - Created `backend/app/api/v1/endpoints/cache_diagnostics.py` registered at `/api/v1/admin/cache`.
+   - Built `frontend/src/components/Admin/CacheDiagnostics.tsx` for visual diagnostics and cache flushing.
+6. **Automated Testing:**
+   - Authored pytest test suite `backend/app/tests/services/test_rate_limiting_caching.py` (100% clean pass: 8 passed).
+
+---
+
 ## 2026-09-04: Release v1.4.0 User Guide Documentation Update
 
 **Task:** Update `docs/user_guide.md` and interactive HTML user guide `docs/user_guide/index.html` to document all Release v1.4.0 features (Income & TDS Data Management, Salary Breakdown & Sec 10(13A) HRA Exemption, Chapter VI-A Tax Deductions, Old vs New Tax Regime Estimation, CSV/PDF exporters, and Unrealized Capital Gains & Sec 112A Exemption Pooling).  

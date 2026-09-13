@@ -3,7 +3,7 @@ import inspect
 import json
 import logging
 import uuid
-from typing import Any, Callable, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
@@ -143,3 +143,72 @@ def invalidate_caches_for_portfolio(db: Session, portfolio_id: uuid.UUID):
             len(keys_to_delete),
             portfolio_id,
         )
+
+
+def get_market_aware_ttl(asset_type: str, now_dt: Optional[Any] = None) -> int:
+    """
+    Returns an optimal Cache TTL based on asset type and market session hours.
+    - Active Market Hours (Mon-Fri 09:15 - 15:30 IST): 15 mins (900s)
+    - Off-Market Hours / Weekends: 12 hours (43,200s)
+    - Mutual Funds: 24 hours (86,400s)
+    - FX Rates: 6 hours (21,600s)
+    """
+    import datetime
+    from datetime import timezone
+
+    asset_upper = (asset_type or "").upper().replace("_", " ")
+
+    if asset_upper == "MUTUAL FUND":
+        return 86400  # 24 hours
+
+    if asset_upper in ("FX", "FOREX", "CURRENCY"):
+        return 21600  # 6 hours
+
+    # Determine IST time (UTC+5:30)
+    if now_dt is None:
+        now_utc = datetime.datetime.now(timezone.utc)
+    elif now_dt.tzinfo is None:
+        now_utc = now_dt.replace(tzinfo=timezone.utc)
+    else:
+        now_utc = now_dt
+
+    ist_offset = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+    now_ist = now_utc.astimezone(ist_offset)
+
+    # Weekday check (0 = Mon, 4 = Fri)
+    is_weekday = now_ist.weekday() < 5
+    market_open = now_ist.replace(hour=9, minute=15, second=0, microsecond=0)
+    market_close = now_ist.replace(hour=15, minute=30, second=0, microsecond=0)
+
+    if is_weekday and market_open <= now_ist <= market_close:
+        return 900  # 15 minutes during trading hours
+    else:
+        return 43200  # 12 hours outside trading hours
+
+
+# Global in-memory cache hit/miss stats tracking
+_CACHE_STATS = {"hits": 0, "misses": 0}
+
+
+def record_cache_access(hit: bool) -> None:
+    """Records a cache hit or miss for diagnostic metrics."""
+    if hit:
+        _CACHE_STATS["hits"] += 1
+    else:
+        _CACHE_STATS["misses"] += 1
+
+
+def get_cache_performance_stats() -> Dict[str, Any]:
+    """Returns aggregated cache hit/miss ratios and count metrics."""
+    hits = _CACHE_STATS["hits"]
+    misses = _CACHE_STATS["misses"]
+    total = hits + misses
+    hit_ratio = round((hits / total) * 100, 2) if total > 0 else 0.0
+
+    return {
+        "hits": hits,
+        "misses": misses,
+        "total_requests": total,
+        "hit_ratio_percent": hit_ratio,
+    }
+
