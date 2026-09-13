@@ -1,7 +1,12 @@
 import datetime
+
 import pytest
 
-from app.cache.utils import get_market_aware_ttl, get_cache_performance_stats, record_cache_access
+from app.cache.utils import (
+    get_cache_performance_stats,
+    get_market_aware_ttl,
+    record_cache_access,
+)
 from app.services.rate_limiter import ProviderRateLimiter, RateLimitExceededException
 from app.services.request_batcher import BatchQuoteFetcher
 

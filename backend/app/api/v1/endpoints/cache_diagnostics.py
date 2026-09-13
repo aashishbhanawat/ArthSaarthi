@@ -3,9 +3,9 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.dependencies import get_current_admin_user
 from app.cache.factory import get_cache_client
 from app.cache.utils import get_cache_performance_stats
+from app.core.dependencies import get_current_admin_user
 from app.models.user import User
 from app.services.rate_limiter import ProviderRateLimiter
 

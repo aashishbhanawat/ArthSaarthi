@@ -31,7 +31,7 @@ export const CacheDiagnostics: React.FC = () => {
       setLoading(true);
       const res = await api.get<CacheStatsResponse>('/admin/cache/stats');
       setData(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch cache stats:', err);
     } finally {
       setLoading(false);
@@ -48,8 +48,12 @@ export const CacheDiagnostics: React.FC = () => {
       await api.post('/admin/cache/clear');
       setMessage('Cache flushed successfully!');
       await fetchStats();
-    } catch (err: any) {
-      setMessage(`Failed to clear cache: ${err?.response?.data?.detail || err.message}`);
+    } catch (err: unknown) {
+      const errorMsg =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : (err as Error).message;
+      setMessage(`Failed to clear cache: ${errorMsg || 'Unknown error'}`);
     } finally {
       setClearing(false);
     }

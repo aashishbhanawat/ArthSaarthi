@@ -16,9 +16,7 @@ class BatchQuoteFetcher:
         self.max_batch_size = max_batch_size
 
     def partition(self, items: List[T]) -> List[List[T]]:
-        """
-        Splits a list of items into chunks of up to max_batch_size.
-        """
+        """Splits a list of items into chunks of up to max_batch_size."""
         if not items:
             return []
         return [
@@ -43,7 +41,8 @@ class BatchQuoteFetcher:
 
         for index, chunk in enumerate(chunks):
             logger.debug(
-                f"Executing batch fetch chunk {index + 1}/{len(chunks)} with {len(chunk)} items"
+                f"Executing batch fetch chunk {index + 1}/{len(chunks)} "
+                f"with {len(chunk)} items"
             )
             try:
                 chunk_result = fetch_fn(chunk)
@@ -51,6 +50,5 @@ class BatchQuoteFetcher:
                     aggregated_results.update(chunk_result)
             except Exception as e:
                 logger.error(f"Error in batch fetch chunk {index + 1}: {e}")
-                # Continue fetching remaining batches even if one batch fails
 
         return aggregated_results
