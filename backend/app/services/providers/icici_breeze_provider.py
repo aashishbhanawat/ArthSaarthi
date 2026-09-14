@@ -13,7 +13,8 @@ from .base import FinancialDataProvider
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
 CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
-BREEZE_BASE_URL = "https://api.icicidirect.com/breezeapi/v1"
+BREEZE_BASE_URL = "https://api.icicidirect.com/breezeapi/api/v1"
+
 
 logger = logging.getLogger(__name__)
 
