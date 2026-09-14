@@ -8,7 +8,9 @@ from app.api.v1.endpoints import (
     admin_interest_rates,
     assets,
     auth,
+    broker,
     cache_diagnostics,
+
     capital_gains,
     dashboard,
     dividends,
@@ -123,6 +125,12 @@ api_router.include_router(
 api_router.include_router(
     cache_diagnostics.router, prefix="/admin/cache", tags=["admin-cache"]
 )
+
+# Broker Integration (NFR12 / FR558)
+api_router.include_router(
+    broker.router, prefix="/broker", tags=["broker"]
+)
+
 
 
 

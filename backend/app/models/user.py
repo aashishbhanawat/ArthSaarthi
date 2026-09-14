@@ -58,4 +58,8 @@ class User(Base):
     tax_deductions = relationship(
         "TaxDeduction", back_populates="user", cascade="all, delete-orphan"
     )
+    broker_credentials = relationship(
+        "BrokerCredential", back_populates="user", cascade="all, delete-orphan"
+    )
+
 

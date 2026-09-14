@@ -1,4 +1,34 @@
+## 2026-09-14: Implement ICICI Breeze Broker API Integration (NFR12 / Issue #558)
+
+**Task:** Implement pluggable ICICI Breeze Direct Broker API integration (`IciciBreezeProvider`), encrypted credentials storage (`broker_credentials` table with Fernet AES-256 GCM encryption for API secrets & OAuth session tokens), FastAPI router (`/api/v1/broker`), `FinancialDataService` priority broker data routing, and React `BrokerSettings.tsx` UI component.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feature Branch:** Created feature branch `feat/558-icici-broker-integration`.
+2. **Database Model & Migration:**
+   - Created `BrokerCredential` model in `backend/app/models/broker_credential.py`.
+   - Created Alembic migration `backend/alembic/versions/j10c2d3e4f5g_add_broker_credentials_table.py` (`i90b1c2d3e4f -> j10c2d3e4f5g`).
+3. **Encryption Security Layer & CRUD (`backend/app/crud/crud_broker.py`, `backend/app/core/security.py`):**
+   - Implemented `encrypt_credential` and `decrypt_credential` helpers using standard `cryptography.fernet.Fernet` driven by application `SECRET_KEY`.
+   - Built `crud_broker` for credential management and token rotation.
+4. **ICICI Breeze Provider (`backend/app/services/providers/icici_breeze_provider.py`):**
+   - Standard pure-Python `httpx` provider extending `FinancialDataProvider`.
+   - Handles login URL generation (`get_login_url`), session token verification (`authenticate_session`), stock quotes (`get_current_prices`), and daily candles (`get_historical_prices`).
+5. **FastAPI Broker Router (`backend/app/api/v1/endpoints/broker.py`):**
+   - Registered endpoints at `/api/v1/broker/credentials`, `/api/v1/broker/icici/login-url`, `/api/v1/broker/icici/authenticate`.
+6. **Financial Data Service Integration (`backend/app/services/financial_data_service.py`):**
+   - Priority routing for stock quotes attempting user's active ICICI Breeze provider before falling back to Upstox/yfinance.
+7. **Frontend UI Component (`frontend/src/components/settings/BrokerSettings.tsx`):**
+   - Created settings card for ICICI Breeze API key configuration, daily OAuth login button, session token validation, and status indicators. Integrated into `ProfilePage.tsx`.
+8. **Automated Testing Suite:**
+   - Authored pytest test suite `backend/app/tests/api/v1/test_broker.py` and `backend/app/tests/services/test_broker_providers.py` (100% clean pass: 4 passed).
+
+---
+
 ## 2026-09-13: Implement API Rate Limiting, Caching, and Request Batching (NFR13 / Issue #559)
+
 
 **Task:** Implement two-tiered sliding-window rate limiter (shared global provider limit + per-user limit quotas), `BatchQuoteFetcher` request aggregation engine, dynamic market-aware TTL calculation (15m market session, 12h off-market, 24h MF NAVs, 6h FX rates), admin cache diagnostics endpoint (`GET /api/v1/admin/cache/stats`, `POST /api/v1/admin/cache/clear`), frontend `CacheDiagnostics.tsx` component, and automated unit test suite.  
 **AI Assistant:** Antigravity  

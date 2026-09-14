@@ -1,24 +1,33 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-09-13
+**Last Updated:** 2026-09-14
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Feature #559 (API Rate Limiting, Caching, and Request Batching) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Feature #558 (ICICI Breeze Broker API Integration) Implemented & Verified.
 
-**Latest Achievement:** Implemented NFR13 (Issue #559: API Rate Limiting, Caching, and Request Batching). Added two-tiered sliding-window rate limiter (`ProviderRateLimiter`) supporting shared global provider limits and individual per-user quota buckets. Implemented `BatchQuoteFetcher` for request payload partitioning. Added dynamic market-aware TTL calculation (`get_market_aware_ttl`) and cache diagnostics REST API + frontend Admin component (`CacheDiagnostics.tsx`).
+**Latest Achievement:** Implemented NFR12 (Issue #558: Pluggable Broker API Integration - ICICI Breeze Provider). Created `BrokerCredential` model storing Fernet (AES-256 GCM) encrypted API secrets and OAuth session tokens (`broker_credentials` table, Alembic migration `j10c2d3e4f5g`). Implemented `IciciBreezeProvider` pure HTTP REST client, FastAPI `/api/v1/broker` endpoint router, priority market data routing in `FinancialDataService`, and React `BrokerSettings.tsx` UI component in Settings page.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **402/405 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **402/405 Passing**
-*   **Frontend Unit Tests (Jest):** ✅ **201/201 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **406/409 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **406/409 Passing**
+*   **Frontend Unit Tests (Vitest):** ✅ **201/201 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **ICICI Breeze Broker API Integration (Issue #558 / NFR12) (Updated 2026-09-14):**
+    - **Database Model & Encryption Security Layer:** Created `BrokerCredential` model (`backend/app/models/broker_credential.py`) and Alembic migration `j10c2d3e4f5g_add_broker_credentials_table.py`. Implemented Fernet AES-256 GCM symmetric encryption helpers (`encrypt_credential`, `decrypt_credential`) in `backend/app/core/security.py` driven by application `SECRET_KEY`.
+    - **ICICI Breeze Data Provider (`IciciBreezeProvider`):** Built standard pure-Python HTTP provider (`backend/app/services/providers/icici_breeze_provider.py`) extending `FinancialDataProvider`. Implemented OAuth login URL generator (`get_login_url`), session token verification (`authenticate_session`), stock quotes (`get_current_prices`), and daily historical charts (`get_historical_prices`).
+    - **FastAPI Endpoint Router:** Created `/api/v1/broker/credentials`, `/api/v1/broker/icici/login-url`, and `/api/v1/broker/icici/authenticate` endpoints in `backend/app/api/v1/endpoints/broker.py`.
+    - **Financial Data Service Integration:** Updated `FinancialDataService` (`backend/app/services/financial_data_service.py`) to dynamically route stock price requests to the user's active ICICI Breeze provider before falling back to Upstox/yfinance/NSE.
+    - **Frontend UI Component (`BrokerSettings.tsx`):** Created `frontend/src/components/settings/BrokerSettings.tsx` with API key configuration form, daily OAuth login launcher, session token validation form, and status badge pill. Integrated into `ProfilePage.tsx`.
+    - **Automated Tests:** Authored unit test suite `backend/app/tests/api/v1/test_broker.py` and `backend/app/tests/services/test_broker_providers.py` (4/4 passed).
+
 *   **API Rate Limiting, Caching, and Request Batching (Issue #559 / NFR13) (Updated 2026-09-13):**
+
     - **Two-Tiered Rate Limiter (`ProviderRateLimiter`):** Built sliding-window rate limiter in `backend/app/services/rate_limiter.py` supporting both shared global provider rate limits (e.g. Zerodha 10/s total) and individual per-user quotas (e.g. User A 3/s). Raises `RateLimitExceededException` to trigger data service fallbacks cleanly.
     - **Request Batching Engine (`BatchQuoteFetcher`):** Implemented request aggregator in `backend/app/services/request_batcher.py` partitioning large asset request lists into optimal sub-batches (default 50 items/batch).
     - **Dynamic Market-Aware TTLs & Cache Performance Tracking:** Extended `backend/app/cache/utils.py` with `get_market_aware_ttl` dynamically calculating cache TTL based on trading session hours (15m market session, 12h off-market, 24h MF NAVs, 6h FX rates) and tracking hit/miss ratios.

@@ -25,12 +25,14 @@ class FinancialDataService:
         self.nse_provider = NseBhavcopyProvider(cache_client)
 
     def get_current_prices(
-        self, assets: List[Dict[str, Any]]
+        self,
+        assets: List[Dict[str, Any]],
+        broker_provider: Optional[Any] = None,
     ) -> Dict[str, Dict[str, Decimal]]:
         """
         Fetches current prices by delegating to the best provider for each asset type.
-        The order of priority is now asset-specific for better accuracy:
-        - Stocks: Upstox -> yfinance -> NSE
+        The order of priority:
+        - Stocks: User Broker Provider (e.g. ICICI Breeze) -> Upstox -> yfinance -> NSE
         - Mutual Funds: AMFI -> NSE
         - Bonds: NSE
         """
@@ -59,17 +61,32 @@ class FinancialDataService:
             prices_data.update(self.amfi_provider.get_current_prices(mf_assets))
             logger.debug(f"Prices after AMFI: {prices_data.keys()}")
 
-        # 3. Stocks: Upstox is primary source (unauthenticated 0-rate limit).
-        #    yfinance is the fallback for unmapped or international assets.
+        # 3. Stocks: Broker provider (if active) -> Upstox -> yfinance
         if stock_assets:
-            logger.debug(
-                f"Processing {len(stock_assets)} stock assets with Upstox provider."
-            )
-            upstox_prices = self.upstox_provider.get_current_prices(stock_assets)
-            prices_data.update(upstox_prices)
-            logger.debug(f"Prices after Upstox: {upstox_prices.keys()}")
+            unresolved_stocks = list(stock_assets)
+            if broker_provider:
+                logger.debug(
+                    f"Processing {len(unresolved_stocks)} stock assets with active Broker provider."
+                )
+                try:
+                    broker_prices = broker_provider.get_current_prices(unresolved_stocks)
+                    prices_data.update(broker_prices)
+                    unresolved_stocks = [
+                        a for a in unresolved_stocks
+                        if a.get("ticker_symbol") not in prices_data
+                    ]
+                except Exception as e:
+                    logger.warning(f"Error fetching prices from Broker provider: {e}")
 
-            # Fallback to yfinance for any stock assets not resolved by Upstox
+            if unresolved_stocks:
+                logger.debug(
+                    f"Processing {len(unresolved_stocks)} stock assets with Upstox provider."
+                )
+                upstox_prices = self.upstox_provider.get_current_prices(unresolved_stocks)
+                prices_data.update(upstox_prices)
+                logger.debug(f"Prices after Upstox: {upstox_prices.keys()}")
+
+            # Fallback to yfinance for any stock assets not resolved
             missing_stocks = [
                 a for a in stock_assets
                 if a.get("ticker_symbol") not in prices_data
@@ -83,6 +100,7 @@ class FinancialDataService:
                 prices_data.update(
                     self.yfinance_provider.get_current_prices(missing_stocks)
                 )
+
 
         # 4. Bonds: NSE is the primary source.
         if bond_assets:
