@@ -76,10 +76,37 @@ def test_broker_credentials_crud_and_endpoints(
         auth_data = resp.json()
         assert auth_data["is_authenticated"] is True
 
-    # 7. Delete broker credentials
+    # 7. Test Zerodha Kite credentials & auth
+    zerodha_payload = {
+        "provider_name": "zerodha_kite",
+        "api_key": "kite_key_999",
+        "api_secret": "kite_secret_888",
+    }
+    resp = client.post("/api/v1/broker/credentials", json=zerodha_payload, headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["provider_name"] == "zerodha_kite"
+
+    resp = client.get("/api/v1/broker/zerodha/login-url", headers=headers)
+    assert resp.status_code == 200
+    assert "https://kite.zerodha.com/connect/login?v=3&api_key=kite_key_999" in resp.json()["login_url"]
+
+    with patch(
+        "app.services.providers.zerodha_provider.ZerodhaKiteProvider.authenticate_request_token",
+        return_value={"success": True, "access_token": "valid_kite_token_111"},
+    ):
+        z_auth_payload = {
+            "provider_name": "zerodha_kite",
+            "session_token": "req_token_777",
+        }
+        resp = client.post("/api/v1/broker/zerodha/authenticate", json=z_auth_payload, headers=headers)
+        assert resp.status_code == 200
+        assert resp.json()["is_authenticated"] is True
+
+    # 8. Delete broker credentials
     resp = client.delete(
         "/api/v1/broker/credentials/icici_breeze",
         headers=headers,
     )
     assert resp.status_code == 200
     assert "Successfully deleted" in resp.json()["message"]
+

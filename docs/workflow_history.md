@@ -1,8 +1,9 @@
-## 2026-09-14: Implement ICICI Breeze Broker API Integration (NFR12 / Issue #558)
+## 2026-09-14: Implement Broker API Integrations for ICICI Breeze & Zerodha Kite Connect (NFR12 / Issue #558)
 
-**Task:** Implement pluggable ICICI Breeze Direct Broker API integration (`IciciBreezeProvider`), encrypted credentials storage (`broker_credentials` table with Fernet AES-256 GCM encryption for API secrets & OAuth session tokens), FastAPI router (`/api/v1/broker`), `FinancialDataService` priority broker data routing, and React `BrokerSettings.tsx` UI component.  
+**Task:** Implement pluggable ICICI Breeze Direct (`IciciBreezeProvider`) and Zerodha Kite Connect (`ZerodhaKiteProvider`) Broker API integrations, encrypted credentials storage (`broker_credentials` table with Fernet AES-256 GCM encryption for API secrets & OAuth session tokens), FastAPI router (`/api/v1/broker`), `FinancialDataService` priority broker data routing, and React `BrokerSettings.tsx` UI component.  
 **AI Assistant:** Antigravity  
 **Role:** Lead Architect & Full-Stack Developer
+
 
 ### Summary
 

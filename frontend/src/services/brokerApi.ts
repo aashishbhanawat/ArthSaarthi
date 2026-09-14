@@ -46,7 +46,23 @@ export const authenticateIciciSession = async (
   return response.data;
 };
 
+export const getZerodhaLoginUrl = async (): Promise<{ provider_name: string; login_url: string }> => {
+  const response = await apiClient.get<{ provider_name: string; login_url: string }>('/api/v1/broker/zerodha/login-url');
+  return response.data;
+};
+
+export const authenticateZerodhaSession = async (
+  request_token: string
+): Promise<BrokerCredentialResponse> => {
+  const response = await apiClient.post<BrokerCredentialResponse>('/api/v1/broker/zerodha/authenticate', {
+    provider_name: 'zerodha_kite',
+    session_token: request_token,
+  });
+  return response.data;
+};
+
 export const deleteBrokerCredentials = async (provider_name: string): Promise<{ message: string }> => {
   const response = await apiClient.delete<{ message: string }>(`/api/v1/broker/credentials/${provider_name}`);
   return response.data;
 };
+

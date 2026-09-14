@@ -15,6 +15,8 @@ from app.schemas.broker import (
     BrokerCredentialSave,
 )
 from app.services.providers.icici_breeze_provider import IciciBreezeProvider
+from app.services.providers.zerodha_provider import ZerodhaKiteProvider
+
 
 router = APIRouter()
 
@@ -161,6 +163,80 @@ def authenticate_icici_breeze(
         created_at=updated_cred.created_at,
         updated_at=updated_cred.updated_at,
     )
+
+
+@router.get("/zerodha/login-url", response_model=BrokerAuthUrlResponse)
+def get_zerodha_login_url(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
+):
+    """Generates the Zerodha Kite Connect login URL for the configured API Key."""
+    cred = crud_broker.get_by_user_and_provider(
+        db, user_id=current_user.id, provider_name="zerodha_kite"
+    )
+    if not cred or not cred.api_key:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Zerodha Kite credentials not found. Please save API Key first.",
+        )
+
+    url = ZerodhaKiteProvider.get_login_url(cred.api_key)
+    return BrokerAuthUrlResponse(provider_name="zerodha_kite", login_url=url)
+
+
+@router.post("/zerodha/authenticate", response_model=BrokerCredentialResponse)
+def authenticate_zerodha_kite(
+    auth_in: BrokerAuthenticateRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
+):
+    """Authenticates Zerodha Kite request_token and stores the generated session access token."""
+    cred = crud_broker.get_by_user_and_provider(
+        db, user_id=current_user.id, provider_name="zerodha_kite"
+    )
+    if not cred:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Zerodha Kite credentials not found. Save API Key & Secret first.",
+        )
+
+    api_secret = crud_broker.get_decrypted_secret(cred)
+    provider = ZerodhaKiteProvider(
+        api_key=cred.api_key,
+        api_secret=api_secret,
+    )
+
+    auth_res = provider.authenticate_request_token(auth_in.session_token)
+    if not auth_res.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Zerodha Kite authentication failed: {auth_res.get('error')}",
+        )
+
+    access_token = auth_res.get("access_token")
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(hours=24)
+
+    updated_cred = crud_broker.update_session_token(
+        db,
+        db_obj=cred,
+        access_token=access_token,
+        token_issued_at=now,
+        token_expires_at=expires_at,
+    )
+
+    return BrokerCredentialResponse(
+        id=updated_cred.id,
+        provider_name=updated_cred.provider_name,
+        api_key=updated_cred.api_key,
+        is_active=updated_cred.is_active,
+        is_authenticated=True,
+        token_issued_at=updated_cred.token_issued_at,
+        token_expires_at=updated_cred.token_expires_at,
+        created_at=updated_cred.created_at,
+        updated_at=updated_cred.updated_at,
+    )
+
 
 
 @router.delete("/credentials/{provider_name}")
