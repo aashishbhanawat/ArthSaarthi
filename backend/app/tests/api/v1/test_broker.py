@@ -56,7 +56,8 @@ def test_broker_credentials_crud_and_endpoints(
     resp = client.get("/api/v1/broker/icici/login-url", headers=headers)
     assert resp.status_code == 200
     url_data = resp.json()
-    assert "https://api.icicidirect.com/apihandler/index.html?API_KEY=test_icici_key_123" in url_data["login_url"]
+    assert "https://api.icicidirect.com/apiuser/login?api_key=test_icici_key_123" in url_data["login_url"]
+
 
     # 6. Authenticate ICICI Breeze session (mocking provider response)
     with patch(

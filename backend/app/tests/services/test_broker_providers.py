@@ -9,7 +9,8 @@ from app.services.providers.icici_breeze_provider import IciciBreezeProvider
 
 def test_icici_breeze_provider_login_url():
     url = IciciBreezeProvider.get_login_url("my_app_key_123")
-    assert "API_KEY=my_app_key_123" in url
+    assert "apiuser/login?api_key=my_app_key_123" in url
+
 
 
 def test_icici_breeze_provider_get_prices():

@@ -34,7 +34,8 @@ class IciciBreezeProvider(FinancialDataProvider):
     @staticmethod
     def get_login_url(api_key: str) -> str:
         encoded_key = urllib.parse.quote(api_key)
-        return f"https://api.icicidirect.com/apihandler/index.html?API_KEY={encoded_key}"
+        return f"https://api.icicidirect.com/apiuser/login?api_key={encoded_key}"
+
 
     def _get_headers(self) -> Dict[str, str]:
         headers = {
