@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
+
 
 from app import models
 from app.core.dependencies import get_current_active_user
@@ -109,6 +111,69 @@ def get_icici_login_url(
 
     url = IciciBreezeProvider.get_login_url(cred.api_key)
     return BrokerAuthUrlResponse(provider_name="icici_breeze", login_url=url)
+
+
+@router.get("/icici/callback", response_class=HTMLResponse)
+def icici_broker_callback(
+    apisession: str = Query(..., alias="apisession"),
+):
+    """Callback landing page for ICICI Breeze OAuth redirect."""
+    html_content = f"""
+    <!质html>
+    <html>
+    <head>
+        <title>ICICI Breeze Session Token</title>
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f3f4f6; padding: 40px; text-align: center; }}
+            .card {{ background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }}
+            h2 {{ color: #166534; margin-top: 0; }}
+            .token-box {{ background: #f0fdf4; border: 2px dashed #22c55e; padding: 15px; font-size: 20px; font-weight: bold; color: #15803d; border-radius: 8px; margin: 20px 0; word-break: break-all; }}
+            p {{ color: #4b5563; font-size: 14px; line-height: 1.5; }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h2>✅ ICICI Breeze Login Successful!</h2>
+            <p>Your ICICI Breeze Session Token (API Session) is:</p>
+            <div class="token-box">{apisession}</div>
+            <p>Please copy the token above and paste it into the <strong>Validate Session Token</strong> box in ArthSaarthi.</p>
+        </div>
+    </body>
+    </html>
+    """.replace("<!质html>", "<!DOCTYPE html>")
+    return HTMLResponse(content=html_content)
+
+
+@router.get("/zerodha/callback", response_class=HTMLResponse)
+def zerodha_broker_callback(
+    request_token: str = Query(..., alias="request_token"),
+):
+    """Callback landing page for Zerodha Kite Connect OAuth redirect."""
+    html_content = f"""
+    <!质html>
+    <html>
+    <head>
+        <title>Zerodha Kite Request Token</title>
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f3f4f6; padding: 40px; text-align: center; }}
+            .card {{ background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }}
+            h2 {{ color: #0369a1; margin-top: 0; }}
+            .token-box {{ background: #f0f9ff; border: 2px dashed #0284c7; padding: 15px; font-size: 20px; font-weight: bold; color: #0369a1; border-radius: 8px; margin: 20px 0; word-break: break-all; }}
+            p {{ color: #4b5563; font-size: 14px; line-height: 1.5; }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h2>✅ Zerodha Kite Login Successful!</h2>
+            <p>Your Zerodha Kite Request Token is:</p>
+            <div class="token-box">{request_token}</div>
+            <p>Please copy the token above and paste it into the <strong>Exchange & Verify Token</strong> box in ArthSaarthi.</p>
+        </div>
+    </body>
+    </html>
+    """.replace("<!质html>", "<!DOCTYPE html>")
+    return HTMLResponse(content=html_content)
+
 
 
 @router.post("/icici/authenticate", response_model=BrokerCredentialResponse)
