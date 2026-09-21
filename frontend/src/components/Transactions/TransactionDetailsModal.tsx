@@ -30,15 +30,15 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ trans
 
     return (
         <div className="modal-overlay z-40" onClick={onClose}>
-            <div role="dialog" aria-modal="true" aria-labelledby="transaction-details-modal-title" className="modal-content w-11/12 md:w-1/2 lg:w-1/3 p-6" onClick={e => e.stopPropagation()}>
+            <div role="dialog" aria-modal="true" aria-labelledby="transaction-details-modal-title" className="modal-content w-11/12 md:w-1/2 lg:w-1/3" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 id="transaction-details-modal-title" className="text-xl font-bold mb-4">Transaction Details</h2>
+                    <h2 id="transaction-details-modal-title" className="text-xl font-bold">Transaction Details</h2>
                     <button type="button" aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="font-semibold text-gray-600">Type</div>
                         <div>{transaction.transaction_type}</div>
@@ -65,10 +65,10 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ trans
                     ) : (
                         <p className="text-gray-500 italic">No additional details available.</p>
                     )}
-                </div>
 
-                <div className="flex justify-end mt-6">
-                    <button onClick={onClose} className="btn btn-secondary">Close</button>
+                    <div className="flex justify-end mt-6">
+                        <button onClick={onClose} className="btn btn-secondary">Close</button>
+                    </div>
                 </div>
             </div>
         </div>
