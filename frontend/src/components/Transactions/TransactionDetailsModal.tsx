@@ -1,6 +1,7 @@
 import React from 'react';
 import { Transaction } from '../../types/portfolio';
 import { usePrivacySensitiveCurrency, formatDate } from '../../utils/formatting';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface TransactionDetailsModalProps {
     transaction: Transaction;
@@ -29,8 +30,13 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ trans
 
     return (
         <div className="modal-overlay z-40" onClick={onClose}>
-            <div role="dialog" aria-modal="true" className="modal-content w-11/12 md:w-1/2 lg:w-1/3 p-6" onClick={e => e.stopPropagation()}>
-                <h2 className="text-xl font-bold mb-4">Transaction Details</h2>
+            <div role="dialog" aria-modal="true" aria-labelledby="transaction-details-modal-title" className="modal-content w-11/12 md:w-1/2 lg:w-1/3 p-6" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 id="transaction-details-modal-title" className="text-xl font-bold mb-4">Transaction Details</h2>
+                    <button type="button" aria-label="Close" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                    </button>
+                </div>
 
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-2 text-sm">
