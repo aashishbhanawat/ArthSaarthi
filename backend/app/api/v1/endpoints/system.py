@@ -357,7 +357,38 @@ def get_logs(
             return {"msg": "".join(last_lines)}
     except Exception as e:
         logger.error(f"Error reading log file: {e}")
-        return {"msg": "Error reading log file."}
+class LogLevelRequest(BaseModel):
+    level: str  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+
+@router.post("/log-level")
+def set_log_level(req: LogLevelRequest):
+    """
+    Dynamically change the root logger log level at runtime (DEBUG, INFO, WARNING, ERROR).
+    """
+    level_str = req.level.upper().strip()
+    valid_levels = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+    if level_str not in valid_levels:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid log level: {req.level}. Must be one of {list(valid_levels.keys())}",
+        )
+
+    new_level = valid_levels[level_str]
+    root_l = logging.getLogger()
+    root_l.setLevel(new_level)
+    for h in root_l.handlers:
+        h.setLevel(new_level)
+
+    logger.info(f"Dynamically set system log level to {level_str}")
+    return {"message": f"Log level updated to {level_str}", "current_level": level_str}
+
 
 
 # --- Android Background Snapshot Endpoint ---

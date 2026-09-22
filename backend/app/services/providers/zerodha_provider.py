@@ -110,6 +110,12 @@ class ZerodhaKiteProvider(FinancialDataProvider):
         url = f"{KITE_BASE_URL}/quote"
 
         try:
+            if self.cache_client:
+                try:
+                    from app.services.rate_limiter import ProviderRateLimiter
+                    ProviderRateLimiter(self.cache_client).check_and_increment("zerodha")
+                except Exception as rle:
+                    logger.debug(f"Zerodha rate limit tracking note: {rle}")
             time.sleep(0.05)
             with httpx.Client(timeout=8.0) as client:
                 resp = client.get(url, headers=headers, params=params)

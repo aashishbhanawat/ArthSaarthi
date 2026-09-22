@@ -161,15 +161,32 @@ export const BrokerSettings: React.FC = () => {
     }
   };
 
+  const extractTokenFromInput = (input: string, paramName: string): string => {
+    const trimmed = input.trim();
+    if (trimmed.includes('http://') || trimmed.includes('https://') || trimmed.includes('?')) {
+      try {
+        const urlObj = new URL(trimmed.startsWith('http') ? trimmed : `http://localhost/${trimmed.startsWith('?') ? trimmed : `?${trimmed}`}`);
+        const token = urlObj.searchParams.get(paramName);
+        if (token) return token;
+      } catch {
+        // Ignore URL parse errors
+      }
+      const match = new RegExp(`[?&]${paramName}=([^&]+)`).exec(trimmed);
+      if (match && match[1]) return match[1];
+    }
+    return trimmed;
+  };
+
   const handleAuthenticateZerodhaSession = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!zerodhaRequestToken.trim()) {
+    const tokenToUse = extractTokenFromInput(zerodhaRequestToken, 'request_token');
+    if (!tokenToUse) {
       showToast('Please enter the request token obtained from the callback URL after login.', 'error');
       return;
     }
     try {
       setSaving(true);
-      await authenticateZerodhaSession(zerodhaRequestToken.trim());
+      await authenticateZerodhaSession(tokenToUse);
       showToast('Zerodha Kite session authenticated successfully!', 'success');
       setZerodhaRequestToken('');
       setShowZerodhaSessionModal(false);
@@ -181,6 +198,7 @@ export const BrokerSettings: React.FC = () => {
       setSaving(false);
     }
   };
+
 
   const handleDelete = async (provider: string) => {
     if (!window.confirm(`Are you sure you want to remove ${provider} integration?`)) return;

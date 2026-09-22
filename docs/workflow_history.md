@@ -1,3 +1,24 @@
+## 2026-09-22: Broker API Integration Polish for Zerodha & ICICI Breeze (NFR12 / Issue #558)
+
+**Task:** Polish Zerodha Kite Connect and ICICI Breeze Broker API OAuth session token exchange, token auto-extraction from callback URLs in frontend `BrokerSettings.tsx`, runtime system log level control (`/api/v1/system/log-level`), and `ProviderRateLimiter` call tracking in `ZerodhaKiteProvider` and `IciciBreezeProvider`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Callback URL Auto-Extraction in Frontend (`frontend/src/components/settings/BrokerSettings.tsx`):**
+   - Enhanced Zerodha session authentication modal to accept either raw `request_token` or full callback URL (e.g. `http://localhost/?status=success&request_token=...&action=login&type=login`).
+   - Automatically extracts `request_token` query parameter from input URL string before sending to backend.
+2. **Dynamic Runtime System Log Level Endpoint (`backend/app/api/v1/endpoints/system.py`):**
+   - Added `POST /api/v1/system/log-level` endpoint allowing runtime switching of root logger output (`DEBUG`, `INFO`, `WARNING`, `ERROR`).
+3. **Provider Rate Limiter Call Tracking (`backend/app/services/providers/zerodha_provider.py`, `icici_breeze_provider.py`):**
+   - Integrated `ProviderRateLimiter(cache_client).check_and_increment("zerodha")` and `("icici_breeze")` before making quote HTTP requests.
+   - Ensures rate limit meters in Admin Cache & Rate Limit Diagnostics (`/admin/cache`) accurately reflect real-time API call counts.
+4. **Automated Testing:**
+   - Ran backend pytest test suite `backend/app/tests/api/v1/test_broker.py` and `backend/app/tests/services/test_broker_providers.py` (7/7 clean pass).
+
+---
+
 ## 2026-09-14: Implement Broker API Integrations for ICICI Breeze & Zerodha Kite Connect (NFR12 / Issue #558)
 
 **Task:** Implement pluggable ICICI Breeze Direct (`IciciBreezeProvider`) and Zerodha Kite Connect (`ZerodhaKiteProvider`) Broker API integrations, encrypted credentials storage (`broker_credentials` table with Fernet AES-256 GCM encryption for API secrets & OAuth session tokens), FastAPI router (`/api/v1/broker`), `FinancialDataService` priority broker data routing, and React `BrokerSettings.tsx` UI component.  

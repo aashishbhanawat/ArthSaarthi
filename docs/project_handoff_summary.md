@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-09-14
+**Last Updated:** 2026-09-22
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Feature #558 (ICICI Breeze Broker API Integration) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 Completed — Feature #558 (Zerodha Kite & ICICI Breeze Broker API Integration) Implemented, Polished & Verified.
 
-**Latest Achievement:** Implemented NFR12 (Issue #558: Pluggable Broker API Integration - ICICI Breeze Provider). Created `BrokerCredential` model storing Fernet (AES-256 GCM) encrypted API secrets and OAuth session tokens (`broker_credentials` table, Alembic migration `j10c2d3e4f5g`). Implemented `IciciBreezeProvider` pure HTTP REST client, FastAPI `/api/v1/broker` endpoint router, priority market data routing in `FinancialDataService`, and React `BrokerSettings.tsx` UI component in Settings page.
+**Latest Achievement:** Completed NFR12 (Issue #558: Pluggable Broker API Integration for ICICI Breeze & Zerodha Kite Connect). Added `BrokerCredential` model with Fernet (AES-256 GCM) encrypted API keys/secrets and session tokens. Created `ZerodhaKiteProvider` & `IciciBreezeProvider` pure HTTP REST clients, `/api/v1/broker` endpoint router, full callback URL token auto-extraction in `BrokerSettings.tsx`, live logger level toggle (`/api/v1/system/log-level`), and rate-limiter metrics integration in `FinancialDataService`.
 
 ## 2. Test Suite Status
 

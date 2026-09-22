@@ -130,6 +130,12 @@ class IciciBreezeProvider(FinancialDataProvider):
             }
 
             try:
+                if self.cache_client:
+                    try:
+                        from app.services.rate_limiter import ProviderRateLimiter
+                        ProviderRateLimiter(self.cache_client).check_and_increment("icici_breeze")
+                    except Exception as rle:
+                        logger.debug(f"ICICI Breeze rate limit tracking note: {rle}")
                 time.sleep(0.05)  # Rate limit safety
                 with httpx.Client(timeout=5.0) as client:
                     resp = client.get(url, headers=headers, params=params)
