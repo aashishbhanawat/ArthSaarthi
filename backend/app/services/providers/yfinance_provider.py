@@ -102,6 +102,12 @@ class YFinanceProvider(FinancialDataProvider):
         logger.debug(f"yfinance batch request: '{yfinance_tickers_str}'")
 
         try:
+            if self.cache_client:
+                try:
+                    from app.services.rate_limiter import ProviderRateLimiter
+                    ProviderRateLimiter(self.cache_client).check_and_increment("yfinance")
+                except Exception as rle:
+                    logger.debug(f"yfinance rate limit tracking note: {rle}")
             yf_data = yf.Tickers(yfinance_tickers_str)
             logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
             for ticker_obj in yf_data.tickers.values():

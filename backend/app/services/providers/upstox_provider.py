@@ -64,6 +64,12 @@ class UpstoxProvider(FinancialDataProvider):
         )
 
         try:
+            if self.cache_client:
+                try:
+                    from app.services.rate_limiter import ProviderRateLimiter
+                    ProviderRateLimiter(self.cache_client).check_and_increment("upstox")
+                except Exception as rle:
+                    logger.debug(f"Upstox rate limit tracking note: {rle}")
             req = urllib.request.Request(
                 url,
                 headers={

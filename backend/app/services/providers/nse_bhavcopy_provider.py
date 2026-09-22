@@ -63,6 +63,12 @@ class NseBhavcopyProvider(FinancialDataProvider):
             url, csv_filename = self._get_bhavcopy_url(current_date)
 
             try:
+                if self.cache_client:
+                    try:
+                        from app.services.rate_limiter import ProviderRateLimiter
+                        ProviderRateLimiter(self.cache_client).check_and_increment("nse")
+                    except Exception as rle:
+                        logger.debug(f"NSE rate limit tracking note: {rle}")
                 with httpx.Client(headers=NSE_HEADERS, follow_redirects=True) as client:
                     response = client.get(url, timeout=20.0)
                     if response.status_code == 404:

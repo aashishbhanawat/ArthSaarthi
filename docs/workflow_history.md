@@ -11,9 +11,9 @@
    - Automatically extracts `request_token` query parameter from input URL string before sending to backend.
 2. **Dynamic Runtime System Log Level Endpoint (`backend/app/api/v1/endpoints/system.py`):**
    - Added `POST /api/v1/system/log-level` endpoint allowing runtime switching of root logger output (`DEBUG`, `INFO`, `WARNING`, `ERROR`).
-3. **Provider Rate Limiter Call Tracking (`backend/app/services/providers/zerodha_provider.py`, `icici_breeze_provider.py`):**
-   - Integrated `ProviderRateLimiter(cache_client).check_and_increment("zerodha")` and `("icici_breeze")` before making quote HTTP requests.
-   - Ensures rate limit meters in Admin Cache & Rate Limit Diagnostics (`/admin/cache`) accurately reflect real-time API call counts.
+3. **Provider Rate Limiter Call Tracking across All Financial Data Providers:**
+   - Integrated `ProviderRateLimiter(cache_client).check_and_increment(...)` into all data providers (`yfinance`, `upstox`, `amfi`, `nse`, `zerodha`, `icici_breeze`).
+   - Ensures rate limit meters in Admin Cache & Rate Limit Diagnostics (`/admin/cache`) accurately reflect real-time API call counts across all data sources.
 4. **Automated Testing:**
    - Ran backend pytest test suite `backend/app/tests/api/v1/test_broker.py` and `backend/app/tests/services/test_broker_providers.py` (7/7 clean pass).
 

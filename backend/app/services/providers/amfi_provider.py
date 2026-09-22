@@ -58,6 +58,12 @@ class AmfiIndiaProvider(FinancialDataProvider):
         current_sub_category: str | None = None
 
         try:
+            if self.cache_client:
+                try:
+                    from app.services.rate_limiter import ProviderRateLimiter
+                    ProviderRateLimiter(self.cache_client).check_and_increment("amfi")
+                except Exception as rle:
+                    logger.debug(f"AMFI rate limit tracking note: {rle}")
             with httpx.Client(follow_redirects=True) as client:
                 response = client.get(self.AMFI_URL, timeout=15.0)
                 response.raise_for_status()
