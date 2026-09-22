@@ -96,5 +96,33 @@ class CRUDBrokerCredential(CRUDBase[BrokerCredential, BrokerCredentialSave, Brok
             return ""
         return decrypt_credential(db_obj.encrypted_access_token)
 
+    def get_active_provider_instance(
+        self, db: Session, user_id: uuid.UUID
+    ) -> Optional[object]:
+        """Returns an initialized provider instance (ZerodhaKiteProvider or IciciBreezeProvider) if active session exists."""
+        creds = self.get_all_by_user(db, user_id=user_id)
+        now = datetime.now(timezone.utc)
+        for c in creds:
+            if c.is_active and c.encrypted_access_token:
+                if c.token_expires_at is None or c.token_expires_at > now:
+                    token = self.get_decrypted_token(c)
+                    secret = self.get_decrypted_secret(c)
+                    if c.provider_name == "zerodha_kite":
+                        from app.services.providers.zerodha_provider import ZerodhaKiteProvider
+                        return ZerodhaKiteProvider(
+                            api_key=c.api_key,
+                            access_token=token,
+                            api_secret=secret,
+                        )
+                    elif c.provider_name == "icici_breeze":
+                        from app.services.providers.icici_breeze_provider import IciciBreezeProvider
+                        return IciciBreezeProvider(
+                            api_key=c.api_key,
+                            session_token=token,
+                            api_secret=secret,
+                        )
+        return None
+
 
 crud_broker = CRUDBrokerCredential(BrokerCredential)
+

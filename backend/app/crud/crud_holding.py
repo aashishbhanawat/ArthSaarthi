@@ -613,11 +613,13 @@ def _process_market_traded_assets(
             "asset_type": asset.asset_type if asset else None,
         })
 
+    broker_provider = crud.crud_broker.get_active_provider_instance(db, user_id=user_id) if user_id else None
     price_details = (
-        financial_data_service.get_current_prices(assets_to_price)
+        financial_data_service.get_current_prices(assets_to_price, broker_provider=broker_provider)
         if assets_to_price
         else {}
     )
+
 
     # --- On-demand enrichment for assets with NULL sector ---
     # This enriches sector/industry/country when fetching portfolio
