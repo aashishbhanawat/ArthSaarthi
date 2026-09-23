@@ -38,3 +38,6 @@
 ## 2024-05-19 - Replace JSON deep clone with shallow array map
 **Learning:** `HoldingDetailModal.tsx` was using `JSON.parse(JSON.stringify(...))` to deep copy an array of transactions just to modify top-level properties like `quantity`. This operation forces expensive JS serialization/deserialization on O(N) objects, which can significantly block the main thread and impact frontend render performance as transaction history scales up.
 **Action:** When copying an array of objects to safely mutate specific top-level properties within React `useMemo` hooks, avoid `JSON.parse(JSON.stringify)`. Opt for a fast shallow copy approach like `array.map(item => ({ ...item }))` which is computationally cheaper and achieves the same isolation for top-level fields.
+## 2024-05-19 - Prevent React.memo Defeat from Unmemoized Inline Functions
+**Learning:** Passing inline arrow functions (e.g., `onEdit={() => onEdit(item)}`) to child components within map loops recreates function references on every parent render, defeating any `React.memo` optimizations on the child components.
+**Action:** Always pass the memoized callback references directly (e.g., `onEdit={onEdit}`) and let the child component handle the closure with its item data.

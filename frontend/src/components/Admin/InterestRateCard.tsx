@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { HistoricalInterestRate } from '../../types/interestRate';
 import { formatDate } from '../../utils/formatting';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
@@ -10,6 +10,9 @@ interface InterestRateCardProps {
 }
 
 const InterestRateCard: React.FC<InterestRateCardProps> = ({ rate, onEdit, onDelete }) => {
+    const handleEdit = useCallback(() => onEdit(rate), [onEdit, rate]);
+    const handleDelete = useCallback(() => onDelete(rate), [onDelete, rate]);
+
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-3 transition-all hover:shadow-md">
             <div className="flex justify-between items-start mb-2">
@@ -22,10 +25,10 @@ const InterestRateCard: React.FC<InterestRateCardProps> = ({ rate, onEdit, onDel
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <button onClick={() => onEdit(rate)} className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label={`Edit rate for ${rate.scheme_name}`}>
+                    <button onClick={handleEdit} className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label={`Edit rate for ${rate.scheme_name}`}>
                         <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
-                    <button onClick={() => onDelete(rate)} className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label={`Delete rate for ${rate.scheme_name}`}>
+                    <button onClick={handleDelete} className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label={`Delete rate for ${rate.scheme_name}`}>
                         <TrashIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                 </div>
@@ -43,4 +46,4 @@ const InterestRateCard: React.FC<InterestRateCardProps> = ({ rate, onEdit, onDel
     );
 };
 
-export default InterestRateCard;
+export default React.memo(InterestRateCard);

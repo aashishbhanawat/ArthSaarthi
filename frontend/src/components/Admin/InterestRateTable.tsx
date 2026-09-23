@@ -54,8 +54,8 @@ const InterestRateTable: React.FC<InterestRateTableProps> = ({ rates, onEdit, on
                 <InterestRateCard
                     key={rate.id}
                     rate={rate}
-                    onEdit={() => onEdit(rate)}
-                    onDelete={() => onDelete(rate)}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
                 />
             ))}
         </div>
