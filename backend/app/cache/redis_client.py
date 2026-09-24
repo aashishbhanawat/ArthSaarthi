@@ -27,7 +27,11 @@ class RedisCacheClient(CacheClient):
     def get(self, key: str) -> Optional[str]:
         if not self._client:
             return None
-        return self._client.get(key)
+        val = self._client.get(key)
+        if not key.startswith("ratelimit:") and not key.startswith("cache_stats:"):
+            from app.cache.utils import record_cache_access
+            record_cache_access(hit=val is not None)
+        return val
 
     def set(self, key: str, value: str, expire: Optional[int] = None) -> None:
         if not self._client:

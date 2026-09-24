@@ -197,11 +197,38 @@ def record_cache_access(hit: bool) -> None:
     else:
         _CACHE_STATS["misses"] += 1
 
+    try:
+        cache = get_cache_client()
+        if cache:
+            stat_key = "cache_stats:hits" if hit else "cache_stats:misses"
+            cache.incr(stat_key)
+    except Exception as e:
+        logger.debug(f"Error recording cache access metric: {e}")
+
 
 def get_cache_performance_stats() -> Dict[str, Any]:
     """Returns aggregated cache hit/miss ratios and count metrics."""
     hits = _CACHE_STATS["hits"]
     misses = _CACHE_STATS["misses"]
+
+    try:
+        cache = get_cache_client()
+        if cache:
+            h_val = cache.get("cache_stats:hits")
+            m_val = cache.get("cache_stats:misses")
+            if h_val is not None:
+                try:
+                    hits = max(hits, int(h_val))
+                except ValueError:
+                    pass
+            if m_val is not None:
+                try:
+                    misses = max(misses, int(m_val))
+                except ValueError:
+                    pass
+    except Exception as e:
+        logger.debug(f"Error reading cache stats metrics: {e}")
+
     total = hits + misses
     hit_ratio = round((hits / total) * 100, 2) if total > 0 else 0.0
 
