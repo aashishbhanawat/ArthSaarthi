@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 # Add backend to PYTHONPATH
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
@@ -33,12 +33,14 @@ db = SessionLocal()
 # Tracking query count
 query_count = 0
 
+
 @event.listens_for(engine, "before_cursor_execute")
 def receive_before_cursor_execute(
     conn, cursor, statement, parameters, context, executemany
 ):
     global query_count
     query_count += 1
+
 
 def setup_data(num_portfolios=10, txs_per_portfolio=5):
     # Create user
@@ -59,7 +61,7 @@ def setup_data(num_portfolios=10, txs_per_portfolio=5):
             name=f"Asset {i}",
             asset_type="STOCK",
             ticker_symbol=f"TICK{i}",
-            currency="INR"
+            currency="INR",
         )
         assets.append(asset)
         db.add(asset)
@@ -67,11 +69,7 @@ def setup_data(num_portfolios=10, txs_per_portfolio=5):
 
     # Create portfolios and transactions
     for i in range(num_portfolios):
-        portfolio = Portfolio(
-            id=uuid.uuid4(),
-            user_id=user.id,
-            name=f"Portfolio {i}"
-        )
+        portfolio = Portfolio(id=uuid.uuid4(), user_id=user.id, name=f"Portfolio {i}")
         db.add(portfolio)
         db.commit()
 
@@ -85,12 +83,13 @@ def setup_data(num_portfolios=10, txs_per_portfolio=5):
                 quantity=Decimal("10"),
                 price_per_unit=Decimal("100"),
                 transaction_date=date.today() - timedelta(days=j),
-                details={}
+                details={},
             )
             db.add(tx)
         db.commit()
 
     return user
+
 
 def run_benchmark():
     from app.crud.crud_dashboard import dashboard
@@ -107,6 +106,7 @@ def run_benchmark():
     # but we will patch them for the test
 
     from unittest.mock import patch
+
     with patch(
         "app.services.financial_data_service.financial_data_service.get_current_prices",
         return_value={},
@@ -122,12 +122,15 @@ def run_benchmark():
     query_count = 0
     start = time.time()
 
-    with patch(
-        "app.services.financial_data_service.financial_data_service.get_historical_prices",
-        return_value={},
-    ), patch(
-        "app.services.financial_data_service.financial_data_service.get_current_prices",
-        return_value={},
+    with (
+        patch(
+            "app.services.financial_data_service.financial_data_service.get_historical_prices",
+            return_value={},
+        ),
+        patch(
+            "app.services.financial_data_service.financial_data_service.get_current_prices",
+            return_value={},
+        ),
     ):
         # "all" range will trigger the `if current_day == end_date:` block
         dashboard.get_history(db=db, user=user, range_str="all")
@@ -136,6 +139,7 @@ def run_benchmark():
     print("\n--- Dashboard History ('all') ---")
     print(f"Time: {end - start:.4f} seconds")
     print(f"Queries: {query_count}")
+
 
 if __name__ == "__main__":
     run_benchmark()

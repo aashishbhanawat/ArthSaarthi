@@ -48,7 +48,6 @@ def _to_finite_float(val: object, default: float = 0.0) -> float:
         return default
 
 
-
 def _calculate_fd_current_value(
     principal: Decimal,
     interest_rate: Decimal,
@@ -76,9 +75,9 @@ def _calculate_fd_current_value(
         "QUARTERLY": 4,
         "MONTHLY": 12,
     }
-    n = Decimal(compounding_frequency_map.get(
-        (compounding_frequency or "").upper(), 4
-    ))  # Default to quarterly
+    n = Decimal(
+        compounding_frequency_map.get((compounding_frequency or "").upper(), 4)
+    )  # Default to quarterly
 
     t = Decimal((end_date - start_date).days / 365.25)
     r = Decimal(interest_rate / 100)
@@ -147,28 +146,21 @@ def _calculate_rd_value_at_date(
     n = Decimal("4.0")  # Quarterly compounding
 
     while (
-        curr_installment_date <= calculation_date
-        and num_installments < tenure_months
+        curr_installment_date <= calculation_date and num_installments < tenure_months
     ):
         # Calculate full months using relativedelta for standard boundaries
         delta = relativedelta(calculation_date, curr_installment_date)
         full_months = delta.years * 12 + delta.months
 
         # Calculate exact days for the remaining partial month
-        after_full_months = curr_installment_date + relativedelta(
-            months=full_months
-        )
+        after_full_months = curr_installment_date + relativedelta(months=full_months)
         remaining_days = (calculation_date - after_full_months).days
 
         # t = full_months / 12 + remaining_days / 365.25
-        t = Decimal(full_months) / 12 + Decimal(remaining_days) / Decimal(
-            "365.25"
-        )
+        t = Decimal(full_months) / 12 + Decimal(remaining_days) / Decimal("365.25")
 
         # Compound interest formula matching FD: P * (1 + r/n)^(n*t)
-        installment_value = monthly_installment * (
-            (1 + r / n) ** (n * t)
-        )
+        installment_value = monthly_installment * ((1 + r / n) ** (n * t))
         total_value += installment_value
 
         num_installments += 1
@@ -346,7 +338,8 @@ def _calculate_summary(
     summary_total_unrealized_pnl = Decimal("0.0")
     logger.debug(
         "[_calculate_summary] Initializing summary calculation. "
-        "Realized PNL from other sources: %s", realized_pnl_from_other_sources
+        "Realized PNL from other sources: %s",
+        realized_pnl_from_other_sources,
     )
     summary_total_realized_pnl = realized_pnl_from_other_sources
     logger.debug(
@@ -391,12 +384,18 @@ def _process_market_traded_assets(
 
     # Optimization: Use the already fetched transactions list instead of a new DB query.
     relevant_types = {
-        "BUY", "SELL", "RSU_VEST", "ESPP_PURCHASE", "SPLIT",
-        "BONUS", "MERGER", "RENAME", "DEMERGER"
+        "BUY",
+        "SELL",
+        "RSU_VEST",
+        "ESPP_PURCHASE",
+        "SPLIT",
+        "BONUS",
+        "MERGER",
+        "RENAME",
+        "DEMERGER",
     }
     unique_asset_ids = {
-        tx.asset_id for tx in transactions
-        if tx.transaction_type in relevant_types
+        tx.asset_id for tx in transactions if tx.transaction_type in relevant_types
     }
 
     holdings_state = defaultdict(
@@ -414,9 +413,7 @@ def _process_market_traded_assets(
 
     # Optimization: Create a map for quick ticker lookup to avoid O(N) scans
     ticker_map = {
-        asset.ticker_symbol: asset
-        for asset in portfolio_assets
-        if asset.ticker_symbol
+        asset.ticker_symbol: asset for asset in portfolio_assets if asset.ticker_symbol
     }
 
     # Sort transactions by date to ensure chronological processing
@@ -447,7 +444,7 @@ def _process_market_traded_assets(
         asset = asset_map.get(tx.asset_id)
         ticker = asset.ticker_symbol if asset else None
         if not ticker:
-            continue # Should not happen if data is consistent
+            continue  # Should not happen if data is consistent
 
         acquisition_types = ["BUY", "ESPP_PURCHASE", "RSU_VEST"]
         if tx.transaction_type in acquisition_types:
@@ -458,7 +455,7 @@ def _process_market_traded_assets(
 
             if tx.transaction_type == "RSU_VEST" and tx.details:
                 cost_basis_price = Decimal(str(tx.details.get("fmv", 0)))
-            else: # For BUY and ESPP, cost basis is the actual price paid.
+            else:  # For BUY and ESPP, cost basis is the actual price paid.
                 cost_basis_price = tx.price_per_unit
             cost_in_inr = tx.quantity * cost_basis_price * fx_rate
             holdings_state[ticker]["total_invested"] += cost_in_inr
@@ -490,18 +487,14 @@ def _process_market_traded_assets(
         elif tx.transaction_type == TransactionType.MERGER:
             # MERGER: Zero out old holdings - shares have been converted to new asset
             # The BUY transaction for new shares was created by the merger handler
-            logger.debug(
-                f"Processing MERGER for {ticker}. Zeroing out old holdings."
-            )
+            logger.debug(f"Processing MERGER for {ticker}. Zeroing out old holdings.")
             holdings_state[ticker]["quantity"] = Decimal("0.0")
             holdings_state[ticker]["total_invested"] = Decimal("0.0")
 
         elif tx.transaction_type == TransactionType.RENAME:
             # RENAME: Zero out old holdings - shares transferred to new ticker
             # The BUY transaction for new ticker was created by the rename handler
-            logger.debug(
-                f"Processing RENAME for {ticker}. Zeroing out old holdings."
-            )
+            logger.debug(f"Processing RENAME for {ticker}. Zeroing out old holdings.")
             holdings_state[ticker]["quantity"] = Decimal("0.0")
             holdings_state[ticker]["total_invested"] = Decimal("0.0")
 
@@ -518,8 +511,7 @@ def _process_market_traded_assets(
         elif tx.transaction_type == "SELL":
             if holdings_state[ticker]["quantity"] > 0:
                 logger.debug(
-                    f"Processing SELL tx {tx.id} for {ticker}. "
-                    f"Details: {tx.details}"
+                    f"Processing SELL tx {tx.id} for {ticker}. Details: {tx.details}"
                 )
 
                 realized_pnl_for_sale = Decimal(0)
@@ -552,7 +544,8 @@ def _process_market_traded_assets(
                             # Get buy transaction's FX rate to convert to INR
                             buy_fx_rate = (
                                 Decimal(str(buy_tx.details.get("fx_rate", 1)))
-                                if buy_tx.details else Decimal(1)
+                                if buy_tx.details
+                                else Decimal(1)
                             )
                             buy_price_inr = buy_price * buy_fx_rate
 
@@ -571,27 +564,25 @@ def _process_market_traded_assets(
                                 link.quantity,
                                 tx.price_per_unit,
                                 buy_price,
-                                pnl
+                                pnl,
                             )
 
                 if sold_qty > 0:
-                     avg_buy_price = (
+                    avg_buy_price = (
                         holdings_state[ticker]["total_invested"]
                         / holdings_state[ticker]["quantity"]
                     )
-                     # For foreign stocks, the sale price must be converted to INR
-                     pnl = (
-                        (tx.price_per_unit * fx_rate) - avg_buy_price
-                     ) * sold_qty
-                     realized_pnl_for_sale += pnl
-                     cost_of_shares_sold += avg_buy_price * sold_qty
+                    # For foreign stocks, the sale price must be converted to INR
+                    pnl = ((tx.price_per_unit * fx_rate) - avg_buy_price) * sold_qty
+                    realized_pnl_for_sale += pnl
+                    cost_of_shares_sold += avg_buy_price * sold_qty
 
-                     logger.debug(
+                    logger.debug(
                         "Unlinked Sell: Sold %s @ %s, Avg Cost @ %s. PnL: %s",
                         sold_qty,
                         tx.price_per_unit,
                         avg_buy_price,
-                        pnl
+                        pnl,
                     )
                 total_realized_pnl += realized_pnl_for_sale
                 holdings_state[ticker]["realized_pnl"] += realized_pnl_for_sale
@@ -607,19 +598,26 @@ def _process_market_traded_assets(
     assets_to_price = []
     for ticker in current_holdings_tickers:
         asset = ticker_map.get(ticker)
-        assets_to_price.append({
-            "ticker_symbol": ticker,
-            "exchange": asset.exchange if asset else None,
-            "asset_type": asset.asset_type if asset else None,
-        })
+        assets_to_price.append(
+            {
+                "ticker_symbol": ticker,
+                "exchange": asset.exchange if asset else None,
+                "asset_type": asset.asset_type if asset else None,
+            }
+        )
 
-    broker_provider = crud.crud_broker.get_active_provider_instance(db, user_id=user_id) if user_id else None
+    broker_provider = (
+        crud.crud_broker.get_active_provider_instance(db, user_id=user_id)
+        if user_id
+        else None
+    )
     price_details = (
-        financial_data_service.get_current_prices(assets_to_price, broker_provider=broker_provider)
+        financial_data_service.get_current_prices(
+            assets_to_price, broker_provider=broker_provider
+        )
         if assets_to_price
         else {}
     )
-
 
     # --- On-demand enrichment for assets with NULL sector ---
     # This enriches sector/industry/country when fetching portfolio
@@ -668,15 +666,12 @@ def _process_market_traded_assets(
         try:
             # Construct asset list for batch call
             assets_to_enrich = [
-                {
-                    "ticker_symbol": asset.ticker_symbol,
-                    "exchange": asset.exchange
-                }
+                {"ticker_symbol": asset.ticker_symbol, "exchange": asset.exchange}
                 for asset in equities_to_enrich
             ]
 
-            enrichment_results = (
-                financial_data_service.get_enrichment_data_batch(assets_to_enrich)
+            enrichment_results = financial_data_service.get_enrichment_data_batch(
+                assets_to_enrich
             )
 
             for asset in equities_to_enrich:
@@ -740,7 +735,7 @@ def _process_market_traded_assets(
             {
                 "ticker_symbol": f"{currency}INR=X",
                 "asset_type": "Currency",
-                "exchange": None
+                "exchange": None,
             }
             for currency in currencies_needed
         ]
@@ -854,7 +849,7 @@ def _process_market_traded_assets(
                 ticker_symbol=ticker,
                 asset_name=asset.name,
                 asset_type=asset.asset_type,
-                currency=asset.currency, # This is the currency of the asset's price
+                currency=asset.currency,  # This is the currency of the asset's price
                 group="EQUITIES",  # Placeholder, will be set properly later
                 quantity=quantity,
                 average_buy_price=average_buy_price,
@@ -896,9 +891,7 @@ class CRUDHolding:
     ) -> schemas.PortfolioHoldingsAndSummary:
         """Calculates the consolidated holdings and a summary for a given portfolio."""
         start_time = time.time()
-        logger.info(
-            f"Starting holdings calculation for portfolio_id: {portfolio_id}"
-        )
+        logger.info(f"Starting holdings calculation for portfolio_id: {portfolio_id}")
         transactions = crud.transaction.get_multi_by_portfolio(
             db=db, portfolio_id=portfolio_id
         )
@@ -924,9 +917,7 @@ class CRUDHolding:
         rd_holdings, pnl_from_matured_rds = _process_recurring_deposits(
             all_recurring_deposits
         )
-        logger.info(
-            "Processed FDs (%s), RDs (%s).", len(fd_holdings), len(rd_holdings)
-        )
+        logger.info("Processed FDs (%s), RDs (%s).", len(fd_holdings), len(rd_holdings))
         logger.info(
             "Realized PNL from matured FDs: %s, RDs: %s",
             pnl_from_matured_fds,
@@ -941,7 +932,7 @@ class CRUDHolding:
             .join(models.Transaction)
             .filter(
                 models.Transaction.portfolio_id == portfolio_id,
-                func.upper(models.Asset.asset_type) == "PPF"
+                func.upper(models.Asset.asset_type) == "PPF",
             )
             .distinct()
             .all()
@@ -987,7 +978,8 @@ class CRUDHolding:
             }
             group_map_upper = {k.upper(): v for k, v in group_map.items()}
             holding_item.group = group_map_upper.get(
-                str(holding_item.asset_type).upper(), "MISCELLANEOUS")
+                str(holding_item.asset_type).upper(), "MISCELLANEOUS"
+            )
 
         # --- Calculate Unrealized P&L for all holdings ---
         # This must be done after all holdings are aggregated.
@@ -1058,13 +1050,17 @@ class CRUDHolding:
             .all()
         )
 
-        all_fixed_deposits = db.query(models.FixedDeposit).filter(
-            models.FixedDeposit.portfolio_id.in_(portfolio_ids)
-        ).all()
+        all_fixed_deposits = (
+            db.query(models.FixedDeposit)
+            .filter(models.FixedDeposit.portfolio_id.in_(portfolio_ids))
+            .all()
+        )
 
-        all_recurring_deposits = db.query(models.RecurringDeposit).filter(
-            models.RecurringDeposit.portfolio_id.in_(portfolio_ids)
-        ).all()
+        all_recurring_deposits = (
+            db.query(models.RecurringDeposit)
+            .filter(models.RecurringDeposit.portfolio_id.in_(portfolio_ids))
+            .all()
+        )
 
         # --- Process Market-Traded Assets First ---
         market_traded_holdings, total_realized_pnl = _process_market_traded_assets(
@@ -1085,9 +1081,7 @@ class CRUDHolding:
         rd_holdings, pnl_from_matured_rds = _process_recurring_deposits(
             all_recurring_deposits
         )
-        logger.info(
-            "Processed FDs (%s), RDs (%s).", len(fd_holdings), len(rd_holdings)
-        )
+        logger.info("Processed FDs (%s), RDs (%s).", len(fd_holdings), len(rd_holdings))
         logger.info(
             "Realized PNL from matured FDs: %s, RDs: %s",
             pnl_from_matured_fds,
@@ -1102,7 +1096,7 @@ class CRUDHolding:
             .join(models.Transaction)
             .filter(
                 models.Transaction.user_id == user_id,
-                func.upper(models.Asset.asset_type) == "PPF"
+                func.upper(models.Asset.asset_type) == "PPF",
             )
             .distinct()
             .all()
@@ -1168,7 +1162,8 @@ class CRUDHolding:
             }
             group_map_upper = {k.upper(): v for k, v in group_map.items()}
             holding_item.group = group_map_upper.get(
-                str(holding_item.asset_type).upper(), "MISCELLANEOUS")
+                str(holding_item.asset_type).upper(), "MISCELLANEOUS"
+            )
 
         # --- Calculate Unrealized P&L for all holdings ---
         for holding in holdings_list:

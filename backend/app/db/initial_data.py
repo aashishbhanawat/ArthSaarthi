@@ -15,6 +15,7 @@ def seed_interest_rates(db: Session) -> None:
     - Updates existing records if end_date or rate has changed
     """
     from app import crud
+
     logger.info("Seeding historical PPF interest rates...")
     created_count = 0
     updated_count = 0
@@ -33,13 +34,12 @@ def seed_interest_rates(db: Session) -> None:
         else:
             # Check if update is needed (end_date or rate changed)
             needs_update = (
-                existing.end_date != rate_data["end_date"] or
-                existing.rate != rate_data["rate"]
+                existing.end_date != rate_data["end_date"]
+                or existing.rate != rate_data["rate"]
             )
             if needs_update:
                 update_data = schemas.HistoricalInterestRateUpdate(
-                    end_date=rate_data["end_date"],
-                    rate=rate_data["rate"]
+                    end_date=rate_data["end_date"], rate=rate_data["rate"]
                 )
                 crud.historical_interest_rate.update(
                     db, db_obj=existing, obj_in=update_data

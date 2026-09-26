@@ -56,6 +56,7 @@ DEPOSIT NO. OPEN DATE PRINCIPAL ROI% MAT. AMOUNT MAT. DATE
 
 def test_icici_fd_parser_password_required(parser, monkeypatch):
     """Test that ValueError("PASSWORD_REQUIRED") is raised if no password provided."""
+
     def mock_open(*args, **kwargs):
         raise ValueError("PASSWORD_REQUIRED")
 

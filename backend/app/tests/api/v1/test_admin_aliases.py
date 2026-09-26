@@ -2,6 +2,7 @@
 API tests for admin alias endpoints.
 Tests CRUD operations and non-admin access denial.
 """
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -97,9 +98,7 @@ def test_update_alias(client: TestClient, db: Session) -> None:
         "source": "New Source",
         "asset_id": str(asset2.id),
     }
-    response = client.put(
-        f"{API_PREFIX}/{alias_id}", headers=headers, json=update_data
-    )
+    response = client.put(f"{API_PREFIX}/{alias_id}", headers=headers, json=update_data)
     assert response.status_code == 200
     content = response.json()
     assert content["alias_symbol"] == "NEWALIAS"
@@ -139,9 +138,7 @@ def test_delete_alias(client: TestClient, db: Session) -> None:
 def test_search_aliases(client: TestClient, db: Session) -> None:
     """Test that search query filters aliases by alias_symbol."""
     headers = _admin_headers(client, db)
-    asset = create_test_asset(
-        db, ticker_symbol="SRCHTEST", name="Search Test Asset"
-    )
+    asset = create_test_asset(db, ticker_symbol="SRCHTEST", name="Search Test Asset")
     db.commit()
 
     client.post(
@@ -155,18 +152,14 @@ def test_search_aliases(client: TestClient, db: Session) -> None:
     )
 
     # Search should find it
-    response = client.get(
-        f"{API_PREFIX}/", headers=headers, params={"q": "XYZUNIQUE"}
-    )
+    response = client.get(f"{API_PREFIX}/", headers=headers, params={"q": "XYZUNIQUE"})
     assert response.status_code == 200
     assert response.json()["total"] >= 1
     syms = [a["alias_symbol"] for a in response.json()["items"]]
     assert "XYZUNIQUE" in syms
 
     # Search with non-matching query should return 0
-    response = client.get(
-        f"{API_PREFIX}/", headers=headers, params={"q": "ZZZNOMATCH"}
-    )
+    response = client.get(f"{API_PREFIX}/", headers=headers, params={"q": "ZZZNOMATCH"})
     assert response.status_code == 200
     assert response.json()["total"] == 0
 

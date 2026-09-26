@@ -13,6 +13,7 @@ from app.utils.pydantic_compat import model_dump
 
 router = APIRouter()
 
+
 def _check_bond_ownership(db: Session, bond: models.Bond, user_id: uuid.UUID) -> None:
     # Use a direct database query to check for asset ownership
     # to prevent IDOR and N+1 query issues
@@ -34,7 +35,6 @@ def _check_bond_ownership(db: Session, bond: models.Bond, user_id: uuid.UUID) ->
         )
 
 
-
 @router.post("/", response_model=Bond, status_code=status.HTTP_201_CREATED)
 def create_bond(
     *,
@@ -54,27 +54,28 @@ def create_bond(
     asset = crud.asset.get(db, id=bond_and_tx_in.transaction_data.asset_id)
     if not asset:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=(
-                f"Asset with ID {bond_and_tx_in.transaction_data.asset_id} not found.")
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                f"Asset with ID {bond_and_tx_in.transaction_data.asset_id} not found."
+            ),
         )
 
     # Check if the asset is actually a bond
     if asset.asset_type.upper() != "BOND":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(f"Asset with ID {bond_and_tx_in.transaction_data.asset_id} "
-                    "is not a BOND type asset.")
-         )
+            detail=(
+                f"Asset with ID {bond_and_tx_in.transaction_data.asset_id} "
+                "is not a BOND type asset."
+            ),
+        )
 
     # Check if bond details already exist for this asset
     existing_bond = crud.bond.get_by_asset_id(
         db=db, asset_id=bond_and_tx_in.transaction_data.asset_id
     )
 
-    bond_in = BondCreate(
-        **model_dump(bond_and_tx_in.bond_data),
-        asset_id=asset.id
-    )
+    bond_in = BondCreate(**model_dump(bond_and_tx_in.bond_data), asset_id=asset.id)
 
     if existing_bond:
         # If bond details already exist (e.g., from seeder), update them
@@ -132,7 +133,8 @@ def read_bond(
     bond = crud.bond.get(db=db, id=bond_id)
     if not bond:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found")
+            status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found"
+        )
     _check_bond_ownership(db, bond, current_user.id)
     return bond
 
@@ -150,8 +152,9 @@ def update_bond(
     """
     bond = crud.bond.get(db=db, id=bond_id)
     if not bond:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Bond not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found"
+        )
     _check_bond_ownership(db, bond, current_user.id)
     bond = crud.bond.update(db=db, db_obj=bond, obj_in=bond_in)
     db.commit()
@@ -171,8 +174,9 @@ def delete_bond(
     """
     bond = crud.bond.get(db=db, id=bond_id)
     if not bond:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Bond not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Bond not found"
+        )
     _check_bond_ownership(db, bond, current_user.id)
     crud.bond.remove(db=db, id=bond_id)
     db.commit()

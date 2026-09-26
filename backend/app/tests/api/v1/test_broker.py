@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -34,9 +34,7 @@ def test_broker_credentials_crud_and_endpoints(
         "api_key": "test_icici_key_123",
         "api_secret": "test_icici_secret_456",
     }
-    resp = client.post(
-        "/api/v1/broker/credentials", json=payload, headers=headers
-    )
+    resp = client.post("/api/v1/broker/credentials", json=payload, headers=headers)
     assert resp.status_code == 200
     data = resp.json()
     assert data["provider_name"] == "icici_breeze"
@@ -45,7 +43,9 @@ def test_broker_credentials_crud_and_endpoints(
     assert "api_secret" not in data
 
     # 4. Verify encrypted storage in DB
-    db_obj = crud_broker.get_by_user_and_provider(db, user_id=user_obj.id, provider_name="icici_breeze")
+    db_obj = crud_broker.get_by_user_and_provider(
+        db, user_id=user_obj.id, provider_name="icici_breeze"
+    )
     assert db_obj is not None
     assert db_obj.api_key == "test_icici_key_123"
     assert db_obj.encrypted_api_secret != "test_icici_secret_456"
@@ -56,8 +56,10 @@ def test_broker_credentials_crud_and_endpoints(
     resp = client.get("/api/v1/broker/icici/login-url", headers=headers)
     assert resp.status_code == 200
     url_data = resp.json()
-    assert "https://api.icicidirect.com/apiuser/login?api_key=test_icici_key_123" in url_data["login_url"]
-
+    assert (
+        "https://api.icicidirect.com/apiuser/login?api_key=test_icici_key_123"
+        in url_data["login_url"]
+    )
 
     # 6. Authenticate ICICI Breeze session (mocking provider response)
     with patch(
@@ -83,13 +85,18 @@ def test_broker_credentials_crud_and_endpoints(
         "api_key": "kite_key_999",
         "api_secret": "kite_secret_888",
     }
-    resp = client.post("/api/v1/broker/credentials", json=zerodha_payload, headers=headers)
+    resp = client.post(
+        "/api/v1/broker/credentials", json=zerodha_payload, headers=headers
+    )
     assert resp.status_code == 200
     assert resp.json()["provider_name"] == "zerodha_kite"
 
     resp = client.get("/api/v1/broker/zerodha/login-url", headers=headers)
     assert resp.status_code == 200
-    assert "https://kite.zerodha.com/connect/login?v=3&api_key=kite_key_999" in resp.json()["login_url"]
+    assert (
+        "https://kite.zerodha.com/connect/login?v=3&api_key=kite_key_999"
+        in resp.json()["login_url"]
+    )
 
     with patch(
         "app.services.providers.zerodha_provider.ZerodhaKiteProvider.authenticate_request_token",
@@ -99,7 +106,9 @@ def test_broker_credentials_crud_and_endpoints(
             "provider_name": "zerodha_kite",
             "session_token": "req_token_777",
         }
-        resp = client.post("/api/v1/broker/zerodha/authenticate", json=z_auth_payload, headers=headers)
+        resp = client.post(
+            "/api/v1/broker/zerodha/authenticate", json=z_auth_payload, headers=headers
+        )
         assert resp.status_code == 200
         assert resp.json()["is_authenticated"] is True
 
@@ -110,4 +119,3 @@ def test_broker_credentials_crud_and_endpoints(
     )
     assert resp.status_code == 200
     assert "Successfully deleted" in resp.json()["message"]
-

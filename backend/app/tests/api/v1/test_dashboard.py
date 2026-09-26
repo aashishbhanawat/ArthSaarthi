@@ -269,8 +269,8 @@ def test_get_portfolio_history_success(
         "get_current_prices",
         return_value={
             "NVDA": {"current_price": Decimal("500.0")},
-            "USDINR=X": {"current_price": Decimal("1.0")}
-        }
+            "USDINR=X": {"current_price": Decimal("1.0")},
+        },
     )
 
     response = client.get(
@@ -362,10 +362,12 @@ def test_portfolio_xirr_with_dividend(
     # After implementation, the correct XIRR for this cash flow is ~21.0%.
     assert data["xirr"] == pytest.approx(0.210, abs=0.001)
 
+
 def test_get_portfolio_history_with_snapshots(
     client: TestClient, db: Session, get_auth_headers, mocker
 ):
     from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+
     user, password = create_random_user(db)
     auth_headers = get_auth_headers(user.email, password)
     portfolio = create_test_portfolio(db, user_id=user.id, name="Snapshot History")
@@ -376,7 +378,7 @@ def test_get_portfolio_history_with_snapshots(
         portfolio_id=portfolio.id,
         snapshot_date=yesterday,
         total_value=Decimal("9999.99"),
-        equity_value=Decimal("9999.99")
+        equity_value=Decimal("9999.99"),
     )
     db.add(snapshot)
     db.commit()
@@ -408,8 +410,8 @@ def test_get_portfolio_history_with_snapshots(
         "get_current_prices",
         return_value={
             "NVDA": {"current_price": Decimal("100.0")},
-            "USDINR=X": {"current_price": Decimal("1.0")}
-        }
+            "USDINR=X": {"current_price": Decimal("1.0")},
+        },
     )
 
     response = client.get(
@@ -435,4 +437,3 @@ def test_get_portfolio_history_with_snapshots(
     )
     assert today_entry is not None
     assert Decimal(today_entry["value"]).quantize(Decimal("0.01")) == Decimal("100.00")
-

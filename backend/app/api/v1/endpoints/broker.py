@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-
 from app import models
 from app.core.dependencies import get_current_active_user
 from app.crud.crud_broker import crud_broker
@@ -18,7 +17,6 @@ from app.schemas.broker import (
 )
 from app.services.providers.icici_breeze_provider import IciciBreezeProvider
 from app.services.providers.zerodha_provider import ZerodhaKiteProvider
-
 
 router = APIRouter()
 
@@ -175,7 +173,6 @@ def zerodha_broker_callback(
     return HTMLResponse(content=html_content)
 
 
-
 @router.post("/icici/authenticate", response_model=BrokerCredentialResponse)
 def authenticate_icici_breeze(
     auth_in: BrokerAuthenticateRequest,
@@ -301,7 +298,6 @@ def authenticate_zerodha_kite(
         created_at=updated_cred.created_at,
         updated_at=updated_cred.updated_at,
     )
-
 
 
 @router.delete("/credentials/{provider_name}")

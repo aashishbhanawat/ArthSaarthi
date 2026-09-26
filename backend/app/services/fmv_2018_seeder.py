@@ -21,9 +21,7 @@ logger = logging.getLogger(__name__)
 BSE_BHAVCOPY_URL = (
     "https://www.bseindia.com/download/BhavCopy/Equity/EQ_ISINCODE_310118.zip"
 )
-AMFI_NAV_URL = (
-    "https://www.amfiindia.com/uploads/NAV_All_31_Jan2018_713f553045.xls"
-)
+AMFI_NAV_URL = "https://www.amfiindia.com/uploads/NAV_All_31_Jan2018_713f553045.xls"
 
 
 class FMV2018Seeder:
@@ -94,7 +92,10 @@ class FMV2018Seeder:
         }
 
         response = requests.get(
-            BSE_BHAVCOPY_URL, headers=headers, timeout=60, verify=False  # nosec B501
+            BSE_BHAVCOPY_URL,
+            headers=headers,
+            timeout=60,
+            verify=False,  # nosec B501
         )
         response.raise_for_status()
 
@@ -136,7 +137,10 @@ class FMV2018Seeder:
         }
 
         response = requests.get(
-            AMFI_NAV_URL, headers=headers, timeout=60, verify=False  # nosec B501
+            AMFI_NAV_URL,
+            headers=headers,
+            timeout=60,
+            verify=False,  # nosec B501
         )
         response.raise_for_status()
 
@@ -162,8 +166,8 @@ class FMV2018Seeder:
                     io.BytesIO(response.content), engine="xlrd", header=None
                 )
             except Exception as excel_err:
-                 logger.error(f"Excel parse failed: {excel_err}")
-                 return navs
+                logger.error(f"Excel parse failed: {excel_err}")
+                return navs
 
         target_col_idx = 0
 
@@ -171,7 +175,7 @@ class FMV2018Seeder:
         # Based on observation: Col 0 contains both Scheme Name and NAV alternating
         for i in range(len(df) - 1):
             val1 = str(df.iloc[i, target_col_idx]).strip()
-            val2 = str(df.iloc[i+1, target_col_idx]).strip()
+            val2 = str(df.iloc[i + 1, target_col_idx]).strip()
 
             # Logic: If val2 is a float (NAV) and val1 is a string (Name), it's a pair.
             # Avoid cases where val1 is also a number (unlikely for Name)
@@ -181,7 +185,7 @@ class FMV2018Seeder:
 
             try:
                 # remove commas and 'N.A.'
-                val2_clean = val2.replace(',', '').replace('N.A.', '').strip()
+                val2_clean = val2.replace(",", "").replace("N.A.", "").strip()
                 if val2_clean:
                     nav_val = Decimal(val2_clean)
                     # Sanity check: NAV shouldn't be a huge integer like a scheme code,
@@ -194,7 +198,7 @@ class FMV2018Seeder:
             except Exception:
                 pass
 
-            if is_val2_nav and val1 and not val1.replace('.','',1).isdigit():
+            if is_val2_nav and val1 and not val1.replace(".", "", 1).isdigit():
                 # val1 is likely the name
                 scheme_name = val1
                 navs[scheme_name] = nav_val
@@ -230,9 +234,13 @@ class FMV2018Seeder:
             # Or iterate prices and query.
             # Optimization: Load all Mutual Funds data first
 
-            db_assets = self.db.query(Asset).filter(
-                Asset.asset_type.in_(["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"])
-            ).all()
+            db_assets = (
+                self.db.query(Asset)
+                .filter(
+                    Asset.asset_type.in_(["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"])
+                )
+                .all()
+            )
 
             # Map normalized name to asset
             name_map = {a.name.strip().upper(): a for a in db_assets if a.name}
@@ -246,7 +254,7 @@ class FMV2018Seeder:
                         asset.fmv_2018 = nav
                         self.updated_count += 1
                     else:
-                         self.skipped_count += 1
+                        self.skipped_count += 1
                 else:
                     # Optional: fuzzy match or log missing
                     pass

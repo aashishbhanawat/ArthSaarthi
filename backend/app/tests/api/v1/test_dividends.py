@@ -55,7 +55,7 @@ def test_get_dividend_report_with_data(
             asset_id=asset1.id,
             transaction_type="DIVIDEND",
             quantity=10,
-            price_per_unit=10, # Total dividend = 100
+            price_per_unit=10,  # Total dividend = 100
             transaction_date=tx1_date,
             fees=0,
         ),
@@ -65,7 +65,7 @@ def test_get_dividend_report_with_data(
 
     response = client.get(
         f"{settings.API_V1_STR}/dividends/?fy=2025-26&portfolio_id={portfolio.id}",
-        headers=user_headers
+        headers=user_headers,
     )
     assert response.status_code == 200
     data = response.json()
@@ -99,7 +99,7 @@ def test_export_dividend_report_csv_with_data(
             asset_id=asset1.id,
             transaction_type="DIVIDEND",
             quantity=1,
-            price_per_unit=50, # 50 USD
+            price_per_unit=50,  # 50 USD
             transaction_date=tx1_date,
             fees=0,
         ),
@@ -109,7 +109,7 @@ def test_export_dividend_report_csv_with_data(
 
     response = client.get(
         f"{settings.API_V1_STR}/dividends/export?fy=2025-26&portfolio_id={portfolio.id}",
-        headers=user_headers
+        headers=user_headers,
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
@@ -142,7 +142,7 @@ def test_export_dividend_report_csv_with_data(
     # Verify detailed section
     assert rows[9][0] == "Asset Name"
     assert rows[10][1] == "DIV_ASSET2"
-    assert amount_native == 50.0 # Amount native
+    assert amount_native == 50.0  # Amount native
     assert rows[10][5] == "USD"  # Currency
-    assert float(rows[10][8]) == expected_inr # Amount INR
-    assert rows[10][9] == "16/6 - 15/9" # Period
+    assert float(rows[10][8]) == expected_inr  # Amount INR
+    assert rows[10][9] == "16/6 - 15/9"  # Period

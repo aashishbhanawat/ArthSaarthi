@@ -22,7 +22,7 @@ def cache_analytics_data(
     ttl: int = 900,
     response_model: Optional[Type[BaseModel]] = None,
 ):
-    """    A flexible decorator to cache the results of analytics functions.
+    """A flexible decorator to cache the results of analytics functions.
 
     It generates a cache key from a prefix and the values of specified arguments.
     The result is stored as JSON with a given TTL.
@@ -109,6 +109,7 @@ def invalidate_caches_for_portfolio(db: Session, portfolio_id: uuid.UUID):
         from sqlalchemy import delete
 
         from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+
         stmt = delete(DailyPortfolioSnapshot).where(
             DailyPortfolioSnapshot.portfolio_id == portfolio_id
         )
@@ -238,4 +239,3 @@ def get_cache_performance_stats() -> Dict[str, Any]:
         "total_requests": total,
         "hit_ratio_percent": hit_ratio,
     }
-

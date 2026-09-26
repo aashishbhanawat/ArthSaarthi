@@ -21,6 +21,3 @@ from app.models.risk import UserRiskProfile  # noqa
 from app.models.portfolio_snapshot import DailyPortfolioSnapshot  # noqa
 from app.models.income import IncomeSource, IncomeEntry  # noqa
 from app.models.tax_deduction import TaxDeduction  # noqa
-
-
-

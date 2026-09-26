@@ -53,12 +53,7 @@ class CRUDAssetAlias(CRUDBase[AssetAlias, AssetAliasCreate, AssetAliasUpdate]):
                 | Asset.ticker_symbol.ilike(pattern)
             )
         total = q.count()
-        items = (
-            q.order_by(self.model.alias_symbol)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        items = q.order_by(self.model.alias_symbol).offset(skip).limit(limit).all()
         return items, total
 
 

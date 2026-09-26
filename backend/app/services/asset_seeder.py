@@ -43,6 +43,7 @@ class AssetSeeder:
         """Loads existing assets into memory to minimize DB queries."""
         # Check if tables exist first
         from sqlalchemy import inspect
+
         inspector = inspect(self.db.bind)
         if not inspector.has_table("assets"):
             return
@@ -55,7 +56,7 @@ class AssetSeeder:
             models.Asset.ticker_symbol,
             models.Asset.name,
             models.Asset.asset_type,
-            models.Asset.currency
+            models.Asset.currency,
         ).all()
 
         for isin, ticker, name, atype, currency in assets:
@@ -85,8 +86,18 @@ class AssetSeeder:
             )
 
             months = [
-                "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-                "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+                "JAN",
+                "FEB",
+                "MAR",
+                "APR",
+                "MAY",
+                "JUN",
+                "JUL",
+                "AUG",
+                "SEP",
+                "OCT",
+                "NOV",
+                "DEC",
             ]
             corrected_count = 0
 
@@ -96,61 +107,82 @@ class AssetSeeder:
 
                 # Check if it matches any strong bond indicators under new rules
                 # 1. Government / Sovereign Bonds
-                is_gov = any(k in name for k in [
-                    "GSEC", "GOI", "SDL", "STRIP", "T-BILL", "TBILL",
-                    "TREASURY BILL"
-                ]) or "SGB" in ticker or "SOVEREIGN GOLD" in name
+                is_gov = (
+                    any(
+                        k in name
+                        for k in [
+                            "GSEC",
+                            "GOI",
+                            "SDL",
+                            "STRIP",
+                            "T-BILL",
+                            "TBILL",
+                            "TREASURY BILL",
+                        ]
+                    )
+                    or "SGB" in ticker
+                    or "SOVEREIGN GOLD" in name
+                )
 
                 # 2. Corporate Bond Keywords
-                is_corp_kw = any(k in name for k in [
-                    "NCD", "DEBENTURE", "PERP", "ZEROCOUP", "SUB DEBT",
-                    "TIER I", "TIER II", "UPPER TIER", "INFRA BOND"
-                ])
+                is_corp_kw = any(
+                    k in name
+                    for k in [
+                        "NCD",
+                        "DEBENTURE",
+                        "PERP",
+                        "ZEROCOUP",
+                        "SUB DEBT",
+                        "TIER I",
+                        "TIER II",
+                        "UPPER TIER",
+                        "INFRA BOND",
+                    ]
+                )
 
                 # 3. Bond Structural Indicators
-                has_fv = bool(re.search(
-                    r"\bFV\s*\d+\s*(L|LAC|CR|K|00)\b", name
-                ))
-                has_complex_date = bool(re.search(
-                    r"\d{2}[A-Z]{2,3}\d{2}", name
-                ))
-                has_series = bool(re.search(
-                    r"\b(SR|SERIES|OP|OPT)\s*[-]?\s*[IVX\d]+\b", name
-                ))
+                has_fv = bool(re.search(r"\bFV\s*\d+\s*(L|LAC|CR|K|00)\b", name))
+                has_complex_date = bool(re.search(r"\d{2}[A-Z]{2,3}\d{2}", name))
+                has_series = bool(
+                    re.search(r"\b(SR|SERIES|OP|OPT)\s*[-]?\s*[IVX\d]+\b", name)
+                )
                 is_tax_free = "TAX FREE" in name
 
                 # 4. Contextual Heuristics
-                is_finance = any(
-                    k in name for k in ["FINANCE", "FINCORP", "FIN"]
-                )
+                is_finance = any(k in name for k in ["FINANCE", "FINCORP", "FIN"])
                 has_bond_ind = any(k in name for k in ["SR-", "SR ", "%"])
-                has_coupon_pattern = bool(re.search(
-                    r"\b\d{1,2}\.\d{1,2}\b", name
-                ))
+                has_coupon_pattern = bool(re.search(r"\b\d{1,2}\.\d{1,2}\b", name))
 
                 # Old month match vs new month match
                 matched_old_month = any(m in name for m in months)
-                matched_new_month = bool(re.search(
-                    r"(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)"
-                    r"(\b|\d)",
-                    name
-                ))
+                matched_new_month = bool(
+                    re.search(
+                        r"(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)"
+                        r"(\b|\d)",
+                        name,
+                    )
+                )
                 has_year = bool(re.search(r"20\d{2}", name))
 
                 # Legitimate bond if matches any indicator
                 is_legit_bond = (
-                    is_gov or is_corp_kw or has_fv or has_complex_date or
-                    has_series or is_tax_free or
-                    (is_finance and (
-                        has_bond_ind or has_coupon_pattern
-                        or has_complex_date
-                    )) or has_year or matched_new_month
+                    is_gov
+                    or is_corp_kw
+                    or has_fv
+                    or has_complex_date
+                    or has_series
+                    or is_tax_free
+                    or (
+                        is_finance
+                        and (has_bond_ind or has_coupon_pattern or has_complex_date)
+                    )
+                    or has_year
+                    or matched_new_month
                 )
 
                 # False positive: matched month in the past but doesn't now
                 is_false_positive = (
-                    not is_legit_bond and matched_old_month
-                    and not matched_new_month
+                    not is_legit_bond and matched_old_month and not matched_new_month
                 )
 
                 if is_false_positive:
@@ -172,10 +204,7 @@ class AssetSeeder:
             if corrected_count > 0:
                 self.db.commit()
                 if self.debug:
-                    print(
-                        f"[DEBUG] Corrected {corrected_count} "
-                        f"misclassified assets."
-                    )
+                    print(f"[DEBUG] Corrected {corrected_count} misclassified assets.")
         except Exception as e:
             self.db.rollback()
             if self.debug:
@@ -183,7 +212,7 @@ class AssetSeeder:
 
     def _parse_date(self, value: Any) -> Optional[date]:
         """Parses a date from various formats."""
-        if pd.isna(value) or value == '':
+        if pd.isna(value) or value == "":
             return None
         try:
             if isinstance(value, (datetime, date)):
@@ -195,12 +224,12 @@ class AssetSeeder:
 
     def _parse_decimal(self, value: Any) -> Optional[Decimal]:
         """Parses a decimal value."""
-        if pd.isna(value) or value == '':
+        if pd.isna(value) or value == "":
             return None
         try:
             # Handle percentage strings if present (e.g. "8.5%")
             if isinstance(value, str):
-                value = value.replace('%', '').replace(',', '').strip()
+                value = value.replace("%", "").replace(",", "").strip()
             return Decimal(str(value))
         except Exception:
             return None
@@ -238,9 +267,7 @@ class AssetSeeder:
 
         return None
 
-    def _create_asset(
-        self, data: dict
-    ) -> Optional[models.Asset]:
+    def _create_asset(self, data: dict) -> Optional[models.Asset]:
         """Creates an asset and optionally a bond record.
 
         Returns the created Asset object, or None if skipped/failed.
@@ -267,26 +294,19 @@ class AssetSeeder:
                 isin=isin,
                 asset_type=asset_type,
                 currency="INR",
-                exchange=data.get("exchange", "N/A")
+                exchange=data.get("exchange", "N/A"),
             )
-            asset = crud.asset.create(
-                db=self.db, obj_in=asset_in
-            )
+            asset = crud.asset.create(db=self.db, obj_in=asset_in)
 
             if asset_type == "BOND" and data.get("bond_type"):
                 bond_in = BondCreate(
                     asset_id=asset.id,
                     bond_type=data["bond_type"],
-                    maturity_date=(
-                        data.get("maturity_date")
-                        or date(1970, 1, 1)
-                    ),
+                    maturity_date=(data.get("maturity_date") or date(1970, 1, 1)),
                     isin=isin,
                     face_value=data.get("face_value"),
                     coupon_rate=data.get("coupon_rate"),
-                    payment_frequency=(
-                        data.get("payment_frequency")
-                    ),
+                    payment_frequency=(data.get("payment_frequency")),
                 )
                 crud.bond.create(db=self.db, obj_in=bond_in)
 
@@ -299,17 +319,11 @@ class AssetSeeder:
             self._pending_commits += 1
 
             # Commit periodically for live progress
-            if (
-                self._pending_commits
-                >= self.COMMIT_BATCH_SIZE
-            ):
+            if self._pending_commits >= self.COMMIT_BATCH_SIZE:
                 self.db.commit()
                 self._pending_commits = 0
                 if self.debug:
-                    print(
-                        "[DEBUG] Committed batch, "
-                        f"total: {self.created_count}"
-                    )
+                    print(f"[DEBUG] Committed batch, total: {self.created_count}")
 
             return asset
         except IntegrityError:
@@ -318,10 +332,7 @@ class AssetSeeder:
             return None
         except Exception as e:
             if self.debug:
-                print(
-                    f"[ERROR] Failed to create "
-                    f"asset {name}: {e}"
-                )
+                print(f"[ERROR] Failed to create asset {name}: {e}")
             self.skipped_count += 1
             return None
 
@@ -348,9 +359,7 @@ class AssetSeeder:
                 source=source,
                 asset_id=asset_id,
             )
-            crud.asset_alias.create(
-                db=self.db, obj_in=alias_in
-            )
+            crud.asset_alias.create(db=self.db, obj_in=alias_in)
             self.alias_count += 1
             return True
         except IntegrityError:
@@ -371,45 +380,43 @@ class AssetSeeder:
         print(f"Processing NSDL file: {filepath}")
         try:
             # Try reading as CSV with tab separator (as discovered)
-            df = pd.read_csv(
-                filepath, sep='\t', on_bad_lines='skip', encoding='latin1'
-            )
+            df = pd.read_csv(filepath, sep="\t", on_bad_lines="skip", encoding="latin1")
         except Exception:
             try:
-                 df = pd.read_excel(filepath)
+                df = pd.read_excel(filepath)
             except Exception as e:
                 print(f"Failed to read NSDL file: {e}")
                 return
 
         for _, row in df.iterrows():
-            isin = str(row.get('ISIN', '')).strip()
+            isin = str(row.get("ISIN", "")).strip()
             if not isin or pd.isna(isin):
                 continue
 
             # Use ISIN as ticker if no other identifier, but usually ISIN
             # is the key here. We map NSDL -> BOND definitively.
-            name = str(row.get('NAME_OF_THE_INSTRUMENT', '')).strip()
+            name = str(row.get("NAME_OF_THE_INSTRUMENT", "")).strip()
             if not name:
                 name = f"Bond {isin}"
 
-            maturity_date = self._parse_date(row.get('REDEMPTION'))
-            face_value = self._parse_decimal(row.get('FACE_VALUE'))
-            coupon_rate = self._parse_decimal(row.get('COUPON_RATE'))
+            maturity_date = self._parse_date(row.get("REDEMPTION"))
+            face_value = self._parse_decimal(row.get("FACE_VALUE"))
+            coupon_rate = self._parse_decimal(row.get("COUPON_RATE"))
             payment_freq = self._parse_frequency(
-                row.get('FREQUENCY_OF_THE_INTEREST_PAYMENT')
+                row.get("FREQUENCY_OF_THE_INTEREST_PAYMENT")
             )
 
             data = {
                 "isin": isin,
-                "ticker_symbol": isin, # Fallback ticker
+                "ticker_symbol": isin,  # Fallback ticker
                 "name": name,
                 "asset_type": "BOND",
-                "bond_type": BondType.CORPORATE, # Default, could be refined
+                "bond_type": BondType.CORPORATE,  # Default, could be refined
                 "maturity_date": maturity_date,
                 "face_value": face_value,
                 "coupon_rate": coupon_rate,
                 "payment_frequency": payment_freq,
-                "exchange": "N/A" # OTC / NSDL
+                "exchange": "N/A",  # OTC / NSDL
             }
             self._create_asset(data)
 
@@ -421,34 +428,34 @@ class AssetSeeder:
                 for filename in z.namelist():
                     if filename.endswith(".xlsx"):
                         with z.open(filename) as f:
-                            df = pd.read_excel(f, engine='openpyxl')
+                            df = pd.read_excel(f, engine="openpyxl")
                             self._process_bse_public_debt_df(df)
         except Exception as e:
             print(f"Error processing BSE Public Debt zip: {e}")
 
     def _process_bse_public_debt_df(self, df: pd.DataFrame):
         for _, row in df.iterrows():
-            isin = str(row.get('ISIN', '')).strip()
-            ticker = str(row.get('Scrip_ Code', '')).strip()
-            name = str(row.get('Scrip_Long_Name', '')).strip()
+            isin = str(row.get("ISIN", "")).strip()
+            ticker = str(row.get("Scrip_ Code", "")).strip()
+            name = str(row.get("Scrip_Long_Name", "")).strip()
 
             if not isin or not ticker:
                 continue
 
-            maturity_date = self._parse_date(row.get('Conversion_Date'))
-            face_value = self._parse_decimal(row.get('Scrip_Face_Value'))
-            coupon_rate = self._parse_decimal(row.get('Interest_Rate'))
+            maturity_date = self._parse_date(row.get("Conversion_Date"))
+            face_value = self._parse_decimal(row.get("Scrip_Face_Value"))
+            coupon_rate = self._parse_decimal(row.get("Interest_Rate"))
 
             data = {
                 "isin": isin,
                 "ticker_symbol": ticker,
                 "name": name,
                 "asset_type": "BOND",
-                "bond_type": BondType.CORPORATE, # Mostly corporate public issues
+                "bond_type": BondType.CORPORATE,  # Mostly corporate public issues
                 "maturity_date": maturity_date,
                 "face_value": face_value,
                 "coupon_rate": coupon_rate,
-                "exchange": "BSE"
+                "exchange": "BSE",
             }
             self._create_asset(data)
 
@@ -464,10 +471,10 @@ class AssetSeeder:
             print(f"Error reading BSE Equity CSV: {e}")
 
     def _process_bse_equity_row(self, row: pd.Series):
-        isin = str(row.get('ISIN', '')).strip()
-        ticker = str(row.get('TckrSymb', '')).strip()
-        series = str(row.get('SctySrs', '')).strip().upper()
-        name = str(row.get('FinInstrmNm', '')).strip()
+        isin = str(row.get("ISIN", "")).strip()
+        ticker = str(row.get("TckrSymb", "")).strip()
+        series = str(row.get("SctySrs", "")).strip().upper()
+        name = str(row.get("FinInstrmNm", "")).strip()
 
         if not isin or not ticker:
             return
@@ -476,23 +483,23 @@ class AssetSeeder:
         asset_type = None
         bond_type = None
 
-        if series in ['A', 'B', 'T', 'X', 'XT', 'Z', 'P']: # Standard Equity Series
+        if series in ["A", "B", "T", "X", "XT", "Z", "P"]:  # Standard Equity Series
             asset_type = "STOCK"
-        elif series == 'E':
-            asset_type = "ETF" # Or STOCK with specific flag
-        elif series == 'G':
+        elif series == "E":
+            asset_type = "ETF"  # Or STOCK with specific flag
+        elif series == "G":
             asset_type = "BOND"
             bond_type = BondType.GOVERNMENT
-        elif series == 'F':
+        elif series == "F":
             asset_type = "BOND"
             bond_type = BondType.CORPORATE
         else:
-             # Unknown series, maybe skip or log?
-             # For now, default to STOCK if looks like equity,
-             # but better to skip if unsure.
-             if series in ['M', 'MT']: # SME
-                 asset_type = "STOCK"
-             else:
+            # Unknown series, maybe skip or log?
+            # For now, default to STOCK if looks like equity,
+            # but better to skip if unsure.
+            if series in ["M", "MT"]:  # SME
+                asset_type = "STOCK"
+            else:
                 self.skipped_series_counts[series] += 1
                 return
 
@@ -502,7 +509,7 @@ class AssetSeeder:
             "name": name,
             "asset_type": asset_type,
             "bond_type": bond_type,
-            "exchange": "BSE"
+            "exchange": "BSE",
         }
         self._create_asset(data)
 
@@ -521,9 +528,9 @@ class AssetSeeder:
 
     def _process_nse_equity_df(self, df: pd.DataFrame):
         for _, row in df.iterrows():
-            isin = str(row.get('ISIN', '')).strip()
-            ticker = str(row.get('SYMBOL', '')).strip()
-            series = str(row.get('SERIES', '')).strip().upper()
+            isin = str(row.get("ISIN", "")).strip()
+            ticker = str(row.get("SYMBOL", "")).strip()
+            series = str(row.get("SERIES", "")).strip().upper()
             # NSE Bhavcopy usually doesn't have full name, use Ticker as fallback
             name = ticker
 
@@ -534,15 +541,15 @@ class AssetSeeder:
             bond_type = None
 
             # NSE Classification Logic
-            if series in ['EQ', 'BE', 'SM', 'ST']:
+            if series in ["EQ", "BE", "SM", "ST"]:
                 asset_type = "STOCK"
-            elif series == 'GB':
+            elif series == "GB":
                 asset_type = "BOND"
                 bond_type = BondType.SGB
-            elif series in ['GS', 'SG', 'CG']:
+            elif series in ["GS", "SG", "CG"]:
                 asset_type = "BOND"
                 bond_type = BondType.GOVERNMENT
-            elif series.startswith(('N', 'Y', 'Z')):
+            elif series.startswith(("N", "Y", "Z")):
                 # Corporate bonds often start with N, Y, Z on NSE
                 asset_type = "BOND"
                 bond_type = BondType.CORPORATE
@@ -553,7 +560,7 @@ class AssetSeeder:
                 "name": name,
                 "asset_type": asset_type,
                 "bond_type": bond_type,
-                "exchange": "NSE"
+                "exchange": "NSE",
             }
             self._create_asset(data)
 
@@ -562,28 +569,28 @@ class AssetSeeder:
         """Phase 3 Source 5: NSE Daily Debt (XLSX)."""
         print(f"Processing NSE Daily Debt: {filepath}")
         try:
-            df = pd.read_excel(filepath, engine='openpyxl')
+            df = pd.read_excel(filepath, engine="openpyxl")
             for _, row in df.iterrows():
                 self._process_nse_debt_row(row)
         except Exception as e:
             print(f"Error reading NSE Daily Debt: {e}")
 
     def _process_nse_debt_row(self, row: pd.Series):
-        isin = str(row.get('ISIN_CODE', '')).strip()
+        isin = str(row.get("ISIN_CODE", "")).strip()
         if not isin:
             return
 
-        name = str(row.get('ISSUE_DESC', '')).strip()
-        issue_type = str(row.get('ISSUE_TYPE', '')).strip().upper()
+        name = str(row.get("ISSUE_DESC", "")).strip()
+        issue_type = str(row.get("ISSUE_TYPE", "")).strip().upper()
 
         bond_type = BondType.CORPORATE
-        if issue_type in ['GS', 'SB', 'SDL']:
+        if issue_type in ["GS", "SB", "SDL"]:
             bond_type = BondType.GOVERNMENT
-        elif issue_type == 'TBILLS':
+        elif issue_type == "TBILLS":
             bond_type = BondType.TBILL
 
-        maturity_date = self._parse_date(row.get('MAT_DT'))
-        coupon_rate = self._parse_decimal(row.get('COUPON_RATE'))
+        maturity_date = self._parse_date(row.get("MAT_DT"))
+        coupon_rate = self._parse_decimal(row.get("COUPON_RATE"))
 
         # Ticker often missing in this file, use ISIN
         ticker = isin
@@ -596,7 +603,7 @@ class AssetSeeder:
             "bond_type": bond_type,
             "maturity_date": maturity_date,
             "coupon_rate": coupon_rate,
-            "exchange": "NSE"
+            "exchange": "NSE",
         }
         self._create_asset(data)
 
@@ -610,40 +617,46 @@ class AssetSeeder:
                         with z.open(filename) as f:
                             # Use python engine and sep=None to auto-detect
                             # delimiter, as it can be comma or pipe.
-                            df = pd.read_csv(f, sep=None, engine='python')
+                            df = pd.read_csv(f, sep=None, engine="python")
                             self._process_bse_debt_csv(filename, df)
         except Exception as e:
             print(f"Error processing BSE Debt Zip: {e}")
 
     def _process_bse_debt_csv(self, filename: str, df: pd.DataFrame):
         # fgroup, icdm -> Corporate. wdm -> Govt usually
-        is_gov = 'wdm' in filename.lower()
+        is_gov = "wdm" in filename.lower()
 
         for _, row in df.iterrows():
             # Column names vary slightly
-            isin = row.get('ISIN No.') or row.get('ISIN')
+            isin = row.get("ISIN No.") or row.get("ISIN")
             if not isin or pd.isna(isin):
                 continue
             isin = str(isin).strip()
 
-            ticker = (row.get('Security Code') or row.get('Security_cd') or
-                      row.get('Scrip Code'))
+            ticker = (
+                row.get("Security Code")
+                or row.get("Security_cd")
+                or row.get("Scrip Code")
+            )
             ticker = str(ticker).strip() if ticker else isin
 
-            name = (row.get('sc_name') or row.get('Issuer Name') or
-                    row.get('Security Description'))
+            name = (
+                row.get("sc_name")
+                or row.get("Issuer Name")
+                or row.get("Security Description")
+            )
             name = str(name).strip() if name else f"Bond {isin}"
 
             maturity_date = self._parse_date(
-                row.get('Maturity Date') or row.get('MaturityDate')
+                row.get("Maturity Date") or row.get("MaturityDate")
             )
             coupon_rate = self._parse_decimal(
-                row.get('COUP0N (%)') or
-                row.get('Coupon (%)') or
-                row.get('Coupon Rate (%)')
+                row.get("COUP0N (%)")
+                or row.get("Coupon (%)")
+                or row.get("Coupon Rate (%)")
             )
             face_value = self._parse_decimal(
-                row.get('Face Value') or row.get('FACE VALUE')
+                row.get("Face Value") or row.get("FACE VALUE")
             )
 
             data = {
@@ -655,7 +668,7 @@ class AssetSeeder:
                 "maturity_date": maturity_date,
                 "face_value": face_value,
                 "coupon_rate": coupon_rate,
-                "exchange": "BSE"
+                "exchange": "BSE",
             }
             self._create_asset(data)
 
@@ -666,18 +679,18 @@ class AssetSeeder:
         try:
             df = pd.read_csv(filepath)
             for _, row in df.iterrows():
-                ticker = str(row.get('IndexID', '')).strip()
-                name = str(row.get('IndexName', '')).strip()
+                ticker = str(row.get("IndexID", "")).strip()
+                name = str(row.get("IndexName", "")).strip()
 
                 if not ticker:
                     continue
 
                 data = {
-                    "isin": None, # Indices usually don't have ISINs in this file
+                    "isin": None,  # Indices usually don't have ISINs in this file
                     "ticker_symbol": ticker,
                     "name": name,
                     "asset_type": "INDEX",
-                    "exchange": "BSE"
+                    "exchange": "BSE",
                 }
                 self._create_asset(data)
         except Exception as e:
@@ -691,8 +704,7 @@ class AssetSeeder:
             with zipfile.ZipFile(filepath) as z:
                 # Find the txt file
                 txt_files = [
-                    f for f in z.namelist()
-                    if f.endswith(".txt") or f.endswith(".csv")
+                    f for f in z.namelist() if f.endswith(".txt") or f.endswith(".csv")
                 ]
 
                 # Prioritize NSEScripMaster.txt to build the ISIN -> Series
@@ -708,19 +720,15 @@ class AssetSeeder:
                         # Code in cli.py used csv.DictReader, implying comma.
                         # But user might have different format now?
                         # Let's assume standard CSV for now or check extension.
-                        df = pd.read_csv(
-                            f, on_bad_lines='skip'
-                        )
+                        df = pd.read_csv(f, on_bad_lines="skip")
                         # NSEScripMaster uses ", " (comma-space)
                         # delimiters, causing leading spaces in
                         # column names. Strip them.
-                        df.columns = df.columns.str.strip().str.replace('"', '')
+                        df.columns = df.columns.str.strip().str.replace('"', "")
                         # Strip whitespace and double quotes from string values
-                        str_cols = df.select_dtypes(
-                            include='object'
-                        ).columns
+                        str_cols = df.select_dtypes(include="object").columns
                         df[str_cols] = df[str_cols].apply(
-                            lambda s: s.str.strip().str.replace('"', '')
+                            lambda s: s.str.strip().str.replace('"', "")
                         )
 
                         # If processing NSE master, build the ISIN -> Series map first
@@ -741,7 +749,7 @@ class AssetSeeder:
                             )
 
                         for _, row in df.iterrows():
-                             self._process_fallback_row(row, exchange)
+                            self._process_fallback_row(row, exchange)
         except Exception as e:
             print(f"Error processing Fallback Zip: {e}")
 
@@ -749,15 +757,12 @@ class AssetSeeder:
         # NSE: ExchangeCode, CompanyName, ISINCode, Series
         # BSE: ScripID, ScripName, ISINCode, Series
 
-        nse_code = row.get('ExchangeCode')
-        bse_code = row.get('ScripID')
-        short_name = row.get('ShortName')
-        name = (
-            row.get('CompanyName')
-            or row.get('ScripName')
-        )
-        isin = row.get('ISINCode')
-        series = row.get('Series', '')
+        nse_code = row.get("ExchangeCode")
+        bse_code = row.get("ScripID")
+        short_name = row.get("ShortName")
+        name = row.get("CompanyName") or row.get("ScripName")
+        isin = row.get("ISINCode")
+        series = row.get("Series", "")
 
         ticker = None
         if not exchange:
@@ -770,21 +775,17 @@ class AssetSeeder:
                 exchange = "BSE"
         else:
             if exchange == "NSE":
-                ticker = row.get('ExchangeCode') or row.get('Symbol')
+                ticker = row.get("ExchangeCode") or row.get("Symbol")
             else:
-                ticker = row.get('ScripID') or row.get('ExchangeCode')
+                ticker = row.get("ScripID") or row.get("ExchangeCode")
 
         if not ticker or pd.isna(ticker):
             return
 
         ticker = str(ticker).strip()
         name = str(name).strip() if name and not pd.isna(name) else ""
-        isin = (
-            str(isin).strip()
-            if isin and not pd.isna(isin)
-            else None
-        )
-        series = str(series).strip().upper() if series and not pd.isna(series) else ''
+        isin = str(isin).strip() if isin and not pd.isna(isin) else None
+        series = str(series).strip().upper() if series and not pd.isna(series) else ""
 
         # Apply Classification Logic using NSEScripMaster mapping lookup
         lookup_series = series
@@ -806,15 +807,13 @@ class AssetSeeder:
         elif lookup_series == "GS":
             asset_type = "BOND"
             bond_type = BondType.GOVERNMENT
-        elif lookup_series.startswith(('N', 'Y', 'Z')):
+        elif lookup_series.startswith(("N", "Y", "Z")):
             asset_type = "BOND"
             bond_type = BondType.CORPORATE
         else:
             # Apply Heuristic Classification
-            asset_type, bond_type = (
-                self._classify_asset_heuristic(
-                    ticker, name, lookup_series
-                )
+            asset_type, bond_type = self._classify_asset_heuristic(
+                ticker, name, lookup_series
             )
 
         if not asset_type:
@@ -835,19 +834,15 @@ class AssetSeeder:
         # look it up so we can still create the alias.
         if not asset:
             if isin and isin in self.existing_isins:
-                asset = self.db.query(models.Asset).filter(
-                    models.Asset.isin == isin
-                ).first()
-            if not asset and ticker in self.existing_tickers:
-                asset = crud.asset.get_by_ticker(
-                    self.db, ticker_symbol=ticker
+                asset = (
+                    self.db.query(models.Asset)
+                    .filter(models.Asset.isin == isin)
+                    .first()
                 )
+            if not asset and ticker in self.existing_tickers:
+                asset = crud.asset.get_by_ticker(self.db, ticker_symbol=ticker)
 
-        if (
-            asset
-            and short_name
-            and not pd.isna(short_name)
-        ):
+        if asset and short_name and not pd.isna(short_name):
             sn = str(short_name).strip()
             if sn and sn.upper() != ticker.upper():
                 self._create_alias(
@@ -868,17 +863,25 @@ class AssetSeeder:
 
         # 1. Government / Sovereign Bonds
         # GSEC, SDL, GOI, TREASURY BILL
-        if any(k in name for k in [
-            "GSEC", "GOI", "SDL", "STRIP", "T-BILL", "TBILL", "TREASURY BILL"
-        ]):
+        if any(
+            k in name
+            for k in ["GSEC", "GOI", "SDL", "STRIP", "T-BILL", "TBILL", "TREASURY BILL"]
+        ):
             return "BOND", BondType.GOVERNMENT
         if "SGB" in ticker or "SOVEREIGN GOLD" in name or series == "GB":
             return "BOND", BondType.SGB
 
         # 2. Corporate Bond Keywords (Strong)
         corp_keywords = [
-            "NCD", "DEBENTURE", "PERP", "ZEROCOUP", "SUB DEBT",
-            "TIER I", "TIER II", "UPPER TIER", "INFRA BOND"
+            "NCD",
+            "DEBENTURE",
+            "PERP",
+            "ZEROCOUP",
+            "SUB DEBT",
+            "TIER I",
+            "TIER II",
+            "UPPER TIER",
+            "INFRA BOND",
         ]
         if any(k in name for k in corp_keywords):
             return "BOND", BondType.CORPORATE
@@ -899,11 +902,11 @@ class AssetSeeder:
 
         # Tax Free Bonds
         if "TAX FREE" in name:
-             return "BOND", BondType.CORPORATE
+            return "BOND", BondType.CORPORATE
 
         # NSE Bond Series
-        if series.startswith(('N', 'Y', 'Z')):
-             return "BOND", BondType.CORPORATE
+        if series.startswith(("N", "Y", "Z")):
+            return "BOND", BondType.CORPORATE
 
         # 4. Stock Indicators (If not identified as Bond yet)
         stock_keywords = ["LIMITED RE", "RIGHTS ENT", "OFS", "WARRANTS", " PP"]
@@ -930,15 +933,19 @@ class AssetSeeder:
         # Use regex to only match months as standalone words or adjacent to
         # digits (e.g. 25JAN26 or JAN 26) to prevent matching substrings
         # inside words like INDRAPRASHTHA, AMARA, KUMAR.
-        has_month = bool(re.search(
-            r"(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\b|\d)",
-            name
-        ))
-        has_year = bool(re.search(r"20\d{2}", name)) # 20xx
+        has_month = bool(
+            re.search(
+                r"(\b|\d)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\b|\d)", name
+            )
+        )
+        has_year = bool(re.search(r"20\d{2}", name))  # 20xx
 
         stock_exclusions = [
-            "INDUSTRIES", "MANUFACTURING", "TECHNOLOGIES",
-            "SYSTEMS", "PROJECTS"
+            "INDUSTRIES",
+            "MANUFACTURING",
+            "TECHNOLOGIES",
+            "SYSTEMS",
+            "PROJECTS",
         ]
         is_stock_excl = any(k in name for k in stock_exclusions)
 
@@ -980,15 +987,17 @@ class AssetSeeder:
                         "ticker_symbol": symbol,
                         "name": symbol,
                         "asset_type": asset_type,
-                        "exchange": "NSE"
+                        "exchange": "NSE",
                     }
                     if self._create_asset(data):
                         stats["created"] += 1
 
             # 2. Cross-Verify existing assets in DB
-            db_assets = self.db.query(models.Asset).filter(
-                models.Asset.exchange.in_(["NSE", "N/A"])
-            ).all()
+            db_assets = (
+                self.db.query(models.Asset)
+                .filter(models.Asset.exchange.in_(["NSE", "N/A"]))
+                .all()
+            )
 
             for asset in db_assets:
                 ticker = (asset.ticker_symbol or "").upper().replace(".NS", "")
@@ -1044,37 +1053,61 @@ class AssetSeeder:
         stats = {"enriched": 0, "skipped": 0, "errors": 0}
 
         try:
-            equities = self.db.query(models.Asset).filter(
-                models.Asset.sector.is_(None),
-                models.Asset.asset_type.in_(["STOCK", "ETF"])
-            ).limit(max_assets).all()
+            equities = (
+                self.db.query(models.Asset)
+                .filter(
+                    models.Asset.sector.is_(None),
+                    models.Asset.asset_type.in_(["STOCK", "ETF"]),
+                )
+                .limit(max_assets)
+                .all()
+            )
         except Exception as e:
             self.db.rollback()
             logger.warning(f"Session rollback triggered before enrich_assets: {e}")
-            equities = self.db.query(models.Asset).filter(
-                models.Asset.sector.is_(None),
-                models.Asset.asset_type.in_(["STOCK", "ETF"])
-            ).limit(max_assets).all()
-
-        mutual_funds = self.db.query(models.Asset).filter(
-            models.Asset.sector.is_(None),
-            models.Asset.asset_type.in_(["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"])
-        ).limit(max_assets).all()
-
-        fixed_income = self.db.query(models.Asset).filter(
-            models.Asset.sector.is_(None),
-            models.Asset.asset_type.in_(
-                ["BOND", "FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF"]
+            equities = (
+                self.db.query(models.Asset)
+                .filter(
+                    models.Asset.sector.is_(None),
+                    models.Asset.asset_type.in_(["STOCK", "ETF"]),
+                )
+                .limit(max_assets)
+                .all()
             )
-        ).limit(max_assets).all()
+
+        mutual_funds = (
+            self.db.query(models.Asset)
+            .filter(
+                models.Asset.sector.is_(None),
+                models.Asset.asset_type.in_(
+                    ["MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"]
+                ),
+            )
+            .limit(max_assets)
+            .all()
+        )
+
+        fixed_income = (
+            self.db.query(models.Asset)
+            .filter(
+                models.Asset.sector.is_(None),
+                models.Asset.asset_type.in_(
+                    ["BOND", "FIXED_DEPOSIT", "RECURRING_DEPOSIT", "PPF"]
+                ),
+            )
+            .limit(max_assets)
+            .all()
+        )
 
         total_to_enrich = len(equities) + len(mutual_funds) + len(fixed_income)
         if total_to_enrich == 0:
             print("No assets need enrichment.")
             return stats
 
-        print(f"Enriching: {len(equities)} equities, "
-              f"{len(mutual_funds)} MFs, {len(fixed_income)} fixed income...")
+        print(
+            f"Enriching: {len(equities)} equities, "
+            f"{len(mutual_funds)} MFs, {len(fixed_income)} fixed income..."
+        )
 
         # Enrich Equities via yfinance (batch)
         if equities:
@@ -1132,10 +1165,7 @@ class AssetSeeder:
                             asset.market_cap = info.get("marketCap")
                             stats["enriched"] += 1
                             if self.debug:
-                                print(
-                                    f"  {asset.ticker_symbol}: "
-                                    f"sector={asset.sector}"
-                                )
+                                print(f"  {asset.ticker_symbol}: sector={asset.sector}")
 
             except Exception as e:
                 print(f"Error fetching yfinance batch: {e}")
@@ -1177,4 +1207,3 @@ class AssetSeeder:
             f"{stats['skipped']} skipped, {stats['errors']} errors"
         )
         return stats
-

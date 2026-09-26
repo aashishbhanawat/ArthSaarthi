@@ -43,6 +43,7 @@ def create_access_token(
 def _get_fernet():
     import base64
     import hashlib
+
     from cryptography.fernet import Fernet
 
     key_bytes = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
@@ -62,4 +63,3 @@ def decrypt_credential(cipher_text: str) -> str:
         return ""
     f = _get_fernet()
     return f.decrypt(cipher_text.encode("utf-8")).decode("utf-8")
-

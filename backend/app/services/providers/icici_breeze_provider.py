@@ -3,14 +3,14 @@ import json
 import logging
 import time
 import urllib.parse
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
-
 
 import httpx
 
 from app.cache.base import CacheClient
+
 from .base import FinancialDataProvider
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
@@ -38,7 +38,6 @@ class IciciBreezeProvider(FinancialDataProvider):
     def get_login_url(api_key: str) -> str:
         encoded_key = urllib.parse.quote(api_key)
         return f"https://api.icicidirect.com/apiuser/login?api_key={encoded_key}"
-
 
     def _get_headers(self, payload_str: str = "") -> Dict[str, str]:
         headers = {
@@ -92,7 +91,6 @@ class IciciBreezeProvider(FinancialDataProvider):
 
         return {"success": False, "error": "Authentication failed"}
 
-
     def _clean_symbol(self, ticker: str) -> str:
         """Strips exchange suffix like .NS, .BO, etc."""
         return ticker.split(".")[0].upper()
@@ -133,7 +131,10 @@ class IciciBreezeProvider(FinancialDataProvider):
                 if self.cache_client:
                     try:
                         from app.services.rate_limiter import ProviderRateLimiter
-                        ProviderRateLimiter(self.cache_client).check_and_increment("icici_breeze")
+
+                        ProviderRateLimiter(self.cache_client).check_and_increment(
+                            "icici_breeze"
+                        )
                     except Exception as rle:
                         logger.debug(f"ICICI Breeze rate limit tracking note: {rle}")
                 time.sleep(0.05)  # Rate limit safety
@@ -144,8 +145,16 @@ class IciciBreezeProvider(FinancialDataProvider):
                         success_data = res_json.get("Success")
                         if success_data and len(success_data) > 0:
                             quote = success_data[0]
-                            lTP = Decimal(str(quote.get("lTP") or quote.get("ltp") or 0))
-                            close = Decimal(str(quote.get("previous_close") or quote.get("close") or lTP))
+                            lTP = Decimal(
+                                str(quote.get("lTP") or quote.get("ltp") or 0)
+                            )
+                            close = Decimal(
+                                str(
+                                    quote.get("previous_close")
+                                    or quote.get("close")
+                                    or lTP
+                                )
+                            )
                             if lTP > 0:
                                 prices_data[ticker] = {
                                     "current_price": lTP,
@@ -154,7 +163,10 @@ class IciciBreezeProvider(FinancialDataProvider):
                                 if self.cache_client:
                                     self.cache_client.set_json(
                                         cache_key,
-                                        {"current_price": str(lTP), "previous_close": str(close)},
+                                        {
+                                            "current_price": str(lTP),
+                                            "previous_close": str(close),
+                                        },
                                         expire=CACHE_TTL_CURRENT_PRICE,
                                     )
             except Exception as e:
@@ -196,13 +208,17 @@ class IciciBreezeProvider(FinancialDataProvider):
                         if candles:
                             historical_data[ticker] = {}
                             for c in candles:
-                                dt_str = c.get("datetime", "").split(" ")[0].split("T")[0]
+                                dt_str = (
+                                    c.get("datetime", "").split(" ")[0].split("T")[0]
+                                )
                                 if dt_str:
                                     c_dt = date.fromisoformat(dt_str)
                                     close_px = Decimal(str(c.get("close", 0)))
                                     historical_data[ticker][c_dt] = close_px
             except Exception as e:
-                logger.error(f"ICICI Breeze historical prices error for {stock_code}: {e}")
+                logger.error(
+                    f"ICICI Breeze historical prices error for {stock_code}: {e}"
+                )
 
         return historical_data
 
@@ -219,10 +235,12 @@ class IciciBreezeProvider(FinancialDataProvider):
         clean_q = self._clean_symbol(query)
         if not clean_q:
             return []
-        return [{
-            "ticker_symbol": clean_q,
-            "name": clean_q,
-            "exchange": "NSE",
-            "asset_type": "STOCK",
-            "currency": "INR",
-        }]
+        return [
+            {
+                "ticker_symbol": clean_q,
+                "name": clean_q,
+                "exchange": "NSE",
+                "asset_type": "STOCK",
+                "currency": "INR",
+            }
+        ]

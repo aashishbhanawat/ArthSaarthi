@@ -7,6 +7,7 @@ creates them using FIFO (First-In-First-Out) matching against available BUY lots
 Run via:
 docker compose run --rm backend python app/scripts/backfill_transaction_links.py
 """
+
 import logging
 import sys
 
@@ -51,12 +52,14 @@ def get_available_lots_for_backfill(
 
     for tx in transactions:
         if tx.transaction_type in ["BUY", "ESPP_PURCHASE", "RSU_VEST", "BONUS"]:
-            lots.append({
-                "id": tx.id,
-                "available_quantity": tx.quantity,
-                "date": tx.transaction_date,
-                "price_per_unit": tx.price_per_unit,
-            })
+            lots.append(
+                {
+                    "id": tx.id,
+                    "available_quantity": tx.quantity,
+                    "date": tx.transaction_date,
+                    "price_per_unit": tx.price_per_unit,
+                }
+            )
         elif tx.transaction_type == "SELL":
             sell_qty = tx.quantity
 
@@ -96,12 +99,11 @@ def backfill_links(db: Optional[Session] = None):
         sell_txs = (
             db.query(Transaction)
             .outerjoin(
-                TransactionLink,
-                Transaction.id == TransactionLink.sell_transaction_id
+                TransactionLink, Transaction.id == TransactionLink.sell_transaction_id
             )
             .filter(
                 Transaction.transaction_type == TransactionType.SELL,
-                TransactionLink.id.is_(None)  # No existing links
+                TransactionLink.id.is_(None),  # No existing links
             )
             .order_by(Transaction.transaction_date)
             .all()
@@ -122,7 +124,7 @@ def backfill_links(db: Optional[Session] = None):
                 db,
                 user_id=sell_tx.user_id,
                 asset_id=sell_tx.asset_id,
-                before_date=sell_tx.transaction_date
+                before_date=sell_tx.transaction_date,
             )
 
             remaining_qty = sell_tx.quantity

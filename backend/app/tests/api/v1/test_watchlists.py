@@ -52,6 +52,7 @@ def test_read_watchlist_not_found(client: TestClient, db: Session, get_auth_head
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
     import uuid
+
     non_existent_id = uuid.uuid4()
     response = client.get(f"/api/v1/watchlists/{non_existent_id}", headers=headers)
     assert response.status_code == 404

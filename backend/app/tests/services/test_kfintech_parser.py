@@ -1,6 +1,7 @@
 """
 Unit tests for KFintech PDF Parser.
 """
+
 import pytest
 
 from app.services.import_parsers.kfintech_parser import KFintechParser
@@ -39,9 +40,7 @@ class TestKFintechParser:
 
     def test_classify_transaction_dividend(self, parser):
         """Test dividend transaction classification."""
-        assert parser._classify_transaction(
-            "IDCW Reinvestment"
-        ) == "IDCW_REINVEST"
+        assert parser._classify_transaction("IDCW Reinvestment") == "IDCW_REINVEST"
         assert parser._classify_transaction("IDCW Payout") == "DIVIDEND"
         assert parser._classify_transaction("Dividend Paid") == "DIVIDEND"
 

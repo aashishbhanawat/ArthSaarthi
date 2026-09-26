@@ -1,5 +1,5 @@
-from .base import FinancialDataProvider
 from .amfi_provider import AmfiIndiaProvider
+from .base import FinancialDataProvider
 from .icici_breeze_provider import IciciBreezeProvider
 from .nse_bhavcopy_provider import NseBhavcopyProvider
 from .upstox_provider import UpstoxProvider

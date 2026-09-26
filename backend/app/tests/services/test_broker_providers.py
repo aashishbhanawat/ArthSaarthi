@@ -1,8 +1,5 @@
-from datetime import date
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from app.services.providers.icici_breeze_provider import IciciBreezeProvider
 
@@ -10,7 +7,6 @@ from app.services.providers.icici_breeze_provider import IciciBreezeProvider
 def test_icici_breeze_provider_login_url():
     url = IciciBreezeProvider.get_login_url("my_app_key_123")
     assert "apiuser/login?api_key=my_app_key_123" in url
-
 
 
 def test_icici_breeze_provider_get_prices():
@@ -50,19 +46,21 @@ def test_icici_breeze_provider_unconfigured():
 
 def test_zerodha_kite_provider_login_url():
     from app.services.providers.zerodha_provider import ZerodhaKiteProvider
+
     url = ZerodhaKiteProvider.get_login_url("my_kite_key_123")
     assert "api_key=my_kite_key_123" in url
 
 
 def test_zerodha_kite_provider_authenticate_request_token():
     from app.services.providers.zerodha_provider import ZerodhaKiteProvider
+
     provider = ZerodhaKiteProvider(api_key="key_123", api_secret="secret_456")
 
     mock_resp = MagicMock()
     mock_resp.status_code = 200
     mock_resp.json.return_value = {
         "status": "success",
-        "data": {"access_token": "valid_kite_access_token_789"}
+        "data": {"access_token": "valid_kite_access_token_789"},
     }
 
     with patch("httpx.Client.post", return_value=mock_resp):
@@ -73,18 +71,14 @@ def test_zerodha_kite_provider_authenticate_request_token():
 
 def test_zerodha_kite_provider_get_prices():
     from app.services.providers.zerodha_provider import ZerodhaKiteProvider
+
     provider = ZerodhaKiteProvider(api_key="key_123", access_token="access_456")
 
     mock_resp = MagicMock()
     mock_resp.status_code = 200
     mock_resp.json.return_value = {
         "status": "success",
-        "data": {
-            "NSE:INFY": {
-                "last_price": 1500.25,
-                "ohlc": {"close": 1490.00}
-            }
-        }
+        "data": {"NSE:INFY": {"last_price": 1500.25, "ohlc": {"close": 1490.00}}},
     }
 
     with patch("httpx.Client.get", return_value=mock_resp):
@@ -93,4 +87,3 @@ def test_zerodha_kite_provider_get_prices():
         assert "INFY.NS" in prices
         assert prices["INFY.NS"]["current_price"] == Decimal("1500.25")
         assert prices["INFY.NS"]["previous_close"] == Decimal("1490")
-

@@ -172,8 +172,7 @@ def get_unrealized_capital_gains(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=(
-                "Failed to calculate unrealized capital gains "
-                "due to an internal error."
+                "Failed to calculate unrealized capital gains due to an internal error."
             ),
         )
 
@@ -220,9 +219,7 @@ def get_loss_ledger_entries(
     Get user's brought-forward capital loss ledger entries with 8-year countdown meters.
     """
     service = TaxSetOffService(db)
-    return service.get_loss_ledger_entries(
-        user_id=str(current_user.id), current_fy=fy
-    )
+    return service.get_loss_ledger_entries(user_id=str(current_user.id), current_fy=fy)
 
 
 @router.post("/loss-ledger", response_model=CapitalLossLedgerResponse)
@@ -288,7 +285,6 @@ def update_loss_ledger_entry(
     return CapitalLossLedgerResponse.from_orm(db_obj)
 
 
-
 @router.delete("/loss-ledger/{ledger_id}")
 def delete_loss_ledger_entry(
     ledger_id: str,
@@ -335,5 +331,3 @@ def get_tax_loss_harvesting_opportunities(
         portfolio_id=portfolio_id,
         slab_rate=slab_rate,
     )
-
-

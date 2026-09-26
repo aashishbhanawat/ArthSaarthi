@@ -64,15 +64,17 @@ def take_snapshot_for_portfolio(
             fd_val += val
 
         # Serialize holding for JSON snapshot
-        holdings_json.append({
-            "ticker_symbol": h.ticker_symbol,
-            "asset_name": h.asset_name,
-            "asset_type": h.asset_type,
-            "quantity": float(h.quantity),
-            "current_price": float(h.current_price) if h.current_price else None,
-            "current_value": float(h.current_value) if h.current_value else None,
-            "currency": h.currency,
-        })
+        holdings_json.append(
+            {
+                "ticker_symbol": h.ticker_symbol,
+                "asset_name": h.asset_name,
+                "asset_type": h.asset_type,
+                "quantity": float(h.quantity),
+                "current_price": float(h.current_price) if h.current_price else None,
+                "current_value": float(h.current_value) if h.current_value else None,
+                "currency": h.currency,
+            }
+        )
 
     # Upsert the snapshot based on active database dialect
     values = dict(
@@ -93,16 +95,16 @@ def take_snapshot_for_portfolio(
 
     # If a snapshot for this date already exists, update it with fresh values
     stmt = stmt.on_conflict_do_update(
-        index_elements=['portfolio_id', 'snapshot_date'],
+        index_elements=["portfolio_id", "snapshot_date"],
         set_={
-            'total_value': stmt.excluded.total_value,
-            'equity_value': stmt.excluded.equity_value,
-            'mf_value': stmt.excluded.mf_value,
-            'bond_value': stmt.excluded.bond_value,
-            'fd_value': stmt.excluded.fd_value,
-            'holdings_snapshot': stmt.excluded.holdings_snapshot,
-            'updated_at': stmt.excluded.updated_at,
-        }
+            "total_value": stmt.excluded.total_value,
+            "equity_value": stmt.excluded.equity_value,
+            "mf_value": stmt.excluded.mf_value,
+            "bond_value": stmt.excluded.bond_value,
+            "fd_value": stmt.excluded.fd_value,
+            "holdings_snapshot": stmt.excluded.holdings_snapshot,
+            "updated_at": stmt.excluded.updated_at,
+        },
     ).returning(DailyPortfolioSnapshot)
 
     result = db.execute(stmt)

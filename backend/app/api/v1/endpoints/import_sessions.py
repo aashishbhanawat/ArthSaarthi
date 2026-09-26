@@ -96,7 +96,7 @@ async def create_import_session(
         parser = parser_factory.get_parser(source_type)
 
         # Handle PDF files differently - they use file path, not DataFrame
-        if file_extension == '.pdf':
+        if file_extension == ".pdf":
             # PDF parsing - use password from form data if provided
             try:
                 parsed_transactions = parser.parse(
@@ -104,12 +104,9 @@ async def create_import_session(
                 )
             except ValueError as e:
                 if "PASSWORD_REQUIRED" in str(e):
-                    raise HTTPException(
-                        status_code=422,
-                        detail="PASSWORD_REQUIRED"
-                    )
+                    raise HTTPException(status_code=422, detail="PASSWORD_REQUIRED")
                 raise
-        elif file_extension in ['.xlsx', '.xls']:
+        elif file_extension in [".xlsx", ".xls"]:
             # Excel files - handle source-specific sheet/header requirements
             if source_type == "KFintech XLS":
                 # KFintech XLS parser reads the file itself
@@ -117,8 +114,8 @@ async def create_import_session(
             elif source_type == "MFCentral CAS":
                 df = pd.read_excel(
                     temp_file_path,
-                    sheet_name='Transaction Details',
-                    header=None  # MFCentral has header at row 8
+                    sheet_name="Transaction Details",
+                    header=None,  # MFCentral has header at row 8
                 )
                 parsed_transactions = parser.parse(df)
             elif source_type == "CAMS Statement":
@@ -130,44 +127,32 @@ async def create_import_session(
                 # Actual header is at row 14
                 df = pd.read_excel(temp_file_path, skiprows=14)
                 # Normalize column names to lowercase for consistency
-                df.columns = df.columns.str.lower().str.replace(' ', '_')
+                df.columns = df.columns.str.lower().str.replace(" ", "_")
                 parsed_transactions = parser.parse(df)
             elif source_type == "Zerodha Dividend":
                 # Zerodha Dividend XLSX has branding/info rows at top
                 # Actual header is at row 14
                 df = pd.read_excel(temp_file_path, skiprows=14)
                 # Normalize column names to lowercase for consistency
-                df.columns = df.columns.str.lower().str.replace(' ', '_')
+                df.columns = df.columns.str.lower().str.replace(" ", "_")
                 parsed_transactions = parser.parse(df)
             elif source_type == "ICICI Direct Portfolio Equity":
                 # ICICI exports TSV data with a fake .xls extension.
                 # Try real Excel first, fall back to TSV.
                 try:
-                    engine = (
-                        'xlrd' if file_extension == '.xls' else None
-                    )
-                    df = pd.read_excel(
-                        temp_file_path, engine=engine
-                    )
+                    engine = "xlrd" if file_extension == ".xls" else None
+                    df = pd.read_excel(temp_file_path, engine=engine)
                 except Exception:
                     # File is likely TSV/CSV with .xls extension
-                    df = pd.read_csv(
-                        temp_file_path, sep='\t'
-                    )
+                    df = pd.read_csv(temp_file_path, sep="\t")
                 parsed_transactions = parser.parse(df)
             else:
                 # Generic Excel handling — also handles fake .xls
                 try:
-                    engine = (
-                        'xlrd' if file_extension == '.xls' else None
-                    )
-                    df = pd.read_excel(
-                        temp_file_path, engine=engine
-                    )
+                    engine = "xlrd" if file_extension == ".xls" else None
+                    df = pd.read_excel(temp_file_path, engine=engine)
                 except Exception:
-                    df = pd.read_csv(
-                        temp_file_path, sep='\t'
-                    )
+                    df = pd.read_csv(temp_file_path, sep="\t")
                 # Parse the dataframe into a list of Pydantic models
                 parsed_transactions = parser.parse(df)
         else:
@@ -220,7 +205,7 @@ async def create_import_session(
     parsed_df = pd.DataFrame([model_dump(t) for t in parsed_transactions])
     parsed_file_name = f"{import_session.id}.json"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_df.to_json(parsed_file_path, orient='records', date_format='iso')
+    parsed_df.to_json(parsed_file_path, orient="records", date_format="iso")
 
     # 5. Update the session with the parsed file path and "PARSED" status
     import_session_update = schemas.ImportSessionUpdate(
@@ -273,7 +258,7 @@ def get_import_session_preview(
         raise HTTPException(status_code=400, detail="No parsed file for this session")
 
     try:
-        df = pd.read_json(import_session.parsed_file_path, orient='records')
+        df = pd.read_json(import_session.parsed_file_path, orient="records")
         # Replace NaN/NaT with None for Pydantic compatibility
         df = df.where(pd.notnull(df), None)
     except Exception as e:
@@ -321,7 +306,9 @@ def get_import_session_preview(
                                 details.get("ticker_symbol")
                                 or f"ISIN:{isin_code}".upper()
                             ),
-                            **{k: v for k, v in details.items() if k != "ticker_symbol"}
+                            **{
+                                k: v for k, v in details.items() if k != "ticker_symbol"
+                            },
                         )
                         asset = models.Asset(**model_dump(asset_in))
                 if asset:
@@ -343,7 +330,7 @@ def get_import_session_preview(
                         ticker_symbol=(
                             details.get("ticker_symbol") or ticker_symbol.upper()
                         ),
-                        **{k: v for k, v in details.items() if k != "ticker_symbol"}
+                        **{k: v for k, v in details.items() if k != "ticker_symbol"},
                     )
                     asset = models.Asset(**model_dump(asset_in))
                 if asset:
@@ -358,9 +345,7 @@ def get_import_session_preview(
                     asset_id = pending_alias_map[ticker_symbol]
                     asset = crud.asset.get(db, id=asset_id)
                     if asset:
-                        log.debug(
-                            f"Found in pending aliases: {ticker_symbol}"
-                        )
+                        log.debug(f"Found in pending aliases: {ticker_symbol}")
                 else:
                     # Then check persisted aliases
                     asset_alias = crud.asset_alias.get_by_alias(
@@ -402,8 +387,10 @@ def get_import_session_preview(
             else:
                 valid_new.append(parsed_transaction)
 
-        log.info(f"Preview: {len(valid_new)} new, {len(duplicates)} duplicates, "
-                 f"{len(needs_mapping)} needs_mapping, {len(invalid)} invalid")
+        log.info(
+            f"Preview: {len(valid_new)} new, {len(duplicates)} duplicates, "
+            f"{len(needs_mapping)} needs_mapping, {len(invalid)} invalid"
+        )
 
         return schemas.ImportSessionPreview(
             valid_new=valid_new,
@@ -472,9 +459,11 @@ def commit_import_session(
 
             # 3. Try alias lookup (any source)
             if not asset:
-                asset_alias = db.query(models.AssetAlias).filter(
-                    models.AssetAlias.alias_symbol == ticker_symbol
-                ).first()
+                asset_alias = (
+                    db.query(models.AssetAlias)
+                    .filter(models.AssetAlias.alias_symbol == ticker_symbol)
+                    .first()
+                )
                 if asset_alias:
                     asset = asset_alias.asset
 
@@ -485,15 +474,15 @@ def commit_import_session(
                         db, ticker_symbol=ticker_symbol
                     )
                 else:
-                    asset = crud.asset.get_by_ticker(
-                        db, ticker_symbol=ticker_symbol
-                    )
+                    asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
 
             # 6. Try name lookup
             if not asset:
-                asset = db.query(models.Asset).filter(
-                    models.Asset.name == ticker_symbol
-                ).first()
+                asset = (
+                    db.query(models.Asset)
+                    .filter(models.Asset.name == ticker_symbol)
+                    .first()
+                )
 
             if not asset:
                 log.error(
@@ -515,7 +504,7 @@ def commit_import_session(
                 crud.transaction.create_with_portfolio(
                     db=db,
                     obj_in=transaction_in,
-                    portfolio_id=import_session.portfolio_id
+                    portfolio_id=import_session.portfolio_id,
                 )
                 transactions_created += 1
             except HTTPException as he:
@@ -563,8 +552,7 @@ def commit_import_session(
         db.rollback()
         error_msg = str(e)
         log.error(
-            f"Failed to commit import session {session_id}: {error_msg}",
-            exc_info=True
+            f"Failed to commit import session {session_id}: {error_msg}", exc_info=True
         )
         crud.import_session.update(
             db,
@@ -575,9 +563,7 @@ def commit_import_session(
             },
         )
         db.commit()
-        raise HTTPException(
-            status_code=500, detail="Could not commit transactions."
-        )
+        raise HTTPException(status_code=500, detail="Could not commit transactions.")
 
 
 @router.post(
@@ -673,7 +659,7 @@ async def create_fd_import_session(
     parsed_df = pd.DataFrame([model_dump(t) for t in parsed_fds])
     parsed_file_name = f"fd_{import_session.id}.json"
     parsed_file_path = upload_dir / parsed_file_name
-    parsed_df.to_json(parsed_file_path, orient='records', date_format='iso')
+    parsed_df.to_json(parsed_file_path, orient="records", date_format="iso")
 
     # 5. Update the session
     import_session_update = schemas.ImportSessionUpdate(
@@ -707,7 +693,7 @@ def get_fd_import_session_preview(
         raise HTTPException(status_code=400, detail="No parsed file for this session")
 
     try:
-        df = pd.read_json(import_session.parsed_file_path, orient='records')
+        df = pd.read_json(import_session.parsed_file_path, orient="records")
         # Replace NaN/NaT with None for Pydantic compatibility
         df = df.where(pd.notnull(df), None)
     except Exception as e:
@@ -718,14 +704,17 @@ def get_fd_import_session_preview(
     duplicates: List[schemas.ParsedFixedDeposit] = []
 
     # Get existing FDs for the portfolio for duplicate detection
-    existing_fds = db.query(models.FixedDeposit).filter(
-        models.FixedDeposit.portfolio_id == import_session.portfolio_id
-    ).all()
+    existing_fds = (
+        db.query(models.FixedDeposit)
+        .filter(models.FixedDeposit.portfolio_id == import_session.portfolio_id)
+        .all()
+    )
 
     # Create an lookup set for (account_number, start_date)
     existing_lookup = {
         (fd.account_number, fd.start_date.strftime("%Y-%m-%d"))
-        for fd in existing_fds if fd.account_number and fd.start_date
+        for fd in existing_fds
+        if fd.account_number and fd.start_date
     }
 
     try:
@@ -831,6 +820,4 @@ def commit_fd_import_session(
             },
         )
         db.commit()
-        raise HTTPException(
-            status_code=500, detail="Could not commit FDs."
-        )
+        raise HTTPException(status_code=500, detail="Could not commit FDs.")

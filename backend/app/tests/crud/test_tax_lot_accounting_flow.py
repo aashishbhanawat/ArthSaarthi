@@ -15,9 +15,7 @@ def test_tax_lot_accounting_flow(db: Session):
 
     # Setup: Portfolio
     portfolio = crud.portfolio.create_with_owner(
-        db=db,
-        obj_in=schemas.PortfolioCreate(name="Test Portfolio"),
-        user_id=user.id
+        db=db, obj_in=schemas.PortfolioCreate(name="Test Portfolio"), user_id=user.id
     )
 
     # Setup: Asset (Stock)
@@ -39,9 +37,9 @@ def test_tax_lot_accounting_flow(db: Session):
             transaction_type="BUY",
             quantity=10,
             price_per_unit=100,
-            transaction_date=datetime.now() - timedelta(days=10)
+            transaction_date=datetime.now() - timedelta(days=10),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 2. Buy 10 units @ 120 on D-5
@@ -52,9 +50,9 @@ def test_tax_lot_accounting_flow(db: Session):
             transaction_type="BUY",
             quantity=10,
             price_per_unit=120,
-            transaction_date=datetime.now() - timedelta(days=5)
+            transaction_date=datetime.now() - timedelta(days=5),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 3. Check Available Lots
@@ -81,14 +79,9 @@ def test_tax_lot_accounting_flow(db: Session):
             quantity=5,
             price_per_unit=130,
             transaction_date=datetime.now(),
-            links=[
-                TransactionLinkCreate(
-                    buy_transaction_id=lot2["id"],
-                    quantity=5
-                )
-            ]
+            links=[TransactionLinkCreate(buy_transaction_id=lot2["id"], quantity=5)],
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # Verify links created
@@ -119,9 +112,9 @@ def test_tax_lot_accounting_flow(db: Session):
             transaction_type="SELL",
             quantity=5,
             price_per_unit=150,
-            transaction_date=datetime.now()
+            transaction_date=datetime.now(),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     lots_final = crud.transaction.get_available_lots(
@@ -143,6 +136,7 @@ def test_tax_lot_accounting_flow(db: Session):
     # relying on previous sales
     # proves that the system knows what has been sold.
 
+
 @pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_tax_lot_split_adjustment(db: Session):
     # Setup: User
@@ -152,7 +146,7 @@ def test_tax_lot_split_adjustment(db: Session):
     portfolio = crud.portfolio.create_with_owner(
         db=db,
         obj_in=schemas.PortfolioCreate(name="Split Test Portfolio"),
-        user_id=user.id
+        user_id=user.id,
     )
 
     # Setup: Asset (USD Stock, so no flooring)
@@ -174,9 +168,9 @@ def test_tax_lot_split_adjustment(db: Session):
             transaction_type="BUY",
             quantity=10,
             price_per_unit=100,
-            transaction_date=datetime.now() - timedelta(days=10)
+            transaction_date=datetime.now() - timedelta(days=10),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 2. Buy 10 units @ 120 on D-5
@@ -187,9 +181,9 @@ def test_tax_lot_split_adjustment(db: Session):
             transaction_type="BUY",
             quantity=10,
             price_per_unit=120,
-            transaction_date=datetime.now() - timedelta(days=5)
+            transaction_date=datetime.now() - timedelta(days=5),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 3. Perform a 2-for-1 stock split on D-3
@@ -202,8 +196,8 @@ def test_tax_lot_split_adjustment(db: Session):
             transaction_type="SPLIT",
             quantity=2,  # New
             price_per_unit=1,  # Old
-            transaction_date=datetime.now() - timedelta(days=3)
-        )
+            transaction_date=datetime.now() - timedelta(days=3),
+        ),
     )
 
     # 4. Check Available Lots
@@ -228,9 +222,9 @@ def test_tax_lot_split_adjustment(db: Session):
             transaction_type="SELL",
             quantity=15,
             price_per_unit=70,
-            transaction_date=datetime.now()
+            transaction_date=datetime.now(),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     lots_after = crud.transaction.get_available_lots(
@@ -244,6 +238,7 @@ def test_tax_lot_split_adjustment(db: Session):
     # Lot 2 remains untouched at 20
     assert float(lot2_after["available_quantity"]) == 20.0
 
+
 @pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_tax_lot_split_inr_flooring(db: Session):
     # Setup: User
@@ -253,7 +248,7 @@ def test_tax_lot_split_inr_flooring(db: Session):
     portfolio = crud.portfolio.create_with_owner(
         db=db,
         obj_in=schemas.PortfolioCreate(name="Split INR Portfolio"),
-        user_id=user.id
+        user_id=user.id,
     )
 
     # Setup: Asset (INR Stock, floors fractional shares)
@@ -275,9 +270,9 @@ def test_tax_lot_split_inr_flooring(db: Session):
             transaction_type="BUY",
             quantity=1,
             price_per_unit=100,
-            transaction_date=datetime.now() - timedelta(days=10)
+            transaction_date=datetime.now() - timedelta(days=10),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 2. Perform a 3:2 stock split on D-5 (3 new for 2 old)
@@ -291,8 +286,8 @@ def test_tax_lot_split_inr_flooring(db: Session):
             transaction_type="SPLIT",
             quantity=3,  # New
             price_per_unit=2,  # Old
-            transaction_date=datetime.now() - timedelta(days=5)
-        )
+            transaction_date=datetime.now() - timedelta(days=5),
+        ),
     )
 
     # 3. Check Available Lots
@@ -317,9 +312,7 @@ def test_tax_lot_reverse_split_adjustment(db: Session):
     # 0. Setup User and Portfolio
     user, _ = create_random_user(db)
     portfolio = crud.portfolio.create_with_owner(
-        db=db,
-        obj_in=schemas.PortfolioCreate(name="Test Portfolio"),
-        user_id=user.id
+        db=db, obj_in=schemas.PortfolioCreate(name="Test Portfolio"), user_id=user.id
     )
 
     # Asset: INR STOCK
@@ -330,7 +323,7 @@ def test_tax_lot_reverse_split_adjustment(db: Session):
             name="INR Reverse Split Stock",
             asset_type="STOCK",
             currency="INR",
-        )
+        ),
     )
 
     # 1. Buy 5 units @ 100 on D-10
@@ -341,9 +334,9 @@ def test_tax_lot_reverse_split_adjustment(db: Session):
             transaction_type="BUY",
             quantity=5,
             price_per_unit=100,
-            transaction_date=datetime.now() - timedelta(days=10)
+            transaction_date=datetime.now() - timedelta(days=10),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 2. Perform a 1:2 reverse stock split on D-5 (1 new for 2 old)
@@ -356,8 +349,8 @@ def test_tax_lot_reverse_split_adjustment(db: Session):
             transaction_type="SPLIT",
             quantity=1,  # New
             price_per_unit=2,  # Old
-            transaction_date=datetime.now() - timedelta(days=5)
-        )
+            transaction_date=datetime.now() - timedelta(days=5),
+        ),
     )
 
     # 3. Check Available Lots
@@ -383,9 +376,7 @@ def test_tax_lot_reverse_split_usd(db: Session):
     # 0. Setup User and Portfolio
     user, _ = create_random_user(db)
     portfolio = crud.portfolio.create_with_owner(
-        db=db,
-        obj_in=schemas.PortfolioCreate(name="Test Portfolio"),
-        user_id=user.id
+        db=db, obj_in=schemas.PortfolioCreate(name="Test Portfolio"), user_id=user.id
     )
 
     # Asset: USD STOCK
@@ -396,7 +387,7 @@ def test_tax_lot_reverse_split_usd(db: Session):
             name="USD Reverse Split Stock",
             asset_type="STOCK",
             currency="USD",
-        )
+        ),
     )
 
     # 1. Buy 5 units @ 100 on D-10
@@ -407,9 +398,9 @@ def test_tax_lot_reverse_split_usd(db: Session):
             transaction_type="BUY",
             quantity=5,
             price_per_unit=100,
-            transaction_date=datetime.now() - timedelta(days=10)
+            transaction_date=datetime.now() - timedelta(days=10),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 2. Perform a 1:2 reverse stock split on D-5 (1 new for 2 old)
@@ -422,8 +413,8 @@ def test_tax_lot_reverse_split_usd(db: Session):
             transaction_type="SPLIT",
             quantity=1,  # New
             price_per_unit=2,  # Old
-            transaction_date=datetime.now() - timedelta(days=5)
-        )
+            transaction_date=datetime.now() - timedelta(days=5),
+        ),
     )
 
     # 3. Check Available Lots
@@ -437,5 +428,3 @@ def test_tax_lot_reverse_split_usd(db: Session):
     assert float(lot1["available_quantity"]) == 2.5
     # Price per unit is adjusted: 100 / 0.5 = 200.0
     assert float(lot1["price_per_unit"]) == 200.0
-
-

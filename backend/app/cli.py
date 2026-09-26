@@ -26,6 +26,7 @@ app = typer.Typer(help="ArthSaarthi CLI for database and utility operations.")
 def get_db_session():
     # Local import to prevent circular dependencies at startup
     from app.db.session import SessionLocal
+
     db = SessionLocal()
     try:
         yield db
@@ -58,9 +59,7 @@ def seed_assets_command(
         dir_okay=True,
         readable=True,
     ),
-    debug: bool = typer.Option(
-        False, "--debug", help="Enable detailed debug logging."
-    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable detailed debug logging."),
 ):
     """
     Seeds the assets table using a multi-phase, authoritative-first strategy.
@@ -84,14 +83,16 @@ def seed_assets_command(
         patterns = {
             "nsdl": ["*nsdl*.xls", "*NSDL*.xls", "*debt_instruments*.xls"],
             "bse_public": [
-                "*bonds_data.zip", "*Public Bond*.zip", "bse_public_debt.zip"
+                "*bonds_data.zip",
+                "*Public Bond*.zip",
+                "bse_public_debt.zip",
             ],
             "bse_equity": ["*BhavCopy_BSE_CM*.csv", "bse_equity.csv"],
             "bse_debt": ["*DEBTBHAVCOPY*.zip", "bse_debt.zip"],
             "nse_debt": ["*New_debt_listing*.xlsx", "nse_daily_debt.xlsx"],
             "nse_equity": ["*BhavCopy_NSE_CM*.csv.zip", "*bhav.csv.zip"],
             "bse_index": ["*INDEXSummary*.csv", "bse_index.csv"],
-            "icici": ["*SecurityMaster*.zip", "icici_master.zip"]
+            "icici": ["*SecurityMaster*.zip", "icici_master.zip"],
         }
 
         for key, pat_list in patterns.items():
@@ -107,6 +108,7 @@ def seed_assets_command(
 
         try:
             from app.utils.financial_utils import download_all_sources
+
             # We wrap the download in a way that respects Typer echoes if needed,
             # but download_all_sources handles the logic.
             # For CLI we might want to see the progress, so we pass a logger
@@ -144,6 +146,7 @@ def seed_assets_command(
 
     # Seed/update interest rates (PPF, etc.) every time assets are seeded
     from app.db.initial_data import seed_interest_rates
+
     typer.echo("\n--- Seeding Interest Rates ---")
     seed_interest_rates(db)
 
@@ -176,7 +179,7 @@ def clear_assets_command(
     try:
         typer.echo("Deleting all user-generated financial data...")
         # Order is important to respect foreign key constraints
-        models_to_delete: list[Type[models.Base]] = [ # type: ignore
+        models_to_delete: list[Type[models.Base]] = [  # type: ignore
             models.ParsedTransaction,
             models.ImportSession,
             models.GoalLink,
@@ -223,7 +226,7 @@ def clear_assets_command(
 def init_db_command(
     create_tables: bool = typer.Option(
         True, help="Create tables from models. Should be false if using Alembic."
-    )
+    ),
 ):
     # Local import to prevent circular dependencies
 
@@ -234,6 +237,7 @@ def init_db_command(
     if create_tables:
         from app.db.base import Base
         from app.db.session import engine
+
         typer.echo("Initializing database tables...")
         Base.metadata.create_all(bind=engine)
         typer.secho("Database tables initialized successfully.", fg=typer.colors.GREEN)
@@ -275,7 +279,7 @@ def dump_table_command(
             "recurring_deposits": RecurringDeposit,
             "import_sessions": models.ImportSession,
             "parsed_transactions": models.ParsedTransaction,
-            "asset_aliases": models.AssetAlias, # type: ignore
+            "asset_aliases": models.AssetAlias,  # type: ignore
             "audit_logs": AuditLog,
             "bonds": models.Bond,
         }

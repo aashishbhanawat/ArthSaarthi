@@ -1,6 +1,7 @@
 """
 Unit tests for UpstoxProvider and UpstoxMetadataService.
 """
+
 from datetime import date
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
@@ -71,11 +72,13 @@ def test_upstox_provider_get_current_prices(mock_fetch, mock_cache_client):
         ["2026-07-30T00:00:00+05:30", 1280.0, 1305.0, 1275.0, 1298.0, 95000, 0],
     ]
 
-    assets = [{
-        "ticker_symbol": "RELIANCE",
-        "isin": "INE002A01018",
-        "asset_type": "STOCK",
-    }]
+    assets = [
+        {
+            "ticker_symbol": "RELIANCE",
+            "isin": "INE002A01018",
+            "asset_type": "STOCK",
+        }
+    ]
     prices = provider.get_current_prices(assets)
 
     assert "RELIANCE" in prices
@@ -157,7 +160,7 @@ def test_asset_seeder_process_upstox_metadata(mock_load, db):
         asset_type="STOCK",
         currency="INR",
         exchange="N/A",
-        isin=None
+        isin=None,
     )
     db.add(existing_asset)
     db.commit()
@@ -167,13 +170,10 @@ def test_asset_seeder_process_upstox_metadata(mock_load, db):
     ) as mock_service_cls:
         instance = MagicMock()
         mock_service_cls.return_value = instance
-        instance._symbol_to_isin_map = {
-            "INFY": "INE009A01021",
-            "TCS": "INE467B01029"
-        }
+        instance._symbol_to_isin_map = {"INFY": "INE009A01021", "TCS": "INE467B01029"}
         instance._symbol_to_key_map = {
             "INFY": "NSE_EQ|INE009A01021",
-            "TCS": "NSE_EQ|INE467B01029"
+            "TCS": "NSE_EQ|INE467B01029",
         }
 
         stats = seeder.process_upstox_metadata()
@@ -184,4 +184,3 @@ def test_asset_seeder_process_upstox_metadata(mock_load, db):
         updated_infy = db.query(Asset).filter_by(ticker_symbol="INFY").first()
         assert updated_infy.isin == "INE009A01021"
         assert updated_infy.exchange == "NSE"
-

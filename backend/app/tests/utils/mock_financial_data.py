@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 class MockYFinanceProvider:
     """Mock yfinance provider for testing."""
+
     def get_enrichment_data(self, ticker_symbol: str, exchange: str = None):
         """Returns mock enrichment data."""
         return {
@@ -24,6 +25,7 @@ class MockYFinanceProvider:
 
 class MockAmfiProvider:
     """Mock AMFI provider for testing."""
+
     def get_all_nav_data(self):
         """Returns mock NAV data with category info."""
         return {
@@ -68,7 +70,7 @@ class MockFinancialDataService:
         },
         "TCS": {
             "current_price": Decimal("3500.00"),
-            "previous_close": Decimal("3490.00")
+            "previous_close": Decimal("3490.00"),
         },
         "UPDATE": {
             "current_price": Decimal("110.00"),
@@ -76,11 +78,11 @@ class MockFinancialDataService:
         },
         "DELETE": {
             "current_price": Decimal("50.00"),
-            "previous_close": Decimal("51.00")
+            "previous_close": Decimal("51.00"),
         },
         "CALC1": {
             "current_price": Decimal("110.0"),
-            "previous_close": Decimal("109.0")
+            "previous_close": Decimal("109.0"),
         },
         "XIRRTEST": {
             "current_price": Decimal("130.0"),
@@ -88,7 +90,7 @@ class MockFinancialDataService:
         },
         "ASSET1": {
             "current_price": Decimal("100.00"),
-            "previous_close": Decimal("99.00")
+            "previous_close": Decimal("99.00"),
         },
         "ASSET2": {
             "current_price": Decimal("200.00"),
@@ -96,12 +98,12 @@ class MockFinancialDataService:
         },
         "TXN1": {
             "current_price": Decimal("100.00"),
-            "previous_close": Decimal("99.00")
+            "previous_close": Decimal("99.00"),
         },
         "TXN2": {
             "current_price": Decimal("200.00"),
-            "previous_close": Decimal("198.00")}
-        ,
+            "previous_close": Decimal("198.00"),
+        },
     }
 
     MOCK_MF_SEARCH_RESULTS = [
@@ -129,7 +131,7 @@ class MockFinancialDataService:
     }
 
     def get_current_prices(
-        self, assets: List[Dict[str, Any]]
+        self, assets: List[Dict[str, Any]], broker_provider: Optional[Any] = None
     ) -> Dict[str, Dict[str, Decimal]]:
         results = {}
         for asset in assets:
@@ -175,30 +177,28 @@ class MockFinancialDataService:
         # If it's not a mutual fund, check if it's a known stock.
         # Use consistent names matching what search_stocks returns
         mock_stocks = {
-            "AAPL": {
-                "name": "Apple Inc.", "exchange": "NASDAQ", "currency": "USD"
-            },
-            "GOOGL": {
-                "name": "Alphabet Inc.", "exchange": "NASDAQ", "currency": "USD"
-            },
+            "AAPL": {"name": "Apple Inc.", "exchange": "NASDAQ", "currency": "USD"},
+            "GOOGL": {"name": "Alphabet Inc.", "exchange": "NASDAQ", "currency": "USD"},
             "MSFT": {
                 "name": "Microsoft Corporation",
-                "exchange": "NASDAQ", "currency": "USD"
+                "exchange": "NASDAQ",
+                "currency": "USD",
             },
             "RELIANCE": {
                 "name": "Reliance Industries Ltd.",
-                "exchange": "NSE", "currency": "INR"
+                "exchange": "NSE",
+                "currency": "INR",
             },
             "TCS": {
                 "name": "Tata Consultancy Services",
-                "exchange": "NSE", "currency": "INR"
+                "exchange": "NSE",
+                "currency": "INR",
             },
-            "NTPC": {
-                "name": "NTPC Ltd", "exchange": "NSE", "currency": "INR"
-            },
+            "NTPC": {"name": "NTPC Ltd", "exchange": "NSE", "currency": "INR"},
             "SCI": {
                 "name": "Shipping Corporation of India",
-                "exchange": "NSE", "currency": "INR"
+                "exchange": "NSE",
+                "currency": "INR",
             },
         }
 
@@ -249,41 +249,41 @@ class MockFinancialDataService:
 
         # Mock stock data for common tickers
         mock_stocks = {
-            "AAPL": {
-                "name": "Apple Inc.", "exchange": "NASDAQ", "currency": "USD"
-            },
-            "GOOGL": {
-                "name": "Alphabet Inc.", "exchange": "NASDAQ", "currency": "USD"
-            },
+            "AAPL": {"name": "Apple Inc.", "exchange": "NASDAQ", "currency": "USD"},
+            "GOOGL": {"name": "Alphabet Inc.", "exchange": "NASDAQ", "currency": "USD"},
             "MSFT": {
                 "name": "Microsoft Corporation",
-                "exchange": "NASDAQ", "currency": "USD"
+                "exchange": "NASDAQ",
+                "currency": "USD",
             },
             "RELIANCE": {
                 "name": "Reliance Industries Ltd.",
-                "exchange": "NSE", "currency": "INR"
+                "exchange": "NSE",
+                "currency": "INR",
             },
             "TCS": {
                 "name": "Tata Consultancy Services",
-                "exchange": "NSE", "currency": "INR"
+                "exchange": "NSE",
+                "currency": "INR",
             },
-            "NTPC": {
-                "name": "NTPC Ltd", "exchange": "NSE", "currency": "INR"
-            },
+            "NTPC": {"name": "NTPC Ltd", "exchange": "NSE", "currency": "INR"},
             "SCI": {
                 "name": "Shipping Corporation of India",
-                "exchange": "NSE", "currency": "INR"
+                "exchange": "NSE",
+                "currency": "INR",
             },
         }
 
         for ticker, data in mock_stocks.items():
             if query_upper in ticker or query_upper in data["name"].upper():
-                results.append({
-                    "ticker_symbol": ticker,
-                    "name": data["name"],
-                    "asset_type": "STOCK",
-                    "exchange": data["exchange"],
-                    "currency": data["currency"],
-                })
+                results.append(
+                    {
+                        "ticker_symbol": ticker,
+                        "name": data["name"],
+                        "asset_type": "STOCK",
+                        "exchange": data["exchange"],
+                        "currency": data["currency"],
+                    }
+                )
 
         return results

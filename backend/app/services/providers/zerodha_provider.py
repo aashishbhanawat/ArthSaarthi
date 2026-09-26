@@ -1,15 +1,15 @@
 import hashlib
-import json
 import logging
 import time
 import urllib.parse
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import httpx
 
 from app.cache.base import CacheClient
+
 from .base import FinancialDataProvider
 
 CACHE_TTL_CURRENT_PRICE = 900  # 15 minutes
@@ -71,9 +71,19 @@ class ZerodhaKiteProvider(FinancialDataProvider):
                         access_token = data.get("access_token")
                         if access_token:
                             self.access_token = access_token
-                            return {"success": True, "access_token": access_token, "data": data}
-                    return {"success": False, "error": res_json.get("message", "Token exchange failed")}
-                return {"success": False, "error": f"HTTP {resp.status_code}: {resp.text}"}
+                            return {
+                                "success": True,
+                                "access_token": access_token,
+                                "data": data,
+                            }
+                    return {
+                        "success": False,
+                        "error": res_json.get("message", "Token exchange failed"),
+                    }
+                return {
+                    "success": False,
+                    "error": f"HTTP {resp.status_code}: {resp.text}",
+                }
         except Exception as e:
             logger.error(f"Zerodha Kite authentication error: {e}")
             return {"success": False, "error": str(e)}
@@ -113,7 +123,10 @@ class ZerodhaKiteProvider(FinancialDataProvider):
             if self.cache_client:
                 try:
                     from app.services.rate_limiter import ProviderRateLimiter
-                    ProviderRateLimiter(self.cache_client).check_and_increment("zerodha")
+
+                    ProviderRateLimiter(self.cache_client).check_and_increment(
+                        "zerodha"
+                    )
                 except Exception as rle:
                     logger.debug(f"Zerodha rate limit tracking note: {rle}")
             time.sleep(0.05)
@@ -161,10 +174,12 @@ class ZerodhaKiteProvider(FinancialDataProvider):
         clean_q = self._clean_symbol(query)
         if not clean_q:
             return []
-        return [{
-            "ticker_symbol": clean_q,
-            "name": clean_q,
-            "exchange": "NSE",
-            "asset_type": "STOCK",
-            "currency": "INR",
-        }]
+        return [
+            {
+                "ticker_symbol": clean_q,
+                "name": clean_q,
+                "exchange": "NSE",
+                "asset_type": "STOCK",
+                "currency": "INR",
+            }
+        ]

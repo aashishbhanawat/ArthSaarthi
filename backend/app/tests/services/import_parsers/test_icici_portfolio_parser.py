@@ -1,4 +1,3 @@
-
 import pandas as pd
 import pytest
 
@@ -52,22 +51,24 @@ def test_parse_valid_csv_data(parser):
     assert t2.isin == "INE017A01032"
     assert t2.transaction_date.strftime("%Y-%m-%d") == "2025-02-11"
 
+
 def test_parse_excludes_invalid_actions(parser):
     """Test ignoring actions other than Buy/Sell logic if applicable."""
     data = {
         "Stock Symbol": ["TEST"],
-        "Action": ["Dividend"], # parser only filters for BUY/SELL
+        "Action": ["Dividend"],  # parser only filters for BUY/SELL
         "Quantity": [10],
         "Transaction Price": [100],
         "Transaction Date": ["01-Jan-2024"],
         "ISIN Code": ["INE123"],
         "Brokerage": [0],
         "Transaction Charges": [0],
-        "StampDuty": [0]
+        "StampDuty": [0],
     }
     df = pd.DataFrame(data)
     transactions = parser.parse(df)
     assert len(transactions) == 0
+
 
 def test_parse_missing_fees_defaults_to_zero(parser):
     """Test logic handles missing logic columns gracefully."""
@@ -85,6 +86,7 @@ def test_parse_missing_fees_defaults_to_zero(parser):
     assert len(transactions) == 1
     assert transactions[0].fees == 0.0
 
+
 def test_parse_handles_whitespace_in_headers(parser):
     """Test stripping logic for headers."""
     data = {
@@ -96,7 +98,7 @@ def test_parse_handles_whitespace_in_headers(parser):
         " ISIN Code ": ["INE123"],
         " Brokerage ": [10],
         "Transaction Charges": [0],
-        "StampDuty": [0]
+        "StampDuty": [0],
     }
     df = pd.DataFrame(data)
     transactions = parser.parse(df)

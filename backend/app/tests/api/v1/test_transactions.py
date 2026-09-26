@@ -301,9 +301,7 @@ def test_read_transactions_with_synthetic_fd_types(
         compounding_frequency="ANNUALLY",
         interest_payout="CUMULATIVE",
     )
-    crud.fixed_deposit.create_with_portfolio(
-        db=db, obj_in=fd_in, user_id=user.id
-    )
+    crud.fixed_deposit.create_with_portfolio(db=db, obj_in=fd_in, user_id=user.id)
 
     response = client.get(
         f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
@@ -315,4 +313,3 @@ def test_read_transactions_with_synthetic_fd_types(
     types = [t["transaction_type"] for t in data["transactions"]]
     assert "FD_DEPOSIT" in types
     assert "FD_MATURITY" in types
-

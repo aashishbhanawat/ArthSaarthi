@@ -23,6 +23,7 @@ class DiskCacheClient(CacheClient):
         val = self._cache.get(key)
         if not key.startswith("ratelimit:") and not key.startswith("cache_stats:"):
             from app.cache.utils import record_cache_access
+
             record_cache_access(hit=val is not None)
         return val
 

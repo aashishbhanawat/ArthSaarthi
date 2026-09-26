@@ -87,9 +87,10 @@ def test_update_bond(db: Session) -> None:
     )
     bond = crud.bond.create(db=db, obj_in=bond_in)
     from app.utils.pydantic_compat import model_dump
+
     bond_update = BondUpdate(
         coupon_rate=Decimal("8.25"),
-        **model_dump(bond_in, exclude={"coupon_rate", "asset_id"})
+        **model_dump(bond_in, exclude={"coupon_rate", "asset_id"}),
     )
     bond2 = crud.bond.update(db=db, db_obj=bond, obj_in=bond_update)
     assert bond2.id == bond.id
@@ -158,8 +159,10 @@ def test_tradable_bond_valuation_primary_api(
     with patch("app.crud.crud_holding.financial_data_service") as mock_fds:
         # Mock the batch price fetching method
         mock_fds.get_current_prices.return_value = {
-            "CORPBOND": {"current_price": Decimal("1025.50"), "previous_close": Decimal(
-                "1020.00")}
+            "CORPBOND": {
+                "current_price": Decimal("1025.50"),
+                "previous_close": Decimal("1020.00"),
+            }
         }
 
         result = crud.holding.get_portfolio_holdings_and_summary(
@@ -259,9 +262,10 @@ def test_tbill_valuation_accretion_model(
         db, obj_in=transaction_in, portfolio_id=portfolio.id
     )
 
-    with patch("app.crud.crud_holding.financial_data_service") as mock_fds, patch(
-        "app.crud.crud_holding.date"
-    ) as mock_date:
+    with (
+        patch("app.crud.crud_holding.financial_data_service") as mock_fds,
+        patch("app.crud.crud_holding.date") as mock_date,
+    ):
         mock_fds.get_current_prices.return_value = {}  # Ensure market price fails
         mock_fds.get_price_from_yfinance.return_value = None
         mock_date.today.return_value = valuation_date
@@ -366,7 +370,7 @@ def test_bond_valuation_book_value_final_fallback(
             price_per_unit=950,
             transaction_date=date.today(),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     with patch("app.crud.crud_holding.financial_data_service") as mock_fds:
@@ -425,7 +429,7 @@ def test_bond_xirr_with_coupon_payment(
             price_per_unit=1000,
             transaction_date=date(2023, 1, 1),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
     # 2. Manual coupon transaction
     crud.transaction.create_with_portfolio(
@@ -438,15 +442,21 @@ def test_bond_xirr_with_coupon_payment(
             price_per_unit=1,
             transaction_date=date(2023, 7, 1),
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
-    with patch("app.crud.crud_holding.financial_data_service") as mock_fds, patch("app.crud.crud_analytics.date") as mock_date:  # noqa: E501
+    with (
+        patch("app.crud.crud_holding.financial_data_service") as mock_fds,
+        patch("app.crud.crud_analytics.date") as mock_date,
+    ):  # noqa: E501
         # Mock valuation date and price for XIRR calculation
         mock_date.today.return_value = date(2024, 1, 1)
         mock_fds.get_current_prices.return_value = {
-            "XIRRBOND": {"current_price": Decimal("1050"),
-                         "previous_close": Decimal("1000")}}
+            "XIRRBOND": {
+                "current_price": Decimal("1050"),
+                "previous_close": Decimal("1000"),
+            }
+        }
 
         analytics = crud.analytics.get_asset_analytics(
             db, asset_id=asset.id, portfolio_id=portfolio.id

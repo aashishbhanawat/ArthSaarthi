@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 def _run_initial_seeding():
     """Actually performs the seeding logic in a thread."""
     from app.api.v1.endpoints.system import SeedingStatus, _seeding_state
+
     logger.info("Background initial seeding thread started.")
     _seeding_state["status"] = SeedingStatus.IN_PROGRESS
     _seeding_state["progress"] = 10
@@ -58,6 +59,7 @@ def _run_initial_seeding():
     finally:
         db.close()
 
+
 def check_and_seed_on_startup():
     """Checks if database is empty and triggers background seeding if so."""
     if settings.ENVIRONMENT in ("test", "testing") or "pytest" in sys.modules:
@@ -65,6 +67,7 @@ def check_and_seed_on_startup():
         return
 
     from app.api.v1.endpoints.system import SeedingStatus, _seeding_state
+
     db = SessionLocal()
     try:
         count = db.query(Asset).count()
@@ -86,10 +89,7 @@ def check_and_seed_on_startup():
 
         # Always trigger a background backfill for unlinked transactions if any
         # This ensures data consistency for capital gains reports
-        threading.Thread(
-            target=run_backfill,
-            daemon=True
-        ).start()
+        threading.Thread(target=run_backfill, daemon=True).start()
     except Exception as e:
         logger.error(f"Error during startup seeding check: {e}")
     finally:

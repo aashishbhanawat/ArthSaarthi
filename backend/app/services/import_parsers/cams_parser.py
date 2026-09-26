@@ -4,6 +4,7 @@ CAMS Excel Parser.
 Parses Mutual Fund transaction Excel files exported from CAMSOnline.
 Handles transactions including purchases, redemptions, SIPs, and dividends.
 """
+
 import logging
 import re
 from datetime import datetime
@@ -111,9 +112,7 @@ class CamsParser(BaseParser):
                 # Classify transaction type
                 tx_type = self._classify_transaction(tx_desc)
                 if tx_type is None:
-                    logger.debug(
-                        "CAMS parser: Unknown transaction type: %s", tx_desc
-                    )
+                    logger.debug("CAMS parser: Unknown transaction type: %s", tx_desc)
                     continue
 
                 # Parse numeric values
@@ -135,9 +134,7 @@ class CamsParser(BaseParser):
                 # Parse date (format: DD-MMM-YYYY, e.g., "16-MAR-2023")
                 transaction_date = self._parse_date(date_str)
                 if transaction_date is None:
-                    logger.warning(
-                        "CAMS parser: Could not parse date: %s", date_str
-                    )
+                    logger.warning("CAMS parser: Could not parse date: %s", date_str)
                     continue
 
                 # Merge MF_NAME and SCHEME_NAME for full fund name
@@ -147,44 +144,52 @@ class CamsParser(BaseParser):
                 if tx_type == "IDCW_REINVEST":
                     # 1. DIVIDEND transaction (amount received)
                     if amount_float > 0:
-                        transactions.append(ParsedTransaction(
+                        transactions.append(
+                            ParsedTransaction(
+                                ticker_symbol=ticker_symbol,
+                                transaction_date=transaction_date,
+                                transaction_type="DIVIDEND",
+                                quantity=abs(amount_float),
+                                price_per_unit=1.0,
+                                fees=0.0,
+                            )
+                        )
+                    # 2. BUY transaction (units purchased)
+                    if units_float > 0 and price_float > 0:
+                        transactions.append(
+                            ParsedTransaction(
+                                ticker_symbol=ticker_symbol,
+                                transaction_date=transaction_date,
+                                transaction_type="BUY",
+                                quantity=abs(units_float),
+                                price_per_unit=price_float,
+                                fees=0.0,
+                            )
+                        )
+                elif tx_type == "DIVIDEND":
+                    # IDCW Paid - only dividend, no units
+                    transactions.append(
+                        ParsedTransaction(
                             ticker_symbol=ticker_symbol,
                             transaction_date=transaction_date,
                             transaction_type="DIVIDEND",
                             quantity=abs(amount_float),
                             price_per_unit=1.0,
                             fees=0.0,
-                        ))
-                    # 2. BUY transaction (units purchased)
-                    if units_float > 0 and price_float > 0:
-                        transactions.append(ParsedTransaction(
+                        )
+                    )
+                else:
+                    # Regular BUY/SELL transaction
+                    transactions.append(
+                        ParsedTransaction(
                             ticker_symbol=ticker_symbol,
                             transaction_date=transaction_date,
-                            transaction_type="BUY",
+                            transaction_type=tx_type,
                             quantity=abs(units_float),
                             price_per_unit=price_float,
                             fees=0.0,
-                        ))
-                elif tx_type == "DIVIDEND":
-                    # IDCW Paid - only dividend, no units
-                    transactions.append(ParsedTransaction(
-                        ticker_symbol=ticker_symbol,
-                        transaction_date=transaction_date,
-                        transaction_type="DIVIDEND",
-                        quantity=abs(amount_float),
-                        price_per_unit=1.0,
-                        fees=0.0,
-                    ))
-                else:
-                    # Regular BUY/SELL transaction
-                    transactions.append(ParsedTransaction(
-                        ticker_symbol=ticker_symbol,
-                        transaction_date=transaction_date,
-                        transaction_type=tx_type,
-                        quantity=abs(units_float),
-                        price_per_unit=price_float,
-                        fees=0.0,
-                    ))
+                        )
+                    )
 
             except Exception as e:
                 logger.error(

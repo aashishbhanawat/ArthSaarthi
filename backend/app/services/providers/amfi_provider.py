@@ -1,5 +1,7 @@
 """Provider for fetching data from AMFI (Association of Mutual Funds in India)."""
+
 import asyncio
+import logging
 from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal
@@ -14,6 +16,8 @@ from .base import FinancialDataProvider
 
 CACHE_TTL_AMFI_DATA = 86400  # 24 hours
 CACHE_TTL_HISTORICAL_PRICE = 86400  # 24 hours
+
+logger = logging.getLogger(__name__)
 
 
 class AmfiIndiaProvider(FinancialDataProvider):
@@ -35,11 +39,10 @@ class AmfiIndiaProvider(FinancialDataProvider):
         Returns: ("Equity Scheme", "Large Cap Fund")
         """
         import re
+
         # Match pattern: "Open Ended Schemes(Category - Sub Category)"
         # or "Close Ended Schemes(Category - Sub Category)"
-        match = re.match(
-            r"(?:Open|Close) Ended Schemes\s*\(([^)]+)\)", line.strip()
-        )
+        match = re.match(r"(?:Open|Close) Ended Schemes\s*\(([^)]+)\)", line.strip())
         if match:
             inner = match.group(1).strip()
             if " - " in inner:
@@ -61,6 +64,7 @@ class AmfiIndiaProvider(FinancialDataProvider):
             if self.cache_client:
                 try:
                     from app.services.rate_limiter import ProviderRateLimiter
+
                     ProviderRateLimiter(self.cache_client).check_and_increment("amfi")
                 except Exception as rle:
                     logger.debug(f"AMFI rate limit tracking note: {rle}")
@@ -93,18 +97,20 @@ class AmfiIndiaProvider(FinancialDataProvider):
                                 "scheme_code": scheme_code,
                                 "isin": parts[1] if parts[1] != "N.A." else None,
                                 "isin2": (
-                                    parts[2] if len(parts) > 2 and parts[2] != "N.A."
+                                    parts[2]
+                                    if len(parts) > 2 and parts[2] != "N.A."
                                     else None
                                 ),
                                 "scheme_name": parts[3],
                                 "nav": (
                                     str(Decimal(parts[4]))
-                                    if parts[4] != "N.A." else "0.0"
+                                    if parts[4] != "N.A."
+                                    else "0.0"
                                 ),
                                 "date": (
-                                    datetime.strptime(
-                                        parts[5], "%d-%b-%Y"
-                                    ).date().isoformat()
+                                    datetime.strptime(parts[5], "%d-%b-%Y")
+                                    .date()
+                                    .isoformat()
                                     if len(parts) > 5 and parts[5] != "N.A."
                                     else None
                                 ),
@@ -228,9 +234,7 @@ class AmfiIndiaProvider(FinancialDataProvider):
 
             for nav_point in mf_data.get("data", []):
                 try:
-                    nav_date = datetime.strptime(
-                        nav_point["date"], "%d-%m-%Y"
-                    ).date()
+                    nav_date = datetime.strptime(nav_point["date"], "%d-%m-%Y").date()
                     if start_date <= nav_date <= end_date:
                         historical_data[scheme_code][nav_date] = Decimal(
                             nav_point["nav"]
@@ -288,8 +292,12 @@ class AmfiIndiaProvider(FinancialDataProvider):
                                 )
                         except (ValueError, KeyError):
                             continue
-                except (httpx.RequestError, httpx.HTTPStatusError, KeyError,
-                        ValueError):
+                except (
+                    httpx.RequestError,
+                    httpx.HTTPStatusError,
+                    KeyError,
+                    ValueError,
+                ):
                     continue
         return historical_data
 

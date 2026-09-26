@@ -41,7 +41,8 @@ class FinancialDataService:
 
         # 1. Separate assets by type for different providers
         mf_assets = [
-            a for a in assets
+            a
+            for a in assets
             if str(a.get("asset_type")).upper().replace("_", " ") == "MUTUAL FUND"
         ]
         stock_assets = [
@@ -49,7 +50,8 @@ class FinancialDataService:
         ]
         bond_assets = [a for a in assets if str(a.get("asset_type")).upper() == "BOND"]
         other_assets = [
-            a for a in assets
+            a
+            for a in assets
             if a not in mf_assets and a not in stock_assets and a not in bond_assets
         ]
 
@@ -69,10 +71,13 @@ class FinancialDataService:
                     f"Processing {len(unresolved_stocks)} stock assets with active Broker provider."
                 )
                 try:
-                    broker_prices = broker_provider.get_current_prices(unresolved_stocks)
+                    broker_prices = broker_provider.get_current_prices(
+                        unresolved_stocks
+                    )
                     prices_data.update(broker_prices)
                     unresolved_stocks = [
-                        a for a in unresolved_stocks
+                        a
+                        for a in unresolved_stocks
                         if a.get("ticker_symbol") not in prices_data
                     ]
                 except Exception as e:
@@ -82,13 +87,16 @@ class FinancialDataService:
                 logger.debug(
                     f"Processing {len(unresolved_stocks)} stock assets with Upstox provider."
                 )
-                upstox_prices = self.upstox_provider.get_current_prices(unresolved_stocks)
+                upstox_prices = self.upstox_provider.get_current_prices(
+                    unresolved_stocks
+                )
                 prices_data.update(upstox_prices)
                 logger.debug(f"Prices after Upstox: {upstox_prices.keys()}")
 
             # Fallback to yfinance for any stock assets not resolved
             missing_stocks = [
-                a for a in stock_assets
+                a
+                for a in stock_assets
                 if a.get("ticker_symbol") not in prices_data
                 and a.get("ticker_symbol", "").replace(".NS", "") not in prices_data
             ]
@@ -101,7 +109,6 @@ class FinancialDataService:
                     self.yfinance_provider.get_current_prices(missing_stocks)
                 )
 
-
         # 4. Bonds: NSE is the primary source.
         if bond_assets:
             logger.debug(
@@ -111,7 +118,7 @@ class FinancialDataService:
             logger.debug(f"Prices after NSE (for bonds): {prices_data.keys()}")
 
         # 5. NSE Fallback: For any stocks or MFs not found by primary providers
-        found_tickers_cleaned = {t.replace('.NS', '') for t in prices_data.keys()}
+        found_tickers_cleaned = {t.replace(".NS", "") for t in prices_data.keys()}
 
         nse_fallback_candidates = stock_assets + mf_assets
         nse_fallback_needed = [
@@ -140,11 +147,13 @@ class FinancialDataService:
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
         mf_assets = [
-            a for a in assets
+            a
+            for a in assets
             if str(a.get("asset_type")).upper().replace("_", " ") == "MUTUAL FUND"
         ]
         other_assets = [
-            a for a in assets
+            a
+            for a in assets
             if str(a.get("asset_type")).upper().replace("_", " ") != "MUTUAL FUND"
         ]
 
@@ -162,14 +171,18 @@ class FinancialDataService:
                 a for a in other_assets if a.get("ticker_symbol") not in historical_data
             ]
             if missing_assets:
-                historical_data.update(self.yfinance_provider.get_historical_prices(
-                    missing_assets, start_date, end_date
-                ))
+                historical_data.update(
+                    self.yfinance_provider.get_historical_prices(
+                        missing_assets, start_date, end_date
+                    )
+                )
 
         if mf_assets:
-            historical_data.update(self.amfi_provider.get_historical_prices(
-                mf_assets, start_date, end_date
-            ))
+            historical_data.update(
+                self.amfi_provider.get_historical_prices(
+                    mf_assets, start_date, end_date
+                )
+            )
 
         return historical_data
 
@@ -240,10 +253,13 @@ class FinancialDataService:
 
 def get_financial_data_service() -> FinancialDataService:
     from app.cache.factory import get_cache_client
+
     if settings.ENVIRONMENT == "test":
         from app.tests.utils.mock_financial_data import MockFinancialDataService
+
         return MockFinancialDataService()
     return FinancialDataService(cache_client=get_cache_client())
+
 
 # Create a singleton instance to be used throughout the application
 financial_data_service = get_financial_data_service()

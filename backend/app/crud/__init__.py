@@ -5,7 +5,6 @@ from .crud_audit_log import audit_log
 from .crud_bond import bond
 from .crud_broker import crud_broker
 from .crud_capital_loss_ledger import capital_loss_ledger
-
 from .crud_dashboard import dashboard
 from .crud_fixed_deposit import fixed_deposit
 from .crud_goal import goal, goal_link
@@ -48,6 +47,5 @@ __all__ = [
     "crud_income_source",
     "crud_income_entry",
     "crud_tax_deduction",
+    "crud_broker",
 ]
-
-

@@ -19,9 +19,7 @@ class CRUDRD(
         obj_in: RecurringDepositCreate,
         user_id: uuid.UUID,
     ) -> RecurringDeposit:
-        db_obj = self.model(
-            **model_dump(obj_in), user_id=user_id
-        )
+        db_obj = self.model(**model_dump(obj_in), user_id=user_id)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)

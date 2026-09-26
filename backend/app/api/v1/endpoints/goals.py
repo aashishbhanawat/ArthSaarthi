@@ -32,9 +32,7 @@ def create_goal(
     """
     Create new goal.
     """
-    goal = crud.goal.create_with_owner(
-        db=db, obj_in=goal_in, user_id=current_user.id
-    )
+    goal = crud.goal.create_with_owner(db=db, obj_in=goal_in, user_id=current_user.id)
     db.commit()
     db.refresh(goal)
     return goal
@@ -134,17 +132,16 @@ def create_goal_link(
 
     if link_in.asset_id:
         from app.models.asset import Asset
+
         asset_exists = (
-            db.query(Asset.id)
-            .filter(Asset.id == link_in.asset_id)
-            .limit(1)
-            .first()
+            db.query(Asset.id).filter(Asset.id == link_in.asset_id).limit(1).first()
         )
         if not asset_exists:
             raise HTTPException(status_code=404, detail="Asset not found")
         # Ensure the user has at least one transaction for this asset
         # (i.e. it's part of their portfolio)
         from app.models.transaction import Transaction
+
         user_has_asset = (
             db.query(Transaction.id)
             .filter(Transaction.asset_id == link_in.asset_id)

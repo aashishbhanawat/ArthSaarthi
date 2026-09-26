@@ -1,6 +1,8 @@
 """Provider for fetching data from NSE Bhavcopy."""
+
 import csv
 import io
+import logging
 import zipfile
 from datetime import date, timedelta
 from decimal import Decimal
@@ -17,8 +19,10 @@ CACHE_KEY_TEMPLATE = "bhavcopy_data:{date_iso}"
 CACHE_TTL = 43200  # 12 hours
 NSE_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 }
+
+logger = logging.getLogger(__name__)
 
 
 class NseBhavcopyProvider(FinancialDataProvider):
@@ -66,7 +70,10 @@ class NseBhavcopyProvider(FinancialDataProvider):
                 if self.cache_client:
                     try:
                         from app.services.rate_limiter import ProviderRateLimiter
-                        ProviderRateLimiter(self.cache_client).check_and_increment("nse")
+
+                        ProviderRateLimiter(self.cache_client).check_and_increment(
+                            "nse"
+                        )
                     except Exception as rle:
                         logger.debug(f"NSE rate limit tracking note: {rle}")
                 with httpx.Client(headers=NSE_HEADERS, follow_redirects=True) as client:
@@ -81,7 +88,7 @@ class NseBhavcopyProvider(FinancialDataProvider):
                         # The CSV has headers that need to be normalized
                         # (e.g. "  TckrSymb  ")
                         # DictReader will handle this if we don't specify fieldnames
-                        reader = csv.DictReader(io.TextIOWrapper(thefile, "utf-8")) # type: ignore
+                        reader = csv.DictReader(io.TextIOWrapper(thefile, "utf-8"))  # type: ignore
                         for row in reader:
                             series = row.get("SctySrs", "").strip().upper()
                             # We are interested in a wide range of tradable securities,
@@ -94,9 +101,11 @@ class NseBhavcopyProvider(FinancialDataProvider):
                                 symbol = row["TckrSymb"].strip().upper()
                                 price_data = {
                                     "current_price": Decimal(
-                                        row["ClsPric"].strip().replace(",", "")),
+                                        row["ClsPric"].strip().replace(",", "")
+                                    ),
                                     "previous_close": Decimal(
-                                        row["PrvsClsgPric"].strip().replace(",", "")),
+                                        row["PrvsClsgPric"].strip().replace(",", "")
+                                    ),
                                 }
                                 # Index by trading symbol
                                 bhavcopy_data[symbol] = price_data
@@ -109,8 +118,10 @@ class NseBhavcopyProvider(FinancialDataProvider):
 
                 return bhavcopy_data
             except (httpx.RequestError, KeyError, zipfile.BadZipFile, csv.Error) as e:
-                print(f"INFO: Failed to fetch/parse Bhavcopy for {current_date} "
-                      f"from {url}. Error: {e}. Trying previous day.")
+                print(
+                    f"INFO: Failed to fetch/parse Bhavcopy for {current_date} "
+                    f"from {url}. Error: {e}. Trying previous day."
+                )
                 continue
 
         print(f"ERROR: Could not fetch Bhavcopy for the last 5 days from {for_date}.")

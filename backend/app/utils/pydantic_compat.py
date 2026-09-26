@@ -11,6 +11,7 @@ def model_dump(obj: BaseModel, **kwargs) -> Dict[str, Any]:
         return obj.model_dump(**kwargs)
     return obj.dict(**kwargs)
 
+
 def model_dump_json(obj: BaseModel, **kwargs) -> str:
     """
     Pydantic v1/v2 compatible model_dump_json.
@@ -18,6 +19,7 @@ def model_dump_json(obj: BaseModel, **kwargs) -> str:
     if hasattr(obj, "model_dump_json"):
         return obj.model_dump_json(**kwargs)
     return obj.json(**kwargs)
+
 
 def model_validate(cls: Any, obj: Any, **kwargs) -> Any:
     """
@@ -33,6 +35,7 @@ def model_validate(cls: Any, obj: Any, **kwargs) -> Any:
             pass
     return cls.parse_obj(obj)
 
+
 def model_copy(obj: Any, **kwargs) -> Any:
     """
     Pydantic v1/v2 compatible model_copy.
@@ -40,6 +43,7 @@ def model_copy(obj: Any, **kwargs) -> Any:
     if hasattr(obj, "model_copy"):
         return obj.model_copy(**kwargs)
     return obj.copy(**kwargs)
+
 
 def model_validate_json(cls: Any, json_data: str, **kwargs) -> Any:
     """

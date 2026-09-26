@@ -69,6 +69,7 @@ class AssetInDBBase(AssetCreate):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 

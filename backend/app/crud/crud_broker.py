@@ -10,7 +10,9 @@ from app.models.broker_credential import BrokerCredential
 from app.schemas.broker import BrokerCredentialSave
 
 
-class CRUDBrokerCredential(CRUDBase[BrokerCredential, BrokerCredentialSave, BrokerCredentialSave]):
+class CRUDBrokerCredential(
+    CRUDBase[BrokerCredential, BrokerCredentialSave, BrokerCredentialSave]
+):
     def get_by_user_and_provider(
         self, db: Session, user_id: uuid.UUID, provider_name: str
     ) -> Optional[BrokerCredential]:
@@ -27,13 +29,16 @@ class CRUDBrokerCredential(CRUDBase[BrokerCredential, BrokerCredentialSave, Brok
         self, db: Session, user_id: uuid.UUID
     ) -> List[BrokerCredential]:
         return (
-            db.query(BrokerCredential)
-            .filter(BrokerCredential.user_id == user_id)
-            .all()
+            db.query(BrokerCredential).filter(BrokerCredential.user_id == user_id).all()
         )
 
     def save_credentials(
-        self, db: Session, user_id: uuid.UUID, provider_name: str, api_key: str, api_secret: str
+        self,
+        db: Session,
+        user_id: uuid.UUID,
+        provider_name: str,
+        api_key: str,
+        api_secret: str,
     ) -> BrokerCredential:
         existing = self.get_by_user_and_provider(db, user_id, provider_name)
         encrypted_secret = encrypt_credential(api_secret)
@@ -108,14 +113,20 @@ class CRUDBrokerCredential(CRUDBase[BrokerCredential, BrokerCredentialSave, Brok
                     token = self.get_decrypted_token(c)
                     secret = self.get_decrypted_secret(c)
                     if c.provider_name == "zerodha_kite":
-                        from app.services.providers.zerodha_provider import ZerodhaKiteProvider
+                        from app.services.providers.zerodha_provider import (
+                            ZerodhaKiteProvider,
+                        )
+
                         return ZerodhaKiteProvider(
                             api_key=c.api_key,
                             access_token=token,
                             api_secret=secret,
                         )
                     elif c.provider_name == "icici_breeze":
-                        from app.services.providers.icici_breeze_provider import IciciBreezeProvider
+                        from app.services.providers.icici_breeze_provider import (
+                            IciciBreezeProvider,
+                        )
+
                         return IciciBreezeProvider(
                             api_key=c.api_key,
                             session_token=token,
@@ -125,4 +136,3 @@ class CRUDBrokerCredential(CRUDBase[BrokerCredential, BrokerCredentialSave, Brok
 
 
 crud_broker = CRUDBrokerCredential(BrokerCredential)
-

@@ -11,12 +11,15 @@ try:
         from pydantic import ConfigDict
     else:
         raise ImportError
+
     def model_validator(pre=False):
         return root_validator(pre=pre, skip_on_failure=True)
 except (ImportError, TypeError):
     ConfigDict = None
+
     def model_validator(pre=False):
         return root_validator(pre=pre)
+
 
 from .enums import TransactionType
 
@@ -39,6 +42,7 @@ class TransactionBase(BaseModel):
     @classmethod
     def check_future_date(cls, values: dict) -> dict:
         from datetime import datetime, timezone
+
         transaction_date = values.get("transaction_date")
         if transaction_date:
             now = datetime.now(timezone.utc)
@@ -119,6 +123,7 @@ class TransactionLink(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -131,9 +136,9 @@ class Transaction(TransactionBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
-
 
 
 class TransactionsResponse(BaseModel):

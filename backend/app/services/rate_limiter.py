@@ -116,10 +116,7 @@ class ProviderRateLimiter:
                     )
 
         # 2. Shared Global Limit Check
-        g_key = (
-            f"ratelimit:global:{provider_key}:"
-            f"{window_seconds}s:{window_bucket}"
-        )
+        g_key = f"ratelimit:global:{provider_key}:{window_seconds}s:{window_bucket}"
         if self.cache:
             try:
                 g_count = self.cache.incr(g_key, expire=window_seconds * 2)
@@ -163,10 +160,7 @@ class ProviderRateLimiter:
         now = time.time()
         window_bucket = int(now // window_seconds)
 
-        g_key = (
-            f"ratelimit:global:{provider_key}:"
-            f"{window_seconds}s:{window_bucket}"
-        )
+        g_key = f"ratelimit:global:{provider_key}:{window_seconds}s:{window_bucket}"
         global_count = 0
         if self.cache:
             val = self.cache.get(g_key)

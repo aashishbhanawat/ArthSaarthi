@@ -10,7 +10,6 @@ from app.api.v1.endpoints import (
     auth,
     broker,
     cache_diagnostics,
-
     capital_gains,
     dashboard,
     dividends,
@@ -97,9 +96,7 @@ api_router.include_router(
 )
 
 # Dividend Tax Reports (FR6.6)
-api_router.include_router(
-    dividends.router, prefix="/dividends", tags=["dividends"]
-)
+api_router.include_router(dividends.router, prefix="/dividends", tags=["dividends"])
 
 # Schedule FA - Foreign Assets (Calendar Year)
 api_router.include_router(
@@ -107,9 +104,7 @@ api_router.include_router(
 )
 
 # Income & TDS Management (FR16.1 & FR16.2)
-api_router.include_router(
-    income.router, prefix="/income", tags=["income"]
-)
+api_router.include_router(income.router, prefix="/income", tags=["income"])
 
 # Tax Deductions under Chapter VI-A (FR16.3)
 api_router.include_router(
@@ -127,10 +122,4 @@ api_router.include_router(
 )
 
 # Broker Integration (NFR12 / FR558)
-api_router.include_router(
-    broker.router, prefix="/broker", tags=["broker"]
-)
-
-
-
-
+api_router.include_router(broker.router, prefix="/broker", tags=["broker"])

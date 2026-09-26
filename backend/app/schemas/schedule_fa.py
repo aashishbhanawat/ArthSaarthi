@@ -1,6 +1,7 @@
 """
 Schedule FA Schemas for ITR-2/ITR-3 Foreign Assets Reporting
 """
+
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
@@ -13,6 +14,7 @@ class ScheduleFAEntry(BaseModel):
     Schedule FA A3 Entry - Foreign Equity and Debt Interest
     Matches ITR-2/ITR-3 Schedule FA format.
     """
+
     country_code: str
     country_name: str
     entity_name: str  # Name of the company/fund
@@ -33,6 +35,7 @@ class ScheduleFAEntry(BaseModel):
 
 class ScheduleFASummary(BaseModel):
     """Response model for Schedule FA Report"""
+
     calendar_year: int  # e.g., 2024
     assessment_year: str  # e.g., "2025-26"
     entries: List[ScheduleFAEntry]

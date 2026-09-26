@@ -24,6 +24,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 logger = logging.getLogger(__name__)
 
+
 # Dependency to get DB session
 def get_db():
     db = SessionLocal()
@@ -35,6 +36,7 @@ def get_db():
     except Exception as e:
         # Don't log ERROR for 4xx client errors (like PASSWORD_REQUIRED)
         from starlette.exceptions import HTTPException
+
         if isinstance(e, HTTPException) and e.status_code < 500:
             logger.debug(f"DB Session: Client error {e.status_code}, rolling back.")
         else:
@@ -44,6 +46,7 @@ def get_db():
             )
             try:
                 from fastapi.exceptions import ResponseValidationError
+
                 if isinstance(e, ResponseValidationError):
                     logger.error(f"Detailed ResponseValidationError: {e.errors()}")
             except Exception:

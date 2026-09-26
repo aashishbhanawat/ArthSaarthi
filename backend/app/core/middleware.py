@@ -26,9 +26,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers[
-            "Referrer-Policy"
-        ] = "strict-origin-when-cross-origin"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
         # Content Security Policy (CSP)
         # Allows 'self', data: (for images), and specific CDNs for Swagger UI support
@@ -42,8 +40,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Only enable HSTS in production (requires HTTPS)
         if settings.ENVIRONMENT == "production":
-            response.headers[
-                "Strict-Transport-Security"
-            ] = "max-age=63072000; includeSubDomains"
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=63072000; includeSubDomains"
+            )
 
         return response

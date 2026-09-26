@@ -13,7 +13,7 @@ def log_event(
     user_id: Optional[uuid.UUID],
     event_type: str,
     ip_address: Optional[str] = None,
-    details: Optional[Dict[str, Any]] = None
+    details: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Logs an audit event to the database.
