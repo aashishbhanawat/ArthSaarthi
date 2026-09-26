@@ -49,10 +49,20 @@ class SbiFdParser(BaseParser):
 
                         # Expected minimum parts for a valid row:
                         # e.g.: TERM DEPOSIT XXXXXXX3276 07-12-15 26613.36 P 6.25 0.00 258.74 28316.00 07-12-26 Yes
-                        if len(parts) >= 11 and ("TERM" in parts or "DEPOSIT" in parts or "SPECIAL" in parts or "STDR" in parts or "TDR" in parts):
+                        if len(parts) >= 11 and (
+                            "TERM" in parts
+                            or "DEPOSIT" in parts
+                            or "SPECIAL" in parts
+                            or "STDR" in parts
+                            or "TDR" in parts
+                        ):
                             try:
                                 # Look for date pattern DD-MM-YY to anchor our search
-                                date_indices = [i for i, part in enumerate(parts) if len(part) == 8 and part.count('-') == 2]
+                                date_indices = [
+                                    i
+                                    for i, part in enumerate(parts)
+                                    if len(part) == 8 and part.count("-") == 2
+                                ]
 
                                 if len(date_indices) >= 2:
                                     open_date_idx = date_indices[0]
@@ -63,25 +73,35 @@ class SbiFdParser(BaseParser):
 
                                     # Parse dates (DD-MM-YY to YYYY-MM-DD)
                                     open_date_str = parts[open_date_idx]
-                                    start_date = datetime.datetime.strptime(open_date_str, "%d-%m-%y").strftime("%Y-%m-%d")
+                                    start_date = datetime.datetime.strptime(
+                                        open_date_str, "%d-%m-%y"
+                                    ).strftime("%Y-%m-%d")
 
                                     mat_date_str = parts[mat_date_idx]
-                                    maturity_date = datetime.datetime.strptime(mat_date_str, "%d-%m-%y").strftime("%Y-%m-%d")
+                                    maturity_date = datetime.datetime.strptime(
+                                        mat_date_str, "%d-%m-%y"
+                                    ).strftime("%Y-%m-%d")
 
                                     # Principal is right after open date
-                                    principal_str = parts[open_date_idx + 1].replace(',', '')
+                                    principal_str = parts[open_date_idx + 1].replace(
+                                        ",", ""
+                                    )
                                     principal_amount = float(principal_str)
 
                                     # Maturity amount is right before maturity date
-                                    mat_amount_str = parts[mat_date_idx - 1].replace(',', '')
+                                    mat_amount_str = parts[mat_date_idx - 1].replace(
+                                        ",", ""
+                                    )
                                     maturity_amount = float(mat_amount_str)
 
                                     # ROI is typically a few columns after principal (after Holding status like 'P')
                                     # Look for the first float-like value
                                     interest_rate = 0.0
-                                    for p in parts[open_date_idx + 2 : mat_date_idx - 1]:
+                                    for p in parts[
+                                        open_date_idx + 2 : mat_date_idx - 1
+                                    ]:
                                         try:
-                                            interest_rate = float(p.replace(',', ''))
+                                            interest_rate = float(p.replace(",", ""))
                                             # ROI shouldn't be zero if it's an FD, usually between 2 and 12
                                             if interest_rate > 0 and interest_rate < 15:
                                                 break
@@ -104,17 +124,23 @@ class SbiFdParser(BaseParser):
                                         maturity_date=maturity_date,
                                         maturity_amount=maturity_amount,
                                         interest_payout=interest_payout,
-                                        compounding_frequency="Quarterly"
+                                        compounding_frequency="Quarterly",
                                     )
                                     fixed_deposits.append(fd_entry)
                             except Exception as e:
-                                logger.warning(f"Failed to parse SBI FD row '{line}': {e}")
+                                logger.warning(
+                                    f"Failed to parse SBI FD row '{line}': {e}"
+                                )
                                 continue
 
             return fixed_deposits
 
         except Exception as e:
-            if isinstance(e, PDFPasswordIncorrect) or "PASSWORD_REQUIRED" in str(e) or str(e) == "":
+            if (
+                isinstance(e, PDFPasswordIncorrect)
+                or "PASSWORD_REQUIRED" in str(e)
+                or str(e) == ""
+            ):
                 logger.error(f"Password required for PDF: {file_path}")
                 raise ValueError("PASSWORD_REQUIRED")
             logger.error(f"Error parsing SBI FD statement: {e}")

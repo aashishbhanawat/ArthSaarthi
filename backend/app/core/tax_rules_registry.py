@@ -167,4 +167,3 @@ def get_tax_rules(financial_year: str) -> FinancialYearTaxRules:
         if fy in TAX_RULES_BY_FY:
             return TAX_RULES_BY_FY[fy]
     return TAX_RULES_BY_FY["2024-25"]
-

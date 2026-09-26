@@ -29,7 +29,7 @@ class IciciFdParser(BaseParser):
                 in_fd_section = False
 
                 # regex for DD-MM-YYYY or DD/MM/YYYY
-                date_pattern = re.compile(r'\d{2}[/-]\d{2}[/-]\d{4}')
+                date_pattern = re.compile(r"\d{2}[/-]\d{2}[/-]\d{4}")
 
                 for page in pdf.pages:
                     text = page.extract_text()
@@ -58,11 +58,23 @@ class IciciFdParser(BaseParser):
                                     open_date_idx = date_indices[0]
                                     mat_date_idx = date_indices[1]
 
-                                    open_date_str = date_pattern.search(parts[open_date_idx]).group().replace('/', '-')
-                                    start_date = datetime.datetime.strptime(open_date_str, "%d-%m-%Y").strftime("%Y-%m-%d")
+                                    open_date_str = (
+                                        date_pattern.search(parts[open_date_idx])
+                                        .group()
+                                        .replace("/", "-")
+                                    )
+                                    start_date = datetime.datetime.strptime(
+                                        open_date_str, "%d-%m-%Y"
+                                    ).strftime("%Y-%m-%d")
 
-                                    mat_date_str = date_pattern.search(parts[mat_date_idx]).group().replace('/', '-')
-                                    maturity_date = datetime.datetime.strptime(mat_date_str, "%d-%m-%Y").strftime("%Y-%m-%d")
+                                    mat_date_str = (
+                                        date_pattern.search(parts[mat_date_idx])
+                                        .group()
+                                        .replace("/", "-")
+                                    )
+                                    maturity_date = datetime.datetime.strptime(
+                                        mat_date_str, "%d-%m-%Y"
+                                    ).strftime("%Y-%m-%d")
 
                                     # ICICI account numbers are usually the first token
                                     account_num = parts[0]
@@ -72,8 +84,10 @@ class IciciFdParser(BaseParser):
                                     principal_amount = 0.0
                                     for idx in range(open_date_idx + 1, mat_date_idx):
                                         try:
-                                            val = float(parts[idx].replace(',', ''))
-                                            if val > 15:  # unlikely to be an interest rate
+                                            val = float(parts[idx].replace(",", ""))
+                                            if (
+                                                val > 15
+                                            ):  # unlikely to be an interest rate
                                                 principal_amount = val
                                                 break
                                         except ValueError:
@@ -84,7 +98,11 @@ class IciciFdParser(BaseParser):
                                     for idx in range(open_date_idx + 1, len(parts)):
                                         try:
                                             # Strip percent sign if present
-                                            clean_rate = parts[idx].replace('%', '').replace(',', '')
+                                            clean_rate = (
+                                                parts[idx]
+                                                .replace("%", "")
+                                                .replace(",", "")
+                                            )
                                             val = float(clean_rate)
                                             if 0 < val < 15:
                                                 interest_rate = val
@@ -93,11 +111,15 @@ class IciciFdParser(BaseParser):
                                             pass
 
                                     # Maturity amount is right before maturity date
-                                    maturity_amount = principal_amount  # Default if not found
-                                    for idx in range(mat_date_idx - 1, open_date_idx, -1):
+                                    maturity_amount = (
+                                        principal_amount  # Default if not found
+                                    )
+                                    for idx in range(
+                                        mat_date_idx - 1, open_date_idx, -1
+                                    ):
                                         try:
                                             # Strip commas
-                                            val_str = parts[idx].replace(',', '')
+                                            val_str = parts[idx].replace(",", "")
                                             val = float(val_str)
                                             if val >= principal_amount:
                                                 maturity_amount = val
@@ -107,7 +129,10 @@ class IciciFdParser(BaseParser):
 
                                     if principal_amount > 0:
                                         interest_payout = "Cumulative"
-                                        if abs(maturity_amount - principal_amount) < 1.0:
+                                        if (
+                                            abs(maturity_amount - principal_amount)
+                                            < 1.0
+                                        ):
                                             interest_payout = "Payout"
 
                                         fd_entry = ParsedFixedDeposit(
@@ -119,11 +144,13 @@ class IciciFdParser(BaseParser):
                                             maturity_date=maturity_date,
                                             maturity_amount=maturity_amount,
                                             interest_payout=interest_payout,
-                                            compounding_frequency="Quarterly"
+                                            compounding_frequency="Quarterly",
                                         )
                                         fixed_deposits.append(fd_entry)
                             except Exception as e:
-                                logger.warning(f"Failed to parse ICICI FD row '{line}': {e}")
+                                logger.warning(
+                                    f"Failed to parse ICICI FD row '{line}': {e}"
+                                )
                                 continue
 
             unique_fds = {}
@@ -134,7 +161,11 @@ class IciciFdParser(BaseParser):
             return list(unique_fds.values())
 
         except Exception as e:
-            if isinstance(e, PDFPasswordIncorrect) or "PASSWORD_REQUIRED" in str(e) or str(e) == "":
+            if (
+                isinstance(e, PDFPasswordIncorrect)
+                or "PASSWORD_REQUIRED" in str(e)
+                or str(e) == ""
+            ):
                 logger.error(f"Password required for PDF: {file_path}")
                 raise ValueError("PASSWORD_REQUIRED")
             logger.error(f"Error parsing ICICI FD statement: {e}")

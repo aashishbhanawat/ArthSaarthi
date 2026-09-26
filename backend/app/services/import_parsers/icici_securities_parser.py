@@ -3,6 +3,7 @@
 Parses Mutual Fund Account Statements from ICICI Securities (AMFI ARN-0845).
 These are broker statements that contain MF transactions across multiple AMCs.
 """
+
 import logging
 import re
 from datetime import datetime
@@ -20,39 +21,37 @@ class ICICISecuritiesParser(BaseParser):
 
     # Transaction type mapping
     TRANSACTION_MAP = {
-        'purchase': 'BUY',
-        'sip': 'BUY',
-        'switch in': 'BUY',
-        'systematic investment': 'BUY',
-        'redemption': 'SELL',
-        'switch out': 'SELL',
-        'sale': 'SELL',
-        'sold': 'SELL',
-        'sgb sell': 'SELL',
-        'dividend': 'DIVIDEND',
-        'idcw': 'DIVIDEND',
+        "purchase": "BUY",
+        "sip": "BUY",
+        "switch in": "BUY",
+        "systematic investment": "BUY",
+        "redemption": "SELL",
+        "switch out": "SELL",
+        "sale": "SELL",
+        "sold": "SELL",
+        "sgb sell": "SELL",
+        "dividend": "DIVIDEND",
+        "idcw": "DIVIDEND",
     }
 
     # Patterns to skip
     SKIP_PATTERNS = [
-        'opening balance',
-        'current unit balance',
-        'closing balance',
-        'page ',
-        'mutual fund account statement',
+        "opening balance",
+        "current unit balance",
+        "closing balance",
+        "page ",
+        "mutual fund account statement",
     ]
 
     # Date pattern: DD-MMM-YYYY (e.g., 27-Oct-2023)
-    DATE_PATTERN = re.compile(r'(\d{1,2}-[A-Za-z]{3}-\d{4})')
+    DATE_PATTERN = re.compile(r"(\d{1,2}-[A-Za-z]{3}-\d{4})")
 
     # Transaction line pattern: starts with date, followed by transaction no
-    TX_LINE_PATTERN = re.compile(
-        r'^(\d{1,2}-[A-Za-z]{3}-\d{4})\s+(\d+)\s+(\w+)'
-    )
+    TX_LINE_PATTERN = re.compile(r"^(\d{1,2}-[A-Za-z]{3}-\d{4})\s+(\d+)\s+(\w+)")
 
     # Number pattern: match numbers with optional commas and decimals
     # Handle negative numbers
-    NUMBER_PATTERN = re.compile(r'-?[\d,]+\.?\d*')
+    NUMBER_PATTERN = re.compile(r"-?[\d,]+\.?\d*")
 
     def parse(
         self, file_path: str, password: Optional[str] = None
@@ -100,9 +99,7 @@ class ICICISecuritiesParser(BaseParser):
             logger.error(f"ICICI parser: Error - {e}")
             raise
 
-        logger.info(
-            f"ICICI Securities parser: Parsed {len(transactions)} transactions"
-        )
+        logger.info(f"ICICI Securities parser: Parsed {len(transactions)} transactions")
         return transactions
 
     def _parse_page_text(
@@ -110,7 +107,7 @@ class ICICISecuritiesParser(BaseParser):
     ) -> Tuple[List[ParsedTransaction], Optional[str]]:
         """Parse a single page of text."""
         transactions = []
-        lines = text.split('\n')
+        lines = text.split("\n")
 
         for line in lines:
             line = line.strip()
@@ -147,8 +144,14 @@ class ICICISecuritiesParser(BaseParser):
 
         # Check for fund-related keywords
         fund_keywords = [
-            'fund', 'plan', 'growth', 'idcw', 'direct',
-            'regular', 'option', 'scheme'
+            "fund",
+            "plan",
+            "growth",
+            "idcw",
+            "direct",
+            "regular",
+            "option",
+            "scheme",
         ]
 
         has_fund_keyword = any(kw in line_lower for kw in fund_keywords)
@@ -156,7 +159,7 @@ class ICICISecuritiesParser(BaseParser):
         if has_fund_keyword and len(line) > 20:
             # Clean up the scheme name
             # Remove "Folio No:" and everything before scheme name
-            if 'folio no' in line_lower:
+            if "folio no" in line_lower:
                 return None  # This is AMC header, not scheme
 
             # Remove common prefixes/suffixes
@@ -192,7 +195,7 @@ class ICICISecuritiesParser(BaseParser):
         date_str = date_match.group(1)
 
         # Parse the rest of the line
-        rest = line[date_match.end():].strip()
+        rest = line[date_match.end() :].strip()
 
         # Extract transaction type
         tx_type = self._classify_transaction(rest)
@@ -225,8 +228,7 @@ class ICICISecuritiesParser(BaseParser):
             expected = units * price
             if amount > 0 and abs(expected - amount) / amount > 0.1:
                 logger.debug(
-                    f"Amount mismatch: {units} * {price} = {expected} "
-                    f"!= {amount}"
+                    f"Amount mismatch: {units} * {price} = {expected} != {amount}"
                 )
 
             # Parse date
@@ -267,7 +269,7 @@ class ICICISecuritiesParser(BaseParser):
         for match in matches:
             try:
                 # Remove commas and convert
-                value = float(match.replace(',', ''))
+                value = float(match.replace(",", ""))
                 numbers.append(value)
             except ValueError:
                 continue
@@ -278,7 +280,7 @@ class ICICISecuritiesParser(BaseParser):
         """Parse date string to YYYY-MM-DD format."""
         try:
             # DD-MMM-YYYY format
-            dt = datetime.strptime(date_str, '%d-%b-%Y')
-            return dt.strftime('%Y-%m-%d')
+            dt = datetime.strptime(date_str, "%d-%b-%Y")
+            return dt.strftime("%Y-%m-%d")
         except ValueError:
             return None

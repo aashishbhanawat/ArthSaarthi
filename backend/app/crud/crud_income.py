@@ -115,9 +115,7 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
             basic_amount=str(basic_amt) if basic_amt is not None else None,
             hra_amount=str(hra_amt) if hra_amt is not None else None,
             da_amount=str(da_amt) if da_amt is not None else None,
-            special_allowance_amount=(
-                str(spec_amt) if spec_amt is not None else None
-            ),
+            special_allowance_amount=(str(spec_amt) if spec_amt is not None else None),
             other_allowances_amount=(
                 str(other_allow_amt) if other_allow_amt is not None else None
             ),
@@ -183,19 +181,13 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
             else None
         )
         hra_amt = (
-            Decimal(str(db_obj.hra_amount))
-            if db_obj.hra_amount is not None
-            else None
+            Decimal(str(db_obj.hra_amount)) if db_obj.hra_amount is not None else None
         )
         da_amt = (
-            Decimal(str(db_obj.da_amount))
-            if db_obj.da_amount is not None
-            else None
+            Decimal(str(db_obj.da_amount)) if db_obj.da_amount is not None else None
         )
         rent_amt = (
-            Decimal(str(db_obj.rent_paid))
-            if db_obj.rent_paid is not None
-            else None
+            Decimal(str(db_obj.rent_paid)) if db_obj.rent_paid is not None else None
         )
         is_metro = bool(db_obj.is_metro or False)
 
@@ -226,6 +218,7 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
         query = db.query(IncomeEntry).filter(IncomeEntry.user_id == user_id)
         if financial_year:
             from app.core.tax_rules_registry import get_fy_variations
+
             fy_list = get_fy_variations(financial_year)
             query = query.filter(IncomeEntry.financial_year.in_(fy_list))
         if source_id:
@@ -298,7 +291,6 @@ class CRUDIncomeEntry(CRUDBase[IncomeEntry, IncomeEntryCreate, IncomeEntryUpdate
             "total_hra_exemption": total_hra_exemption,
             "source_breakdown": list(source_totals.values()),
         }
-
 
 
 crud_income_source = CRUDIncomeSource(IncomeSource)

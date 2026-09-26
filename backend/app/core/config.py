@@ -9,13 +9,16 @@ try:
 except ImportError:
     # Fallback for pydantic v1 (used on Android)
     from pydantic import BaseSettings
+
     SettingsConfigDict = None
 
 
 def _is_local_mode(values: dict) -> bool:
     """Check if running in a local/embedded mode (desktop or android)."""
-    return values.get("DEPLOYMENT_MODE") in ("desktop", "android") or \
-           values.get("DATABASE_TYPE") == "sqlite"
+    return (
+        values.get("DEPLOYMENT_MODE") in ("desktop", "android")
+        or values.get("DATABASE_TYPE") == "sqlite"
+    )
 
 
 def _get_app_dir() -> Path:
@@ -191,8 +194,10 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v
         from pathlib import Path
+
         if _is_local_mode(values):
             from platformdirs import user_cache_dir
+
             # Use a stable directory for cache
             cache_dir = Path(user_cache_dir("arthsaarthi", "arthsaarthi-app"))
         else:
@@ -213,6 +218,7 @@ class Settings(BaseSettings):
             from pathlib import Path
 
             from platformdirs import user_log_dir
+
             # Use a stable directory for logs
             log_dir = Path(user_log_dir("arthsaarthi", "arthsaarthi-app"))
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -225,6 +231,7 @@ class Settings(BaseSettings):
             if isinstance(v, str):
                 return v
             from pathlib import Path
+
             log_dir = Path(values.get("LOG_DIR"))
             return str(log_dir / "arthsaarthi.log")
         return v
@@ -238,6 +245,7 @@ class Settings(BaseSettings):
     if SettingsConfigDict:
         model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
     else:
+
         class Config:
             case_sensitive = True
             env_file = ".env"

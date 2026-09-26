@@ -102,11 +102,13 @@ def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
             a = crud.asset.get(db, id=aid)
             if a:
                 if a.asset_type == "PPF":
-                    ppf_accounts.append({
-                        "account_number": a.account_number,
-                        "institution": a.name,
-                        "opening_date": _serialize_date(a.opening_date)
-                    })
+                    ppf_accounts.append(
+                        {
+                            "account_number": a.account_number,
+                            "institution": a.name,
+                            "opening_date": _serialize_date(a.opening_date),
+                        }
+                    )
                 elif a.asset_type == "BOND":
                     # Access related bond - handling both relationship styles just in
                     # case
@@ -115,14 +117,16 @@ def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
                         b = b[0]
 
                     if b:
-                        bonds.append({
-                            "name": a.name,
-                            "isin": a.isin,
-                            "bond_type": b.bond_type,
-                            "coupon_rate": _serialize_decimal(b.coupon_rate),
-                            "face_value": _serialize_decimal(b.face_value),
-                            "maturity_date": _serialize_date(b.maturity_date)
-                        })
+                        bonds.append(
+                            {
+                                "name": a.name,
+                                "isin": a.isin,
+                                "bond_type": b.bond_type,
+                                "coupon_rate": _serialize_decimal(b.coupon_rate),
+                                "face_value": _serialize_decimal(b.face_value),
+                                "maturity_date": _serialize_date(b.maturity_date),
+                            }
+                        )
 
     # Fetch FDs
     fds = (
@@ -133,21 +137,23 @@ def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
     fd_list = []
     for fd in fds:
         p_name = portfolio_map.get(fd.portfolio_id)
-        fd_list.append({
-            "portfolio_name": p_name,
-            "account_number": fd.account_number,
-            "institution": fd.name,
-            "principal": _serialize_decimal(fd.principal_amount),
-            "interest_rate": _serialize_decimal(fd.interest_rate),
-            "start_date": _serialize_date(fd.start_date),
-            "maturity_date": _serialize_date(fd.maturity_date),
-            "compounding_frequency": fd.compounding_frequency.upper()
-            if fd.compounding_frequency
-            else "ANNUALLY",
-            "payout_type": fd.interest_payout.upper()
-            if fd.interest_payout
-            else "CUMULATIVE",
-        })
+        fd_list.append(
+            {
+                "portfolio_name": p_name,
+                "account_number": fd.account_number,
+                "institution": fd.name,
+                "principal": _serialize_decimal(fd.principal_amount),
+                "interest_rate": _serialize_decimal(fd.interest_rate),
+                "start_date": _serialize_date(fd.start_date),
+                "maturity_date": _serialize_date(fd.maturity_date),
+                "compounding_frequency": fd.compounding_frequency.upper()
+                if fd.compounding_frequency
+                else "ANNUALLY",
+                "payout_type": fd.interest_payout.upper()
+                if fd.interest_payout
+                else "CUMULATIVE",
+            }
+        )
 
     # Fetch RDs
     rds = (
@@ -158,15 +164,17 @@ def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
     rd_list = []
     for rd in rds:
         p_name = portfolio_map.get(rd.portfolio_id)
-        rd_list.append({
-            "portfolio_name": p_name,
-            "account_number": rd.account_number,
-            "institution": rd.name,
-            "monthly_installment": _serialize_decimal(rd.monthly_installment),
-            "interest_rate": _serialize_decimal(rd.interest_rate),
-            "start_date": _serialize_date(rd.start_date),
-            "tenure_months": rd.tenure_months
-        })
+        rd_list.append(
+            {
+                "portfolio_name": p_name,
+                "account_number": rd.account_number,
+                "institution": rd.name,
+                "monthly_installment": _serialize_decimal(rd.monthly_installment),
+                "interest_rate": _serialize_decimal(rd.interest_rate),
+                "start_date": _serialize_date(rd.start_date),
+                "tenure_months": rd.tenure_months,
+            }
+        )
 
     # Fetch Goals
     goals = crud.goal.get_multi_by_owner(db, user_id=user_id)
@@ -180,23 +188,22 @@ def create_backup(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
             elif link.asset:
                 linked_assets.append(link.asset.ticker_symbol)
 
-        goal_list.append({
-            "name": g.name,
-            "target_amount": _serialize_decimal(g.target_amount),
-            "target_date": _serialize_date(g.target_date),
-            "linked_portfolios": linked_names,
-            "linked_assets": linked_assets
-        })
+        goal_list.append(
+            {
+                "name": g.name,
+                "target_amount": _serialize_decimal(g.target_amount),
+                "target_date": _serialize_date(g.target_date),
+                "linked_portfolios": linked_names,
+                "linked_assets": linked_assets,
+            }
+        )
 
     # Fetch Watchlists
     watchlists = crud.watchlist.get_multi_by_user(db, user_id=user_id)
     watchlist_list = []
     for w in watchlists:
         items = [wi.asset.ticker_symbol for wi in w.items if wi.asset]
-        watchlist_list.append({
-            "name": w.name,
-            "items": items
-        })
+        watchlist_list.append({"name": w.name, "items": items})
 
     # Portfolios list
     portfolio_list = [
@@ -262,22 +269,21 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
             for p in portfolios:
                 db.delete(p)
 
-            db.flush() # Ensure deletions are applied before recreation
+            db.flush()  # Ensure deletions are applied before recreation
 
             # 2. Restore Phase
 
             # Create Portfolios
-            portfolio_map = {} # name -> id
+            portfolio_map = {}  # name -> id
             for p_data in data.get("portfolios", []):
                 p_in = schemas.PortfolioCreate(
-                    name=p_data["name"],
-                    description=p_data.get("description")
+                    name=p_data["name"], description=p_data.get("description")
                 )
                 p = crud.portfolio.create_with_owner(db, obj_in=p_in, user_id=user_id)
                 portfolio_map[p.name] = p.id
 
             # Create Watchlists
-            watchlist_map = {} # name -> id
+            watchlist_map = {}  # name -> id
             for w_data in data.get("watchlists", []):
                 w_in = schemas.WatchlistCreate(name=w_data["name"])
                 w = crud.watchlist.create_with_user(db, obj_in=w_in, user_id=user_id)
@@ -290,7 +296,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                             db,
                             obj_in=schemas.WatchlistItemCreate(asset_id=asset.id),
                             watchlist_id=w.id,
-                            user_id=user_id
+                            user_id=user_id,
                         )
 
             # Independent Assets: PPF
@@ -306,7 +312,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                         asset_type="PPF",
                         currency="INR",
                         account_number=ppf_data["account_number"],
-                        opening_date=_parse_date(ppf_data.get("opening_date"))
+                        opening_date=_parse_date(ppf_data.get("opening_date")),
                     )
                     crud.asset.create(db, obj_in=asset_in)
 
@@ -328,7 +334,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                         # We can assume ticker=isin or check if backup provides ticker?
                         asset_type="BOND",
                         currency="INR",
-                        isin=isin
+                        isin=isin,
                     )
                     # Need unique ticker. If Bond definition doesn't have ticker, use
                     # ISIN.
@@ -341,7 +347,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                         face_value=Decimal(bond_data["face_value"]),
                         coupon_rate=Decimal(bond_data["coupon_rate"]),
                         maturity_date=_parse_date(bond_data["maturity_date"]),
-                        isin=isin
+                        isin=isin,
                     )
                     crud.bond.create(db, obj_in=bond_in)
 
@@ -358,7 +364,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                         maturity_date=_parse_date(fd_data["maturity_date"]),
                         compounding_frequency=fd_data.get("compounding_frequency"),
                         interest_payout=fd_data.get("payout_type"),
-                        portfolio_id=portfolio_map[p_name]
+                        portfolio_id=portfolio_map[p_name],
                     )
                     crud.fixed_deposit.create_with_owner(
                         db, obj_in=fd_in, owner_id=user_id
@@ -375,7 +381,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                         interest_rate=Decimal(rd_data["interest_rate"]),
                         start_date=_parse_date(rd_data["start_date"]),
                         tenure_months=rd_data.get("tenure_months", 12),
-                        portfolio_id=portfolio_map[p_name]
+                        portfolio_id=portfolio_map[p_name],
                     )
                     crud.recurring_deposit.create_with_owner(
                         db, obj_in=rd_in, owner_id=user_id
@@ -383,6 +389,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
 
             # Transactions
             transactions = data.get("transactions", [])
+
             def get_tx_sort_key(tx):
                 t_date = tx.get("transaction_date")
                 t_date_str = _serialize_date(t_date) or ""
@@ -431,6 +438,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                             from app.services.providers.amfi_provider import (
                                 amfi_provider,
                             )
+
                             isin_code = tx_data["isin"]
                             all_mf_data = amfi_provider.get_all_nav_data()
                             for scheme_code, mf_info in all_mf_data.items():
@@ -493,7 +501,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                 g_in = schemas.GoalCreate(
                     name=g_data["name"],
                     target_amount=Decimal(g_data["target_amount"]),
-                    target_date=_parse_date(g_data["target_date"])
+                    target_date=_parse_date(g_data["target_date"]),
                 )
                 goal = crud.goal.create_with_owner(db, obj_in=g_in, user_id=user_id)
 
@@ -524,6 +532,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
 
         # Comprehensive cache invalidation after restore
         from app.cache.factory import get_cache_client
+
         cache = get_cache_client()
 
         # 1. Collect all keys to delete
@@ -558,6 +567,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                 from sqlalchemy import delete as sql_delete
 
                 from app.models.portfolio_snapshot import DailyPortfolioSnapshot
+
                 portfolio_ids = list(portfolio_map.values())
                 stmt = sql_delete(DailyPortfolioSnapshot).where(
                     DailyPortfolioSnapshot.portfolio_id.in_(portfolio_ids)
@@ -573,9 +583,7 @@ def restore_backup(db: Session, user_id: uuid.UUID, backup_data: Dict[str, Any])
                     f"Failed to delete snapshots for restored portfolios: {e}"
                 )
 
-        logger.info(
-            f"Invalidated all caches for user {user_id} after restore"
-        )
+        logger.info(f"Invalidated all caches for user {user_id} after restore")
 
     except Exception:
         db.rollback()

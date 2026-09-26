@@ -4,6 +4,7 @@ Schedule FA API Endpoint
 Reports foreign assets for ITR-2/ITR-3 Schedule FA.
 Uses CALENDAR YEAR (Jan-Dec) not Financial Year.
 """
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -39,7 +40,7 @@ def get_schedule_fa(
     entries_data = service.get_schedule_fa(
         user_id=str(current_user.id),
         calendar_year=calendar_year,
-        portfolio_id=portfolio_id
+        portfolio_id=portfolio_id,
     )
 
     # Convert to Pydantic models

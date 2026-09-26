@@ -11,7 +11,7 @@ exclude = [
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 fixable = ["ALL"]
-ignore = []
+ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

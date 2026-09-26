@@ -30,9 +30,7 @@ def test_search_local_assets_general(client: TestClient, db: Session) -> None:
 
     # Search by ticker
     response = client.get(
-        f"{API_PREFIX}/search-local",
-        headers=headers,
-        params={"query": "SRCHTEST1"}
+        f"{API_PREFIX}/search-local", headers=headers, params={"query": "SRCHTEST1"}
     )
     assert response.status_code == 200
     content = response.json()
@@ -41,9 +39,7 @@ def test_search_local_assets_general(client: TestClient, db: Session) -> None:
 
     # Search by name
     response = client.get(
-        f"{API_PREFIX}/search-local",
-        headers=headers,
-        params={"query": "Asset Two"}
+        f"{API_PREFIX}/search-local", headers=headers, params={"query": "Asset Two"}
     )
     assert response.status_code == 200
     content = response.json()
@@ -55,10 +51,7 @@ def test_search_local_assets_general(client: TestClient, db: Session) -> None:
     assert found
 
     # Search with no query (should return list)
-    response = client.get(
-        f"{API_PREFIX}/search-local",
-        headers=headers
-    )
+    response = client.get(f"{API_PREFIX}/search-local", headers=headers)
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 

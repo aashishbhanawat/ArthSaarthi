@@ -42,6 +42,7 @@ class WatchlistItem(WatchlistItemBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -72,5 +73,6 @@ class Watchlist(WatchlistBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True

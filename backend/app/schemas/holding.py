@@ -11,12 +11,15 @@ try:
         from pydantic import ConfigDict
     else:
         raise ImportError
+
     def model_validator(pre=False, mode="after"):
         return root_validator(pre=pre, skip_on_failure=True)
 except (ImportError, TypeError):
     ConfigDict = None
+
     def model_validator(pre=False, mode="after"):
         return root_validator(pre=pre)
+
 
 from .bond import Bond as BondSchema
 
@@ -49,9 +52,9 @@ class Holding(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
-
 
     @model_validator(pre=False)
     @classmethod
@@ -79,10 +82,7 @@ class Holding(BaseModel):
         # For certain asset types where a live price might not be available (e.g.,
         # unlisted bonds, RDs), fall back to using the average buy price to avoid
         # showing a 100% loss. This should NOT apply to stocks.
-        if (
-            values.get("asset_type") == "BOND"
-            and values.get("current_price") == 0
-        ):
+        if values.get("asset_type") == "BOND" and values.get("current_price") == 0:
             avg = values.get("average_buy_price")
             values["current_price"] = avg
             qty = values.get("quantity")
@@ -106,9 +106,9 @@ class PortfolioSummary(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
-
 
 
 class PortfolioHoldingsAndSummary(BaseModel):
@@ -118,6 +118,6 @@ class PortfolioHoldingsAndSummary(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
-

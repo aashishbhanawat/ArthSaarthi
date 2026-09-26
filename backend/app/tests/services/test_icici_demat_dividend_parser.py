@@ -1,4 +1,3 @@
-
 from app.services.import_parsers.icici_demat_dividend_parser import (
     IciciDematDividendParser,
 )

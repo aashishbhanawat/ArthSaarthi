@@ -20,7 +20,12 @@ class DiskCacheClient(CacheClient):
 
     def get(self, key: str) -> Optional[str]:
         # .get() returns None if the key doesn't exist, which matches our interface
-        return self._cache.get(key)
+        val = self._cache.get(key)
+        if not key.startswith("ratelimit:") and not key.startswith("cache_stats:"):
+            from app.cache.utils import record_cache_access
+
+            record_cache_access(hit=val is not None)
+        return val
 
     def set(self, key: str, value: str, expire: Optional[int] = None) -> None:
         # The 'expire' parameter in diskcache.set is equivalent to Redis's 'ex'

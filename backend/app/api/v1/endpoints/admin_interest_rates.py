@@ -27,7 +27,6 @@ def _trigger_ppf_recalculation(db: Session, from_date: date):
     # The commit is handled by the calling function to maintain transactional integrity.
 
 
-
 @router.get(
     "/",
     response_model=List[schemas.HistoricalInterestRate],

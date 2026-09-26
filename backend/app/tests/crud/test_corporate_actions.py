@@ -235,6 +235,7 @@ def test_handle_stock_split(db: Session) -> None:
     # Total Expected: 30
 
     from app.cache.utils import invalidate_caches_for_portfolio
+
     invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
 
     # Mock financial service to prevent external calls
@@ -501,7 +502,9 @@ def test_merger_no_holdings_rejects(db: Session) -> None:
 
     with pytest.raises(HTTPException) as exc_info:
         crud.crud_corporate_action.handle_merger(
-            db, portfolio_id=portfolio.id, asset_id=old_asset.id,
+            db,
+            portfolio_id=portfolio.id,
+            asset_id=old_asset.id,
             transaction_in=merger_in,
         )
     assert exc_info.value.status_code == 400
@@ -531,7 +534,9 @@ def test_demerger_no_holdings_rejects(db: Session) -> None:
 
     with pytest.raises(HTTPException) as exc_info:
         crud.crud_corporate_action.handle_demerger(
-            db, portfolio_id=portfolio.id, asset_id=old_asset.id,
+            db,
+            portfolio_id=portfolio.id,
+            asset_id=old_asset.id,
             transaction_in=demerger_in,
         )
     assert exc_info.value.status_code == 400
@@ -561,7 +566,9 @@ def test_rename_no_holdings_rejects(db: Session) -> None:
 
     with pytest.raises(HTTPException) as exc_info:
         crud.crud_corporate_action.handle_rename(
-            db, portfolio_id=portfolio.id, asset_id=old_asset.id,
+            db,
+            portfolio_id=portfolio.id,
+            asset_id=old_asset.id,
             transaction_in=rename_in,
         )
     assert exc_info.value.status_code == 400
@@ -604,7 +611,9 @@ def test_demerger_preserves_original_dates(db: Session) -> None:
         details={"new_asset_id": str(child_asset.id), "cost_allocation_pct": "25"},
     )
     crud.crud_corporate_action.handle_demerger(
-        db, portfolio_id=portfolio.id, asset_id=parent_asset.id,
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=parent_asset.id,
         transaction_in=demerger_in,
     )
     db.commit()
@@ -657,7 +666,9 @@ def test_demerger_stores_total_cost_allocated(db: Session) -> None:
         details={"new_asset_id": str(child_asset.id), "cost_allocation_pct": "30"},
     )
     crud.crud_corporate_action.handle_demerger(
-        db, portfolio_id=portfolio.id, asset_id=parent_asset.id,
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=parent_asset.id,
         transaction_in=demerger_in,
     )
     db.commit()
@@ -707,7 +718,9 @@ def test_multi_demerger_cost_calculation(db: Session) -> None:
 
     # First demerger: 30% to child1
     crud.crud_corporate_action.handle_demerger(
-        db, portfolio_id=portfolio.id, asset_id=parent.id,
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=parent.id,
         transaction_in=schemas.TransactionCreate(
             asset_id=parent.id,
             transaction_type=TransactionType.DEMERGER,
@@ -721,7 +734,9 @@ def test_multi_demerger_cost_calculation(db: Session) -> None:
 
     # Second demerger: 30% to child2
     crud.crud_corporate_action.handle_demerger(
-        db, portfolio_id=portfolio.id, asset_id=parent.id,
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=parent.id,
         transaction_in=schemas.TransactionCreate(
             asset_id=parent.id,
             transaction_type=TransactionType.DEMERGER,
@@ -773,7 +788,6 @@ def test_multi_demerger_cost_calculation(db: Session) -> None:
     assert total == Decimal("90000")
 
 
-
 @pytest.mark.usefixtures("pre_unlocked_key_manager")
 def test_handle_bonus_issue_fractional_inr(db: Session) -> None:
     """
@@ -784,9 +798,7 @@ def test_handle_bonus_issue_fractional_inr(db: Session) -> None:
     """
     # GIVEN
     user, _ = create_random_user(db)
-    portfolio = create_test_portfolio(
-        db, user_id=user.id, name="Bonus Fractional"
-    )
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Bonus Fractional")
     asset = create_test_asset(db, ticker_symbol="INFY")
 
     # Manually update currency to INR since helper defaults to USD
@@ -828,13 +840,17 @@ def test_handle_bonus_issue_fractional_inr(db: Session) -> None:
     db.commit()
 
     # THEN
-    txs = db.query(models.Transaction).filter(
-        models.Transaction.portfolio_id == portfolio.id,
-        models.Transaction.asset_id == asset.id,
-        models.Transaction.transaction_type == TransactionType.BUY,
-        models.Transaction.price_per_unit == 0,
-        models.Transaction.transaction_date == datetime(2023, 6, 1)
-    ).all()
+    txs = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.portfolio_id == portfolio.id,
+            models.Transaction.asset_id == asset.id,
+            models.Transaction.transaction_type == TransactionType.BUY,
+            models.Transaction.price_per_unit == 0,
+            models.Transaction.transaction_date == datetime(2023, 6, 1),
+        )
+        .all()
+    )
 
     assert len(txs) == 1
     bonus_tx = txs[0]
@@ -851,9 +867,7 @@ def test_handle_split_issue_fractional_inr(db: Session) -> None:
     """
     # GIVEN
     user, _ = create_random_user(db)
-    portfolio = create_test_portfolio(
-        db, user_id=user.id, name="Split Fractional"
-    )
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Split Fractional")
     asset = create_test_asset(db, ticker_symbol="TATASTEEL")
 
     # Manually update currency to INR
@@ -896,6 +910,7 @@ def test_handle_split_issue_fractional_inr(db: Session) -> None:
 
     # THEN
     from app.cache.utils import invalidate_caches_for_portfolio
+
     invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
 
     # Mock financial service to prevent external calls

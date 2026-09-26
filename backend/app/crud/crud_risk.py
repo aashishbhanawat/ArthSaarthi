@@ -56,9 +56,7 @@ class CRUDRiskProfile(
         self, db: Session, *, user_id: uuid.UUID
     ) -> Optional[UserRiskProfile]:
         return (
-            db.query(UserRiskProfile)
-            .filter(UserRiskProfile.user_id == user_id)
-            .first()
+            db.query(UserRiskProfile).filter(UserRiskProfile.user_id == user_id).first()
         )
 
     def create_or_update(

@@ -2,6 +2,7 @@
 Admin endpoints for asset management operations.
 FR2.3: Manual Asset Seeding
 """
+
 import logging
 import shutil
 import tempfile
@@ -116,6 +117,7 @@ def sync_assets(
 
             # Seed/update interest rates (PPF, etc.)
             from app.db.initial_data import seed_interest_rates
+
             logger.info("Seeding interest rates...")
             seed_interest_rates(db)
 
@@ -155,11 +157,13 @@ def sync_assets(
 
 class FMV2018Update(BaseModel):
     """Request model for updating FMV 2018."""
+
     fmv_2018: float
 
 
 class FMV2018Response(BaseModel):
     """Response model for FMV 2018 update."""
+
     ticker_symbol: str
     fmv_2018: float
     message: str
@@ -167,6 +171,7 @@ class FMV2018Response(BaseModel):
 
 class LocalAssetResult(BaseModel):
     """Search result for local assets only."""
+
     id: str
     ticker_symbol: str
     name: str
@@ -174,7 +179,6 @@ class LocalAssetResult(BaseModel):
     exchange: str | None
     isin: str | None
     fmv_2018: float | None
-
 
 
 @router.get(
@@ -201,8 +205,7 @@ def search_local_assets_general(
     if query and len(query) >= 2:
         search_term = f"%{query.upper()}%"
         q = q.filter(
-            (Asset.ticker_symbol.ilike(search_term)) |
-            (Asset.name.ilike(search_term))
+            (Asset.ticker_symbol.ilike(search_term)) | (Asset.name.ilike(search_term))
         )
 
     assets = q.order_by(Asset.ticker_symbol).limit(limit).all()
@@ -241,17 +244,15 @@ def search_local_assets(
     from app.models import Asset
 
     q = db.query(Asset).filter(
-        Asset.asset_type.in_([
-            "STOCK", "ETF", "MUTUAL_FUND",
-            "MUTUAL FUND", "Mutual Fund"
-        ])
+        Asset.asset_type.in_(
+            ["STOCK", "ETF", "MUTUAL_FUND", "MUTUAL FUND", "Mutual Fund"]
+        )
     )
 
     if query and len(query) >= 2:
         search_term = f"%{query.upper()}%"
         q = q.filter(
-            (Asset.ticker_symbol.ilike(search_term)) |
-            (Asset.name.ilike(search_term))
+            (Asset.ticker_symbol.ilike(search_term)) | (Asset.name.ilike(search_term))
         )
 
     assets = q.order_by(Asset.ticker_symbol).limit(limit).all()
@@ -315,6 +316,7 @@ def update_asset_fmv_2018(
 
 class FMV2018LookupResponse(BaseModel):
     """Response model for FMV 2018 lookup."""
+
     ticker_symbol: str
     fmv_2018: float | None
     source: str
@@ -359,11 +361,13 @@ def lookup_fmv_2018(
     fmv_date = date(2018, 1, 31)
     try:
         historical_data = financial_data_service.get_historical_prices(
-            assets=[{
-                "ticker_symbol": yf_ticker,
-                "asset_type": asset.asset_type,
-                "exchange": asset.exchange or "NSE",
-            }],
+            assets=[
+                {
+                    "ticker_symbol": yf_ticker,
+                    "asset_type": asset.asset_type,
+                    "exchange": asset.exchange or "NSE",
+                }
+            ],
             start_date=date(2018, 1, 25),
             end_date=date(2018, 2, 5),
         )
@@ -412,6 +416,7 @@ def lookup_fmv_2018(
 
 class FMV2018BulkSeedResponse(BaseModel):
     """Response model for bulk FMV 2018 seeding."""
+
     status: str
     updated: int
     skipped: int

@@ -3,6 +3,7 @@
 Parses dividend information from ICICI DEMAT Account Statement PDFs.
 Extracts dividends from the "Corporate Benefits" section.
 """
+
 import logging
 import re
 from datetime import datetime
@@ -19,13 +20,13 @@ class IciciDematDividendParser(BaseParser):
     """Parser for ICICI DEMAT Account Statement PDF dividend section."""
 
     # Date pattern for record/payment dates (DD-Mon-YYYY or DD-MMM-YYYY)
-    DATE_PATTERN = re.compile(r'(\d{1,2}-[A-Za-z]{3}-\d{4})')
+    DATE_PATTERN = re.compile(r"(\d{1,2}-[A-Za-z]{3}-\d{4})")
 
     # ISIN pattern (12 characters starting with INE)
-    ISIN_PATTERN = re.compile(r'(INE[A-Z0-9]{9})')
+    ISIN_PATTERN = re.compile(r"(INE[A-Z0-9]{9})")
 
     # Numeric values with optional decimals, not preceded by a capital letter
-    NUMBER_PATTERN = re.compile(r'(?<![A-Z])(\d+(?:\.\d+)?)')
+    NUMBER_PATTERN = re.compile(r"(?<![A-Z])(\d+(?:\.\d+)?)")
 
     def parse(
         self, file_path: str, password: Optional[str] = None
@@ -58,10 +59,8 @@ class IciciDematDividendParser(BaseParser):
                         continue
 
                     # Only parse pages with Corporate Benefits section
-                    if 'Corporate Benefits' in text:
-                        page_txs = self._parse_corporate_benefits(
-                            text, page_num
-                        )
+                    if "Corporate Benefits" in text:
+                        page_txs = self._parse_corporate_benefits(text, page_num)
                         transactions.extend(page_txs)
 
         except PDFPasswordIncorrect:
@@ -86,22 +85,22 @@ class IciciDematDividendParser(BaseParser):
         transactions = []
 
         # Find the Corporate Benefits section
-        lines = text.split('\n')
+        lines = text.split("\n")
         in_benefits_section = False
 
         for line in lines:
             # Start of Corporate Benefits section
-            if 'Corporate Benefits for record date' in line:
+            if "Corporate Benefits for record date" in line:
                 in_benefits_section = True
                 continue
 
             # Stop at expected/future dividends or disclaimers
             if in_benefits_section:
-                if 'expected between' in line.lower():
+                if "expected between" in line.lower():
                     break
-                if 'disclaimer' in line.lower():
+                if "disclaimer" in line.lower():
                     break
-                if 'calculated assuming' in line.lower():
+                if "calculated assuming" in line.lower():
                     break
 
             if not in_benefits_section:
@@ -140,8 +139,8 @@ class IciciDematDividendParser(BaseParser):
             return None
 
         # Clean line for number extraction - remove ISIN and date patterns
-        clean_line = self.ISIN_PATTERN.sub('', line)
-        clean_line = self.DATE_PATTERN.sub('', clean_line)
+        clean_line = self.ISIN_PATTERN.sub("", line)
+        clean_line = self.DATE_PATTERN.sub("", clean_line)
 
         # Extract numeric values from cleaned line
         numbers = self._extract_numbers(clean_line)
@@ -182,8 +181,8 @@ class IciciDematDividendParser(BaseParser):
     def _parse_date(self, date_str: str) -> Optional[str]:
         """Parse date string to YYYY-MM-DD format."""
         try:
-            dt = datetime.strptime(date_str, '%d-%b-%Y')
-            return dt.strftime('%Y-%m-%d')
+            dt = datetime.strptime(date_str, "%d-%b-%Y")
+            return dt.strftime("%Y-%m-%d")
         except ValueError:
             return None
 

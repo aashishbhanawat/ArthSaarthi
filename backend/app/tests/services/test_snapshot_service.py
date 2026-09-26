@@ -36,7 +36,7 @@ def test_take_snapshot_for_portfolio(db: Session, mocker):
         total_invested_amount=Decimal("4000.00"),
         days_pnl=Decimal("10.00"),
         total_unrealized_pnl=Decimal("1000.00"),
-        total_realized_pnl=Decimal("0.00")
+        total_realized_pnl=Decimal("0.00"),
     )
     mock_holdings = [
         Holding(
@@ -54,7 +54,7 @@ def test_take_snapshot_for_portfolio(db: Session, mocker):
             days_pnl=Decimal("0.00"),
             days_pnl_percentage=0.0,
             unrealized_pnl=Decimal("500.00"),
-            unrealized_pnl_percentage=0.5
+            unrealized_pnl_percentage=0.5,
         ),
         Holding(
             asset_id=uuid.uuid4(),
@@ -71,8 +71,8 @@ def test_take_snapshot_for_portfolio(db: Session, mocker):
             days_pnl=Decimal("0.00"),
             days_pnl_percentage=0.0,
             unrealized_pnl=Decimal("0.00"),
-            unrealized_pnl_percentage=0.0
-        )
+            unrealized_pnl_percentage=0.0,
+        ),
     ]
 
     mock_data = PortfolioHoldingsAndSummary(

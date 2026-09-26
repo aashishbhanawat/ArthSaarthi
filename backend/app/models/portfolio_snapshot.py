@@ -46,12 +46,11 @@ class DailyPortfolioSnapshot(Base):
         nullable=False,
     )
 
-
     # Automatically set back-population relationship
     portfolio = relationship("Portfolio", back_populates="snapshots")
 
     __table_args__ = (
         UniqueConstraint(
-            'portfolio_id', 'snapshot_date', name='uq_portfolio_date_snapshot'
+            "portfolio_id", "snapshot_date", name="uq_portfolio_date_snapshot"
         ),
     )

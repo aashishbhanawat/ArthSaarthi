@@ -146,7 +146,7 @@ def test_create_import_session(
     assert Path(data["parsed_file_path"]).exists()
 
     # Verify content of parsed file
-    df = pd.read_json(data["parsed_file_path"], orient='records')
+    df = pd.read_json(data["parsed_file_path"], orient="records")
     assert len(df) == 1
     assert df.iloc[0]["ticker_symbol"] == "TEST"
 
@@ -262,14 +262,16 @@ def test_commit_import_session_success(
     auth_headers = get_auth_headers(user.email, password)
 
     # Construct the commit payload from the parsed data
-    df = pd.read_json(parsed_import_session.parsed_file_path, orient='records')
+    df = pd.read_json(parsed_import_session.parsed_file_path, orient="records")
     transactions_to_commit = [
         schemas.ParsedTransaction(**row) for _, row in df.iterrows()
     ]
     commit_payload = {
         "transactions_to_commit": [
-            json.loads(tx.json()) if hasattr(tx, "json")
-            else json.loads(tx.model_dump_json()) for tx in transactions_to_commit
+            json.loads(tx.json())
+            if hasattr(tx, "json")
+            else json.loads(tx.model_dump_json())
+            for tx in transactions_to_commit
         ],
         "aliases_to_create": [],
     }
@@ -318,8 +320,10 @@ def test_commit_import_session_asset_not_found(
     ]
     commit_payload = {
         "transactions_to_commit": [
-            json.loads(tx.json()) if hasattr(tx, "json")
-            else json.loads(tx.model_dump_json()) for tx in transactions_to_commit
+            json.loads(tx.json())
+            if hasattr(tx, "json")
+            else json.loads(tx.model_dump_json())
+            for tx in transactions_to_commit
         ],
         "aliases_to_create": [],
     }

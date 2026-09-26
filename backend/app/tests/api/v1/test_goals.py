@@ -484,5 +484,3 @@ def test_goal_future_value_projection_fallback(
     assert data["status"] == "Off Track"
     assert data["projected_future_value"] < 60000.0
     assert data["required_sip"] > 0.0
-
-

@@ -15,6 +15,7 @@ router = APIRouter()
 # Income Sources
 # ---------------------------------------------------------------------------
 
+
 @router.get("/sources", response_model=List[schemas.IncomeSource])
 def read_income_sources(
     db: Session = Depends(dependencies.get_db),
@@ -92,6 +93,7 @@ def delete_income_source(
 # ---------------------------------------------------------------------------
 # Income Entries
 # ---------------------------------------------------------------------------
+
 
 @router.get("/entries", response_model=List[schemas.IncomeEntry])
 def read_income_entries(

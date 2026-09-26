@@ -12,13 +12,16 @@ from app.services.financial_data_service import FinancialDataService
 def mock_db():
     return MagicMock()
 
+
 @pytest.fixture
 def mock_financial_service():
     return MagicMock(spec=FinancialDataService)
 
+
 @pytest.fixture
 def benchmark_service(mock_db, mock_financial_service):
     return BenchmarkService(mock_db, mock_financial_service)
+
 
 def test_calculate_benchmark_performance_empty(benchmark_service, mock_db):
     # Mock crud.transaction.get_multi_by_portfolio to return empty list
@@ -27,6 +30,7 @@ def test_calculate_benchmark_performance_empty(benchmark_service, mock_db):
         assert result["portfolio_xirr"] == 0.0
         assert result["benchmark_xirr"] == 0.0
         assert result["chart_data"] == []
+
 
 def test_calculate_benchmark_performance_success(
     benchmark_service, mock_db, mock_financial_service
@@ -70,7 +74,6 @@ def test_calculate_benchmark_performance_success(
         with patch(
             "app.crud.analytics.get_portfolio_analytics", return_value=mock_pf_analytics
         ):
-
             result = benchmark_service.calculate_benchmark_performance("pf_id")
 
             assert result["portfolio_xirr"] == 10.5
@@ -85,7 +88,7 @@ def test_calculate_benchmark_performance_success(
             # Check final data point
             last_point = result["chart_data"][-1]
             assert last_point["invested_amount"] == 15000.0
-            assert last_point["benchmark_value"] > 16000.0 # 17454 > 16000
+            assert last_point["benchmark_value"] > 16000.0  # 17454 > 16000
 
 
 def test_calculate_benchmark_performance_cached_dict(
@@ -116,13 +119,14 @@ def test_calculate_benchmark_performance_cached_dict(
             result = benchmark_service.calculate_benchmark_performance("pf_id")
             assert result["portfolio_xirr"] == 12.5
 
+
 def test_risk_free_rate_calculation(benchmark_service, mock_db, mock_financial_service):
     mock_financial_service.yfinance_provider = MagicMock()
     txn1 = MagicMock()
     txn1.transaction_date = datetime(2023, 1, 1)
     txn1.transaction_type = "BUY"
     txn1.quantity = Decimal("10")
-    txn1.price_per_unit = Decimal("1000") # 10,000 invested
+    txn1.price_per_unit = Decimal("1000")  # 10,000 invested
 
     with patch(
         "app.crud.transaction.get_multi_by_portfolio",
@@ -145,8 +149,11 @@ def test_risk_free_rate_calculation(benchmark_service, mock_db, mock_financial_s
             # End day should be > 10000
             last_value = result["chart_data"][-1]["risk_free_value"]
             days_passed = (date.today() - date(2023, 1, 1)).days
-            expected_val = 10000 * (1.07 ** (days_passed/365))
-            assert abs(last_value - expected_val) < 100 # Allow some rounding difference
+            expected_val = 10000 * (1.07 ** (days_passed / 365))
+            assert (
+                abs(last_value - expected_val) < 100
+            )  # Allow some rounding difference
+
 
 def test_hybrid_benchmark_blended_values(
     benchmark_service, mock_db, mock_financial_service
@@ -156,7 +163,7 @@ def test_hybrid_benchmark_blended_values(
     txn1.transaction_date = datetime(2023, 1, 1)
     txn1.transaction_type = "BUY"
     txn1.quantity = Decimal("100")
-    txn1.price_per_unit = Decimal("100") # 10,000 invested
+    txn1.price_per_unit = Decimal("100")  # 10,000 invested
 
     start_date = date(2023, 1, 1)
     today = date.today()
@@ -187,6 +194,7 @@ def test_hybrid_benchmark_blended_values(
             assert last_point["invested_amount"] == 10000.0
             assert abs(last_point["benchmark_value"] - 11500.0) < 50
 
+
 def test_hybrid_benchmark_debt_fallback(
     benchmark_service, mock_db, mock_financial_service
 ):
@@ -196,15 +204,15 @@ def test_hybrid_benchmark_debt_fallback(
     txn1.transaction_date = datetime(2023, 1, 1)
     txn1.transaction_type = "BUY"
     txn1.quantity = Decimal("100")
-    txn1.price_per_unit = Decimal("100") # 10,000 invested
+    txn1.price_per_unit = Decimal("100")  # 10,000 invested
 
     start_date = date(2023, 1, 1)
     today = date.today()
 
     def mock_get_history(ticker, sd, ed):
         if ticker == "^NSEI":
-            return {start_date.isoformat(): 100.0, today.isoformat(): 100.0} # Flat
-        return {} # Debt is missing
+            return {start_date.isoformat(): 100.0, today.isoformat(): 100.0}  # Flat
+        return {}  # Debt is missing
 
     yf = mock_financial_service.yfinance_provider
     yf.get_index_history.side_effect = mock_get_history
@@ -223,10 +231,11 @@ def test_hybrid_benchmark_debt_fallback(
 
             # Nifty is flat (5k). Debt should grow at 7% from 5k.
             days_passed = (today - start_date).days
-            expected_debt_grown = 5000 * (1.07 ** (days_passed/365))
+            expected_debt_grown = 5000 * (1.07 ** (days_passed / 365))
             expected_total = 5000 + expected_debt_grown
 
             assert abs(last_point["benchmark_value"] - expected_total) < 50
+
 
 def test_category_benchmark_splits_correctly(
     benchmark_service, mock_db, mock_financial_service
@@ -236,14 +245,14 @@ def test_category_benchmark_splits_correctly(
     txn_equity.transaction_date = datetime(2023, 1, 1)
     txn_equity.transaction_type = "BUY"
     txn_equity.quantity = Decimal("10")
-    txn_equity.price_per_unit = Decimal("100") # 1000
+    txn_equity.price_per_unit = Decimal("100")  # 1000
     txn_equity.asset_id = "asset_eq"
 
     txn_debt = MagicMock()
     txn_debt.transaction_date = datetime(2023, 1, 1)
     txn_debt.transaction_type = "BUY"
     txn_debt.quantity = Decimal("1")
-    txn_debt.price_per_unit = Decimal("5000") # 5000
+    txn_debt.price_per_unit = Decimal("5000")  # 5000
     txn_debt.asset_id = "asset_debt"
 
     def mock_get_history(ticker, sd, ed):
@@ -267,7 +276,8 @@ def test_category_benchmark_splits_correctly(
         with patch(
             "app.crud.asset.get_multi_by_portfolio",
             return_value=[
-                mock_asset_eq, mock_asset_debt,
+                mock_asset_eq,
+                mock_asset_debt,
             ],
         ):
             with patch("app.crud.analytics.get_portfolio_analytics", return_value=None):
@@ -288,9 +298,7 @@ def test_category_benchmark_splits_correctly(
                 assert cat_data["debt"]["chart_data"][-1]["invested_amount"] == 5000.0
 
 
-def test_benchmark_outflows_and_withdrawals(
-    benchmark_service, mock_financial_service
-):
+def test_benchmark_outflows_and_withdrawals(benchmark_service, mock_financial_service):
     """Test that SELL and WITHDRAWAL reduce benchmark units correctly."""
     mock_financial_service.yfinance_provider = MagicMock()
 
@@ -355,20 +363,26 @@ def test_benchmark_outflows_and_withdrawals(
             assert may_point["benchmark_value"] == 3000.0
 
 
-def test_benchmark_all_transaction_types(
-    benchmark_service, mock_financial_service
-):
+def test_benchmark_all_transaction_types(benchmark_service, mock_financial_service):
     """Test that all transaction types are handled or ignored properly."""
     mock_financial_service.yfinance_provider = MagicMock()
 
     # Create one of each transaction type
     types = [
         # Inflows (BUY_TYPES)
-        "BUY", "DEPOSIT", "RSU_VEST", "ESPP_PURCHASE", "CONTRIBUTION",
+        "BUY",
+        "DEPOSIT",
+        "RSU_VEST",
+        "ESPP_PURCHASE",
+        "CONTRIBUTION",
         # Outflows
-        "SELL", "WITHDRAWAL", "DIVIDEND", "COUPON",
+        "SELL",
+        "WITHDRAWAL",
+        "DIVIDEND",
+        "COUPON",
         # Others (Ignored by benchmark service)
-        "BONUS", "SPLIT"
+        "BONUS",
+        "SPLIT",
     ]
 
     txns = []
@@ -381,16 +395,12 @@ def test_benchmark_all_transaction_types(
         txn.details = {}
         txns.append(txn)
 
-    index_history = {
-        date(2023, 1, i + 1).isoformat(): 100.0 for i in range(len(types))
-    }
+    index_history = {date(2023, 1, i + 1).isoformat(): 100.0 for i in range(len(types))}
     index_history[date.today().isoformat()] = 100.0
     yf = mock_financial_service.yfinance_provider
     yf.get_index_history.return_value = index_history
 
-    with patch(
-        "app.crud.transaction.get_multi_by_portfolio", return_value=txns
-    ):
+    with patch("app.crud.transaction.get_multi_by_portfolio", return_value=txns):
         with patch("app.crud.analytics.get_portfolio_analytics", return_value=None):
             result = benchmark_service.calculate_benchmark_performance("pf_id")
             chart = result["chart_data"]
@@ -473,9 +483,7 @@ def test_synthetic_transactions_generation_and_processing(
         with patch(rd_crud_path, return_value=[rd]):
             with patch(calc_fd_path, return_value=Decimal("10800")):
                 with patch(calc_rd_path, return_value=Decimal("6100")):
-                    txns = benchmark_service._generate_synthetic_transactions(
-                        "pf_id"
-                    )
+                    txns = benchmark_service._generate_synthetic_transactions("pf_id")
 
                     # Verify FD transactions:
                     # 1. BUY principal_amount on 2023-01-01
@@ -488,37 +496,36 @@ def test_synthetic_transactions_generation_and_processing(
 
                     buy_txns = [t for t in txns if t.transaction_type == "BUY"]
                     sell_txns = [t for t in txns if t.transaction_type == "SELL"]
-                    div_txns = [
-                        t for t in txns if t.transaction_type == "DIVIDEND"
-                    ]
+                    div_txns = [t for t in txns if t.transaction_type == "DIVIDEND"]
 
                     assert len(buy_txns) == 7  # 1 FD + 6 RD
                     assert len(sell_txns) == 2  # 1 FD + 1 RD
-                    assert len(div_txns) == 1   # FD payout on 2023-07-01
+                    assert len(div_txns) == 1  # FD payout on 2023-07-01
 
                     # Check values
                     fd_buy = [
-                        t for t in buy_txns
+                        t
+                        for t in buy_txns
                         if t.transaction_date == datetime(2023, 1, 1)
                     ][0]
                     assert fd_buy.price_per_unit == Decimal("10000")
 
                     fd_div = [
-                        t for t in div_txns
+                        t
+                        for t in div_txns
                         if t.transaction_date == datetime(2023, 7, 1)
                     ][0]
                     assert fd_div.price_per_unit == Decimal("400")
 
                     fd_sell = [
-                        t for t in sell_txns
+                        t
+                        for t in sell_txns
                         if t.transaction_date == datetime(2023, 12, 31)
                     ][0]
                     assert fd_sell.price_per_unit == Decimal("10800")
 
 
-def test_benchmark_invested_amount_clamping(
-    benchmark_service, mock_financial_service
-):
+def test_benchmark_invested_amount_clamping(benchmark_service, mock_financial_service):
     """Test that invested_amount is clamped to zero when assets are sold."""
     mock_financial_service.yfinance_provider = MagicMock()
 
@@ -559,4 +566,3 @@ def test_benchmark_invested_amount_clamping(
             feb_point = [p for p in chart if p["date"] == "2023-02-01"][0]
             # Invested amount should be clamped to 0
             assert feb_point["invested_amount"] == 0.0
-

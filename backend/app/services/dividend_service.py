@@ -14,6 +14,7 @@ from app.services.financial_data_service import financial_data_service
 
 logger = logging.getLogger(__name__)
 
+
 class DividendService:
     def __init__(self, db: Session):
         self.db = db
@@ -120,7 +121,7 @@ class DividendService:
             "16/6 - 15/9": Decimal("0"),
             "16/9 - 15/12": Decimal("0"),
             "16/12 - 15/3": Decimal("0"),
-            "16/3 - 31/3": Decimal("0")
+            "16/3 - 31/3": Decimal("0"),
         }
 
         for txn in transactions:
@@ -163,7 +164,7 @@ class DividendService:
                     logger.warning(
                         f"Could not fetch TTBR proxy rate for {currency} on {ttbr_date}"
                     )
-                    amount_inr = Decimal("0") # Or leave it as distinct error state
+                    amount_inr = Decimal("0")  # Or leave it as distinct error state
             else:
                 amount_inr = amount_native
 
@@ -182,5 +183,5 @@ class DividendService:
             fy_year=fy_year,
             entries=entries,
             total_amount_inr=total_amount_inr,
-            bucket_totals=bucket_totals
+            bucket_totals=bucket_totals,
         )

@@ -18,6 +18,7 @@ def create_random_goal(db: Session, user_id: str, target_amount: float = None) -
         target_date=target_date,
     )
     from app.utils.pydantic_compat import model_dump
+
     goal = Goal(**model_dump(goal_in), user_id=user_id)
     db.add(goal)
     db.commit()

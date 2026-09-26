@@ -19,6 +19,7 @@ class CRUDFixedDeposit(CRUDBase[FixedDeposit, FixedDepositCreate, FixedDepositUp
     ) -> FixedDeposit:
         # Check for duplicate FD in the same portfolio
         from fastapi import HTTPException
+
         existing = (
             db.query(self.model)
             .filter(
@@ -38,9 +39,7 @@ class CRUDFixedDeposit(CRUDBase[FixedDeposit, FixedDepositCreate, FixedDepositUp
                 ),
             )
 
-        db_obj = self.model(
-            **model_dump(obj_in), user_id=user_id
-        )
+        db_obj = self.model(**model_dump(obj_in), user_id=user_id)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)

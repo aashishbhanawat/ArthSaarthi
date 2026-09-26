@@ -16,12 +16,15 @@ def test_specific_lot_pnl_calculation(db: Session):
 
     # 2. Create Asset
     asset_ticker = "LOTT"
-    asset = crud.asset.create(db, obj_in=schemas.AssetCreate(
-        ticker_symbol=asset_ticker,
-        name="Lot Test Tech",
-        asset_type="Stock",
-        currency="USD"
-    ))
+    asset = crud.asset.create(
+        db,
+        obj_in=schemas.AssetCreate(
+            ticker_symbol=asset_ticker,
+            name="Lot Test Tech",
+            asset_type="Stock",
+            currency="USD",
+        ),
+    )
 
     # 3. Buy Lot 1: 10 @ $100
     crud.transaction.create_with_portfolio(
@@ -31,9 +34,9 @@ def test_specific_lot_pnl_calculation(db: Session):
             transaction_type="BUY",
             quantity=Decimal("10"),
             price_per_unit=Decimal("100"),
-            transaction_date="2023-01-01T00:00:00Z"
+            transaction_date="2023-01-01T00:00:00Z",
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 4. Buy Lot 2: 10 @ $200
@@ -44,9 +47,9 @@ def test_specific_lot_pnl_calculation(db: Session):
             transaction_type="BUY",
             quantity=Decimal("10"),
             price_per_unit=Decimal("200"),
-            transaction_date="2023-01-05T00:00:00Z"
+            transaction_date="2023-01-05T00:00:00Z",
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 5. Sell 5 units - LINKED to Lot 2 (Higher Cost)
@@ -62,8 +65,7 @@ def test_specific_lot_pnl_calculation(db: Session):
 
     # Create Link Object
     link_in = schemas.TransactionLinkCreate(
-        buy_transaction_id=buy2.id,
-        quantity=sell_qty
+        buy_transaction_id=buy2.id, quantity=sell_qty
     )
 
     # Create Sell Transaction with Links
@@ -75,9 +77,9 @@ def test_specific_lot_pnl_calculation(db: Session):
             quantity=sell_qty,
             price_per_unit=sell_price,
             transaction_date="2023-01-10T00:00:00Z",
-            links=[link_in]
+            links=[link_in],
         ),
-        portfolio_id=portfolio.id
+        portfolio_id=portfolio.id,
     )
 
     # 6. Verify Creation
@@ -88,6 +90,7 @@ def test_specific_lot_pnl_calculation(db: Session):
     # We need to trigger the holdings calculation which includes realized
     # P&L processing.
     from app.cache.utils import invalidate_caches_for_portfolio
+
     invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
 
     holdings_data = crud.holding.get_portfolio_holdings_and_summary(
@@ -106,9 +109,7 @@ def test_specific_lot_pnl_calculation(db: Session):
     # Total Value (Cost) = 2000.
     # Avg Cost = 2000 / 15 = 133.3333
 
-    asset_holding = next(
-        h for h in holdings_data.holdings if h.asset_id == asset.id
-    )
+    asset_holding = next(h for h in holdings_data.holdings if h.asset_id == asset.id)
     assert asset_holding.quantity == Decimal("15")
     # Verify average buy price matches expected remaining lots
     expected_avg = Decimal("2000") / Decimal("15")

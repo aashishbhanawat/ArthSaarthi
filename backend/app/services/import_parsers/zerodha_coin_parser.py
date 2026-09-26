@@ -4,6 +4,7 @@ Zerodha Coin MF Parser.
 Parses Mutual Fund tradebook exports from Zerodha Coin (coin.zerodha.com).
 Handles both CSV and Excel formats.
 """
+
 import logging
 from typing import List
 
@@ -43,9 +44,7 @@ class ZerodhaCoinParser(BaseParser):
         transactions = []
 
         # Check if required columns exist
-        missing_cols = [
-            col for col in self.EXPECTED_COLUMNS if col not in df.columns
-        ]
+        missing_cols = [col for col in self.EXPECTED_COLUMNS if col not in df.columns]
         if missing_cols:
             logger.error(
                 "Zerodha Coin parser: Missing columns: %s. Found: %s",
@@ -99,9 +98,7 @@ class ZerodhaCoinParser(BaseParser):
                 # Date is already in YYYY-MM-DD format
                 transaction_date = self._parse_date(trade_date)
                 if transaction_date is None:
-                    logger.warning(
-                        "Zerodha Coin parser: Invalid date: %s", trade_date
-                    )
+                    logger.warning("Zerodha Coin parser: Invalid date: %s", trade_date)
                     continue
 
                 # Use ISIN for ticker if available (enables auto-matching)
@@ -110,14 +107,16 @@ class ZerodhaCoinParser(BaseParser):
                 else:
                     ticker = symbol
 
-                transactions.append(ParsedTransaction(
-                    ticker_symbol=ticker,
-                    transaction_date=transaction_date,
-                    transaction_type=tx_type,
-                    quantity=abs(qty),
-                    price_per_unit=ppu,
-                    fees=0.0,
-                ))
+                transactions.append(
+                    ParsedTransaction(
+                        ticker_symbol=ticker,
+                        transaction_date=transaction_date,
+                        transaction_type=tx_type,
+                        quantity=abs(qty),
+                        price_per_unit=ppu,
+                        fees=0.0,
+                    )
+                )
 
             except Exception as e:
                 logger.error(
@@ -126,9 +125,7 @@ class ZerodhaCoinParser(BaseParser):
                     e,
                 )
 
-        logger.info(
-            "Zerodha Coin parser: Parsed %d transactions", len(transactions)
-        )
+        logger.info("Zerodha Coin parser: Parsed %d transactions", len(transactions))
         return transactions
 
     def _parse_date(self, date_str: str) -> str | None:

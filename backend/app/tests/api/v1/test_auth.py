@@ -279,6 +279,7 @@ def test_change_password_invalid_new_password(
     # 3. Assert
     assert response.status_code == 422
 
+
 def test_login_rate_limiting(
     client: TestClient, db: Session, admin_user_data: dict, mocker
 ):
@@ -318,6 +319,4 @@ def test_login_rate_limiting(
     # The next attempt should return 429
     response = client.post("/api/v1/auth/login", data=login_data)
     assert response.status_code == 429
-    assert (
-        "Too many failed login attempts" in response.json()["detail"]
-    )
+    assert "Too many failed login attempts" in response.json()["detail"]
