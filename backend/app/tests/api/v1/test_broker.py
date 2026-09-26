@@ -1,3 +1,4 @@
+import pytest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -5,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.crud.crud_broker import crud_broker
 from app.models.user import User
-
-
 from app.tests.utils.user import create_random_user
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_broker_credentials_crud_and_endpoints(
