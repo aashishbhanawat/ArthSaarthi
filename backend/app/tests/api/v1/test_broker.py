@@ -7,21 +7,15 @@ from app.crud.crud_broker import crud_broker
 from app.models.user import User
 
 
+from app.tests.utils.user import create_random_user
+
+
 def test_broker_credentials_crud_and_endpoints(
     client: TestClient, get_auth_headers, db: Session
 ):
-    # 1. Setup admin user
-    user_data = {
-        "full_name": "Test User",
-        "email": "testbroker@example.com",
-        "password": "ValidPassword123!",
-    }
-    setup_resp = client.post("/api/v1/auth/setup", json=user_data)
-    assert setup_resp.status_code == 200
-
-    headers = get_auth_headers("testbroker@example.com", "ValidPassword123!")
-    user_obj = db.query(User).filter(User.email == "testbroker@example.com").first()
-    assert user_obj is not None
+    # 1. Setup user via test utility
+    user_obj, password = create_random_user(db)
+    headers = get_auth_headers(email=user_obj.email, password=password)
 
     # 2. Get credentials initially (empty)
     resp = client.get("/api/v1/broker/credentials", headers=headers)
