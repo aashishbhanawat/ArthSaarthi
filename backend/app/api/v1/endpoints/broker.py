@@ -1,3 +1,5 @@
+import html
+import re
 from datetime import datetime, timedelta, timezone
 from typing import List
 
@@ -111,11 +113,18 @@ def get_icici_login_url(
     return BrokerAuthUrlResponse(provider_name="icici_breeze", login_url=url)
 
 
+def _sanitize_token_for_html(token_str: str) -> str:
+    """Sanitizes user input token string for safe embedding in HTML to prevent XSS."""
+    cleaned = re.sub(r"[^a-zA-Z0-9_\-]", "", token_str or "")
+    return html.escape(cleaned)
+
+
 @router.get("/icici/callback", response_class=HTMLResponse)
 def icici_broker_callback(
     apisession: str = Query(..., alias="apisession"),
 ):
     """Callback landing page for ICICI Breeze OAuth redirect."""
+    safe_apisession = _sanitize_token_for_html(apisession)
     html_content = f"""
     <!质html>
     <html>
@@ -133,7 +142,7 @@ def icici_broker_callback(
         <div class="card">
             <h2>✅ ICICI Breeze Login Successful!</h2>
             <p>Your ICICI Breeze Session Token (API Session) is:</p>
-            <div class="token-box">{apisession}</div>
+            <div class="token-box">{safe_apisession}</div>
             <p>Please copy the token above and paste it into the <strong>Validate Session Token</strong> box in ArthSaarthi.</p>
         </div>
     </body>
@@ -147,6 +156,7 @@ def zerodha_broker_callback(
     request_token: str = Query(..., alias="request_token"),
 ):
     """Callback landing page for Zerodha Kite Connect OAuth redirect."""
+    safe_request_token = _sanitize_token_for_html(request_token)
     html_content = f"""
     <!质html>
     <html>
@@ -164,7 +174,7 @@ def zerodha_broker_callback(
         <div class="card">
             <h2>✅ Zerodha Kite Login Successful!</h2>
             <p>Your Zerodha Kite Request Token is:</p>
-            <div class="token-box">{request_token}</div>
+            <div class="token-box">{safe_request_token}</div>
             <p>Please copy the token above and paste it into the <strong>Exchange & Verify Token</strong> box in ArthSaarthi.</p>
         </div>
     </body>
