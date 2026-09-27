@@ -52,7 +52,11 @@ class IciciBreezeProvider(FinancialDataProvider):
         if self.api_secret:
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
             raw = timestamp + payload_str + self.api_secret
-            checksum = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+            # Broker API Protocol Requirement: ICICI Breeze Direct API requires SHA-256 checksum for header authentication.
+            # Not used for password hashing.
+            checksum = hashlib.sha256(
+                raw.encode("utf-8")
+            ).hexdigest()  # noqa: S324
             headers["X-Timestamp"] = timestamp
             headers["X-Checksum"] = f"token {checksum}"
 

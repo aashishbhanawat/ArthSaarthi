@@ -51,8 +51,12 @@ class ZerodhaKiteProvider(FinancialDataProvider):
         if not self.api_key or not self.api_secret:
             return {"success": False, "error": "Missing API Key or API Secret"}
 
+        # Broker API Protocol Requirement: Zerodha Kite Connect v3 requires SHA-256 checksum for OAuth request_token verification.
+        # Not used for password hashing.
         raw_checksum = self.api_key + request_token + self.api_secret
-        checksum = hashlib.sha256(raw_checksum.encode("utf-8")).hexdigest()
+        checksum = hashlib.sha256(
+            raw_checksum.encode("utf-8")
+        ).hexdigest()  # noqa: S324
 
         url = f"{KITE_BASE_URL}/session/token"
         payload = {
