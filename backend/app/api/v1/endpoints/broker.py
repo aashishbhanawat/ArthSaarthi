@@ -116,7 +116,7 @@ def get_icici_login_url(
 def _sanitize_token_for_html(token_str: str) -> str:
     """Sanitizes user input token string for safe embedding in HTML to prevent XSS."""
     cleaned = re.sub(r"[^a-zA-Z0-9_\-]", "", token_str or "")
-    return html.escape(cleaned)
+    return html.escape(cleaned, quote=True)
 
 
 @router.get("/icici/callback", response_class=HTMLResponse)

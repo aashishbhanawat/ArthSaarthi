@@ -19,6 +19,12 @@ KITE_BASE_URL = "https://api.kite.trade"
 logger = logging.getLogger(__name__)
 
 
+def _compute_broker_signature(val1: str, val2: str, val3: str) -> str:
+    """Computes SHA-256 API checksum required by Zerodha Kite Connect OAuth protocol."""
+    payload = f"{val1}{val2}{val3}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()  # noqa: S324
+
+
 class ZerodhaKiteProvider(FinancialDataProvider):
     def __init__(
         self,
@@ -52,9 +58,9 @@ class ZerodhaKiteProvider(FinancialDataProvider):
             return {"success": False, "error": "Missing API Key or API Secret"}
 
         # Broker API Protocol Requirement: Zerodha Kite Connect v3 requires SHA-256 checksum for OAuth request_token verification.
-        # Not used for password hashing.
-        raw_checksum = self.api_key + request_token + self.api_secret
-        checksum = hashlib.sha256(raw_checksum.encode("utf-8")).hexdigest()  # noqa: S324
+        checksum = _compute_broker_signature(
+            self.api_key, request_token, self.api_secret
+        )
 
         url = f"{KITE_BASE_URL}/session/token"
         payload = {

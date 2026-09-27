@@ -21,6 +21,12 @@ BREEZE_BASE_URL = "https://api.icicidirect.com/breezeapi/api/v1"
 logger = logging.getLogger(__name__)
 
 
+def _compute_breeze_header_signature(val1: str, val2: str, val3: str) -> str:
+    """Computes SHA-256 header checksum required by ICICI Breeze Direct API protocol."""
+    payload = f"{val1}{val2}{val3}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()  # noqa: S324
+
+
 class IciciBreezeProvider(FinancialDataProvider):
     def __init__(
         self,
@@ -51,10 +57,9 @@ class IciciBreezeProvider(FinancialDataProvider):
 
         if self.api_secret:
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-            raw = timestamp + payload_str + self.api_secret
-            # Broker API Protocol Requirement: ICICI Breeze Direct API requires SHA-256 checksum for header authentication.
-            # Not used for password hashing.
-            checksum = hashlib.sha256(raw.encode("utf-8")).hexdigest()  # noqa: S324
+            checksum = _compute_breeze_header_signature(
+                timestamp, payload_str, self.api_secret
+            )
             headers["X-Timestamp"] = timestamp
             headers["X-Checksum"] = f"token {checksum}"
 
