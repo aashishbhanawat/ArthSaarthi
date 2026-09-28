@@ -53,8 +53,8 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete }) => {
                 <UserCard
                     key={user.id}
                     user={user}
-                    onEdit={() => onEdit(user)}
-                    onDelete={() => onDelete(user)}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
                 />
             ))}
         </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { User } from '../../types/user';
 
 interface UserCardProps {
@@ -8,6 +8,9 @@ interface UserCardProps {
 }
 
 const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
+    const handleEdit = useCallback(() => onEdit(user), [onEdit, user]);
+    const handleDelete = useCallback(() => onDelete(user), [onDelete, user]);
+
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-3 transition-all hover:shadow-md">
             <div className="flex justify-between items-start">
@@ -20,12 +23,12 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => onEdit(user)} className="btn btn-secondary btn-xs py-1">Edit</button>
-                    <button onClick={() => onDelete(user)} className="btn btn-danger btn-xs py-1">Delete</button>
+                    <button onClick={handleEdit} className="btn btn-secondary btn-xs py-1">Edit</button>
+                    <button onClick={handleDelete} className="btn btn-danger btn-xs py-1">Delete</button>
                 </div>
             </div>
         </div>
     );
 };
 
-export default UserCard;
+export default React.memo(UserCard);
