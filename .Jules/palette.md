@@ -1,1 +1,4 @@
 ## 2024-05-18 - Transaction Details Modal Close Button\n**Learning:** Modals can sometimes be missing explicit close buttons or lack ARIA attributes linking the title to the dialog role.\n**Action:** Update modals to include a standard `modal-header` with an `h2` and an explicitly labeled close button using `XMarkIcon`.
+## $(date +%Y-%m-%d) - Keyboard Accessibility for List Items
+**Learning:** Using `<a>` tags without `href` attributes for list item actions prevents keyboard focus and breaks accessibility (users cannot tab to them).
+**Action:** Replace unsemantic `<a>` wrappers with `<div role="button" tabIndex={0}>`. Add an `onKeyDown` handler for 'Enter' and 'Space', ensuring `e.target === e.currentTarget` is checked to prevent bubbling from child interactive elements like nested buttons.
