@@ -66,4 +66,3 @@ class IncomeEntry(Base):
 
     user = relationship("User")
     source = relationship("IncomeSource", back_populates="entries")
-

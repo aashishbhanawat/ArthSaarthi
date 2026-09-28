@@ -120,7 +120,7 @@ def test_dashboard_history_with_foreign_asset(
                 total_unrealized_pnl=Decimal("0"),
                 total_realized_pnl=Decimal("0"),
             ),
-            holdings=[]
+            holdings=[],
         )
 
         history = dashboard.get_history(db=db, user_id=user.id, range_str="7d")
@@ -131,9 +131,7 @@ def test_dashboard_history_with_foreign_asset(
     assert latest_point["value"] == expected_value_inr
 
 
-def test_analytics_xirr_with_rsu_vest(
-    db: Session, test_user_portfolio, foreign_asset
-):
+def test_analytics_xirr_with_rsu_vest(db: Session, test_user_portfolio, foreign_asset):
     user, portfolio = test_user_portfolio
 
     # 1. Create an RSU VEST transaction
@@ -245,7 +243,7 @@ def test_get_holdings_current_value_conversion(
         "app.crud.crud_holding.financial_data_service.get_current_prices"
     ) as mock_prices:
 
-        def side_effect(assets):
+        def side_effect(assets, broker_provider=None):
             result = {}
             for a in assets:
                 ticker = a["ticker_symbol"]

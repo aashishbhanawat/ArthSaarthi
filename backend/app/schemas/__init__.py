@@ -158,7 +158,6 @@ __all__ = [
     "RecurringDepositCreate",
     "RecurringDepositDetails",
     "RecurringDepositUpdate",
-
     "TransactionType",
     "AssetType",
     "Asset",
@@ -178,7 +177,6 @@ __all__ = [
     "AssetUpdate",
     "AssetAnalytics",
     "CapitalGainsSummary",
-
     "DiversificationResponse",
     "DiversificationSegment",
     "FixedDepositAnalytics",
@@ -260,4 +258,3 @@ if hasattr(Asset, "model_rebuild"):
 else:
     Asset.update_forward_refs()
     Transaction.update_forward_refs(Asset=Asset)
-

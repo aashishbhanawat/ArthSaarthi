@@ -13,8 +13,9 @@ try:
 except ImportError:
     ConfigDict = None
     from pydantic import validator
+
     def field_validator(*args, mode="before", **kwargs):
-        pre = (mode == "before")
+        pre = mode == "before"
         return validator(*args, pre=pre, **kwargs)
 
 
@@ -25,6 +26,7 @@ class UserRiskProfileBase(BaseModel):
     @classmethod
     def validate_answers(cls, v: Any) -> Dict[str, str]:
         import json
+
         if isinstance(v, str):
             try:
                 v = json.loads(v)
@@ -90,5 +92,6 @@ class UserRiskProfile(UserRiskProfileBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True

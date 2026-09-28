@@ -26,17 +26,17 @@ class BondBase(BaseModel):
     )
     coupon_rate: Decimal | None = Field(
         None,
-        description="The annual coupon rate (e.g., 7.5 for 7.5%). Null for T-Bills."
+        description="The annual coupon rate (e.g., 7.5 for 7.5%). Null for T-Bills.",
     )
     maturity_date: date
     isin: str | None = Field(
         None, index=True, description="ISIN for market price lookups of tradable bonds."
     )
-    payment_frequency: PaymentFrequency | None = Field(None,
-        description="For auto-coupon generation."
+    payment_frequency: PaymentFrequency | None = Field(
+        None, description="For auto-coupon generation."
     )
-    first_payment_date: date | None = Field(None,
-        description="For auto-coupon generation."
+    first_payment_date: date | None = Field(
+        None, description="For auto-coupon generation."
     )
 
 
@@ -50,11 +50,10 @@ class BondWithTransactionCreate(BaseModel):
     bond_data: BondBase
     transaction_data: TransactionCreate
 
+
 # Properties to receive on item update
 class BondUpdate(BondBase):
     pass
-
-
 
 
 # Properties shared by models stored in DB
@@ -65,9 +64,9 @@ class BondInDBBase(BondBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
-
 
 
 # Properties to return to client

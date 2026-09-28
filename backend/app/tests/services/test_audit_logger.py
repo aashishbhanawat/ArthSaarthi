@@ -29,7 +29,7 @@ def test_log_event():
         mock_create.assert_called_once()
         pos_args, kw_args = mock_create.call_args
         assert pos_args[0] == db
-        created_log = kw_args['obj_in']
+        created_log = kw_args["obj_in"]
         assert isinstance(created_log, AuditLogCreate)
         assert created_log.user_id == user_id
         assert created_log.event_type == event_type

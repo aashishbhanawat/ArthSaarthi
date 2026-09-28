@@ -37,6 +37,7 @@ class UserCreate(UserBase):
             }
         )
     else:
+
         class Config:
             schema_extra = {
                 "example": {
@@ -81,6 +82,7 @@ class User(UserBase):
             },
         )
     else:
+
         class Config:
             orm_mode = True
             schema_extra = {
@@ -112,6 +114,7 @@ class UserUpdate(BaseModel):
             }
         )
     else:
+
         class Config:
             schema_extra = {
                 "example": {

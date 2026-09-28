@@ -7,9 +7,8 @@ from app.tests.utils.user import create_random_user, get_access_token
 
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
-def test_create_interest_rate(
-    client: TestClient, db: Session
-) -> None:
+
+def test_create_interest_rate(client: TestClient, db: Session) -> None:
     admin_user, admin_password = create_random_user(db, is_admin=True)
     admin_token = get_access_token(client, admin_user.email, admin_password)
     admin_token_headers = {"Authorization": f"Bearer {admin_token}"}
@@ -32,9 +31,7 @@ def test_create_interest_rate(
     assert "id" in content
 
 
-def test_read_interest_rates(
-    client: TestClient, db: Session
-) -> None:
+def test_read_interest_rates(client: TestClient, db: Session) -> None:
     admin_user, admin_password = create_random_user(db, is_admin=True)
     admin_token = get_access_token(client, admin_user.email, admin_password)
     admin_token_headers = {"Authorization": f"Bearer {admin_token}"}
@@ -62,9 +59,7 @@ def test_read_interest_rates(
     assert content[0]["scheme_name"] in ["PPF", "NSC"]
 
 
-def test_update_interest_rate(
-    client: TestClient, db: Session
-) -> None:
+def test_update_interest_rate(client: TestClient, db: Session) -> None:
     admin_user, admin_password = create_random_user(db, is_admin=True)
     admin_token = get_access_token(client, admin_user.email, admin_password)
     admin_token_headers = {"Authorization": f"Bearer {admin_token}"}
@@ -97,9 +92,7 @@ def test_update_interest_rate(
     assert float(content["rate"]) == 7.6
 
 
-def test_delete_interest_rate(
-    client: TestClient, db: Session
-) -> None:
+def test_delete_interest_rate(client: TestClient, db: Session) -> None:
     admin_user, admin_password = create_random_user(db, is_admin=True)
     admin_token = get_access_token(client, admin_user.email, admin_password)
     admin_token_headers = {"Authorization": f"Bearer {admin_token}"}
@@ -125,9 +118,7 @@ def test_delete_interest_rate(
     assert content["id"] == rate_id
 
 
-def test_non_admin_cannot_access(
-    client: TestClient, db: Session
-) -> None:
+def test_non_admin_cannot_access(client: TestClient, db: Session) -> None:
     normal_user, normal_password = create_random_user(db, is_admin=False)
     normal_user_token = get_access_token(client, normal_user.email, normal_password)
     normal_user_token_headers = {"Authorization": f"Bearer {normal_user_token}"}
@@ -174,6 +165,7 @@ def test_seed_interest_rates_correctness(db: Session) -> None:
 
     # Retrieve seeded interest rates from database
     from app import crud
+
     db_rates = crud.historical_interest_rate.get_multi(db, limit=100)
     ppf_db_rates = [r for r in db_rates if r.scheme_name == "PPF"]
 
@@ -187,5 +179,3 @@ def test_seed_interest_rates_correctness(db: Session) -> None:
         )
         assert db_record.end_date == rate_data["end_date"]
         assert db_record.rate == rate_data["rate"]
-
-

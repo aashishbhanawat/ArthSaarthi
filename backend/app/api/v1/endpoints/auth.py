@@ -86,7 +86,7 @@ def setup_admin_user(user: UserCreate, db: Session = Depends(get_db)):
         logger.exception("Error during setup_admin_user:")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Admin setup failed."
+            detail="Admin setup failed.",
         )
 
     # Note: Asset seeding is now triggered by the splash screen before login,

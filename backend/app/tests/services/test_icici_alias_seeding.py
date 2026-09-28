@@ -1,4 +1,5 @@
 """Tests for ICICI ShortName alias creation during asset seeding (#216)."""
+
 import pandas as pd
 import pytest
 from sqlalchemy.orm import Session
@@ -17,18 +18,21 @@ def seeder(db: Session):
 #  _process_fallback_row  →  alias creation
 # ------------------------------------------------------------------ #
 
+
 def test_alias_created_when_shortname_differs(
     seeder: AssetSeeder,
     db: Session,
 ):
     """ShortName ≠ ExchangeCode → alias should be created."""
-    row = pd.Series({
-        "ExchangeCode": "HDFCAMC",
-        "CompanyName": "HDFC Asset Mgmt",
-        "ISINCode": "INE127TEST01",
-        "Series": "EQ",
-        "ShortName": "HDFCAMC-EQ",
-    })
+    row = pd.Series(
+        {
+            "ExchangeCode": "HDFCAMC",
+            "CompanyName": "HDFC Asset Mgmt",
+            "ISINCode": "INE127TEST01",
+            "Series": "EQ",
+            "ShortName": "HDFCAMC-EQ",
+        }
+    )
     seeder._process_fallback_row(row)
     seeder.flush_pending()
     db.commit()
@@ -53,13 +57,15 @@ def test_no_alias_when_shortname_matches_ticker(
     db: Session,
 ):
     """ShortName == ticker (case-insensitive) → no alias."""
-    row = pd.Series({
-        "ExchangeCode": "RELIANCE",
-        "CompanyName": "Reliance Industries",
-        "ISINCode": "INE002TEST01",
-        "Series": "EQ",
-        "ShortName": "RELIANCE",
-    })
+    row = pd.Series(
+        {
+            "ExchangeCode": "RELIANCE",
+            "CompanyName": "Reliance Industries",
+            "ISINCode": "INE002TEST01",
+            "Series": "EQ",
+            "ShortName": "RELIANCE",
+        }
+    )
     seeder._process_fallback_row(row)
     seeder.flush_pending()
     db.commit()
@@ -72,13 +78,15 @@ def test_no_alias_when_shortname_missing(
     db: Session,
 ):
     """Missing ShortName column → no alias, no error."""
-    row = pd.Series({
-        "ExchangeCode": "TCS",
-        "CompanyName": "Tata Consultancy",
-        "ISINCode": "INE003TEST01",
-        "Series": "EQ",
-        # ShortName intentionally absent
-    })
+    row = pd.Series(
+        {
+            "ExchangeCode": "TCS",
+            "CompanyName": "Tata Consultancy",
+            "ISINCode": "INE003TEST01",
+            "Series": "EQ",
+            # ShortName intentionally absent
+        }
+    )
     seeder._process_fallback_row(row)
     seeder.flush_pending()
     db.commit()
@@ -91,13 +99,15 @@ def test_no_alias_when_shortname_nan(
     db: Session,
 ):
     """ShortName is NaN → no alias."""
-    row = pd.Series({
-        "ExchangeCode": "INFY",
-        "CompanyName": "Infosys Ltd",
-        "ISINCode": "INE004TEST01",
-        "Series": "EQ",
-        "ShortName": float("nan"),
-    })
+    row = pd.Series(
+        {
+            "ExchangeCode": "INFY",
+            "CompanyName": "Infosys Ltd",
+            "ISINCode": "INE004TEST01",
+            "Series": "EQ",
+            "ShortName": float("nan"),
+        }
+    )
     seeder._process_fallback_row(row)
     seeder.flush_pending()
     db.commit()
@@ -110,13 +120,15 @@ def test_duplicate_alias_not_created_on_reseed(
     db: Session,
 ):
     """Re-seeding the same row should not create a duplicate alias."""
-    row = pd.Series({
-        "ExchangeCode": "SBIN",
-        "CompanyName": "State Bank of India",
-        "ISINCode": "INE005TEST01",
-        "Series": "EQ",
-        "ShortName": "SBI",
-    })
+    row = pd.Series(
+        {
+            "ExchangeCode": "SBIN",
+            "CompanyName": "State Bank of India",
+            "ISINCode": "INE005TEST01",
+            "Series": "EQ",
+            "ShortName": "SBI",
+        }
+    )
     seeder._process_fallback_row(row)
     seeder.flush_pending()
     db.commit()

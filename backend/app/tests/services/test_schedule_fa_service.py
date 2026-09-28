@@ -11,8 +11,8 @@ class MockTx:
         self.price_per_unit = Decimal(price)
         self.transaction_date = datetime.strptime(date_str, "%Y-%m-%d")
 
-class TestScheduleFAService:
 
+class TestScheduleFAService:
     def test_calculate_lot_peak_value_simple_hold(self):
         """
         Test peak value when asset is held for the entire year.
@@ -21,11 +21,7 @@ class TestScheduleFAService:
         service = ScheduleFAService(db=None)
 
         buy_tx = MockTx(10, 100, "2023-01-01")
-        lot = {
-            "buy_transaction": buy_tx,
-            "disposals": [],
-            "id": "lot1"
-        }
+        lot = {"buy_transaction": buy_tx, "disposals": [], "id": "lot1"}
 
         start_date = datetime(2023, 1, 1)
         end_date = datetime(2023, 12, 31)
@@ -60,13 +56,9 @@ class TestScheduleFAService:
         disposal = {
             "qty": Decimal(5),
             "date": datetime(2023, 7, 1),
-            "sell_price": Decimal(220)
+            "sell_price": Decimal(220),
         }
-        lot = {
-            "buy_transaction": buy_tx,
-            "disposals": [disposal],
-            "id": "lot1"
-        }
+        lot = {"buy_transaction": buy_tx, "disposals": [disposal], "id": "lot1"}
 
         start_date = datetime(2023, 1, 1)
         end_date = datetime(2023, 12, 31)
@@ -101,13 +93,9 @@ class TestScheduleFAService:
         disposal = {
             "qty": Decimal(10),
             "date": datetime(2023, 7, 1),
-            "sell_price": Decimal(150)
+            "sell_price": Decimal(150),
         }
-        lot = {
-            "buy_transaction": buy_tx,
-            "disposals": [disposal],
-            "id": "lot1"
-        }
+        lot = {"buy_transaction": buy_tx, "disposals": [disposal], "id": "lot1"}
 
         start_date = datetime(2023, 1, 1)
         end_date = datetime(2023, 12, 31)

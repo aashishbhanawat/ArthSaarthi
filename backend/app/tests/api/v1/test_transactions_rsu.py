@@ -13,6 +13,7 @@ from app.tests.utils.user import create_random_user
 
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
+
 def test_create_rsu_with_sell_to_cover(
     client: TestClient,
     db: Session,
@@ -29,18 +30,13 @@ def test_create_rsu_with_sell_to_cover(
         "quantity": 10,
         "price_per_unit": 0,
         "transaction_date": datetime.now().isoformat(),
-        "details": {
-            "sell_to_cover": {
-                "quantity": 4,
-                "price_per_unit": 150.0
-            }
-        }
+        "details": {"sell_to_cover": {"quantity": 4, "price_per_unit": 150.0}},
     }
 
     response = client.post(
         f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
         headers=user_headers,
-        json=payload
+        json=payload,
     )
 
     assert response.status_code == 201, response.text
@@ -56,6 +52,7 @@ def test_create_rsu_with_sell_to_cover(
     assert float(sell_tx["quantity"]) == 4.0
     assert float(sell_tx["price_per_unit"]) == 150.0
 
+
 def test_get_fx_rate(
     client: TestClient,
     db: Session,
@@ -69,13 +66,13 @@ def test_get_fx_rate(
     # Patch where it is imported in the endpoint file
     mocker.patch(
         "app.api.v1.endpoints.fx.financial_data_service.get_exchange_rate",
-        return_value=Decimal("83.50")
+        return_value=Decimal("83.50"),
     )
 
     date_str = date.today().isoformat()
     response = client.get(
         f"{settings.API_V1_STR}/fx-rate/?from=USD&to=INR&date={date_str}",
-        headers=user_headers
+        headers=user_headers,
     )
 
     assert response.status_code == 200, response.text

@@ -32,17 +32,15 @@ class HistoricalInterestRateUpdate(HistoricalInterestRateBase):
     rate: Optional[Decimal] = None
 
 
-
-
 class HistoricalInterestRateInDBBase(HistoricalInterestRateBase):
     id: uuid.UUID
 
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
-
 
 
 class HistoricalInterestRate(HistoricalInterestRateInDBBase):

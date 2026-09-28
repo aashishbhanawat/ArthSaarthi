@@ -19,6 +19,7 @@ from app.services.snapshot_service import take_daily_snapshots_for_all
 # --- Background Task for Desktop App ---
 _snapshot_task: Optional[asyncio.Task] = None
 
+
 async def _desktop_snapshot_loop() -> None:
     """
     Background loop that runs only in Desktop mode.
@@ -43,6 +44,7 @@ async def _desktop_snapshot_loop() -> None:
 
         # Sleep for 6 hours (21600 seconds)
         await asyncio.sleep(21600)
+
 
 # --- Logging Configuration ---
 log_level = logging.DEBUG if settings.DEBUG else logging.INFO
@@ -110,6 +112,7 @@ async def startup_event() -> None:
             f"{settings.DEPLOYMENT_MODE.capitalize()} App..."
         )
         _snapshot_task = asyncio.create_task(_desktop_snapshot_loop())
+
 
 app.add_middleware(
     CORSMiddleware,

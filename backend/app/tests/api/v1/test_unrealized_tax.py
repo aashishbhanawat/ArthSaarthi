@@ -229,6 +229,7 @@ def test_unrealized_gains_api_endpoint(
     assert "section_112a_remaining_headroom" in data
     assert "lots" in data
 
+
 def test_unrealized_gains_api_endpoint_handles_error(
     client: TestClient, db: Session, get_auth_headers, mocker
 ):

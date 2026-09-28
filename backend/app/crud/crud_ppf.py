@@ -74,11 +74,12 @@ def _calculate_ppf_interest_for_fy(
         if ppf_rates is not None:
             rate_obj = next(
                 (
-                    r for r in ppf_rates
-                    if r.start_date <= current_month_start and
-                    (r.end_date is None or r.end_date >= current_month_start)
+                    r
+                    for r in ppf_rates
+                    if r.start_date <= current_month_start
+                    and (r.end_date is None or r.end_date >= current_month_start)
                 ),
-                None
+                None,
             )
         else:
             rate_obj = crud.historical_interest_rate.get_rate_for_date(
@@ -95,9 +96,11 @@ def _calculate_ppf_interest_for_fy(
         # contributions from the current month
         monthly_contributions_total = Decimal("0.0")
         monthly_contributions_total = sum(
-            t.quantity for t in transactions_in_fy if
-            current_month_start <= t.transaction_date.date() < current_month_end and
-            t.transaction_type == TransactionType.CONTRIBUTION)
+            t.quantity
+            for t in transactions_in_fy
+            if current_month_start <= t.transaction_date.date() < current_month_end
+            and t.transaction_type == TransactionType.CONTRIBUTION
+        )
         balance_at_start_of_month += monthly_contributions_total
 
     return total_interest.quantize(Decimal("0.01"))
@@ -111,10 +114,15 @@ def _cleanup_duplicate_interest_credits(db: Session, asset_id: uuid.UUID) -> Non
     """
 
     # Get all interest credits for this asset, ordered by date and id
-    all_credits = db.query(Transaction).filter(
-        Transaction.asset_id == asset_id,
-        Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
-    ).order_by(Transaction.transaction_date, Transaction.id).all()
+    all_credits = (
+        db.query(Transaction)
+        .filter(
+            Transaction.asset_id == asset_id,
+            Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
+        )
+        .order_by(Transaction.transaction_date, Transaction.id)
+        .all()
+    )
 
     if not all_credits:
         return
@@ -140,9 +148,13 @@ def _cleanup_duplicate_interest_credits(db: Session, asset_id: uuid.UUID) -> Non
             db.delete(dup)
         db.commit()
 
+
 def process_ppf_holding(
-    db: Session, ppf_asset: Asset, portfolio_id: uuid.UUID | None,
-    calculation_date: date = None, simulate_only: bool = False,
+    db: Session,
+    ppf_asset: Asset,
+    portfolio_id: uuid.UUID | None,
+    calculation_date: date = None,
+    simulate_only: bool = False,
     transactions: List[Transaction] = None,
     ppf_rates: List[HistoricalInterestRate] = None,
     user_id: uuid.UUID | None = None,
@@ -159,6 +171,7 @@ def process_ppf_holding(
             )
             if user_id:
                 from app.models.portfolio import Portfolio
+
                 user_portfolios = (
                     db.query(Portfolio.id).filter(Portfolio.user_id == user_id).all()
                 )
@@ -168,8 +181,7 @@ def process_ppf_holding(
                 ]
     if calculation_date:
         transactions = [
-            t for t in transactions
-            if t.transaction_date.date() <= calculation_date
+            t for t in transactions if t.transaction_date.date() <= calculation_date
         ]
     logger.debug(
         f"[process_ppf_holding] Processing asset {ppf_asset.id}, "
@@ -210,9 +222,11 @@ def process_ppf_holding(
     if ppf_rates is not None:
         all_ppf_rates = ppf_rates
     else:
-        all_ppf_rates = db.query(HistoricalInterestRate).filter(
-            HistoricalInterestRate.scheme_name == "PPF"
-        ).all()
+        all_ppf_rates = (
+            db.query(HistoricalInterestRate)
+            .filter(HistoricalInterestRate.scheme_name == "PPF")
+            .all()
+        )
 
     # Separate transactions by type
     contributions = [
@@ -248,13 +262,15 @@ def process_ppf_holding(
                 )
             else:
                 # Calculate and create missing interest transaction
-                logger.info(
-                    f"[PPF] FY {fy_end}: No existing credit, calculating..."
-                )
+                logger.info(f"[PPF] FY {fy_end}: No existing credit, calculating...")
                 interest_for_fy = _calculate_ppf_interest_for_fy(
-                    db, fy_start, fy_end, balance, transactions_in_fy,
+                    db,
+                    fy_start,
+                    fy_end,
+                    balance,
+                    transactions_in_fy,
                     ppf_rates=all_ppf_rates,
-                    calculation_date=calculation_date
+                    calculation_date=calculation_date,
                 )
                 logger.info(
                     f"[PPF] FY {fy_end}: Calculated interest = {interest_for_fy}"
@@ -269,18 +285,21 @@ def process_ppf_holding(
                         logger.info(
                             f"[PPF] FY {fy_end}: Checking for existing credit..."
                         )
-                        existing_credit = db.query(Transaction).filter(
-                            Transaction.asset_id == ppf_asset.id,
-                            Transaction.transaction_type
-                            == TransactionType.INTEREST_CREDIT,
-                            Transaction.transaction_date >= fy_end,
-                            Transaction.transaction_date < fy_end + timedelta(days=1),
-                        ).first()
+                        existing_credit = (
+                            db.query(Transaction)
+                            .filter(
+                                Transaction.asset_id == ppf_asset.id,
+                                Transaction.transaction_type
+                                == TransactionType.INTEREST_CREDIT,
+                                Transaction.transaction_date >= fy_end,
+                                Transaction.transaction_date
+                                < fy_end + timedelta(days=1),
+                            )
+                            .first()
+                        )
 
                         if not existing_credit:
-                            logger.info(
-                                f"[PPF] FY {fy_end}: INSERTING new transaction"
-                            )
+                            logger.info(f"[PPF] FY {fy_end}: INSERTING new transaction")
                             # When calculating for all portfolios, portfolio_id is None,
                             # so we shouldn't attempt to create missing interest
                             # credits here.
@@ -316,14 +335,18 @@ def process_ppf_holding(
                                     )
                                     db.rollback()
                                     # Re-check after rollback
-                                    existing_credit = db.query(Transaction).filter(
-                                        Transaction.asset_id == ppf_asset.id,
-                                        Transaction.transaction_type
-                                        == TransactionType.INTEREST_CREDIT,
-                                        Transaction.transaction_date >= fy_end,
-                                        Transaction.transaction_date
-                                        < fy_end + timedelta(days=1),
-                                    ).first()
+                                    existing_credit = (
+                                        db.query(Transaction)
+                                        .filter(
+                                            Transaction.asset_id == ppf_asset.id,
+                                            Transaction.transaction_type
+                                            == TransactionType.INTEREST_CREDIT,
+                                            Transaction.transaction_date >= fy_end,
+                                            Transaction.transaction_date
+                                            < fy_end + timedelta(days=1),
+                                        )
+                                        .first()
+                                    )
                                     if existing_credit:
                                         interest_for_fy = existing_credit.quantity
                                         logger.info(
@@ -348,9 +371,13 @@ def process_ppf_holding(
             )
         else:  # Current, ongoing financial year
             on_the_fly_interest = _calculate_ppf_interest_for_fy(
-                db, fy_start, fy_end, balance, transactions_in_fy,
+                db,
+                fy_start,
+                fy_end,
+                balance,
+                transactions_in_fy,
                 ppf_rates=all_ppf_rates,
-                calculation_date=calculation_date
+                calculation_date=calculation_date,
             )
             balance += (
                 sum(
@@ -377,11 +404,12 @@ def process_ppf_holding(
     if all_ppf_rates is not None:
         current_rate_obj = next(
             (
-                r for r in all_ppf_rates
-                if r.start_date <= date.today() and
-                (r.end_date is None or r.end_date >= date.today())
+                r
+                for r in all_ppf_rates
+                if r.start_date <= date.today()
+                and (r.end_date is None or r.end_date >= date.today())
             ),
-            None
+            None,
         )
     else:
         current_rate_obj = crud.historical_interest_rate.get_rate_for_date(
@@ -418,9 +446,7 @@ def trigger_ppf_recalculation(db: Session, asset_id: uuid.UUID) -> None:
     if not asset or asset.asset_type != AssetType.PPF:
         return
 
-    logger.info(
-        f"Triggering PPF recalculation for asset {asset_id}."
-    )
+    logger.info(f"Triggering PPF recalculation for asset {asset_id}.")
 
     # This function is called when a contribution is modified.
     # We need to find the financial year of the change and delete all
@@ -429,10 +455,14 @@ def trigger_ppf_recalculation(db: Session, asset_id: uuid.UUID) -> None:
     # for the asset. The valuation logic is optimized to only recalculate
     # what's missing, so this is safe and effective.
 
-    transactions_to_delete = db.query(Transaction).filter( # type: ignore
-        Transaction.asset_id == asset_id,
-        Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
-    ).all()
+    transactions_to_delete = (
+        db.query(Transaction)
+        .filter(  # type: ignore
+            Transaction.asset_id == asset_id,
+            Transaction.transaction_type == TransactionType.INTEREST_CREDIT,
+        )
+        .all()
+    )
 
     if transactions_to_delete:
         logger.info(

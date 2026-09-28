@@ -259,9 +259,7 @@ class UnrealizedTaxService:
 
         # 3. Section 112A Exemption Pooling & Statutory Loss Set-Off Math
         # Net 112A LTCG eligible after intra-head LTCL absorption
-        section_112a_unrealized_eligible = max(
-            Decimal("0.0"), total_unrealized_ltcg
-        )
+        section_112a_unrealized_eligible = max(Decimal("0.0"), total_unrealized_ltcg)
         unrealized_exemption_used = min(
             remaining_headroom, section_112a_unrealized_eligible
         )
@@ -292,7 +290,6 @@ class UnrealizedTaxService:
         total_estimated_tax = (
             estimated_unrealized_stcg_tax + estimated_unrealized_ltcg_tax
         )
-
 
         return UnrealizedGainsSummary(
             financial_year=fy_year,

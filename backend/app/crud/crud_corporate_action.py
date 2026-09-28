@@ -30,8 +30,10 @@ def handle_dividend(
         f"Handling dividend for asset {asset_id} in portfolio {portfolio_id}. "
         f"Is Reinvested: {getattr(transaction_in, 'is_reinvested', False)}"
     )
-    logger.debug("Payload received by handle_dividend: %s",
-                 model_dump_json(transaction_in, indent=2))
+    logger.debug(
+        "Payload received by handle_dividend: %s",
+        model_dump_json(transaction_in, indent=2),
+    )
 
     # Always save the dividend transaction itself for record-keeping.
     # We create a new schema here to ensure only relevant fields are passed.
@@ -82,9 +84,7 @@ def handle_dividend(
         crud.transaction.create_with_portfolio(
             db=db, obj_in=buy_transaction_schema, portfolio_id=portfolio_id
         )
-        logger.info(
-            "Saved corresponding BUY transaction for reinvested dividend."
-        )
+        logger.info("Saved corresponding BUY transaction for reinvested dividend.")
     else:
         logger.info(
             "Dividend is not marked as reinvested. Skipping BUY transaction creation."
@@ -233,9 +233,7 @@ def handle_merger(
     2. Creates BUY transaction for new shares preserving cost basis
     3. Holdings calculation will interpret MERGER to hide old holdings
     """
-    logger.info(
-        f"Handling merger for asset {asset_id} in portfolio {portfolio_id}"
-    )
+    logger.info(f"Handling merger for asset {asset_id} in portfolio {portfolio_id}")
 
     details = transaction_in.details or {}
     record_date = transaction_in.transaction_date
@@ -247,7 +245,7 @@ def handle_merger(
     if not new_asset_id and not new_asset_ticker:
         raise HTTPException(
             status_code=400,
-            detail="new_asset_id or new_asset_ticker is required in details for merger"
+            detail="new_asset_id or new_asset_ticker is required in details for merger",
         )
 
     if not new_asset_id and new_asset_ticker:
@@ -275,8 +273,7 @@ def handle_merger(
 
     if old_holdings <= 0:
         raise HTTPException(
-            status_code=400,
-            detail=f"No holdings found for this asset on {record_date}"
+            status_code=400, detail=f"No holdings found for this asset on {record_date}"
         )
 
     # Calculate new shares based on conversion ratio
@@ -285,12 +282,18 @@ def handle_merger(
 
     # Fetch original BUY transactions to preserve acquisition dates
     # This is critical for correct XIRR and holding period calculation
-    original_buys = db.query(models.Transaction).filter(
-        models.Transaction.portfolio_id == portfolio_id,
-        models.Transaction.asset_id == asset_id,
-        models.Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
-        models.Transaction.transaction_date <= record_date,
-    ).all()
+    original_buys = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.portfolio_id == portfolio_id,
+            models.Transaction.asset_id == asset_id,
+            models.Transaction.transaction_type.in_(
+                ["BUY", "ESPP_PURCHASE", "RSU_VEST"]
+            ),
+            models.Transaction.transaction_date <= record_date,
+        )
+        .all()
+    )
 
     # Create BUY transactions for new asset preserving original acquisition dates
     for orig_buy in original_buys:
@@ -343,9 +346,7 @@ def handle_demerger(
     2. Creates BUY transactions for demerged shares with proportional cost basis
     3. Preserves original acquisition dates for holding period
     """
-    logger.info(
-        f"Handling demerger for asset {asset_id} in portfolio {portfolio_id}"
-    )
+    logger.info(f"Handling demerger for asset {asset_id} in portfolio {portfolio_id}")
 
     details = transaction_in.details or {}
     record_date = transaction_in.transaction_date
@@ -358,7 +359,7 @@ def handle_demerger(
     if not new_asset_id and not new_asset_ticker:
         raise HTTPException(
             status_code=400,
-            detail="new_asset_id or new_asset_ticker required for demerger"
+            detail="new_asset_id or new_asset_ticker required for demerger",
         )
 
     if not new_asset_id and new_asset_ticker:
@@ -385,8 +386,7 @@ def handle_demerger(
 
     if old_holdings <= 0:
         raise HTTPException(
-            status_code=400,
-            detail=f"No holdings found for this asset on {record_date}"
+            status_code=400, detail=f"No holdings found for this asset on {record_date}"
         )
 
     # Calculate demerged shares
@@ -395,12 +395,18 @@ def handle_demerger(
 
     # Fetch original BUY transactions to preserve acquisition dates
     # This is critical for correct XIRR and holding period calculation
-    original_buys = db.query(models.Transaction).filter(
-        models.Transaction.portfolio_id == portfolio_id,
-        models.Transaction.asset_id == asset_id,
-        models.Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
-        models.Transaction.transaction_date <= record_date,
-    ).all()
+    original_buys = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.portfolio_id == portfolio_id,
+            models.Transaction.asset_id == asset_id,
+            models.Transaction.transaction_type.in_(
+                ["BUY", "ESPP_PURCHASE", "RSU_VEST"]
+            ),
+            models.Transaction.transaction_date <= record_date,
+        )
+        .all()
+    )
 
     # Calculate total cost being allocated to child (for holdings reduction)
     total_cost_allocated = Decimal("0.0")
@@ -439,8 +445,8 @@ def handle_demerger(
     # Add metadata to the DEMERGER audit transaction
     updated_details = dict(transaction_in.details or {})
     updated_details["total_cost_allocated"] = str(total_cost_allocated)
-    transaction_in_with_cost = model_copy(transaction_in,
-        update={"details": updated_details}
+    transaction_in_with_cost = model_copy(
+        transaction_in, update={"details": updated_details}
     )
 
     # Save the DEMERGER audit transaction with cost info
@@ -467,9 +473,7 @@ def handle_rename(
     2. Holdings calculation interprets RENAME to map old ticker to new
     3. No cost basis or holding period changes
     """
-    logger.info(
-        f"Handling rename for asset {asset_id} in portfolio {portfolio_id}"
-    )
+    logger.info(f"Handling rename for asset {asset_id} in portfolio {portfolio_id}")
 
     details = transaction_in.details or {}
     new_asset_id = details.get("new_asset_id")
@@ -479,7 +483,7 @@ def handle_rename(
     if not new_asset_id and not new_asset_ticker:
         raise HTTPException(
             status_code=400,
-            detail="new_asset_id or new_asset_ticker is required in details for rename"
+            detail="new_asset_id or new_asset_ticker is required in details for rename",
         )
 
     if not new_asset_id and new_asset_ticker:
@@ -504,18 +508,23 @@ def handle_rename(
 
     if old_holdings <= 0:
         raise HTTPException(
-            status_code=400,
-            detail=f"No holdings found for this asset on {record_date}"
+            status_code=400, detail=f"No holdings found for this asset on {record_date}"
         )
 
     # Fetch original BUY transactions to preserve acquisition dates
     # This is critical for correct XIRR and holding period calculation
-    original_buys = db.query(models.Transaction).filter(
-        models.Transaction.portfolio_id == portfolio_id,
-        models.Transaction.asset_id == asset_id,
-        models.Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
-        models.Transaction.transaction_date <= record_date,
-    ).all()
+    original_buys = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.portfolio_id == portfolio_id,
+            models.Transaction.asset_id == asset_id,
+            models.Transaction.transaction_type.in_(
+                ["BUY", "ESPP_PURCHASE", "RSU_VEST"]
+            ),
+            models.Transaction.transaction_date <= record_date,
+        )
+        .all()
+    )
 
     # Create BUY transactions for new ticker preserving original acquisition dates
     for orig_buy in original_buys:

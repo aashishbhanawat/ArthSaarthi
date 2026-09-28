@@ -1,6 +1,7 @@
 """
 System endpoints for desktop app operations like seeding status.
 """
+
 import logging
 import subprocess
 import sys
@@ -260,8 +261,10 @@ def reset_seeding_status():
 
 # --- Update Check Endpoint ---
 
+
 class UpdateCheckResponse(BaseModel):
     """Response model for update check."""
+
     available: bool
     version: Optional[str] = None
     url: Optional[str] = None
@@ -331,6 +334,7 @@ def _is_newer_version(v1: str, v2: str) -> bool:
     except ValueError:
         return False
 
+
 @router.get("/logs", response_model=schemas.Msg)
 def get_logs(
     db: Session = Depends(get_db),
@@ -343,6 +347,7 @@ def get_logs(
         return {"msg": "Logging to file is not enabled in this mode."}
 
     from pathlib import Path
+
     log_path = Path(settings.LOG_FILE)
 
     if not log_path.exists():
@@ -357,15 +362,50 @@ def get_logs(
             return {"msg": "".join(last_lines)}
     except Exception as e:
         logger.error(f"Error reading log file: {e}")
-        return {"msg": "Error reading log file."}
+
+
+class LogLevelRequest(BaseModel):
+    level: str  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+
+@router.post("/log-level")
+def set_log_level(req: LogLevelRequest):
+    """
+    Dynamically change the root logger log level at runtime (DEBUG, INFO, WARNING, ERROR).
+    """
+    level_str = req.level.upper().strip()
+    valid_levels = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+    if level_str not in valid_levels:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid log level: {req.level}. Must be one of {list(valid_levels.keys())}",
+        )
+
+    new_level = valid_levels[level_str]
+    root_l = logging.getLogger()
+    root_l.setLevel(new_level)
+    for h in root_l.handlers:
+        h.setLevel(new_level)
+
+    logger.info(f"Dynamically set system log level to {level_str}")
+    return {"message": f"Log level updated to {level_str}", "current_level": level_str}
 
 
 # --- Android Background Snapshot Endpoint ---
 
+
 class SnapshotResponse(BaseModel):
     """Response model for daily snapshot execution."""
+
     updated: int
     date: date
+
 
 @router.post("/snapshots/run-daily", response_model=SnapshotResponse)
 def run_daily_snapshots(db: Session = Depends(get_db)):

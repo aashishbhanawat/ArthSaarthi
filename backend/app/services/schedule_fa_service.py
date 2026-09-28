@@ -6,6 +6,7 @@ Uses CALENDAR YEAR (Jan 1 - Dec 31 of AY-2) not Financial Year.
 
 Example: For AY 2025-26, report assets held Jan 1, 2024 to Dec 31, 2024.
 """
+
 import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class ScheduleFAEntry:
     """Entry for Schedule FA A3 (Foreign Equity & Debt)"""
+
     def __init__(
         self,
         country_code: str,
@@ -67,7 +69,7 @@ class ScheduleFAService:
         self,
         user_id: str,
         calendar_year: int,  # e.g., 2024 for AY 2025-26
-        portfolio_id: Optional[str] = None
+        portfolio_id: Optional[str] = None,
     ) -> List[dict]:
         """
         Generate Schedule FA A3 data for a calendar year.
@@ -114,30 +116,35 @@ class ScheduleFAService:
             country_code, country_name = self._get_country_info(asset)
 
             # Round values to 2 decimal places
-            entries.append({
-                "country_code": country_code,
-                "country_name": country_name,
-                "entity_name": asset.name,
-                "entity_address": "",  # Not stored in system
-                "zip_code": "",
-                "nature_of_entity": self._get_entity_nature(asset),
-                "date_acquired": buy_tx.transaction_date.date(),
-                "initial_value": round(float(initial_value), 2),
-                "peak_value": round(float(peak_value), 2),
-                "peak_value_date": peak_date,
-                "closing_value": round(float(closing_value), 2),
-                "gross_amount_received": round(float(gross_received), 2),
-                "gross_proceeds_from_sale": round(float(gross_proceeds), 2),
-                "currency": asset.currency,
-                "asset_ticker": asset.ticker_symbol,
-                "quantity_held": round(float(lot["quantity_remaining"]), 4),
-            })
+            entries.append(
+                {
+                    "country_code": country_code,
+                    "country_name": country_name,
+                    "entity_name": asset.name,
+                    "entity_address": "",  # Not stored in system
+                    "zip_code": "",
+                    "nature_of_entity": self._get_entity_nature(asset),
+                    "date_acquired": buy_tx.transaction_date.date(),
+                    "initial_value": round(float(initial_value), 2),
+                    "peak_value": round(float(peak_value), 2),
+                    "peak_value_date": peak_date,
+                    "closing_value": round(float(closing_value), 2),
+                    "gross_amount_received": round(float(gross_received), 2),
+                    "gross_proceeds_from_sale": round(float(gross_proceeds), 2),
+                    "currency": asset.currency,
+                    "asset_ticker": asset.ticker_symbol,
+                    "quantity_held": round(float(lot["quantity_remaining"]), 4),
+                }
+            )
 
         return entries
 
     def _get_foreign_lots_for_period(
-        self, user_id: str, start_date: datetime, end_date: datetime,
-        portfolio_id: Optional[str]
+        self,
+        user_id: str,
+        start_date: datetime,
+        end_date: datetime,
+        portfolio_id: Optional[str],
     ) -> List[dict]:
         """
         Get all foreign lots held during the period with detailed disposal tracking.
@@ -152,12 +159,18 @@ class ScheduleFAService:
                 Transaction.user_id == user_id,
                 Asset.currency != "INR",
                 Asset.currency.isnot(None),
-                Transaction.transaction_type.in_([
-                    TransactionType.BUY, TransactionType.RSU_VEST,
-                    TransactionType.ESPP_PURCHASE, TransactionType.BONUS,
-                    TransactionType.SELL, TransactionType.DIVIDEND,
-                    TransactionType.INTEREST_CREDIT, TransactionType.COUPON
-                ])
+                Transaction.transaction_type.in_(
+                    [
+                        TransactionType.BUY,
+                        TransactionType.RSU_VEST,
+                        TransactionType.ESPP_PURCHASE,
+                        TransactionType.BONUS,
+                        TransactionType.SELL,
+                        TransactionType.DIVIDEND,
+                        TransactionType.INTEREST_CREDIT,
+                        TransactionType.COUPON,
+                    ]
+                ),
             )
         )
         if portfolio_id:
@@ -180,8 +193,10 @@ class ScheduleFAService:
             tx_date_ist = tx.transaction_date + timedelta(hours=5, minutes=30)
 
             if tx.transaction_type in [
-                TransactionType.BUY, TransactionType.RSU_VEST,
-                TransactionType.ESPP_PURCHASE, TransactionType.BONUS
+                TransactionType.BUY,
+                TransactionType.RSU_VEST,
+                TransactionType.ESPP_PURCHASE,
+                TransactionType.BONUS,
             ]:
                 lot = {
                     "asset": tx.asset,
@@ -190,7 +205,7 @@ class ScheduleFAService:
                     "current_qty": tx.quantity,
                     "disposals": [],
                     "gross_proceeds": Decimal(0),
-                    "dividends": Decimal(0)
+                    "dividends": Decimal(0),
                 }
                 lots_map[tx.id] = lot
                 lots_by_asset[tx.asset_id].append(lot)
@@ -206,11 +221,11 @@ class ScheduleFAService:
                             take = link.quantity
 
                             # Deduct
-                            if lot["current_qty"] >= take: # Should usually match
+                            if lot["current_qty"] >= take:  # Should usually match
                                 lot["current_qty"] -= take
-                                lot["disposals"].append({
-                                    "date": tx_date_ist, "qty": take
-                                })
+                                lot["disposals"].append(
+                                    {"date": tx_date_ist, "qty": take}
+                                )
                                 qty_to_sell -= take
 
                                 # Track proceeds if in reporting period
@@ -245,7 +260,7 @@ class ScheduleFAService:
             elif tx.transaction_type in [
                 TransactionType.DIVIDEND,
                 TransactionType.INTEREST_CREDIT,
-                TransactionType.COUPON
+                TransactionType.COUPON,
             ]:
                 if start_date <= tx_date_ist <= end_date:
                     # Div/Int transactions might have price * quantity as amount
@@ -310,18 +325,19 @@ class ScheduleFAService:
             held_at_start = buy_date_ist < start_date and qty_at_start > 0
 
             if acquired_during or held_at_start:
-                 final_lots.append({
-                     "asset": lot["asset"],
-                     "buy_transaction": lot["buy_transaction"],
-                     "quantity_at_start": qty_at_start,
-                     "quantity_remaining": qty_at_end, # "Closing Balance"
-                     "gross_proceeds": lot["gross_proceeds"],
-                     "disposals": lot["disposals"], # needed for Peak Value
-                     "dividends": lot["dividends"]
-                 })
+                final_lots.append(
+                    {
+                        "asset": lot["asset"],
+                        "buy_transaction": lot["buy_transaction"],
+                        "quantity_at_start": qty_at_start,
+                        "quantity_remaining": qty_at_end,  # "Closing Balance"
+                        "gross_proceeds": lot["gross_proceeds"],
+                        "disposals": lot["disposals"],  # needed for Peak Value
+                        "dividends": lot["dividends"],
+                    }
+                )
 
         return final_lots
-
 
     def _fetch_historical_prices_for_lots(
         self, lots: List[dict], start_date: date, end_date: date
@@ -336,10 +352,12 @@ class ScheduleFAService:
             asset = lot["asset"]
             if asset.ticker_symbol not in seen_tickers:
                 seen_tickers.add(asset.ticker_symbol)
-                assets_for_yf.append({
-                    "ticker_symbol": asset.ticker_symbol,
-                    "exchange": asset.exchange,
-                })
+                assets_for_yf.append(
+                    {
+                        "ticker_symbol": asset.ticker_symbol,
+                        "exchange": asset.exchange,
+                    }
+                )
 
         if not assets_for_yf:
             return {}
@@ -408,10 +426,13 @@ class ScheduleFAService:
         buy_price = buy_tx.price_per_unit
 
         # Use FMV for ESPP/RSU if available (same logic as Capital Gains)
-        if (buy_tx.transaction_type in [
-            TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST
-        ] and buy_tx.details and "fmv" in buy_tx.details):
-             buy_price = Decimal(str(buy_tx.details["fmv"]))
+        if (
+            buy_tx.transaction_type
+            in [TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST]
+            and buy_tx.details
+            and "fmv" in buy_tx.details
+        ):
+            buy_price = Decimal(str(buy_tx.details["fmv"]))
 
         # For the "Initial Value" field:
         # If it's a lot held from previous years, it's the cost of that lot.
@@ -430,13 +451,16 @@ class ScheduleFAService:
 
         max_qty = max(lot["quantity_at_start"], lot["quantity_remaining"])
         if buy_tx.transaction_date >= start_date:
-            max_qty = buy_tx.quantity # Acquired this year, so max is what we bought
+            max_qty = buy_tx.quantity  # Acquired this year, so max is what we bought
 
         return max_qty * buy_price
 
     def _calculate_lot_peak_value(
-        self, lot: dict, start_date: datetime, end_date: datetime,
-        yahoo_prices: Dict[date, Decimal]
+        self,
+        lot: dict,
+        start_date: datetime,
+        end_date: datetime,
+        yahoo_prices: Dict[date, Decimal],
     ) -> Tuple[Decimal, Optional[date]]:
         """
         Peak value of this lot during the calendar year.
@@ -455,7 +479,7 @@ class ScheduleFAService:
 
         disposals = sorted(
             [d for d in lot["disposals"] if s_date <= d["date"].date() <= e_date],
-            key=lambda x: x["date"]
+            key=lambda x: x["date"],
         )
         for d in disposals:
             d_date = d["date"].date()
@@ -492,7 +516,7 @@ class ScheduleFAService:
             if qty > 0:
                 # Find max price in range [seg_start, seg_end]
                 max_p = Decimal(0)
-                max_p_date = seg_start # Fallback
+                max_p_date = seg_start  # Fallback
 
                 if yahoo_prices:
                     curr = seg_start
@@ -505,7 +529,7 @@ class ScheduleFAService:
 
                 if max_p == 0:
                     max_p = buy_tx.price_per_unit
-                    max_p_date = seg_start # Use start of interval if flat price
+                    max_p_date = seg_start  # Use start of interval if flat price
 
                 val = qty * max_p
                 if val > global_peak:
@@ -549,10 +573,12 @@ class ScheduleFAService:
         assets_for_yf = []
         for holding in holdings:
             asset = holding["asset"]
-            assets_for_yf.append({
-                "ticker_symbol": asset.ticker_symbol,
-                "exchange": asset.exchange,
-            })
+            assets_for_yf.append(
+                {
+                    "ticker_symbol": asset.ticker_symbol,
+                    "exchange": asset.exchange,
+                }
+            )
 
         if not assets_for_yf:
             return {}
@@ -568,8 +594,11 @@ class ScheduleFAService:
             return {}
 
     def _get_foreign_holdings_for_period(
-        self, user_id: str, start_date: datetime, end_date: datetime,
-        portfolio_id: Optional[str]
+        self,
+        user_id: str,
+        start_date: datetime,
+        end_date: datetime,
+        portfolio_id: Optional[str],
     ) -> List[dict]:
         """
         Find all foreign assets user held at any point during the period.
@@ -606,8 +635,9 @@ class ScheduleFAService:
 
             # Track first buy date
             if tx.transaction_type in [
-                TransactionType.BUY, TransactionType.RSU_VEST,
-                TransactionType.ESPP_PURCHASE
+                TransactionType.BUY,
+                TransactionType.RSU_VEST,
+                TransactionType.ESPP_PURCHASE,
             ]:
                 if asset_holdings[asset_id]["first_buy_date"] is None:
                     asset_holdings[asset_id]["first_buy_date"] = (
@@ -621,8 +651,10 @@ class ScheduleFAService:
 
             for tx in holding["transactions"]:
                 if tx.transaction_type in [
-                    TransactionType.BUY, TransactionType.RSU_VEST,
-                    TransactionType.ESPP_PURCHASE, TransactionType.BONUS
+                    TransactionType.BUY,
+                    TransactionType.RSU_VEST,
+                    TransactionType.ESPP_PURCHASE,
+                    TransactionType.BONUS,
                 ]:
                     if tx.transaction_date < start_date:
                         qty_at_start += tx.quantity
@@ -639,8 +671,10 @@ class ScheduleFAService:
 
         # Filter to only assets held during the period
         held_during_period = [
-            h for h in asset_holdings.values()
-            if h["quantity_at_start"] > 0 or h["quantity_at_end"] > 0
+            h
+            for h in asset_holdings.values()
+            if h["quantity_at_start"] > 0
+            or h["quantity_at_end"] > 0
             or any(
                 start_date <= tx.transaction_date <= end_date
                 for tx in h["transactions"]
@@ -649,9 +683,7 @@ class ScheduleFAService:
 
         return held_during_period
 
-    def _calculate_initial_value(
-        self, holding: dict, start_date: datetime
-    ) -> Decimal:
+    def _calculate_initial_value(self, holding: dict, start_date: datetime) -> Decimal:
         """Value of holding at start of calendar year"""
         qty = holding["quantity_at_start"]
         if qty <= 0:
@@ -664,8 +696,9 @@ class ScheduleFAService:
             if tx.transaction_date >= start_date:
                 break
             if tx.transaction_type in [
-                TransactionType.BUY, TransactionType.RSU_VEST,
-                TransactionType.ESPP_PURCHASE
+                TransactionType.BUY,
+                TransactionType.RSU_VEST,
+                TransactionType.ESPP_PURCHASE,
             ]:
                 total_cost += tx.quantity * tx.price_per_unit
                 total_qty += tx.quantity
@@ -676,8 +709,12 @@ class ScheduleFAService:
         return Decimal(0)
 
     def _calculate_peak_value(
-        self, holding: dict, asset: Asset, start_date: datetime, end_date: datetime,
-        yahoo_prices: Dict[date, Decimal]
+        self,
+        holding: dict,
+        asset: Asset,
+        start_date: datetime,
+        end_date: datetime,
+        yahoo_prices: Dict[date, Decimal],
     ) -> Decimal:
         """
         Peak value during the calendar year.
@@ -694,8 +731,10 @@ class ScheduleFAService:
                 break
 
             if tx.transaction_type in [
-                TransactionType.BUY, TransactionType.RSU_VEST,
-                TransactionType.ESPP_PURCHASE, TransactionType.BONUS
+                TransactionType.BUY,
+                TransactionType.RSU_VEST,
+                TransactionType.ESPP_PURCHASE,
+                TransactionType.BONUS,
             ]:
                 current_qty += tx.quantity
             elif tx.transaction_type == TransactionType.SELL:
@@ -722,8 +761,11 @@ class ScheduleFAService:
         return max_qty * max_price if max_price > 0 else Decimal(0)
 
     def _calculate_closing_value(
-        self, holding: dict, asset: Asset, end_date: datetime,
-        yahoo_prices: Dict[date, Decimal]
+        self,
+        holding: dict,
+        asset: Asset,
+        end_date: datetime,
+        yahoo_prices: Dict[date, Decimal],
     ) -> Decimal:
         """
         Value at end of calendar year (Dec 31).
@@ -776,14 +818,14 @@ class ScheduleFAService:
                 if tx.transaction_type in [
                     TransactionType.DIVIDEND,
                     TransactionType.INTEREST_CREDIT,
-                    TransactionType.COUPON
+                    TransactionType.COUPON,
                 ]:
                     total += tx.quantity * tx.price_per_unit
         return total
 
     def _get_country_info(self, asset: Asset) -> tuple:
         """Get country code and name from asset or currency"""
-        country = getattr(asset, 'country', None)
+        country = getattr(asset, "country", None)
         if country:
             return country, country
 

@@ -4,6 +4,7 @@ KFintech PDF Parser.
 Parses Mutual Fund statements from KFintech (formerly Karvy).
 Handles password-protected PDFs and multi-section format.
 """
+
 import logging
 import re
 from datetime import datetime
@@ -109,9 +110,7 @@ class KFintechParser(BaseParser):
         So to get dateB, we take odd positions (1, 3, 5, 7...)
         """
         # Match pattern: starts with 4 digits, has garbled month/year
-        garbled_match = re.match(
-            r'^(\d{4})--([A-Za-z]{6,8})--(\d{8})\s+(.+)$', line
-        )
+        garbled_match = re.match(r"^(\d{4})--([A-Za-z]{6,8})--(\d{8})\s+(.+)$", line)
         if garbled_match:
             day_garble = garbled_match.group(1)  # e.g., "2294"
             month_garble = garbled_match.group(2)  # e.g., "NJaonv"
@@ -124,11 +123,11 @@ class KFintechParser(BaseParser):
 
                 # Month: odd positions (1,3,5)
                 month_range = range(1, min(6, len(month_garble)), 2)
-                month2 = ''.join([month_garble[i] for i in month_range])
+                month2 = "".join([month_garble[i] for i in month_range])
 
                 # Year: odd positions (1,3,5,7)
                 year_range = range(1, min(8, len(year_garble)), 2)
-                year2 = ''.join([year_garble[i] for i in year_range])
+                year2 = "".join([year_garble[i] for i in year_range])
 
                 # Validate the extracted date components
                 if len(day2) == 2 and len(month2) == 3 and len(year2) == 4:
@@ -186,16 +185,14 @@ class KFintechParser(BaseParser):
             # Check repr or exception args for password indicator
             error_repr = repr(e)
             if (
-                "password" in error_repr.lower() or
-                isinstance(e, PDFPasswordIncorrect) or
-                "PDFPasswordIncorrect" in error_repr
+                "password" in error_repr.lower()
+                or isinstance(e, PDFPasswordIncorrect)
+                or "PDFPasswordIncorrect" in error_repr
             ):
                 raise ValueError("PASSWORD_REQUIRED")
             raise
 
-        logger.info(
-            "KFintech parser: Parsed %d transactions", len(transactions)
-        )
+        logger.info("KFintech parser: Parsed %d transactions", len(transactions))
         return transactions
 
     def _parse_table(self, table: List[List[str]]) -> List[ParsedTransaction]:
@@ -215,7 +212,7 @@ class KFintechParser(BaseParser):
 
             # Check if first cell is a date
             date_str = row[0]
-            date_match = re.match(r'^(\d{2}-[A-Za-z]{3}-\d{4})$', date_str)
+            date_match = re.match(r"^(\d{2}-[A-Za-z]{3}-\d{4})$", date_str)
             if not date_match:
                 # Check for ISIN in the row
                 for cell in row:
@@ -254,45 +251,51 @@ class KFintechParser(BaseParser):
             else:
                 ticker = "Unknown Fund"
 
-            logger.debug(
-                f"Table Tx: {transaction_date}, {tx_type}, {units}"
-            )
+            logger.debug(f"Table Tx: {transaction_date}, {tx_type}, {units}")
 
             if tx_type == "IDCW_REINVEST":
-                transactions.append(ParsedTransaction(
-                    ticker_symbol=ticker,
-                    transaction_date=transaction_date,
-                    transaction_type="DIVIDEND",
-                    quantity=abs(amount),
-                    price_per_unit=1.0,
-                    fees=0.0,
-                ))
-                transactions.append(ParsedTransaction(
-                    ticker_symbol=ticker,
-                    transaction_date=transaction_date,
-                    transaction_type="BUY",
-                    quantity=abs(units),
-                    price_per_unit=nav,
-                    fees=0.0,
-                ))
+                transactions.append(
+                    ParsedTransaction(
+                        ticker_symbol=ticker,
+                        transaction_date=transaction_date,
+                        transaction_type="DIVIDEND",
+                        quantity=abs(amount),
+                        price_per_unit=1.0,
+                        fees=0.0,
+                    )
+                )
+                transactions.append(
+                    ParsedTransaction(
+                        ticker_symbol=ticker,
+                        transaction_date=transaction_date,
+                        transaction_type="BUY",
+                        quantity=abs(units),
+                        price_per_unit=nav,
+                        fees=0.0,
+                    )
+                )
             elif tx_type == "DIVIDEND":
-                transactions.append(ParsedTransaction(
-                    ticker_symbol=ticker,
-                    transaction_date=transaction_date,
-                    transaction_type="DIVIDEND",
-                    quantity=abs(amount),
-                    price_per_unit=1.0,
-                    fees=0.0,
-                ))
+                transactions.append(
+                    ParsedTransaction(
+                        ticker_symbol=ticker,
+                        transaction_date=transaction_date,
+                        transaction_type="DIVIDEND",
+                        quantity=abs(amount),
+                        price_per_unit=1.0,
+                        fees=0.0,
+                    )
+                )
             else:
-                transactions.append(ParsedTransaction(
-                    ticker_symbol=ticker,
-                    transaction_date=transaction_date,
-                    transaction_type=tx_type,
-                    quantity=abs(units),
-                    price_per_unit=nav,
-                    fees=0.0,
-                ))
+                transactions.append(
+                    ParsedTransaction(
+                        ticker_symbol=ticker,
+                        transaction_date=transaction_date,
+                        transaction_type=tx_type,
+                        quantity=abs(units),
+                        price_per_unit=nav,
+                        fees=0.0,
+                    )
+                )
 
         return transactions
 
@@ -323,9 +326,7 @@ class KFintechParser(BaseParser):
                 # If scheme name looks like ISIN: or is empty, use previous line
                 if not scheme or scheme.startswith("ISIN:") or len(scheme) < 5:
                     scheme = self._extract_scheme_name(previous_line)
-                    logger.debug(
-                        f"Using prev line: '{previous_line[:40]}'"
-                    )
+                    logger.debug(f"Using prev line: '{previous_line[:40]}'")
 
                 # If still no good scheme name, use ISIN as identifier
                 if not scheme or scheme.startswith("ISIN:") or len(scheme) < 5:

@@ -38,3 +38,28 @@ def create_access_token(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
     return encoded_jwt
+
+
+def _get_fernet():
+    import base64
+    import hashlib
+
+    from cryptography.fernet import Fernet
+
+    key_bytes = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+    fernet_key = base64.urlsafe_b64encode(key_bytes)
+    return Fernet(fernet_key)
+
+
+def encrypt_credential(plain_text: str) -> str:
+    if not plain_text:
+        return ""
+    f = _get_fernet()
+    return f.encrypt(plain_text.encode("utf-8")).decode("utf-8")
+
+
+def decrypt_credential(cipher_text: str) -> str:
+    if not cipher_text:
+        return ""
+    f = _get_fernet()
+    return f.decrypt(cipher_text.encode("utf-8")).decode("utf-8")

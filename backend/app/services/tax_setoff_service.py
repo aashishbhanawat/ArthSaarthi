@@ -274,7 +274,6 @@ class TaxSetOffService:
         else:
             stcg_tax_rate = Decimal(str(slab_rate)) / Decimal("100.0")
 
-
         # Fetch open lots
         unrealized_service = UnrealizedTaxService(self.db)
         unrealized_summary = unrealized_service.calculate_unrealized_gains(
@@ -310,7 +309,6 @@ class TaxSetOffService:
                             f"{stcg_rate_pct}% rate."
                         )
                     elif rem_taxable_ltcg > 0:
-
                         offset_amount = min(unrealized_loss, rem_taxable_ltcg)
                         tax_saved = offset_amount * Decimal("0.125")
                         rem_taxable_ltcg -= offset_amount
@@ -345,7 +343,6 @@ class TaxSetOffService:
                         )
 
                 total_potential_tax_savings += tax_saved
-
 
                 items.append(
                     TaxLossHarvestingItem(

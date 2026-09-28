@@ -2,6 +2,7 @@
 Provider for fetching market data from Upstox API v3.
 Uses public unauthenticated endpoints for historical candle data and market holidays.
 """
+
 import json
 import logging
 import ssl
@@ -64,6 +65,13 @@ class UpstoxProvider(FinancialDataProvider):
         )
 
         try:
+            if self.cache_client:
+                try:
+                    from app.services.rate_limiter import ProviderRateLimiter
+
+                    ProviderRateLimiter(self.cache_client).check_and_increment("upstox")
+                except Exception as rle:
+                    logger.debug(f"Upstox rate limit tracking note: {rle}")
             req = urllib.request.Request(
                 url,
                 headers={
@@ -243,11 +251,13 @@ class UpstoxProvider(FinancialDataProvider):
         """Searches for assets supported by Upstox metadata."""
         inst_key = self.metadata_service.get_instrument_key(query)
         if inst_key:
-            return [{
-                "ticker_symbol": query.upper(),
-                "name": query.upper(),
-                "exchange": "NSE",
-                "asset_type": "STOCK",
-                "currency": "INR",
-            }]
+            return [
+                {
+                    "ticker_symbol": query.upper(),
+                    "name": query.upper(),
+                    "exchange": "NSE",
+                    "asset_type": "STOCK",
+                    "currency": "INR",
+                }
+            ]
         return []

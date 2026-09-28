@@ -1,6 +1,7 @@
 """
 Unit tests for MFCentral CAS Parser.
 """
+
 from pathlib import Path
 
 import pandas as pd
@@ -86,9 +87,7 @@ class TestMfCentralParser:
             assert date_str[4] == "-"
             assert date_str[7] == "-"
 
-    def test_parse_handles_schemes_as_ticker_symbols(
-        self, parser, sample_mfcentral_df
-    ):
+    def test_parse_handles_schemes_as_ticker_symbols(self, parser, sample_mfcentral_df):
         """Test that scheme names are used as ticker symbols."""
         result = parser.parse(sample_mfcentral_df)
 

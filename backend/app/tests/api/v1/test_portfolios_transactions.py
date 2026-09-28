@@ -182,9 +182,7 @@ def test_read_transactions_with_filters_and_pagination(
     base_url = f"{settings.API_V1_STR}/transactions/"
 
     # 1. Test filter by portfolio_id
-    response = client.get(
-        f"{base_url}?portfolio_id={portfolio.id}", headers=headers
-    )
+    response = client.get(f"{base_url}?portfolio_id={portfolio.id}", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 3
@@ -210,8 +208,8 @@ def test_read_transactions_with_filters_and_pagination(
 
     # 4. Test filter by date range (last 15 days)
     start_date_str = (
-        datetime.now(timezone.utc) - timedelta(days=15)
-    ).date().isoformat()
+        (datetime.now(timezone.utc) - timedelta(days=15)).date().isoformat()
+    )
     response = client.get(
         f"{base_url}?portfolio_id={portfolio.id}&start_date={start_date_str}",
         headers=headers,
@@ -347,4 +345,3 @@ def test_ppf_interest_credit_immutability(
     # Verify transaction still exists in db
     db_transaction = crud.transaction.get(db, id=transaction_id)
     assert db_transaction is not None
-

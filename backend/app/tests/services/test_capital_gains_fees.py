@@ -55,6 +55,7 @@ def test_process_single_link_with_fees():
     assert entry.gain == Decimal("2375")
     assert s112a is None  # Not grandfathered
 
+
 def test_process_single_link_grandfathered_with_fees():
     service = CapitalGainsService(db=MagicMock())
 
@@ -117,6 +118,7 @@ def test_process_single_link_grandfathered_with_fees():
     assert s112a.total_deductions == Decimal("10100")  # final + expenditure
     assert s112a.full_value_consideration == Decimal("15000")
     assert s112a.balance == Decimal("4900")  # full - total_deductions
+
 
 def test_process_foreign_link_with_fees():
     service = CapitalGainsService(db=MagicMock())

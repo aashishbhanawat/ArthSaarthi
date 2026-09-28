@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 try:
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
+
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
@@ -60,14 +61,18 @@ def export_tax_summary_csv(
     # Mandatory Legal Disclaimer Headers
     writer.writerow(["=== IMPORTANT LEGAL NOTICE & TAX DISCLAIMER ==="])
     writer.writerow([MANDATORY_TAX_DISCLAIMER])
-    writer.writerow([
-        "1. Calculations shown do NOT represent actual final tax liabilities "
-        "payable to IT Department."
-    ])
-    writer.writerow([
-        "2. For official tax filing, users MUST consult a qualified "
-        "Chartered Accountant (CA)."
-    ])
+    writer.writerow(
+        [
+            "1. Calculations shown do NOT represent actual final tax liabilities "
+            "payable to IT Department."
+        ]
+    )
+    writer.writerow(
+        [
+            "2. For official tax filing, users MUST consult a qualified "
+            "Chartered Accountant (CA)."
+        ]
+    )
     writer.writerow([])  # Blank row separator
 
     writer.writerow(["Financial Year", summary.financial_year])
@@ -76,18 +81,14 @@ def export_tax_summary_csv(
     writer.writerow([])
 
     writer.writerow(["=== INCOME & EXEMPTIONS SUMMARY ==="])
-    writer.writerow(
-        ["Gross Salary", f"INR {summary.income_summary.gross_salary:,.2f}"]
-    )
+    writer.writerow(["Gross Salary", f"INR {summary.income_summary.gross_salary:,.2f}"])
     writer.writerow(
         ["Business Income", f"INR {summary.income_summary.business_income:,.2f}"]
     )
     writer.writerow(
         ["Dividend Income", f"INR {summary.income_summary.dividend_income:,.2f}"]
     )
-    writer.writerow(
-        ["Other Income", f"INR {summary.income_summary.other_income:,.2f}"]
-    )
+    writer.writerow(["Other Income", f"INR {summary.income_summary.other_income:,.2f}"])
     writer.writerow(
         ["Total Gross Income", f"INR {summary.income_summary.total_gross_income:,.2f}"]
     )
@@ -130,61 +131,83 @@ def export_tax_summary_csv(
     writer.writerow([])
 
     writer.writerow(["=== DUAL REGIME COMPARISON ==="])
-    writer.writerow([
-        "Metric",
-        "Old Tax Regime",
-        "New Tax Regime (Sec 115BAC)",
-    ])
-    writer.writerow([
-        "Gross Income",
-        f"INR {summary.old_regime.gross_income:,.2f}",
-        f"INR {summary.new_regime.gross_income:,.2f}",
-    ])
-    writer.writerow([
-        "Standard Deduction",
-        f"INR {summary.old_regime.exemptions:,.2f}",
-        f"INR {summary.new_regime.exemptions:,.2f}",
-    ])
-    writer.writerow([
-        "Chapter VI-A Deductions",
-        f"INR {summary.old_regime.chapter_via_deductions:,.2f}",
-        f"INR {summary.new_regime.chapter_via_deductions:,.2f}",
-    ])
-    writer.writerow([
-        "Taxable Income",
-        f"INR {summary.old_regime.taxable_income:,.2f}",
-        f"INR {summary.new_regime.taxable_income:,.2f}",
-    ])
-    writer.writerow([
-        "Tax on Slabs",
-        f"INR {summary.old_regime.tax_on_slabs:,.2f}",
-        f"INR {summary.new_regime.tax_on_slabs:,.2f}",
-    ])
-    writer.writerow([
-        "Sec 87A Rebate",
-        f"INR {summary.old_regime.section_87a_rebate:,.2f}",
-        f"INR {summary.new_regime.section_87a_rebate:,.2f}",
-    ])
-    writer.writerow([
-        "Health & Edu Cess (4%)",
-        f"INR {summary.old_regime.cess:,.2f}",
-        f"INR {summary.new_regime.cess:,.2f}",
-    ])
-    writer.writerow([
-        "Total Tax Liability",
-        f"INR {summary.old_regime.total_tax_liability:,.2f}",
-        f"INR {summary.new_regime.total_tax_liability:,.2f}",
-    ])
-    writer.writerow([
-        "TDS Credits",
-        f"INR {summary.old_regime.tds_credits:,.2f}",
-        f"INR {summary.new_regime.tds_credits:,.2f}",
-    ])
-    writer.writerow([
-        "Net Tax Payable",
-        f"INR {summary.old_regime.net_tax_payable:,.2f}",
-        f"INR {summary.new_regime.net_tax_payable:,.2f}",
-    ])
+    writer.writerow(
+        [
+            "Metric",
+            "Old Tax Regime",
+            "New Tax Regime (Sec 115BAC)",
+        ]
+    )
+    writer.writerow(
+        [
+            "Gross Income",
+            f"INR {summary.old_regime.gross_income:,.2f}",
+            f"INR {summary.new_regime.gross_income:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "Standard Deduction",
+            f"INR {summary.old_regime.exemptions:,.2f}",
+            f"INR {summary.new_regime.exemptions:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "Chapter VI-A Deductions",
+            f"INR {summary.old_regime.chapter_via_deductions:,.2f}",
+            f"INR {summary.new_regime.chapter_via_deductions:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "Taxable Income",
+            f"INR {summary.old_regime.taxable_income:,.2f}",
+            f"INR {summary.new_regime.taxable_income:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "Tax on Slabs",
+            f"INR {summary.old_regime.tax_on_slabs:,.2f}",
+            f"INR {summary.new_regime.tax_on_slabs:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "Sec 87A Rebate",
+            f"INR {summary.old_regime.section_87a_rebate:,.2f}",
+            f"INR {summary.new_regime.section_87a_rebate:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "Health & Edu Cess (4%)",
+            f"INR {summary.old_regime.cess:,.2f}",
+            f"INR {summary.new_regime.cess:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "Total Tax Liability",
+            f"INR {summary.old_regime.total_tax_liability:,.2f}",
+            f"INR {summary.new_regime.total_tax_liability:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "TDS Credits",
+            f"INR {summary.old_regime.tds_credits:,.2f}",
+            f"INR {summary.new_regime.tds_credits:,.2f}",
+        ]
+    )
+    writer.writerow(
+        [
+            "Net Tax Payable",
+            f"INR {summary.old_regime.net_tax_payable:,.2f}",
+            f"INR {summary.new_regime.net_tax_payable:,.2f}",
+        ]
+    )
 
     filename = f"tax_summary_{summary.financial_year}.csv"
     return StreamingResponse(
@@ -227,7 +250,7 @@ def export_tax_summary_pdf(
             b"/Contents 4 0 R /Resources << /Font << /F1 << /Type /Font "
             b"/Subtype /Type1 /BaseFont /Helvetica >> >> >> >>\nendobj\n"
             b"4 0 obj\n<< /Length 200 >>\nstream\nBT /F1 12 Tf 50 700 Td ("
-            + text_content[:150].encode('latin-1', errors='ignore')
+            + text_content[:150].encode("latin-1", errors="ignore")
             + b") Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f \n"
             b"0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n"
             b"0000000260 00000 n \ntrailer\n<< /Size 5 /Root 1 0 R >>\n"

@@ -81,9 +81,9 @@ def run_dev_server(
 
         # For sqlite:////path, path is "///path" - we want "/path"
         # Remove the extra slashes but keep one leading slash for absolute path
-        if raw_path.startswith('///'):
+        if raw_path.startswith("///"):
             db_path_str = raw_path[2:]  # ///home -> /home
-        elif raw_path.startswith('//'):
+        elif raw_path.startswith("//"):
             db_path_str = raw_path[1:]  # //home -> /home
         else:
             db_path_str = raw_path
@@ -101,6 +101,7 @@ def run_dev_server(
             # 1. Create any missing tables that were introduced in newer releases
             from app.db.base import Base
             from app.db.session import engine
+
             print("Creating any newly added tables...")
             Base.metadata.create_all(bind=engine)
 

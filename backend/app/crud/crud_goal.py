@@ -135,9 +135,7 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                         all_cash_flows.extend(cfs)
 
         progress = (
-            (current_amount / goal.target_amount) * 100
-            if goal.target_amount > 0
-            else 0
+            (current_amount / goal.target_amount) * 100 if goal.target_amount > 0 else 0
         )
 
         # Calculate combined XIRR
@@ -216,11 +214,13 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                 step_months = 12
 
             # Start point (Today)
-            projection_chart_data.append({
-                "date": today.strftime("%Y-%m-%d"),
-                "projected_value": round(current_amt, 2),
-                "target_value": round(current_amt, 2),
-            })
+            projection_chart_data.append(
+                {
+                    "date": today.strftime("%Y-%m-%d"),
+                    "projected_value": round(current_amt, 2),
+                    "target_value": round(current_amt, 2),
+                }
+            )
 
             m = step_months
             monthly_rate = (rate_of_return / 100.0) / 12.0
@@ -236,26 +236,32 @@ class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
                         * (((1.0 + monthly_rate) ** m - 1.0) / monthly_rate)
                     )
 
-                projection_chart_data.append({
-                    "date": point_date.strftime("%Y-%m-%d"),
-                    "projected_value": round(proj_val, 2),
-                    "target_value": round(tgt_val, 2),
-                })
+                projection_chart_data.append(
+                    {
+                        "date": point_date.strftime("%Y-%m-%d"),
+                        "projected_value": round(proj_val, 2),
+                        "target_value": round(tgt_val, 2),
+                    }
+                )
                 m += step_months
 
             # Final target point
-            projection_chart_data.append({
-                "date": goal.target_date.strftime("%Y-%m-%d"),
-                "projected_value": round(projected_future_value, 2),
-                "target_value": round(target_amt, 2),
-            })
+            projection_chart_data.append(
+                {
+                    "date": goal.target_date.strftime("%Y-%m-%d"),
+                    "projected_value": round(projected_future_value, 2),
+                    "target_value": round(target_amt, 2),
+                }
+            )
         else:
             # target date is today or in the past
-            projection_chart_data.append({
-                "date": today.strftime("%Y-%m-%d"),
-                "projected_value": round(current_amt, 2),
-                "target_value": round(target_amt, 2),
-            })
+            projection_chart_data.append(
+                {
+                    "date": today.strftime("%Y-%m-%d"),
+                    "projected_value": round(current_amt, 2),
+                    "target_value": round(target_amt, 2),
+                }
+            )
 
         return {
             **goal.__dict__,

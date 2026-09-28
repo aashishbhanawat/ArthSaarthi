@@ -142,18 +142,14 @@ def test_ppf_legacy_backup_restore(
 
     # Construct legacy backup JSON manually
     legacy_backup = {
-        "metadata": {
-            "version": "1.2"
-        },
+        "metadata": {"version": "1.2"},
         "data": {
-            "portfolios": [
-                {"name": "Legacy Portfolio", "description": "Legacy test"}
-            ],
+            "portfolios": [{"name": "Legacy Portfolio", "description": "Legacy test"}],
             "ppf_accounts": [
                 {
                     "account_number": legacy_account_num,
                     "institution": "Legacy Bank",
-                    "opening_date": "2020-04-01"
+                    "opening_date": "2020-04-01",
                 }
             ],
             "transactions": [
@@ -164,17 +160,15 @@ def test_ppf_legacy_backup_restore(
                     "price_per_unit": 1.0,
                     "transaction_date": "2020-04-05",
                     "fees": 0.0,
-                    "ppf_account_number": legacy_account_num
+                    "ppf_account_number": legacy_account_num,
                 }
-            ]
-        }
+            ],
+        },
     }
 
     file_content = json.dumps(legacy_backup).encode("utf-8")
     files = {"file": ("backup.json", file_content, "application/json")}
-    restore_resp = client.post(
-        "/api/v1/users/me/restore", headers=headers, files=files
-    )
+    restore_resp = client.post("/api/v1/users/me/restore", headers=headers, files=files)
     assert restore_resp.status_code == 200
 
     # Verify data is restored under the new user-specific ticker

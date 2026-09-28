@@ -16,6 +16,7 @@ MOCK_BSE_EQUITY_CSV = """ISIN,TckrSymb,FinInstrmNm,SctySrs
 INE002,STOCKB,STOCK B,A
 """
 
+
 @pytest.fixture
 def mock_db_session_empty(mocker):
     """Mocks the database session to return no existing assets."""
@@ -40,7 +41,7 @@ def test_seed_assets_with_local_dir(mocker, tmp_path, mock_db_session_empty):
 
     # Mock crud.asset.create
     mock_asset = mocker.Mock()
-    mock_asset.id = uuid.uuid4() # Use real UUID
+    mock_asset.id = uuid.uuid4()  # Use real UUID
     mock_asset.asset_type = "STOCK"
     mock_asset_create = mocker.patch("app.crud.asset.create", return_value=mock_asset)
     mocker.patch("app.crud.bond.create")
@@ -91,7 +92,7 @@ def mock_db_session_with_data(mocker):
 
 def test_clear_assets_with_confirmation(mocker, mock_db_session_with_data):
     """Tests the clear-assets command with user confirmation."""
-    result = runner.invoke(main_app, ["db", "clear-assets"], input="y\n") # noqa: E501
+    result = runner.invoke(main_app, ["db", "clear-assets"], input="y\n")  # noqa: E501
     print(
         f"\n--- STDOUT for test_clear_assets_with_confirmation ---\n{result.stdout}\n"
         "----------------------------------------------------"
@@ -107,7 +108,7 @@ def test_clear_assets_with_confirmation(mocker, mock_db_session_with_data):
 
 def test_clear_assets_with_force(mocker, mock_db_session_with_data):
     """Tests the clear-assets command with the --force flag."""
-    result = runner.invoke(main_app, ["db", "clear-assets", "--force"]) # noqa: E501
+    result = runner.invoke(main_app, ["db", "clear-assets", "--force"])  # noqa: E501
     print(
         f"\n--- STDOUT for test_clear_assets_with_force ---\n{result.stdout}\n"
         "-------------------------------------------------"

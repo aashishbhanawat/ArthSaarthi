@@ -7,21 +7,24 @@ from pydantic import BaseModel
 
 class ITRPeriodValues(BaseModel):
     """Stores values for the 5 Advance Tax periods in ITR-2"""
+
     upto_15_6: Decimal = Decimal("0.0")
     upto_15_9: Decimal = Decimal("0.0")  # 16/6 to 15/9
-    upto_15_12: Decimal = Decimal("0.0") # 16/9 to 15/12
+    upto_15_12: Decimal = Decimal("0.0")  # 16/9 to 15/12
     upto_15_3: Decimal = Decimal("0.0")  # 16/12 to 15/3
     upto_31_3: Decimal = Decimal("0.0")  # 16/3 to 31/3
 
 
 class ITRRow(BaseModel):
     """Represents a row in the ITR-2 Schedule CG Matrix"""
+
     category_label: str  # e.g., "STCG 20% (Equity)"
     period_values: ITRPeriodValues
 
 
 class GainEntry(BaseModel):
     """Detailed record of a single realized capital gain transaction"""
+
     transaction_id: str
     asset_ticker: str
     asset_name: str
@@ -36,17 +39,18 @@ class GainEntry(BaseModel):
     gain: Decimal
     gain_type: Literal["STCG", "LTCG"]
     holding_days: int
-    tax_rate: str # e.g. "12.5%", "Slab"
+    tax_rate: str  # e.g. "12.5%", "Slab"
 
     # Metadata for warnings
     is_grandfathered: bool = False
-    corporate_action_adjusted: bool = False # True if Demerger/Split involved
-    is_hybrid_warning: bool = False # Warn user about potential equity/debt ambiguity
-    note: Optional[str] = None # Information note (e.g. SGB premature redemption)
+    corporate_action_adjusted: bool = False  # True if Demerger/Split involved
+    is_hybrid_warning: bool = False  # Warn user about potential equity/debt ambiguity
+    note: Optional[str] = None  # Information note (e.g. SGB premature redemption)
 
 
 class Schedule112AEntry(BaseModel):
     """Row for Schedule 112A (Grandfathered Equity LTCG)"""
+
     isin: str
     asset_name: str
     quantity: Decimal
@@ -55,7 +59,7 @@ class Schedule112AEntry(BaseModel):
     cost_of_acquisition_orig: Decimal
     fmv_31jan2018: Optional[Decimal]
     total_fmv: Optional[Decimal]
-    cost_of_acquisition_final: Decimal # Computed per Sec 55(2)(ac)
+    cost_of_acquisition_final: Decimal  # Computed per Sec 55(2)(ac)
     expenditure: Decimal
     total_deductions: Decimal
     balance: Decimal
@@ -65,6 +69,7 @@ class Schedule112AEntry(BaseModel):
 
 class CapitalGainsSummary(BaseModel):
     """Response model for Capital Gains Report"""
+
     financial_year: str
     total_stcg: Decimal
     total_ltcg: Decimal
@@ -86,6 +91,7 @@ class ForeignGainEntry(BaseModel):
     Values are in native currency - user/tax consultant must convert using
     SBI TT Buying Rate (Rule 115) for ITR filing.
     """
+
     transaction_id: str
     asset_ticker: str
     asset_name: str
@@ -112,6 +118,7 @@ else:
 
 class UnrealizedTaxLot(BaseModel):
     """Details of an unsold/open tax lot with unrealized gains"""
+
     holding_id: str
     asset_id: str
     asset_ticker: str
@@ -135,6 +142,7 @@ class UnrealizedTaxLot(BaseModel):
 
 class UnrealizedGainsSummary(BaseModel):
     """Summary of unrealized capital gains and Section 112A exemption headroom"""
+
     financial_year: str
     total_unrealized_stcg: Decimal = Decimal("0.0")
     total_unrealized_ltcg: Decimal = Decimal("0.0")
@@ -150,6 +158,7 @@ class UnrealizedGainsSummary(BaseModel):
 
 
 # --- Capital Loss Ledger Schemas ---
+
 
 class CapitalLossLedgerBase(BaseModel):
     financial_year: str  # e.g., "2023-24"
@@ -184,6 +193,7 @@ class CapitalLossLedgerResponse(CapitalLossLedgerBase):
 
 
 # --- Net Capital Gains Set-Off Schemas ---
+
 
 class SetOffBreakdown(BaseModel):
     gross_stcg: Decimal = Decimal("0.0")
@@ -221,6 +231,7 @@ class CapitalSetOffSummaryResponse(BaseModel):
 
 # --- Tax Loss Harvesting Schemas ---
 
+
 class TaxLossHarvestingItem(BaseModel):
     holding_id: str
     asset_id: str
@@ -249,5 +260,3 @@ class TaxLossHarvestingSummary(BaseModel):
     net_taxable_stcg_before_harvesting: Decimal = Decimal("0.0")
     net_taxable_ltcg_before_harvesting: Decimal = Decimal("0.0")
     harvesting_opportunities: List[TaxLossHarvestingItem] = []
-
-

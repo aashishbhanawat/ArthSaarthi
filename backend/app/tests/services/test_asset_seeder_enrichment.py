@@ -20,21 +20,21 @@ def test_enrich_assets_concurrently(seeder, db):
             name="Apple",
             asset_type="STOCK",
             currency="USD",
-            exchange="NASDAQ"
+            exchange="NASDAQ",
         ),
         Asset(
             ticker_symbol="MSFT",
             name="Microsoft",
             asset_type="STOCK",
             currency="USD",
-            exchange="NASDAQ"
+            exchange="NASDAQ",
         ),
         Asset(
             ticker_symbol="GOOG",
             name="Google",
             asset_type="STOCK",
             currency="USD",
-            exchange="NASDAQ"
+            exchange="NASDAQ",
         ),
     ]
     db.add_all(assets)
@@ -53,15 +53,13 @@ def test_enrich_assets_concurrently(seeder, db):
         for asset in assets:
             mock_ticker = MagicMock()
             industry = (
-                "Consumer Electronics"
-                if asset.ticker_symbol == "AAPL"
-                else "Software"
+                "Consumer Electronics" if asset.ticker_symbol == "AAPL" else "Software"
             )
             mock_ticker.info = {
                 "sector": "Technology",
                 "industry": industry,
                 "country": "United States",
-                "marketCap": 1000000000
+                "marketCap": 1000000000,
             }
             # For NASDAQ assets, yf_ticker is same as ticker_symbol in current logic
             mock_ticker_objs[asset.ticker_symbol] = mock_ticker

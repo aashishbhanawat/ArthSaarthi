@@ -1,4 +1,5 @@
 """Provider for fetching data from Yahoo Finance."""
+
 import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta
@@ -23,13 +24,11 @@ class YFinanceProvider(FinancialDataProvider):
     def __init__(self, cache_client: Optional[CacheClient]):
         self.cache_client = cache_client
 
-    def _get_yfinance_ticker(
-        self, ticker_symbol: str, exchange: Optional[str]
-    ) -> str:
+    def _get_yfinance_ticker(self, ticker_symbol: str, exchange: Optional[str]) -> str:
         """Constructs the correct ticker for yfinance."""
         # Don't add suffix if already present
         upper_ticker = ticker_symbol.upper()
-        if upper_ticker.endswith('.NS') or upper_ticker.endswith('.BO'):
+        if upper_ticker.endswith(".NS") or upper_ticker.endswith(".BO"):
             return ticker_symbol
 
         if str(exchange).upper() in ("NSE", "NSI"):
@@ -58,9 +57,7 @@ class YFinanceProvider(FinancialDataProvider):
                     f"Ticker transform: {original_ticker} "
                     f"(exchange={asset.get('exchange')}) -> {ticker}"
                 )
-                cache_key = (
-                    f"price_details:{ticker}"
-                )  # Use the yfinance-specific ticker for cache key
+                cache_key = f"price_details:{ticker}"  # Use the yfinance-specific ticker for cache key
                 not_found_cache_key = f"asset_details_not_found:{ticker.upper()}"
 
                 cached_data = self.cache_client.get_json(cache_key)
@@ -102,6 +99,15 @@ class YFinanceProvider(FinancialDataProvider):
         logger.debug(f"yfinance batch request: '{yfinance_tickers_str}'")
 
         try:
+            if self.cache_client:
+                try:
+                    from app.services.rate_limiter import ProviderRateLimiter
+
+                    ProviderRateLimiter(self.cache_client).check_and_increment(
+                        "yfinance"
+                    )
+                except Exception as rle:
+                    logger.debug(f"yfinance rate limit tracking note: {rle}")
             yf_data = yf.Tickers(yfinance_tickers_str)
             logger.debug(f"yfinance response tickers: {list(yf_data.tickers.keys())}")
             for ticker_obj in yf_data.tickers.values():
@@ -115,9 +121,7 @@ class YFinanceProvider(FinancialDataProvider):
 
                 if not hist.empty and len(hist) >= 2:
                     current_price = Decimal(str(hist["Close"].iloc[-1]))
-                    logger.debug(
-                        f"Price fetched: {original_ticker}={current_price}"
-                    )
+                    logger.debug(f"Price fetched: {original_ticker}={current_price}")
                     previous_close = Decimal(str(hist["Close"].iloc[-2]))
                     prices_data[original_ticker] = {
                         "current_price": current_price,
@@ -163,11 +167,14 @@ class YFinanceProvider(FinancialDataProvider):
                         "current_price": str(data["current_price"]),
                         "previous_close": str(data["previous_close"]),
                     }
-                    yf_ticker_for_cache = self._get_yfinance_ticker(ticker, any(
-                        t["exchange"]
-                        for t in tickers_to_fetch
-                        if t["ticker_symbol"] == ticker
-                    ))
+                    yf_ticker_for_cache = self._get_yfinance_ticker(
+                        ticker,
+                        any(
+                            t["exchange"]
+                            for t in tickers_to_fetch
+                            if t["ticker_symbol"] == ticker
+                        ),
+                    )
                     self.cache_client.set_json(
                         f"price_details:{yf_ticker_for_cache}",
                         serializable_data,
@@ -287,8 +294,6 @@ class YFinanceProvider(FinancialDataProvider):
         else:
             return "Unknown"
 
-
-
     def get_historical_prices(
         self, assets: List[Dict[str, Any]], start_date: date, end_date: date
     ) -> Dict[str, Dict[date, Decimal]]:
@@ -311,9 +316,7 @@ class YFinanceProvider(FinancialDataProvider):
             for a in assets_to_fetch
         }
         yfinance_tickers_str = " ".join(yfinance_tickers_map.keys())
-        cache_key = (
-            f"history:{yfinance_tickers_str}:{start_date.isoformat()}:{end_date.isoformat()}"
-        )
+        cache_key = f"history:{yfinance_tickers_str}:{start_date.isoformat()}:{end_date.isoformat()}"
 
         if self.cache_client:
             cached_data = self.cache_client.get_json(cache_key)
@@ -341,8 +344,9 @@ class YFinanceProvider(FinancialDataProvider):
                         original_ticker = list(yfinance_tickers_map.values())[0]
                         for a_date, price in close_prices.dropna().items():
                             try:
-                                historical_data[original_ticker][
-                                    a_date.date()] = Decimal(str(price))
+                                historical_data[original_ticker][a_date.date()] = (
+                                    Decimal(str(price))
+                                )
                             except Exception:
                                 logger.error(
                                     "Failed to convert price for %s on %s. "
@@ -356,12 +360,13 @@ class YFinanceProvider(FinancialDataProvider):
                     else:
                         for yf_ticker, original_ticker in yfinance_tickers_map.items():
                             if yf_ticker in close_prices:
-                                for a_date, price in close_prices[
-                                    yf_ticker
-                                ].dropna().items():
+                                for a_date, price in (
+                                    close_prices[yf_ticker].dropna().items()
+                                ):
                                     try:
                                         historical_data[original_ticker][
-                                            a_date.date()] = Decimal(str(price))
+                                            a_date.date()
+                                        ] = Decimal(str(price))
                                     except Exception:
                                         logger.error(
                                             "Failed to convert price for %s on %s. "
@@ -458,7 +463,9 @@ class YFinanceProvider(FinancialDataProvider):
         logger.debug(f"get_asset_details: Looking up {ticker_symbol}")
         ticker_obj = None
         for yf_ticker_str in [
-            f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
+            f"{ticker_symbol}.NS",
+            f"{ticker_symbol}.BO",
+            ticker_symbol,
         ]:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
@@ -504,7 +511,9 @@ class YFinanceProvider(FinancialDataProvider):
     def get_price(self, ticker_symbol: str) -> Optional[Decimal]:
         ticker_obj = None
         for yf_ticker_str in [
-            f"{ticker_symbol}.NS", f"{ticker_symbol}.BO", ticker_symbol
+            f"{ticker_symbol}.NS",
+            f"{ticker_symbol}.BO",
+            ticker_symbol,
         ]:
             try:
                 temp_ticker = yf.Ticker(yf_ticker_str)
@@ -530,7 +539,7 @@ class YFinanceProvider(FinancialDataProvider):
         try:
             # yfinance provides a Search class for querying Yahoo Finance
             search_obj = yf.Search(query)
-            quotes = getattr(search_obj, 'quotes', [])
+            quotes = getattr(search_obj, "quotes", [])
 
             results = []
             for quote in quotes[:10]:  # Limit to top 10 results
@@ -544,13 +553,15 @@ class YFinanceProvider(FinancialDataProvider):
                 elif quote_type in ("EQUITY", "STOCK"):
                     asset_type = "STOCK"
 
-                results.append({
-                    "ticker_symbol": quote.get("symbol"),
-                    "name": quote.get("shortname") or quote.get("longname"),
-                    "exchange": quote.get("exchange"),
-                    "asset_type": asset_type,
-                    "currency": quote.get("currency"),
-                })
+                results.append(
+                    {
+                        "ticker_symbol": quote.get("symbol"),
+                        "name": quote.get("shortname") or quote.get("longname"),
+                        "exchange": quote.get("exchange"),
+                        "asset_type": asset_type,
+                        "currency": quote.get("currency"),
+                    }
+                )
 
             logger.debug(
                 f"Yahoo search for '{query}': "
@@ -583,9 +594,9 @@ class YFinanceProvider(FinancialDataProvider):
         end_date = date_obj + timedelta(days=1)
 
         result = self.get_historical_prices(
-            [{"ticker_symbol": ticker, "exchange": None}], # type: ignore
+            [{"ticker_symbol": ticker, "exchange": None}],  # type: ignore
             start_date,
-            end_date
+            end_date,
         )
         if result and ticker in result and result[ticker]:
             # Find the most recent available date up to and including the
@@ -597,7 +608,8 @@ class YFinanceProvider(FinancialDataProvider):
                 latest_available_date = available_dates[0]
                 logger.info(
                     "Using FX rate from %s for requested date %s",
-                    latest_available_date, date_obj
+                    latest_available_date,
+                    date_obj,
                 )
                 return result[ticker][latest_available_date]
         return None
@@ -628,8 +640,7 @@ class YFinanceProvider(FinancialDataProvider):
                 )
                 if is_rate_limit:
                     logger.warning(
-                        "Aborting batch enrichment early due to Yahoo rate limit: "
-                        f"{e}"
+                        f"Aborting batch enrichment early due to Yahoo rate limit: {e}"
                     )
                     break
 

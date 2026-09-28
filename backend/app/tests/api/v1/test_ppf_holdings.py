@@ -56,6 +56,7 @@ def test_ppf_interest_calculation(
         @classmethod
         def today(cls):
             return date(2025, 9, 13)
+
     mocker.patch("app.crud.crud_ppf.date", MockDate)
 
     # 1. Create PPF Account with an initial contribution
@@ -65,7 +66,7 @@ def test_ppf_interest_calculation(
         "account_number": "123456",
         "opening_date": "2022-05-01",
         "amount": 10000,
-        "contribution_date": "2022-05-10", # Before 5th of month doesn't apply here
+        "contribution_date": "2022-05-10",  # Before 5th of month doesn't apply here
     }
     response = client.post(
         f"{settings.API_V1_STR}/ppf-accounts/",
@@ -124,9 +125,7 @@ def test_ppf_interest_calculation(
     print(f"Actual Total Investment:   {ppf_holding['total_invested_amount']}")
     print(f"Expected Realized PNL (Credited Interest): {expected_realized_pnl}")
     print(f"Actual Realized PNL:   {ppf_holding['realized_pnl']}")
-    print(
-        f"Expected Unrealized PNL (On-the-fly Interest): {expected_unrealized_pnl}"
-    )
+    print(f"Expected Unrealized PNL (On-the-fly Interest): {expected_unrealized_pnl}")
     print(f"Actual Unrealized PNL:   {ppf_holding['unrealized_pnl']}")
     print(
         "Expected Current Value (incl. on-the-fly interest): "
@@ -216,7 +215,7 @@ def test_ppf_smart_recalculation(
     assert response.status_code == 200
 
     # 4. Verify the interest transaction was deleted
-    db.expire_all() # Ensure we get fresh data from the DB
+    db.expire_all()  # Ensure we get fresh data from the DB
     transactions = crud.transaction.get_multi_by_asset(db, asset_id=ppf_asset.id)
     assert not any(
         t.transaction_type == TransactionType.INTEREST_CREDIT for t in transactions

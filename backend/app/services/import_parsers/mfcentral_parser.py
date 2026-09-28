@@ -4,6 +4,7 @@ MFCentral CAS Excel Parser.
 Parses Consolidated Account Statement (CAS) Excel files exported from MFCentral.
 Handles Mutual Fund transactions including purchases, redemptions, SIPs, and dividends.
 """
+
 import logging
 import re
 from typing import List
@@ -75,7 +76,7 @@ class MfCentralParser(BaseParser):
 
         # Set headers from the found row
         df.columns = df.iloc[header_row_idx].values
-        df = df.iloc[header_row_idx + 1:].reset_index(drop=True)
+        df = df.iloc[header_row_idx + 1 :].reset_index(drop=True)
 
         # Track expected columns
         expected_columns = [

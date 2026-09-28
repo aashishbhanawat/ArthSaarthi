@@ -34,18 +34,20 @@ def read_tax_deductions(
     )
     result = []
     for entry in entries:
-        result.append({
-            "id": entry.id,
-            "user_id": entry.user_id,
-            "financial_year": entry.financial_year,
-            "section": entry.section,
-            "title": entry.title,
-            "amount": entry.amount,
-            "deduction_date": entry.deduction_date,
-            "proof_notes": entry.proof_notes,
-            "created_at": entry.created_at,
-            "updated_at": entry.updated_at,
-        })
+        result.append(
+            {
+                "id": entry.id,
+                "user_id": entry.user_id,
+                "financial_year": entry.financial_year,
+                "section": entry.section,
+                "title": entry.title,
+                "amount": entry.amount,
+                "deduction_date": entry.deduction_date,
+                "proof_notes": entry.proof_notes,
+                "created_at": entry.created_at,
+                "updated_at": entry.updated_at,
+            }
+        )
     return result
 
 

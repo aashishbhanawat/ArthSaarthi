@@ -90,13 +90,17 @@ def delete_portfolio(
                 # Collect all keys to delete
                 keys_to_delete = [f"analytics:dashboard_summary:{user_id}"]
                 for range_str in DASHBOARD_HISTORY_RANGES:
-                    keys_to_delete.append(f"analytics:dashboard_history:{user_id}:{range_str}")
+                    keys_to_delete.append(
+                        f"analytics:dashboard_history:{user_id}:{range_str}"
+                    )
 
-                keys_to_delete.extend([
-                    f"analytics:all_portfolios_holdings_and_summary:{user_id}",
-                    f"analytics:portfolio_holdings_and_summary:{portfolio_id}",
-                    f"analytics:portfolio_analytics:{portfolio_id}"
-                ])
+                keys_to_delete.extend(
+                    [
+                        f"analytics:all_portfolios_holdings_and_summary:{user_id}",
+                        f"analytics:portfolio_holdings_and_summary:{portfolio_id}",
+                        f"analytics:portfolio_analytics:{portfolio_id}",
+                    ]
+                )
 
                 cache.delete_multi(keys_to_delete)
         except Exception as e:
@@ -251,8 +255,7 @@ def get_asset_analytics(
 
 
 @router.get(
-    "/{portfolio_id}/diversification",
-    response_model=schemas.DiversificationResponse
+    "/{portfolio_id}/diversification", response_model=schemas.DiversificationResponse
 )
 def get_portfolio_diversification(
     *,
@@ -272,12 +275,12 @@ def get_portfolio_diversification(
 
     return crud.analytics.get_diversification(db=db, portfolio_id=portfolio_id)
 
+
 router.include_router(
     bonds_router.router,
     prefix="/{portfolio_id}/bonds",
     tags=["bonds"],
 )
-
 
 
 def get_benchmark_service(
@@ -314,5 +317,5 @@ def get_benchmark_comparison(
         benchmark_ticker=benchmark_ticker,
         benchmark_mode=benchmark_mode,
         hybrid_preset=hybrid_preset,
-        risk_free_rate=risk_free_rate
+        risk_free_rate=risk_free_rate,
     )

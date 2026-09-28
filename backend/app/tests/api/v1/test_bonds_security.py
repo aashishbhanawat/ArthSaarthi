@@ -31,7 +31,7 @@ def test_bond_authorization(
         db,
         portfolio_id=portfolio_a.id,
         ticker=asset.ticker_symbol,
-        asset_id=str(asset.id)
+        asset_id=str(asset.id),
     )
 
     bond = Bond(
@@ -87,7 +87,7 @@ def test_read_delete_bond_authorization(
         db,
         portfolio_id=portfolio_a.id,
         ticker=asset.ticker_symbol,
-        asset_id=str(asset.id)
+        asset_id=str(asset.id),
     )
 
     bond = Bond(

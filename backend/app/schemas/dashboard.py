@@ -21,6 +21,7 @@ class PortfolioHistoryPoint(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -30,6 +31,7 @@ class PortfolioHistoryResponse(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -41,6 +43,7 @@ class AssetAllocation(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -50,6 +53,7 @@ class AssetAllocationResponse(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -72,5 +76,6 @@ class DashboardSummary(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True

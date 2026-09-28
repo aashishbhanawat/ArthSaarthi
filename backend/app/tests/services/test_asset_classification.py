@@ -21,30 +21,38 @@ def test_classify_stock_series_nse(seeder: AssetSeeder, db: Session):
     as STOCK.
     """
     rows = [
-        pd.Series({
-            "ExchangeCode": "INFY",
-            "CompanyName": "Infosys Limited",
-            "ISINCode": "INE009A01021",
-            "Series": "EQ",
-        }),
-        pd.Series({
-            "ExchangeCode": "BE_STOCK",
-            "CompanyName": "BE Stock Company",
-            "ISINCode": "INE009A01022",
-            "Series": "BE",
-        }),
-        pd.Series({
-            "ExchangeCode": "SM_STOCK",
-            "CompanyName": "SM Stock Company",
-            "ISINCode": "INE009A01023",
-            "Series": "SM",
-        }),
-        pd.Series({
-            "ExchangeCode": "ST_STOCK",
-            "CompanyName": "ST Stock Company",
-            "ISINCode": "INE009A01024",
-            "Series": "ST",
-        })
+        pd.Series(
+            {
+                "ExchangeCode": "INFY",
+                "CompanyName": "Infosys Limited",
+                "ISINCode": "INE009A01021",
+                "Series": "EQ",
+            }
+        ),
+        pd.Series(
+            {
+                "ExchangeCode": "BE_STOCK",
+                "CompanyName": "BE Stock Company",
+                "ISINCode": "INE009A01022",
+                "Series": "BE",
+            }
+        ),
+        pd.Series(
+            {
+                "ExchangeCode": "SM_STOCK",
+                "CompanyName": "SM Stock Company",
+                "ISINCode": "INE009A01023",
+                "Series": "SM",
+            }
+        ),
+        pd.Series(
+            {
+                "ExchangeCode": "ST_STOCK",
+                "CompanyName": "ST Stock Company",
+                "ISINCode": "INE009A01024",
+                "Series": "ST",
+            }
+        ),
     ]
 
     for row in rows:
@@ -63,26 +71,32 @@ def test_classify_bond_series_nse(seeder: AssetSeeder, db: Session):
     """NSE fallback rows with bond-like series should be classified as BOND."""
     rows = [
         # Sovereign Gold Bond
-        pd.Series({
-            "ExchangeCode": "SGBDEC30",
-            "CompanyName": "SGB 2.50% DEC 2030",
-            "ISINCode": "IN0020200012",
-            "Series": "GB",
-        }),
+        pd.Series(
+            {
+                "ExchangeCode": "SGBDEC30",
+                "CompanyName": "SGB 2.50% DEC 2030",
+                "ISINCode": "IN0020200012",
+                "Series": "GB",
+            }
+        ),
         # Govt Security
-        pd.Series({
-            "ExchangeCode": "718GS2033",
-            "CompanyName": "7.18% GS 2033",
-            "ISINCode": "IN0020230085",
-            "Series": "GS",
-        }),
+        pd.Series(
+            {
+                "ExchangeCode": "718GS2033",
+                "CompanyName": "7.18% GS 2033",
+                "ISINCode": "IN0020230085",
+                "Series": "GS",
+            }
+        ),
         # Corporate NCD
-        pd.Series({
-            "ExchangeCode": "HUDCO-N2",
-            "CompanyName": "HUDCO N2 BOND",
-            "ISINCode": "INE123A07011",
-            "Series": "N2",
-        })
+        pd.Series(
+            {
+                "ExchangeCode": "HUDCO-N2",
+                "CompanyName": "HUDCO N2 BOND",
+                "ISINCode": "INE123A07011",
+                "Series": "N2",
+            }
+        ),
     ]
 
     for row in rows:
@@ -119,18 +133,22 @@ def test_isin_mapping_cross_exchange(seeder: AssetSeeder, db: Session):
     seeder.nse_series_map["INE885A01032"] = "EQ"
 
     # Process BSE fallback rows
-    row_igl = pd.Series({
-        "ScripID": "IGL",
-        "ScripName": "INDRAPRASHTHA GAS LTD",
-        "ISINCode": "INE203G01027",
-        "Series": "DR",
-    })
-    row_amara = pd.Series({
-        "ScripID": "ARE&M",
-        "ScripName": "AMARA RAJA ENERGY & MOBILITY",
-        "ISINCode": "INE885A01032",
-        "Series": "DR",
-    })
+    row_igl = pd.Series(
+        {
+            "ScripID": "IGL",
+            "ScripName": "INDRAPRASHTHA GAS LTD",
+            "ISINCode": "INE203G01027",
+            "Series": "DR",
+        }
+    )
+    row_amara = pd.Series(
+        {
+            "ScripID": "ARE&M",
+            "ScripName": "AMARA RAJA ENERGY & MOBILITY",
+            "ISINCode": "INE885A01032",
+            "Series": "DR",
+        }
+    )
 
     seeder._process_fallback_row(row_igl, exchange="BSE")
     seeder._process_fallback_row(row_amara, exchange="BSE")
@@ -149,12 +167,14 @@ def test_isin_mapping_cross_exchange(seeder: AssetSeeder, db: Session):
 
 def test_bse_series_c_stock(seeder: AssetSeeder, db: Session):
     """BSE fallback row with Series C should be classified as STOCK."""
-    row = pd.Series({
-        "ScripID": "BSE_C_STOCK",
-        "ScripName": "7NR RETAIL LIMITED",
-        "ISINCode": "INE413X01035",
-        "Series": "C",
-    })
+    row = pd.Series(
+        {
+            "ScripID": "BSE_C_STOCK",
+            "ScripName": "7NR RETAIL LIMITED",
+            "ISINCode": "INE413X01035",
+            "Series": "C",
+        }
+    )
     seeder._process_fallback_row(row, exchange="BSE")
     seeder.flush_pending()
     db.commit()
@@ -172,7 +192,7 @@ def test_refined_month_heuristic(seeder: AssetSeeder):
     test_cases = [
         ("IGL", "INDRAPRASHTHA GAS LTD", "DR"),
         ("AMARAJ", "AMARA RAJA ENERGY & MOBILITY", "DR"),
-        ("KUMAR", "KUMAR WIRE CLOTH", "DR")
+        ("KUMAR", "KUMAR WIRE CLOTH", "DR"),
     ]
     for ticker, name, series in test_cases:
         asset_type, bond_type = seeder._classify_asset_heuristic(ticker, name, series)
@@ -184,7 +204,7 @@ def test_refined_month_heuristic(seeder: AssetSeeder):
     bond_cases = [
         ("HUDCO", "HUDCO TAX FREE BOND DEC 2028", "DR"),
         ("NHAI", "NHAI TAX FREE BOND 15-JAN-25", "DR"),
-        ("SGB", "SGB 2.5% 25JAN26", "DR")
+        ("SGB", "SGB 2.5% 25JAN26", "DR"),
     ]
     for ticker, name, series in bond_cases:
         asset_type, bond_type = seeder._classify_asset_heuristic(ticker, name, series)
@@ -204,7 +224,7 @@ def test_auto_correction_of_misclassified_bonds(db: Session):
         asset_type="BOND",
         currency="INR",
         exchange="BSE",
-        isin="INE203G01027_TEST"
+        isin="INE203G01027_TEST",
     )
     db.add(asset_igl)
     db.commit()
@@ -214,7 +234,7 @@ def test_auto_correction_of_misclassified_bonds(db: Session):
         asset_id=asset_igl.id,
         bond_type=BondType.CORPORATE,
         isin="INE203G01027_TEST",
-        maturity_date=date(2030, 1, 1)
+        maturity_date=date(2030, 1, 1),
     )
     db.add(bond_igl)
     db.commit()
@@ -226,7 +246,7 @@ def test_auto_correction_of_misclassified_bonds(db: Session):
         asset_type="BOND",
         currency="INR",
         exchange="BSE",
-        isin="IN0020200012_TEST"
+        isin="IN0020200012_TEST",
     )
     db.add(asset_sgb)
     db.commit()
@@ -235,7 +255,7 @@ def test_auto_correction_of_misclassified_bonds(db: Session):
         asset_id=asset_sgb.id,
         bond_type=BondType.SGB,
         isin="IN0020200012_TEST",
-        maturity_date=date(2026, 1, 25)
+        maturity_date=date(2026, 1, 25),
     )
     db.add(bond_sgb)
     db.commit()
@@ -251,27 +271,26 @@ def test_auto_correction_of_misclassified_bonds(db: Session):
         assert asset_igl.asset_type == "STOCK"
 
         # Linked Bond for IGL should be deleted
-        associated_bond_igl = (
-            db.query(Bond.id).filter_by(asset_id=asset_igl.id).first()
-        )
+        associated_bond_igl = db.query(Bond.id).filter_by(asset_id=asset_igl.id).first()
         assert associated_bond_igl is None
 
         # SGB should remain a BOND
         db.refresh(asset_sgb)
         assert asset_sgb.asset_type == "BOND"
-        associated_bond_sgb = (
-            db.query(Bond.id).filter_by(asset_id=asset_sgb.id).first()
-        )
+        associated_bond_sgb = db.query(Bond.id).filter_by(asset_id=asset_sgb.id).first()
         assert associated_bond_sgb is not None
     finally:
         # Cleanup test data safely
-        for b in db.query(Bond).filter(
-            Bond.isin.in_(["INE203G01027_TEST", "IN0020200012_TEST"])
-        ).all():
+        for b in (
+            db.query(Bond)
+            .filter(Bond.isin.in_(["INE203G01027_TEST", "IN0020200012_TEST"]))
+            .all()
+        ):
             db.delete(b)
-        for a in db.query(Asset).filter(
-            Asset.isin.in_(["INE203G01027_TEST", "IN0020200012_TEST"])
-        ).all():
+        for a in (
+            db.query(Asset)
+            .filter(Asset.isin.in_(["INE203G01027_TEST", "IN0020200012_TEST"]))
+            .all()
+        ):
             db.delete(a)
         db.commit()
-

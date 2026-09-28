@@ -21,9 +21,7 @@ class ImportSession(Base):
     error_message = Column(String, nullable=True)
     status = Column(String, nullable=False, default="UPLOADED")
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", back_populates="import_sessions")
     portfolio = relationship("Portfolio", back_populates="import_sessions")

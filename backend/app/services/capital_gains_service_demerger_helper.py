@@ -11,9 +11,7 @@ from app.schemas.enums import TransactionType
 
 
 def _calculate_demerger_ratios(
-    db: Session,
-    portfolio_id: Optional[str],
-    end_date: datetime
+    db: Session, portfolio_id: Optional[str], end_date: datetime
 ) -> Dict[str, List[Tuple[datetime, Decimal]]]:
     """
     Returns a dict mapping asset_id (str) to a list of (demerger_date, remaining_ratio)
@@ -22,7 +20,7 @@ def _calculate_demerger_ratios(
     # 1. Fetch all DEMERGER transactions before end_date
     query = select(Transaction).where(
         Transaction.transaction_type == TransactionType.DEMERGER,
-        Transaction.transaction_date <= end_date
+        Transaction.transaction_date <= end_date,
     )
     if portfolio_id:
         query = query.where(Transaction.portfolio_id == portfolio_id)
@@ -55,7 +53,7 @@ def _calculate_demerger_ratios(
         buy_query = select(Transaction).where(
             Transaction.asset_id == asset_id,
             Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
-            Transaction.transaction_date < earliest_demerger_date
+            Transaction.transaction_date < earliest_demerger_date,
         )
         if portfolio_id:
             buy_query = buy_query.where(Transaction.portfolio_id == portfolio_id)

@@ -2,6 +2,7 @@
 Metadata service for Upstox integration.
 Handles downloading & caching of instrument master files (NSE.json.gz).
 """
+
 import gzip
 import json
 import logging
@@ -68,8 +69,7 @@ class UpstoxMetadataService:
 
         try:
             req = urllib.request.Request(
-                MARKET_HOLIDAYS_URL,
-                headers={"User-Agent": "Mozilla/5.0"}
+                MARKET_HOLIDAYS_URL, headers={"User-Agent": "Mozilla/5.0"}
             )
             with _urlopen_safe(req, timeout=10) as response:
                 data = json.loads(response.read().decode("utf-8"))
@@ -109,8 +109,7 @@ class UpstoxMetadataService:
 
         try:
             req = urllib.request.Request(
-                NSE_INSTRUMENTS_URL,
-                headers={"User-Agent": "Mozilla/5.0"}
+                NSE_INSTRUMENTS_URL, headers={"User-Agent": "Mozilla/5.0"}
             )
             with _urlopen_safe(req, timeout=15) as response:
                 compressed_data = response.read()

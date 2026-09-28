@@ -13,9 +13,10 @@ SAMPLE_AMFI_DATA = """Scheme Code;ISIN;ISIN Reinvestment;Scheme Name;NAV;Date
 120504;INF846K01DR4;INF846K01DS2;HDFC Nifty 50 Index Fund;210.11;21-Aug-2025
 """
 
+
 @pytest.fixture
 def mock_httpx_client():
-    with patch('httpx.Client') as mock_client_class:
+    with patch("httpx.Client") as mock_client_class:
         mock_response = MagicMock()
         mock_response.text = SAMPLE_AMFI_DATA
         mock_response.raise_for_status.return_value = None
@@ -26,12 +27,14 @@ def mock_httpx_client():
         mock_client_class.return_value.__enter__.return_value = mock_client_instance
         yield mock_client_class
 
+
 @pytest.fixture
 def mock_cache_client():
     client = MagicMock(spec=CacheClient)
     client.get_json.return_value = None
     client.set_json.return_value = None
     return client
+
 
 def test_fetch_and_parse_amfi_data(mock_httpx_client):
     """Test that the AMFI data is fetched and parsed correctly."""
@@ -45,6 +48,7 @@ def test_fetch_and_parse_amfi_data(mock_httpx_client):
     assert data["119551"]["isin"] == "INF204K01282"
     assert len(data) == 4
 
+
 def test_get_all_nav_data_no_cache(mock_httpx_client):
     """Test getting all NAV data without caching."""
     provider = AmfiIndiaProvider(cache_client=None)
@@ -52,6 +56,7 @@ def test_get_all_nav_data_no_cache(mock_httpx_client):
 
     assert "120503" in data
     mock_httpx_client.return_value.__enter__.return_value.get.assert_called_once()
+
 
 def test_get_all_nav_data_with_caching(mock_httpx_client, mock_cache_client):
     """Test that data is fetched and then cached."""
@@ -72,11 +77,12 @@ def test_get_all_nav_data_with_caching(mock_httpx_client, mock_cache_client):
 
     # Third call (new instance): should get from external cache
     new_provider = AmfiIndiaProvider(cache_client=mock_cache_client)
-    mock_cache_client.get_json.return_value = data # Simulate cache hit
+    mock_cache_client.get_json.return_value = data  # Simulate cache hit
     new_provider.get_all_nav_data()
     assert mock_cache_client.get_json.call_count == 2
     # httpx.get still called only once from the very first provider
     mock_httpx_client.return_value.__enter__.return_value.get.assert_called_once()
+
 
 def test_get_details_success(mock_httpx_client):
     """Test getting details for a valid MF scheme code."""
@@ -90,11 +96,13 @@ def test_get_details_success(mock_httpx_client):
     assert details["currency"] == "INR"
     assert details["isin"] == "INF090I01037"
 
+
 def test_get_details_not_found(mock_httpx_client):
     """Test getting details for an invalid MF scheme code."""
     provider = AmfiIndiaProvider(cache_client=None)
     details = provider.get_asset_details("999999")
     assert details is None
+
 
 def test_search_funds(mock_httpx_client):
     """Test searching for funds by name and scheme code."""
@@ -108,7 +116,7 @@ def test_search_funds(mock_httpx_client):
 
     # Search by scheme code
     results_code = provider.search("12050")
-    assert len(results_code) == 2 # 120503 and 120504
+    assert len(results_code) == 2  # 120503 and 120504
 
     # Search by common name part
     results_hdfc = provider.search("hdfc")
@@ -117,6 +125,7 @@ def test_search_funds(mock_httpx_client):
     # No results
     results_none = provider.search("nonexistentfund")
     assert len(results_none) == 0
+
 
 def test_get_scheme_by_isin(mock_httpx_client):
     """Test getting scheme details by ISIN."""

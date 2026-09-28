@@ -6,6 +6,7 @@ clean structured data without the garbling issues of PDF extraction.
 
 Download from: mfs.kfintech.com → Transaction Statement → Excel format
 """
+
 import logging
 from datetime import datetime
 from typing import List, Optional
@@ -24,40 +25,40 @@ class KFintechXlsParser(BaseParser):
 
     # Expected columns in KFintech XLS
     EXPECTED_COLUMNS = [
-        'FundName',
-        'Scheme Description',
-        'Transaction Date',
-        'Transaction Description',
-        'Amount',
-        'Units',
-        'NAV',
-        'SchemeISIN',
+        "FundName",
+        "Scheme Description",
+        "Transaction Date",
+        "Transaction Description",
+        "Amount",
+        "Units",
+        "NAV",
+        "SchemeISIN",
     ]
 
     # Transaction type mapping
     TRANSACTION_MAP = {
-        'Purchase': 'BUY',
-        'Purchase Online': 'BUY',
-        'Purchase Physical': 'BUY',
-        'Redemption': 'SELL',
-        'Sale': 'SELL',
-        'Sold': 'SELL',
-        'SGB Sell': 'SELL',
-        'Switch In': 'BUY',
-        'Switch Out': 'SELL',
-        'SIP Purchase': 'BUY',
-        'Systematic Investment': 'BUY',
-        'IDCW Reinvestment': 'DIVIDEND',
-        'Dividend Reinvestment': 'DIVIDEND',
+        "Purchase": "BUY",
+        "Purchase Online": "BUY",
+        "Purchase Physical": "BUY",
+        "Redemption": "SELL",
+        "Sale": "SELL",
+        "Sold": "SELL",
+        "SGB Sell": "SELL",
+        "Switch In": "BUY",
+        "Switch Out": "SELL",
+        "SIP Purchase": "BUY",
+        "Systematic Investment": "BUY",
+        "IDCW Reinvestment": "DIVIDEND",
+        "Dividend Reinvestment": "DIVIDEND",
     }
 
     # Patterns to skip (non-transaction rows)
     SKIP_PATTERNS = [
-        'Address updated',
-        'Bank Mandate',
-        'Nomination',
-        'KYC',
-        'Folio',
+        "Address updated",
+        "Bank Mandate",
+        "Nomination",
+        "KYC",
+        "Folio",
     ]
 
     def parse(
@@ -78,9 +79,9 @@ class KFintechXlsParser(BaseParser):
         try:
             # Try openpyxl first (for .xlsx), fall back to xlrd (for .xls)
             try:
-                df = pd.read_excel(file_path, engine='openpyxl')
+                df = pd.read_excel(file_path, engine="openpyxl")
             except Exception:
-                df = pd.read_excel(file_path, engine='xlrd')
+                df = pd.read_excel(file_path, engine="xlrd")
 
             logger.info(f"KFintech XLS: Loaded {len(df)} rows")
 
@@ -110,7 +111,7 @@ class KFintechXlsParser(BaseParser):
         """Parse a single row into a ParsedTransaction."""
         try:
             # Get transaction description
-            tx_desc = str(row.get('Transaction Description', '')).strip()
+            tx_desc = str(row.get("Transaction Description", "")).strip()
 
             # Skip non-transaction rows
             if self._should_skip(tx_desc):
@@ -121,35 +122,35 @@ class KFintechXlsParser(BaseParser):
             tx_type = self._classify_transaction(tx_desc)
             if not tx_type:
                 # Check if negative amount indicates SELL
-                amount = row.get('Amount', 0)
+                amount = row.get("Amount", 0)
                 if pd.notna(amount) and float(amount) < 0:
-                    tx_type = 'SELL'
+                    tx_type = "SELL"
                 else:
                     logger.debug(f"Row {idx}: Unknown tx type '{tx_desc}'")
                     return None
 
             # Parse date
-            date_val = row.get('Transaction Date')
+            date_val = row.get("Transaction Date")
             transaction_date = self._parse_date(date_val)
             if not transaction_date:
                 logger.warning(f"Row {idx}: Invalid date '{date_val}'")
                 return None
 
             # Get ISIN as ticker (for auto-matching)
-            isin = str(row.get('SchemeISIN', '')).strip()
+            isin = str(row.get("SchemeISIN", "")).strip()
             if isin and len(isin) == 12:
                 ticker_symbol = f"ISIN:{isin}"
             else:
                 # Fallback to Product Code
-                ticker_symbol = str(row.get('Product Code', 'Unknown'))
+                ticker_symbol = str(row.get("Product Code", "Unknown"))
 
             # Get numeric values
-            amount = abs(float(row.get('Amount', 0) or 0))
-            units = abs(float(row.get('Units', 0) or 0))
-            nav = float(row.get('NAV', 0) or 0)
+            amount = abs(float(row.get("Amount", 0) or 0))
+            units = abs(float(row.get("Units", 0) or 0))
+            nav = float(row.get("NAV", 0) or 0)
 
             # Skip zero-unit transactions (except dividends)
-            if units < 0.001 and tx_type not in ['DIVIDEND']:
+            if units < 0.001 and tx_type not in ["DIVIDEND"]:
                 logger.debug(f"Row {idx}: Skipping zero-unit transaction")
                 return None
 
@@ -174,7 +175,7 @@ class KFintechXlsParser(BaseParser):
             if pattern.lower() in tx_lower:
                 return True
         # Skip rows starting with ***
-        if tx_desc.startswith('***'):
+        if tx_desc.startswith("***"):
             return True
         return False
 
@@ -195,13 +196,13 @@ class KFintechXlsParser(BaseParser):
 
         # If already a datetime
         if isinstance(date_val, datetime):
-            return date_val.strftime('%Y-%m-%d')
+            return date_val.strftime("%Y-%m-%d")
 
         # Try parsing string date
         date_str = str(date_val).strip()
-        for fmt in ['%d-%b-%Y', '%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y']:
+        for fmt in ["%d-%b-%Y", "%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"]:
             try:
-                return datetime.strptime(date_str, fmt).strftime('%Y-%m-%d')
+                return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
             except ValueError:
                 continue
 

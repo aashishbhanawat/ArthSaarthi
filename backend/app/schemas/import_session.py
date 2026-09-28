@@ -53,6 +53,7 @@ class ImportSessionInDBBase(ImportSessionBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -94,9 +95,7 @@ class ImportSessionPreview(BaseModel):
     valid_new: list[ParsedTransaction]
     duplicates: list[ParsedTransaction]
     invalid: list[dict]  # e.g., {"row_data": {...}, "error": "Invalid data format"}
-    needs_mapping: list[
-        ParsedTransaction
-    ]  # For rows with unrecognized ticker symbols
+    needs_mapping: list[ParsedTransaction]  # For rows with unrecognized ticker symbols
 
 
 # New schema for the selective commit request body

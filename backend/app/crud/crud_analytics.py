@@ -62,6 +62,7 @@ except ImportError:
             logger.error(f"XIRR fallback failed: {e}")
             return 0.0
 
+
 SHARPE_ANNUALIZATION_FACTOR = 252
 SHARPE_STEP_FUNCTION_THRESHOLD = 0.8
 SHARPE_ZERO_RETURN_TOLERANCE = 1e-6
@@ -492,8 +493,7 @@ def _get_portfolio_cash_flows(
 
         amount = Decimal("0.0")
         fx_rate = (
-            Decimal(str(tx.details.get("fx_rate", 1)))
-            if tx.details else Decimal(1)
+            Decimal(str(tx.details.get("fx_rate", 1))) if tx.details else Decimal(1)
         )
 
         if tx.transaction_type == "CONTRIBUTION":
@@ -504,10 +504,7 @@ def _get_portfolio_cash_flows(
             amount = tx.quantity * fx_rate
         elif tx.transaction_type == "RSU_VEST":
             # For RSU VEST, outflow is FMV * Quantity * FX Rate
-            fmv = (
-                Decimal(str(tx.details.get("fmv", 0)))
-                if tx.details else Decimal(0)
-            )
+            fmv = Decimal(str(tx.details.get("fmv", 0))) if tx.details else Decimal(0)
             amount = tx.quantity * fmv * fx_rate
         else:
             amount = tx.quantity * tx.price_per_unit * fx_rate
@@ -546,9 +543,8 @@ def _get_portfolio_cash_flows(
                 cutoff_date = min(today, fd.maturity_date)
                 if last_payout_date < cutoff_date:
                     remaining_days = (cutoff_date - last_payout_date).days
-                    daily_rate = (
-                        (fd.interest_rate / Decimal("100.0")) /
-                        Decimal("365.25")
+                    daily_rate = (fd.interest_rate / Decimal("100.0")) / Decimal(
+                        "365.25"
                     )
                     pro_rata_interest = (
                         fd.principal_amount * daily_rate * Decimal(remaining_days)
@@ -608,8 +604,7 @@ class CRUDAnalytics:
             logger.warning(f"Asset with ID {asset_id} not found.")
             return schemas.AssetAnalytics(xirr_current=0.0, xirr_historical=0.0)
         logger.debug(
-            f"Calculating analytics for asset {asset_id} "
-            f"({asset.ticker_symbol})"
+            f"Calculating analytics for asset {asset_id} ({asset.ticker_symbol})"
         )
 
         # We need the current value of the holding, which is calculated in crud_holding
@@ -845,7 +840,6 @@ class CRUDAnalytics:
         sharpe = (ann_return - rf_rate) / ann_vol
         return float(sharpe)
 
-
     def get_diversification(
         self, db: Session, *, portfolio_id: uuid.UUID
     ) -> schemas.DiversificationResponse:
@@ -854,6 +848,7 @@ class CRUDAnalytics:
         for a portfolio (FR6.4).
         """
         from app.models.asset import Asset
+
         # Get holdings with current values
         holdings_result = crud.holding.get_portfolio_holdings_and_summary(
             db, portfolio_id=portfolio_id
@@ -897,7 +892,8 @@ class CRUDAnalytics:
             value = h.current_value or Decimal("0")
             # Use asset_type from Asset if available, otherwise from the Holding schema
             asset_type = (
-                (asset.asset_type or "").upper() if asset
+                (asset.asset_type or "").upper()
+                if asset
                 else (h.asset_type or "").upper()
             )
 
@@ -971,9 +967,13 @@ class CRUDAnalytics:
                 mf_sector = (asset.sector or "").lower()
                 if "equity" in mf_sector or "growth" in mf_sector:
                     asset_class = "Equity"
-                elif ("debt" in mf_sector or "gilt" in mf_sector
-                      or "income" in mf_sector or "money market" in mf_sector
-                      or "liquid" in mf_sector):
+                elif (
+                    "debt" in mf_sector
+                    or "gilt" in mf_sector
+                    or "income" in mf_sector
+                    or "money market" in mf_sector
+                    or "liquid" in mf_sector
+                ):
                     asset_class = "Debt"
                 elif "hybrid" in mf_sector:
                     asset_class = "Hybrid"
@@ -1013,12 +1013,11 @@ class CRUDAnalytics:
             by_market_cap=to_list(by_market_cap, equity_total),
             by_country=to_list(by_country, total_value),
             by_investment_style=to_list(by_investment_style, equity_total),
-            total_value=total_value
+            total_value=total_value,
         )
 
 
 analytics = CRUDAnalytics()
-
 
 
 def _get_holding_history(

@@ -24,7 +24,6 @@ def test_calculate_years_remaining():
 
 
 def test_stcl_setoff_against_stcg_and_ltcg(db, monkeypatch):
-
     """
     Scenario 1: User has STCL ₹20,000 and LTCG ₹50,000.
     STCL is set off against LTCG, reducing net LTCG to ₹30,000.
@@ -41,7 +40,7 @@ def test_stcl_setoff_against_stcg_and_ltcg(db, monkeypatch):
     class MockSummary:
         gains = [
             MockGain(-20000, "STCG"),  # STCL ₹20,000
-            MockGain(50000, "LTCG"),   # LTCG ₹50,000
+            MockGain(50000, "LTCG"),  # LTCG ₹50,000
         ]
 
     monkeypatch.setattr(
@@ -51,7 +50,6 @@ def test_stcl_setoff_against_stcg_and_ltcg(db, monkeypatch):
 
     service = TaxSetOffService(db)
     result = service.calculate_net_capital_gains(user_id=user_id, fy_year=fy_year)
-
 
     assert result.breakdown.gross_stcl == Decimal("20000.00")
     assert result.breakdown.gross_ltcg == Decimal("50000.00")
@@ -79,7 +77,7 @@ def test_ltcl_cannot_setoff_against_stcg(db, monkeypatch):
     class MockSummary:
         gains = [
             MockGain(-30000, "LTCG"),  # LTCL ₹30,000
-            MockGain(40000, "STCG"),   # STCG ₹40,000
+            MockGain(40000, "STCG"),  # STCG ₹40,000
         ]
 
     monkeypatch.setattr(
@@ -89,7 +87,6 @@ def test_ltcl_cannot_setoff_against_stcg(db, monkeypatch):
 
     service = TaxSetOffService(db)
     result = service.calculate_net_capital_gains(user_id=user_id, fy_year=fy_year)
-
 
     assert result.breakdown.gross_ltcl == Decimal("30000.00")
     assert result.breakdown.gross_stcg == Decimal("40000.00")
@@ -102,8 +99,6 @@ def test_ltcl_cannot_setoff_against_stcg(db, monkeypatch):
 def test_brought_forward_loss_setoff_and_expiry(
     db, pre_unlocked_key_manager, monkeypatch
 ):
-
-
     """
     Scenario 3: User has brought-forward loss entries:
     - AY 2020-21 (Valid): STCL ₹15,000 (Filed on time)
@@ -133,7 +128,6 @@ def test_brought_forward_loss_setoff_and_expiry(
     user_uuid = test_user.id
     user_id = str(user_uuid)
     fy_year = "2025-26"
-
 
     # Add loss ledger entries to DB
     e1 = CapitalLossLedger(
@@ -194,7 +188,6 @@ def test_brought_forward_loss_setoff_and_expiry(
     assert result.breakdown.bf_ltcl_used == Decimal("25000.00")
     assert result.breakdown.net_taxable_stcg == Decimal("5000.00")
     assert result.breakdown.net_taxable_ltcg == Decimal("5000.00")
-
 
 
 def test_tax_loss_harvesting_recommendations(db, monkeypatch):
@@ -437,4 +430,3 @@ def test_setoff_and_harvesting_empty_portfolio_or_no_losses(db, monkeypatch):
     assert setoff.breakdown.net_estimated_tax == Decimal("0.0")
     assert len(harvesting.harvesting_opportunities) == 0
     assert harvesting.total_potential_tax_savings == Decimal("0.0")
-

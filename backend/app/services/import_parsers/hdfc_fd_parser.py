@@ -29,7 +29,7 @@ class HdfcFdParser(BaseParser):
                 in_fd_section = False
 
                 # regex for DD/MM/YYYY or DD-MM-YYYY
-                date_pattern = re.compile(r'\d{2}[/-]\d{2}[/-]\d{4}')
+                date_pattern = re.compile(r"\d{2}[/-]\d{2}[/-]\d{4}")
 
                 for page in pdf.pages:
                     text = page.extract_text()
@@ -78,25 +78,38 @@ class HdfcFdParser(BaseParser):
                             if i < len(lines):
                                 next_line = lines[i].strip()
                                 next_parts = next_line.split()
-                                if next_parts and (date_pattern.match(next_parts[0]) or any(c.isdigit() for c in next_parts[0])):
+                                if next_parts and (
+                                    date_pattern.match(next_parts[0])
+                                    or any(c.isdigit() for c in next_parts[0])
+                                ):
                                     row_text += " " + next_line
-                                    i += 1 # Consume next line
+                                    i += 1  # Consume next line
 
                             # Now process the combined row_text
                             try:
                                 dates = date_pattern.findall(row_text)
                                 if len(dates) >= 2:
-                                    open_date_str = dates[0].replace('/', '-')
-                                    start_date = datetime.datetime.strptime(open_date_str, "%d-%m-%Y").strftime("%Y-%m-%d")
+                                    open_date_str = dates[0].replace("/", "-")
+                                    start_date = datetime.datetime.strptime(
+                                        open_date_str, "%d-%m-%Y"
+                                    ).strftime("%Y-%m-%d")
 
-                                    mat_date_str = dates[-1].replace('/', '-')
-                                    maturity_date = datetime.datetime.strptime(mat_date_str, "%d-%m-%Y").strftime("%Y-%m-%d")
+                                    mat_date_str = dates[-1].replace("/", "-")
+                                    maturity_date = datetime.datetime.strptime(
+                                        mat_date_str, "%d-%m-%Y"
+                                    ).strftime("%Y-%m-%d")
 
                                     # Extract all numeric values
                                     parts = row_text.split()
                                     numbers = []
                                     for p in parts:
-                                        if date_pattern.match(p) or p == acc_num or "INR" in p.upper() or "YES" in p.upper() or "NO" in p.upper():
+                                        if (
+                                            date_pattern.match(p)
+                                            or p == acc_num
+                                            or "INR" in p.upper()
+                                            or "YES" in p.upper()
+                                            or "NO" in p.upper()
+                                        ):
                                             continue
                                         clean_num = p.replace(",", "")
                                         try:
@@ -125,7 +138,10 @@ class HdfcFdParser(BaseParser):
 
                                     if principal_amount > 0:
                                         interest_payout = "Cumulative"
-                                        if abs(maturity_amount - principal_amount) < 1.0:
+                                        if (
+                                            abs(maturity_amount - principal_amount)
+                                            < 1.0
+                                        ):
                                             interest_payout = "Payout"
 
                                         fd_entry = ParsedFixedDeposit(
@@ -137,11 +153,13 @@ class HdfcFdParser(BaseParser):
                                             maturity_date=maturity_date,
                                             maturity_amount=maturity_amount,
                                             interest_payout=interest_payout,
-                                            compounding_frequency="Quarterly"
+                                            compounding_frequency="Quarterly",
                                         )
                                         fixed_deposits.append(fd_entry)
                             except Exception as e:
-                                logger.warning(f"Failed to parse HDFC FD row '{row_text}': {e}")
+                                logger.warning(
+                                    f"Failed to parse HDFC FD row '{row_text}': {e}"
+                                )
                                 continue
 
             # HDFC statements often duplicate FD rows in summary and detail. Let's deduplicate.
@@ -153,7 +171,11 @@ class HdfcFdParser(BaseParser):
             return list(unique_fds.values())
 
         except Exception as e:
-            if isinstance(e, PDFPasswordIncorrect) or "PASSWORD_REQUIRED" in str(e) or str(e) == "":
+            if (
+                isinstance(e, PDFPasswordIncorrect)
+                or "PASSWORD_REQUIRED" in str(e)
+                or str(e) == ""
+            ):
                 logger.error(f"Password required for PDF: {file_path}")
                 raise ValueError("PASSWORD_REQUIRED")
             logger.error(f"Error parsing HDFC FD statement: {e}")

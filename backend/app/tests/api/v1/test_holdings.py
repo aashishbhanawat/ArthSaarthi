@@ -264,7 +264,7 @@ def test_summary_with_mf_dividend(
         ticker="120503",
         asset_type="Mutual Fund",
         transaction_type="DIVIDEND",
-        quantity=2500, # Total dividend amount
+        quantity=2500,  # Total dividend amount
         price_per_unit=1,
         transaction_date=date(2023, 7, 1),
     )
@@ -301,9 +301,7 @@ def test_rsu_vest_with_sell_to_cover_holdings(
     # 1. Setup
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(
-        db, user_id=user.id, name="RSU Holdings Test"
-    )
+    portfolio = create_test_portfolio(db, user_id=user.id, name="RSU Holdings Test")
     asset = create_test_asset(db, ticker_symbol="CSCO")
 
     # 2. Create RSU_VEST: 100 shares, FMV=$70, FX=85, sell-to-cover 40@70
@@ -323,8 +321,7 @@ def test_rsu_vest_with_sell_to_cover_holdings(
         },
     }
     response = client.post(
-        f"{settings.API_V1_STR}/transactions/"
-        f"?portfolio_id={portfolio.id}",
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
         headers=headers,
         json=rsu_payload,
     )
@@ -373,9 +370,7 @@ def test_rsu_vest_with_sell_to_cover_holdings(
 
     # total_invested = 60 * 70 * 85 = 357,000
     invested = Decimal(csco["total_invested_amount"])
-    assert invested == pytest.approx(
-        Decimal("357000.0"), abs=Decimal("1")
-    )
+    assert invested == pytest.approx(Decimal("357000.0"), abs=Decimal("1"))
 
     # current_value = 60 * 78 * 85 = 397,800
     # unrealized = 397800 - 357000 = 40,800 (positive)
@@ -397,9 +392,7 @@ def test_rsu_vest_plain_holdings(
     # 1. Setup
     user, password = create_random_user(db)
     headers = get_auth_headers(user.email, password)
-    portfolio = create_test_portfolio(
-        db, user_id=user.id, name="RSU Plain Test"
-    )
+    portfolio = create_test_portfolio(db, user_id=user.id, name="RSU Plain Test")
     asset = create_test_asset(db, ticker_symbol="MSFT")
 
     # 2. RSU_VEST: 50 shares, FMV=$100, FX=83.5, no sell-to-cover
@@ -415,8 +408,7 @@ def test_rsu_vest_plain_holdings(
         },
     }
     response = client.post(
-        f"{settings.API_V1_STR}/transactions/"
-        f"?portfolio_id={portfolio.id}",
+        f"{settings.API_V1_STR}/transactions/?portfolio_id={portfolio.id}",
         headers=headers,
         json=rsu_payload,
     )

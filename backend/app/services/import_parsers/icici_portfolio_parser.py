@@ -1,4 +1,3 @@
-
 import logging
 from typing import List
 
@@ -86,13 +85,13 @@ class IciciPortfolioParser(BaseParser):
         # Format in sample: 08-Jul-2015
         try:
             df_trades["transaction_date"] = pd.to_datetime(
-                df_trades["transaction_date"], format="%d-%b-%Y", errors='coerce'
+                df_trades["transaction_date"], format="%d-%b-%Y", errors="coerce"
             )
             # Drop invalid dates
             df_trades = df_trades.dropna(subset=["transaction_date"])
-            df_trades["transaction_date"] = df_trades[
-                "transaction_date"
-            ].dt.strftime("%Y-%m-%d")
+            df_trades["transaction_date"] = df_trades["transaction_date"].dt.strftime(
+                "%Y-%m-%d"
+            )
         except Exception as e:
             logging.error(f"ICICI Portfolio parser: Date parsing error: {e}")
             return []
@@ -100,9 +99,9 @@ class IciciPortfolioParser(BaseParser):
         for _, row in df_trades.iterrows():
             try:
                 # Handle numeric fields
-                qty = pd.to_numeric(row.get("quantity"), errors='coerce') or 0
-                price = pd.to_numeric(row.get("price_per_unit"), errors='coerce') or 0
-                fees = pd.to_numeric(row.get("fees"), errors='coerce') or 0
+                qty = pd.to_numeric(row.get("quantity"), errors="coerce") or 0
+                price = pd.to_numeric(row.get("price_per_unit"), errors="coerce") or 0
+                fees = pd.to_numeric(row.get("fees"), errors="coerce") or 0
 
                 ticker = str(row.get("ticker_symbol", "")).strip()
                 isin = str(row.get("isin", "")).strip()
@@ -110,18 +109,18 @@ class IciciPortfolioParser(BaseParser):
                 if qty <= 0:
                     continue
 
-                transactions.append(ParsedTransaction(
-                    ticker_symbol=ticker,
-                    transaction_date=row["transaction_date"],
-                    transaction_type=row["transaction_type"],
-                    quantity=float(qty),
-                    price_per_unit=float(price),
-                    fees=float(fees),
-                    isin=isin if isin else None
-                ))
-            except Exception as e:
-                logging.error(
-                    f"ICICI Portfolio parser: Error parsing row. Error: {e}"
+                transactions.append(
+                    ParsedTransaction(
+                        ticker_symbol=ticker,
+                        transaction_date=row["transaction_date"],
+                        transaction_type=row["transaction_type"],
+                        quantity=float(qty),
+                        price_per_unit=float(price),
+                        fees=float(fees),
+                        isin=isin if isin else None,
+                    )
                 )
+            except Exception as e:
+                logging.error(f"ICICI Portfolio parser: Error parsing row. Error: {e}")
 
         return transactions

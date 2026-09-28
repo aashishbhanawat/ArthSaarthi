@@ -37,13 +37,14 @@ def test_zerodha_parser_success():
     assert result[1].ticker_symbol == "TCS"
     assert result[1].transaction_type == "SELL"
 
+
 def test_zerodha_parser_ignores_other_types():
     # 1. Setup
     parser = ZerodhaParser()
     data = {
         "symbol": ["RELIANCE"],
         "trade_date": ["2023-01-01"],
-        "trade_type": ["corporate action"], # This should be ignored
+        "trade_type": ["corporate action"],  # This should be ignored
         "quantity": [10.0],
         "price": [2500.0],
         "charges": [50.0],
@@ -57,10 +58,11 @@ def test_zerodha_parser_ignores_other_types():
     assert isinstance(result, list)
     assert len(result) == 0
 
+
 def test_zerodha_parser_missing_columns():
     # 1. Setup
     parser = ZerodhaParser()
-    data = {"symbol": ["RELIANCE"], "quantity": [10.0]} # Missing columns
+    data = {"symbol": ["RELIANCE"], "quantity": [10.0]}  # Missing columns
     df = pd.DataFrame(data)
 
     # 2. Execute

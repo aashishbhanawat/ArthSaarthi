@@ -39,6 +39,7 @@ class IncomeSource(IncomeSourceBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -147,6 +148,7 @@ class IncomeEntry(IncomeEntryBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -158,4 +160,3 @@ class IncomeFYSummary(BaseModel):
     total_net: Decimal
     total_hra_exemption: Optional[Decimal] = Decimal("0.00")
     source_breakdown: List[Dict[str, Any]] = []
-

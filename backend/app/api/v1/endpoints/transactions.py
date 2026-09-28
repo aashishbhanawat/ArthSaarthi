@@ -127,7 +127,6 @@ def read_transactions(
             reverse=True,
         )
 
-
     if config.settings.DEBUG:
         print("--- BACKEND DEBUG: Read Transactions Response ---")
         if transactions:
@@ -226,8 +225,8 @@ def create_transaction(
             asset_id_to_use = asset_to_use.id
             transaction_create_schema = schemas.TransactionCreate(
                 asset_id=asset_id_to_use,
-                **model_dump(transaction_in,
-                    exclude={"ticker_symbol", "asset_type", "asset_id"}
+                **model_dump(
+                    transaction_in, exclude={"ticker_symbol", "asset_type", "asset_id"}
                 ),
             )
 
@@ -373,8 +372,9 @@ def update_transaction(
 
     # --- Smart Recalculation for PPF ---
     if transaction.asset and transaction.asset.asset_type == "PPF":
-        logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} "
-                    f"due to transaction update."
+        logger.info(
+            f"Triggering PPF recalculation for asset {transaction.asset_id} "
+            f"due to transaction update."
         )
         trigger_ppf_recalculation(db, asset_id=transaction.asset_id)
     # --- End Smart Recalculation ---
@@ -431,8 +431,9 @@ def delete_transaction(
 
     # --- Smart Recalculation for PPF ---
     if transaction.asset and transaction.asset.asset_type == "PPF":
-        logger.info(f"Triggering PPF recalculation for asset {transaction.asset_id} "
-                    f"due to transaction deletion."
+        logger.info(
+            f"Triggering PPF recalculation for asset {transaction.asset_id} "
+            f"due to transaction deletion."
         )
         trigger_ppf_recalculation(db, asset_id=transaction.asset_id)
     # --- End Smart Recalculation ---

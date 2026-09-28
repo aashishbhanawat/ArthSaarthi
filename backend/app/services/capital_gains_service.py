@@ -23,12 +23,13 @@ logger = logging.getLogger(__name__)
 # Tax Constants
 HOLDING_PERIOD_EQUITY_LTCG = 365  # 12 months
 HOLDING_PERIOD_GENERAL_LTCG_OLD = 1095  # 36 months (Pre July 2024)
-HOLDING_PERIOD_GENERAL_LTCG_NEW = 730   # 24 months (Post July 2024)
+HOLDING_PERIOD_GENERAL_LTCG_NEW = 730  # 24 months (Post July 2024)
 
 DATE_2018_01_31 = date(2018, 1, 31)
 DATE_2024_07_23 = date(2024, 7, 23)
 
 DATE_2023_04_01 = date(2023, 4, 1)
+
 
 class CapitalGainsService:
     def __init__(self, db: Session):
@@ -37,9 +38,9 @@ class CapitalGainsService:
     def calculate_capital_gains(
         self,
         portfolio_id: Optional[str],
-        fy_year: str, # e.g. "2025-26"
-        slab_rate: float = 30.0, # Default to 30% if not provided
-        user_id: Optional[str] = None
+        fy_year: str,  # e.g. "2025-26"
+        slab_rate: float = 30.0,  # Default to 30% if not provided
+        user_id: Optional[str] = None,
     ) -> CapitalGainsSummary:
         """
         Main entry point to calculate Capital Gains for a financial year.
@@ -66,7 +67,7 @@ class CapitalGainsService:
             .where(
                 SellTx.transaction_type == TransactionType.SELL,
                 SellTx.transaction_date >= start_date,
-                SellTx.transaction_date <= end_date
+                SellTx.transaction_date <= end_date,
             )
         )
 
@@ -91,13 +92,15 @@ class CapitalGainsService:
         total_ltcg = Decimal(0)
 
         # Matrix Buckets (domestic only)
-        matrix_data = defaultdict(lambda: {
-            "upto_15_6": Decimal(0),
-            "upto_15_9": Decimal(0),
-            "upto_15_12": Decimal(0),
-            "upto_15_3": Decimal(0),
-            "upto_31_3": Decimal(0)
-        })
+        matrix_data = defaultdict(
+            lambda: {
+                "upto_15_6": Decimal(0),
+                "upto_15_9": Decimal(0),
+                "upto_15_12": Decimal(0),
+                "upto_15_3": Decimal(0),
+                "upto_31_3": Decimal(0),
+            }
+        )
 
         for link in links:
             sell_tx = link.sell_transaction
@@ -184,7 +187,6 @@ class CapitalGainsService:
             + other_ltcg_tax
         )
 
-
         return CapitalGainsSummary(
             financial_year=fy_year,
             total_stcg=total_stcg,
@@ -194,7 +196,7 @@ class CapitalGainsService:
             itr_schedule_cg=itr_matrix,
             schedule_112a=schedule_112a_entries,
             gains=sorted(gains, key=lambda x: x.sell_date),
-            foreign_gains=sorted(foreign_gains, key=lambda x: x.sell_date)
+            foreign_gains=sorted(foreign_gains, key=lambda x: x.sell_date),
         )
 
     def _get_fy_dates(self, fy: str) -> Tuple[datetime, datetime]:
@@ -205,10 +207,7 @@ class CapitalGainsService:
         return start_date, end_date
 
     def _calculate_demerger_ratios(
-        self,
-        portfolio_id: Optional[str],
-        user_id: Optional[str],
-        end_date: datetime
+        self, portfolio_id: Optional[str], user_id: Optional[str], end_date: datetime
     ) -> Dict[str, List[Tuple[date, Decimal]]]:
         """
         Calculates remaining cost basis ratios for assets that underwent demergers.
@@ -217,7 +216,7 @@ class CapitalGainsService:
         # 1. Fetch all DEMERGER transactions before end_date
         query = select(Transaction).where(
             Transaction.transaction_type == TransactionType.DEMERGER,
-            Transaction.transaction_date <= end_date
+            Transaction.transaction_date <= end_date,
         )
         if user_id:
             query = query.where(Transaction.user_id == user_id)
@@ -249,7 +248,7 @@ class CapitalGainsService:
             buy_query = select(Transaction).where(
                 Transaction.asset_id == asset_id_str,
                 Transaction.transaction_type.in_(["BUY", "ESPP_PURCHASE", "RSU_VEST"]),
-                Transaction.transaction_date < earliest_demerger_date
+                Transaction.transaction_date < earliest_demerger_date,
             )
             if portfolio_id:
                 buy_query = buy_query.where(Transaction.portfolio_id == portfolio_id)
@@ -290,7 +289,7 @@ class CapitalGainsService:
         asset: Asset,
         sell_tx: Transaction,
         buy_tx: Transaction,
-        demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None
+        demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None,
     ) -> ForeignGainEntry:
         """
         Process a foreign asset gain entry.
@@ -305,9 +304,12 @@ class CapitalGainsService:
 
         # --- ESPP Cost Basis Adjustment ---
         # For ESPP_PURCHASE, use FMV as cost basis, not discounted price.
-        if (buy_tx.transaction_type in [
-            TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST
-        ] and buy_tx.details and "fmv" in buy_tx.details):
+        if (
+            buy_tx.transaction_type
+            in [TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST]
+            and buy_tx.details
+            and "fmv" in buy_tx.details
+        ):
             buy_price = Decimal(str(buy_tx.details["fmv"]))
 
         # --- Corporate Action Adjustment (Demerger) ---
@@ -344,7 +346,7 @@ class CapitalGainsService:
         is_ltcg = holding_days > 730  # 24 months
 
         # Country code: derive from asset.country or default from currency
-        country_code = getattr(asset, 'country', None) or ""
+        country_code = getattr(asset, "country", None) or ""
         if not country_code and asset.currency:
             # Default country mapping for common currencies
             currency_country_map = {
@@ -374,7 +376,7 @@ class CapitalGainsService:
             gain=gain,
             gain_type="LTCG" if is_ltcg else "STCG",
             holding_days=holding_days,
-            country_code=country_code
+            country_code=country_code,
         )
 
     def _process_single_link(
@@ -383,7 +385,7 @@ class CapitalGainsService:
         asset: Asset,
         sell_tx: Transaction,
         buy_tx: Transaction,
-        demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None
+        demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None,
     ) -> Tuple[GainEntry, Optional[Schedule112AEntry]]:
 
         buy_date = buy_tx.transaction_date.date()
@@ -395,9 +397,12 @@ class CapitalGainsService:
         # --- ESPP Cost Basis Adjustment ---
         # For ESPP_PURCHASE, use FMV as cost basis, not discounted price.
         # The perquisite benefit (FMV - discount price) is already taxed as income.
-        if (buy_tx.transaction_type in [
-            TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST
-        ] and buy_tx.details and "fmv" in buy_tx.details):
+        if (
+            buy_tx.transaction_type
+            in [TransactionType.ESPP_PURCHASE, TransactionType.RSU_VEST]
+            and buy_tx.details
+            and "fmv" in buy_tx.details
+        ):
             buy_price = Decimal(str(buy_tx.details["fmv"]))
             logger.debug(
                 f"Using ESPP FMV {buy_price} as cost basis for {asset.ticker_symbol}"
@@ -443,7 +448,10 @@ class CapitalGainsService:
 
         # Determine Tax Rate Label
         tax_rate_label = self._determine_tax_rate_label(
-            gain_type, asset_category, sell_date, buy_date # Updated signature
+            gain_type,
+            asset_category,
+            sell_date,
+            buy_date,  # Updated signature
         )
 
         # SGB Exemption Check (Redemption on Maturity)
@@ -457,14 +465,12 @@ class CapitalGainsService:
         if asset_category == "SGB" and "Exempt" not in tax_rate_label:
             # 5 years = approx 1825 days
             if holding_days > 1825:
-                note = (
-                    "Potential Exemption: Tax-free if redeemed with RBI (Premature)."
-                )
+                note = "Potential Exemption: Tax-free if redeemed with RBI (Premature)."
 
         # Grandfathering Logic
         fmv_2018 = None
         is_grandfathered = False
-        actual_cost_total = cost_of_acquisition # Initial cost including buy fees
+        actual_cost_total = cost_of_acquisition  # Initial cost including buy fees
 
         if is_ltcg and asset_category == "EQUITY_LISTED" and buy_date < DATE_2018_01_31:
             is_grandfathered = True
@@ -487,7 +493,7 @@ class CapitalGainsService:
             buy_date=buy_date,
             sell_date=sell_date,
             quantity=quantity,
-            buy_price=buy_price, # showing original buy price for reference
+            buy_price=buy_price,  # showing original buy price for reference
             sell_price=sell_price,
             total_buy_value=cost_of_acquisition,
             total_sell_value=net_sell_value,
@@ -497,13 +503,13 @@ class CapitalGainsService:
             tax_rate=tax_rate_label,
             is_grandfathered=is_grandfathered,
             is_hybrid_warning=self._is_hybrid_fund(asset),
-            note=note
+            note=note,
         )
 
         # Schedule 112A Entry (Only for Grandfathered Equity LTCG)
         s112a_entry = None
         if is_grandfathered and gain_type == "LTCG":
-             s112a_entry = Schedule112AEntry(
+            s112a_entry = Schedule112AEntry(
                 isin=asset.isin or "N/A",
                 asset_name=asset.name,
                 quantity=quantity,
@@ -518,8 +524,8 @@ class CapitalGainsService:
                 balance=full_value_consideration
                 - (cost_of_acquisition + prop_sell_fees),
                 acquired_date=buy_date,
-                transfer_date=sell_date
-             )
+                transfer_date=sell_date,
+            )
 
         return entry, s112a_entry
 
@@ -534,13 +540,13 @@ class CapitalGainsService:
             # Post July 2024 Rule: 12 months for Secondary Market
             if sell_date >= DATE_2024_07_23:
                 return days > 365
-            return days > 1095 # Old rule (36 months)
+            return days > 1095  # Old rule (36 months)
 
         if category == "DEBT":
             # Debt Fund Rules
             # 1. Invested ON/AFTER 1 Apr 2023 -> Always STCG (Sec 50AA)
             if buy_date >= DATE_2023_04_01:
-                return False # Always Short Term regardless of holding
+                return False  # Always Short Term regardless of holding
 
             # 2. Invested BEFORE 1 Apr 2023 -> Normal Debt Rules
             # Post July 2024 -> 24 months
@@ -645,9 +651,9 @@ class CapitalGainsService:
         if "BOND" in atype:
             if asset.bond and asset.bond.bond_type == BondType.SGB:
                 return "SGB"
-            return "DEBT" # Corporate/Govt Bonds
+            return "DEBT"  # Corporate/Govt Bonds
 
-        if "GOLD" in atype: # Physical Gold placeholders
+        if "GOLD" in atype:  # Physical Gold placeholders
             return "GOLD"
 
         return "OTHER"
@@ -708,7 +714,7 @@ class CapitalGainsService:
                 return "LTCG 12.5%" if is_post_july else "LTCG 20%"
 
             if category == "SGB":
-                return "LTCG 12.5%" # Secondary market
+                return "LTCG 12.5%"  # Secondary market
 
             if category == "DEBT":
                 # Only reaches here if Pre-Apr 2023 buy + >2/3yr hold
@@ -720,9 +726,9 @@ class CapitalGainsService:
                 # User Example used "sold in 2025".
                 # We will handle "Post July 2024" as 12.5%
                 if is_post_july:
-                     return "LTCG 12.5%"
+                    return "LTCG 12.5%"
                 else:
-                     return "LTCG 20%" # Old regime with indexation
+                    return "LTCG 20%"  # Old regime with indexation
 
         return "Unknown"
 
@@ -768,21 +774,21 @@ class CapitalGainsService:
             period_key = "upto_31_3"
 
         # 2. Determine Row (Category)
-        row_key = "LTCG Other" # Default
+        row_key = "LTCG Other"  # Default
 
         # We invoke classification just to be sure, though we have tax_rate in entry now
         # But categorization for rows is strictly defined
 
         if entry.gain_type == "STCG":
-             if "STCG 20%" in entry.tax_rate or "STCG 15%" in entry.tax_rate:
-                 row_key = "STCG 20% (Equity)"
-             else:
-                 row_key = "STCG Slab (Debt/Gold)"
-        else: # LTCG
-             if "LTCG 12.5%" in entry.tax_rate or "LTCG 10%" in entry.tax_rate:
-                 row_key = "LTCG 12.5% (Equity/Gold)"
-             else:
-                 row_key = "LTCG Other"
+            if "STCG 20%" in entry.tax_rate or "STCG 15%" in entry.tax_rate:
+                row_key = "STCG 20% (Equity)"
+            else:
+                row_key = "STCG Slab (Debt/Gold)"
+        else:  # LTCG
+            if "LTCG 12.5%" in entry.tax_rate or "LTCG 10%" in entry.tax_rate:
+                row_key = "LTCG 12.5% (Equity/Gold)"
+            else:
+                row_key = "LTCG Other"
 
         current_val = matrix[row_key][period_key]
         matrix[row_key][period_key] = current_val + entry.gain
@@ -794,21 +800,23 @@ class CapitalGainsService:
             "STCG 20% (Equity)",
             "STCG Slab (Debt/Gold)",
             "LTCG 12.5% (Equity/Gold)",
-            "LTCG Other"
+            "LTCG Other",
         ]
 
         for key in ordered_keys:
-            data = matrix_data.get(key, {
-                "upto_15_6": Decimal(0),
-                "upto_15_9": Decimal(0),
-                "upto_15_12": Decimal(0),
-                "upto_15_3": Decimal(0),
-                "upto_31_3": Decimal(0)
-            })
+            data = matrix_data.get(
+                key,
+                {
+                    "upto_15_6": Decimal(0),
+                    "upto_15_9": Decimal(0),
+                    "upto_15_12": Decimal(0),
+                    "upto_15_3": Decimal(0),
+                    "upto_31_3": Decimal(0),
+                },
+            )
 
-            rows.append(ITRRow(
-                category_label=key,
-                period_values=ITRPeriodValues(**data)
-            ))
+            rows.append(
+                ITRRow(category_label=key, period_values=ITRPeriodValues(**data))
+            )
 
         return rows

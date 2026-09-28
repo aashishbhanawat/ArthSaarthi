@@ -1,6 +1,7 @@
 """
 Unit tests for CAMS Parser.
 """
+
 from pathlib import Path
 
 import pandas as pd
@@ -70,9 +71,7 @@ class TestCamsParser:
 
         assert len(dividend_transactions) >= 1, "Should have DIVIDEND transactions"
 
-    def test_idcw_reinvestment_creates_two_transactions(
-        self, parser, sample_cams_df
-    ):
+    def test_idcw_reinvestment_creates_two_transactions(self, parser, sample_cams_df):
         """Test that IDCW Reinvestment creates both DIVIDEND and BUY transactions."""
         result = parser.parse(sample_cams_df)
 

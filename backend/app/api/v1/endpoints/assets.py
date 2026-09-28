@@ -34,11 +34,15 @@ def create_asset(
 
     if settings.DEBUG:
         if asset:
-            print(f"Asset with ticker '{asset_in.ticker_symbol}' "
-                  f"already exists in DB. ID: {asset.id}")
+            print(
+                f"Asset with ticker '{asset_in.ticker_symbol}' "
+                f"already exists in DB. ID: {asset.id}"
+            )
         else:
-            print(f"Asset with ticker '{asset_in.ticker_symbol}' "
-                  f"does NOT exist in DB. Proceeding with creation.")
+            print(
+                f"Asset with ticker '{asset_in.ticker_symbol}' "
+                f"does NOT exist in DB. Proceeding with creation."
+            )
         print("-------------------------------------------------\n")
     # --- END OF DEBUG LOGS ---
     if asset:
@@ -90,21 +94,23 @@ def search_stocks(
         db, query=query, asset_type=search_types
     )
     for asset in local_assets:
-        results.append({
-            "id": str(asset.id),  # Include id for local assets
-            "ticker_symbol": asset.ticker_symbol,
-            "name": asset.name,
-            "asset_type": asset.asset_type,
-            "exchange": asset.exchange,
-            "currency": asset.currency,
-            "source": "local",
-            "fmv_2018": float(asset.fmv_2018) if asset.fmv_2018 else None,
-            "bond": (
-                model_validate(schemas.Bond, asset.bond)
-                if getattr(asset, "bond", None)
-                else None
-            ),
-        })
+        results.append(
+            {
+                "id": str(asset.id),  # Include id for local assets
+                "ticker_symbol": asset.ticker_symbol,
+                "name": asset.name,
+                "asset_type": asset.asset_type,
+                "exchange": asset.exchange,
+                "currency": asset.currency,
+                "source": "local",
+                "fmv_2018": float(asset.fmv_2018) if asset.fmv_2018 else None,
+                "bond": (
+                    model_validate(schemas.Bond, asset.bond)
+                    if getattr(asset, "bond", None)
+                    else None
+                ),
+            }
+        )
 
     # 2. If few local results, also search Yahoo Finance
     if len(results) < 5:
@@ -119,27 +125,23 @@ def search_stocks(
             # "MAHKTECH", Yahoo gives "MAHKTECH.NS")
             is_indian_variant = False
             root_ticker = ticker
-            if ticker.upper().endswith('.NS'):
+            if ticker.upper().endswith(".NS"):
                 root_ticker = ticker[:-3]
                 is_indian_variant = True
-            elif ticker.upper().endswith('.BO'):
+            elif ticker.upper().endswith(".BO"):
                 root_ticker = ticker[:-3]
                 is_indian_variant = True
 
             # Check if root ticker matches any local result
             if is_indian_variant:
                 root_exists = any(
-                    lr["ticker_symbol"].upper() == root_ticker.upper()
-                    for lr in results
+                    lr["ticker_symbol"].upper() == root_ticker.upper() for lr in results
                 )
                 if root_exists:
                     continue  # Skip because we have the clean version locally
 
             # Skip if exact ticker is already in local results
-            if any(
-                lr["ticker_symbol"] == ticker
-                for lr in results
-            ):
+            if any(lr["ticker_symbol"] == ticker for lr in results):
                 continue
 
             # Filter by asset_type if provided
@@ -156,14 +158,16 @@ def search_stocks(
                 elif r_type != asset_type.upper():
                     continue
 
-            results.append({
-                "ticker_symbol": ticker,
-                "name": r.get("name"),
-                "asset_type": r.get("asset_type", "STOCK"),
-                "exchange": r.get("exchange"),
-                "currency": r.get("currency"),
-                "source": "yahoo",
-            })
+            results.append(
+                {
+                    "ticker_symbol": ticker,
+                    "name": r.get("name"),
+                    "asset_type": r.get("asset_type", "STOCK"),
+                    "exchange": r.get("exchange"),
+                    "currency": r.get("currency"),
+                    "source": "yahoo",
+                }
+            )
 
     if settings.DEBUG:
         print(f"Search for '{query}' returned {len(results)} results")
@@ -207,8 +211,10 @@ def lookup_ticker_symbol(
     if asset_type == "BOND":
         if settings.DEBUG:
             print("--- BACKEND DEBUG: Asset Lookup ---")
-            print(f"No local BOND asset found for '{query}'. "
-                  "External lookup is disabled for bonds.")
+            print(
+                f"No local BOND asset found for '{query}'. "
+                "External lookup is disabled for bonds."
+            )
             print("---------------------------------")
         return []
 
@@ -273,8 +279,10 @@ def lookup_ticker_symbol(
         if not allowed:
             if settings.DEBUG:
                 print("--- BACKEND DEBUG: Asset Lookup ---")
-                print(f"External asset found, but type '{found_type}' "
-                      f"does not match requested type '{asset_type}'. Discarding.")
+                print(
+                    f"External asset found, but type '{found_type}' "
+                    f"does not match requested type '{asset_type}'. Discarding."
+                )
                 print("---------------------------------")
             return []
 
@@ -297,11 +305,15 @@ def lookup_ticker_symbol(
     # Also check by name+type+currency to avoid duplicate key errors.
     # This handles cases where the same asset has different tickers
     # on different exchanges.
-    existing_by_name = db.query(models.Asset).filter(
-        models.Asset.name == details.get("name"),
-        models.Asset.asset_type == details.get("asset_type"),
-        models.Asset.currency == details.get("currency")
-    ).first()
+    existing_by_name = (
+        db.query(models.Asset)
+        .filter(
+            models.Asset.name == details.get("name"),
+            models.Asset.asset_type == details.get("asset_type"),
+            models.Asset.currency == details.get("currency"),
+        )
+        .first()
+    )
     if existing_by_name:
         if settings.DEBUG:
             print("--- BACKEND DEBUG: Asset Lookup ---")

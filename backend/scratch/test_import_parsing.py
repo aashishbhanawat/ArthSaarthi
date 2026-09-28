@@ -1,4 +1,3 @@
-
 import os
 from datetime import datetime
 
@@ -15,6 +14,7 @@ class ParsedTransaction(BaseModel):
     fees: float
     isin: str | None = None
 
+
 def test_serialization():
     # Simulate what happens in the backend
     t = ParsedTransaction(
@@ -24,7 +24,7 @@ def test_serialization():
         quantity=10.0,
         price_per_unit=2800.0,
         fees=15.0,
-        isin=None
+        isin=None,
     )
 
     # model_dump converts datetime to datetime object (in Pydantic v2)
@@ -37,10 +37,10 @@ def test_serialization():
     print(f"Initial DF date type: {type(df.iloc[0]['transaction_date'])}")
 
     json_path = "test_data.json"
-    df.to_json(json_path, orient='records', date_format='iso')
+    df.to_json(json_path, orient="records", date_format="iso")
 
     # Read back
-    df_read = pd.read_json(json_path, orient='records')
+    df_read = pd.read_json(json_path, orient="records")
     print(f"Read back DF date type: {type(df_read.iloc[0]['transaction_date'])}")
 
     for _, row in df_read.iterrows():
@@ -56,6 +56,7 @@ def test_serialization():
 
     if os.path.exists(json_path):
         os.remove(json_path)
+
 
 if __name__ == "__main__":
     test_serialization()

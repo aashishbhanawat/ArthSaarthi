@@ -86,4 +86,3 @@ def test_legacy_v1_2_0_migration_overwrites_blank_new_db(tmp_path, monkeypatch):
     count = cur.fetchone()[0]
     conn_result.close()
     assert count == 1
-

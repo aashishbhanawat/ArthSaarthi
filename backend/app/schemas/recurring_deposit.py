@@ -37,8 +37,6 @@ class RecurringDepositUpdate(BaseModel):
     tenure_months: Optional[int] = None
 
 
-
-
 class RecurringDeposit(RecurringDepositBase):
     id: uuid.UUID
     portfolio_id: uuid.UUID
@@ -47,9 +45,9 @@ class RecurringDeposit(RecurringDepositBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
-
 
 
 class RecurringDepositDetails(RecurringDeposit):

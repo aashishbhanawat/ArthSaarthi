@@ -1,6 +1,7 @@
 """
 Unit tests for Zerodha Coin MF Parser.
 """
+
 from pathlib import Path
 
 import pandas as pd
@@ -79,13 +80,15 @@ class TestZerodhaCoinParser:
 
     def test_buy_sell_classification(self, parser):
         """Test buy/sell classification with mock data."""
-        df = pd.DataFrame({
-            "symbol": ["TEST FUND A", "TEST FUND B"],
-            "trade_date": ["2025-01-01", "2025-01-02"],
-            "trade_type": ["buy", "sell"],
-            "quantity": [100.0, 50.0],
-            "price": [10.0, 12.0],
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["TEST FUND A", "TEST FUND B"],
+                "trade_date": ["2025-01-01", "2025-01-02"],
+                "trade_type": ["buy", "sell"],
+                "quantity": [100.0, 50.0],
+                "price": [10.0, 12.0],
+            }
+        )
 
         result = parser.parse(df)
 

@@ -307,4 +307,3 @@ def test_income_entry_salary_breakdown_and_hra_exemption(
     # Opt 3: 50% Basic (Metro) = 25,000
     # Minimum = 15,000
     assert float(data["hra_exemption"]) == 15000.0
-

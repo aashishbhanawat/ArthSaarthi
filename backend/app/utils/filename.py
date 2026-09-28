@@ -22,10 +22,10 @@ def secure_filename(filename: str) -> str:
     filename = os.path.basename(filename)
 
     # Keep only safe characters
-    filename = re.sub(r'[^a-zA-Z0-9.\-_]', '_', filename)
+    filename = re.sub(r"[^a-zA-Z0-9.\-_]", "_", filename)
 
     # Remove leading dots to prevent hidden files
-    filename = filename.lstrip('.')
+    filename = filename.lstrip(".")
 
     # Ensure it's not empty after cleaning
     if not filename:

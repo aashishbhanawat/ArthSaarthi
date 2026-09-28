@@ -2,6 +2,7 @@
 
 Parses dividend statements from Zerodha (XLSX format).
 """
+
 import logging
 from datetime import datetime
 from typing import List, Optional
@@ -19,7 +20,7 @@ class ZerodhaDividendParser(BaseParser):
     """Parser for Zerodha Dividend Statement XLSX files."""
 
     # Required columns (lowercase, underscored)
-    REQUIRED_COLUMNS = ['isin', 'ex-date', 'quantity', 'dividend_per_share']
+    REQUIRED_COLUMNS = ["isin", "ex-date", "quantity", "dividend_per_share"]
 
     def parse(
         self, df: pd.DataFrame, password: Optional[str] = None
@@ -37,7 +38,7 @@ class ZerodhaDividendParser(BaseParser):
         transactions = []
 
         # Normalize column names
-        df.columns = df.columns.str.lower().str.replace(' ', '_')
+        df.columns = df.columns.str.lower().str.replace(" ", "_")
         logger.info(f"Zerodha Dividend parser: Columns: {df.columns.tolist()}")
 
         # Check required columns
@@ -55,37 +56,33 @@ class ZerodhaDividendParser(BaseParser):
                 logger.warning(f"Row {idx}: Failed to parse - {e}")
                 continue
 
-        logger.info(
-            f"Zerodha Dividend parser: Parsed {len(transactions)} transactions"
-        )
+        logger.info(f"Zerodha Dividend parser: Parsed {len(transactions)} transactions")
         return transactions
 
-    def _parse_row(
-        self, row: pd.Series, idx: int
-    ) -> Optional[ParsedTransaction]:
+    def _parse_row(self, row: pd.Series, idx: int) -> Optional[ParsedTransaction]:
         """Parse a single row into a transaction."""
         # Extract ISIN
-        isin = str(row.get('isin', '')).strip()
-        if not isin or isin == 'nan':
+        isin = str(row.get("isin", "")).strip()
+        if not isin or isin == "nan":
             return None
 
         # Use ISIN format for ticker
         ticker_symbol = f"ISIN:{isin}"
 
         # Parse date (ex-date)
-        ex_date = row.get('ex-date')
+        ex_date = row.get("ex-date")
         transaction_date = self._parse_date(ex_date)
         if not transaction_date:
             logger.debug(f"Row {idx}: Invalid date: {ex_date}")
             return None
 
         # Parse quantity
-        quantity = self._parse_number(row.get('quantity'))
+        quantity = self._parse_number(row.get("quantity"))
         if quantity is None or quantity <= 0:
             return None
 
         # Parse dividend per share
-        dividend_per_share = self._parse_number(row.get('dividend_per_share'))
+        dividend_per_share = self._parse_number(row.get("dividend_per_share"))
         if dividend_per_share is None or dividend_per_share <= 0:
             return None
 
@@ -104,13 +101,13 @@ class ZerodhaDividendParser(BaseParser):
             return None
 
         if isinstance(value, datetime):
-            return value.strftime('%Y-%m-%d')
+            return value.strftime("%Y-%m-%d")
 
         if isinstance(value, str):
             # Try multiple formats
-            for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y']:
+            for fmt in ["%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y"]:
                 try:
-                    return datetime.strptime(value, fmt).strftime('%Y-%m-%d')
+                    return datetime.strptime(value, fmt).strftime("%Y-%m-%d")
                 except ValueError:
                     continue
 
@@ -127,7 +124,7 @@ class ZerodhaDividendParser(BaseParser):
         if isinstance(value, str):
             # Remove commas and parse
             try:
-                return float(value.replace(',', ''))
+                return float(value.replace(",", ""))
             except ValueError:
                 return None
 

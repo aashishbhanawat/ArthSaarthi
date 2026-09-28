@@ -170,9 +170,7 @@ def _get_portfolio_history(
     else:
         # If 'all' portfolios, we still need to filter by user_id
         portfolios = (
-            db.query(models.Portfolio)
-            .filter(models.Portfolio.user_id == user.id)
-            .all()
+            db.query(models.Portfolio).filter(models.Portfolio.user_id == user.id).all()
         )
         portfolio_ids = [p.id for p in portfolios]
         if portfolio_ids:
@@ -190,15 +188,16 @@ def _get_portfolio_history(
 
     # Pre-calculate RD maturity dates to avoid O(N) recalculation inside the daily loop
     processed_rds = [
-        (rd, rd.start_date + relativedelta(months=rd.tenure_months))
-        for rd in all_rds
+        (rd, rd.start_date + relativedelta(months=rd.tenure_months)) for rd in all_rds
     ]
 
     all_ppf_rates = []
     if ppf_assets:
-        all_ppf_rates = db.query(HistoricalInterestRate).filter(
-            HistoricalInterestRate.scheme_name == "PPF"
-        ).all()
+        all_ppf_rates = (
+            db.query(HistoricalInterestRate)
+            .filter(HistoricalInterestRate.scheme_name == "PPF")
+            .all()
+        )
 
     # Pre-fetch PPF transactions if we have PPF assets
     ppf_transactions = []
@@ -206,7 +205,7 @@ def _get_portfolio_history(
         ppf_asset_ids = [a.id for a in ppf_assets]
         ppf_tx_query = db.query(models.Transaction).filter(
             models.Transaction.asset_id.in_(ppf_asset_ids),
-            models.Transaction.transaction_date <= end_date
+            models.Transaction.transaction_date <= end_date,
         )
         if portfolio_id:
             ppf_tx_query = ppf_tx_query.filter(
@@ -215,13 +214,17 @@ def _get_portfolio_history(
         ppf_transactions = ppf_tx_query.all()
 
     # Fetch snapshots
-    snapshot_query = db.query(
-        DailyPortfolioSnapshot.snapshot_date,
-        func.sum(DailyPortfolioSnapshot.total_value).label('total_value')
-    ).join(models.Portfolio).filter(
-        models.Portfolio.user_id == user.id,
-        DailyPortfolioSnapshot.snapshot_date >= start_date,
-        DailyPortfolioSnapshot.snapshot_date <= end_date
+    snapshot_query = (
+        db.query(
+            DailyPortfolioSnapshot.snapshot_date,
+            func.sum(DailyPortfolioSnapshot.total_value).label("total_value"),
+        )
+        .join(models.Portfolio)
+        .filter(
+            models.Portfolio.user_id == user.id,
+            DailyPortfolioSnapshot.snapshot_date >= start_date,
+            DailyPortfolioSnapshot.snapshot_date <= end_date,
+        )
     )
     if portfolio_id:
         snapshot_query = snapshot_query.filter(models.Portfolio.id == portfolio_id)
@@ -229,7 +232,6 @@ def _get_portfolio_history(
     snapshot_query = snapshot_query.group_by(DailyPortfolioSnapshot.snapshot_date)
 
     snapshot_data = {row.snapshot_date: row.total_value for row in snapshot_query.all()}
-
 
     # Build asset query with optional portfolio filter
     asset_query = (
@@ -242,9 +244,7 @@ def _get_portfolio_history(
             crud.transaction.model.portfolio_id == portfolio_id
         )
     all_user_assets = (
-        asset_query.options(joinedload(crud.asset.model.bond))
-        .distinct()
-        .all()
+        asset_query.options(joinedload(crud.asset.model.bond)).distinct().all()
     )
 
     if not all_user_assets and not all_fds and not all_rds:
@@ -252,10 +252,15 @@ def _get_portfolio_history(
 
     # Filter for assets that are likely to have market data from yfinance/amfi
     supported_types = [
-        "STOCK", "ETF", "MUTUAL_FUND", "MUTUAL FUND", "BOND",
+        "STOCK",
+        "ETF",
+        "MUTUAL_FUND",
+        "MUTUAL FUND",
+        "BOND",
     ]
     market_traded_assets = [
-        asset for asset in all_user_assets
+        asset
+        for asset in all_user_assets
         if str(asset.asset_type).upper().replace("_", " ") in supported_types
     ]
 
@@ -276,7 +281,8 @@ def _get_portfolio_history(
 
     # --- FX Rate Handling ---
     foreign_currencies = {
-        asset.currency for asset in market_traded_assets
+        asset.currency
+        for asset in market_traded_assets
         if asset.currency and asset.currency.upper() != "INR"
     }
 
@@ -324,7 +330,7 @@ def _get_portfolio_history(
         elif t.transaction_type.lower() == "sell":
             if daily_holdings[ticker] > 0:
                 proportion = t.quantity / daily_holdings[ticker]
-                daily_invested_capital[ticker] *= (1 - proportion)
+                daily_invested_capital[ticker] *= 1 - proportion
             daily_holdings[ticker] -= t.quantity
 
     # Calculate initial holdings up to the start_date
@@ -404,9 +410,13 @@ def _get_portfolio_history(
             # We fetch the live holdings summary to get the exact true current value.
             if current_day == end_date:
                 try:
-                    portfolio_data = crud.holding.get_portfolio_holdings_and_summary(
-                        db, portfolio_id=portfolio_id
-                    ) if portfolio_id else None
+                    portfolio_data = (
+                        crud.holding.get_portfolio_holdings_and_summary(
+                            db, portfolio_id=portfolio_id
+                        )
+                        if portfolio_id
+                        else None
+                    )
 
                     if portfolio_data:
                         day_total_value = portfolio_data.summary.total_value
@@ -501,10 +511,12 @@ def _get_portfolio_history(
 
                 # 4. PPF (Simulated for this historical day)
                 from app.crud.crud_ppf import process_ppf_holding
+
                 if ppf_assets:
                     # Filter PPF transactions up to the current historical day
                     day_ppf_txns = [
-                        tx for tx in ppf_transactions
+                        tx
+                        for tx in ppf_transactions
                         if tx.transaction_date.date() <= current_day
                     ]
 
@@ -540,7 +552,10 @@ def _get_portfolio_history(
     end_time = time.time()
     logger.info(
         "Portfolio history (%s) for user %s took %.4f seconds. %d data points.",
-        range_str, user.id, end_time - start_time, len(history_points),
+        range_str,
+        user.id,
+        end_time - start_time,
+        len(history_points),
     )
     return history_points
 

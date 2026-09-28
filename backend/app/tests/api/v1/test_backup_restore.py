@@ -61,7 +61,7 @@ def test_backup_restore_flow(client: TestClient, db: Session, get_auth_headers):
         asset_type="PPF",
         currency="INR",
         account_number="12345",
-        opening_date=date(2020, 4, 1)
+        opening_date=date(2020, 4, 1),
     )
     ppf_asset = crud.asset.create(db, obj_in=ppf_asset_in)
 
@@ -89,7 +89,7 @@ def test_backup_restore_flow(client: TestClient, db: Session, get_auth_headers):
     crud.goal_link.create_with_owner(
         db,
         obj_in=schemas.GoalLinkCreate(goal_id=goal.id, asset_id=stock_asset.id),
-        user_id=user.id
+        user_id=user.id,
     )
 
     # 2. Backup
@@ -117,8 +117,8 @@ def test_backup_restore_flow(client: TestClient, db: Session, get_auth_headers):
     assert stock_tx["isin"] == "INE002A01018"
 
     # 3. Restore (Wipe and Restore)
-    file_content = json.dumps(backup_data).encode('utf-8')
-    files = {'file': ('backup.json', file_content, 'application/json')}
+    file_content = json.dumps(backup_data).encode("utf-8")
+    files = {"file": ("backup.json", file_content, "application/json")}
 
     response = client.post("/api/v1/users/me/restore", headers=headers, files=files)
     assert response.status_code == 200
@@ -234,8 +234,8 @@ def test_backup_restore_shuffled_transactions(
     backup_data["data"]["transactions"] = shuffled_txs
 
     # 3. Restore (Wipe and Restore)
-    file_content = json.dumps(backup_data).encode('utf-8')
-    files = {'file': ('backup.json', file_content, 'application/json')}
+    file_content = json.dumps(backup_data).encode("utf-8")
+    files = {"file": ("backup.json", file_content, "application/json")}
 
     response = client.post("/api/v1/users/me/restore", headers=headers, files=files)
     assert response.status_code == 200
@@ -258,9 +258,7 @@ def test_backup_restore_robust_sorting(db: Session):
 
     # 1. Setup Data
     user, _ = create_random_user(db)
-    create_test_portfolio(
-        db, user_id=user.id, name="Test Portfolio Robust"
-    )
+    create_test_portfolio(db, user_id=user.id, name="Test Portfolio Robust")
 
     # Create a Stock Asset
     stock_asset_in = schemas.AssetCreate(
@@ -274,9 +272,7 @@ def test_backup_restore_robust_sorting(db: Session):
 
     # Prepare backup data with date/datetime objects and mixed case transaction types
     backup_data = {
-        "metadata": {
-            "version": "1.2"
-        },
+        "metadata": {"version": "1.2"},
         "data": {
             "portfolios": [
                 {"name": "Test Portfolio Robust", "description": "Robust sorting test"}
@@ -291,7 +287,7 @@ def test_backup_restore_robust_sorting(db: Session):
                     "price_per_unit": 1600.0,
                     "transaction_date": date(2023, 1, 2),
                     "fees": 0.0,
-                    "isin": "INE009A01021"
+                    "isin": "INE009A01021",
                 },
                 # Buy transaction with datetime object and mixed case "Buy"
                 # (appears second, but date is earlier)
@@ -302,10 +298,10 @@ def test_backup_restore_robust_sorting(db: Session):
                     "price_per_unit": 1500.0,
                     "transaction_date": datetime(2023, 1, 1, 12, 0),
                     "fees": 0.0,
-                    "isin": "INE009A01021"
-                }
-            ]
-        }
+                    "isin": "INE009A01021",
+                },
+            ],
+        },
     }
 
     # 2. Call restore_backup directly (programmatic call with datetime/date objects)
@@ -330,5 +326,3 @@ def test_backup_restore_robust_sorting(db: Session):
     sell_tx = next(t for t in restored_txs if t.transaction_type == "SELL")
     assert buy_tx.quantity == 10
     assert sell_tx.quantity == 5
-
-

@@ -2,12 +2,14 @@ import UpdateProfileForm from '../components/Profile/UpdateProfileForm';
 import ChangePasswordForm from '../components/Profile/ChangePasswordForm';
 import BackupRestoreCard from '../components/Profile/BackupRestoreCard';
 import AndroidSettingsCard from '../components/Profile/AndroidSettingsCard';
+import { BrokerSettings } from '../components/settings/BrokerSettings';
 
 const ProfilePage = () => {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Profile & Settings</h1>
       <div className="max-w-2xl mx-auto space-y-8">
+        <BrokerSettings />
         <UpdateProfileForm />
         <ChangePasswordForm />
         <BackupRestoreCard />
@@ -18,3 +20,4 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
+

@@ -10,12 +10,16 @@ try:
         from pydantic import ConfigDict
     else:
         raise ImportError
+
     def model_validator(pre=False, mode="after"):
         return root_validator(pre=pre, skip_on_failure=True)
 except (ImportError, TypeError):
     ConfigDict = None
+
     def model_validator(pre=False, mode="after"):
         return root_validator(pre=pre)
+
+
 class FixedDepositBase(BaseModel):
     name: str
     account_number: str | None = None
@@ -61,9 +65,9 @@ class FixedDeposit(FixedDepositBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
-
 
 
 class FixedDepositDetails(FixedDeposit):

@@ -111,6 +111,7 @@ def update_fixed_deposit(
     db.refresh(fd)
     return fd
 
+
 @router.delete("/{fd_id}", response_model=schemas.Msg)
 def delete_fixed_deposit(
     *,

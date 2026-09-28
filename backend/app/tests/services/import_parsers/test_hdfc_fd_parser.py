@@ -55,6 +55,7 @@ FD Number Open/Last Renew Date Maturity Date Rate of Interest Maturity Amount Av
 
 def test_hdfc_fd_parser_password_required(parser, monkeypatch):
     """Test that ValueError("PASSWORD_REQUIRED") is raised if no password provided."""
+
     def mock_open(*args, **kwargs):
         raise ValueError("PASSWORD_REQUIRED")
 

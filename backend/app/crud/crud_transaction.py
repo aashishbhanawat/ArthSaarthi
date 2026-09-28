@@ -59,7 +59,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 TransactionType.RSU_VEST,
                 # TransactionType.BONUS - Excluded as it is an audit record;
                 # actual shares are in a BUY tx
-                TransactionType.CONTRIBUTION
+                TransactionType.CONTRIBUTION,
             ]:
                 units += qty
             elif ttype == TransactionType.SELL:
@@ -159,7 +159,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             )
             # Use a small epsilon for float comparison if needed, but Decimal is exact
             if obj_in.quantity > current_holdings:
-                 raise HTTPException(
+                raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
                         "Insufficient holdings to sell. Current holdings:"
@@ -193,9 +193,11 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 f"Auto-FIFO linking for SELL tx {db_obj.id}, qty: {obj_in.quantity}"
             )
             available_lots = self.get_available_lots(
-                db=db, user_id=portfolio.user_id, asset_id=obj_in.asset_id,
+                db=db,
+                user_id=portfolio.user_id,
+                asset_id=obj_in.asset_id,
                 portfolio_id=portfolio_id,
-                exclude_sell_id=db_obj.id
+                exclude_sell_id=db_obj.id,
             )
             remaining_qty = obj_in.quantity
             for lot in available_lots:
@@ -244,12 +246,16 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             if sell_quantity > 0:
                 # --- Idempotency Check ---
                 # Check if a SELL transaction for this RSU vest already exists.
-                existing_sell = db.query(Transaction).filter(
-                    Transaction.portfolio_id == portfolio_id,
-                    Transaction.transaction_type == TransactionType.SELL,
-                    Transaction.details.op("->>")("related_rsu_vest_id")
-                    == str(db_obj.id),
-                ).first()
+                existing_sell = (
+                    db.query(Transaction)
+                    .filter(
+                        Transaction.portfolio_id == portfolio_id,
+                        Transaction.transaction_type == TransactionType.SELL,
+                        Transaction.details.op("->>")("related_rsu_vest_id")
+                        == str(db_obj.id),
+                    )
+                    .first()
+                )
 
                 if existing_sell:
                     logger.warning(
@@ -276,10 +282,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                     },
                     links=[
                         schemas.TransactionLinkCreate(
-                            buy_transaction_id=db_obj.id,
-                            quantity=sell_quantity
+                            buy_transaction_id=db_obj.id, quantity=sell_quantity
                         )
-                    ]
+                    ],
                 )
                 # Recursively call create_with_portfolio for the SELL transaction
                 logger.debug(
@@ -330,7 +335,10 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
 
         total = query.count()
         transactions = (
-            query.order_by(self.model.transaction_date.desc()).offset(skip).limit(limit).all()
+            query.order_by(self.model.transaction_date.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
         )
         return transactions, total
 
@@ -421,11 +429,14 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             .first()
         )
 
-
     def get_available_lots(
-        self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID,
+        self,
+        db: Session,
+        *,
+        user_id: uuid.UUID,
+        asset_id: uuid.UUID,
         portfolio_id: Optional[uuid.UUID] = None,
-        exclude_sell_id: Optional[uuid.UUID] = None
+        exclude_sell_id: Optional[uuid.UUID] = None,
     ) -> List[dict]:
         """
         Calculates available lots for an asset using FIFO matching for unlinked sells
@@ -439,10 +450,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         """
         # Pre-fetch the asset currency to optimize db lookups inside the loop
         asset_currency = (
-            db.query(Asset.currency)
-            .filter(Asset.id == asset_id)
-            .limit(1)
-            .scalar()
+            db.query(Asset.currency).filter(Asset.id == asset_id).limit(1).scalar()
         )
 
         # Fetch all relevant transactions sorted by date
@@ -471,9 +479,9 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 return 3
             return 4
 
-        transactions.sort(key=lambda t: (
-            t.transaction_date, get_type_priority(t.transaction_type)
-        ))
+        transactions.sort(
+            key=lambda t: (t.transaction_date, get_type_priority(t.transaction_type))
+        )
 
         # --- Pre-fetch Transaction Links (Avoid N+1 Queries) ---
         # Identify all relevant SELL transactions to batch-fetch their links.
@@ -533,8 +541,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                                 if remaining_fraction <= 0:
                                     break
                                 deduct = min(
-                                    lot["available_quantity"],
-                                    remaining_fraction
+                                    lot["available_quantity"], remaining_fraction
                                 )
                                 lot["available_quantity"] -= deduct
                                 remaining_fraction -= deduct
@@ -581,7 +588,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                 "available_quantity": lot["available_quantity"],
                 "price_per_unit": lot["price_per_unit"],
                 "type": lot["transaction"].transaction_type,
-                "details": lot["transaction"].details
+                "details": lot["transaction"].details,
             }
             for lot in lots
             if lot["available_quantity"] > 0

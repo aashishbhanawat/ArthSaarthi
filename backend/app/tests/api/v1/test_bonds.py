@@ -257,8 +257,10 @@ def test_create_coupon_transaction_for_bond(
         "transaction_date": "2023-01-01",
     }
     crud.transaction.create_with_portfolio(
-        db, obj_in=schemas.TransactionCreate(
-            **buy_transaction_data), portfolio_id=portfolio.id)
+        db,
+        obj_in=schemas.TransactionCreate(**buy_transaction_data),
+        portfolio_id=portfolio.id,
+    )
 
     # Now, add the COUPON transaction via the API
     coupon_transaction_data = {

@@ -33,6 +33,7 @@ def create_random_rd(
         db=db, obj_in=rd_in, user_id=user_id
     )
 
+
 def test_create_recurring_deposit(
     client: TestClient,
     db: Session,
@@ -65,6 +66,7 @@ def test_create_recurring_deposit(
     assert float(data["monthly_installment"]) == float(rd_data["monthly_installment"])
     assert "id" in data
 
+
 def test_read_recurring_deposit(
     client: TestClient,
     db: Session,
@@ -84,6 +86,7 @@ def test_read_recurring_deposit(
     data = response.json()
     assert data["name"] == rd.name
     assert data["id"] == str(rd.id)
+
 
 def test_update_recurring_deposit(
     client: TestClient,
@@ -114,6 +117,7 @@ def test_update_recurring_deposit(
     assert data["name"] == update_data["name"]
     assert data["id"] == str(rd.id)
 
+
 def test_delete_recurring_deposit(
     client: TestClient,
     db: Session,
@@ -136,6 +140,7 @@ def test_delete_recurring_deposit(
         headers=auth_headers,
     )
     assert response.status_code == 404
+
 
 def test_recurring_deposit_valuation():
     """

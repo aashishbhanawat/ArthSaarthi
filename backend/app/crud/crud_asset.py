@@ -46,7 +46,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
 
         new_asset_data = AssetCreate(
             ticker_symbol=final_ticker,
-            **{k: v for k, v in details.items() if k != "ticker_symbol"}
+            **{k: v for k, v in details.items() if k != "ticker_symbol"},
         )
         return self.create(db=db, obj_in=new_asset_data)
 
@@ -74,7 +74,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         """
         Retrieves all assets that have at least one transaction in the
         specified portfolio.
-         """
+        """
         query = (
             db.query(self.model)
             .join(models.Transaction)
@@ -160,11 +160,7 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         if not isin_code or not isinstance(isin_code, str):
             return None
 
-        return (
-            db.query(self.model)
-            .filter(self.model.isin == isin_code.upper())
-            .first()
-        )
+        return db.query(self.model).filter(self.model.isin == isin_code.upper()).first()
 
     def search_by_name_or_ticker(
         self, db: Session, *, query: str, asset_type: Optional[str | List[str]] = None
@@ -180,11 +176,11 @@ class CRUDAsset(CRUDBase[Asset, AssetCreate, AssetUpdate]):
         )
         if asset_type:
             if isinstance(asset_type, list):
-                 db_query = db_query.filter(
-                     func.upper(self.model.asset_type).in_(
-                         [t.upper() for t in asset_type]
-                     )
-                 )
+                db_query = db_query.filter(
+                    func.upper(self.model.asset_type).in_(
+                        [t.upper() for t in asset_type]
+                    )
+                )
             else:
                 # Use case-insensitive comparison for asset_type
                 db_query = db_query.filter(

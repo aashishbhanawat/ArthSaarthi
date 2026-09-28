@@ -143,6 +143,7 @@ def yfinance_diagnostic():
 
     # 1b. DNS / IP Raw Connectivity Check
     import socket
+
     try:
         # Test raw IP connectivity (Cloudflare DNS)
         socket.create_connection(("1.1.1.1", 53), timeout=3).close()
@@ -159,12 +160,14 @@ def yfinance_diagnostic():
     # 2. requests / certifi info
     try:
         import certifi
+
         out["certifi"] = certifi.__version__
     except ImportError:
         out["certifi"] = "NOT INSTALLED"
 
     try:
         import curl_cffi
+
         out["curl_cffi"] = curl_cffi.__version__
     except ImportError:
         out["curl_cffi"] = "NOT INSTALLED"
@@ -188,15 +191,20 @@ def yfinance_diagnostic():
         out["ip"] = {"error": str(e)}
 
     # 5. Direct Yahoo Finance API request — check status code
-    test_url = "https://query1.finance.yahoo.com/v8/finance/chart/NTPC.NS?range=1d&interval=1d"
+    test_url = (
+        "https://query1.finance.yahoo.com/v8/finance/chart/NTPC.NS?range=1d&interval=1d"
+    )
     for label, headers in [
         ("default_ua", {}),
-        ("spoof", {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-            )
-        }),
+        (
+            "spoof",
+            {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                )
+            },
+        ),
     ]:
         try:
             resp = requests.get(
@@ -215,12 +223,11 @@ def yfinance_diagnostic():
     # 6. yfinance version and cache location
     try:
         import yfinance as yf
+
         out["yfinance"] = {"version": yf.__version__}
         try:
             loc = (
-                yf.cache.get_tz_cache_location()
-                if hasattr(yf, "cache")
-                else "unknown"
+                yf.cache.get_tz_cache_location() if hasattr(yf, "cache") else "unknown"
             )
             out["yfinance"]["tz_cache"] = str(loc)
         except Exception:

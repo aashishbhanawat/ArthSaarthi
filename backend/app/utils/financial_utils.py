@@ -11,6 +11,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
 
+
 def download_file(
     url: str, dest_path: str, log: Optional[logging.Logger] = None
 ) -> bool:
@@ -44,6 +45,7 @@ def download_file(
             log.warning(f"Download failed for {url}: {e}")
         return False
 
+
 def get_latest_trading_date() -> date:
     """Returns the latest potential trading date (today or previous weekday)."""
     d = date.today()
@@ -53,12 +55,14 @@ def get_latest_trading_date() -> date:
         d -= timedelta(days=2)
     return d
 
+
 def decrement_trading_day(d: date) -> date:
     """Returns the previous trading day (skipping weekends)."""
     d -= timedelta(days=1)
     while d.weekday() > 4:  # Sat=5, Sun=6
         d -= timedelta(days=1)
     return d
+
 
 def get_dynamic_urls(d: date) -> Dict[str, Union[str, List[str]]]:
     """Generates URLs for a specific trading date."""
@@ -97,6 +101,7 @@ def get_dynamic_urls(d: date) -> Dict[str, Union[str, List[str]]]:
         ),
     }
 
+
 def download_all_sources(
     temp_dir: str, log: Optional[logging.Logger] = None
 ) -> Dict[str, str]:
@@ -113,8 +118,14 @@ def download_all_sources(
         log.info(f"Trying dates: {[d.isoformat() for d in candidate_dates]}")
 
     required_sources = [
-        "nsdl", "bse_public", "bse_equity", "bse_debt",
-        "nse_debt", "nse_equity", "bse_index", "icici"
+        "nsdl",
+        "bse_public",
+        "bse_equity",
+        "bse_debt",
+        "nse_debt",
+        "nse_equity",
+        "bse_index",
+        "icici",
     ]
 
     for source in required_sources:

@@ -40,6 +40,7 @@ class Goal(GoalBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -87,8 +88,10 @@ class AssetInGoalLink(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
+
 
 class PortfolioInGoalLink(BaseModel):
     id: uuid.UUID
@@ -96,6 +99,7 @@ class PortfolioInGoalLink(BaseModel):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 
@@ -108,6 +112,7 @@ class GoalLink(GoalLinkBase):
     if ConfigDict:
         model_config = ConfigDict(from_attributes=True)
     else:
+
         class Config:
             orm_mode = True
 

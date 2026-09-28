@@ -46,11 +46,11 @@ class Asset(Base):
     aliases: Mapped[List[AssetAlias]] = relationship(
         "AssetAlias", back_populates="asset", cascade="all, delete-orphan"
     )
-    watchlist_items: Mapped[List[WatchlistItem]] = relationship(
-        back_populates="asset")
+    watchlist_items: Mapped[List[WatchlistItem]] = relationship(back_populates="asset")
 
     # Add the relationship to the Bond model
     bond: Mapped["Bond"] = relationship(
-        "Bond", back_populates="asset", cascade="all, delete-orphan")
+        "Bond", back_populates="asset", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (UniqueConstraint("ticker_symbol", name="uq_ticker_symbol"),)

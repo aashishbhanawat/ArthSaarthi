@@ -32,6 +32,7 @@ def _create_zip_in_memory(csv_content: str, csv_filename: str) -> bytes:
         zf.writestr(csv_filename, csv_content)
     return zip_buffer.getvalue()
 
+
 @patch("app.services.providers.nse_bhavcopy_provider.httpx.Client")
 def test_fetch_and_parse_bhavcopy_success(mock_httpx_client_class):
     """Test that the Bhavcopy is fetched, unzipped, and parsed correctly."""
@@ -49,7 +50,7 @@ def test_fetch_and_parse_bhavcopy_success(mock_httpx_client_class):
     mock_httpx_client_class.return_value.__enter__.return_value = mock_client_instance
 
     provider = NseBhavcopyProvider(cache_client=None)
-    data = provider._fetch_and_parse_bhavcopy(for_date=today) # type: ignore
+    data = provider._fetch_and_parse_bhavcopy(for_date=today)  # type: ignore
 
     assert "RELIANCE" in data
     assert data["RELIANCE"]["current_price"] == Decimal("2845.50")
@@ -79,7 +80,7 @@ def test_fetch_bhavcopy_with_fallback(mock_httpx_client_class):
     mock_httpx_client_class.return_value.__enter__.return_value = mock_client_instance
 
     provider = NseBhavcopyProvider(cache_client=None)
-    data = provider._fetch_and_parse_bhavcopy(for_date=today) # type: ignore
+    data = provider._fetch_and_parse_bhavcopy(for_date=today)  # type: ignore
 
     assert mock_client_instance.get.call_count == 2
     assert "RELIANCE" in data
@@ -107,7 +108,7 @@ def test_get_current_prices(mock_cache_client):
             {"ticker_symbol": "RELIANCE"},
             {"ticker_symbol": "NONEXISTENT"},
         ]
-        prices = provider.get_current_prices(assets_to_price) # type: ignore
+        prices = provider.get_current_prices(assets_to_price)  # type: ignore
 
         assert "RELIANCE" in prices
         assert "NONEXISTENT" not in prices
@@ -131,20 +132,22 @@ def test_caching_mechanism(mock_cache_client):
         "RELIANCE": {"current_price": "2845.50", "previous_close": "2800.00"}
     }
 
-    with patch.object(provider, "_fetch_and_parse_bhavcopy", return_value=fresh_data) as mock_fetch: # noqa: E501
+    with patch.object(
+        provider, "_fetch_and_parse_bhavcopy", return_value=fresh_data
+    ) as mock_fetch:  # noqa: E501
         # 1. First call: cache is empty, should fetch and set cache
-        provider._get_bhavcopy_data() # type: ignore
+        provider._get_bhavcopy_data()  # type: ignore
         mock_cache_client.get_json.assert_called_once()
         mock_fetch.assert_called_once()
         mock_cache_client.set_json.assert_called_once_with(
-            f"bhavcopy_data:{date.today().isoformat()}", # type: ignore
+            f"bhavcopy_data:{date.today().isoformat()}",  # type: ignore
             serialized_data,
-            expire=43200
+            expire=43200,
         )
 
         # 2. Second call: simulate cache hit
         mock_cache_client.get_json.return_value = serialized_data
-        provider._get_bhavcopy_data() # type: ignore
+        provider._get_bhavcopy_data()  # type: ignore
 
         # Assert that get_json was called again, but fetch was not.
         assert mock_cache_client.get_json.call_count == 2
