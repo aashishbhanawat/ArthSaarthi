@@ -294,7 +294,34 @@
    - Expanded `backend/app/tests/services/test_tax_setoff_service.py` with 4 new corner case test scenarios: 112A LTCG exemption headroom ceiling, Section 111A 20% equity STCG rate, zero gains / empty portfolio, and loss ledger priority.
    - All 37/37 backend pytest test cases passing cleanly.
    - ESLint & Ruff linters passing with **0 errors**.
-   - Pushed commits `b0e83059`, `973e1503`, `c557ac0f`, `3b427ec0`, `563d360f`, `984c2cb1`, `96a612f3`, `c20d1442` to branch `feat/526-tax-loss-setoff-harvesting` (PR #527).
+## 2026-10-03: Implement Direct Portfolio & Trade Statement Import via Broker APIs (FR7.1.10 / Issue #569)
+
+**Task:** Implement direct portfolio holdings & trade book statement import for Zerodha Kite and ICICI Breeze using the pluggable broker API infrastructure (NFR12).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **GitHub Issue & Branch:** Created GitHub Issue [#569](https://github.com/aashishbhanawat/ArthSaarthi/issues/569) and branch `feat/569-broker-direct-import`.
+2. **Specification & Requirements Documentation:**
+   - Authored complete 11-point FR specification [`docs/features/FR7.1.10_broker_direct_import.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR7.1.10_broker_direct_import.md).
+   - Cross-referenced `FR7.1.10` in [`docs/requirements.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/requirements.md).
+3. **Backend Integration & Parsers:**
+   - Extended `ZerodhaKiteProvider` (`fetch_holdings`, `fetch_trades`) and `IciciBreezeProvider` (`fetch_holdings`, `fetch_trades`) in `backend/app/services/providers/`.
+   - Created `broker_api_parser.py` converting raw Zerodha & ICICI JSON payloads into ArthSaarthi standardized import transaction objects.
+   - Added endpoint `POST /api/v1/import-sessions/broker/sync` in `backend/app/api/v1/endpoints/import_sessions.py` to pull holdings/trades directly using active encrypted broker tokens and stage an `ImportSession`.
+   - Added `BrokerSyncRequest` schema in `app/schemas/import_session.py` and exported in `app/schemas/__init__.py`.
+4. **Frontend UI Components & API Services:**
+   - Added `syncBrokerApi` endpoint in `frontend/src/services/brokerApi.ts`.
+   - Built `BrokerApiSyncCard.tsx` component with broker selection pills, OAuth token status badges (`Connected`, `Daily Auth Required`, `Not Configured`), portfolio selector, and import mode controls.
+   - Integrated `BrokerApiSyncCard` into `frontend/src/pages/Import/DataImportPage.tsx`.
+5. **Testing & Verification:**
+   - Added backend pytest unit tests in `backend/app/tests/services/import_parsers/test_broker_api_parser.py` and API endpoint tests in `backend/app/tests/api/v1/test_broker_sync_endpoints.py`.
+   - Added frontend Jest component test `frontend/src/__tests__/components/Import/BrokerApiSyncCard.test.tsx`.
+   - Added Playwright E2E test `e2e/tests/broker-direct-import.spec.ts`.
+   - Verified 100% test pass rate across backend pytest (2/2 parser, 2/2 endpoint) and frontend Jest (51/51 test suites, 201/201 tests).
+
+---
 
 ## 2026-08-23: Implement Intra-Head Capital Loss Set-Off, Loss Ledger & Tax-Loss Harvesting (FR6.5 Phase 3 / Issue #526)
 

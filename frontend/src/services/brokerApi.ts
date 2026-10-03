@@ -66,3 +66,17 @@ export const deleteBrokerCredentials = async (provider_name: string): Promise<{ 
   return response.data;
 };
 
+export interface BrokerSyncPayload {
+  provider_name: string;
+  portfolio_id: string;
+  import_type: string;
+  from_date?: string;
+  to_date?: string;
+}
+
+export const syncBrokerApi = async (payload: BrokerSyncPayload) => {
+  const response = await apiClient.post('/api/v1/import-sessions/broker/sync', payload);
+  return response.data;
+};
+
+

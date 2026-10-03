@@ -821,3 +821,144 @@ def commit_fd_import_session(
         )
         db.commit()
         raise HTTPException(status_code=500, detail="Could not commit FDs.")
+
+
+@router.post(
+    "/broker/sync",
+    response_model=schemas.ImportSession,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_broker_sync_import_session(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user),
+    sync_req: schemas.BrokerSyncRequest = Body(...),
+) -> Any:
+    """
+    Create a new import session directly from a connected broker API (Zerodha Kite / ICICI Breeze).
+    Pulls holdings or trade history directly, standardizes records, and stages an ImportSession.
+    """
+    portfolio = crud.portfolio.get(db=db, id=sync_req.portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if portfolio.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Not enough permissions for this portfolio"
+        )
+
+    provider_name = sync_req.provider_name.lower()
+    cred = crud.crud_broker.get_by_user_and_provider(
+        db, user_id=current_user.id, provider_name=provider_name
+    )
+    if not cred or not cred.is_active or not cred.encrypted_access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"No active session for broker '{provider_name}'. Please authenticate via Broker Settings.",
+        )
+
+    if cred.token_expires_at and cred.token_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Broker session token for '{provider_name}' has expired. Please re-authenticate.",
+        )
+
+    token = crud.crud_broker.get_decrypted_token(cred)
+    secret = crud.crud_broker.get_decrypted_secret(cred)
+
+    if provider_name == "zerodha_kite":
+        from app.services.providers.zerodha_provider import ZerodhaKiteProvider
+
+        provider = ZerodhaKiteProvider(
+            api_key=cred.api_key, access_token=token, api_secret=secret
+        )
+        try:
+            if sync_req.import_type == "trades":
+                raw_data = provider.fetch_trades()
+            else:
+                raw_data = provider.fetch_holdings()
+        except PermissionError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Zerodha Kite session token is invalid or expired.",
+            )
+        from app.services.import_parsers.broker_api_parser import (
+            parse_zerodha_api_payload,
+        )
+
+        parsed_items = parse_zerodha_api_payload(
+            raw_data,
+            import_type=sync_req.import_type,
+            default_portfolio_id=str(sync_req.portfolio_id),
+        )
+
+    elif provider_name == "icici_breeze":
+        from app.services.providers.icici_breeze_provider import IciciBreezeProvider
+
+        provider = IciciBreezeProvider(
+            api_key=cred.api_key, session_token=token, api_secret=secret
+        )
+        try:
+            if sync_req.import_type == "trades":
+                from_date_obj = (
+                    date_type.fromisoformat(sync_req.from_date)
+                    if sync_req.from_date
+                    else None
+                )
+                to_date_obj = (
+                    date_type.fromisoformat(sync_req.to_date)
+                    if sync_req.to_date
+                    else None
+                )
+                raw_data = provider.fetch_trades(
+                    from_date=from_date_obj, to_date=to_date_obj
+                )
+            else:
+                raw_data = provider.fetch_holdings()
+        except PermissionError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="ICICI Breeze session token is invalid or expired.",
+            )
+        from app.services.import_parsers.broker_api_parser import parse_icici_api_payload
+
+        parsed_items = parse_icici_api_payload(
+            raw_data,
+            import_type=sync_req.import_type,
+            default_portfolio_id=str(sync_req.portfolio_id),
+        )
+
+    else:
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported broker provider '{provider_name}'"
+        )
+
+    session_id = uuid.uuid4()
+    upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
+    upload_dir.mkdir(exist_ok=True)
+    parsed_file_path = upload_dir / f"parsed_{session_id}.json"
+
+    df = pd.DataFrame(parsed_items)
+    df.to_json(parsed_file_path, orient="records", date_format="iso")
+
+    import_session_in = schemas.ImportSessionCreate(
+        file_name=f"{provider_name}_{sync_req.import_type}_sync.json",
+        file_path=str(parsed_file_path),
+        portfolio_id=sync_req.portfolio_id,
+        source=f"{provider_name}_api",
+        status="PARSED",
+    )
+
+    import_session = crud.import_session.create_with_owner(
+        db=db, obj_in=import_session_in, owner_id=current_user.id
+    )
+
+    crud.import_session.update(
+        db=db,
+        db_obj=import_session,
+        obj_in=schemas.ImportSessionUpdate(
+            parsed_file_path=str(parsed_file_path), status="PARSED"
+        ),
+    )
+    db.refresh(import_session)
+    return import_session
+

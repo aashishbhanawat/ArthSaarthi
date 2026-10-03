@@ -132,3 +132,12 @@ class FDImportPreview(BaseModel):
 # Schema for FD import commit request body
 class FDImportCommit(BaseModel):
     fds_to_commit: List[ParsedFixedDeposit]
+
+
+class BrokerSyncRequest(BaseModel):
+    provider_name: str  # zerodha_kite, icici_breeze
+    portfolio_id: uuid.UUID
+    import_type: str = "holdings"  # holdings, trades
+    from_date: Optional[str] = None
+    to_date: Optional[str] = None
+

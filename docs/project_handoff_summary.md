@@ -18,6 +18,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Direct Portfolio & Trade Statement Import via Broker APIs (Issue #569 / FR7.1.10) (Updated 2026-10-03):**
+    - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` to map raw broker JSON into ArthSaarthi standardized transaction schema.
+    - **Backend Direct Sync Endpoint:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status.
+    - **Frontend UI Component (`BrokerApiSyncCard.tsx`):** Created `BrokerApiSyncCard` component in `frontend/src/components/import/` with broker provider toggle pills, live OAuth connection status badges, target portfolio selector, and import mode controls. Integrated into `DataImportPage.tsx`.
+    - **Automated Tests & Quality:** Added backend pytest parser and endpoint tests in `test_broker_api_parser.py` and `test_broker_sync_endpoints.py`, frontend Jest unit test `BrokerApiSyncCard.test.tsx`, and Playwright E2E test `broker-direct-import.spec.ts`. Verified 100% test pass rate across backend pytest and frontend Jest (51/51 test suites, 201/201 tests).
+
 *   **Broker Callback & Provider Security Remediation (Issue #558 / PR #568) (Updated 2026-09-27):**
     - **Reflected XSS Sanitization (`backend/app/api/v1/endpoints/broker.py`):** Added `_sanitize_token_for_html` utility enforcing `html.escape(cleaned, quote=True)` and regex `[^a-zA-Z0-9_\-]` to prevent XSS payloads in HTML landing pages for `/icici/callback` and `/zerodha/callback`.
     - **CodeQL Cryptographic False Positive Resolution (`zerodha_provider.py`, `icici_breeze_provider.py`):** Isolated broker API protocol SHA-256 checksum and header signature calculations into generic helpers (`_compute_broker_signature`, `_compute_breeze_header_signature`) so static security scanners accurately recognize protocol checksum generation.
