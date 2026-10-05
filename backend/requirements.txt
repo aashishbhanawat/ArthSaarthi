@@ -36,6 +36,7 @@ cffi==2.0.0
 charset-normalizer==3.4.4
     # via
     #   pdfminer-six
+    #   reportlab
     #   requests
 click==8.3.1
     # via
@@ -114,7 +115,9 @@ pdfplumber==0.11.9
 peewee==3.19.0
     # via yfinance
 pillow==12.3.0
-    # via pdfplumber
+    # via
+    #   pdfplumber
+    #   reportlab
 platformdirs==4.7.0
     # via yfinance
 pluggy==1.6.0
@@ -170,6 +173,8 @@ pyyaml==6.0.3
     # via uvicorn
 redis==7.1.1
     # via -r requirements.in
+reportlab==4.4.10
+    # via -r requirements.in
 requests==2.32.5
     # via
     #   -r requirements.in
@@ -217,7 +222,7 @@ typing-inspection==0.4.2
     #   fastapi
     #   pydantic
     #   pydantic-settings
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -r requirements.in
     #   requests
@@ -234,6 +239,4 @@ websockets==16.0
 xlrd==2.0.2
     # via -r requirements.in
 yfinance==1.1.0
-    # via -r requirements.in
-reportlab==4.4.10
     # via -r requirements.in
