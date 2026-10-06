@@ -1,3 +1,20 @@
+## 2026-10-06: Fix Missing datetime Import in Broker Sync Endpoint (Issue #569)
+
+**Task:** Fix `NameError: name 'datetime' is not defined` in `backend/app/api/v1/endpoints/import_sessions.py` during `POST /api/v1/import-sessions/broker/sync`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - On `POST /api/v1/import-sessions/broker/sync`, checking token expiration referenced `datetime.now(timezone.utc)`, but line 4 of `import_sessions.py` only imported `from datetime import date as date_type`.
+2. **Fix (`backend/app/api/v1/endpoints/import_sessions.py`):**
+   - Updated import statement on line 4 to `from datetime import date as date_type, datetime, timezone`.
+3. **Verification:**
+   - Ran backend pytest test suite (`pytest app/tests/api/v1/test_broker_sync_endpoints.py`): 2/2 passed cleanly with code 0.
+
+---
+
 ## 2026-09-27: Security CodeQL Scan Remediation for Broker Callbacks & Providers (PR #568 / Issue #558)
 
 **Task:** Resolve GitHub Advanced Security CodeQL alerts on Reflected Cross-Site Scripting (XSS) in broker OAuth HTML callback endpoints and weak cryptographic algorithm false positives on broker API SHA-256 signature calculations.  

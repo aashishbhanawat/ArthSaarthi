@@ -24,6 +24,22 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-10-06-01
+**Title:** HTTP 500 NameError datetime is not defined on POST /api/v1/import-sessions/broker/sync
+**Module:** Import Sessions / Broker Direct Import
+**Reported By:** User
+**Date Reported:** 2026-10-06
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Calling `POST /api/v1/import-sessions/broker/sync` triggered an HTTP 500 Internal Server Error with detail `Failed to sync from broker API: name 'datetime' is not defined`.
+**Steps to Reproduce:**
+1. Connect Zerodha or ICICI Breeze broker account in Broker Settings.
+2. Navigate to Data Import -> Broker Direct Sync.
+3. Click "Sync Holdings" or "Sync Trade Statement".
+**Expected Behavior:** Broker API holdings/trades are fetched and staged in an import session.
+**Actual Behavior:** API responds with 500 Internal Server Error due to `NameError: name 'datetime' is not defined`.
+**Resolution:** Updated line 4 of `backend/app/api/v1/endpoints/import_sessions.py` to `from datetime import date as date_type, datetime, timezone`.
+
 ---
 
 **Bug ID:** 2026-07-30-01

@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-09-27
+**Last Updated:** 2026-10-06
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 Completed — Security & CodeQL Scanner Fixes for Feature #558 (Zerodha Kite & ICICI Breeze Broker API Integration) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via Zerodha & ICICI Broker APIs) Implemented, Fixed & Verified.
 
-**Latest Achievement:** Resolved CodeQL Advanced Security alerts on PR #568 for Reflected XSS in broker OAuth HTML callbacks and weak cryptographic hashing false positives on SHA-256 API checksum protocols. Verified with clean test pass (7/7) and zero ruff linter errors.
+**Latest Achievement:** Resolved HTTP 500 runtime error on `POST /api/v1/import-sessions/broker/sync` by adding missing `datetime` and `timezone` imports in `import_sessions.py`. Verified with clean backend pytest execution (2/2 passing).
 
 ## 2. Test Suite Status
 
@@ -18,9 +18,9 @@
 
 ## Recent Stabilization & Refinement Efforts
 
-*   **Direct Portfolio & Trade Statement Import via Broker APIs (Issue #569 / FR7.1.10) (Updated 2026-10-03):**
+*   **Direct Portfolio & Trade Statement Import via Broker APIs (Issue #569 / FR7.1.10) (Updated 2026-10-06):**
     - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` to map raw broker JSON into ArthSaarthi standardized transaction schema.
-    - **Backend Direct Sync Endpoint:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status.
+    - **Backend Direct Sync Endpoint:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status. Fixed missing `datetime` and `timezone` import issue on line 4.
     - **Frontend UI Component (`BrokerApiSyncCard.tsx`):** Created `BrokerApiSyncCard` component in `frontend/src/components/import/` with broker provider toggle pills, live OAuth connection status badges, target portfolio selector, and import mode controls. Integrated into `DataImportPage.tsx`.
     - **Automated Tests & Quality:** Added backend pytest parser and endpoint tests in `test_broker_api_parser.py` and `test_broker_sync_endpoints.py`, frontend Jest unit test `BrokerApiSyncCard.test.tsx`, and Playwright E2E test `broker-direct-import.spec.ts`. Verified 100% test pass rate across backend pytest and frontend Jest (51/51 test suites, 201/201 tests).
 
