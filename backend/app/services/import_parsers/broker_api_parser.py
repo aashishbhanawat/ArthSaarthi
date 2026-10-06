@@ -31,10 +31,12 @@ def parse_zerodha_api_payload(
             parsed_items.append(
                 {
                     "transaction_date": datetime.now().strftime("%Y-%m-%d"),
+                    "ticker_symbol": ticker_symbol,
                     "symbol": ticker_symbol,
                     "name": symbol,
                     "transaction_type": "BUY",
                     "quantity": float(qty),
+                    "price_per_unit": float(avg_price),
                     "price": float(avg_price),
                     "amount": float(amount),
                     "fees": 0.0,
@@ -69,10 +71,12 @@ def parse_zerodha_api_payload(
             parsed_items.append(
                 {
                     "transaction_date": tx_date,
+                    "ticker_symbol": ticker_symbol,
                     "symbol": ticker_symbol,
                     "name": symbol,
                     "transaction_type": tx_type if tx_type in ("BUY", "SELL") else "BUY",
                     "quantity": float(qty),
+                    "price_per_unit": float(price),
                     "price": float(price),
                     "amount": float(amount),
                     "fees": 0.0,
@@ -111,10 +115,12 @@ def parse_icici_api_payload(
             parsed_items.append(
                 {
                     "transaction_date": datetime.now().strftime("%Y-%m-%d"),
+                    "ticker_symbol": ticker_symbol,
                     "symbol": ticker_symbol,
                     "name": stock_code,
                     "transaction_type": "BUY",
                     "quantity": float(qty),
+                    "price_per_unit": float(avg_price),
                     "price": float(avg_price),
                     "amount": float(amount),
                     "fees": 0.0,
@@ -150,10 +156,12 @@ def parse_icici_api_payload(
             parsed_items.append(
                 {
                     "transaction_date": tx_date,
+                    "ticker_symbol": ticker_symbol,
                     "symbol": ticker_symbol,
                     "name": stock_code,
                     "transaction_type": tx_type,
                     "quantity": float(qty),
+                    "price_per_unit": float(price),
                     "price": float(price),
                     "amount": float(amount),
                     "fees": 0.0,

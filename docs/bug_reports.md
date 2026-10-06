@@ -24,6 +24,23 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-10-06-02
+**Title:** Validation errors for ParsedTransaction: ticker_symbol and price_per_unit required field missing
+**Module:** Import Sessions / Broker Direct Import Parsers
+**Reported By:** User
+**Date Reported:** 2026-10-06
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Broker direct import sessions failed preview parsing with 18 validation errors: `ticker_symbol Field required` and `price_per_unit Field required`.
+**Steps to Reproduce:**
+1. Sync Zerodha or ICICI holdings/trades via Broker Direct Import.
+2. View import session preview.
+**Expected Behavior:** Parsed transactions are validated into `valid_new` or `duplicates` array.
+**Actual Behavior:** All rows are categorized as `invalid` due to key mismatch (`symbol` instead of `ticker_symbol` and `price` instead of `price_per_unit`).
+**Resolution:** Updated `broker_api_parser.py` payload dicts to output `ticker_symbol` and `price_per_unit`. Added `@root_validator(pre=True)` in `ParsedTransaction` schema (`import_session.py`) to auto-normalize legacy `symbol`/`price` fields.
+
+---
+
 **Bug ID:** 2026-10-06-01
 **Title:** HTTP 500 NameError datetime is not defined on POST /api/v1/import-sessions/broker/sync
 **Module:** Import Sessions / Broker Direct Import

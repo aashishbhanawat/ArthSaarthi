@@ -1,3 +1,21 @@
+## 2026-10-06: Fix Broker API Import Session ParsedTransaction Schema Mapping (Issue #569)
+
+**Task:** Fix `ParsedTransaction` schema validation failure (`ticker_symbol` and `price_per_unit` field required missing errors) when loading preview for broker direct import sessions.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - `broker_api_parser.py` generated dictionaries with keys `"symbol"` and `"price"`, whereas `ParsedTransaction` schema and import session endpoints require `"ticker_symbol"` and `"price_per_unit"`.
+2. **Fix (`broker_api_parser.py` & `import_session.py`):**
+   - Updated `parse_zerodha_api_payload` and `parse_icici_api_payload` in `backend/app/services/import_parsers/broker_api_parser.py` to output `"ticker_symbol"` and `"price_per_unit"`.
+   - Added `@root_validator(pre=True)` normalize method in `ParsedTransaction` (`backend/app/schemas/import_session.py`) to auto-map `"symbol" -> "ticker_symbol"` and `"price" -> "price_per_unit"` if missing.
+3. **Verification:**
+   - Ran backend pytest test suite (`test_broker_api_parser.py` and `test_broker_sync_endpoints.py`): 6/6 passed cleanly with code 0.
+
+---
+
 ## 2026-10-06: Fix Missing datetime Import in Broker Sync Endpoint (Issue #569)
 
 **Task:** Fix `NameError: name 'datetime' is not defined` in `backend/app/api/v1/endpoints/import_sessions.py` during `POST /api/v1/import-sessions/broker/sync`.  
