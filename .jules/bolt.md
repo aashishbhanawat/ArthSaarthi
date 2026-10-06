@@ -41,3 +41,6 @@
 ## 2024-05-19 - Prevent React.memo Defeat from Unmemoized Inline Functions
 **Learning:** Passing inline arrow functions (e.g., `onEdit={() => onEdit(item)}`) to child components within map loops recreates function references on every parent render, defeating any `React.memo` optimizations on the child components.
 **Action:** Always pass the memoized callback references directly (e.g., `onEdit={onEdit}`) and let the child component handle the closure with its item data.
+## 2026-10-06 - Push transaction asset filtering to database
+**Learning:** Fetching all transactions globally for a shared asset and using Python list comprehensions to filter by `user_id` creates significant memory overhead and an (N)$ processing bottleneck. It also risks data leakage.
+**Action:** Optimize queries by performing a `JOIN` with the `Portfolio` table and filtering by `user_id` at the database level. For example, updating `get_multi_by_asset` to accept `user_id` eliminates the need to load cross-tenant data into Python memory.
