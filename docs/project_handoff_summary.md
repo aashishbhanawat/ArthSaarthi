@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via Zerodha & ICICI Broker APIs) Implemented, Fixed & Verified.
 
-**Latest Achievement:** Fixed `ParsedTransaction` schema validation errors (`ticker_symbol` and `price_per_unit` field missing) during import preview by mapping broker API fields in `broker_api_parser.py` and adding a pre-validator normalization in `import_session.py`. Verified with clean backend pytest execution (6/6 passing).
+**Latest Achievement:** Enhanced ICICI Breeze session token error validation in `IciciBreezeProvider` and added explicit network error handling (`HTTP 503 Service Unavailable`) for broker direct import endpoints. Verified with clean backend pytest execution (8/8 passing).
 
 ## 2. Test Suite Status
 
@@ -19,8 +19,8 @@
 ## Recent Stabilization & Refinement Efforts
 
 *   **Direct Portfolio & Trade Statement Import via Broker APIs (Issue #569 / FR7.1.10) (Updated 2026-10-06):**
-    - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` to map raw broker JSON into ArthSaarthi standardized transaction schema with `ticker_symbol` and `price_per_unit`. Added `@root_validator` to `ParsedTransaction` schema in `import_session.py` for field normalization.
-    - **Backend Direct Sync Endpoint:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status. Fixed missing `datetime` and `timezone` import issue on line 4.
+    - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` to map raw broker JSON into ArthSaarthi standardized transaction schema with `ticker_symbol` and `price_per_unit`. Added `@root_validator` to `ParsedTransaction` schema in `import_session.py` for field normalization. Added `_check_res_for_token_error` in `IciciBreezeProvider` to catch HTTP 200 JSON token errors.
+    - **Backend Direct Sync Endpoint:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status. Fixed missing `datetime`/`timezone` imports and added `httpx.RequestError` / network exception handling (HTTP 503).
     - **Frontend UI Component (`BrokerApiSyncCard.tsx`):** Created `BrokerApiSyncCard` component in `frontend/src/components/import/` with broker provider toggle pills, live OAuth connection status badges, target portfolio selector, and import mode controls. Integrated into `DataImportPage.tsx`.
     - **Automated Tests & Quality:** Added backend pytest parser and endpoint tests in `test_broker_api_parser.py` and `test_broker_sync_endpoints.py`, frontend Jest unit test `BrokerApiSyncCard.test.tsx`, and Playwright E2E test `broker-direct-import.spec.ts`. Verified 100% test pass rate across backend pytest and frontend Jest (51/51 test suites, 201/201 tests).
 

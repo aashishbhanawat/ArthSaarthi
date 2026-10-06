@@ -1,3 +1,22 @@
+## 2026-10-06: Fix ICICI Breeze Session Error Validation & Network Exception Handling (Issue #569)
+
+**Task:** Fix ICICI Breeze API response handling for expired session tokens returned with HTTP 200 JSON status, and add explicit network exception handling for broker direct sync endpoints.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - ICICI Breeze API returns HTTP 200 with JSON payload `{"Status": 401, "Error": "Session Token Expired"}` when session token expires, causing provider methods to fall through to `return []` or obscure errors.
+   - Network connectivity errors (e.g. `[Errno 101] Network is unreachable`) bubbled up to unhandled HTTP 500 server errors.
+2. **Fix (`icici_breeze_provider.py` & `import_sessions.py`):**
+   - Added `_check_res_for_token_error` in `IciciBreezeProvider` to inspect JSON response status codes (`401`/`403`) and error string keywords (`token`, `session`, `expired`, `invalid`), raising `PermissionError("BROKER_TOKEN_EXPIRED")`.
+   - Added `(httpx.RequestError, OSError, ConnectionError)` handling in `import_sessions.py` returning HTTP 503 Service Unavailable with friendly error guidance.
+3. **Verification:**
+   - Ran backend pytest test suite (`test_broker_sync_endpoints.py` and `test_broker_providers.py`): 8/8 passed cleanly with code 0.
+
+---
+
 ## 2026-10-06: Fix Broker API Import Session ParsedTransaction Schema Mapping (Issue #569)
 
 **Task:** Fix `ParsedTransaction` schema validation failure (`ticker_symbol` and `price_per_unit` field required missing errors) when loading preview for broker direct import sessions.  

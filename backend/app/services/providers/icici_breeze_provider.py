@@ -98,6 +98,17 @@ class IciciBreezeProvider(FinancialDataProvider):
 
         return {"success": False, "error": "Authentication failed"}
 
+    def _check_res_for_token_error(self, res_json: Dict[str, Any]) -> None:
+        if not isinstance(res_json, dict):
+            return
+        status_val = str(res_json.get("Status") or res_json.get("status") or "")
+        err_msg = str(res_json.get("Error") or res_json.get("error") or "").lower()
+        if status_val in ("401", "403") or any(
+            kw in err_msg for kw in ("token", "session", "unauthorized", "expired", "invalid")
+        ):
+            logger.error(f"ICICI Breeze API returned session error: {res_json}")
+            raise PermissionError("BROKER_TOKEN_EXPIRED")
+
     def fetch_holdings(self) -> List[Dict[str, Any]]:
         """Fetches current portfolio holdings directly from ICICI Breeze API."""
         if not self.api_key or not self.session_token:
@@ -113,6 +124,7 @@ class IciciBreezeProvider(FinancialDataProvider):
                 logger.info(f"ICICI Breeze fetch_holdings HTTP status: {resp.status_code}")
                 if resp.status_code == 200:
                     res_json = resp.json()
+                    self._check_res_for_token_error(res_json)
                     success_data = res_json.get("Success")
                     if success_data is not None and isinstance(success_data, list):
                         logger.info(f"Successfully fetched {len(success_data)} holdings from ICICI Breeze.")
@@ -153,6 +165,7 @@ class IciciBreezeProvider(FinancialDataProvider):
                 logger.info(f"ICICI Breeze fetch_trades HTTP status: {resp.status_code}")
                 if resp.status_code == 200:
                     res_json = resp.json()
+                    self._check_res_for_token_error(res_json)
                     success_data = res_json.get("Success")
                     if success_data is not None and isinstance(success_data, list):
                         logger.info(f"Successfully fetched {len(success_data)} trades from ICICI Breeze.")

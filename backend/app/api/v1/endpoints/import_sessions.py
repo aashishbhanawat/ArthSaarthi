@@ -6,6 +6,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, List, Optional
 
+import httpx
 import pandas as pd
 from fastapi import (
     APIRouter,
@@ -893,7 +894,13 @@ async def create_broker_sync_import_session(
             except PermissionError:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Zerodha Kite session token is invalid or expired.",
+                    detail="Zerodha Kite session token is invalid or expired. Please re-authenticate via Broker Settings.",
+                )
+            except (httpx.RequestError, OSError, ConnectionError) as net_err:
+                log.error(f"Zerodha Kite API network error: {net_err}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"Unable to reach Zerodha Kite server. Network error: {net_err}",
                 )
             from app.services.import_parsers.broker_api_parser import (
                 parse_zerodha_api_payload,
@@ -931,7 +938,13 @@ async def create_broker_sync_import_session(
             except PermissionError:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="ICICI Breeze session token is invalid or expired.",
+                    detail="ICICI Breeze session token is invalid or expired. Please re-authenticate via Broker Settings.",
+                )
+            except (httpx.RequestError, OSError, ConnectionError) as net_err:
+                log.error(f"ICICI Breeze API network error: {net_err}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"Unable to reach ICICI Breeze server. Network error: {net_err}",
                 )
             from app.services.import_parsers.broker_api_parser import parse_icici_api_payload
 

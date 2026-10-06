@@ -24,6 +24,23 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-10-06-03
+**Title:** ICICI Breeze HTTP 200 session token error fall-through and unhandled network errors
+**Module:** Import Sessions / ICICI Breeze Provider
+**Reported By:** User
+**Date Reported:** 2026-10-06
+**Classification:** Implementation (Backend)
+**Severity:** Medium
+**Description:** ICICI Breeze API returns HTTP 200 with JSON `{"Status": 401, "Error": "Session Token Expired"}` when session token expires, causing provider methods to skip raising `PermissionError`. In addition, unhandled socket/network exceptions (`[Errno 101] Network is unreachable`) returned unhandled 500 errors.
+**Steps to Reproduce:**
+1. Sync ICICI Breeze holdings/trades with expired token or unreachable network.
+2. Observe fall-through or HTTP 500 Network is unreachable.
+**Expected Behavior:** API returns HTTP 401 with re-authenticate guidance on token error, or HTTP 503 on network connection failure.
+**Actual Behavior:** API returned unhandled HTTP 500 or silent fall-through.
+**Resolution:** Added `_check_res_for_token_error` in `IciciBreezeProvider` to inspect JSON response status/error fields. Caught network exceptions in `import_sessions.py` returning HTTP 503 Service Unavailable.
+
+---
+
 **Bug ID:** 2026-10-06-02
 **Title:** Validation errors for ParsedTransaction: ticker_symbol and price_per_unit required field missing
 **Module:** Import Sessions / Broker Direct Import Parsers
