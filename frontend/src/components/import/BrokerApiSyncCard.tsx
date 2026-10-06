@@ -74,7 +74,17 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
         navigate(`/import/${session.id}/preview`);
       }
     } catch (err: any) {
-      const detail = err.response?.data?.detail || 'Failed to sync from broker API.';
+      let detail = 'Failed to sync from broker API.';
+      const resDetail = err.response?.data?.detail;
+      if (typeof resDetail === 'string') {
+        detail = resDetail;
+      } else if (Array.isArray(resDetail)) {
+        detail = resDetail.map((d: any) => d.msg || JSON.stringify(d)).join('; ');
+      } else if (resDetail && typeof resDetail === 'object') {
+        detail = JSON.stringify(resDetail);
+      } else if (err.message) {
+        detail = err.message;
+      }
       setErrorMsg(detail);
     } finally {
       setIsSyncing(false);

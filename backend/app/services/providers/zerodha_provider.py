@@ -100,53 +100,66 @@ class ZerodhaKiteProvider(FinancialDataProvider):
         """Fetches current portfolio holdings directly from Zerodha Kite API."""
         if not self.api_key or not self.access_token:
             logger.warning("Zerodha Kite: Cannot fetch holdings without API key and access token.")
-            return []
+            raise PermissionError("BROKER_TOKEN_EXPIRED")
 
         url = f"{KITE_BASE_URL}/portfolio/holdings"
         headers = self._get_headers()
+        logger.info("Executing Zerodha Kite fetch_holdings API call...")
         try:
             with httpx.Client(timeout=10.0) as client:
                 resp = client.get(url, headers=headers)
+                logger.info(f"Zerodha Kite fetch_holdings HTTP status: {resp.status_code}")
                 if resp.status_code == 200:
                     res_json = resp.json()
                     if res_json.get("status") == "success":
-                        return res_json.get("data", [])
+                        data = res_json.get("data", [])
+                        logger.info(f"Successfully fetched {len(data)} holdings from Zerodha Kite.")
+                        return data
                 elif resp.status_code in (401, 403):
-                    logger.error("Zerodha Kite access token expired or invalid.")
+                    logger.error(f"Zerodha Kite access token expired or invalid (HTTP {resp.status_code}).")
                     raise PermissionError("BROKER_TOKEN_EXPIRED")
                 else:
                     logger.error(f"Zerodha Kite fetch_holdings HTTP error {resp.status_code}: {resp.text}")
+                    raise RuntimeError(f"Zerodha Kite API HTTP {resp.status_code}: {resp.text}")
         except PermissionError:
             raise
         except Exception as e:
-            logger.error(f"Zerodha Kite fetch_holdings error: {e}")
+            logger.error(f"Zerodha Kite fetch_holdings error: {e}", exc_info=True)
+            raise
         return []
 
     def fetch_trades(self) -> List[Dict[str, Any]]:
         """Fetches executed trades directly from Zerodha Kite API."""
         if not self.api_key or not self.access_token:
             logger.warning("Zerodha Kite: Cannot fetch trades without API key and access token.")
-            return []
+            raise PermissionError("BROKER_TOKEN_EXPIRED")
 
         url = f"{KITE_BASE_URL}/trades"
         headers = self._get_headers()
+        logger.info("Executing Zerodha Kite fetch_trades API call...")
         try:
             with httpx.Client(timeout=10.0) as client:
                 resp = client.get(url, headers=headers)
+                logger.info(f"Zerodha Kite fetch_trades HTTP status: {resp.status_code}")
                 if resp.status_code == 200:
                     res_json = resp.json()
                     if res_json.get("status") == "success":
-                        return res_json.get("data", [])
+                        data = res_json.get("data", [])
+                        logger.info(f"Successfully fetched {len(data)} trades from Zerodha Kite.")
+                        return data
                 elif resp.status_code in (401, 403):
-                    logger.error("Zerodha Kite access token expired or invalid.")
+                    logger.error(f"Zerodha Kite access token expired or invalid (HTTP {resp.status_code}).")
                     raise PermissionError("BROKER_TOKEN_EXPIRED")
                 else:
                     logger.error(f"Zerodha Kite fetch_trades HTTP error {resp.status_code}: {resp.text}")
+                    raise RuntimeError(f"Zerodha Kite API HTTP {resp.status_code}: {resp.text}")
         except PermissionError:
             raise
         except Exception as e:
-            logger.error(f"Zerodha Kite fetch_trades error: {e}")
+            logger.error(f"Zerodha Kite fetch_trades error: {e}", exc_info=True)
+            raise
         return []
+
 
     def _clean_symbol(self, ticker: str) -> str:
         """Strips exchange suffix like .NS, .BO, etc."""

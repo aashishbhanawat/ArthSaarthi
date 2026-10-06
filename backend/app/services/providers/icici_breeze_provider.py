@@ -102,27 +102,32 @@ class IciciBreezeProvider(FinancialDataProvider):
         """Fetches current portfolio holdings directly from ICICI Breeze API."""
         if not self.api_key or not self.session_token:
             logger.warning("ICICI Breeze: Cannot fetch holdings without API key and session token.")
-            return []
+            raise PermissionError("BROKER_TOKEN_EXPIRED")
 
         url = f"{BREEZE_BASE_URL}/portfolioholdings"
         headers = self._get_headers()
+        logger.info("Executing ICICI Breeze fetch_holdings API call...")
         try:
             with httpx.Client(timeout=10.0) as client:
                 resp = client.get(url, headers=headers)
+                logger.info(f"ICICI Breeze fetch_holdings HTTP status: {resp.status_code}")
                 if resp.status_code == 200:
                     res_json = resp.json()
                     success_data = res_json.get("Success")
                     if success_data is not None and isinstance(success_data, list):
+                        logger.info(f"Successfully fetched {len(success_data)} holdings from ICICI Breeze.")
                         return success_data
                 elif resp.status_code in (401, 403):
-                    logger.error("ICICI Breeze session token expired or invalid.")
+                    logger.error(f"ICICI Breeze session token expired or invalid (HTTP {resp.status_code}).")
                     raise PermissionError("BROKER_TOKEN_EXPIRED")
                 else:
                     logger.error(f"ICICI Breeze fetch_holdings HTTP error {resp.status_code}: {resp.text}")
+                    raise RuntimeError(f"ICICI Breeze API HTTP {resp.status_code}: {resp.text}")
         except PermissionError:
             raise
         except Exception as e:
-            logger.error(f"ICICI Breeze fetch_holdings error: {e}")
+            logger.error(f"ICICI Breeze fetch_holdings error: {e}", exc_info=True)
+            raise
         return []
 
     def fetch_trades(
@@ -131,7 +136,7 @@ class IciciBreezeProvider(FinancialDataProvider):
         """Fetches trade book directly from ICICI Breeze API."""
         if not self.api_key or not self.session_token:
             logger.warning("ICICI Breeze: Cannot fetch trades without API key and session token.")
-            return []
+            raise PermissionError("BROKER_TOKEN_EXPIRED")
 
         url = f"{BREEZE_BASE_URL}/trades"
         headers = self._get_headers()
@@ -141,24 +146,30 @@ class IciciBreezeProvider(FinancialDataProvider):
         if to_date:
             params["to_date"] = f"{to_date.isoformat()}T23:59:59.000Z"
 
+        logger.info("Executing ICICI Breeze fetch_trades API call...")
         try:
             with httpx.Client(timeout=10.0) as client:
                 resp = client.get(url, headers=headers, params=params)
+                logger.info(f"ICICI Breeze fetch_trades HTTP status: {resp.status_code}")
                 if resp.status_code == 200:
                     res_json = resp.json()
                     success_data = res_json.get("Success")
                     if success_data is not None and isinstance(success_data, list):
+                        logger.info(f"Successfully fetched {len(success_data)} trades from ICICI Breeze.")
                         return success_data
                 elif resp.status_code in (401, 403):
-                    logger.error("ICICI Breeze session token expired or invalid.")
+                    logger.error(f"ICICI Breeze session token expired or invalid (HTTP {resp.status_code}).")
                     raise PermissionError("BROKER_TOKEN_EXPIRED")
                 else:
                     logger.error(f"ICICI Breeze fetch_trades HTTP error {resp.status_code}: {resp.text}")
+                    raise RuntimeError(f"ICICI Breeze API HTTP {resp.status_code}: {resp.text}")
         except PermissionError:
             raise
         except Exception as e:
-            logger.error(f"ICICI Breeze fetch_trades error: {e}")
+            logger.error(f"ICICI Breeze fetch_trades error: {e}", exc_info=True)
+            raise
         return []
+
 
     def _clean_symbol(self, ticker: str) -> str:
         """Strips exchange suffix like .NS, .BO, etc."""
