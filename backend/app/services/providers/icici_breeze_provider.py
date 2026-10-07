@@ -35,14 +35,14 @@ class IciciBreezeProvider(FinancialDataProvider):
         api_secret: Optional[str] = None,
         cache_client: Optional[CacheClient] = None,
     ):
-        self.api_key = api_key
-        self.session_token = session_token
-        self.api_secret = api_secret
+        self.api_key = api_key.strip() if api_key else None
+        self.session_token = session_token.strip() if session_token else None
+        self.api_secret = api_secret.strip() if api_secret else None
         self.cache_client = cache_client
 
     @staticmethod
     def get_login_url(api_key: str) -> str:
-        encoded_key = urllib.parse.quote(api_key)
+        encoded_key = urllib.parse.quote(api_key.strip() if api_key else "")
         return f"https://api.icicidirect.com/apiuser/login?api_key={encoded_key}"
 
     def _get_headers(self, payload_str: str = "") -> Dict[str, str]:
@@ -68,35 +68,29 @@ class IciciBreezeProvider(FinancialDataProvider):
     def authenticate_session(self, session_token: str) -> Dict[str, Any]:
         """Exchanges/verifies ICICI Breeze session token with customer details endpoint."""
         url = f"{BREEZE_BASE_URL}/customerdetails"
-        self.session_token = session_token
-        payload = {"SessionToken": session_token, "AppKey": self.api_key or ""}
-        payload_str = json.dumps(payload)
+        self.session_token = session_token.strip() if session_token else None
+        payload = {"SessionToken": self.session_token or "", "AppKey": self.api_key or ""}
+        payload_str = json.dumps(payload, separators=(',', ':'))
         headers = self._get_headers(payload_str)
 
         try:
             with httpx.Client(timeout=10.0) as client:
-                # Try POST with json payload
                 resp = client.post(url, headers=headers, content=payload_str)
                 if resp.status_code == 200:
                     data = resp.json()
-                    if data.get("Status") == 200 or data.get("status") == 200:
+                    status_val = data.get("Status") or data.get("status")
+                    if status_val in (200, "200"):
                         return {"success": True, "data": data.get("Success", {})}
-
-                # Fallback to GET with content body
-                resp_get = client.get(url, headers=headers)
-                if resp_get.status_code == 200:
-                    data_get = resp_get.json()
-                    if data_get.get("Status") == 200 or data_get.get("status") == 200:
-                        return {"success": True, "data": data_get.get("Success", {})}
-
+                    else:
+                        err_msg = data.get("Error") or data.get("error") or f"Customerdetails status {status_val}"
+                        logger.error(f"ICICI Breeze customerdetails error: {err_msg}")
+                        return {"success": False, "error": str(err_msg)}
+                else:
+                    logger.error(f"ICICI Breeze customerdetails HTTP {resp.status_code}: {resp.text}")
+                    return {"success": False, "error": f"ICICI Breeze API HTTP {resp.status_code}: {resp.text}"}
         except Exception as e:
-            logger.error(f"ICICI Breeze authentication error: {e}")
-
-        # If session_token is provided and non-empty, accept it to enable user integration
-        if session_token and len(session_token.strip()) >= 5:
-            return {"success": True, "data": {"session_token": session_token}}
-
-        return {"success": False, "error": "Authentication failed"}
+            logger.error(f"ICICI Breeze authentication exception: {e}")
+            return {"success": False, "error": f"Connection/auth exception: {e}"}
 
     def _check_res_for_token_error(self, res_json: Dict[str, Any]) -> None:
         if not isinstance(res_json, dict):

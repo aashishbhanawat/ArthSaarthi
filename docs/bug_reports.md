@@ -41,7 +41,7 @@ Copy and paste the template below to file a new bug report.
 3. Authenticate ICICI Breeze with an expired token and note false "Active Session" status.
 **Expected Behavior:** Holdings extract item dates or use user-specified as-of date; Zerodha trades display date pickers; ICICI rejects invalid session tokens during setup.
 **Actual Behavior:** Holdings defaulted to current date; Zerodha datepickers were hidden; ICICI accepted invalid tokens.
-**Resolution:** Added `as_of_date` parameter to `BrokerSyncRequest` and `broker_api_parser.py` date resolution; enabled datepickers for Zerodha trades in `BrokerApiSyncCard.tsx`; updated `IciciBreezeProvider.authenticate_session` to strictly verify ICICI `/customerdetails` response.
+**Resolution:** Added `as_of_date` parameter to `BrokerSyncRequest` and `broker_api_parser.py` date resolution; enabled datepickers for Zerodha trades in `BrokerApiSyncCard.tsx`; updated `IciciBreezeProvider.authenticate_session` to strictly verify ICICI `/customerdetails` response, applied `.strip()` to tokens/secrets, and formatted payload string using compact `json.dumps(..., separators=(',', ':'))`.
 
 ---
 

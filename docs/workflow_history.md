@@ -14,8 +14,9 @@
    - Enabled `From Date` and `To Date` datepickers in `BrokerApiSyncCard.tsx` for Zerodha Trade Book History mode.
    - Added `from_date` / `to_date` parameter support to `ZerodhaKiteProvider.fetch_trades()`.
    - Added validation in `import_sessions.py` to raise HTTP 400 Bad Request if 0 items are returned by the broker API, preventing empty import session creation.
-3. **ICICI Breeze Session Token Validation (`icici_breeze_provider.py`, `broker.py`):**
-   - Updated `IciciBreezeProvider._get_headers()` to include both `X-SessionToken` & `SessionToken` and `X-AppKey` & `AppKey`.
+3. **ICICI Breeze Session Token Validation & Compact JSON Formatting (`icici_breeze_provider.py`, `broker.py`):**
+   - Applied `.strip()` to `api_key`, `session_token`, and `api_secret` in `IciciBreezeProvider` to prevent hidden whitespace/newlines in HTTP headers (`X-SessionToken`, `X-AppKey`).
+   - Formatted request body JSON using compact `json.dumps(payload, separators=(',', ':'))` matching ICICI Direct checksum verification specs.
    - Updated `authenticate_session()` to verify response status code and JSON `Status: 200` from ICICI Direct `/customerdetails`. Removed legacy fallback that falsely accepted arbitrary strings, ensuring invalid tokens fail immediately during OAuth setup.
 4. **Automated Testing:**
    - Ran backend pytest test suite (`test_broker_sync_endpoints.py`, `test_broker_api_parser.py`, `test_broker_providers.py`): 12/12 passed cleanly (exit code 0).
