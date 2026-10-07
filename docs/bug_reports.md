@@ -24,6 +24,23 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-10-07-02
+**Title:** ICICI Breeze authentication HTTP 405 Method Not Allowed on customerdetails & un-exchanged raw session token saved to DB
+**Module:** Import Sessions / ICICI Breeze Provider & Broker Router
+**Reported By:** User
+**Date Reported:** 2026-10-07
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Calling `authenticate_session()` in `IciciBreezeProvider` sent a `POST` request to `/customerdetails` which returned `HTTP 405 Method Not Allowed` with `Allow: GET`. Additionally, `authenticate_icici_breeze()` endpoint saved the raw un-exchanged `apisession` string from the user input into the database instead of saving the exchanged `session_token` returned by `customerdetails`.
+**Steps to Reproduce:**
+1. Authenticate ICICI Breeze broker account in Broker Settings with a valid `apisession`.
+2. Observe HTTP 405 error or subsequent 401 Unauthorized errors when fetching holdings/trades.
+**Expected Behavior:** `/customerdetails` is called using HTTP `GET`, and the exchanged `session_token` returned in the response payload is saved in `broker_credentials` table.
+**Actual Behavior:** API POSTed to `/customerdetails` causing HTTP 405, and raw input token was saved to DB causing HTTP 401 on subsequent requests.
+**Resolution:** Updated `authenticate_session()` in `IciciBreezeProvider` to perform `GET` on `/customerdetails` with query parameters `SessionToken` and `AppKey`, and headers `X-SessionToken` and `SessionToken`. Updated `authenticate_icici_breeze()` in `broker.py` to extract `session_token` from `customerdetails` response and persist `final_session_token` to DB.
+
+---
+
 **Bug ID:** 2026-10-07-01
 **Title:** Broker holdings imported with current date fallback, hidden Zerodha trade date pickers, and false ICICI session validation
 **Module:** Import Sessions / Broker Direct Import

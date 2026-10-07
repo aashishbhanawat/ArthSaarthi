@@ -1,3 +1,23 @@
+## 2026-10-07: Fix ICICI Breeze Customerdetails GET Method & Exchanged Session Token Persistence (Issue #569)
+
+**Task:** Fix ICICI Breeze authentication HTTP 405 Method Not Allowed error on `/customerdetails`, pass `SessionToken` header, and save exchanged session token in database.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **GET Request & Header Alignment (`icici_breeze_provider.py`):**
+   - Updated `authenticate_session()` in `IciciBreezeProvider` to perform HTTP `GET` directly on `/customerdetails` (resolving HTTP 405 Method Not Allowed error returned when attempting POST).
+   - Added both `X-SessionToken` and `SessionToken` to `_get_headers()` to support all ICICI Breeze API header variants.
+2. **Exchanged Session Token Extraction & Database Persistence (`broker.py`):**
+   - Extracted `session_token` returned inside `Success` payload from `customerdetails` response.
+   - Updated `authenticate_icici_breeze()` endpoint in `broker.py` to persist `final_session_token` (exchanged session token) in `broker_credentials` DB table instead of un-exchanged raw input token (`apisession`).
+3. **Verification:**
+   - Ran backend pytest test suite (413 passed, 3 skipped, 0 failed).
+   - Restarted `pms-backend` Docker container.
+
+---
+
 ## 2026-10-07: Fix Broker Direct Import Date Resolution & ICICI Session Token Validation (Issue #569)
 
 **Task:** Resolve holdings snapshot transaction date fallback, enable date range pickers for Zerodha Trade Book history, reject invalid ICICI Breeze session tokens during authentication, and handle empty import session results.  

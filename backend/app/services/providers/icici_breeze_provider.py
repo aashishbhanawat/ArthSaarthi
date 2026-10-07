@@ -52,6 +52,7 @@ class IciciBreezeProvider(FinancialDataProvider):
         }
         if self.session_token:
             headers["X-SessionToken"] = self.session_token
+            headers["SessionToken"] = self.session_token
         if self.api_key:
             headers["X-AppKey"] = self.api_key
 
@@ -66,21 +67,37 @@ class IciciBreezeProvider(FinancialDataProvider):
         return headers
 
     def authenticate_session(self, session_token: str) -> Dict[str, Any]:
-        """Exchanges/verifies ICICI Breeze session token with customer details endpoint."""
+        """Exchanges/verifies ICICI Breeze session token with customer details endpoint using GET."""
         url = f"{BREEZE_BASE_URL}/customerdetails"
         self.session_token = session_token.strip() if session_token else None
-        payload = {"SessionToken": self.session_token or "", "AppKey": self.api_key or ""}
-        payload_str = json.dumps(payload, separators=(',', ':'))
-        headers = self._get_headers(payload_str)
+        headers = self._get_headers("")
+        params = {
+            "SessionToken": self.session_token or "",
+            "AppKey": self.api_key or "",
+        }
 
         try:
             with httpx.Client(timeout=10.0) as client:
-                resp = client.post(url, headers=headers, content=payload_str)
+                resp = client.get(url, headers=headers, params=params)
                 if resp.status_code == 200:
                     data = resp.json()
                     status_val = data.get("Status") or data.get("status")
                     if status_val in (200, "200"):
-                        return {"success": True, "data": data.get("Success", {})}
+                        success_data = data.get("Success", {})
+                        returned_token = None
+                        if isinstance(success_data, dict):
+                            returned_token = success_data.get("session_token") or success_data.get("SessionToken")
+                        elif isinstance(data, dict):
+                            returned_token = data.get("session_token") or data.get("SessionToken")
+
+                        if returned_token and isinstance(returned_token, str):
+                            self.session_token = returned_token.strip()
+
+                        return {
+                            "success": True,
+                            "data": success_data,
+                            "session_token": self.session_token,
+                        }
                     else:
                         err_msg = data.get("Error") or data.get("error") or f"Customerdetails status {status_val}"
                         logger.error(f"ICICI Breeze customerdetails error: {err_msg}")

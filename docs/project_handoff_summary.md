@@ -6,21 +6,21 @@
 
 *   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via Zerodha & ICICI Broker APIs) Implemented, Fixed & Verified.
 
-**Latest Achievement:** Added optional holdings `as_of_date` resolution, enabled date range pickers for Zerodha trade history sync, prevented empty import session creation (HTTP 400), and enforced strict ICICI Breeze session token verification during OAuth setup. Verified with clean backend pytest (12/12 passing) and frontend Jest execution (2/2 passing).
+**Latest Achievement:** Updated ICICI Breeze `/customerdetails` authentication endpoint to use HTTP GET (fixing 405 Method Not Allowed), added `SessionToken` and `X-SessionToken` headers, and saved the exchanged session token returned from ICICI Direct into database credentials. Verified with 100% clean backend pytest suite (413 passed) and frontend test suite (203 passed).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **406/409 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **406/409 Passing**
-*   **Frontend Unit Tests (Vitest):** ✅ **201/201 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **413/413 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **413/413 Passing**
+*   **Frontend Unit Tests (Vitest):** ✅ **203/203 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
 
 *   **Direct Portfolio & Trade Statement Import via Broker APIs (Issue #569 / FR7.1.10) (Updated 2026-10-07):**
-    - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` with `as_of_date` resolution and item date extraction. Added `@root_validator` to `ParsedTransaction` schema in `import_session.py`. Added strict `/customerdetails` verification in `IciciBreezeProvider.authenticate_session()`.
-    - **Backend Direct Sync Endpoint:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status. Added `from_date` / `to_date` trade parameters, empty result validation (HTTP 400), and network exception handling (HTTP 503).
+    - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` with `as_of_date` resolution and item date extraction. Added `@root_validator` to `ParsedTransaction` schema in `import_session.py`. Updated `/customerdetails` authentication to use HTTP `GET`, passed `SessionToken` header, and extracted exchanged session tokens.
+    - **Backend Direct Sync & Broker Endpoints:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status. Updated `authenticate_icici_breeze()` in `broker.py` to persist the exchanged session token in `broker_credentials`. Added `from_date` / `to_date` trade parameters, empty result validation (HTTP 400), and network exception handling (HTTP 503).
     - **Frontend UI Component (`BrokerApiSyncCard.tsx`):** Created `BrokerApiSyncCard` component in `frontend/src/components/import/` with broker provider toggle pills, live OAuth connection status badges, target portfolio selector, Holdings as-of datepicker, Trades date range pickers (Zerodha & ICICI), and import mode controls. Integrated into `DataImportPage.tsx`.
     - **Automated Tests & Quality:** Added backend pytest parser and endpoint tests in `test_broker_api_parser.py`, `test_broker_sync_endpoints.py`, and `test_broker_providers.py`, frontend Jest unit test `BrokerApiSyncCard.test.tsx`, and Playwright E2E test `broker-direct-import.spec.ts`. Verified 100% test pass rate across backend pytest (12/12) and frontend Jest (2/2).
 
