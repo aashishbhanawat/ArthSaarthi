@@ -150,4 +150,5 @@ class BrokerSyncRequest(BaseModel):
     import_type: str = "holdings"  # holdings, trades
     from_date: Optional[str] = None
     to_date: Optional[str] = None
+    as_of_date: Optional[str] = None
 

@@ -128,7 +128,9 @@ class ZerodhaKiteProvider(FinancialDataProvider):
             raise
         return []
 
-    def fetch_trades(self) -> List[Dict[str, Any]]:
+    def fetch_trades(
+        self, from_date: Optional[date] = None, to_date: Optional[date] = None
+    ) -> List[Dict[str, Any]]:
         """Fetches executed trades directly from Zerodha Kite API."""
         if not self.api_key or not self.access_token:
             logger.warning("Zerodha Kite: Cannot fetch trades without API key and access token.")
@@ -136,10 +138,16 @@ class ZerodhaKiteProvider(FinancialDataProvider):
 
         url = f"{KITE_BASE_URL}/trades"
         headers = self._get_headers()
+        params: Dict[str, str] = {}
+        if from_date:
+            params["from"] = from_date.strftime("%Y-%m-%d")
+        if to_date:
+            params["to"] = to_date.strftime("%Y-%m-%d")
+
         logger.info("Executing Zerodha Kite fetch_trades API call...")
         try:
             with httpx.Client(timeout=10.0) as client:
-                resp = client.get(url, headers=headers)
+                resp = client.get(url, headers=headers, params=params)
                 logger.info(f"Zerodha Kite fetch_trades HTTP status: {resp.status_code}")
                 if resp.status_code == 200:
                     res_json = resp.json()
@@ -147,6 +155,9 @@ class ZerodhaKiteProvider(FinancialDataProvider):
                         data = res_json.get("data", [])
                         logger.info(f"Successfully fetched {len(data)} trades from Zerodha Kite.")
                         return data
+                    elif res_json.get("error_type") in ("TokenException", "PermissionException") or "token" in str(res_json.get("message", "")).lower():
+                        logger.error(f"Zerodha Kite access token error: {res_json}")
+                        raise PermissionError("BROKER_TOKEN_EXPIRED")
                 elif resp.status_code in (401, 403):
                     logger.error(f"Zerodha Kite access token expired or invalid (HTTP {resp.status_code}).")
                     raise PermissionError("BROKER_TOKEN_EXPIRED")

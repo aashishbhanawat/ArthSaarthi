@@ -1,3 +1,28 @@
+## 2026-10-07: Fix Broker Direct Import Date Resolution & ICICI Session Token Validation (Issue #569)
+
+**Task:** Resolve holdings snapshot transaction date fallback, enable date range pickers for Zerodha Trade Book history, reject invalid ICICI Breeze session tokens during authentication, and handle empty import session results.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Holdings Transaction Date Resolution (`broker_api_parser.py`, `import_session.py`, `BrokerApiSyncCard.tsx`):**
+   - Added `as_of_date` parameter to `BrokerSyncRequest` schema and `parse_zerodha_api_payload` / `parse_icici_api_payload`.
+   - Added item date resolution extracting holding order/authorised/created dates from broker JSON, defaulting to user-specified `as_of_date` or today's date if omitted.
+   - Added an optional "As-Of Transaction Date" datepicker in `BrokerApiSyncCard.tsx` for Holdings import mode.
+2. **Zerodha Trade Book History Date Range & Empty Session Prevention (`BrokerApiSyncCard.tsx`, `zerodha_provider.py`, `import_sessions.py`):**
+   - Enabled `From Date` and `To Date` datepickers in `BrokerApiSyncCard.tsx` for Zerodha Trade Book History mode.
+   - Added `from_date` / `to_date` parameter support to `ZerodhaKiteProvider.fetch_trades()`.
+   - Added validation in `import_sessions.py` to raise HTTP 400 Bad Request if 0 items are returned by the broker API, preventing empty import session creation.
+3. **ICICI Breeze Session Token Validation (`icici_breeze_provider.py`, `broker.py`):**
+   - Updated `IciciBreezeProvider._get_headers()` to include both `X-SessionToken` & `SessionToken` and `X-AppKey` & `AppKey`.
+   - Updated `authenticate_session()` to verify response status code and JSON `Status: 200` from ICICI Direct `/customerdetails`. Removed legacy fallback that falsely accepted arbitrary strings, ensuring invalid tokens fail immediately during OAuth setup.
+4. **Automated Testing:**
+   - Ran backend pytest test suite (`test_broker_sync_endpoints.py`, `test_broker_api_parser.py`, `test_broker_providers.py`): 12/12 passed cleanly (exit code 0).
+   - Ran frontend Jest unit test suite (`BrokerApiSyncCard.test.tsx`): 2/2 passed cleanly.
+
+---
+
 ## 2026-10-06: Fix ICICI Breeze Session Error Validation & Network Exception Handling (Issue #569)
 
 **Task:** Fix ICICI Breeze API response handling for expired session tokens returned with HTTP 200 JSON status, and add explicit network exception handling for broker direct sync endpoints.  

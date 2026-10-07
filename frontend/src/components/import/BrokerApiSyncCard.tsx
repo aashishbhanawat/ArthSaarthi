@@ -23,6 +23,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
   const [importType, setImportType] = useState<'holdings' | 'trades'>('holdings');
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
+  const [asOfDate, setAsOfDate] = useState<string>('');
   
   const [credentials, setCredentials] = useState<BrokerCredentialResponse[]>([]);
   const [isLoadingCreds, setIsLoadingCreds] = useState<boolean>(true);
@@ -68,6 +69,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
         import_type: importType,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
+        as_of_date: asOfDate || undefined,
       });
 
       if (session && session.id) {
@@ -210,8 +212,20 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
           </div>
         </div>
 
-        {/* Date pickers for trades */}
-        {importType === 'trades' && broker === 'icici_breeze' && (
+        {/* Date pickers for holdings or trades */}
+        {importType === 'holdings' && (
+          <div className="pt-2">
+            <label className="form-label text-xs">As-Of Transaction Date (Optional - defaults to today)</label>
+            <input
+              type="date"
+              value={asOfDate}
+              onChange={(e) => setAsOfDate(e.target.value)}
+              className="form-input text-sm"
+            />
+          </div>
+        )}
+
+        {importType === 'trades' && (
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div>
               <label className="form-label text-xs">From Date (Optional)</label>

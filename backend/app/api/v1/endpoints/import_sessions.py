@@ -888,7 +888,19 @@ async def create_broker_sync_import_session(
             )
             try:
                 if sync_req.import_type == "trades":
-                    raw_data = provider.fetch_trades()
+                    from_date_obj = (
+                        date_type.fromisoformat(sync_req.from_date)
+                        if sync_req.from_date
+                        else None
+                    )
+                    to_date_obj = (
+                        date_type.fromisoformat(sync_req.to_date)
+                        if sync_req.to_date
+                        else None
+                    )
+                    raw_data = provider.fetch_trades(
+                        from_date=from_date_obj, to_date=to_date_obj
+                    )
                 else:
                     raw_data = provider.fetch_holdings()
             except PermissionError:
@@ -910,6 +922,7 @@ async def create_broker_sync_import_session(
                 raw_data,
                 import_type=sync_req.import_type,
                 default_portfolio_id=str(sync_req.portfolio_id),
+                as_of_date=sync_req.as_of_date or sync_req.from_date,
             )
 
         elif provider_name == "icici_breeze":
@@ -952,11 +965,19 @@ async def create_broker_sync_import_session(
                 raw_data,
                 import_type=sync_req.import_type,
                 default_portfolio_id=str(sync_req.portfolio_id),
+                as_of_date=sync_req.as_of_date or sync_req.from_date,
             )
 
         else:
             raise HTTPException(
                 status_code=400, detail=f"Unsupported broker provider '{provider_name}'"
+            )
+
+        if not parsed_items:
+            log.warning(f"No {sync_req.import_type} records returned by broker provider '{provider_name}'.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"No {sync_req.import_type} records found for your {provider_name.replace('_', ' ').title()} account for the specified date range.",
             )
 
         session_id = uuid.uuid4()

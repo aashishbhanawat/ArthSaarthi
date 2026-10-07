@@ -10,6 +10,7 @@ def parse_zerodha_api_payload(
     raw_data: List[Dict[str, Any]],
     import_type: str = "holdings",
     default_portfolio_id: Optional[str] = None,
+    as_of_date: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Converts Zerodha Kite API holdings or trades JSON list into standard ArthSaarthi import transaction items."""
     parsed_items: List[Dict[str, Any]] = []
@@ -28,9 +29,26 @@ def parse_zerodha_api_payload(
             ticker_symbol = f"{symbol}.BO" if exchange == "BSE" else f"{symbol}.NS"
             amount = qty * avg_price
 
+            item_date = (
+                item.get("authorised_date")
+                or item.get("created_date")
+                or item.get("buy_date")
+                or item.get("date")
+                or item.get("order_timestamp")
+            )
+            if item_date:
+                try:
+                    tx_date = datetime.fromisoformat(str(item_date).replace("Z", "+00:00")).strftime("%Y-%m-%d")
+                except Exception:
+                    tx_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
+            elif as_of_date:
+                tx_date = as_of_date
+            else:
+                tx_date = datetime.now().strftime("%Y-%m-%d")
+
             parsed_items.append(
                 {
-                    "transaction_date": datetime.now().strftime("%Y-%m-%d"),
+                    "transaction_date": tx_date,
                     "ticker_symbol": ticker_symbol,
                     "symbol": ticker_symbol,
                     "name": symbol,
@@ -55,13 +73,15 @@ def parse_zerodha_api_payload(
             tx_type = item.get("transaction_type", "BUY").upper()
             qty = Decimal(str(item.get("quantity") or 0))
             price = Decimal(str(item.get("average_price") or item.get("price") or 0))
-            fill_ts = item.get("fill_timestamp") or item.get("trade_date") or ""
+            fill_ts = item.get("fill_timestamp") or item.get("trade_date") or item.get("order_timestamp") or ""
 
             if fill_ts:
                 try:
                     tx_date = datetime.fromisoformat(str(fill_ts).replace("Z", "+00:00")).strftime("%Y-%m-%d")
                 except Exception:
-                    tx_date = datetime.now().strftime("%Y-%m-%d")
+                    tx_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
+            elif as_of_date:
+                tx_date = as_of_date
             else:
                 tx_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -95,6 +115,7 @@ def parse_icici_api_payload(
     raw_data: List[Dict[str, Any]],
     import_type: str = "holdings",
     default_portfolio_id: Optional[str] = None,
+    as_of_date: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Converts ICICI Breeze API holdings or trades JSON list into standard ArthSaarthi import transaction items."""
     parsed_items: List[Dict[str, Any]] = []
@@ -112,9 +133,25 @@ def parse_icici_api_payload(
             ticker_symbol = f"{stock_code}.BO" if exchange == "BSE" else f"{stock_code}.NS"
             amount = qty * avg_price
 
+            item_date = (
+                item.get("trade_date")
+                or item.get("order_date")
+                or item.get("date")
+                or item.get("execution_time")
+            )
+            if item_date:
+                try:
+                    tx_date = datetime.fromisoformat(str(item_date).replace("Z", "+00:00")).strftime("%Y-%m-%d")
+                except Exception:
+                    tx_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
+            elif as_of_date:
+                tx_date = as_of_date
+            else:
+                tx_date = datetime.now().strftime("%Y-%m-%d")
+
             parsed_items.append(
                 {
-                    "transaction_date": datetime.now().strftime("%Y-%m-%d"),
+                    "transaction_date": tx_date,
                     "ticker_symbol": ticker_symbol,
                     "symbol": ticker_symbol,
                     "name": stock_code,
@@ -145,7 +182,9 @@ def parse_icici_api_payload(
                 try:
                     tx_date = datetime.fromisoformat(str(trade_date_raw).replace("Z", "+00:00")).strftime("%Y-%m-%d")
                 except Exception:
-                    tx_date = datetime.now().strftime("%Y-%m-%d")
+                    tx_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
+            elif as_of_date:
+                tx_date = as_of_date
             else:
                 tx_date = datetime.now().strftime("%Y-%m-%d")
 

@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-10-06
+**Last Updated:** 2026-10-07
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via Zerodha & ICICI Broker APIs) Implemented, Fixed & Verified.
 
-**Latest Achievement:** Enhanced ICICI Breeze session token error validation in `IciciBreezeProvider` and added explicit network error handling (`HTTP 503 Service Unavailable`) for broker direct import endpoints. Verified with clean backend pytest execution (8/8 passing).
+**Latest Achievement:** Added optional holdings `as_of_date` resolution, enabled date range pickers for Zerodha trade history sync, prevented empty import session creation (HTTP 400), and enforced strict ICICI Breeze session token verification during OAuth setup. Verified with clean backend pytest (12/12 passing) and frontend Jest execution (2/2 passing).
 
 ## 2. Test Suite Status
 
@@ -18,11 +18,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
-*   **Direct Portfolio & Trade Statement Import via Broker APIs (Issue #569 / FR7.1.10) (Updated 2026-10-06):**
-    - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` to map raw broker JSON into ArthSaarthi standardized transaction schema with `ticker_symbol` and `price_per_unit`. Added `@root_validator` to `ParsedTransaction` schema in `import_session.py` for field normalization. Added `_check_res_for_token_error` in `IciciBreezeProvider` to catch HTTP 200 JSON token errors.
-    - **Backend Direct Sync Endpoint:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status. Fixed missing `datetime`/`timezone` imports and added `httpx.RequestError` / network exception handling (HTTP 503).
-    - **Frontend UI Component (`BrokerApiSyncCard.tsx`):** Created `BrokerApiSyncCard` component in `frontend/src/components/import/` with broker provider toggle pills, live OAuth connection status badges, target portfolio selector, and import mode controls. Integrated into `DataImportPage.tsx`.
-    - **Automated Tests & Quality:** Added backend pytest parser and endpoint tests in `test_broker_api_parser.py` and `test_broker_sync_endpoints.py`, frontend Jest unit test `BrokerApiSyncCard.test.tsx`, and Playwright E2E test `broker-direct-import.spec.ts`. Verified 100% test pass rate across backend pytest and frontend Jest (51/51 test suites, 201/201 tests).
+*   **Direct Portfolio & Trade Statement Import via Broker APIs (Issue #569 / FR7.1.10) (Updated 2026-10-07):**
+    - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` with `as_of_date` resolution and item date extraction. Added `@root_validator` to `ParsedTransaction` schema in `import_session.py`. Added strict `/customerdetails` verification in `IciciBreezeProvider.authenticate_session()`.
+    - **Backend Direct Sync Endpoint:** Built `POST /api/v1/import-sessions/broker/sync` endpoint in `import_sessions.py` to fetch holdings or trade statements using active encrypted broker tokens and stage an `ImportSession` in `PARSED` status. Added `from_date` / `to_date` trade parameters, empty result validation (HTTP 400), and network exception handling (HTTP 503).
+    - **Frontend UI Component (`BrokerApiSyncCard.tsx`):** Created `BrokerApiSyncCard` component in `frontend/src/components/import/` with broker provider toggle pills, live OAuth connection status badges, target portfolio selector, Holdings as-of datepicker, Trades date range pickers (Zerodha & ICICI), and import mode controls. Integrated into `DataImportPage.tsx`.
+    - **Automated Tests & Quality:** Added backend pytest parser and endpoint tests in `test_broker_api_parser.py`, `test_broker_sync_endpoints.py`, and `test_broker_providers.py`, frontend Jest unit test `BrokerApiSyncCard.test.tsx`, and Playwright E2E test `broker-direct-import.spec.ts`. Verified 100% test pass rate across backend pytest (12/12) and frontend Jest (2/2).
 
 *   **Broker Callback & Provider Security Remediation (Issue #558 / PR #568) (Updated 2026-09-27):**
     - **Reflected XSS Sanitization (`backend/app/api/v1/endpoints/broker.py`):** Added `_sanitize_token_for_html` utility enforcing `html.escape(cleaned, quote=True)` and regex `[^a-zA-Z0-9_\-]` to prevent XSS payloads in HTML landing pages for `/icici/callback` and `/zerodha/callback`.

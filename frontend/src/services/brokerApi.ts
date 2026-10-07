@@ -72,6 +72,7 @@ export interface BrokerSyncPayload {
   import_type: string;
   from_date?: string;
   to_date?: string;
+  as_of_date?: string;
 }
 
 export const syncBrokerApi = async (payload: BrokerSyncPayload) => {

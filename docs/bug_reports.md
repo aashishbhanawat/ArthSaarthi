@@ -24,6 +24,27 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-10-07-01
+**Title:** Broker holdings imported with current date fallback, hidden Zerodha trade date pickers, and false ICICI session validation
+**Module:** Import Sessions / Broker Direct Import
+**Reported By:** User
+**Date Reported:** 2026-10-07
+**Classification:** Implementation (Full-Stack)
+**Severity:** High
+**Description:** 
+1. Portfolio holdings snapshot import defaulted to today's date (`datetime.now()`) without extracting broker item dates or offering an as-of date input.
+2. Trade Book History mode hid date range pickers for Zerodha Kite.
+3. ICICI Breeze OAuth setup falsely validated expired/broken session tokens, causing subsequent sync calls to fail with 401 Unauthorized.
+**Steps to Reproduce:**
+1. Sync Zerodha holdings and note transaction date set to today.
+2. Select Zerodha Trade Book History and note missing date range controls.
+3. Authenticate ICICI Breeze with an expired token and note false "Active Session" status.
+**Expected Behavior:** Holdings extract item dates or use user-specified as-of date; Zerodha trades display date pickers; ICICI rejects invalid session tokens during setup.
+**Actual Behavior:** Holdings defaulted to current date; Zerodha datepickers were hidden; ICICI accepted invalid tokens.
+**Resolution:** Added `as_of_date` parameter to `BrokerSyncRequest` and `broker_api_parser.py` date resolution; enabled datepickers for Zerodha trades in `BrokerApiSyncCard.tsx`; updated `IciciBreezeProvider.authenticate_session` to strictly verify ICICI `/customerdetails` response.
+
+---
+
 **Bug ID:** 2026-10-06-03
 **Title:** ICICI Breeze HTTP 200 session token error fall-through and unhandled network errors
 **Module:** Import Sessions / ICICI Breeze Provider
