@@ -1,1 +1,4 @@
 ## 2024-05-18 - Transaction Details Modal Close Button\n**Learning:** Modals can sometimes be missing explicit close buttons or lack ARIA attributes linking the title to the dialog role.\n**Action:** Update modals to include a standard `modal-header` with an `h2` and an explicitly labeled close button using `XMarkIcon`.
+## 2023-10-12 - Nested Buttons Breaking Accessibility
+**Learning:** Using `role="button"` or an `<a>` tag as a clickable row wrapper that also contains other interactive buttons (like Edit/Delete) creates a severe accessibility violation (nested interactive controls) that breaks screen readers and causes E2E strict mode violations.
+**Action:** When fixing non-semantic clickable containers (like an `<a>` without an `href`) that hold child action buttons, replace the wrapper with a non-interactive layout `<div>` and turn the primary action into a semantic `<button>` that sits as a sibling alongside the other action buttons.
