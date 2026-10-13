@@ -7,3 +7,7 @@
 **Vulnerability:** The `get_unrealized_capital_gains` endpoint in `backend/app/api/v1/endpoints/capital_gains.py` leaked internal error details to the client in HTTP 500 responses by including the raw exception string `str(exc)`.
 **Learning:** Returning `str(exc)` in production environments exposes stack trace fragments or implementation details, potentially aiding an attacker in understanding backend logic or discovering further vulnerabilities.
 **Prevention:** Catch-all exception handlers must return generic, sanitized error messages (e.g., "Internal server error") to the client. The full exception details, including stack traces (`exc_info=True`), should be strictly confined to internal server logs using `logger.error()`.
+## 2025-02-27 - [Fix IDOR in Asset Transaction Fetching]
+**Vulnerability:** Found an Insecure Direct Object Reference (IDOR) and cross-tenant data leakage risk in `crud_transaction.py` where `get_multi_by_asset` fetched all transactions for an asset globally without scoping by `user_id`.
+**Learning:** Shared assets (like global bonds or equities) can have transactions spanning multiple tenants. Fetching globally and relying on Python-level filtering introduces both performance bottlenecks (O(N) overhead) and significant data leakage risks if filtering is overlooked.
+**Prevention:** Always push tenant filtering to the database level by joining the `Portfolio` table and asserting `Portfolio.user_id == user_id` when aggregating or fetching shared asset transactions.
