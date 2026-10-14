@@ -7,3 +7,7 @@
 **Vulnerability:** The `get_unrealized_capital_gains` endpoint in `backend/app/api/v1/endpoints/capital_gains.py` leaked internal error details to the client in HTTP 500 responses by including the raw exception string `str(exc)`.
 **Learning:** Returning `str(exc)` in production environments exposes stack trace fragments or implementation details, potentially aiding an attacker in understanding backend logic or discovering further vulnerabilities.
 **Prevention:** Catch-all exception handlers must return generic, sanitized error messages (e.g., "Internal server error") to the client. The full exception details, including stack traces (`exc_info=True`), should be strictly confined to internal server logs using `logger.error()`.
+## 2025-03-10 - Breaking Internal Clients with Aggressive Authorization
+**Vulnerability:** Unauthenticated sensitive endpoints in system.py
+**Learning:** Applying standard auth like get_current_admin_user to background or system initialization endpoints (e.g. run-daily snapshots or seeding-progress) breaks them because these clients (like Android background worker or internal subprocesses) do not have auth tokens.
+**Prevention:** Before securing an endpoint, trace its clients. Only apply standard auth to endpoints driven by logged-in users. For system endpoints, either secure the surrounding application logic or implement an internal service token system.
