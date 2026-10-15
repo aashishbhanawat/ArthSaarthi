@@ -451,11 +451,13 @@ Based on the `product_backlog.md`, the next features to consider are:
 
 ## 16. Broker Direct API Import & Holdings Snapshot Date Handling (Issue #569) (Updated 2026-10-15)
 
--   **Issue #569:** Direct Broker API Import (Zerodha Kite & ICICI Breeze) holding snapshot imports showed current date or unintended DDPI authorization timestamps for all holdings, with confusing validation and missing date context.
+-   **Issue #569:** Direct Broker API Import (Zerodha Kite & ICICI Breeze) holding snapshot imports showed current date or unintended DDPI authorization timestamps for all holdings, with confusing validation and missing date context. Furthermore, attempting to sync "Trade Book History" on Zerodha returned empty trade records.
 -   **Fix:**
     -   **Snapshot API Date Contract:** Standardized date extraction for `/portfolio/holdings` (Zerodha) and `/portfolioholdings` (ICICI Breeze) in `broker_api_parser.py`. Because broker holdings endpoints return instantaneous portfolio snapshots without individual buy execution dates, transactions are assigned an explicit `as_of_date` or the current date.
+    -   **Zerodha API Trade Constraint Handling:** Documented and handled Zerodha Kite Connect v3 API limitation where `/trades` strictly queries orders filled on the current trading day only. Enhanced backend error messaging and updated frontend UI to label the mode as "Today's Trades (Intraday)", suppressed unsupported date range pickers for Zerodha, and guided users to import their Tradebook CSV via Zerodha Console for past historical trades.
     -   **Authentication Fixes:** Fixed ICICI Breeze customer details authentication method to HTTP GET and ensured exchanged session tokens are persisted correctly.
-    -   **UI Guidance:** Enhanced `BrokerApiSyncCard.tsx` with clear notice that holdings snapshot imports use the snapshot date and provided guidance to use "Trade Book History" mode for full historical transaction timelines with exact trade timestamps.
+    -   **UI Guidance:** Enhanced `BrokerApiSyncCard.tsx` with clear notices explaining snapshot date handling and Tradebook CSV alternatives.
 -   **Verification:** Backend unit and integration tests (413 passed, 3 skipped) and frontend Jest test suites (52 suites, 203 passed) all pass cleanly.
+
 
 

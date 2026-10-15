@@ -131,7 +131,14 @@ class ZerodhaKiteProvider(FinancialDataProvider):
     def fetch_trades(
         self, from_date: Optional[date] = None, to_date: Optional[date] = None
     ) -> List[Dict[str, Any]]:
-        """Fetches executed trades directly from Zerodha Kite API."""
+        """Fetches executed trades directly from Zerodha Kite API.
+
+        NOTE: Zerodha Kite Connect v3 API's /trades endpoint ONLY returns trades executed
+        on the CURRENT trading day (intraday fills). Zerodha does NOT provide a REST API
+        endpoint for historical trades or past days' trade logs. Any from/to date
+        parameters are ignored by Kite Connect. For past historical trades, users must
+        download the Tradebook CSV from Zerodha Console (Reports > Tradebook).
+        """
         if not self.api_key or not self.access_token:
             logger.warning("Zerodha Kite: Cannot fetch trades without API key and access token.")
             raise PermissionError("BROKER_TOKEN_EXPIRED")
@@ -139,10 +146,13 @@ class ZerodhaKiteProvider(FinancialDataProvider):
         url = f"{KITE_BASE_URL}/trades"
         headers = self._get_headers()
         params: Dict[str, str] = {}
-        if from_date:
-            params["from"] = from_date.strftime("%Y-%m-%d")
-        if to_date:
-            params["to"] = to_date.strftime("%Y-%m-%d")
+        if from_date or to_date:
+            logger.info(
+                "Zerodha Kite /trades only returns trades for the current trading day. "
+                "Date filters (%s to %s) are not supported by Kite Connect REST API.",
+                from_date,
+                to_date,
+            )
 
         logger.info("Executing Zerodha Kite fetch_trades API call...")
         try:

@@ -2653,4 +2653,32 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 ### Outcome
 **Success.** Backend pytest test suite (413 passed, 3 skipped) and frontend Jest suite (52 suites, 203 passed) fully pass. Holdings imports now accurately use the selected snapshot date or today without ambiguity.
 
+---
+
+## Date: 2026-10-15
+**Issue Reference:** #569
+
+**Task:** Direct Broker API Import - Handle Zerodha Kite Connect API current-day trades limitation and improve tradebook guidance.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Zerodha API Constraint Addressed:** Zerodha Kite Connect v3 `/trades` endpoint only returns fills executed on the current trading day. Kite Connect does not provide an API endpoint for historical trade logs across past dates (past trades are only available via Zerodha Console CSV download).
+2. **Backend Error Messaging & Logging:** Updated `backend/app/api/v1/endpoints/import_sessions.py` to return an explicit, actionable message when Zerodha returns 0 trades, explaining the current-day limitation and directing users to download the Tradebook CSV from Zerodha Console for past trades. Updated `ZerodhaKiteProvider.fetch_trades` docstring and log warning when date range filters are passed.
+3. **Frontend UX Refinements:** In `BrokerApiSyncCard.tsx`, labeled the mode as "Today's Trades (Intraday)" when Zerodha Kite is selected, suppressed the date range pickers (which are ignored by Kite Connect), and added an informational callout directing users to import past trades via the File Upload tab.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/providers/zerodha_provider.py` — Documented and logged current-day trades limitation in `fetch_trades`.
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Clarified empty trades error response for Zerodha Kite.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/import/BrokerApiSyncCard.tsx` — Differentiated Zerodha vs ICICI trade sync modes, added current-day informational banner, and conditioned date pickers.
+
+### Outcome
+**Success.** All 413 backend tests and 203 frontend tests pass cleanly. User experience clearly reflects broker API constraints.
+
+
 

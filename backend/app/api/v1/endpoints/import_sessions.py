@@ -974,10 +974,22 @@ async def create_broker_sync_import_session(
             )
 
         if not parsed_items:
-            log.warning(f"No {sync_req.import_type} records returned by broker provider '{provider_name}'.")
+            log.warning(
+                f"No {sync_req.import_type} records returned by broker provider '{provider_name}'."
+            )
+            if provider_name == "zerodha_kite" and sync_req.import_type == "trades":
+                detail_msg = (
+                    "No trades were executed today in your Zerodha Kite account. "
+                    "Note: Zerodha Kite Connect API only returns trades executed on the current trading day. "
+                    "Zerodha does not provide an API for historical trade logs. To import past trades, please "
+                    "download your Tradebook CSV from Zerodha Console (Reports > Tradebook) and import it using the File Upload tab."
+                )
+            else:
+                detail_msg = f"No {sync_req.import_type} records found for your {provider_name.replace('_', ' ').title()} account for the specified date range."
+
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"No {sync_req.import_type} records found for your {provider_name.replace('_', ' ').title()} account for the specified date range.",
+                detail=detail_msg,
             )
 
         session_id = uuid.uuid4()

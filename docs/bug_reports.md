@@ -7440,6 +7440,11 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 **Issue**: When syncing holdings from Zerodha Kite or ICICI Breeze via direct broker API, all imported transactions showed the current day's date or an arbitrary DDPI authorization date (`authorised_date`) rather than an intentional snapshot date, causing user confusion.
 **Fix**: Recognized that `/portfolio/holdings` and `/portfolioholdings` are point-in-time snapshots without individual buy execution timestamps. Standardized parser logic in `broker_api_parser.py` to use `as_of_date` or fall back cleanly to current date, added debug logging for diagnostic payloads, and updated `BrokerApiSyncCard.tsx` with clear user guidance recommending Trade Book History mode when exact historical execution dates are required.
 
+## [2026-10-15] Zerodha Kite API Current-Day Trades Constraint (Issue #569)
+**Issue**: Users attempting to sync "Trade Book History" with date ranges from Zerodha Kite received "No trades records found for your Zerodha Kite account for the specified date range" despite having past trades.
+**Fix**: Zerodha Kite Connect REST API only supports fetching orders and trades executed on the current trading day; date filter parameters are unsupported and historical trade queries return an empty array `[]`. Updated backend error response to provide explicit guidance to use Zerodha Console Tradebook CSV for past trades, clarified UI labeling to "Today's Trades (Intraday)", and suppressed unused date range pickers for Zerodha trades.
+
+
 
 
 

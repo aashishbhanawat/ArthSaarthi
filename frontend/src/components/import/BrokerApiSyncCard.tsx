@@ -207,7 +207,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
                 onChange={() => setImportType('trades')}
                 className="form-radio text-blue-600"
               />
-              Trade Book History
+              {broker === 'zerodha_kite' ? "Today's Trades (Intraday)" : "Trade Book History"}
             </label>
           </div>
         </div>
@@ -218,7 +218,12 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
             <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
               <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-amber-800 dark:text-amber-300">
-                <strong>Note:</strong> The holdings API returns a current portfolio snapshot with average buy prices, but <strong>does not include original buy dates</strong>. All transactions will be dated with the value below. For accurate transaction dates, use <strong>Trade Book History</strong> mode instead.
+                <strong>Note:</strong> The {broker === 'zerodha_kite' ? 'Zerodha' : 'ICICI'} holdings API returns a current portfolio snapshot with average purchase prices, but <strong>does not include original buy dates</strong>. All transactions will be dated with the snapshot date below.
+                {broker === 'zerodha_kite' ? (
+                  <> To import your complete transaction history with original trade dates, download your Tradebook CSV from <strong>Zerodha Console (Reports &gt; Tradebook)</strong> and import it via the <strong>File Upload</strong> tab.</>
+                ) : (
+                  <> For full historical trade dates, switch to <strong>Trade Book History</strong> mode above.</>
+                )}
               </p>
             </div>
             <label className="form-label text-xs">
@@ -234,7 +239,18 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
           </div>
         )}
 
-        {importType === 'trades' && (
+        {importType === 'trades' && broker === 'zerodha_kite' && (
+          <div className="pt-2 space-y-2">
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                <strong>Current Day Only:</strong> Zerodha Kite Connect API only returns orders and trades executed on the <strong>current trading day</strong>. Zerodha does not provide an API for historical past trades. To import past trades with original dates, download your Tradebook CSV from <strong>Zerodha Console (console.zerodha.com &gt; Reports &gt; Tradebook)</strong> and import it via the <strong>File Upload</strong> tab.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {importType === 'trades' && broker === 'icici_breeze' && (
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div>
               <label className="form-label text-xs">From Date (Optional)</label>
@@ -280,7 +296,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
               ) : (
                 <>
                   <CloudArrowDownIcon className="h-5 w-5" />
-                  Sync & Preview {importType === 'holdings' ? 'Holdings' : 'Trade Book'}
+                  Sync & Preview {importType === 'holdings' ? 'Holdings' : (broker === 'zerodha_kite' ? "Today's Trades" : 'Trade Book')}
                 </>
               )}
             </button>
