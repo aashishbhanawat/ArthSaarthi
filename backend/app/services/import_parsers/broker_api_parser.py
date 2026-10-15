@@ -12,10 +12,36 @@ def parse_zerodha_api_payload(
     default_portfolio_id: Optional[str] = None,
     as_of_date: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Converts Zerodha Kite API holdings or trades JSON list into standard ArthSaarthi import transaction items."""
+    """Converts Zerodha Kite API holdings or trades JSON list into standard ArthSaarthi import transaction items.
+
+    NOTE: Zerodha's /portfolio/holdings API returns a current-day snapshot.
+    It does NOT provide the original buy/purchase date for holdings.
+    The `authorised_date` field is the DDPI/TPIN authorization date (for
+    demat selling permission), NOT the purchase date.
+    For accurate buy dates, use the "Trade Book History" import mode instead.
+    """
     parsed_items: List[Dict[str, Any]] = []
 
     if import_type == "holdings":
+        # Log first raw item for diagnostics so we can inspect actual fields
+        if raw_data:
+            logger.debug(
+                "Zerodha holdings raw sample (first item keys): %s",
+                list(raw_data[0].keys()) if raw_data else "empty",
+            )
+            logger.debug("Zerodha holdings raw sample (first item): %s", raw_data[0])
+
+        # Zerodha holdings API is a snapshot — buy dates are NOT available.
+        # Use the user-provided as_of_date or fall back to today's date.
+        snapshot_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
+        if not as_of_date:
+            logger.info(
+                "Zerodha holdings snapshot: no as_of_date provided, using today's date (%s). "
+                "Holdings API does not return original buy dates. "
+                "For accurate transaction dates, use Trade Book History mode.",
+                snapshot_date,
+            )
+
         for item in raw_data:
             symbol = item.get("tradingsymbol", "").upper()
             exchange = item.get("exchange", "NSE").upper()
@@ -29,26 +55,9 @@ def parse_zerodha_api_payload(
             ticker_symbol = f"{symbol}.BO" if exchange == "BSE" else f"{symbol}.NS"
             amount = qty * avg_price
 
-            item_date = (
-                item.get("authorised_date")
-                or item.get("created_date")
-                or item.get("buy_date")
-                or item.get("date")
-                or item.get("order_timestamp")
-            )
-            if item_date:
-                try:
-                    tx_date = datetime.fromisoformat(str(item_date).replace("Z", "+00:00")).strftime("%Y-%m-%d")
-                except Exception:
-                    tx_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
-            elif as_of_date:
-                tx_date = as_of_date
-            else:
-                tx_date = datetime.now().strftime("%Y-%m-%d")
-
             parsed_items.append(
                 {
-                    "transaction_date": tx_date,
+                    "transaction_date": snapshot_date,
                     "ticker_symbol": ticker_symbol,
                     "symbol": ticker_symbol,
                     "name": symbol,
@@ -117,10 +126,34 @@ def parse_icici_api_payload(
     default_portfolio_id: Optional[str] = None,
     as_of_date: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Converts ICICI Breeze API holdings or trades JSON list into standard ArthSaarthi import transaction items."""
+    """Converts ICICI Breeze API holdings or trades JSON list into standard ArthSaarthi import transaction items.
+
+    NOTE: ICICI Breeze's /portfolioholdings API returns a current-day snapshot.
+    It does NOT provide the original buy/purchase date for holdings.
+    For accurate buy dates, use the "Trade Book History" import mode instead.
+    """
     parsed_items: List[Dict[str, Any]] = []
 
     if import_type == "holdings":
+        # Log first raw item for diagnostics so we can inspect actual fields
+        if raw_data:
+            logger.debug(
+                "ICICI holdings raw sample (first item keys): %s",
+                list(raw_data[0].keys()) if raw_data else "empty",
+            )
+            logger.debug("ICICI holdings raw sample (first item): %s", raw_data[0])
+
+        # ICICI holdings API is a snapshot — buy dates are NOT available.
+        # Use the user-provided as_of_date or fall back to today's date.
+        snapshot_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
+        if not as_of_date:
+            logger.info(
+                "ICICI holdings snapshot: no as_of_date provided, using today's date (%s). "
+                "Holdings API does not return original buy dates. "
+                "For accurate transaction dates, use Trade Book History mode.",
+                snapshot_date,
+            )
+
         for item in raw_data:
             stock_code = (item.get("stock_code") or item.get("stock_name") or "").upper()
             exchange = (item.get("exchange_code") or "NSE").upper()
@@ -133,25 +166,9 @@ def parse_icici_api_payload(
             ticker_symbol = f"{stock_code}.BO" if exchange == "BSE" else f"{stock_code}.NS"
             amount = qty * avg_price
 
-            item_date = (
-                item.get("trade_date")
-                or item.get("order_date")
-                or item.get("date")
-                or item.get("execution_time")
-            )
-            if item_date:
-                try:
-                    tx_date = datetime.fromisoformat(str(item_date).replace("Z", "+00:00")).strftime("%Y-%m-%d")
-                except Exception:
-                    tx_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
-            elif as_of_date:
-                tx_date = as_of_date
-            else:
-                tx_date = datetime.now().strftime("%Y-%m-%d")
-
             parsed_items.append(
                 {
-                    "transaction_date": tx_date,
+                    "transaction_date": snapshot_date,
                     "ticker_symbol": ticker_symbol,
                     "symbol": ticker_symbol,
                     "name": stock_code,

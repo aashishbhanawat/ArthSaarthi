@@ -7436,6 +7436,11 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 3. Removed "View System Logs (Diagnostics)" footer link from `frontend/src/pages/AuthPage.tsx`.
 4. Updated `get_seeding_status` in `system.py` to return `status: COMPLETE` for `DEPLOYMENT_MODE == "server"`, set `seedingComplete` to `true` for non-native mobile in `AuthPage.tsx`, and added fallback `onComplete()` call on seeding status fetch errors in `MobileSeedingSplash.tsx`.
 
+## [2026-10-15] Broker API Holdings Snapshot Transaction Date Mapping (Issue #569)
+**Issue**: When syncing holdings from Zerodha Kite or ICICI Breeze via direct broker API, all imported transactions showed the current day's date or an arbitrary DDPI authorization date (`authorised_date`) rather than an intentional snapshot date, causing user confusion.
+**Fix**: Recognized that `/portfolio/holdings` and `/portfolioholdings` are point-in-time snapshots without individual buy execution timestamps. Standardized parser logic in `broker_api_parser.py` to use `as_of_date` or fall back cleanly to current date, added debug logging for diagnostic payloads, and updated `BrokerApiSyncCard.tsx` with clear user guidance recommending Trade Book History mode when exact historical execution dates are required.
+
+
 
 
 

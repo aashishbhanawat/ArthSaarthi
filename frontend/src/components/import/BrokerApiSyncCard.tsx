@@ -214,8 +214,17 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
 
         {/* Date pickers for holdings or trades */}
         {importType === 'holdings' && (
-          <div className="pt-2">
-            <label className="form-label text-xs">As-Of Transaction Date (Optional - defaults to today)</label>
+          <div className="pt-2 space-y-2">
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                <strong>Note:</strong> The holdings API returns a current portfolio snapshot with average buy prices, but <strong>does not include original buy dates</strong>. All transactions will be dated with the value below. For accurate transaction dates, use <strong>Trade Book History</strong> mode instead.
+              </p>
+            </div>
+            <label className="form-label text-xs">
+              Import Date for All Holdings
+              <span className="text-gray-400 dark:text-gray-500 ml-1">(defaults to today)</span>
+            </label>
             <input
               type="date"
               value={asOfDate}

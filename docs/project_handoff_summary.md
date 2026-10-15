@@ -449,3 +449,13 @@ Based on the `product_backlog.md`, the next features to consider are:
 -   **Verification Script:** Authored `test_schemas.py` in the project root to compile and run from_orm/dict mock instantiation tests for all 16 database schemas. Verified 100% success rate (`Passed: 16, Failed: 0`) under a simulated Pydantic v1.10.13 environment.
 -   **E2E Test Suite Resolution:** Resolved E2E test failures caused by `MobileSeedingSplash` hanging indefinitely during test execution when asset seeding is disabled (`ENVIRONMENT=test`). Updated `/api/v1/system/seeding-status` in `system.py` to bypass splash screen during testing mode. Full Playwright E2E suite executed via Docker Compose with 100% pass rate (`34 passed, 0 failed`).
 
+## 16. Broker Direct API Import & Holdings Snapshot Date Handling (Issue #569) (Updated 2026-10-15)
+
+-   **Issue #569:** Direct Broker API Import (Zerodha Kite & ICICI Breeze) holding snapshot imports showed current date or unintended DDPI authorization timestamps for all holdings, with confusing validation and missing date context.
+-   **Fix:**
+    -   **Snapshot API Date Contract:** Standardized date extraction for `/portfolio/holdings` (Zerodha) and `/portfolioholdings` (ICICI Breeze) in `broker_api_parser.py`. Because broker holdings endpoints return instantaneous portfolio snapshots without individual buy execution dates, transactions are assigned an explicit `as_of_date` or the current date.
+    -   **Authentication Fixes:** Fixed ICICI Breeze customer details authentication method to HTTP GET and ensured exchanged session tokens are persisted correctly.
+    -   **UI Guidance:** Enhanced `BrokerApiSyncCard.tsx` with clear notice that holdings snapshot imports use the snapshot date and provided guidance to use "Trade Book History" mode for full historical transaction timelines with exact trade timestamps.
+-   **Verification:** Backend unit and integration tests (413 passed, 3 skipped) and frontend Jest test suites (52 suites, 203 passed) all pass cleanly.
+
+

@@ -2627,3 +2627,30 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 ### Outcome
 **Success.** All 4 bugs resolved. Import validation error details are properly propagated to the frontend, dashboard loading no longer forces risk profile redirects, login page UI is cleaned up, and server mode splash screen blocking is bypassed.
 
+---
+
+## Date: 2026-10-15
+**Issue Reference:** #569
+
+**Task:** Direct Broker API Import - Fix holdings transaction date mapping for Zerodha Kite and ICICI Breeze snapshot APIs.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Holdings API Limitation Identified:** Both Zerodha Kite (`/portfolio/holdings`) and ICICI Breeze (`/portfolioholdings`) provide portfolio snapshot views representing current holdings with average purchase prices, but neither API returns original purchase/buy dates. Zerodha's `authorised_date` represents DDPI/TPIN demat authorization date, not trade execution date.
+2. **Snapshot Date Pattern Standardized:** Updated `parse_zerodha_api_payload` and `parse_icici_api_payload` in `broker_api_parser.py` to use a consistent `snapshot_date = as_of_date or datetime.now().strftime("%Y-%m-%d")` across all holdings rows, removing misleading date fallback chains.
+3. **Frontend Guidance & UX:** Updated `BrokerApiSyncCard.tsx` with an informational notice alerting users that holdings snapshot imports use the specified snapshot date and suggesting Trade Book History mode when exact historical buy dates are required. Re-labeled the date picker to "Import Date for All Holdings (defaults to today)".
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/import_parsers/broker_api_parser.py` — Standardized snapshot date mapping for Zerodha and ICICI holdings parser, removed incorrect date extraction chains, and added debug logging.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/import/BrokerApiSyncCard.tsx` — Added amber warning note explaining holdings API date limitation and clarified input label.
+
+### Outcome
+**Success.** Backend pytest test suite (413 passed, 3 skipped) and frontend Jest suite (52 suites, 203 passed) fully pass. Holdings imports now accurately use the selected snapshot date or today without ambiguity.
+
+
