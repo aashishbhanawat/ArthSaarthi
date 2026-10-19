@@ -93,6 +93,7 @@ const AddAssetToWatchlistModal: React.FC<AddAssetToWatchlistModalProps> = ({
               className="form-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              autoFocus
             />
             {debouncedSearchTerm && (
               <ul className="absolute z-10 w-full bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg divide-y dark:divide-gray-700">

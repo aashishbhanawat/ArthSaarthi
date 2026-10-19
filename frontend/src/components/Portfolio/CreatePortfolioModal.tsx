@@ -65,6 +65,7 @@ const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ isOpen, onC
                                 className="form-input"
                                 required
                                 disabled={createPortfolioMutation.isPending}
+                                autoFocus
                             />
                         </div>
                         {createPortfolioMutation.isError && (
