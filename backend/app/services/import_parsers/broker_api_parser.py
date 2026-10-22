@@ -120,13 +120,37 @@ def parse_zerodha_api_payload(
     return parsed_items
 
 
+def _parse_icici_date_string(date_val: Any) -> Optional[str]:
+    """Parses various date/time formats returned by ICICI Breeze API (e.g. '06-May-2024 13:42' or ISO)."""
+    if not date_val:
+        return None
+    date_str = str(date_val).strip()
+    for fmt in (
+        "%d-%b-%Y %H:%M",
+        "%d-%b-%Y %H:%M:%S",
+        "%d-%b-%Y",
+        "%Y-%m-%d",
+        "%d/%m/%Y",
+        "%d/%m/%Y %H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
+    ):
+        try:
+            return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    try:
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00")).strftime("%Y-%m-%d")
+    except Exception:
+        return None
+
+
 def parse_icici_api_payload(
     raw_data: List[Dict[str, Any]],
     import_type: str = "holdings",
     default_portfolio_id: Optional[str] = None,
     as_of_date: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Converts ICICI Breeze API holdings or trades JSON list into standard ArthSaarthi import transaction items.
+    """Converts ICICI Breeze API holdings or trades/orders JSON list into standard ArthSaarthi import transaction items.
 
     NOTE: ICICI Breeze's /portfolioholdings API returns a current-day snapshot.
     It does NOT provide the original buy/purchase date for holdings.
@@ -187,27 +211,58 @@ def parse_icici_api_payload(
             )
 
     elif import_type == "trades":
-        for item in raw_data:
-            stock_code = (item.get("stock_code") or "").upper()
-            exchange = (item.get("exchange_code") or "NSE").upper()
-            action = (item.get("action") or item.get("transaction_type") or "BUY").upper()
-            qty = Decimal(str(item.get("quantity") or 0))
-            price = Decimal(str(item.get("price") or item.get("average_price") or 0))
-            trade_date_raw = item.get("trade_date") or item.get("execution_time") or ""
+        if raw_data:
+            logger.debug(
+                "ICICI trades/orderlist raw sample (first item keys): %s",
+                list(raw_data[0].keys()) if raw_data else "empty",
+            )
+            logger.debug("ICICI trades/orderlist raw sample (first item): %s", raw_data[0])
 
-            if trade_date_raw:
-                try:
-                    tx_date = datetime.fromisoformat(str(trade_date_raw).replace("Z", "+00:00")).strftime("%Y-%m-%d")
-                except Exception:
-                    tx_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
-            elif as_of_date:
-                tx_date = as_of_date
-            else:
-                tx_date = datetime.now().strftime("%Y-%m-%d")
+        for item in raw_data:
+            stock_code = (item.get("stock_code") or item.get("stock_name") or "").upper()
+            if not stock_code:
+                continue
+
+            exchange = (item.get("exchange_code") or "NSE").upper()
+
+            # Status filter: for orderlist responses, filter for executed orders
+            status_str = str(item.get("status") or item.get("order_status") or "").upper()
+            if status_str and status_str not in (
+                "EXECUTED",
+                "PARTIALLY EXECUTED",
+                "COMPLETE",
+                "COMPLETED",
+                "E",
+                "P",
+            ):
+                continue
+
+            action = (item.get("action") or item.get("order_flow") or item.get("transaction_type") or "BUY").upper()
+            qty = Decimal(str(item.get("quantity") or item.get("executed_quantity") or 0))
+            if qty <= 0:
+                continue
+
+            # In Breeze orderlist, executed orders have average_price; fall back to price
+            avg_price_val = item.get("average_price")
+            price_val = item.get("price")
+            price = Decimal(str(avg_price_val if avg_price_val and str(avg_price_val) != "0" else price_val or 0))
+            if price <= 0:
+                continue
+
+            trade_date_raw = (
+                item.get("order_datetime")
+                or item.get("trade_date")
+                or item.get("execution_time")
+                or item.get("date")
+                or item.get("exchange_acknowledgement_date")
+                or ""
+            )
+
+            tx_date = _parse_icici_date_string(trade_date_raw) or as_of_date or datetime.now().strftime("%Y-%m-%d")
 
             ticker_symbol = f"{stock_code}.BO" if exchange == "BSE" else f"{stock_code}.NS"
             amount = qty * price
-            tx_type = "SELL" if "SELL" in action or "S" == action else "BUY"
+            tx_type = "SELL" if "SELL" in action or action == "S" else "BUY"
 
             parsed_items.append(
                 {

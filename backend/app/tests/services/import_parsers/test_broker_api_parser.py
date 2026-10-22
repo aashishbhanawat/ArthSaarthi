@@ -76,23 +76,38 @@ def test_parse_icici_api_holdings():
     assert res[0]["source"] == "icici_breeze_api"
 
 
-def test_parse_icici_api_trades():
+def test_parse_icici_api_orderlist():
     mock_raw = [
         {
-            "stock_code": "TATMOT",
+            "order_id": "20240506T200033213",
+            "stock_code": "POWGRI",
             "exchange_code": "NSE",
-            "action": "SELL",
-            "quantity": 50,
-            "price": 650.00,
-            "trade_date": "2026-04-10T14:15:00Z",
-        }
+            "action": "Buy",
+            "status": "Executed",
+            "quantity": "10",
+            "average_price": "302.00",
+            "order_datetime": "06-May-2024 13:42",
+        },
+        {
+            "order_id": "20240506T200033214",
+            "stock_code": "RELIANCE",
+            "exchange_code": "BSE",
+            "action": "Sell",
+            "status": "Cancelled",
+            "quantity": "5",
+            "price": "2800.00",
+            "order_datetime": "06-May-2024 14:00",
+        },
     ]
 
     res = parse_icici_api_payload(mock_raw, import_type="trades")
+    # Only the Executed order should be imported, Cancelled order ignored
     assert len(res) == 1
-    assert res[0]["ticker_symbol"] == "TATMOT.NS"
-    assert res[0]["symbol"] == "TATMOT.NS"
-    assert res[0]["transaction_type"] == "SELL"
-    assert res[0]["quantity"] == 50.0
-    assert res[0]["price_per_unit"] == 650.00
-    assert res[0]["transaction_date"] == "2026-04-10"
+    assert res[0]["ticker_symbol"] == "POWGRI.NS"
+    assert res[0]["symbol"] == "POWGRI.NS"
+    assert res[0]["name"] == "POWGRI"
+    assert res[0]["transaction_type"] == "BUY"
+    assert res[0]["quantity"] == 10.0
+    assert res[0]["price_per_unit"] == 302.00
+    assert res[0]["transaction_date"] == "2024-05-06"
+    assert res[0]["source"] == "icici_breeze_api"

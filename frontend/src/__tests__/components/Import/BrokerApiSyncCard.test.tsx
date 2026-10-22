@@ -26,9 +26,8 @@ describe('BrokerApiSyncCard', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Direct Broker API Sync (NFR12)')).toBeInTheDocument();
-    expect(screen.getByText('Zerodha Kite API')).toBeInTheDocument();
-    expect(screen.getByText('ICICI Breeze API')).toBeInTheDocument();
+    expect(screen.getByText('Direct Broker API Sync (ICICI Breeze)')).toBeInTheDocument();
+    expect(screen.getByText('ICICI Direct Breeze API')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Not Configured')).toBeInTheDocument();
@@ -39,7 +38,7 @@ describe('BrokerApiSyncCard', () => {
     mockGetBrokerCredentials.mockResolvedValue([
       {
         id: 'c1',
-        provider_name: 'zerodha_kite',
+        provider_name: 'icici_breeze',
         api_key: 'key1',
         is_active: true,
         is_authenticated: true,

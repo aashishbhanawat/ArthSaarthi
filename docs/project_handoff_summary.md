@@ -449,15 +449,16 @@ Based on the `product_backlog.md`, the next features to consider are:
 -   **Verification Script:** Authored `test_schemas.py` in the project root to compile and run from_orm/dict mock instantiation tests for all 16 database schemas. Verified 100% success rate (`Passed: 16, Failed: 0`) under a simulated Pydantic v1.10.13 environment.
 -   **E2E Test Suite Resolution:** Resolved E2E test failures caused by `MobileSeedingSplash` hanging indefinitely during test execution when asset seeding is disabled (`ENVIRONMENT=test`). Updated `/api/v1/system/seeding-status` in `system.py` to bypass splash screen during testing mode. Full Playwright E2E suite executed via Docker Compose with 100% pass rate (`34 passed, 0 failed`).
 
-## 16. Broker Direct API Import & Holdings Snapshot Date Handling (Issue #569) (Updated 2026-10-15)
+## 16. Broker Direct API Import & ICICI Breeze Integration (Issue #569) (Updated 2026-10-22)
 
--   **Issue #569:** Direct Broker API Import (Zerodha Kite & ICICI Breeze) holding snapshot imports showed current date or unintended DDPI authorization timestamps for all holdings, with confusing validation and missing date context. Furthermore, attempting to sync "Trade Book History" on Zerodha returned empty trade records.
+-   **Issue #569:** Direct Broker API Import enhancements: Zerodha Kite Connect API does not provide historical trade data or portfolio purchase dates (restricted to current-day order fills), whereas ICICI Direct Breeze API supports both multi-exchange demat portfolio holdings and historical trade book / order history.
 -   **Fix:**
-    -   **Snapshot API Date Contract:** Standardized date extraction for `/portfolio/holdings` (Zerodha) and `/portfolioholdings` (ICICI Breeze) in `broker_api_parser.py`. Because broker holdings endpoints return instantaneous portfolio snapshots without individual buy execution dates, transactions are assigned an explicit `as_of_date` or the current date.
-    -   **Zerodha API Trade Constraint Handling:** Documented and handled Zerodha Kite Connect v3 API limitation where `/trades` strictly queries orders filled on the current trading day only. Enhanced backend error messaging and updated frontend UI to label the mode as "Today's Trades (Intraday)", suppressed unsupported date range pickers for Zerodha, and guided users to import their Tradebook CSV via Zerodha Console for past historical trades.
-    -   **Authentication Fixes:** Fixed ICICI Breeze customer details authentication method to HTTP GET and ensured exchanged session tokens are persisted correctly.
-    -   **UI Guidance:** Enhanced `BrokerApiSyncCard.tsx` with clear notices explaining snapshot date handling and Tradebook CSV alternatives.
--   **Verification:** Backend unit and integration tests (413 passed, 3 skipped) and frontend Jest test suites (52 suites, 203 passed) all pass cleanly.
+    -   **Zerodha API Import Deprecation:** Removed Zerodha Kite from direct API sync UI and disabled it on the backend sync endpoint (`/import-sessions/broker/sync`), redirecting users to import past transactions via Zerodha Console Tradebook CSV (which remains fully supported in ArthSaarthi).
+    -   **ICICI Breeze Holdings Multi-Exchange Support:** Updated `IciciBreezeProvider.fetch_holdings` to send required `exchange_code` payload in compact JSON body with dynamic SHA256 checksum, querying both NSE and BSE to aggregate all demat holdings.
+    -   **ICICI Breeze Order List Integration:** Updated `fetch_trades` to query the `/order` (order list) endpoint across NSE and BSE with fallback to `/orderlist` and `/trades`.
+    -   **Enhanced Order Parser:** Updated `parse_icici_api_payload` to parse order list fields (`order_datetime`, `status`, `average_price`), filter strictly for executed orders, and support multi-format timestamp parsing.
+    -   **Streamlined UI:** Redesigned `BrokerApiSyncCard.tsx` exclusively for ICICI Breeze direct sync.
+-   **Verification:** Backend unit and integration tests (414 passed, 3 skipped) and frontend Jest test suites (52 suites, 203 passed) all pass cleanly.
 
 
 

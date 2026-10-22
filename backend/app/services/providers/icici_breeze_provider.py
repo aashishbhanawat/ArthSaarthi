@@ -120,79 +120,205 @@ class IciciBreezeProvider(FinancialDataProvider):
             logger.error(f"ICICI Breeze API returned session error: {res_json}")
             raise PermissionError("BROKER_TOKEN_EXPIRED")
 
-    def fetch_holdings(self) -> List[Dict[str, Any]]:
-        """Fetches current portfolio holdings directly from ICICI Breeze API."""
+    def _make_get_call(
+        self, client: httpx.Client, url: str, body_dict: Optional[Dict[str, Any]] = None
+    ) -> httpx.Response:
+        """Executes an authenticated GET request with Breeze SHA256 checksum over compact JSON body."""
+        body_json = json.dumps(body_dict, separators=(",", ":")) if body_dict else ""
+        headers = self._get_headers(body_json)
+        return client.request("GET", url, content=body_json.encode("utf-8"), headers=headers)
+
+    def fetch_holdings(
+        self, exchange_codes: Optional[List[str]] = None
+    ) -> List[Dict[str, Any]]:
+        """Fetches current portfolio holdings directly from ICICI Breeze API across exchanges (NSE, BSE).
+
+        Refer: https://api.icicidirect.com/breezeapi/documents/index.html#portfolioholdings
+        """
         if not self.api_key or not self.session_token:
             logger.warning("ICICI Breeze: Cannot fetch holdings without API key and session token.")
             raise PermissionError("BROKER_TOKEN_EXPIRED")
 
         url = f"{BREEZE_BASE_URL}/portfolioholdings"
-        headers = self._get_headers()
-        logger.info("Executing ICICI Breeze fetch_holdings API call...")
+        target_exchanges = exchange_codes or ["NSE", "BSE"]
+        all_holdings: List[Dict[str, Any]] = []
+        auth_error_encountered = False
+
+        logger.info("Executing ICICI Breeze fetch_holdings API call for %s...", target_exchanges)
         try:
-            with httpx.Client(timeout=10.0) as client:
-                resp = client.get(url, headers=headers)
-                logger.info(f"ICICI Breeze fetch_holdings HTTP status: {resp.status_code}")
-                if resp.status_code == 200:
-                    res_json = resp.json()
-                    self._check_res_for_token_error(res_json)
-                    success_data = res_json.get("Success")
-                    if success_data is not None and isinstance(success_data, list):
-                        logger.info(f"Successfully fetched {len(success_data)} holdings from ICICI Breeze.")
-                        return success_data
-                elif resp.status_code in (401, 403):
-                    logger.error(f"ICICI Breeze session token expired or invalid (HTTP {resp.status_code}).")
-                    raise PermissionError("BROKER_TOKEN_EXPIRED")
-                else:
-                    logger.error(f"ICICI Breeze fetch_holdings HTTP error {resp.status_code}: {resp.text}")
-                    raise RuntimeError(f"ICICI Breeze API HTTP {resp.status_code}: {resp.text}")
+            with httpx.Client(timeout=15.0) as client:
+                for exc in target_exchanges:
+                    try:
+                        resp = self._make_get_call(client, url, {"exchange_code": exc})
+                        logger.info(
+                            "ICICI Breeze fetch_holdings (%s) HTTP status: %s",
+                            exc,
+                            resp.status_code,
+                        )
+                        if resp.status_code == 200:
+                            res_json = resp.json()
+                            self._check_res_for_token_error(res_json)
+                            success_data = res_json.get("Success")
+                            if success_data and isinstance(success_data, list):
+                                logger.info(
+                                    "Fetched %d holdings for exchange %s from ICICI Breeze.",
+                                    len(success_data),
+                                    exc,
+                                )
+                                all_holdings.extend(success_data)
+                        elif resp.status_code in (401, 403):
+                            logger.error(
+                                "ICICI Breeze session token expired or invalid (HTTP %s).",
+                                resp.status_code,
+                            )
+                            auth_error_encountered = True
+                            break
+                        else:
+                            logger.warning(
+                                "ICICI Breeze fetch_holdings (%s) returned HTTP %s: %s",
+                                exc,
+                                resp.status_code,
+                                resp.text,
+                            )
+                    except PermissionError:
+                        auth_error_encountered = True
+                        break
+                    except Exception as exc_err:
+                        logger.warning(
+                            "ICICI Breeze fetch_holdings exchange %s error: %s",
+                            exc,
+                            exc_err,
+                        )
+
+            if auth_error_encountered:
+                raise PermissionError("BROKER_TOKEN_EXPIRED")
+
+            logger.info("Successfully fetched %d total holdings from ICICI Breeze.", len(all_holdings))
+            return all_holdings
         except PermissionError:
             raise
         except Exception as e:
-            logger.error(f"ICICI Breeze fetch_holdings error: {e}", exc_info=True)
+            logger.error("ICICI Breeze fetch_holdings error: %s", e, exc_info=True)
             raise
-        return []
 
     def fetch_trades(
-        self, from_date: Optional[date] = None, to_date: Optional[date] = None
+        self,
+        from_date: Optional[date] = None,
+        to_date: Optional[date] = None,
+        exchange_codes: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
-        """Fetches trade book directly from ICICI Breeze API."""
+        """Fetches trade book / executed order list directly from ICICI Breeze API.
+
+        Refer: https://api.icicidirect.com/breezeapi/documents/index.html#getorderlist
+        Uses /order (order list) with fallback to /orderlist and /trades.
+        """
         if not self.api_key or not self.session_token:
             logger.warning("ICICI Breeze: Cannot fetch trades without API key and session token.")
             raise PermissionError("BROKER_TOKEN_EXPIRED")
 
-        url = f"{BREEZE_BASE_URL}/trades"
-        headers = self._get_headers()
-        params: Dict[str, str] = {}
-        if from_date:
-            params["from_date"] = f"{from_date.isoformat()}T00:00:00.000Z"
-        if to_date:
-            params["to_date"] = f"{to_date.isoformat()}T23:59:59.000Z"
+        target_exchanges = exchange_codes or ["NSE", "BSE"]
+        from_date_str = (
+            f"{from_date.isoformat()}T00:00:00.000Z"
+            if from_date
+            else "2020-01-01T00:00:00.000Z"
+        )
+        to_date_str = (
+            f"{to_date.isoformat()}T23:59:59.000Z"
+            if to_date
+            else datetime.now(timezone.utc).strftime("%Y-%m-%dT23:59:59.000Z")
+        )
 
-        logger.info("Executing ICICI Breeze fetch_trades API call...")
+        all_orders: List[Dict[str, Any]] = []
+        auth_error_encountered = False
+
+        endpoints_to_try = [
+            f"{BREEZE_BASE_URL}/order",
+            f"{BREEZE_BASE_URL}/orderlist",
+            f"{BREEZE_BASE_URL}/trades",
+        ]
+
+        logger.info(
+            "Executing ICICI Breeze fetch_trades API call from %s to %s for %s...",
+            from_date_str,
+            to_date_str,
+            target_exchanges,
+        )
+
         try:
-            with httpx.Client(timeout=10.0) as client:
-                resp = client.get(url, headers=headers, params=params)
-                logger.info(f"ICICI Breeze fetch_trades HTTP status: {resp.status_code}")
-                if resp.status_code == 200:
-                    res_json = resp.json()
-                    self._check_res_for_token_error(res_json)
-                    success_data = res_json.get("Success")
-                    if success_data is not None and isinstance(success_data, list):
-                        logger.info(f"Successfully fetched {len(success_data)} trades from ICICI Breeze.")
-                        return success_data
-                elif resp.status_code in (401, 403):
-                    logger.error(f"ICICI Breeze session token expired or invalid (HTTP {resp.status_code}).")
-                    raise PermissionError("BROKER_TOKEN_EXPIRED")
-                else:
-                    logger.error(f"ICICI Breeze fetch_trades HTTP error {resp.status_code}: {resp.text}")
-                    raise RuntimeError(f"ICICI Breeze API HTTP {resp.status_code}: {resp.text}")
+            with httpx.Client(timeout=15.0) as client:
+                for exc in target_exchanges:
+                    body = {
+                        "exchange_code": exc,
+                        "from_date": from_date_str,
+                        "to_date": to_date_str,
+                    }
+                    fetched_for_exc = False
+
+                    for endpoint_url in endpoints_to_try:
+                        try:
+                            resp = self._make_get_call(client, endpoint_url, body)
+                            if resp.status_code == 404:
+                                logger.debug(
+                                    "Endpoint %s returned 404, trying next endpoint...",
+                                    endpoint_url,
+                                )
+                                continue
+
+                            logger.info(
+                                "ICICI Breeze %s (%s) HTTP status: %s",
+                                endpoint_url.split("/")[-1],
+                                exc,
+                                resp.status_code,
+                            )
+
+                            if resp.status_code == 200:
+                                res_json = resp.json()
+                                self._check_res_for_token_error(res_json)
+                                success_data = res_json.get("Success")
+                                if success_data and isinstance(success_data, list):
+                                    logger.info(
+                                        "Fetched %d orders/trades for %s from ICICI Breeze (%s).",
+                                        len(success_data),
+                                        exc,
+                                        endpoint_url.split("/")[-1],
+                                    )
+                                    all_orders.extend(success_data)
+                                fetched_for_exc = True
+                                break
+                            elif resp.status_code in (401, 403):
+                                logger.error(
+                                    "ICICI Breeze session token expired or invalid (HTTP %s).",
+                                    resp.status_code,
+                                )
+                                auth_error_encountered = True
+                                break
+                            else:
+                                logger.warning(
+                                    "ICICI Breeze %s (%s) HTTP %s: %s",
+                                    endpoint_url.split("/")[-1],
+                                    exc,
+                                    resp.status_code,
+                                    resp.text,
+                                )
+                        except PermissionError:
+                            auth_error_encountered = True
+                            break
+                        except Exception as e_endpoint:
+                            logger.debug("Error requesting %s: %s", endpoint_url, e_endpoint)
+
+                    if auth_error_encountered:
+                        break
+
+            if auth_error_encountered:
+                raise PermissionError("BROKER_TOKEN_EXPIRED")
+
+            logger.info("Successfully fetched %d total records from ICICI Breeze.", len(all_orders))
+            return all_orders
         except PermissionError:
             raise
         except Exception as e:
-            logger.error(f"ICICI Breeze fetch_trades error: {e}", exc_info=True)
+            logger.error("ICICI Breeze fetch_trades error: %s", e, exc_info=True)
             raise
-        return []
 
 
     def _clean_symbol(self, ticker: str) -> str:

@@ -18,7 +18,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
   isLoadingPortfolios,
 }) => {
   const navigate = useNavigate();
-  const [broker, setBroker] = useState<'zerodha_kite' | 'icici_breeze'>('zerodha_kite');
+  const broker = 'icici_breeze';
   const [selectedPortfolio, setSelectedPortfolio] = useState<string>('');
   const [importType, setImportType] = useState<'holdings' | 'trades'>('holdings');
   const [fromDate, setFromDate] = useState<string>('');
@@ -99,7 +99,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
         <div className="flex items-center gap-2">
           <CloudArrowDownIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Direct Broker API Sync (NFR12)
+            Direct Broker API Sync (ICICI Breeze)
           </h2>
         </div>
 
@@ -126,37 +126,21 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
       </div>
 
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-        Sync current holdings or trade statements directly from your connected Zerodha Kite or ICICI Breeze account without file uploads.
+        Sync current demat portfolio holdings or historical trade book / orders directly from your connected ICICI Direct Breeze account without file uploads.
       </p>
 
       <form onSubmit={handleSync} className="space-y-5">
-        {/* Broker Choice */}
-        <div>
-          <label className="form-label font-medium mb-2 block">Select Broker Provider</label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setBroker('zerodha_kite')}
-              className={`py-2.5 px-4 rounded-lg border font-medium text-sm transition-colors ${
-                broker === 'zerodha_kite'
-                  ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-500'
-                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-              }`}
-            >
-              Zerodha Kite API
-            </button>
-            <button
-              type="button"
-              onClick={() => setBroker('icici_breeze')}
-              className={`py-2.5 px-4 rounded-lg border font-medium text-sm transition-colors ${
-                broker === 'icici_breeze'
-                  ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-500'
-                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-              }`}
-            >
-              ICICI Breeze API
-            </button>
+        {/* Provider Info Banner */}
+        <div className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">Provider:</span>
+            <span className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+              ICICI Direct Breeze API
+            </span>
           </div>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            For Zerodha, import Tradebook CSV via File Upload
+          </span>
         </div>
 
         {/* Portfolio Selector */}
@@ -207,7 +191,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
                 onChange={() => setImportType('trades')}
                 className="form-radio text-blue-600"
               />
-              {broker === 'zerodha_kite' ? "Today's Trades (Intraday)" : "Trade Book History"}
+              Trade Book History
             </label>
           </div>
         </div>
@@ -218,12 +202,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
             <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
               <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-amber-800 dark:text-amber-300">
-                <strong>Note:</strong> The {broker === 'zerodha_kite' ? 'Zerodha' : 'ICICI'} holdings API returns a current portfolio snapshot with average purchase prices, but <strong>does not include original buy dates</strong>. All transactions will be dated with the snapshot date below.
-                {broker === 'zerodha_kite' ? (
-                  <> To import your complete transaction history with original trade dates, download your Tradebook CSV from <strong>Zerodha Console (Reports &gt; Tradebook)</strong> and import it via the <strong>File Upload</strong> tab.</>
-                ) : (
-                  <> For full historical trade dates, switch to <strong>Trade Book History</strong> mode above.</>
-                )}
+                <strong>Note:</strong> The ICICI holdings API returns a current portfolio snapshot with average purchase prices, but <strong>does not include original buy dates</strong>. All transactions will be dated with the snapshot date below. For full historical trade dates, switch to <strong>Trade Book History</strong> mode above.
               </p>
             </div>
             <label className="form-label text-xs">
@@ -239,18 +218,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
           </div>
         )}
 
-        {importType === 'trades' && broker === 'zerodha_kite' && (
-          <div className="pt-2 space-y-2">
-            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-              <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-amber-800 dark:text-amber-300">
-                <strong>Current Day Only:</strong> Zerodha Kite Connect API only returns orders and trades executed on the <strong>current trading day</strong>. Zerodha does not provide an API for historical past trades. To import past trades with original dates, download your Tradebook CSV from <strong>Zerodha Console (console.zerodha.com &gt; Reports &gt; Tradebook)</strong> and import it via the <strong>File Upload</strong> tab.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {importType === 'trades' && broker === 'icici_breeze' && (
+        {importType === 'trades' && (
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div>
               <label className="form-label text-xs">From Date (Optional)</label>
@@ -291,18 +259,18 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
               {isSyncing ? (
                 <>
                   <ArrowPathIcon className="h-5 w-5 animate-spin" />
-                  Syncing from {broker === 'zerodha_kite' ? 'Zerodha' : 'ICICI Breeze'}...
+                  Syncing from ICICI Breeze...
                 </>
               ) : (
                 <>
                   <CloudArrowDownIcon className="h-5 w-5" />
-                  Sync & Preview {importType === 'holdings' ? 'Holdings' : (broker === 'zerodha_kite' ? "Today's Trades" : 'Trade Book')}
+                  Sync & Preview {importType === 'holdings' ? 'Holdings' : 'Trade Book'}
                 </>
               )}
             </button>
           ) : (
             <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm text-gray-600 dark:text-gray-400">
-              Please configure and authenticate {broker === 'zerodha_kite' ? 'Zerodha Kite' : 'ICICI Breeze'} under{' '}
+              Please configure and authenticate ICICI Breeze under{' '}
               <button
                 type="button"
                 onClick={() => navigate('/settings')}

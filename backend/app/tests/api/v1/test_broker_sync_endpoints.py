@@ -24,7 +24,7 @@ def test_broker_sync_endpoint_unauthenticated_broker(client: TestClient, db: Ses
     )
 
     payload = {
-        "provider_name": "zerodha_kite",
+        "provider_name": "icici_breeze",
         "portfolio_id": str(portfolio.id),
         "import_type": "holdings",
     }
@@ -38,10 +38,47 @@ def test_broker_sync_endpoint_unauthenticated_broker(client: TestClient, db: Ses
     assert "No active session" in response.json()["detail"]
 
 
+def test_broker_sync_endpoint_zerodha_disabled(client: TestClient, db: Session, get_auth_headers):
+    user_in = schemas.UserCreate(
+        email="sync_zerodha_user@example.com",
+        password="ValidPassword123!",
+        full_name="Zerodha User",
+    )
+    user = crud.user.create(db=db, obj_in=user_in)
+    headers = get_auth_headers("sync_zerodha_user@example.com", "ValidPassword123!")
+
+    portfolio = crud.portfolio.create_with_owner(
+        db=db,
+        obj_in=schemas.PortfolioCreate(name="Broker Sync Zerodha Portfolio", description="Test"),
+        user_id=user.id,
+    )
+
+    mock_cred = MagicMock()
+    mock_cred.is_active = True
+    mock_cred.encrypted_access_token = "encrypted_token"
+    mock_cred.token_expires_at = None
+    mock_cred.api_key = "test_key"
+
+    with patch.object(crud.crud_broker, "get_by_user_and_provider", return_value=mock_cred), \
+         patch.object(crud.crud_broker, "get_decrypted_token", return_value="token123"), \
+         patch.object(crud.crud_broker, "get_decrypted_secret", return_value="secret123"):
+        response = client.post(
+            f"{settings.API_V1_STR}/import-sessions/broker/sync",
+            headers=headers,
+            json={
+                "provider_name": "zerodha_kite",
+                "portfolio_id": str(portfolio.id),
+                "import_type": "holdings",
+            },
+        )
+        assert response.status_code == 400
+        assert "disabled for Zerodha Kite" in response.json()["detail"]
+
+
 @patch.object(crud.crud_broker, "get_by_user_and_provider")
 @patch.object(crud.crud_broker, "get_decrypted_token")
 @patch.object(crud.crud_broker, "get_decrypted_secret")
-@patch("app.services.providers.zerodha_provider.ZerodhaKiteProvider.fetch_holdings")
+@patch("app.services.providers.icici_breeze_provider.IciciBreezeProvider.fetch_holdings")
 def test_broker_sync_endpoint_success(
     mock_fetch_holdings,
     mock_dec_secret,
@@ -76,16 +113,15 @@ def test_broker_sync_endpoint_success(
 
     mock_fetch_holdings.return_value = [
         {
-            "tradingsymbol": "WIPRO",
-            "exchange": "NSE",
+            "stock_code": "WIPRO",
+            "exchange_code": "NSE",
             "quantity": 50,
             "average_price": 420.00,
-            "isin": "INE075A01022",
         }
     ]
 
     payload = {
-        "provider_name": "zerodha_kite",
+        "provider_name": "icici_breeze",
         "portfolio_id": str(portfolio.id),
         "import_type": "holdings",
     }
@@ -97,5 +133,5 @@ def test_broker_sync_endpoint_success(
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["source"] == "zerodha_kite_api"
+    assert data["source"] == "icici_breeze_api"
     assert data["status"] == "PARSED"

@@ -881,48 +881,14 @@ async def create_broker_sync_import_session(
             )
 
         if provider_name == "zerodha_kite":
-            from app.services.providers.zerodha_provider import ZerodhaKiteProvider
-
-            provider = ZerodhaKiteProvider(
-                api_key=cred.api_key, access_token=token, api_secret=secret
-            )
-            try:
-                if sync_req.import_type == "trades":
-                    from_date_obj = (
-                        date_type.fromisoformat(sync_req.from_date)
-                        if sync_req.from_date
-                        else None
-                    )
-                    to_date_obj = (
-                        date_type.fromisoformat(sync_req.to_date)
-                        if sync_req.to_date
-                        else None
-                    )
-                    raw_data = provider.fetch_trades(
-                        from_date=from_date_obj, to_date=to_date_obj
-                    )
-                else:
-                    raw_data = provider.fetch_holdings()
-            except PermissionError:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Zerodha Kite session token is invalid or expired. Please re-authenticate via Broker Settings.",
-                )
-            except (httpx.RequestError, OSError, ConnectionError) as net_err:
-                log.error(f"Zerodha Kite API network error: {net_err}")
-                raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail=f"Unable to reach Zerodha Kite server. Network error: {net_err}",
-                )
-            from app.services.import_parsers.broker_api_parser import (
-                parse_zerodha_api_payload,
-            )
-
-            parsed_items = parse_zerodha_api_payload(
-                raw_data,
-                import_type=sync_req.import_type,
-                default_portfolio_id=str(sync_req.portfolio_id),
-                as_of_date=sync_req.as_of_date or sync_req.from_date,
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Direct API import is disabled for Zerodha Kite because Kite Connect API "
+                    "does not provide historical trade logs or purchase dates. Please import your transactions "
+                    "by downloading your Tradebook CSV from Zerodha Console (Reports > Tradebook) and uploading "
+                    "it using the File Upload tab."
+                ),
             )
 
         elif provider_name == "icici_breeze":

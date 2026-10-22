@@ -2680,5 +2680,37 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 ### Outcome
 **Success.** All 413 backend tests and 203 frontend tests pass cleanly. User experience clearly reflects broker API constraints.
 
+---
+
+## Date: 2026-10-22
+**Issue Reference:** #569
+
+**Task:** Direct Broker API Import - Remove Zerodha Kite from direct API sync, enhance ICICI Breeze holdings and orderlist integration per official API documentation.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Remove Zerodha Direct API Import:** Removed Zerodha Kite from `BrokerApiSyncCard.tsx` direct sync interface because Kite Connect REST API only supports intraday orders and lacks historical trades/purchase dates. In `import_sessions.py`, added an explicit rejection informing users to import past transactions via Zerodha Console Tradebook CSV.
+2. **ICICI Breeze Holdings Multi-Exchange Support:** Updated `IciciBreezeProvider.fetch_holdings` to send required `exchange_code` payload in compact JSON body with dynamic SHA256 checksum, querying both NSE and BSE to aggregate all demat holdings.
+3. **ICICI Breeze Trade & Order History Integration:** Updated `IciciBreezeProvider.fetch_trades` to query `/order` (order list endpoint) with fallback to `/orderlist` and `/trades` across NSE and BSE. Updated `parse_icici_api_payload` to parse `orderlist` fields (`order_datetime`, `average_price`, `quantity`, `status`), filter for executed orders, and support multi-format date parsing (`DD-Mon-YYYY HH:MM`, ISO, etc.).
+4. **UI Streamlining:** Refactored `BrokerApiSyncCard.tsx` exclusively for ICICI Breeze direct sync with holdings snapshot and trade book history modes.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/providers/icici_breeze_provider.py` — Added compact JSON body support with `exchange_code` for `portfolioholdings` and multi-exchange orderlist retrieval.
+*   **Modified:** `backend/app/services/import_parsers/broker_api_parser.py` — Added `_parse_icici_date_string` multi-format parser and updated `parse_icici_api_payload` for executed order list responses.
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Disabled Zerodha direct API sync with clear guidance toward Tradebook CSV upload.
+*   **Modified:** `backend/app/tests/api/v1/test_broker_sync_endpoints.py` — Updated tests for ICICI Breeze sync and Zerodha rejection.
+*   **Modified:** `backend/app/tests/services/import_parsers/test_broker_api_parser.py` — Added test for ICICI orderlist payload parsing and status filtering.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/import/BrokerApiSyncCard.tsx` — Streamlined direct sync UI exclusively for ICICI Breeze API.
+*   **Modified:** `frontend/src/__tests__/components/Import/BrokerApiSyncCard.test.tsx` — Updated test assertions.
+
+### Outcome
+**Success.** Backend pytest suite (414 passed, 3 skipped) and frontend Jest suite (52 suites, 203 passed) pass 100%. Direct sync now fully adheres to ICICI Breeze API documentation.
+
 
 

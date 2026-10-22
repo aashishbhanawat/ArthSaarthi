@@ -7444,6 +7444,11 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 **Issue**: Users attempting to sync "Trade Book History" with date ranges from Zerodha Kite received "No trades records found for your Zerodha Kite account for the specified date range" despite having past trades.
 **Fix**: Zerodha Kite Connect REST API only supports fetching orders and trades executed on the current trading day; date filter parameters are unsupported and historical trade queries return an empty array `[]`. Updated backend error response to provide explicit guidance to use Zerodha Console Tradebook CSV for past trades, clarified UI labeling to "Today's Trades (Intraday)", and suppressed unused date range pickers for Zerodha trades.
 
+## [2026-10-22] ICICI Breeze API Orderlist Integration and Zerodha Direct Import Removal (Issue #569)
+**Issue**: Kite API does not support historical trade history or portfolio purchase dates, leading to repeated sync confusion. In addition, ICICI Breeze `portfolioholdings` required `exchange_code` payload in GET body and trade history required alignment with the `orderlist` / `order` endpoint.
+**Fix**: Removed Zerodha Kite from direct API sync UI and disabled it on the backend sync endpoint with clear user redirection to Zerodha Console Tradebook CSV upload. Updated ICICI Breeze provider to query `/portfolioholdings` across NSE and BSE with compact JSON payload and dynamic checksum, updated trade history to query `/order` (order list) across exchanges, and enhanced parser with robust status filtering and multi-format datetime extraction.
+
+
 
 
 
