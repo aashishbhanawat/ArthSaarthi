@@ -7448,6 +7448,11 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 **Issue**: Kite API does not support historical trade history or portfolio purchase dates, leading to repeated sync confusion. In addition, ICICI Breeze `portfolioholdings` required `exchange_code` payload in GET body and trade history required alignment with the `orderlist` / `order` endpoint.
 **Fix**: Removed Zerodha Kite from direct API sync UI and disabled it on the backend sync endpoint with clear user redirection to Zerodha Console Tradebook CSV upload. Updated ICICI Breeze provider to query `/portfolioholdings` across NSE and BSE with compact JSON payload and dynamic checksum, updated trade history to query `/order` (order list) across exchanges, and enhanced parser with robust status filtering and multi-format datetime extraction.
 
+## [2026-10-26] ICICI Breeze Authentication "Request Object is Null" (Issue #569)
+**Issue**: When authenticating ICICI Breeze session token, the API returned HTTP 200 with `{"Success":null,"Status":500,"Error":"Request Object is Null"}` (Content-Length: 62).
+**Fix**: `authenticate_session()` in `icici_breeze_provider.py` was passing `SessionToken` and `AppKey` via URL query parameters (`params=...`). Updated the method to transmit the compact JSON body in the HTTP `GET` request (`content=body_json.encode('utf-8')`) with `Content-Type: application/json` headers, matching the official Breeze SDK.
+
+
 
 
 

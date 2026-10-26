@@ -449,16 +449,17 @@ Based on the `product_backlog.md`, the next features to consider are:
 -   **Verification Script:** Authored `test_schemas.py` in the project root to compile and run from_orm/dict mock instantiation tests for all 16 database schemas. Verified 100% success rate (`Passed: 16, Failed: 0`) under a simulated Pydantic v1.10.13 environment.
 -   **E2E Test Suite Resolution:** Resolved E2E test failures caused by `MobileSeedingSplash` hanging indefinitely during test execution when asset seeding is disabled (`ENVIRONMENT=test`). Updated `/api/v1/system/seeding-status` in `system.py` to bypass splash screen during testing mode. Full Playwright E2E suite executed via Docker Compose with 100% pass rate (`34 passed, 0 failed`).
 
-## 16. Broker Direct API Import & ICICI Breeze Integration (Issue #569) (Updated 2026-10-22)
+## 16. Broker Direct API Import & ICICI Breeze Integration (Issue #569) (Updated 2026-10-26)
 
 -   **Issue #569:** Direct Broker API Import enhancements: Zerodha Kite Connect API does not provide historical trade data or portfolio purchase dates (restricted to current-day order fills), whereas ICICI Direct Breeze API supports both multi-exchange demat portfolio holdings and historical trade book / order history.
 -   **Fix:**
     -   **Zerodha API Import Deprecation:** Removed Zerodha Kite from direct API sync UI and disabled it on the backend sync endpoint (`/import-sessions/broker/sync`), redirecting users to import past transactions via Zerodha Console Tradebook CSV (which remains fully supported in ArthSaarthi).
+    -   **ICICI Breeze Session Authentication:** Fixed `authenticate_session()` in `icici_breeze_provider.py` to transmit credentials inside the HTTP `GET` JSON request body (resolving `Request Object is Null` error caused by URL query parameters).
     -   **ICICI Breeze Holdings Multi-Exchange Support:** Updated `IciciBreezeProvider.fetch_holdings` to send required `exchange_code` payload in compact JSON body with dynamic SHA256 checksum, querying both NSE and BSE to aggregate all demat holdings.
     -   **ICICI Breeze Order List Integration:** Updated `fetch_trades` to query the `/order` (order list) endpoint across NSE and BSE with fallback to `/orderlist` and `/trades`.
     -   **Enhanced Order Parser:** Updated `parse_icici_api_payload` to parse order list fields (`order_datetime`, `status`, `average_price`), filter strictly for executed orders, and support multi-format timestamp parsing.
     -   **Streamlined UI:** Redesigned `BrokerApiSyncCard.tsx` exclusively for ICICI Breeze direct sync.
--   **Verification:** Backend unit and integration tests (414 passed, 3 skipped) and frontend Jest test suites (52 suites, 203 passed) all pass cleanly.
+-   **Verification:** Backend unit and integration tests (415 passed, 3 skipped) and frontend Jest test suites (52 suites, 203 passed) all pass cleanly.
 
 
 

@@ -2712,5 +2712,30 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 ### Outcome
 **Success.** Backend pytest suite (414 passed, 3 skipped) and frontend Jest suite (52 suites, 203 passed) pass 100%. Direct sync now fully adheres to ICICI Breeze API documentation.
 
+---
+
+## Date: 2026-10-26
+**Issue Reference:** #569
+
+**Task:** Direct Broker API Import - Fix ICICI Breeze session authentication (`customerdetails`) payload transport.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Diagnosis:** `authenticate_session()` in `IciciBreezeProvider` sent credentials via URL query parameters (`params={"SessionToken": ..., "AppKey": ...}`) on an HTTP `GET` request. The ICICI Breeze `/customerdetails` endpoint expects the JSON payload in the request body (`content=body_json`). As a result, the server returned HTTP 200 with `{"Success":null,"Status":500,"Error":"Request Object is Null"}` (62 bytes), failing authentication.
+2. **Fix:** Updated `authenticate_session()` in `icici_breeze_provider.py` to transmit compact serialized JSON (`{"SessionToken":"...","AppKey":"..."}`) in the HTTP `GET` body (`content=body_json.encode('utf-8')`) with clean `Content-Type: application/json` headers, aligning with the official Breeze SDK specification.
+3. **Verification:** Authored `test_icici_breeze_provider_authenticate_session` in `test_broker_providers.py`. Full test suites pass: backend pytest (415 passed, 3 skipped) and frontend Jest (52 suites, 203 passed).
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/providers/icici_breeze_provider.py` — Transmitted JSON body in `GET /customerdetails`.
+*   **Modified:** `backend/app/tests/services/test_broker_providers.py` — Added unit test for session authentication request body.
+
+### Outcome
+**Success.** Verified against ICICI Breeze API: request object is successfully received and parsed by the server.
+
+
 
 

@@ -67,18 +67,23 @@ class IciciBreezeProvider(FinancialDataProvider):
         return headers
 
     def authenticate_session(self, session_token: str) -> Dict[str, Any]:
-        """Exchanges/verifies ICICI Breeze session token with customer details endpoint using GET."""
+        """Exchanges/verifies ICICI Breeze session token with customer details endpoint using GET with JSON body."""
         url = f"{BREEZE_BASE_URL}/customerdetails"
         self.session_token = session_token.strip() if session_token else None
-        headers = self._get_headers("")
-        params = {
+        
+        body_dict = {
             "SessionToken": self.session_token or "",
             "AppKey": self.api_key or "",
         }
+        body_json = json.dumps(body_dict, separators=(",", ":"))
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
 
         try:
-            with httpx.Client(timeout=10.0) as client:
-                resp = client.get(url, headers=headers, params=params)
+            with httpx.Client(timeout=15.0) as client:
+                resp = client.request("GET", url, headers=headers, content=body_json.encode("utf-8"))
                 if resp.status_code == 200:
                     data = resp.json()
                     status_val = data.get("Status") or data.get("status")
