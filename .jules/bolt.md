@@ -41,3 +41,7 @@
 ## 2024-05-19 - Prevent React.memo Defeat from Unmemoized Inline Functions
 **Learning:** Passing inline arrow functions (e.g., `onEdit={() => onEdit(item)}`) to child components within map loops recreates function references on every parent render, defeating any `React.memo` optimizations on the child components.
 **Action:** Always pass the memoized callback references directly (e.g., `onEdit={onEdit}`) and let the child component handle the closure with its item data.
+
+## 2023-10-26 - React.memo for mapped children and hoisted mutations
+**Learning:** Component mapping in React doesn't inherently memoize children, even if the parent mapping container (e.g. `WatchlistTable`) is wrapped in `React.memo`. Furthermore, keeping `useQuery`/`useMutation` hooks inside mapped item components (e.g. `WatchlistItemCard`) unnecessarily multiplies the number of hook instantiations.
+**Action:** When a parent table uses `React.memo` for performance but also maps list items into child component cards (like `TransactionCard`), those child cards must also be wrapped in `React.memo` to actually save re-renders. Always hoist API mutations/hooks to the parent list component and pass memoized callbacks down to item components instead of instantiating the hook inside every child component in the loop.

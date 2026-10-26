@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Holding } from '../../types/holding';
 import { usePrivacy } from '../../context/PrivacyContext';
 import { formatPercentage } from '../../utils/formatting';
@@ -10,6 +10,10 @@ interface HoldingCardProps {
 
 const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
     const { isPrivacyMode } = usePrivacy();
+
+    const handleClick = useCallback(() => {
+        onClick(holding);
+    }, [onClick, holding]);
 
     const formatCurrency = (value: number) => {
         if (isPrivacyMode) return '₹ ••••••';
@@ -151,7 +155,7 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
 
     return (
         <div
-            onClick={() => onClick(holding)}
+            onClick={handleClick}
             className="card p-4 active:scale-[0.98] transition-all cursor-pointer border-l-4"
             style={{ borderLeftColor: isPositive ? '#10b981' : '#ef4444' }}
         >
@@ -186,4 +190,4 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
     );
 };
 
-export default HoldingCard;
+export default React.memo(HoldingCard);

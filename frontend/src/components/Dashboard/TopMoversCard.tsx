@@ -35,4 +35,4 @@ const TopMoversCard: React.FC<TopMoversCardProps> = ({ asset }) => {
     );
 };
 
-export default TopMoversCard;
+export default React.memo(TopMoversCard);
