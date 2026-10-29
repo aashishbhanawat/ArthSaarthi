@@ -80,6 +80,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({
                 className="form-input"
                 placeholder="E.g., Buy a house"
                 required
+                autoFocus
               />
             </div>
 
