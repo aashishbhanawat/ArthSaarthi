@@ -237,9 +237,8 @@ class IciciBreezeProvider(FinancialDataProvider):
         auth_error_encountered = False
 
         endpoints_to_try = [
-            f"{BREEZE_BASE_URL}/order",
-            f"{BREEZE_BASE_URL}/orderlist",
             f"{BREEZE_BASE_URL}/trades",
+            f"{BREEZE_BASE_URL}/order",
         ]
 
         logger.info(
@@ -257,9 +256,14 @@ class IciciBreezeProvider(FinancialDataProvider):
                         "from_date": from_date_str,
                         "to_date": to_date_str,
                     }
-                    fetched_for_exc = False
 
                     for endpoint_url in endpoints_to_try:
+                        # Skip /order if date range > 10 days because ICICI Breeze strictly caps /order at 10 days
+                        if endpoint_url.endswith("/order") and from_date and to_date:
+                            if (to_date - from_date).days > 10:
+                                logger.debug("Skipping /order because date range exceeds 10 days.")
+                                continue
+
                         try:
                             resp = self._make_get_call(client, endpoint_url, body)
                             if resp.status_code == 404:
@@ -288,8 +292,11 @@ class IciciBreezeProvider(FinancialDataProvider):
                                         endpoint_url.split("/")[-1],
                                     )
                                     all_orders.extend(success_data)
-                                fetched_for_exc = True
-                                break
+                                    break
+                                elif res_json.get("Error") == "No Data Found" or success_data == []:
+                                    # Valid empty result for this exchange
+                                    logger.info("No trades found for exchange %s.", exc)
+                                    break
                             elif resp.status_code in (401, 403):
                                 logger.error(
                                     "ICICI Breeze session token expired or invalid (HTTP %s).",

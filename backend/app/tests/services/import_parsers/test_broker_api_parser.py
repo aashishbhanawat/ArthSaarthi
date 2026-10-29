@@ -111,3 +111,59 @@ def test_parse_icici_api_orderlist():
     assert res[0]["price_per_unit"] == 302.00
     assert res[0]["transaction_date"] == "2024-05-06"
     assert res[0]["source"] == "icici_breeze_api"
+
+
+def test_parse_icici_api_trades_endpoint():
+    mock_trades = [
+        {
+            "book_type": "Trade-Book",
+            "trade_date": "23-Oct-2026",
+            "stock_code": "BOMBUR",
+            "action": "Buy",
+            "quantity": "100",
+            "average_cost": "112558.00",
+            "brokerage_amount": "135.07",
+            "product_type": "Cash",
+            "exchange_code": "NSE",
+            "order_id": "20261023T700021193",
+            "total_taxes": "158.31",
+            "order_type": "Market",
+        },
+        {
+            "book_type": "Trade-Book",
+            "trade_date": "30-Jul-2026",
+            "stock_code": "INDMIM",
+            "action": "Sell",
+            "quantity": "210",
+            "average_cost": "155903.50",
+            "brokerage_amount": "180.00",
+            "product_type": "Cash",
+            "exchange_code": "NSE",
+            "order_id": "20260730T700011222",
+            "total_taxes": "202.59",
+            "order_type": "Limit",
+        },
+    ]
+
+    res = parse_icici_api_payload(mock_trades, import_type="trades")
+    assert len(res) == 2
+
+    # Test BUY trade with average_cost
+    assert res[0]["ticker_symbol"] == "BOMBUR.NS"
+    assert res[0]["transaction_type"] == "BUY"
+    assert res[0]["quantity"] == 100.0
+    assert res[0]["price_per_unit"] == 1125.58
+    assert res[0]["amount"] == 112558.00
+    assert res[0]["transaction_date"] == "2026-10-23"
+    assert round(res[0]["fees"], 2) == round(135.07 + 158.31, 2)
+    assert res[0]["source"] == "icici_breeze_api"
+
+    # Test SELL trade
+    assert res[1]["ticker_symbol"] == "INDMIM.NS"
+    assert res[1]["transaction_type"] == "SELL"
+    assert res[1]["quantity"] == 210.0
+    assert res[1]["price_per_unit"] == round(155903.50 / 210.0, 4)
+    assert res[1]["amount"] == 155903.50
+    assert res[1]["transaction_date"] == "2026-07-30"
+    assert round(res[1]["fees"], 2) == round(180.00 + 202.59, 2)
+

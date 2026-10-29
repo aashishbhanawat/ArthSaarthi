@@ -1,22 +1,28 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-10-07
+**Last Updated:** 2026-10-29
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via Zerodha & ICICI Broker APIs) Implemented, Fixed & Verified.
+*   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via ICICI Broker API) Diagnosed, Fixed & Verified.
 
-**Latest Achievement:** Updated ICICI Breeze `/customerdetails` authentication endpoint to use HTTP GET (fixing 405 Method Not Allowed), added `SessionToken` and `X-SessionToken` headers, and saved the exchanged session token returned from ICICI Direct into database credentials. Verified with 100% clean backend pytest suite (413 passed) and frontend test suite (203 passed).
+**Latest Achievement:** Diagnosed raw ICICI Breeze API behavior using new diagnostic utility (`backend/scripts/inspect_icici_raw.py`). Fixed `IciciBreezeProvider.fetch_trades()` to prioritize `/trades` (which supports historical ranges up to 2 years) over `/order` (which ICICI limits to <= 10 days). Updated `broker_api_parser.py` to parse trade book `average_cost`, `trade_date`, and fees (`brokerage_amount` + `total_taxes`). Verified with 100% clean backend pytest suite (416 passed) and frontend Jest suite (203 passed).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **413/413 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **413/413 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **416/416 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **416/416 Passing**
 *   **Frontend Unit Tests (Vitest):** ✅ **203/203 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **ICICI Breeze Raw Diagnostic & Trade Book Historical Import Fix (Issue #569) (Updated 2026-10-29):**
+    - **Diagnostic Utility:** Authored `backend/scripts/inspect_icici_raw.py` to test raw Breeze API endpoints (`/customerdetails`, `/portfolioholdings`, `/dematholdings`, `/order`, `/trades`) using stored DB credentials or CLI tokens.
+    - **Holdings Snapshot Date vs Trade Book:** Confirmed that `/portfolioholdings` is a holdings snapshot API returning current positions without purchase dates. Confirmed that `/trades` is the canonical Breeze Trade Book endpoint supporting up to 2 years of historical trades with exact transaction dates, actions, quantities, costs, and fee breakdowns.
+    - **Provider & Parser Integration:** Updated `IciciBreezeProvider.fetch_trades` to query `/trades` first, avoiding the 10-day limitation on `/order`. Updated `parse_icici_api_payload` in `broker_api_parser.py` to calculate per-unit price from `average_cost / quantity`, parse `trade_date`, and compute `brokerage_amount + total_taxes` fees.
+    - **Automated Tests:** Authored unit test `test_parse_icici_api_trades_endpoint`. Verified clean pass on 416 backend tests and 203 frontend tests.
 
 *   **Direct Portfolio & Trade Statement Import via Broker APIs (Issue #569 / FR7.1.10) (Updated 2026-10-07):**
     - **Broker Fetch Infrastructure & Parser:** Extended `ZerodhaKiteProvider` and `IciciBreezeProvider` with pure Python REST methods (`fetch_holdings()` and `fetch_trades()`). Created `broker_api_parser.py` with `as_of_date` resolution and item date extraction. Added `@root_validator` to `ParsedTransaction` schema in `import_session.py`. Updated `/customerdetails` authentication to use HTTP `GET`, passed `SessionToken` header, and extracted exchanged session tokens.

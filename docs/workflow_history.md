@@ -1,3 +1,31 @@
+## 2026-10-29: ICICI Breeze Raw Diagnostic Utility & Trade Book Historical Import Fix (Issue #569)
+
+**Task:** Build raw API test utility for ICICI Breeze, diagnose holdings snapshot vs trade book date resolution, and fix `/trades` historical endpoint integration and payload parsing.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Diagnostic Utility Script (`backend/scripts/inspect_icici_raw.py`):**
+   - Created standalone diagnostic utility capable of running inside `pms-backend` or via CLI (`--session-token`, `--api-key`, `--api-secret`), reading active credentials from PostgreSQL DB and querying live Breeze endpoints.
+   - Tested `/customerdetails`, `/portfolioholdings`, `/dematholdings`, `/order`, and `/trades` with various date formats and ranges (today, 4 days, 7 days, 30 days, 365 days, 730 days).
+2. **Key Findings:**
+   - `/portfolioholdings` returns a snapshot with `stock_code`, `average_price`, and `quantity`, but contains NO purchase or transaction dates.
+   - `/order` is limited to `<= 10 days` date ranges by ICICI Breeze (`"Number of days between from_date & to_date should not be more than 10"`).
+   - `/trades` is the canonical Trade Book endpoint in Breeze, supporting date queries up to 730 days (2 years), returning 21+ real executed trades with exact `trade_date`, `stock_code`, `action`, `quantity`, `average_cost`, `brokerage_amount`, and `total_taxes`.
+3. **Provider & Parser Fixes (`icici_breeze_provider.py`, `broker_api_parser.py`):**
+   - Updated `IciciBreezeProvider.fetch_trades()` to prioritize `/trades` over `/order`, and skip `/order` if date range exceeds 10 days.
+   - Updated `parse_icici_api_payload()` in `broker_api_parser.py` to handle `/trades` payload:
+     - Calculated unit price as `average_cost / quantity`.
+     - Extracted fees as `brokerage_amount + total_taxes`.
+     - Parsed Breeze date formats (`23-Oct-2026`).
+4. **Testing & Verification:**
+   - Added unit test `test_parse_icici_api_trades_endpoint` in `test_broker_api_parser.py`.
+   - Verified 100% backend test suite pass (416 passed, 3 skipped).
+   - Verified 100% frontend test suite pass (52 suites, 203 passed).
+
+---
+
 ## 2026-10-07: Fix ICICI Breeze Customerdetails GET Method & Exchanged Session Token Persistence (Issue #569)
 
 **Task:** Fix ICICI Breeze authentication HTTP 405 Method Not Allowed error on `/customerdetails`, pass `SessionToken` header, and save exchanged session token in database.  

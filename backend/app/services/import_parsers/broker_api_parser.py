@@ -242,16 +242,38 @@ def parse_icici_api_payload(
             if qty <= 0:
                 continue
 
-            # In Breeze orderlist, executed orders have average_price; fall back to price
+            # Price calculation:
+            # - In Breeze /trades endpoint: 'average_cost' is the total trade amount (INR)
+            # - In Breeze /order endpoint: 'average_price' or 'price' is the unit price
+            avg_cost_val = item.get("average_cost")
             avg_price_val = item.get("average_price")
             price_val = item.get("price")
-            price = Decimal(str(avg_price_val if avg_price_val and str(avg_price_val) != "0" else price_val or 0))
+
+            if avg_cost_val and Decimal(str(avg_cost_val)) > 0:
+                total_cost = Decimal(str(avg_cost_val))
+                price = (total_cost / qty).quantize(Decimal("0.0001"))
+                amount = total_cost
+            elif avg_price_val and Decimal(str(avg_price_val)) > 0:
+                price = Decimal(str(avg_price_val))
+                amount = qty * price
+            elif price_val and Decimal(str(price_val)) > 0:
+                price = Decimal(str(price_val))
+                amount = qty * price
+            else:
+                price = Decimal("0")
+                amount = Decimal("0")
+
             if price <= 0:
                 continue
 
+            # Fees calculation (brokerage + total_taxes)
+            brokerage = Decimal(str(item.get("brokerage_amount") or 0))
+            taxes = Decimal(str(item.get("total_taxes") or 0))
+            fees = float(brokerage + taxes)
+
             trade_date_raw = (
-                item.get("order_datetime")
-                or item.get("trade_date")
+                item.get("trade_date")
+                or item.get("order_datetime")
                 or item.get("execution_time")
                 or item.get("date")
                 or item.get("exchange_acknowledgement_date")
@@ -261,7 +283,6 @@ def parse_icici_api_payload(
             tx_date = _parse_icici_date_string(trade_date_raw) or as_of_date or datetime.now().strftime("%Y-%m-%d")
 
             ticker_symbol = f"{stock_code}.BO" if exchange == "BSE" else f"{stock_code}.NS"
-            amount = qty * price
             tx_type = "SELL" if "SELL" in action or action == "S" else "BUY"
 
             parsed_items.append(
@@ -275,7 +296,7 @@ def parse_icici_api_payload(
                     "price_per_unit": float(price),
                     "price": float(price),
                     "amount": float(amount),
-                    "fees": 0.0,
+                    "fees": fees,
                     "asset_type": "STOCK",
                     "exchange": exchange,
                     "isin": "",
