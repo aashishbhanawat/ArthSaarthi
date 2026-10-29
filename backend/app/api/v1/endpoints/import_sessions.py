@@ -4,7 +4,7 @@ import uuid
 from datetime import date as date_type, datetime, timezone
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 import pandas as pd
@@ -239,6 +239,101 @@ def get_import_session(
     return import_session
 
 
+def resolve_asset_for_import_transaction(
+    db: Session,
+    ticker_symbol: Optional[str],
+    source: Optional[str] = None,
+    name: Optional[str] = None,
+    isin: Optional[str] = None,
+    pending_alias_map: Optional[Dict[str, uuid.UUID]] = None,
+) -> Optional[models.Asset]:
+    """Resolves an import transaction to a system Asset using:
+    1. ISIN code
+    2. Pending aliases from current preview mapping
+    3. Direct ticker symbol (full ticker or base without exchange suffix)
+    4. Exact/compatible broker aliases (e.g. ICICI Tradebook aliases like BOMBUR -> BBTC)
+    5. Global aliases across any source
+    6. Exact name matching
+    """
+    if not ticker_symbol and not isin and not name:
+        return None
+
+    # 1. Try ISIN lookup first
+    if isin:
+        asset = crud.asset.get_by_isin(db, isin_code=isin)
+        if asset:
+            return asset
+
+    # Build symbol candidate variations (e.g. ['BOMBUR.NS', 'BOMBUR'])
+    candidates: List[str] = []
+    if ticker_symbol:
+        candidates.append(ticker_symbol)
+        base = ticker_symbol.rsplit(".", 1)[0] if "." in ticker_symbol else ticker_symbol
+        if base and base not in candidates:
+            candidates.append(base)
+    if name and name not in candidates:
+        candidates.append(name)
+
+    # 2. Check pending aliases (from current preview session)
+    if pending_alias_map:
+        for c in candidates:
+            if c in pending_alias_map:
+                asset = crud.asset.get(db, id=pending_alias_map[c])
+                if asset:
+                    return asset
+
+    # 3. Direct asset ticker lookup (full symbol, base symbol, base with .NS/.BO)
+    for c in candidates:
+        if c.upper().startswith("ISIN:"):
+            continue
+        asset = crud.asset.get_by_ticker(db, ticker_symbol=c)
+        if asset:
+            return asset
+        if "." not in c:
+            for suffix in (".NS", ".BO"):
+                asset = crud.asset.get_by_ticker(db, ticker_symbol=f"{c}{suffix}")
+                if asset:
+                    return asset
+
+    # 4. Alias lookup with source or compatible broker sources
+    sources_to_try: List[str] = []
+    if source:
+        sources_to_try.append(source)
+        src_lower = source.lower()
+        if "icici" in src_lower or "breeze" in src_lower:
+            for s in ("ICICI Direct Tradebook", "ICICI Direct", "icici_breeze_api", "ICICI Breeze"):
+                if s not in sources_to_try:
+                    sources_to_try.append(s)
+        elif "zerodha" in src_lower or "kite" in src_lower:
+            for s in ("Zerodha Tradebook", "Zerodha", "zerodha_kite_api"):
+                if s not in sources_to_try:
+                    sources_to_try.append(s)
+
+    for c in candidates:
+        for s in sources_to_try:
+            asset_alias = crud.asset_alias.get_by_alias(db, alias_symbol=c, source=s)
+            if asset_alias and asset_alias.asset:
+                return asset_alias.asset
+
+    # 5. Alias lookup across ANY source
+    for c in candidates:
+        asset_alias = (
+            db.query(models.AssetAlias)
+            .filter(models.AssetAlias.alias_symbol == c)
+            .first()
+        )
+        if asset_alias and asset_alias.asset:
+            return asset_alias.asset
+
+    # 6. Asset name lookup
+    for c in candidates:
+        asset = db.query(models.Asset).filter(models.Asset.name == c).first()
+        if asset:
+            return asset
+
+    return None
+
+
 @router.post("/{session_id}/preview", response_model=schemas.ImportSessionPreview)
 def get_import_session_preview(
     session_id: uuid.UUID,
@@ -288,38 +383,37 @@ def get_import_session_preview(
                 continue
 
             # 1. Asset Identification
-            ticker_symbol = row_data["ticker_symbol"]
-            asset = None
+            ticker_symbol = row_data.get("ticker_symbol") or ""
+            isin_code = row_data.get("isin")
+            name_val = row_data.get("name")
+            asset = resolve_asset_for_import_transaction(
+                db=db,
+                ticker_symbol=ticker_symbol,
+                source=import_session.source,
+                name=name_val,
+                isin=isin_code,
+                pending_alias_map=pending_alias_map,
+            )
 
-            # Check ISIN first if available
-            if "isin" in row_data and row_data["isin"]:
-                isin_code = row_data["isin"]
-                asset = crud.asset.get_by_isin(db, isin_code=isin_code)
-                if not asset:
-                    # Try to fetch details without creating (side-effect free preview)
-                    details = financial_data_service.get_asset_details(
-                        f"ISIN:{isin_code}"
+            # If ISIN lookup externally for new mutual funds (side-effect free preview)
+            if not asset and isin_code:
+                details = financial_data_service.get_asset_details(
+                    f"ISIN:{isin_code}"
+                )
+                if details:
+                    # Validate and filter through schema to prevent TypeError
+                    asset_in = schemas.AssetCreate(
+                        ticker_symbol=(
+                            details.get("ticker_symbol")
+                            or f"ISIN:{isin_code}".upper()
+                        ),
+                        **{
+                            k: v for k, v in details.items() if k != "ticker_symbol"
+                        },
                     )
-                    if details:
-                        # Validate and filter through schema to prevent TypeError
-                        asset_in = schemas.AssetCreate(
-                            ticker_symbol=(
-                                details.get("ticker_symbol")
-                                or f"ISIN:{isin_code}".upper()
-                            ),
-                            **{
-                                k: v for k, v in details.items() if k != "ticker_symbol"
-                            },
-                        )
-                        asset = models.Asset(**model_dump(asset_in))
+                    asset = models.Asset(**model_dump(asset_in))
                 if asset:
                     log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
-
-            if not asset:
-                # This also handles ticker_symbol with "ISIN:" prefix
-                asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
-                if asset:
-                    log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
 
             # If ticker looks like "ISIN:XXX", try to find externally
             # (side-effect free preview)
@@ -341,28 +435,18 @@ def get_import_session_preview(
                     )
 
             if not asset:
-                # Check pending aliases from the current session first
-                if ticker_symbol in pending_alias_map:
-                    asset_id = pending_alias_map[ticker_symbol]
-                    asset = crud.asset.get(db, id=asset_id)
-                    if asset:
-                        log.debug(f"Found in pending aliases: {ticker_symbol}")
-                else:
-                    # Then check persisted aliases
-                    asset_alias = crud.asset_alias.get_by_alias(
-                        db,
-                        alias_symbol=ticker_symbol,
-                        source=import_session.source,
-                    )
-                    if asset_alias:
-                        asset = asset_alias.asset
-                        log.debug(f"Found by alias: {ticker_symbol} -> {asset.name}")
-
-            if not asset:
                 # If no asset or alias is found, it needs user mapping
                 log.debug(f"No match found for: {ticker_symbol}")
                 needs_mapping.append(parsed_transaction)
                 continue
+
+            # Update display ticker symbol to canonical resolved ticker if it was mapped via alias
+            if asset and asset.ticker_symbol:
+                if "." in ticker_symbol and "." not in asset.ticker_symbol:
+                    suffix = "." + ticker_symbol.rsplit(".", 1)[1]
+                    parsed_transaction.ticker_symbol = f"{asset.ticker_symbol}{suffix}"
+                else:
+                    parsed_transaction.ticker_symbol = asset.ticker_symbol
 
             # 2. Duplicate Detection
             existing_transaction = None
@@ -436,53 +520,24 @@ def commit_import_session(
         # 2. Commit the selected transactions.
         transactions_created = 0
         for parsed_tx in commit_payload.transactions_to_commit:
-            # Try to find asset: ISIN first, then alias, then ticker, then name
-            asset = None
+            # Try to find asset: ISIN first, then robust symbol/alias resolution
             ticker_symbol = parsed_tx.ticker_symbol
+            asset = resolve_asset_for_import_transaction(
+                db=db,
+                ticker_symbol=ticker_symbol,
+                source=import_session.source,
+                name=getattr(parsed_tx, "name", None),
+                isin=parsed_tx.isin,
+            )
 
-            # 1. Try ISIN lookup first (most reliable)
-            if parsed_tx.isin:
-                asset = crud.asset.get_by_isin(db, isin_code=parsed_tx.isin)
-                if not asset:
-                    asset = crud.asset.get_or_create_by_ticker(
-                        db, ticker_symbol=f"ISIN:{parsed_tx.isin}"
-                    )
-
-            # 2. Try alias lookup (with source)
-            if not asset:
-                asset_alias = crud.asset_alias.get_by_alias(
-                    db,
-                    alias_symbol=ticker_symbol,
-                    source=import_session.source,
+            # Fallback for transient ISIN creation if not exists
+            if not asset and parsed_tx.isin:
+                asset = crud.asset.get_or_create_by_ticker(
+                    db, ticker_symbol=f"ISIN:{parsed_tx.isin}"
                 )
-                if asset_alias:
-                    asset = asset_alias.asset
-
-            # 3. Try alias lookup (any source)
-            if not asset:
-                asset_alias = (
-                    db.query(models.AssetAlias)
-                    .filter(models.AssetAlias.alias_symbol == ticker_symbol)
-                    .first()
-                )
-                if asset_alias:
-                    asset = asset_alias.asset
-
-            # 4. Try ticker lookup (also handles ISIN: prefix)
-            if not asset:
-                if ticker_symbol.upper().startswith("ISIN:"):
-                    asset = crud.asset.get_or_create_by_ticker(
-                        db, ticker_symbol=ticker_symbol
-                    )
-                else:
-                    asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
-
-            # 6. Try name lookup
-            if not asset:
-                asset = (
-                    db.query(models.Asset)
-                    .filter(models.Asset.name == ticker_symbol)
-                    .first()
+            if not asset and ticker_symbol and ticker_symbol.upper().startswith("ISIN:"):
+                asset = crud.asset.get_or_create_by_ticker(
+                    db, ticker_symbol=ticker_symbol
                 )
 
             if not asset:

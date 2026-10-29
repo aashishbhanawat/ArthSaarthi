@@ -1,3 +1,34 @@
+## 2026-10-29: Broker Direct Import Auto Ticker & Alias Resolution Enhancement (Issue #569)
+
+**Task:** Resolve auto ticker mapping for ICICI Breeze API imports where proprietary broker stock codes (e.g., `BOMBUR.NS`, `TATMOT.NS`, `JAMKAS.NS`, `GIC.NS`) were not resolving to canonical assets despite existing in `asset_aliases`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - In ICICI Breeze direct sync, transactions are parsed with exchange suffixes (`BOMBUR.NS`, `TATMOT.NS`), whereas `asset_aliases` stores un-suffixed short names (`BOMBUR`, `TATMOT`).
+   - The preview and commit resolution strictly queried `crud.asset_alias.get_by_alias(db, alias_symbol=ticker_symbol, source=import_session.source)`, which failed because `source` in `broker_credentials` / sync was `icici_breeze_api`, while seeded aliases have `source="ICICI Direct Tradebook"`.
+   - `get_import_session_preview` also lacked fallback to base symbols, name matching, or global alias matching.
+2. **Unified Asset & Alias Resolution Engine (`import_sessions.py`):**
+   - Created `resolve_asset_for_import_transaction()` supporting multi-stage resolution:
+     1. ISIN matching.
+     2. Pending session aliases from current user mappings.
+     3. Direct ticker lookups across candidates (`ticker_symbol`, base symbol without `.NS`/`.BO`, base with alternate exchange suffixes).
+     4. Broker-compatible alias lookups (e.g. mapping `icici_breeze_api` to `ICICI Direct Tradebook`, `ICICI Direct`, `ICICI Breeze`).
+     5. Global alias lookups across any source.
+     6. Asset name lookups.
+   - Applied `resolve_asset_for_import_transaction()` to both `get_import_session_preview` and `commit_import_session`.
+   - Updated preview `parsed_transaction.ticker_symbol` to canonical resolved asset ticker (with exchange suffix if applicable) so that preview displays clean asset tickers (e.g. `BBTC.NS`, `TMPV.NS`, `GICRE.NS`, `J&KBANK.NS`) and 0 transactions land in `needs_mapping`.
+3. **Schema Update (`schemas/import_session.py`):**
+   - Added `name: str | None = None` to `ParsedTransaction` schema to ensure holding/trade asset names are preserved for name-based fallback matching.
+4. **Testing & Verification:**
+   - Added `test_get_import_session_preview_icici_broker_alias_auto_match` in `test_import_sessions.py`.
+   - Verified 100% backend test suite pass (417 passed, 3 skipped).
+   - Verified 100% frontend test suite pass (52 suites, 203 passed).
+
+---
+
 ## 2026-10-29: ICICI Breeze Raw Diagnostic Utility & Trade Book Historical Import Fix (Issue #569)
 
 **Task:** Build raw API test utility for ICICI Breeze, diagnose holdings snapshot vs trade book date resolution, and fix `/trades` historical endpoint integration and payload parsing.  

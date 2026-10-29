@@ -6,17 +6,22 @@
 
 *   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via ICICI Broker API) Diagnosed, Fixed & Verified.
 
-**Latest Achievement:** Diagnosed raw ICICI Breeze API behavior using new diagnostic utility (`backend/scripts/inspect_icici_raw.py`). Fixed `IciciBreezeProvider.fetch_trades()` to prioritize `/trades` (which supports historical ranges up to 2 years) over `/order` (which ICICI limits to <= 10 days). Updated `broker_api_parser.py` to parse trade book `average_cost`, `trade_date`, and fees (`brokerage_amount` + `total_taxes`). Verified with 100% clean backend pytest suite (416 passed) and frontend Jest suite (203 passed).
+**Latest Achievement:** Resolved auto ticker mapping for broker direct imports. Created unified `resolve_asset_for_import_transaction()` helper handling candidate generation (full and un-suffixed symbols), broker-compatible alias source mapping (e.g. `icici_breeze_api` -> `ICICI Direct Tradebook`), global aliases, and canonical ticker display updates. Auto-matched 100% of trades (`BOMBUR.NS` -> `BBTC.NS`, `TATMOT.NS` -> `TMPV.NS`, `GIC.NS` -> `GICRE.NS`, `JAMKAS.NS` -> `J&KBANK.NS`) and 98/98 holdings. Verified with 100% clean backend pytest suite (417 passed) and frontend Jest suite (203 passed).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **416/416 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **416/416 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **417/417 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **417/417 Passing**
 *   **Frontend Unit Tests (Vitest):** ✅ **203/203 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Broker Direct Import Auto Ticker & Alias Resolution Enhancement (Issue #569) (Updated 2026-10-29):**
+    - **Unified Resolution Engine:** Built `resolve_asset_for_import_transaction()` in `backend/app/api/v1/endpoints/import_sessions.py` supporting ISIN, candidate symbol stripping (`.NS`/`.BO`), broker-compatible alias sources (`ICICI Direct Tradebook`, `ICICI Direct`, `icici_breeze_api`, etc.), global alias lookup, and asset name matching.
+    - **Preview & Commit Consistency:** Standardized both preview and commit endpoints on the new resolution engine, updating display tickers to canonical symbols (`BBTC.NS`, `TMPV.NS`, `GICRE.NS`, `J&KBANK.NS`) so that 0 transactions require manual mapping.
+    - **Automated Tests:** Added `test_get_import_session_preview_icici_broker_alias_auto_match` in `test_import_sessions.py`. 417 backend tests and 203 frontend tests passing cleanly.
 
 *   **ICICI Breeze Raw Diagnostic & Trade Book Historical Import Fix (Issue #569) (Updated 2026-10-29):**
     - **Diagnostic Utility:** Authored `backend/scripts/inspect_icici_raw.py` to test raw Breeze API endpoints (`/customerdetails`, `/portfolioholdings`, `/dematholdings`, `/order`, `/trades`) using stored DB credentials or CLI tokens.

@@ -73,6 +73,7 @@ class ParsedTransaction(BaseModel):
     price_per_unit: float
     fees: float
     isin: str | None = None
+    name: str | None = None
 
     @root_validator(pre=True)
     @classmethod
