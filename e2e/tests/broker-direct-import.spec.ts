@@ -27,20 +27,26 @@ test.describe('Broker Direct API Import UI E2E Test', () => {
   });
 
   test('Navigate to Import page and verify Direct Broker API Sync card is visible', async ({ page }) => {
-    // Login
-    await page.goto('/login');
-    await page.fill('input[type="email"]', standardUser.email);
-    await page.fill('input[type="password"]', standardUser.password);
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL('/dashboard');
+    // Login using standard workflow
+    await page.goto('/');
+    await page.getByLabel('Email address').fill(standardUser.email);
+    await page.getByLabel('Password', { exact: true }).fill(standardUser.password);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
     // Navigate to Import page
-    await page.goto('/import');
+    await page.getByRole('link', { name: 'Import' }).click();
+    await expect(page.getByRole('heading', { name: 'Import Transactions' })).toBeVisible();
 
     // Check presence of Broker API Sync Card
-    await expect(page.locator('text=Direct Broker API Sync (NFR12)')).toBeVisible();
-    await expect(page.locator('text=Zerodha Kite API')).toBeVisible();
-    await expect(page.locator('text=ICICI Breeze API')).toBeVisible();
+    await expect(page.locator('text=Direct Broker API Sync (ICICI Breeze)')).toBeVisible();
+    await expect(page.locator('text=ICICI Direct Breeze API')).toBeVisible();
     await expect(page.locator('text=Not Configured')).toBeVisible();
+    await expect(page.locator('text=Please configure and authenticate ICICI Breeze under')).toBeVisible();
+
+    // Verify clicking Profile / Settings redirects to /profile
+    await page.getByRole('button', { name: 'Profile / Settings' }).click();
+    await expect(page.getByRole('heading', { name: 'Profile & Settings' })).toBeVisible();
+    await expect(page).toHaveURL(/.*\/profile/);
   });
 });

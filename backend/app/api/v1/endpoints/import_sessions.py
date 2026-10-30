@@ -435,18 +435,31 @@ def get_import_session_preview(
                         f"-> {asset.name}"
                     )
 
+            is_broker_sync = bool(
+                import_session.source
+                and any(k in import_session.source.lower() for k in ("api", "breeze", "broker"))
+            )
+
             if not asset:
                 # If no asset or alias is found, it needs user mapping
                 log.debug(f"No match found for: {ticker_symbol}")
-                if parsed_transaction.ticker_symbol and parsed_transaction.ticker_symbol.endswith((".NS", ".BO")):
+                if (
+                    is_broker_sync
+                    and parsed_transaction.ticker_symbol
+                    and parsed_transaction.ticker_symbol.endswith((".NS", ".BO"))
+                ):
                     parsed_transaction.ticker_symbol = parsed_transaction.ticker_symbol.rsplit(".", 1)[0]
                 needs_mapping.append(parsed_transaction)
                 continue
 
-            # Update display ticker symbol to canonical resolved ticker if it was mapped via alias
-            if asset and asset.ticker_symbol:
+            # Update display ticker symbol to canonical resolved ticker for broker sync sessions
+            if is_broker_sync and asset and asset.ticker_symbol:
                 parsed_transaction.ticker_symbol = asset.ticker_symbol
-            elif parsed_transaction.ticker_symbol and parsed_transaction.ticker_symbol.endswith((".NS", ".BO")):
+            elif (
+                is_broker_sync
+                and parsed_transaction.ticker_symbol
+                and parsed_transaction.ticker_symbol.endswith((".NS", ".BO"))
+            ):
                 parsed_transaction.ticker_symbol = parsed_transaction.ticker_symbol.rsplit(".", 1)[0]
 
             # 2. Duplicate Detection

@@ -18,6 +18,10 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Fix CI Playwright E2E Tests for Broker Import and Data Mapping (Issue #569) (Updated 2026-10-30):**
+    - **Broker Direct Import E2E Spec:** Updated `broker-direct-import.spec.ts` locators for active UI labels (`Direct Broker API Sync (ICICI Breeze)`, `ICICI Direct Breeze API`, `Not Configured`, Profile/Settings button). Added interaction test verifying redirect to `/profile`.
+    - **Import Preview Row Symbol Preservation:** In `import_sessions.py`, preserved parsed CSV symbols (`row_data["ticker_symbol"]`) for file-based imports during user alias mapping, scoping canonical symbol substitution strictly to direct broker sync sources.
+
 *   **Fix CI SQLite Desktop Tests & CodeQL Alert #22 (Issue #569) (Updated 2026-10-30):**
     - **Desktop Test Encryption Fixture:** Added `pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")` in `test_broker_sync_endpoints.py` to support encrypted SQLite fields.
     - **CodeQL Remediation:** Eliminated credential slicing/printing in `inspect_icici_raw.py` and masked customer details response.

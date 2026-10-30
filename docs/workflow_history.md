@@ -1,3 +1,24 @@
+## 2026-10-30: Fix CI Playwright E2E Tests for Broker Import and Data Mapping (Issue #569)
+
+**Task:** Fix CI Playwright E2E failures on `broker-direct-import.spec.ts` (mismatched locators for provider & card heading) and `data-import-mapping.spec.ts` (preserving uploaded CSV symbol in preview rows for user-mapped assets).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Broker Direct Import E2E Spec (`e2e/tests/broker-direct-import.spec.ts`):**
+   - Updated locators to match the active UI implementation (`Direct Broker API Sync (ICICI Breeze)`, `ICICI Direct Breeze API`, `Not Configured`, and `Please configure and authenticate ICICI Breeze under`).
+   - Added interaction assertion verifying that clicking "Profile / Settings" redirects directly to `/profile`.
+2. **Import Session Preview Symbol Preservation (`backend/app/api/v1/endpoints/import_sessions.py`):**
+   - Scoped canonical ticker replacement (`parsed_transaction.ticker_symbol = asset.ticker_symbol`) strictly to broker sync sources (`is_broker_sync`).
+   - Preserves uploaded file symbols (`row_data["ticker_symbol"]`, e.g. `RIL`) for standard CSV/Excel imports so user mapping verification continues to display the source row symbol in the preview table.
+3. **Verification:**
+   - Ran `pytest app/tests/api/test_import_sessions.py` (12/12 passing).
+   - Ran `pytest app/tests/api/v1/test_broker_sync_endpoints.py` (3/3 passing).
+   - Local Ruff and ESLint checks passing with 0 warnings.
+
+---
+
 ## 2026-10-30: Fix CI SQLite Desktop Tests & CodeQL Alert #22 (Issue #569)
 
 **Task:** Fix SQLite Desktop test failure in CI (missing `pre_unlocked_key_manager` fixture for encrypted types) and resolve CodeQL Alert #22 (clear-text logging of sensitive keys/tokens in diagnostic script).  
