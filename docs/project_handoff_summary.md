@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-10-29
+**Last Updated:** 2026-10-30
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via ICICI Broker API) Diagnosed, Fixed & Verified.
 
-**Latest Achievement:** Resolved auto ticker mapping for broker direct imports. Created unified `resolve_asset_for_import_transaction()` helper handling candidate generation (full and un-suffixed symbols), broker-compatible alias source mapping (e.g. `icici_breeze_api` -> `ICICI Direct Tradebook`), global aliases, and canonical ticker display updates. Auto-matched 100% of trades (`BOMBUR.NS` -> `BBTC.NS`, `TATMOT.NS` -> `TMPV.NS`, `GIC.NS` -> `GICRE.NS`, `JAMKAS.NS` -> `J&KBANK.NS`) and 98/98 holdings. Verified with 100% clean backend pytest suite (417 passed) and frontend Jest suite (203 passed).
+**Latest Achievement:** Cleaned up import preview ticker display by removing artificial `.NS` / `.BO` exchange suffixes from broker import parsers and preview display. Tickers now display as clean canonical symbols (e.g. `BBTC`, `TMPV`, `GICRE`, `J&KBANK`) across preview and mapping tables. Verified with 100% clean backend pytest suite (417 passed) and frontend Jest suite (203 passed).
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,11 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Clean Ticker Display Formatting for Broker Import Preview (Issue #569) (Updated 2026-10-30):**
+    - **Parser Simplification:** In `broker_api_parser.py`, eliminated artificial `.NS` / `.BO` concatenation for Zerodha and ICICI payloads, storing clean symbols directly.
+    - **Preview Formatting:** In `import_sessions.py`, ensured preview sets `parsed_transaction.ticker_symbol = asset.ticker_symbol` without appending `.NS` / `.BO`, and strips any legacy suffixes before display.
+    - **Verification:** Updated `test_broker_api_parser.py` and `test_import_sessions.py` to assert base tickers. Verified all 417 backend tests and 203 frontend tests pass.
 
 *   **Broker Direct Import Auto Ticker & Alias Resolution Enhancement (Issue #569) (Updated 2026-10-29):**
     - **Unified Resolution Engine:** Built `resolve_asset_for_import_transaction()` in `backend/app/api/v1/endpoints/import_sessions.py` supporting ISIN, candidate symbol stripping (`.NS`/`.BO`), broker-compatible alias sources (`ICICI Direct Tradebook`, `ICICI Direct`, `icici_breeze_api`, etc.), global alias lookup, and asset name matching.

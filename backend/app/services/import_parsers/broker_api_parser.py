@@ -52,7 +52,7 @@ def parse_zerodha_api_payload(
             if qty <= 0:
                 continue
 
-            ticker_symbol = f"{symbol}.BO" if exchange == "BSE" else f"{symbol}.NS"
+            ticker_symbol = symbol
             amount = qty * avg_price
 
             parsed_items.append(
@@ -94,7 +94,7 @@ def parse_zerodha_api_payload(
             else:
                 tx_date = datetime.now().strftime("%Y-%m-%d")
 
-            ticker_symbol = f"{symbol}.BO" if exchange == "BSE" else f"{symbol}.NS"
+            ticker_symbol = symbol
             amount = qty * price
 
             parsed_items.append(
@@ -187,7 +187,7 @@ def parse_icici_api_payload(
             if qty <= 0:
                 continue
 
-            ticker_symbol = f"{stock_code}.BO" if exchange == "BSE" else f"{stock_code}.NS"
+            ticker_symbol = stock_code
             amount = qty * avg_price
 
             parsed_items.append(
@@ -282,7 +282,7 @@ def parse_icici_api_payload(
 
             tx_date = _parse_icici_date_string(trade_date_raw) or as_of_date or datetime.now().strftime("%Y-%m-%d")
 
-            ticker_symbol = f"{stock_code}.BO" if exchange == "BSE" else f"{stock_code}.NS"
+            ticker_symbol = stock_code
             tx_type = "SELL" if "SELL" in action or action == "S" else "BUY"
 
             parsed_items.append(

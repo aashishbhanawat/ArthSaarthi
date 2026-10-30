@@ -607,7 +607,7 @@ def test_get_import_session_preview_icici_broker_alias_auto_match(
     data = response.json()
     assert len(data["needs_mapping"]) == 0
     assert len(data["valid_new"]) == 1
-    assert data["valid_new"][0]["ticker_symbol"] == "BBTC.NS"
+    assert data["valid_new"][0]["ticker_symbol"] == "BBTC"
     assert data["valid_new"][0]["quantity"] == 100.0
     assert data["valid_new"][0]["price_per_unit"] == 1125.58
 

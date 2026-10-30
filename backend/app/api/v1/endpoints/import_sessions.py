@@ -437,16 +437,16 @@ def get_import_session_preview(
             if not asset:
                 # If no asset or alias is found, it needs user mapping
                 log.debug(f"No match found for: {ticker_symbol}")
+                if parsed_transaction.ticker_symbol and parsed_transaction.ticker_symbol.endswith((".NS", ".BO")):
+                    parsed_transaction.ticker_symbol = parsed_transaction.ticker_symbol.rsplit(".", 1)[0]
                 needs_mapping.append(parsed_transaction)
                 continue
 
             # Update display ticker symbol to canonical resolved ticker if it was mapped via alias
             if asset and asset.ticker_symbol:
-                if "." in ticker_symbol and "." not in asset.ticker_symbol:
-                    suffix = "." + ticker_symbol.rsplit(".", 1)[1]
-                    parsed_transaction.ticker_symbol = f"{asset.ticker_symbol}{suffix}"
-                else:
-                    parsed_transaction.ticker_symbol = asset.ticker_symbol
+                parsed_transaction.ticker_symbol = asset.ticker_symbol
+            elif parsed_transaction.ticker_symbol and parsed_transaction.ticker_symbol.endswith((".NS", ".BO")):
+                parsed_transaction.ticker_symbol = parsed_transaction.ticker_symbol.rsplit(".", 1)[0]
 
             # 2. Duplicate Detection
             existing_transaction = None

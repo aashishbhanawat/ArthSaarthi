@@ -1,3 +1,24 @@
+## 2026-10-30: Clean Ticker Display Formatting for Broker Import Preview (Issue #569)
+
+**Task:** Remove artificial `.NS` / `.BO` exchange suffixes from broker import preview display and parser items so tickers display cleanly as base canonical symbols (e.g. `BBTC`, `TMPV`, `GICRE`, `J&KBANK`).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Parser Simplification (`broker_api_parser.py`):**
+   - Removed automatic `.NS` / `.BO` suffix concatenation when generating `ticker_symbol` in `parse_zerodha_api_payload()` and `parse_icici_api_payload()`.
+   - Set `ticker_symbol` directly to `symbol` or `stock_code` without exchange suffix.
+2. **Preview Display Refinement (`import_sessions.py`):**
+   - In `get_import_session_preview()`, ensured that `parsed_transaction.ticker_symbol` displays the canonical asset's symbol without appending `.NS` / `.BO`.
+   - Stripped trailing `.NS` / `.BO` from unmatched tickers before presenting them under "Transactions Needing Mapping".
+3. **Automated Test Updates & Verification:**
+   - Updated assertions in `backend/app/tests/services/import_parsers/test_broker_api_parser.py` and `backend/app/tests/api/test_import_sessions.py` to expect base canonical symbols (`INFY`, `TCS`, `RELIANCE`, `INFTEC`, `POWGRI`, `BOMBUR`, `INDMIM`, `BBTC`).
+   - Verified 100% backend test suite pass (417 passed, 3 skipped).
+   - Verified 100% frontend test suite pass (52 suites, 203 passed).
+
+---
+
 ## 2026-10-29: Broker Direct Import Auto Ticker & Alias Resolution Enhancement (Issue #569)
 
 **Task:** Resolve auto ticker mapping for ICICI Breeze API imports where proprietary broker stock codes (e.g., `BOMBUR.NS`, `TATMOT.NS`, `JAMKAS.NS`, `GIC.NS`) were not resolving to canonical assets despite existing in `asset_aliases`.  

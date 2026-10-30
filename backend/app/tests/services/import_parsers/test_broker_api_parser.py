@@ -25,14 +25,14 @@ def test_parse_zerodha_api_holdings():
 
     res = parse_zerodha_api_payload(mock_raw, import_type="holdings")
     assert len(res) == 2
-    assert res[0]["ticker_symbol"] == "INFY.NS"
-    assert res[0]["symbol"] == "INFY.NS"
+    assert res[0]["ticker_symbol"] == "INFY"
+    assert res[0]["symbol"] == "INFY"
     assert res[0]["quantity"] == 10.0
     assert res[0]["price_per_unit"] == 1450.50
     assert res[0]["price"] == 1450.50
     assert res[0]["source"] == "zerodha_api"
-    assert res[1]["ticker_symbol"] == "TCS.BO"
-    assert res[1]["symbol"] == "TCS.BO"
+    assert res[1]["ticker_symbol"] == "TCS"
+    assert res[1]["symbol"] == "TCS"
 
 
 def test_parse_zerodha_api_trades():
@@ -49,8 +49,8 @@ def test_parse_zerodha_api_trades():
 
     res = parse_zerodha_api_payload(mock_raw, import_type="trades")
     assert len(res) == 1
-    assert res[0]["ticker_symbol"] == "RELIANCE.NS"
-    assert res[0]["symbol"] == "RELIANCE.NS"
+    assert res[0]["ticker_symbol"] == "RELIANCE"
+    assert res[0]["symbol"] == "RELIANCE"
     assert res[0]["transaction_type"] == "BUY"
     assert res[0]["quantity"] == 20.0
     assert res[0]["price_per_unit"] == 2400.00
@@ -69,8 +69,8 @@ def test_parse_icici_api_holdings():
 
     res = parse_icici_api_payload(mock_raw, import_type="holdings")
     assert len(res) == 1
-    assert res[0]["ticker_symbol"] == "INFTEC.NS"
-    assert res[0]["symbol"] == "INFTEC.NS"
+    assert res[0]["ticker_symbol"] == "INFTEC"
+    assert res[0]["symbol"] == "INFTEC"
     assert res[0]["quantity"] == 15.0
     assert res[0]["price_per_unit"] == 1500.00
     assert res[0]["source"] == "icici_breeze_api"
@@ -103,8 +103,8 @@ def test_parse_icici_api_orderlist():
     res = parse_icici_api_payload(mock_raw, import_type="trades")
     # Only the Executed order should be imported, Cancelled order ignored
     assert len(res) == 1
-    assert res[0]["ticker_symbol"] == "POWGRI.NS"
-    assert res[0]["symbol"] == "POWGRI.NS"
+    assert res[0]["ticker_symbol"] == "POWGRI"
+    assert res[0]["symbol"] == "POWGRI"
     assert res[0]["name"] == "POWGRI"
     assert res[0]["transaction_type"] == "BUY"
     assert res[0]["quantity"] == 10.0
@@ -149,7 +149,7 @@ def test_parse_icici_api_trades_endpoint():
     assert len(res) == 2
 
     # Test BUY trade with average_cost
-    assert res[0]["ticker_symbol"] == "BOMBUR.NS"
+    assert res[0]["ticker_symbol"] == "BOMBUR"
     assert res[0]["transaction_type"] == "BUY"
     assert res[0]["quantity"] == 100.0
     assert res[0]["price_per_unit"] == 1125.58
@@ -159,7 +159,7 @@ def test_parse_icici_api_trades_endpoint():
     assert res[0]["source"] == "icici_breeze_api"
 
     # Test SELL trade
-    assert res[1]["ticker_symbol"] == "INDMIM.NS"
+    assert res[1]["ticker_symbol"] == "INDMIM"
     assert res[1]["transaction_type"] == "SELL"
     assert res[1]["quantity"] == 210.0
     assert res[1]["price_per_unit"] == round(155903.50 / 210.0, 4)
