@@ -1,7 +1,6 @@
-from decimal import Decimal
 from app.services.import_parsers.broker_api_parser import (
-    parse_zerodha_api_payload,
     parse_icici_api_payload,
+    parse_zerodha_api_payload,
 )
 
 

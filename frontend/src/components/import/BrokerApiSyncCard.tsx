@@ -75,17 +75,22 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
       if (session && session.id) {
         navigate(`/import/${session.id}/preview`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       let detail = 'Failed to sync from broker API.';
-      const resDetail = err.response?.data?.detail;
+      const axiosErr = err as { response?: { data?: { detail?: unknown } }; message?: string };
+      const resDetail = axiosErr.response?.data?.detail;
       if (typeof resDetail === 'string') {
         detail = resDetail;
       } else if (Array.isArray(resDetail)) {
-        detail = resDetail.map((d: any) => d.msg || JSON.stringify(d)).join('; ');
+        detail = resDetail
+          .map((d: unknown) =>
+            d && typeof d === 'object' && 'msg' in d ? String((d as { msg: unknown }).msg) : JSON.stringify(d)
+          )
+          .join('; ');
       } else if (resDetail && typeof resDetail === 'object') {
         detail = JSON.stringify(resDetail);
-      } else if (err.message) {
-        detail = err.message;
+      } else if (axiosErr.message) {
+        detail = axiosErr.message;
       }
       setErrorMsg(detail);
     } finally {

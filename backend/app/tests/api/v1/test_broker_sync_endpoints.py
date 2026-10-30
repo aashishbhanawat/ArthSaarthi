@@ -1,10 +1,9 @@
-import uuid
 from unittest.mock import MagicMock, patch
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
-from app.core import security
+from app import crud, schemas
 from app.core.config import settings
 
 

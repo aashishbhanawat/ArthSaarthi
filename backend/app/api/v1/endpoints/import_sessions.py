@@ -1,7 +1,8 @@
 import logging
 import shutil
 import uuid
-from datetime import date as date_type, datetime, timezone
+from datetime import date as date_type
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -980,7 +981,9 @@ async def create_broker_sync_import_session(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail=f"Unable to reach ICICI Breeze server. Network error: {net_err}",
                 )
-            from app.services.import_parsers.broker_api_parser import parse_icici_api_payload
+            from app.services.import_parsers.broker_api_parser import (
+                parse_icici_api_payload,
+            )
 
             parsed_items = parse_icici_api_payload(
                 raw_data,

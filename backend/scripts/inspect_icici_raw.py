@@ -9,7 +9,6 @@ Usage:
 import argparse
 import hashlib
 import json
-import os
 import sys
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
@@ -131,12 +130,9 @@ def main():
     now_utc = datetime.now(timezone.utc)
     today_iso_start = now_utc.strftime("%Y-%m-%dT00:00:00.000Z")
     today_iso_end = now_utc.strftime("%Y-%m-%dT23:59:59.000Z")
-    
+
     days_30_ago = (now_utc - timedelta(days=30)).strftime("%Y-%m-%dT00:00:00.000Z")
     days_365_ago = (now_utc - timedelta(days=365)).strftime("%Y-%m-%dT00:00:00.000Z")
-    
-    today_date_str = now_utc.strftime("%Y-%m-%d")
-    days_30_date_str = (now_utc - timedelta(days=30)).strftime("%Y-%m-%d")
 
     with httpx.Client() as client:
         # 1. Customer Details (Check Session Validity)

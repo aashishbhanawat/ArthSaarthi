@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, useNavigate } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { BrokerApiSyncCard } from '../../../components/import/BrokerApiSyncCard';
 import * as brokerApi from '../../../services/brokerApi';
 

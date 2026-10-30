@@ -70,7 +70,7 @@ class IciciBreezeProvider(FinancialDataProvider):
         """Exchanges/verifies ICICI Breeze session token with customer details endpoint using GET with JSON body."""
         url = f"{BREEZE_BASE_URL}/customerdetails"
         self.session_token = session_token.strip() if session_token else None
-        
+
         body_dict = {
             "SessionToken": self.session_token or "",
             "AppKey": self.api_key or "",
