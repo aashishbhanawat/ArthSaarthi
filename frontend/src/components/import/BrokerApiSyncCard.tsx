@@ -273,7 +273,7 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
               Please configure and authenticate ICICI Breeze under{' '}
               <button
                 type="button"
-                onClick={() => navigate('/settings')}
+                onClick={() => navigate('/profile')}
                 className="text-blue-600 dark:text-blue-400 font-semibold underline"
               >
                 Profile / Settings

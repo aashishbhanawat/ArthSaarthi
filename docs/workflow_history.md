@@ -1,3 +1,21 @@
+## 2026-10-30: Fix Profile & Settings Navigation Route in Broker Direct Sync (Issue #569)
+
+**Task:** Fix navigation link in `BrokerApiSyncCard` when broker is unconfigured, which was targeting non-existent route `/#/settings` instead of `/#/profile`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Navigation Fix (`BrokerApiSyncCard.tsx`):**
+   - Corrected `onClick={() => navigate('/profile')}` in `BrokerApiSyncCard.tsx` so clicking "Profile / Settings" opens the Profile & Settings page where `BrokerSettings` is rendered.
+2. **Route Alias (`App.tsx`):**
+   - Added `<Route path="/settings" element={<Navigate to="/profile" replace />} />` in `App.tsx` as a graceful redirect so any direct hits to `#/settings` seamlessly land on `ProfilePage`.
+3. **Automated Testing & Verification:**
+   - Updated `BrokerApiSyncCard.test.tsx` to assert that clicking the "Profile / Settings" button navigates to `/profile`.
+   - Verified clean test execution (2/2 passing in `BrokerApiSyncCard.test.tsx`).
+
+---
+
 ## 2026-10-30: Clean Ticker Display Formatting for Broker Import Preview (Issue #569)
 
 **Task:** Remove artificial `.NS` / `.BO` exchange suffixes from broker import preview display and parser items so tickers display cleanly as base canonical symbols (e.g. `BBTC`, `TMPV`, `GICRE`, `J&KBANK`).  

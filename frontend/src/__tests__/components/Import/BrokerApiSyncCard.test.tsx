@@ -1,7 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { BrokerApiSyncCard } from '../../../components/import/BrokerApiSyncCard';
 import * as brokerApi from '../../../services/brokerApi';
+
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
 
 jest.mock('../../../services/brokerApi');
 
@@ -32,6 +38,10 @@ describe('BrokerApiSyncCard', () => {
     await waitFor(() => {
       expect(screen.getByText('Not Configured')).toBeInTheDocument();
     });
+
+    const settingsButton = screen.getByRole('button', { name: 'Profile / Settings' });
+    fireEvent.click(settingsButton);
+    expect(mockNavigate).toHaveBeenCalledWith('/profile');
   });
 
   it('renders connected state when active authenticated credentials exist', async () => {

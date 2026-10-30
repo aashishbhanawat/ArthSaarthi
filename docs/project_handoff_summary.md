@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via ICICI Broker API) Diagnosed, Fixed & Verified.
 
-**Latest Achievement:** Cleaned up import preview ticker display by removing artificial `.NS` / `.BO` exchange suffixes from broker import parsers and preview display. Tickers now display as clean canonical symbols (e.g. `BBTC`, `TMPV`, `GICRE`, `J&KBANK`) across preview and mapping tables. Verified with 100% clean backend pytest suite (417 passed) and frontend Jest suite (203 passed).
+**Latest Achievement:** Corrected broker configuration redirect in `BrokerApiSyncCard` from `/#/settings` to `/#/profile` (where `BrokerSettings` lives) and added `/settings` route redirect in `App.tsx`. Verified with automated unit testing.
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,11 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Fix Profile & Settings Navigation Route in Broker Direct Sync (Issue #569) (Updated 2026-10-30):**
+    - **Navigation Link:** Updated `BrokerApiSyncCard.tsx` button click from `navigate('/settings')` to `navigate('/profile')`.
+    - **Route Redirect:** Added `<Route path="/settings" element={<Navigate to="/profile" replace />} />` in `App.tsx`.
+    - **Unit Test:** Updated `BrokerApiSyncCard.test.tsx` verifying navigation to `/profile`.
 
 *   **Clean Ticker Display Formatting for Broker Import Preview (Issue #569) (Updated 2026-10-30):**
     - **Parser Simplification:** In `broker_api_parser.py`, eliminated artificial `.NS` / `.BO` concatenation for Zerodha and ICICI payloads, storing clean symbols directly.
