@@ -121,11 +121,9 @@ def main():
         finally:
             db.close()
 
-    masked_key = f"{api_key[:4]}...{api_key[-4:]}" if api_key and len(api_key) > 8 else "****"
-    masked_tok = f"{session_token[:4]}...{session_token[-4:]}" if session_token and len(session_token) > 8 else "****"
-    print(f"Using API Key: {masked_key}")
-    print(f"Using Session Token: {masked_tok}")
-    print(f"API Secret Set: {bool(api_secret)}")
+    print(f"API Key Present: {bool(api_key)}")
+    print(f"Session Token Present: {bool(session_token)}")
+    print(f"API Secret Present: {bool(api_secret)}")
 
     now_utc = datetime.now(timezone.utc)
     today_iso_start = now_utc.strftime("%Y-%m-%dT00:00:00.000Z")
@@ -150,14 +148,23 @@ def main():
         print(f"Customer Details Status: {cust_resp.status_code}")
         try:
             cust_json = cust_resp.json()
-            print("Customer Details JSON:", json.dumps(cust_json, indent=2))
             if cust_json.get("Status") == 200 and cust_json.get("Success"):
                 fresh_token = cust_json["Success"].get("session_token")
                 if fresh_token:
                     session_token = fresh_token
-                    print(f"Adopted session token from customerdetails: {session_token[:4]}...{session_token[-4:]}")
+                    print("Adopted fresh session token from customerdetails.")
+                display_json = {
+                    "Status": cust_json.get("Status"),
+                    "Success": {
+                        k: ("***" if "token" in k.lower() or "key" in k.lower() else v)
+                        for k, v in cust_json["Success"].items()
+                    } if isinstance(cust_json.get("Success"), dict) else cust_json.get("Success"),
+                }
+                print("Customer Details JSON:", json.dumps(display_json, indent=2))
+            else:
+                print("Customer Details JSON:", json.dumps(cust_json, indent=2))
         except Exception:
-            print("Customer Details Text:", cust_resp.text)
+            print("Customer Details Status:", cust_resp.status_code)
 
         # 2. Portfolio Holdings (NSE and BSE)
         print("\n--- 2. Testing Portfolio Holdings (/portfolioholdings) ---")

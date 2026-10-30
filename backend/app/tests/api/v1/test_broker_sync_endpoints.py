@@ -1,10 +1,13 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.core.config import settings
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_broker_sync_endpoint_unauthenticated_broker(client: TestClient, db: Session, get_auth_headers):

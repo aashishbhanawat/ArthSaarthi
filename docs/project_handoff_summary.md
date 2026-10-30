@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via ICICI Broker API) Diagnosed, Fixed & Verified.
 
-**Latest Achievement:** Corrected broker configuration redirect in `BrokerApiSyncCard` from `/#/settings` to `/#/profile` (where `BrokerSettings` lives) and added `/settings` route redirect in `App.tsx`. Verified with automated unit testing.
+**Latest Achievement:** Resolved CodeQL Alert #22 (clear-text logging of sensitive credentials in diagnostic utility) and fixed SQLite desktop integration test suite (`test_broker_sync_endpoints.py`) with `pre_unlocked_key_manager` fixture for desktop encryption. Verified with clean linters (Ruff & ESLint) and tests.
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,10 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Fix CI SQLite Desktop Tests & CodeQL Alert #22 (Issue #569) (Updated 2026-10-30):**
+    - **Desktop Test Encryption Fixture:** Added `pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")` in `test_broker_sync_endpoints.py` to support encrypted SQLite fields.
+    - **CodeQL Remediation:** Eliminated credential slicing/printing in `inspect_icici_raw.py` and masked customer details response.
 
 *   **Fix Profile & Settings Navigation Route in Broker Direct Sync (Issue #569) (Updated 2026-10-30):**
     - **Navigation Link:** Updated `BrokerApiSyncCard.tsx` button click from `navigate('/settings')` to `navigate('/profile')`.

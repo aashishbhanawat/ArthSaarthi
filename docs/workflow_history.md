@@ -1,3 +1,24 @@
+## 2026-10-30: Fix CI SQLite Desktop Tests & CodeQL Alert #22 (Issue #569)
+
+**Task:** Fix SQLite Desktop test failure in CI (missing `pre_unlocked_key_manager` fixture for encrypted types) and resolve CodeQL Alert #22 (clear-text logging of sensitive keys/tokens in diagnostic script).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **SQLite Desktop Encryption Fixture (`test_broker_sync_endpoints.py`):**
+   - Added `pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")` in `backend/app/tests/api/v1/test_broker_sync_endpoints.py`.
+   - In SQLite desktop mode, `User` and `Portfolio` entities utilize `EncryptedString` which requires the master key loaded in `KeyManager`.
+   - Verified that all 3 tests pass cleanly under SQLite desktop test suite (`docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml run --build --rm test-desktop`).
+2. **CodeQL Alert #22 Remediation (`inspect_icici_raw.py`):**
+   - Removed printing/slicing of `api_key` and `session_token` in `backend/scripts/inspect_icici_raw.py`.
+   - Replaced with boolean presence indicators (`bool(api_key)`, `bool(session_token)`, `bool(api_secret)`).
+   - Sanitized customerdetails JSON dump to mask sensitive tokens before logging.
+3. **Linting & Quality Checks:**
+   - Verified 100% clean passes on `ruff check .` and `npx eslint .`.
+
+---
+
 ## 2026-10-30: Fix Profile & Settings Navigation Route in Broker Direct Sync (Issue #569)
 
 **Task:** Fix navigation link in `BrokerApiSyncCard` when broker is unconfigured, which was targeting non-existent route `/#/settings` instead of `/#/profile`.  
