@@ -67,7 +67,7 @@
     }
   },
   "dependencies": {
-    "@capacitor/android": "^7.0.0",
+    "@capacitor/android": "^7.6.9",
     "@capacitor/core": "^7.0.0",
     "@heroicons/react": "^2.1.5",
     "@radix-ui/react-accordion": "^1.2.12",
