@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { useChangePassword } from '../../hooks/useProfile';
 import { UserPasswordChange } from '../../types/user';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 type ChangePasswordFormData = UserPasswordChange & {
   confirmPassword?: string;
@@ -91,7 +92,8 @@ const ChangePasswordForm = () => {
           </div>
 
           <div className="flex items-center justify-end mt-6">
-            <button type="submit" className="btn btn-primary" disabled={isPending}>
+            <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={isPending} aria-busy={isPending}>
+              {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {isPending ? 'Updating...' : 'Update Password'}
             </button>
           </div>

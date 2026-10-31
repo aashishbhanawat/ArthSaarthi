@@ -1,1 +1,5 @@
 ## 2024-05-18 - Transaction Details Modal Close Button\n**Learning:** Modals can sometimes be missing explicit close buttons or lack ARIA attributes linking the title to the dialog role.\n**Action:** Update modals to include a standard `modal-header` with an `h2` and an explicitly labeled close button using `XMarkIcon`.
+
+## 2025-03-09 - Add loading spinners and ARIA attributes to Profile forms
+**Learning:** For primary action buttons representing async actions, visually indicating the loading state with a spinner (`ArrowPathIcon` with `animate-spin`) AND semantically indicating it via `aria-busy={isPending}` significantly improves the user experience and accessibility for screen readers. Some forms like `UpdateProfileForm` and `ChangePasswordForm` missed this pattern compared to the rest of the application.
+**Action:** Always include `flex items-center gap-2`, `{isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}`, and `aria-busy={isPending}` on form submit buttons to maintain a consistent UX pattern across the app.

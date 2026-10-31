@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../context/AuthContext';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useUpdateProfile } from '../../hooks/useProfile';
 import { UserUpdateMe } from '../../types/user';
 
@@ -64,9 +65,11 @@ const UpdateProfileForm = () => {
           <div className="flex items-center justify-end mt-6">
             <button
               type="submit"
-              className="btn btn-primary"
+              className="btn btn-primary flex items-center gap-2"
               disabled={isPending || !isDirty}
+              aria-busy={isPending}
             >
+              {isPending && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
