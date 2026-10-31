@@ -7452,6 +7452,11 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 **Issue**: When authenticating ICICI Breeze session token, the API returned HTTP 200 with `{"Success":null,"Status":500,"Error":"Request Object is Null"}` (Content-Length: 62).
 **Fix**: `authenticate_session()` in `icici_breeze_provider.py` was passing `SessionToken` and `AppKey` via URL query parameters (`params=...`). Updated the method to transmit the compact JSON body in the HTTP `GET` request (`content=body_json.encode('utf-8')`) with `Content-Type: application/json` headers, matching the official Breeze SDK.
 
+## [2026-10-31] Dependabot Security Vulnerabilities (Issue #604)
+**Issue**: Security scan identified 1 critical and 8 high-severity CVEs across dependencies, notably in `@capacitor/android` (<7.6.9, GHSA-rvm3-566m-v7fv), `undici` (<=6.29.0, 5 CVEs), `pyasn1` (<0.6.5, 4 GHSAs), `dnspython` (<2.9.0, GHSA-45c3-73f7-pv4m), `source-map-js` (CVE-2026-93749), and `vite` (GHSA-698v-4r3x-3vcv).
+**Fix**: Bumped backend dependencies in `requirements.in`, `requirements.txt`, and `requirements-windows.txt` (`pyasn1>=0.6.5`, `dnspython==2.9.0`, `certifi==2026.10.18`), and ran container-scoped `npm audit fix` for `package-lock.json` (`@capacitor/android` to 7.6.10, `undici` to 6.29.1, `fast-uri` to 3.1.9, `source-map-js` to 1.2.2, `postcss-selector-parser` to 6.1.5, `follow-redirects` to 1.16.2, `vite` to 8.3.5).
+
+
 
 
 

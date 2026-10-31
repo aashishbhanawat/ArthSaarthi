@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-10-30
+**Last Updated:** 2026-10-31
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 Completed — Feature #569 (Direct Portfolio & Trade Statement Import via ICICI Broker API) Diagnosed, Fixed & Verified.
+*   **Overall Status:** Release v1.5.0 Completed — Dependabot Security Audit & Vulnerability Remediation (#604) Resolved.
 
-**Latest Achievement:** Resolved CodeQL Alert #22 (clear-text logging of sensitive credentials in diagnostic utility) and fixed SQLite desktop integration test suite (`test_broker_sync_endpoints.py`) with `pre_unlocked_key_manager` fixture for desktop encryption. Verified with clean linters (Ruff & ESLint) and tests.
+**Latest Achievement:** Resolved 1 critical and 8 high-severity CVEs across backend and frontend dependencies (`@capacitor/android`, `undici`, `vite`, `pyasn1`, `dnspython`, `source-map-js`, `postcss-selector-parser`, `fast-uri`, `follow-redirects`, `certifi`). Verified with clean linters (Ruff & ESLint) and 100% test pass rates across both test suites.
 
 ## 2. Test Suite Status
 
@@ -17,6 +17,11 @@
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Dependabot Security Vulnerability Remediation (Issue #604) (Updated 2026-10-31):**
+    - **Backend Dependencies:** Bumped `pyasn1>=0.6.5` (mitigating 4 ASN.1 infinite loop GHSAs), `dnspython==2.9.0` (mitigating excessive CPU consumption GHSA-45c3-73f7-pv4m), and `certifi==2026.10.18` (root CA certificate sync).
+    - **Frontend Dependencies:** Resolved critical `@capacitor/android` vulnerability (GHSA-rvm3-566m-v7fv upgraded to 7.6.10), high-severity `undici` vulnerabilities (5 CVEs upgraded to 6.29.1), `vite` (upgraded to 8.3.5), `source-map-js` (upgraded to 1.2.2), `postcss-selector-parser` (upgraded to 6.1.5), and `fast-uri` (upgraded to 3.1.9).
+    - **Verification:** Ran backend SQLite test suite (417 passed), frontend Jest test suite (52 suites, 203 passed), and both Ruff and ESLint linters with zero errors.
 
 *   **Fix CI Playwright E2E Tests for Broker Import and Data Mapping (Issue #569) (Updated 2026-10-30):**
     - **Broker Direct Import E2E Spec:** Updated `broker-direct-import.spec.ts` locators for active UI labels (`Direct Broker API Sync (ICICI Breeze)`, `ICICI Direct Breeze API`, `Not Configured`, Profile/Settings button). Added interaction test verifying redirect to `/profile`.
