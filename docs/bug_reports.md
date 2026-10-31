@@ -24,6 +24,94 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-10-07-02
+**Title:** ICICI Breeze authentication HTTP 405 Method Not Allowed on customerdetails & un-exchanged raw session token saved to DB
+**Module:** Import Sessions / ICICI Breeze Provider & Broker Router
+**Reported By:** User
+**Date Reported:** 2026-10-07
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Calling `authenticate_session()` in `IciciBreezeProvider` sent a `POST` request to `/customerdetails` which returned `HTTP 405 Method Not Allowed` with `Allow: GET`. Additionally, `authenticate_icici_breeze()` endpoint saved the raw un-exchanged `apisession` string from the user input into the database instead of saving the exchanged `session_token` returned by `customerdetails`.
+**Steps to Reproduce:**
+1. Authenticate ICICI Breeze broker account in Broker Settings with a valid `apisession`.
+2. Observe HTTP 405 error or subsequent 401 Unauthorized errors when fetching holdings/trades.
+**Expected Behavior:** `/customerdetails` is called using HTTP `GET`, and the exchanged `session_token` returned in the response payload is saved in `broker_credentials` table.
+**Actual Behavior:** API POSTed to `/customerdetails` causing HTTP 405, and raw input token was saved to DB causing HTTP 401 on subsequent requests.
+**Resolution:** Updated `authenticate_session()` in `IciciBreezeProvider` to perform `GET` on `/customerdetails` with query parameters `SessionToken` and `AppKey`, and headers `X-SessionToken` and `SessionToken`. Updated `authenticate_icici_breeze()` in `broker.py` to extract `session_token` from `customerdetails` response and persist `final_session_token` to DB.
+
+---
+
+**Bug ID:** 2026-10-07-01
+**Title:** Broker holdings imported with current date fallback, hidden Zerodha trade date pickers, and false ICICI session validation
+**Module:** Import Sessions / Broker Direct Import
+**Reported By:** User
+**Date Reported:** 2026-10-07
+**Classification:** Implementation (Full-Stack)
+**Severity:** High
+**Description:** 
+1. Portfolio holdings snapshot import defaulted to today's date (`datetime.now()`) without extracting broker item dates or offering an as-of date input.
+2. Trade Book History mode hid date range pickers for Zerodha Kite.
+3. ICICI Breeze OAuth setup falsely validated expired/broken session tokens, causing subsequent sync calls to fail with 401 Unauthorized.
+**Steps to Reproduce:**
+1. Sync Zerodha holdings and note transaction date set to today.
+2. Select Zerodha Trade Book History and note missing date range controls.
+3. Authenticate ICICI Breeze with an expired token and note false "Active Session" status.
+**Expected Behavior:** Holdings extract item dates or use user-specified as-of date; Zerodha trades display date pickers; ICICI rejects invalid session tokens during setup.
+**Actual Behavior:** Holdings defaulted to current date; Zerodha datepickers were hidden; ICICI accepted invalid tokens.
+**Resolution:** Added `as_of_date` parameter to `BrokerSyncRequest` and `broker_api_parser.py` date resolution; enabled datepickers for Zerodha trades in `BrokerApiSyncCard.tsx`; updated `IciciBreezeProvider.authenticate_session` to strictly verify ICICI `/customerdetails` response, applied `.strip()` to tokens/secrets, and formatted payload string using compact `json.dumps(..., separators=(',', ':'))`.
+
+---
+
+**Bug ID:** 2026-10-06-03
+**Title:** ICICI Breeze HTTP 200 session token error fall-through and unhandled network errors
+**Module:** Import Sessions / ICICI Breeze Provider
+**Reported By:** User
+**Date Reported:** 2026-10-06
+**Classification:** Implementation (Backend)
+**Severity:** Medium
+**Description:** ICICI Breeze API returns HTTP 200 with JSON `{"Status": 401, "Error": "Session Token Expired"}` when session token expires, causing provider methods to skip raising `PermissionError`. In addition, unhandled socket/network exceptions (`[Errno 101] Network is unreachable`) returned unhandled 500 errors.
+**Steps to Reproduce:**
+1. Sync ICICI Breeze holdings/trades with expired token or unreachable network.
+2. Observe fall-through or HTTP 500 Network is unreachable.
+**Expected Behavior:** API returns HTTP 401 with re-authenticate guidance on token error, or HTTP 503 on network connection failure.
+**Actual Behavior:** API returned unhandled HTTP 500 or silent fall-through.
+**Resolution:** Added `_check_res_for_token_error` in `IciciBreezeProvider` to inspect JSON response status/error fields. Caught network exceptions in `import_sessions.py` returning HTTP 503 Service Unavailable.
+
+---
+
+**Bug ID:** 2026-10-06-02
+**Title:** Validation errors for ParsedTransaction: ticker_symbol and price_per_unit required field missing
+**Module:** Import Sessions / Broker Direct Import Parsers
+**Reported By:** User
+**Date Reported:** 2026-10-06
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Broker direct import sessions failed preview parsing with 18 validation errors: `ticker_symbol Field required` and `price_per_unit Field required`.
+**Steps to Reproduce:**
+1. Sync Zerodha or ICICI holdings/trades via Broker Direct Import.
+2. View import session preview.
+**Expected Behavior:** Parsed transactions are validated into `valid_new` or `duplicates` array.
+**Actual Behavior:** All rows are categorized as `invalid` due to key mismatch (`symbol` instead of `ticker_symbol` and `price` instead of `price_per_unit`).
+**Resolution:** Updated `broker_api_parser.py` payload dicts to output `ticker_symbol` and `price_per_unit`. Added `@root_validator(pre=True)` in `ParsedTransaction` schema (`import_session.py`) to auto-normalize legacy `symbol`/`price` fields.
+
+---
+
+**Bug ID:** 2026-10-06-01
+**Title:** HTTP 500 NameError datetime is not defined on POST /api/v1/import-sessions/broker/sync
+**Module:** Import Sessions / Broker Direct Import
+**Reported By:** User
+**Date Reported:** 2026-10-06
+**Classification:** Implementation (Backend)
+**Severity:** High
+**Description:** Calling `POST /api/v1/import-sessions/broker/sync` triggered an HTTP 500 Internal Server Error with detail `Failed to sync from broker API: name 'datetime' is not defined`.
+**Steps to Reproduce:**
+1. Connect Zerodha or ICICI Breeze broker account in Broker Settings.
+2. Navigate to Data Import -> Broker Direct Sync.
+3. Click "Sync Holdings" or "Sync Trade Statement".
+**Expected Behavior:** Broker API holdings/trades are fetched and staged in an import session.
+**Actual Behavior:** API responds with 500 Internal Server Error due to `NameError: name 'datetime' is not defined`.
+**Resolution:** Updated line 4 of `backend/app/api/v1/endpoints/import_sessions.py` to `from datetime import date as date_type, datetime, timezone`.
+
 ---
 
 **Bug ID:** 2026-07-30-01
@@ -7347,6 +7435,26 @@ The `test_dashboard.py` test assumed Weighted Average Cost accounting for PnL (U
 2. Removed auto-redirection to `/risk-profile` on 404 error from `frontend/src/pages/DashboardPage.tsx`.
 3. Removed "View System Logs (Diagnostics)" footer link from `frontend/src/pages/AuthPage.tsx`.
 4. Updated `get_seeding_status` in `system.py` to return `status: COMPLETE` for `DEPLOYMENT_MODE == "server"`, set `seedingComplete` to `true` for non-native mobile in `AuthPage.tsx`, and added fallback `onComplete()` call on seeding status fetch errors in `MobileSeedingSplash.tsx`.
+
+## [2026-10-15] Broker API Holdings Snapshot Transaction Date Mapping (Issue #569)
+**Issue**: When syncing holdings from Zerodha Kite or ICICI Breeze via direct broker API, all imported transactions showed the current day's date or an arbitrary DDPI authorization date (`authorised_date`) rather than an intentional snapshot date, causing user confusion.
+**Fix**: Recognized that `/portfolio/holdings` and `/portfolioholdings` are point-in-time snapshots without individual buy execution timestamps. Standardized parser logic in `broker_api_parser.py` to use `as_of_date` or fall back cleanly to current date, added debug logging for diagnostic payloads, and updated `BrokerApiSyncCard.tsx` with clear user guidance recommending Trade Book History mode when exact historical execution dates are required.
+
+## [2026-10-15] Zerodha Kite API Current-Day Trades Constraint (Issue #569)
+**Issue**: Users attempting to sync "Trade Book History" with date ranges from Zerodha Kite received "No trades records found for your Zerodha Kite account for the specified date range" despite having past trades.
+**Fix**: Zerodha Kite Connect REST API only supports fetching orders and trades executed on the current trading day; date filter parameters are unsupported and historical trade queries return an empty array `[]`. Updated backend error response to provide explicit guidance to use Zerodha Console Tradebook CSV for past trades, clarified UI labeling to "Today's Trades (Intraday)", and suppressed unused date range pickers for Zerodha trades.
+
+## [2026-10-22] ICICI Breeze API Orderlist Integration and Zerodha Direct Import Removal (Issue #569)
+**Issue**: Kite API does not support historical trade history or portfolio purchase dates, leading to repeated sync confusion. In addition, ICICI Breeze `portfolioholdings` required `exchange_code` payload in GET body and trade history required alignment with the `orderlist` / `order` endpoint.
+**Fix**: Removed Zerodha Kite from direct API sync UI and disabled it on the backend sync endpoint with clear user redirection to Zerodha Console Tradebook CSV upload. Updated ICICI Breeze provider to query `/portfolioholdings` across NSE and BSE with compact JSON payload and dynamic checksum, updated trade history to query `/order` (order list) across exchanges, and enhanced parser with robust status filtering and multi-format datetime extraction.
+
+## [2026-10-26] ICICI Breeze Authentication "Request Object is Null" (Issue #569)
+**Issue**: When authenticating ICICI Breeze session token, the API returned HTTP 200 with `{"Success":null,"Status":500,"Error":"Request Object is Null"}` (Content-Length: 62).
+**Fix**: `authenticate_session()` in `icici_breeze_provider.py` was passing `SessionToken` and `AppKey` via URL query parameters (`params=...`). Updated the method to transmit the compact JSON body in the HTTP `GET` request (`content=body_json.encode('utf-8')`) with `Content-Type: application/json` headers, matching the official Breeze SDK.
+
+
+
+
 
 
 

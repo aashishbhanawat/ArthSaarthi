@@ -1,3 +1,243 @@
+## 2026-10-30: Fix CI Playwright E2E Tests for Broker Import and Data Mapping (Issue #569)
+
+**Task:** Fix CI Playwright E2E failures on `broker-direct-import.spec.ts` (mismatched locators for provider & card heading) and `data-import-mapping.spec.ts` (preserving uploaded CSV symbol in preview rows for user-mapped assets).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Broker Direct Import E2E Spec (`e2e/tests/broker-direct-import.spec.ts`):**
+   - Updated locators to match the active UI implementation (`Direct Broker API Sync (ICICI Breeze)`, `ICICI Direct Breeze API`, `Not Configured`, and `Please configure and authenticate ICICI Breeze under`).
+   - Added interaction assertion verifying that clicking "Profile / Settings" redirects directly to `/profile`.
+2. **Import Session Preview Symbol Preservation (`backend/app/api/v1/endpoints/import_sessions.py`):**
+   - Scoped canonical ticker replacement (`parsed_transaction.ticker_symbol = asset.ticker_symbol`) strictly to broker sync sources (`is_broker_sync`).
+   - Preserves uploaded file symbols (`row_data["ticker_symbol"]`, e.g. `RIL`) for standard CSV/Excel imports so user mapping verification continues to display the source row symbol in the preview table.
+3. **Verification:**
+   - Ran `pytest app/tests/api/test_import_sessions.py` (12/12 passing).
+   - Ran `pytest app/tests/api/v1/test_broker_sync_endpoints.py` (3/3 passing).
+   - Local Ruff and ESLint checks passing with 0 warnings.
+
+---
+
+## 2026-10-30: Fix CI SQLite Desktop Tests & CodeQL Alert #22 (Issue #569)
+
+**Task:** Fix SQLite Desktop test failure in CI (missing `pre_unlocked_key_manager` fixture for encrypted types) and resolve CodeQL Alert #22 (clear-text logging of sensitive keys/tokens in diagnostic script).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **SQLite Desktop Encryption Fixture (`test_broker_sync_endpoints.py`):**
+   - Added `pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")` in `backend/app/tests/api/v1/test_broker_sync_endpoints.py`.
+   - In SQLite desktop mode, `User` and `Portfolio` entities utilize `EncryptedString` which requires the master key loaded in `KeyManager`.
+   - Verified that all 3 tests pass cleanly under SQLite desktop test suite (`docker compose -f docker-compose.yml -f docker-compose.test.desktop.yml run --build --rm test-desktop`).
+2. **CodeQL Alert #22 Remediation (`inspect_icici_raw.py`):**
+   - Removed printing/slicing of `api_key` and `session_token` in `backend/scripts/inspect_icici_raw.py`.
+   - Replaced with boolean presence indicators (`bool(api_key)`, `bool(session_token)`, `bool(api_secret)`).
+   - Sanitized customerdetails JSON dump to mask sensitive tokens before logging.
+3. **Linting & Quality Checks:**
+   - Verified 100% clean passes on `ruff check .` and `npx eslint .`.
+
+---
+
+## 2026-10-30: Fix Profile & Settings Navigation Route in Broker Direct Sync (Issue #569)
+
+**Task:** Fix navigation link in `BrokerApiSyncCard` when broker is unconfigured, which was targeting non-existent route `/#/settings` instead of `/#/profile`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Navigation Fix (`BrokerApiSyncCard.tsx`):**
+   - Corrected `onClick={() => navigate('/profile')}` in `BrokerApiSyncCard.tsx` so clicking "Profile / Settings" opens the Profile & Settings page where `BrokerSettings` is rendered.
+2. **Route Alias (`App.tsx`):**
+   - Added `<Route path="/settings" element={<Navigate to="/profile" replace />} />` in `App.tsx` as a graceful redirect so any direct hits to `#/settings` seamlessly land on `ProfilePage`.
+3. **Automated Testing & Verification:**
+   - Updated `BrokerApiSyncCard.test.tsx` to assert that clicking the "Profile / Settings" button navigates to `/profile`.
+   - Verified clean test execution (2/2 passing in `BrokerApiSyncCard.test.tsx`).
+
+---
+
+## 2026-10-30: Clean Ticker Display Formatting for Broker Import Preview (Issue #569)
+
+**Task:** Remove artificial `.NS` / `.BO` exchange suffixes from broker import preview display and parser items so tickers display cleanly as base canonical symbols (e.g. `BBTC`, `TMPV`, `GICRE`, `J&KBANK`).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Parser Simplification (`broker_api_parser.py`):**
+   - Removed automatic `.NS` / `.BO` suffix concatenation when generating `ticker_symbol` in `parse_zerodha_api_payload()` and `parse_icici_api_payload()`.
+   - Set `ticker_symbol` directly to `symbol` or `stock_code` without exchange suffix.
+2. **Preview Display Refinement (`import_sessions.py`):**
+   - In `get_import_session_preview()`, ensured that `parsed_transaction.ticker_symbol` displays the canonical asset's symbol without appending `.NS` / `.BO`.
+   - Stripped trailing `.NS` / `.BO` from unmatched tickers before presenting them under "Transactions Needing Mapping".
+3. **Automated Test Updates & Verification:**
+   - Updated assertions in `backend/app/tests/services/import_parsers/test_broker_api_parser.py` and `backend/app/tests/api/test_import_sessions.py` to expect base canonical symbols (`INFY`, `TCS`, `RELIANCE`, `INFTEC`, `POWGRI`, `BOMBUR`, `INDMIM`, `BBTC`).
+   - Verified 100% backend test suite pass (417 passed, 3 skipped).
+   - Verified 100% frontend test suite pass (52 suites, 203 passed).
+
+---
+
+## 2026-10-29: Broker Direct Import Auto Ticker & Alias Resolution Enhancement (Issue #569)
+
+**Task:** Resolve auto ticker mapping for ICICI Breeze API imports where proprietary broker stock codes (e.g., `BOMBUR.NS`, `TATMOT.NS`, `JAMKAS.NS`, `GIC.NS`) were not resolving to canonical assets despite existing in `asset_aliases`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - In ICICI Breeze direct sync, transactions are parsed with exchange suffixes (`BOMBUR.NS`, `TATMOT.NS`), whereas `asset_aliases` stores un-suffixed short names (`BOMBUR`, `TATMOT`).
+   - The preview and commit resolution strictly queried `crud.asset_alias.get_by_alias(db, alias_symbol=ticker_symbol, source=import_session.source)`, which failed because `source` in `broker_credentials` / sync was `icici_breeze_api`, while seeded aliases have `source="ICICI Direct Tradebook"`.
+   - `get_import_session_preview` also lacked fallback to base symbols, name matching, or global alias matching.
+2. **Unified Asset & Alias Resolution Engine (`import_sessions.py`):**
+   - Created `resolve_asset_for_import_transaction()` supporting multi-stage resolution:
+     1. ISIN matching.
+     2. Pending session aliases from current user mappings.
+     3. Direct ticker lookups across candidates (`ticker_symbol`, base symbol without `.NS`/`.BO`, base with alternate exchange suffixes).
+     4. Broker-compatible alias lookups (e.g. mapping `icici_breeze_api` to `ICICI Direct Tradebook`, `ICICI Direct`, `ICICI Breeze`).
+     5. Global alias lookups across any source.
+     6. Asset name lookups.
+   - Applied `resolve_asset_for_import_transaction()` to both `get_import_session_preview` and `commit_import_session`.
+   - Updated preview `parsed_transaction.ticker_symbol` to canonical resolved asset ticker (with exchange suffix if applicable) so that preview displays clean asset tickers (e.g. `BBTC.NS`, `TMPV.NS`, `GICRE.NS`, `J&KBANK.NS`) and 0 transactions land in `needs_mapping`.
+3. **Schema Update (`schemas/import_session.py`):**
+   - Added `name: str | None = None` to `ParsedTransaction` schema to ensure holding/trade asset names are preserved for name-based fallback matching.
+4. **Testing & Verification:**
+   - Added `test_get_import_session_preview_icici_broker_alias_auto_match` in `test_import_sessions.py`.
+   - Verified 100% backend test suite pass (417 passed, 3 skipped).
+   - Verified 100% frontend test suite pass (52 suites, 203 passed).
+
+---
+
+## 2026-10-29: ICICI Breeze Raw Diagnostic Utility & Trade Book Historical Import Fix (Issue #569)
+
+**Task:** Build raw API test utility for ICICI Breeze, diagnose holdings snapshot vs trade book date resolution, and fix `/trades` historical endpoint integration and payload parsing.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Diagnostic Utility Script (`backend/scripts/inspect_icici_raw.py`):**
+   - Created standalone diagnostic utility capable of running inside `pms-backend` or via CLI (`--session-token`, `--api-key`, `--api-secret`), reading active credentials from PostgreSQL DB and querying live Breeze endpoints.
+   - Tested `/customerdetails`, `/portfolioholdings`, `/dematholdings`, `/order`, and `/trades` with various date formats and ranges (today, 4 days, 7 days, 30 days, 365 days, 730 days).
+2. **Key Findings:**
+   - `/portfolioholdings` returns a snapshot with `stock_code`, `average_price`, and `quantity`, but contains NO purchase or transaction dates.
+   - `/order` is limited to `<= 10 days` date ranges by ICICI Breeze (`"Number of days between from_date & to_date should not be more than 10"`).
+   - `/trades` is the canonical Trade Book endpoint in Breeze, supporting date queries up to 730 days (2 years), returning 21+ real executed trades with exact `trade_date`, `stock_code`, `action`, `quantity`, `average_cost`, `brokerage_amount`, and `total_taxes`.
+3. **Provider & Parser Fixes (`icici_breeze_provider.py`, `broker_api_parser.py`):**
+   - Updated `IciciBreezeProvider.fetch_trades()` to prioritize `/trades` over `/order`, and skip `/order` if date range exceeds 10 days.
+   - Updated `parse_icici_api_payload()` in `broker_api_parser.py` to handle `/trades` payload:
+     - Calculated unit price as `average_cost / quantity`.
+     - Extracted fees as `brokerage_amount + total_taxes`.
+     - Parsed Breeze date formats (`23-Oct-2026`).
+4. **Testing & Verification:**
+   - Added unit test `test_parse_icici_api_trades_endpoint` in `test_broker_api_parser.py`.
+   - Verified 100% backend test suite pass (416 passed, 3 skipped).
+   - Verified 100% frontend test suite pass (52 suites, 203 passed).
+
+---
+
+## 2026-10-07: Fix ICICI Breeze Customerdetails GET Method & Exchanged Session Token Persistence (Issue #569)
+
+**Task:** Fix ICICI Breeze authentication HTTP 405 Method Not Allowed error on `/customerdetails`, pass `SessionToken` header, and save exchanged session token in database.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **GET Request & Header Alignment (`icici_breeze_provider.py`):**
+   - Updated `authenticate_session()` in `IciciBreezeProvider` to perform HTTP `GET` directly on `/customerdetails` (resolving HTTP 405 Method Not Allowed error returned when attempting POST).
+   - Added both `X-SessionToken` and `SessionToken` to `_get_headers()` to support all ICICI Breeze API header variants.
+2. **Exchanged Session Token Extraction & Database Persistence (`broker.py`):**
+   - Extracted `session_token` returned inside `Success` payload from `customerdetails` response.
+   - Updated `authenticate_icici_breeze()` endpoint in `broker.py` to persist `final_session_token` (exchanged session token) in `broker_credentials` DB table instead of un-exchanged raw input token (`apisession`).
+3. **Verification:**
+   - Ran backend pytest test suite (413 passed, 3 skipped, 0 failed).
+   - Restarted `pms-backend` Docker container.
+
+---
+
+## 2026-10-07: Fix Broker Direct Import Date Resolution & ICICI Session Token Validation (Issue #569)
+
+**Task:** Resolve holdings snapshot transaction date fallback, enable date range pickers for Zerodha Trade Book history, reject invalid ICICI Breeze session tokens during authentication, and handle empty import session results.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Holdings Transaction Date Resolution (`broker_api_parser.py`, `import_session.py`, `BrokerApiSyncCard.tsx`):**
+   - Added `as_of_date` parameter to `BrokerSyncRequest` schema and `parse_zerodha_api_payload` / `parse_icici_api_payload`.
+   - Added item date resolution extracting holding order/authorised/created dates from broker JSON, defaulting to user-specified `as_of_date` or today's date if omitted.
+   - Added an optional "As-Of Transaction Date" datepicker in `BrokerApiSyncCard.tsx` for Holdings import mode.
+2. **Zerodha Trade Book History Date Range & Empty Session Prevention (`BrokerApiSyncCard.tsx`, `zerodha_provider.py`, `import_sessions.py`):**
+   - Enabled `From Date` and `To Date` datepickers in `BrokerApiSyncCard.tsx` for Zerodha Trade Book History mode.
+   - Added `from_date` / `to_date` parameter support to `ZerodhaKiteProvider.fetch_trades()`.
+   - Added validation in `import_sessions.py` to raise HTTP 400 Bad Request if 0 items are returned by the broker API, preventing empty import session creation.
+3. **ICICI Breeze Session Token Validation & Compact JSON Formatting (`icici_breeze_provider.py`, `broker.py`):**
+   - Applied `.strip()` to `api_key`, `session_token`, and `api_secret` in `IciciBreezeProvider` to prevent hidden whitespace/newlines in HTTP headers (`X-SessionToken`, `X-AppKey`).
+   - Formatted request body JSON using compact `json.dumps(payload, separators=(',', ':'))` matching ICICI Direct checksum verification specs.
+   - Updated `authenticate_session()` to verify response status code and JSON `Status: 200` from ICICI Direct `/customerdetails`. Removed legacy fallback that falsely accepted arbitrary strings, ensuring invalid tokens fail immediately during OAuth setup.
+4. **Automated Testing:**
+   - Ran backend pytest test suite (`test_broker_sync_endpoints.py`, `test_broker_api_parser.py`, `test_broker_providers.py`): 12/12 passed cleanly (exit code 0).
+   - Ran frontend Jest unit test suite (`BrokerApiSyncCard.test.tsx`): 2/2 passed cleanly.
+
+---
+
+## 2026-10-06: Fix ICICI Breeze Session Error Validation & Network Exception Handling (Issue #569)
+
+**Task:** Fix ICICI Breeze API response handling for expired session tokens returned with HTTP 200 JSON status, and add explicit network exception handling for broker direct sync endpoints.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - ICICI Breeze API returns HTTP 200 with JSON payload `{"Status": 401, "Error": "Session Token Expired"}` when session token expires, causing provider methods to fall through to `return []` or obscure errors.
+   - Network connectivity errors (e.g. `[Errno 101] Network is unreachable`) bubbled up to unhandled HTTP 500 server errors.
+2. **Fix (`icici_breeze_provider.py` & `import_sessions.py`):**
+   - Added `_check_res_for_token_error` in `IciciBreezeProvider` to inspect JSON response status codes (`401`/`403`) and error string keywords (`token`, `session`, `expired`, `invalid`), raising `PermissionError("BROKER_TOKEN_EXPIRED")`.
+   - Added `(httpx.RequestError, OSError, ConnectionError)` handling in `import_sessions.py` returning HTTP 503 Service Unavailable with friendly error guidance.
+3. **Verification:**
+   - Ran backend pytest test suite (`test_broker_sync_endpoints.py` and `test_broker_providers.py`): 8/8 passed cleanly with code 0.
+
+---
+
+## 2026-10-06: Fix Broker API Import Session ParsedTransaction Schema Mapping (Issue #569)
+
+**Task:** Fix `ParsedTransaction` schema validation failure (`ticker_symbol` and `price_per_unit` field required missing errors) when loading preview for broker direct import sessions.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - `broker_api_parser.py` generated dictionaries with keys `"symbol"` and `"price"`, whereas `ParsedTransaction` schema and import session endpoints require `"ticker_symbol"` and `"price_per_unit"`.
+2. **Fix (`broker_api_parser.py` & `import_session.py`):**
+   - Updated `parse_zerodha_api_payload` and `parse_icici_api_payload` in `backend/app/services/import_parsers/broker_api_parser.py` to output `"ticker_symbol"` and `"price_per_unit"`.
+   - Added `@root_validator(pre=True)` normalize method in `ParsedTransaction` (`backend/app/schemas/import_session.py`) to auto-map `"symbol" -> "ticker_symbol"` and `"price" -> "price_per_unit"` if missing.
+3. **Verification:**
+   - Ran backend pytest test suite (`test_broker_api_parser.py` and `test_broker_sync_endpoints.py`): 6/6 passed cleanly with code 0.
+
+---
+
+## 2026-10-06: Fix Missing datetime Import in Broker Sync Endpoint (Issue #569)
+
+**Task:** Fix `NameError: name 'datetime' is not defined` in `backend/app/api/v1/endpoints/import_sessions.py` during `POST /api/v1/import-sessions/broker/sync`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - On `POST /api/v1/import-sessions/broker/sync`, checking token expiration referenced `datetime.now(timezone.utc)`, but line 4 of `import_sessions.py` only imported `from datetime import date as date_type`.
+2. **Fix (`backend/app/api/v1/endpoints/import_sessions.py`):**
+   - Updated import statement on line 4 to `from datetime import date as date_type, datetime, timezone`.
+3. **Verification:**
+   - Ran backend pytest test suite (`pytest app/tests/api/v1/test_broker_sync_endpoints.py`): 2/2 passed cleanly with code 0.
+
+---
+
 ## 2026-09-27: Security CodeQL Scan Remediation for Broker Callbacks & Providers (PR #568 / Issue #558)
 
 **Task:** Resolve GitHub Advanced Security CodeQL alerts on Reflected Cross-Site Scripting (XSS) in broker OAuth HTML callback endpoints and weak cryptographic algorithm false positives on broker API SHA-256 signature calculations.  
@@ -294,7 +534,34 @@
    - Expanded `backend/app/tests/services/test_tax_setoff_service.py` with 4 new corner case test scenarios: 112A LTCG exemption headroom ceiling, Section 111A 20% equity STCG rate, zero gains / empty portfolio, and loss ledger priority.
    - All 37/37 backend pytest test cases passing cleanly.
    - ESLint & Ruff linters passing with **0 errors**.
-   - Pushed commits `b0e83059`, `973e1503`, `c557ac0f`, `3b427ec0`, `563d360f`, `984c2cb1`, `96a612f3`, `c20d1442` to branch `feat/526-tax-loss-setoff-harvesting` (PR #527).
+## 2026-10-03: Implement Direct Portfolio & Trade Statement Import via Broker APIs (FR7.1.10 / Issue #569)
+
+**Task:** Implement direct portfolio holdings & trade book statement import for Zerodha Kite and ICICI Breeze using the pluggable broker API infrastructure (NFR12).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **GitHub Issue & Branch:** Created GitHub Issue [#569](https://github.com/aashishbhanawat/ArthSaarthi/issues/569) and branch `feat/569-broker-direct-import`.
+2. **Specification & Requirements Documentation:**
+   - Authored complete 11-point FR specification [`docs/features/FR7.1.10_broker_direct_import.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/features/FR7.1.10_broker_direct_import.md).
+   - Cross-referenced `FR7.1.10` in [`docs/requirements.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/requirements.md).
+3. **Backend Integration & Parsers:**
+   - Extended `ZerodhaKiteProvider` (`fetch_holdings`, `fetch_trades`) and `IciciBreezeProvider` (`fetch_holdings`, `fetch_trades`) in `backend/app/services/providers/`.
+   - Created `broker_api_parser.py` converting raw Zerodha & ICICI JSON payloads into ArthSaarthi standardized import transaction objects.
+   - Added endpoint `POST /api/v1/import-sessions/broker/sync` in `backend/app/api/v1/endpoints/import_sessions.py` to pull holdings/trades directly using active encrypted broker tokens and stage an `ImportSession`.
+   - Added `BrokerSyncRequest` schema in `app/schemas/import_session.py` and exported in `app/schemas/__init__.py`.
+4. **Frontend UI Components & API Services:**
+   - Added `syncBrokerApi` endpoint in `frontend/src/services/brokerApi.ts`.
+   - Built `BrokerApiSyncCard.tsx` component with broker selection pills, OAuth token status badges (`Connected`, `Daily Auth Required`, `Not Configured`), portfolio selector, and import mode controls.
+   - Integrated `BrokerApiSyncCard` into `frontend/src/pages/Import/DataImportPage.tsx`.
+5. **Testing & Verification:**
+   - Added backend pytest unit tests in `backend/app/tests/services/import_parsers/test_broker_api_parser.py` and API endpoint tests in `backend/app/tests/api/v1/test_broker_sync_endpoints.py`.
+   - Added frontend Jest component test `frontend/src/__tests__/components/Import/BrokerApiSyncCard.test.tsx`.
+   - Added Playwright E2E test `e2e/tests/broker-direct-import.spec.ts`.
+   - Verified 100% test pass rate across backend pytest (2/2 parser, 2/2 endpoint) and frontend Jest (51/51 test suites, 201/201 tests).
+
+---
 
 ## 2026-08-23: Implement Intra-Head Capital Loss Set-Off, Loss Ledger & Tax-Loss Harvesting (FR6.5 Phase 3 / Issue #526)
 
@@ -2499,4 +2766,116 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 
 ### Outcome
 **Success.** All 4 bugs resolved. Import validation error details are properly propagated to the frontend, dashboard loading no longer forces risk profile redirects, login page UI is cleaned up, and server mode splash screen blocking is bypassed.
+
+---
+
+## Date: 2026-10-15
+**Issue Reference:** #569
+
+**Task:** Direct Broker API Import - Fix holdings transaction date mapping for Zerodha Kite and ICICI Breeze snapshot APIs.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Holdings API Limitation Identified:** Both Zerodha Kite (`/portfolio/holdings`) and ICICI Breeze (`/portfolioholdings`) provide portfolio snapshot views representing current holdings with average purchase prices, but neither API returns original purchase/buy dates. Zerodha's `authorised_date` represents DDPI/TPIN demat authorization date, not trade execution date.
+2. **Snapshot Date Pattern Standardized:** Updated `parse_zerodha_api_payload` and `parse_icici_api_payload` in `broker_api_parser.py` to use a consistent `snapshot_date = as_of_date or datetime.now().strftime("%Y-%m-%d")` across all holdings rows, removing misleading date fallback chains.
+3. **Frontend Guidance & UX:** Updated `BrokerApiSyncCard.tsx` with an informational notice alerting users that holdings snapshot imports use the specified snapshot date and suggesting Trade Book History mode when exact historical buy dates are required. Re-labeled the date picker to "Import Date for All Holdings (defaults to today)".
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/import_parsers/broker_api_parser.py` — Standardized snapshot date mapping for Zerodha and ICICI holdings parser, removed incorrect date extraction chains, and added debug logging.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/import/BrokerApiSyncCard.tsx` — Added amber warning note explaining holdings API date limitation and clarified input label.
+
+### Outcome
+**Success.** Backend pytest test suite (413 passed, 3 skipped) and frontend Jest suite (52 suites, 203 passed) fully pass. Holdings imports now accurately use the selected snapshot date or today without ambiguity.
+
+---
+
+## Date: 2026-10-15
+**Issue Reference:** #569
+
+**Task:** Direct Broker API Import - Handle Zerodha Kite Connect API current-day trades limitation and improve tradebook guidance.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Zerodha API Constraint Addressed:** Zerodha Kite Connect v3 `/trades` endpoint only returns fills executed on the current trading day. Kite Connect does not provide an API endpoint for historical trade logs across past dates (past trades are only available via Zerodha Console CSV download).
+2. **Backend Error Messaging & Logging:** Updated `backend/app/api/v1/endpoints/import_sessions.py` to return an explicit, actionable message when Zerodha returns 0 trades, explaining the current-day limitation and directing users to download the Tradebook CSV from Zerodha Console for past trades. Updated `ZerodhaKiteProvider.fetch_trades` docstring and log warning when date range filters are passed.
+3. **Frontend UX Refinements:** In `BrokerApiSyncCard.tsx`, labeled the mode as "Today's Trades (Intraday)" when Zerodha Kite is selected, suppressed the date range pickers (which are ignored by Kite Connect), and added an informational callout directing users to import past trades via the File Upload tab.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/providers/zerodha_provider.py` — Documented and logged current-day trades limitation in `fetch_trades`.
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Clarified empty trades error response for Zerodha Kite.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/import/BrokerApiSyncCard.tsx` — Differentiated Zerodha vs ICICI trade sync modes, added current-day informational banner, and conditioned date pickers.
+
+### Outcome
+**Success.** All 413 backend tests and 203 frontend tests pass cleanly. User experience clearly reflects broker API constraints.
+
+---
+
+## Date: 2026-10-22
+**Issue Reference:** #569
+
+**Task:** Direct Broker API Import - Remove Zerodha Kite from direct API sync, enhance ICICI Breeze holdings and orderlist integration per official API documentation.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Remove Zerodha Direct API Import:** Removed Zerodha Kite from `BrokerApiSyncCard.tsx` direct sync interface because Kite Connect REST API only supports intraday orders and lacks historical trades/purchase dates. In `import_sessions.py`, added an explicit rejection informing users to import past transactions via Zerodha Console Tradebook CSV.
+2. **ICICI Breeze Holdings Multi-Exchange Support:** Updated `IciciBreezeProvider.fetch_holdings` to send required `exchange_code` payload in compact JSON body with dynamic SHA256 checksum, querying both NSE and BSE to aggregate all demat holdings.
+3. **ICICI Breeze Trade & Order History Integration:** Updated `IciciBreezeProvider.fetch_trades` to query `/order` (order list endpoint) with fallback to `/orderlist` and `/trades` across NSE and BSE. Updated `parse_icici_api_payload` to parse `orderlist` fields (`order_datetime`, `average_price`, `quantity`, `status`), filter for executed orders, and support multi-format date parsing (`DD-Mon-YYYY HH:MM`, ISO, etc.).
+4. **UI Streamlining:** Refactored `BrokerApiSyncCard.tsx` exclusively for ICICI Breeze direct sync with holdings snapshot and trade book history modes.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/providers/icici_breeze_provider.py` — Added compact JSON body support with `exchange_code` for `portfolioholdings` and multi-exchange orderlist retrieval.
+*   **Modified:** `backend/app/services/import_parsers/broker_api_parser.py` — Added `_parse_icici_date_string` multi-format parser and updated `parse_icici_api_payload` for executed order list responses.
+*   **Modified:** `backend/app/api/v1/endpoints/import_sessions.py` — Disabled Zerodha direct API sync with clear guidance toward Tradebook CSV upload.
+*   **Modified:** `backend/app/tests/api/v1/test_broker_sync_endpoints.py` — Updated tests for ICICI Breeze sync and Zerodha rejection.
+*   **Modified:** `backend/app/tests/services/import_parsers/test_broker_api_parser.py` — Added test for ICICI orderlist payload parsing and status filtering.
+
+**Frontend:**
+*   **Modified:** `frontend/src/components/import/BrokerApiSyncCard.tsx` — Streamlined direct sync UI exclusively for ICICI Breeze API.
+*   **Modified:** `frontend/src/__tests__/components/Import/BrokerApiSyncCard.test.tsx` — Updated test assertions.
+
+### Outcome
+**Success.** Backend pytest suite (414 passed, 3 skipped) and frontend Jest suite (52 suites, 203 passed) pass 100%. Direct sync now fully adheres to ICICI Breeze API documentation.
+
+---
+
+## Date: 2026-10-26
+**Issue Reference:** #569
+
+**Task:** Direct Broker API Import - Fix ICICI Breeze session authentication (`customerdetails`) payload transport.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Diagnosis:** `authenticate_session()` in `IciciBreezeProvider` sent credentials via URL query parameters (`params={"SessionToken": ..., "AppKey": ...}`) on an HTTP `GET` request. The ICICI Breeze `/customerdetails` endpoint expects the JSON payload in the request body (`content=body_json`). As a result, the server returned HTTP 200 with `{"Success":null,"Status":500,"Error":"Request Object is Null"}` (62 bytes), failing authentication.
+2. **Fix:** Updated `authenticate_session()` in `icici_breeze_provider.py` to transmit compact serialized JSON (`{"SessionToken":"...","AppKey":"..."}`) in the HTTP `GET` body (`content=body_json.encode('utf-8')`) with clean `Content-Type: application/json` headers, aligning with the official Breeze SDK specification.
+3. **Verification:** Authored `test_icici_breeze_provider_authenticate_session` in `test_broker_providers.py`. Full test suites pass: backend pytest (415 passed, 3 skipped) and frontend Jest (52 suites, 203 passed).
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/app/services/providers/icici_breeze_provider.py` — Transmitted JSON body in `GET /customerdetails`.
+*   **Modified:** `backend/app/tests/services/test_broker_providers.py` — Added unit test for session authentication request body.
+
+### Outcome
+**Success.** Verified against ICICI Breeze API: request object is successfully received and parsed by the server.
+
+
+
 

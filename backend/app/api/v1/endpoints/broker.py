@@ -213,13 +213,17 @@ def authenticate_icici_breeze(
             detail=f"ICICI Breeze authentication failed: {auth_res.get('error')}",
         )
 
+    final_session_token = (
+        auth_res.get("session_token") or auth_in.session_token.strip()
+    )
+
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(hours=24)
 
     updated_cred = crud_broker.update_session_token(
         db,
         db_obj=cred,
-        access_token=auth_in.session_token,
+        access_token=final_session_token,
         token_issued_at=now,
         token_expires_at=expires_at,
     )
