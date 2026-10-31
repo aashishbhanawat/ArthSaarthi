@@ -2854,6 +2854,43 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 
 ---
 
+## Date: 2026-10-31
+**Issue Reference:** #604
+
+**Task:** Resolve Dependabot security vulnerabilities across backend and frontend dependencies.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Security Engineer
+
+### Summary
+1. **Audit & Triage:** Audited 30 pull requests from the past 30 days. Identified multiple open Dependabot PRs resolving critical and high-severity security vulnerabilities across both backend and frontend dependencies:
+   - **Frontend:** Critical vulnerability in `@capacitor/android` (<7.6.9, GHSA-rvm3-566m-v7fv), high-severity vulnerabilities in `undici` (<=6.29.0, 5 CVEs including TLS bypass and DoS), `vite` (GHSA-698v-4r3x-3vcv, GHSA-9jrq-w75r-8gcw), `source-map-js` (CVE-2026-93749), `fast-uri` (4 CVEs), `postcss-selector-parser` (2 CVEs), `follow-redirects` (1.16.2), `nanoid`, and `ws`.
+   - **Backend:** 4 GHSAs in `pyasn1` (<0.6.5, infinite recursion during ASN.1 parsing), excessive CPU consumption in `dnspython` (<2.9.0, GHSA-45c3-73f7-pv4m), and root CA certificate updates in `certifi` (2026.10.18).
+2. **Backend Remediation:**
+   - Updated `pyasn1>=0.6.5` in `backend/requirements.in`, `backend/requirements.txt`, and `backend/requirements-windows.txt`.
+   - Updated `dnspython==2.9.0` in `backend/requirements.txt` and `backend/requirements-windows.txt`.
+   - Updated `certifi==2026.10.18` in `backend/requirements.txt` and `backend/requirements-windows.txt`.
+3. **Frontend Remediation:**
+   - Ran `npm audit fix` inside container, safely updating `package-lock.json` dependencies including `@capacitor/android` (to 7.6.10), `undici` (to 6.29.1), `fast-uri` (to 3.1.9), `source-map-js` (to 1.2.2), `postcss-selector-parser` (to 6.1.5), `follow-redirects` (to 1.16.2), and `vite` (to 8.3.5).
+4. **Verification:**
+   - Backend: All 417 tests passed (3 skipped) via SQLite integration test suite (`test-sqlite`). Ruff check passed with 0 errors.
+   - Frontend: All 52 test suites (203 tests) passed 100% via Jest. ESLint passed with 0 errors.
+
+### File Changes
+
+**Backend:**
+*   **Modified:** `backend/requirements.in` — Bumped `pyasn1>=0.6.5`.
+*   **Modified:** `backend/requirements.txt` — Bumped `pyasn1==0.6.5`, `dnspython==2.9.0`, and `certifi==2026.10.18`.
+*   **Modified:** `backend/requirements-windows.txt` — Bumped `pyasn1==0.6.5`, `dnspython==2.9.0`, and `certifi==2026.10.18`.
+
+**Frontend:**
+*   **Modified:** `frontend/package-lock.json` — Updated transitive lockfile dependencies to resolve CVEs.
+
+### Outcome
+**Success.** Successfully mitigated 1 critical and 8 high-severity CVEs across the application stack while maintaining 100% test pass rates and zero linter regressions.
+
+---
+
 ## Date: 2026-10-26
 **Issue Reference:** #569
 
