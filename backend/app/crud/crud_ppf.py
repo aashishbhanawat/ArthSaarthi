@@ -167,18 +167,8 @@ def process_ppf_holding(
             )
         else:
             transactions = crud.transaction.get_multi_by_asset(
-                db, asset_id=ppf_asset.id
+                db, asset_id=ppf_asset.id, user_id=user_id
             )
-            if user_id:
-                from app.models.portfolio import Portfolio
-
-                user_portfolios = (
-                    db.query(Portfolio.id).filter(Portfolio.user_id == user_id).all()
-                )
-                portfolio_ids = {p.id for p in user_portfolios}
-                transactions = [
-                    t for t in transactions if t.portfolio_id in portfolio_ids
-                ]
     if calculation_date:
         transactions = [
             t for t in transactions if t.transaction_date.date() <= calculation_date
