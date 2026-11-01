@@ -99,11 +99,14 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
             key={watchlist.id}
             className={selectedWatchlistId === watchlist.id ? 'bordered' : ''}
           >
-            <a
-              onClick={() => onSelectWatchlist(watchlist.id)}
-              className="flex justify-between items-center"
-            >
-              <span>{watchlist.name}</span>
+            <div className="flex justify-between items-center w-full">
+              <button
+                type="button"
+                className="flex-grow text-left py-2 hover:text-primary transition-colors focus:outline-none"
+                onClick={() => onSelectWatchlist(watchlist.id)}
+              >
+                {watchlist.name}
+              </button>
               <div className="flex items-center gap-2">
                 <button
                   className="btn btn-ghost btn-xs"
@@ -126,7 +129,7 @@ const WatchlistSelector: React.FC<WatchlistSelectorProps> = ({
                   <TrashIcon className="h-4 w-4 text-red-500" aria-hidden="true" />
                 </button>
               </div>
-            </a>
+            </div>
           </li>
         ))}
       </ul>

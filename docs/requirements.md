@@ -108,6 +108,7 @@ This document outlines the functional and non-functional requirements for the Ar
     -   **FR7.1.2:** Mutual Fund CAS statements from CAMSOnline or NSDL. `✅ Done` (CAMS, KFintech, MFCentral, Zerodha Coin)
     -   **FR7.1.3:** eNPS statements from Karvy or NSDL. `📝 Planned`
     -   **FR7.1.4:** PMS & AIF statements. `📝 Planned`
+    -   **FR7.1.10:** Direct Broker API Sync for Zerodha Kite & ICICI Breeze holdings and trade statements. `📝 Planned` (See FR7.1.10_broker_direct_import.md)
 -   **FR7.2: File Format Support.** The import engine must handle various file formats, including PDF, Excel, HTML, CSV, TXT, and DBF. `⚠️ Partially Implemented` (CSV, Excel, PDF)
 
 ### FR8: Market Insights & Research

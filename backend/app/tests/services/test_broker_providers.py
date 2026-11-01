@@ -9,6 +9,37 @@ def test_icici_breeze_provider_login_url():
     assert "apiuser/login?api_key=my_app_key_123" in url
 
 
+def test_icici_breeze_provider_authenticate_session():
+    provider = IciciBreezeProvider(
+        api_key="my_app_key",
+        api_secret="my_secret",
+    )
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "Status": 200,
+        "Success": {
+            "session_token": "exchanged_base64_session_token_123",
+            "userId": "user123",
+        },
+    }
+
+    with patch("httpx.Client.request", return_value=mock_resp) as mock_req:
+        res = provider.authenticate_session("raw_login_session_token")
+        assert res["success"] is True
+        assert res["session_token"] == "exchanged_base64_session_token_123"
+
+        # Verify it used GET with content body and Content-Type header
+        mock_req.assert_called_once()
+        args, kwargs = mock_req.call_args
+        assert args[0] == "GET"
+        assert "customerdetails" in args[1]
+        assert b"SessionToken" in kwargs["content"]
+        assert b"AppKey" in kwargs["content"]
+        assert kwargs["headers"]["Content-Type"] == "application/json"
+
+
 def test_icici_breeze_provider_get_prices():
     provider = IciciBreezeProvider(
         api_key="key_123",

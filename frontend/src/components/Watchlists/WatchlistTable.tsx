@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Watchlist } from '../../types/watchlist';
 import { useRemoveWatchlistItem } from '../../hooks/useWatchlists';
 import { TrashIcon } from '@heroicons/react/24/solid';
@@ -33,11 +33,11 @@ const PnlCell: React.FC<{ value: number | undefined; currency?: string | null }>
 const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, error }) => {
   const removeWatchlistItem = useRemoveWatchlistItem();
 
-  const handleRemove = (itemId: string) => {
+  const handleRemove = useCallback((itemId: string) => {
     if (watchlist) {
       removeWatchlistItem.mutate({ watchlistId: watchlist.id, itemId });
     }
-  };
+  }, [watchlist, removeWatchlistItem]);
 
   if (isLoading) {
     return <div className="text-center p-8 text-gray-500">Loading assets...</div>;
@@ -99,7 +99,7 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
       {/* Mobile Card View */}
       <div className="lg:hidden">
         {watchlist.items.map((item) => (
-          <WatchlistItemCard key={item.id} item={item} watchlistId={watchlist.id} />
+          <WatchlistItemCard key={item.id} item={item} onRemove={handleRemove} />
         ))}
       </div>
     </div>
