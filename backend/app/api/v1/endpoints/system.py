@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.config import settings
+from app.core.dependencies import get_current_admin_user
 from app.db.session import get_db
 from app.services.snapshot_service import take_daily_snapshots_for_all
 
@@ -369,7 +370,9 @@ class LogLevelRequest(BaseModel):
 
 
 @router.post("/log-level")
-def set_log_level(req: LogLevelRequest):
+def set_log_level(
+    req: LogLevelRequest, current_user: models.User = Depends(get_current_admin_user)
+):
     """
     Dynamically change the root logger log level at runtime (DEBUG, INFO, WARNING, ERROR).
     """
