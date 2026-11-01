@@ -215,7 +215,7 @@ const HoldingsTable: React.FC<HoldingsTableProps> = ({ holdings, isLoading, erro
                                         <HoldingCard
                                             key={holding.asset_id}
                                             holding={holding}
-                                            onClick={() => onRowClick(holding)}
+                                            onClick={onRowClick}
                                         />
                                     ))}
                                 </div>
