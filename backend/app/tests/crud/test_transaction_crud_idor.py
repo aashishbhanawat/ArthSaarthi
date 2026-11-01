@@ -1,17 +1,33 @@
+import pytest
 from sqlalchemy.orm import Session
 
 from app import crud
 from app.tests.utils.asset import create_test_asset
 from app.tests.utils.portfolio import create_test_portfolio
 from app.tests.utils.transaction import create_test_transaction
-from app.tests.utils.user import create_random_user
 
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 def test_get_multi_by_asset_filters_by_user_id(db: Session) -> None:
     """Regression test: get_multi_by_asset must not leak cross-tenant transactions."""
     # Setup: two users, same shared asset, each with their own transactions
-    user_a, _ = create_random_user(db)
-    user_b, _ = create_random_user(db)
+    # Note: create_random_user creates a user but it requires master key to be loaded
+    # and settings.DEPLOYMENT_MODE might be postgres.
+    # Actually, if we just use normal text for fields it might bypass encryption
+    # depending on how test runner sets up things. Let's just create raw users to avoid
+    # the security dependency which breaks when master key is not loaded in Postgres CI mode.
+
+    import random
+    import uuid
+
+    from app.models.user import User
+
+    user_a = User(id=uuid.uuid4(), email=f"usera{random.randint(1,1000)}@test.com", hashed_password="pw", full_name="User A", is_admin=False)
+    user_b = User(id=uuid.uuid4(), email=f"userb{random.randint(1,1000)}@test.com", hashed_password="pw", full_name="User B", is_admin=False)
+    db.add(user_a)
+    db.add(user_b)
+    db.commit()
+
     portfolio_a = create_test_portfolio(db, user_id=user_a.id, name="A")
     portfolio_b = create_test_portfolio(db, user_id=user_b.id, name="B")
     shared_asset = create_test_asset(db, ticker_symbol="SHARED")
