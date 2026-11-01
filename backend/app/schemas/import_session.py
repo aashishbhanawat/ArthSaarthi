@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, root_validator, validator
 from pydantic.version import VERSION
 
 try:
@@ -73,6 +73,17 @@ class ParsedTransaction(BaseModel):
     price_per_unit: float
     fees: float
     isin: str | None = None
+    name: str | None = None
+
+    @root_validator(pre=True)
+    @classmethod
+    def normalize_fields(cls, values: Any) -> Any:
+        if isinstance(values, dict):
+            if not values.get("ticker_symbol") and values.get("symbol"):
+                values["ticker_symbol"] = values["symbol"]
+            if not values.get("price_per_unit") and values.get("price") is not None:
+                values["price_per_unit"] = values["price"]
+        return values
 
     @validator("transaction_date", pre=True)
     @classmethod
@@ -132,3 +143,13 @@ class FDImportPreview(BaseModel):
 # Schema for FD import commit request body
 class FDImportCommit(BaseModel):
     fds_to_commit: List[ParsedFixedDeposit]
+
+
+class BrokerSyncRequest(BaseModel):
+    provider_name: str  # zerodha_kite, icici_breeze
+    portfolio_id: uuid.UUID
+    import_type: str = "holdings"  # holdings, trades
+    from_date: Optional[str] = None
+    to_date: Optional[str] = None
+    as_of_date: Optional[str] = None
+

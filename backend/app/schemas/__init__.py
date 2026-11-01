@@ -67,6 +67,7 @@ from .holding import (
     PortfolioSummary,
 )
 from .import_session import (
+    BrokerSyncRequest,
     FDImportCommit,
     FDImportPreview,
     ImportSession,
@@ -189,6 +190,7 @@ __all__ = [
     "ImportSessionCreate",
     "ImportSessionPreview",
     "ImportSessionUpdate",
+    "BrokerSyncRequest",
     "Msg",
     "ParsedTransaction",
     "ParsedFixedDeposit",

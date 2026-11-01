@@ -154,6 +154,7 @@ const AssetAliasMappingModal: React.FC<AssetAliasMappingModalProps> = ({
                             setSelectedMf(null);
                             setIsAssetSelected(false);
                         }}
+                        autoFocus
                     />
                 </div>
 

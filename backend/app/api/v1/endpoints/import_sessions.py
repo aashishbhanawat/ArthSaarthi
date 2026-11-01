@@ -2,10 +2,12 @@ import logging
 import shutil
 import uuid
 from datetime import date as date_type
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
+import httpx
 import pandas as pd
 from fastapi import (
     APIRouter,
@@ -238,6 +240,101 @@ def get_import_session(
     return import_session
 
 
+def resolve_asset_for_import_transaction(
+    db: Session,
+    ticker_symbol: Optional[str],
+    source: Optional[str] = None,
+    name: Optional[str] = None,
+    isin: Optional[str] = None,
+    pending_alias_map: Optional[Dict[str, uuid.UUID]] = None,
+) -> Optional[models.Asset]:
+    """Resolves an import transaction to a system Asset using:
+    1. ISIN code
+    2. Pending aliases from current preview mapping
+    3. Direct ticker symbol (full ticker or base without exchange suffix)
+    4. Exact/compatible broker aliases (e.g. ICICI Tradebook aliases like BOMBUR -> BBTC)
+    5. Global aliases across any source
+    6. Exact name matching
+    """
+    if not ticker_symbol and not isin and not name:
+        return None
+
+    # 1. Try ISIN lookup first
+    if isin:
+        asset = crud.asset.get_by_isin(db, isin_code=isin)
+        if asset:
+            return asset
+
+    # Build symbol candidate variations (e.g. ['BOMBUR.NS', 'BOMBUR'])
+    candidates: List[str] = []
+    if ticker_symbol:
+        candidates.append(ticker_symbol)
+        base = ticker_symbol.rsplit(".", 1)[0] if "." in ticker_symbol else ticker_symbol
+        if base and base not in candidates:
+            candidates.append(base)
+    if name and name not in candidates:
+        candidates.append(name)
+
+    # 2. Check pending aliases (from current preview session)
+    if pending_alias_map:
+        for c in candidates:
+            if c in pending_alias_map:
+                asset = crud.asset.get(db, id=pending_alias_map[c])
+                if asset:
+                    return asset
+
+    # 3. Direct asset ticker lookup (full symbol, base symbol, base with .NS/.BO)
+    for c in candidates:
+        if c.upper().startswith("ISIN:"):
+            continue
+        asset = crud.asset.get_by_ticker(db, ticker_symbol=c)
+        if asset:
+            return asset
+        if "." not in c:
+            for suffix in (".NS", ".BO"):
+                asset = crud.asset.get_by_ticker(db, ticker_symbol=f"{c}{suffix}")
+                if asset:
+                    return asset
+
+    # 4. Alias lookup with source or compatible broker sources
+    sources_to_try: List[str] = []
+    if source:
+        sources_to_try.append(source)
+        src_lower = source.lower()
+        if "icici" in src_lower or "breeze" in src_lower:
+            for s in ("ICICI Direct Tradebook", "ICICI Direct", "icici_breeze_api", "ICICI Breeze"):
+                if s not in sources_to_try:
+                    sources_to_try.append(s)
+        elif "zerodha" in src_lower or "kite" in src_lower:
+            for s in ("Zerodha Tradebook", "Zerodha", "zerodha_kite_api"):
+                if s not in sources_to_try:
+                    sources_to_try.append(s)
+
+    for c in candidates:
+        for s in sources_to_try:
+            asset_alias = crud.asset_alias.get_by_alias(db, alias_symbol=c, source=s)
+            if asset_alias and asset_alias.asset:
+                return asset_alias.asset
+
+    # 5. Alias lookup across ANY source
+    for c in candidates:
+        asset_alias = (
+            db.query(models.AssetAlias)
+            .filter(models.AssetAlias.alias_symbol == c)
+            .first()
+        )
+        if asset_alias and asset_alias.asset:
+            return asset_alias.asset
+
+    # 6. Asset name lookup
+    for c in candidates:
+        asset = db.query(models.Asset).filter(models.Asset.name == c).first()
+        if asset:
+            return asset
+
+    return None
+
+
 @router.post("/{session_id}/preview", response_model=schemas.ImportSessionPreview)
 def get_import_session_preview(
     session_id: uuid.UUID,
@@ -287,38 +384,37 @@ def get_import_session_preview(
                 continue
 
             # 1. Asset Identification
-            ticker_symbol = row_data["ticker_symbol"]
-            asset = None
+            ticker_symbol = row_data.get("ticker_symbol") or ""
+            isin_code = row_data.get("isin")
+            name_val = row_data.get("name")
+            asset = resolve_asset_for_import_transaction(
+                db=db,
+                ticker_symbol=ticker_symbol,
+                source=import_session.source,
+                name=name_val,
+                isin=isin_code,
+                pending_alias_map=pending_alias_map,
+            )
 
-            # Check ISIN first if available
-            if "isin" in row_data and row_data["isin"]:
-                isin_code = row_data["isin"]
-                asset = crud.asset.get_by_isin(db, isin_code=isin_code)
-                if not asset:
-                    # Try to fetch details without creating (side-effect free preview)
-                    details = financial_data_service.get_asset_details(
-                        f"ISIN:{isin_code}"
+            # If ISIN lookup externally for new mutual funds (side-effect free preview)
+            if not asset and isin_code:
+                details = financial_data_service.get_asset_details(
+                    f"ISIN:{isin_code}"
+                )
+                if details:
+                    # Validate and filter through schema to prevent TypeError
+                    asset_in = schemas.AssetCreate(
+                        ticker_symbol=(
+                            details.get("ticker_symbol")
+                            or f"ISIN:{isin_code}".upper()
+                        ),
+                        **{
+                            k: v for k, v in details.items() if k != "ticker_symbol"
+                        },
                     )
-                    if details:
-                        # Validate and filter through schema to prevent TypeError
-                        asset_in = schemas.AssetCreate(
-                            ticker_symbol=(
-                                details.get("ticker_symbol")
-                                or f"ISIN:{isin_code}".upper()
-                            ),
-                            **{
-                                k: v for k, v in details.items() if k != "ticker_symbol"
-                            },
-                        )
-                        asset = models.Asset(**model_dump(asset_in))
+                    asset = models.Asset(**model_dump(asset_in))
                 if asset:
                     log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
-
-            if not asset:
-                # This also handles ticker_symbol with "ISIN:" prefix
-                asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
-                if asset:
-                    log.debug(f"Found asset by ticker: {ticker_symbol} -> {asset.name}")
 
             # If ticker looks like "ISIN:XXX", try to find externally
             # (side-effect free preview)
@@ -339,29 +435,32 @@ def get_import_session_preview(
                         f"-> {asset.name}"
                     )
 
-            if not asset:
-                # Check pending aliases from the current session first
-                if ticker_symbol in pending_alias_map:
-                    asset_id = pending_alias_map[ticker_symbol]
-                    asset = crud.asset.get(db, id=asset_id)
-                    if asset:
-                        log.debug(f"Found in pending aliases: {ticker_symbol}")
-                else:
-                    # Then check persisted aliases
-                    asset_alias = crud.asset_alias.get_by_alias(
-                        db,
-                        alias_symbol=ticker_symbol,
-                        source=import_session.source,
-                    )
-                    if asset_alias:
-                        asset = asset_alias.asset
-                        log.debug(f"Found by alias: {ticker_symbol} -> {asset.name}")
+            is_broker_sync = bool(
+                import_session.source
+                and any(k in import_session.source.lower() for k in ("api", "breeze", "broker"))
+            )
 
             if not asset:
                 # If no asset or alias is found, it needs user mapping
                 log.debug(f"No match found for: {ticker_symbol}")
+                if (
+                    is_broker_sync
+                    and parsed_transaction.ticker_symbol
+                    and parsed_transaction.ticker_symbol.endswith((".NS", ".BO"))
+                ):
+                    parsed_transaction.ticker_symbol = parsed_transaction.ticker_symbol.rsplit(".", 1)[0]
                 needs_mapping.append(parsed_transaction)
                 continue
+
+            # Update display ticker symbol to canonical resolved ticker for broker sync sessions
+            if is_broker_sync and asset and asset.ticker_symbol:
+                parsed_transaction.ticker_symbol = asset.ticker_symbol
+            elif (
+                is_broker_sync
+                and parsed_transaction.ticker_symbol
+                and parsed_transaction.ticker_symbol.endswith((".NS", ".BO"))
+            ):
+                parsed_transaction.ticker_symbol = parsed_transaction.ticker_symbol.rsplit(".", 1)[0]
 
             # 2. Duplicate Detection
             existing_transaction = None
@@ -435,53 +534,24 @@ def commit_import_session(
         # 2. Commit the selected transactions.
         transactions_created = 0
         for parsed_tx in commit_payload.transactions_to_commit:
-            # Try to find asset: ISIN first, then alias, then ticker, then name
-            asset = None
+            # Try to find asset: ISIN first, then robust symbol/alias resolution
             ticker_symbol = parsed_tx.ticker_symbol
+            asset = resolve_asset_for_import_transaction(
+                db=db,
+                ticker_symbol=ticker_symbol,
+                source=import_session.source,
+                name=getattr(parsed_tx, "name", None),
+                isin=parsed_tx.isin,
+            )
 
-            # 1. Try ISIN lookup first (most reliable)
-            if parsed_tx.isin:
-                asset = crud.asset.get_by_isin(db, isin_code=parsed_tx.isin)
-                if not asset:
-                    asset = crud.asset.get_or_create_by_ticker(
-                        db, ticker_symbol=f"ISIN:{parsed_tx.isin}"
-                    )
-
-            # 2. Try alias lookup (with source)
-            if not asset:
-                asset_alias = crud.asset_alias.get_by_alias(
-                    db,
-                    alias_symbol=ticker_symbol,
-                    source=import_session.source,
+            # Fallback for transient ISIN creation if not exists
+            if not asset and parsed_tx.isin:
+                asset = crud.asset.get_or_create_by_ticker(
+                    db, ticker_symbol=f"ISIN:{parsed_tx.isin}"
                 )
-                if asset_alias:
-                    asset = asset_alias.asset
-
-            # 3. Try alias lookup (any source)
-            if not asset:
-                asset_alias = (
-                    db.query(models.AssetAlias)
-                    .filter(models.AssetAlias.alias_symbol == ticker_symbol)
-                    .first()
-                )
-                if asset_alias:
-                    asset = asset_alias.asset
-
-            # 4. Try ticker lookup (also handles ISIN: prefix)
-            if not asset:
-                if ticker_symbol.upper().startswith("ISIN:"):
-                    asset = crud.asset.get_or_create_by_ticker(
-                        db, ticker_symbol=ticker_symbol
-                    )
-                else:
-                    asset = crud.asset.get_by_ticker(db, ticker_symbol=ticker_symbol)
-
-            # 6. Try name lookup
-            if not asset:
-                asset = (
-                    db.query(models.Asset)
-                    .filter(models.Asset.name == ticker_symbol)
-                    .first()
+            if not asset and ticker_symbol and ticker_symbol.upper().startswith("ISIN:"):
+                asset = crud.asset.get_or_create_by_ticker(
+                    db, ticker_symbol=ticker_symbol
                 )
 
             if not asset:
@@ -821,3 +891,191 @@ def commit_fd_import_session(
         )
         db.commit()
         raise HTTPException(status_code=500, detail="Could not commit FDs.")
+
+
+@router.post(
+    "/broker/sync",
+    response_model=schemas.ImportSession,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_broker_sync_import_session(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user),
+    sync_req: schemas.BrokerSyncRequest = Body(...),
+) -> Any:
+    """
+    Create a new import session directly from a connected broker API (Zerodha Kite / ICICI Breeze).
+    Pulls holdings or trade history directly, standardizes records, and stages an ImportSession.
+    """
+    try:
+        log.info(
+            f"Initiating broker sync for provider '{sync_req.provider_name}', "
+            f"portfolio '{sync_req.portfolio_id}', type '{sync_req.import_type}'"
+        )
+        portfolio = crud.portfolio.get(db=db, id=sync_req.portfolio_id)
+        if not portfolio:
+            raise HTTPException(status_code=404, detail="Portfolio not found")
+        if portfolio.user_id != current_user.id:
+            raise HTTPException(
+                status_code=403, detail="Not enough permissions for this portfolio"
+            )
+
+        provider_name = sync_req.provider_name.lower()
+        cred = crud.crud_broker.get_by_user_and_provider(
+            db, user_id=current_user.id, provider_name=provider_name
+        )
+        if not cred or not cred.is_active or not cred.encrypted_access_token:
+            log.warning(f"No active session found for broker '{provider_name}'.")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"No active session for broker '{provider_name}'. Please authenticate via Broker Settings.",
+            )
+
+        if cred.token_expires_at and cred.token_expires_at < datetime.now(timezone.utc):
+            log.warning(f"Broker session token for '{provider_name}' has expired.")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Broker session token for '{provider_name}' has expired. Please re-authenticate.",
+            )
+
+        token = crud.crud_broker.get_decrypted_token(cred)
+        secret = crud.crud_broker.get_decrypted_secret(cred)
+
+        if not token:
+            log.warning(f"Decrypted token for '{provider_name}' is empty.")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Broker session token for '{provider_name}' is unauthenticated. Please re-authenticate.",
+            )
+
+        if provider_name == "zerodha_kite":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Direct API import is disabled for Zerodha Kite because Kite Connect API "
+                    "does not provide historical trade logs or purchase dates. Please import your transactions "
+                    "by downloading your Tradebook CSV from Zerodha Console (Reports > Tradebook) and uploading "
+                    "it using the File Upload tab."
+                ),
+            )
+
+        elif provider_name == "icici_breeze":
+            from app.services.providers.icici_breeze_provider import IciciBreezeProvider
+
+            provider = IciciBreezeProvider(
+                api_key=cred.api_key, session_token=token, api_secret=secret
+            )
+            try:
+                if sync_req.import_type == "trades":
+                    from_date_obj = (
+                        date_type.fromisoformat(sync_req.from_date)
+                        if sync_req.from_date
+                        else None
+                    )
+                    to_date_obj = (
+                        date_type.fromisoformat(sync_req.to_date)
+                        if sync_req.to_date
+                        else None
+                    )
+                    raw_data = provider.fetch_trades(
+                        from_date=from_date_obj, to_date=to_date_obj
+                    )
+                else:
+                    raw_data = provider.fetch_holdings()
+            except PermissionError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="ICICI Breeze session token is invalid or expired. Please re-authenticate via Broker Settings.",
+                )
+            except (httpx.RequestError, OSError, ConnectionError) as net_err:
+                log.error(f"ICICI Breeze API network error: {net_err}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"Unable to reach ICICI Breeze server. Network error: {net_err}",
+                )
+            from app.services.import_parsers.broker_api_parser import (
+                parse_icici_api_payload,
+            )
+
+            parsed_items = parse_icici_api_payload(
+                raw_data,
+                import_type=sync_req.import_type,
+                default_portfolio_id=str(sync_req.portfolio_id),
+                as_of_date=sync_req.as_of_date or sync_req.from_date,
+            )
+
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported broker provider '{provider_name}'"
+            )
+
+        if not parsed_items:
+            log.warning(
+                f"No {sync_req.import_type} records returned by broker provider '{provider_name}'."
+            )
+            if provider_name == "zerodha_kite" and sync_req.import_type == "trades":
+                detail_msg = (
+                    "No trades were executed today in your Zerodha Kite account. "
+                    "Note: Zerodha Kite Connect API only returns trades executed on the current trading day. "
+                    "Zerodha does not provide an API for historical trade logs. To import past trades, please "
+                    "download your Tradebook CSV from Zerodha Console (Reports > Tradebook) and import it using the File Upload tab."
+                )
+            else:
+                detail_msg = f"No {sync_req.import_type} records found for your {provider_name.replace('_', ' ').title()} account for the specified date range."
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=detail_msg,
+            )
+
+        session_id = uuid.uuid4()
+        upload_dir = Path(settings.IMPORT_UPLOAD_DIR)
+        upload_dir.mkdir(exist_ok=True)
+        parsed_file_path = upload_dir / f"parsed_{session_id}.json"
+
+        df = pd.DataFrame(parsed_items)
+        df.to_json(parsed_file_path, orient="records", date_format="iso")
+
+        import_session_in = schemas.ImportSessionCreate(
+            file_name=f"{provider_name}_{sync_req.import_type}_sync.json",
+            file_path=str(parsed_file_path),
+            portfolio_id=sync_req.portfolio_id,
+            source=f"{provider_name}_api",
+            status="PARSED",
+        )
+
+        import_session = crud.import_session.create_with_owner(
+            db=db, obj_in=import_session_in, owner_id=current_user.id
+        )
+
+        crud.import_session.update(
+            db=db,
+            db_obj=import_session,
+            obj_in=schemas.ImportSessionUpdate(
+                parsed_file_path=str(parsed_file_path), status="PARSED"
+            ),
+        )
+
+        db.commit()
+        db.refresh(import_session)
+        log.info(f"Successfully created broker sync import session {import_session.id} with {len(parsed_items)} records.")
+        return import_session
+
+    except HTTPException:
+        raise
+    except PermissionError as pe:
+        log.warning(f"Broker permission error during sync: {pe}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Broker authentication failed or expired: {str(pe)}",
+        )
+    except Exception as e:
+        db.rollback()
+        log.error(f"Failed to create broker sync import session: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to sync from broker API: {str(e)}",
+        )
+
+

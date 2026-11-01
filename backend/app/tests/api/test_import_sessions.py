@@ -531,3 +531,83 @@ def test_get_import_session_preview_with_invalid_symbol(
     assert len(data["invalid"]) == 0
     assert len(data["needs_mapping"]) == 1
     assert data["needs_mapping"][0]["ticker_symbol"] == "UNKNOWN"
+
+
+def test_get_import_session_preview_icici_broker_alias_auto_match(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    user_portfolio: models.Portfolio,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
+    user, password = normal_user
+    auth_headers = get_auth_headers(user.email, password)
+
+    # 1. Ensure target asset and alias exist
+    asset = crud.asset.get_by_ticker(db, ticker_symbol="BBTC")
+    if not asset:
+        from app.tests.utils.asset import create_test_asset
+        asset = create_test_asset(
+            db,
+            ticker_symbol="BBTC",
+            name="Bombay Burmah",
+            currency="INR",
+        )
+
+    alias = crud.asset_alias.get_by_alias(
+        db, alias_symbol="BOMBUR", source="ICICI Direct Tradebook"
+    )
+    if not alias:
+        alias = crud.asset_alias.create(
+            db,
+            obj_in=schemas.AssetAliasCreate(
+                alias_symbol="BOMBUR",
+                source="ICICI Direct Tradebook",
+                asset_id=asset.id,
+            ),
+        )
+
+    # 2. Create import session with source="icici_breeze_api" and ticker="BOMBUR.NS"
+    upload_dir = Path("/tmp")
+    df = pd.DataFrame(
+        [
+            {
+                "ticker_symbol": "BOMBUR.NS",
+                "name": "BOMBUR",
+                "transaction_type": "BUY",
+                "quantity": 100.0,
+                "price_per_unit": 1125.58,
+                "transaction_date": datetime.now(timezone.utc).isoformat(),
+                "fees": 293.38,
+            }
+        ]
+    )
+    parsed_file_path = upload_dir / f"{uuid.uuid4()}.json"
+    df.to_json(parsed_file_path, orient="records", date_format="iso")
+    session_in = models.ImportSession(
+        user_id=user.id,
+        portfolio_id=user_portfolio.id,
+        file_name="icici_trades_sync.json",
+        file_path=str(parsed_file_path),
+        source="icici_breeze_api",
+        status="PARSED",
+        parsed_file_path=str(parsed_file_path),
+    )
+    db.add(session_in)
+    db.commit()
+    db.refresh(session_in)
+
+    # 3. Call preview endpoint
+    response = client.post(
+        f"/api/v1/import-sessions/{session_in.id}/preview",
+        headers=auth_headers,
+        json=[],
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["needs_mapping"]) == 0
+    assert len(data["valid_new"]) == 1
+    assert data["valid_new"][0]["ticker_symbol"] == "BBTC"
+    assert data["valid_new"][0]["quantity"] == 100.0
+    assert data["valid_new"][0]["price_per_unit"] == 1125.58
+

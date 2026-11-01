@@ -60,6 +60,7 @@ function AppRoutes() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<Navigate to="/profile" replace />} />
           <Route path="/more" element={<MorePage />} />
           <Route path="/help" element={<UserGuidePage />} />
           <Route path="/portfolios" element={<PortfolioPage />} />

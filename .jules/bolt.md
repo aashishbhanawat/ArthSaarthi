@@ -41,3 +41,11 @@
 ## 2024-05-19 - Prevent React.memo Defeat from Unmemoized Inline Functions
 **Learning:** Passing inline arrow functions (e.g., `onEdit={() => onEdit(item)}`) to child components within map loops recreates function references on every parent render, defeating any `React.memo` optimizations on the child components.
 **Action:** Always pass the memoized callback references directly (e.g., `onEdit={onEdit}`) and let the child component handle the closure with its item data.
+
+## 2026-10-29 - React.memo Optimization with useCallback
+**Learning:** In React functional components mapping over arrays (like tables or lists), passing unmemoized inline functions (e.g. `onClick={() => handle(item)}`) completely negates the performance benefits of `React.memo` on the child component because the inline function reference changes every render.
+**Action:** When wrapping a child component in `React.memo` (like `HoldingCard` or `TransactionCard`), always ensure the parent passes either a memoized function or pass the handler directly (e.g. `onRemove={handleRemove}`) and wrap the specific callback internally using `useCallback` inside the child component.
+
+## 2026-10-29 - React.memo Optimization with useCallback
+**Learning:** In React functional components mapping over arrays (like tables or lists), passing unmemoized inline functions (e.g. `onClick={() => handle(item)}`) completely negates the performance benefits of `React.memo` on the child component because the inline function reference changes every render.
+**Action:** When wrapping a child component in `React.memo` (like `HoldingCard` or `TransactionCard`), always ensure the parent passes either a memoized function or pass the handler directly (e.g. `onRemove={handleRemove}`) and wrap the specific callback internally using `useCallback` inside the child component.

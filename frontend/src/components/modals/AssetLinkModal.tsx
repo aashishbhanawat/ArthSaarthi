@@ -59,6 +59,7 @@ const AssetLinkModal: React.FC<AssetLinkModalProps> = ({ isOpen, onClose, onLink
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             autoComplete="off"
+                            autoFocus
                         />
                         {/* Dropdown List */}
                         <div className="absolute z-20 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">

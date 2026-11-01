@@ -1,20 +1,17 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { WatchlistItem } from '../../types/watchlist';
-import { useRemoveWatchlistItem } from '../../hooks/useWatchlists';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { formatCurrency } from '../../utils/formatting';
 
 interface WatchlistItemCardProps {
     item: WatchlistItem;
-    watchlistId: string;
+    onRemove: (itemId: string) => void;
 }
 
-const WatchlistItemCard: React.FC<WatchlistItemCardProps> = ({ item, watchlistId }) => {
-    const removeWatchlistItem = useRemoveWatchlistItem();
-
-    const handleRemove = () => {
-        removeWatchlistItem.mutate({ watchlistId, itemId: item.id });
-    };
+const WatchlistItemCard: React.FC<WatchlistItemCardProps> = ({ item, onRemove }) => {
+    const handleRemove = useCallback(() => {
+        onRemove(item.id);
+    }, [item.id, onRemove]);
 
     const getPnlColor = (pnl: number | undefined) => {
         if (!pnl) return 'text-gray-900 dark:text-gray-200';
@@ -57,4 +54,4 @@ const WatchlistItemCard: React.FC<WatchlistItemCardProps> = ({ item, watchlistId
     );
 };
 
-export default WatchlistItemCard;
+export default React.memo(WatchlistItemCard);

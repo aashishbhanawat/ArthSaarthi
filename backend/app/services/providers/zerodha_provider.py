@@ -96,6 +96,92 @@ class ZerodhaKiteProvider(FinancialDataProvider):
             logger.error(f"Zerodha Kite authentication error: {e}")
             return {"success": False, "error": str(e)}
 
+    def fetch_holdings(self) -> List[Dict[str, Any]]:
+        """Fetches current portfolio holdings directly from Zerodha Kite API."""
+        if not self.api_key or not self.access_token:
+            logger.warning("Zerodha Kite: Cannot fetch holdings without API key and access token.")
+            raise PermissionError("BROKER_TOKEN_EXPIRED")
+
+        url = f"{KITE_BASE_URL}/portfolio/holdings"
+        headers = self._get_headers()
+        logger.info("Executing Zerodha Kite fetch_holdings API call...")
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                resp = client.get(url, headers=headers)
+                logger.info(f"Zerodha Kite fetch_holdings HTTP status: {resp.status_code}")
+                if resp.status_code == 200:
+                    res_json = resp.json()
+                    if res_json.get("status") == "success":
+                        data = res_json.get("data", [])
+                        logger.info(f"Successfully fetched {len(data)} holdings from Zerodha Kite.")
+                        return data
+                elif resp.status_code in (401, 403):
+                    logger.error(f"Zerodha Kite access token expired or invalid (HTTP {resp.status_code}).")
+                    raise PermissionError("BROKER_TOKEN_EXPIRED")
+                else:
+                    logger.error(f"Zerodha Kite fetch_holdings HTTP error {resp.status_code}: {resp.text}")
+                    raise RuntimeError(f"Zerodha Kite API HTTP {resp.status_code}: {resp.text}")
+        except PermissionError:
+            raise
+        except Exception as e:
+            logger.error(f"Zerodha Kite fetch_holdings error: {e}", exc_info=True)
+            raise
+        return []
+
+    def fetch_trades(
+        self, from_date: Optional[date] = None, to_date: Optional[date] = None
+    ) -> List[Dict[str, Any]]:
+        """Fetches executed trades directly from Zerodha Kite API.
+
+        NOTE: Zerodha Kite Connect v3 API's /trades endpoint ONLY returns trades executed
+        on the CURRENT trading day (intraday fills). Zerodha does NOT provide a REST API
+        endpoint for historical trades or past days' trade logs. Any from/to date
+        parameters are ignored by Kite Connect. For past historical trades, users must
+        download the Tradebook CSV from Zerodha Console (Reports > Tradebook).
+        """
+        if not self.api_key or not self.access_token:
+            logger.warning("Zerodha Kite: Cannot fetch trades without API key and access token.")
+            raise PermissionError("BROKER_TOKEN_EXPIRED")
+
+        url = f"{KITE_BASE_URL}/trades"
+        headers = self._get_headers()
+        params: Dict[str, str] = {}
+        if from_date or to_date:
+            logger.info(
+                "Zerodha Kite /trades only returns trades for the current trading day. "
+                "Date filters (%s to %s) are not supported by Kite Connect REST API.",
+                from_date,
+                to_date,
+            )
+
+        logger.info("Executing Zerodha Kite fetch_trades API call...")
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                resp = client.get(url, headers=headers, params=params)
+                logger.info(f"Zerodha Kite fetch_trades HTTP status: {resp.status_code}")
+                if resp.status_code == 200:
+                    res_json = resp.json()
+                    if res_json.get("status") == "success":
+                        data = res_json.get("data", [])
+                        logger.info(f"Successfully fetched {len(data)} trades from Zerodha Kite.")
+                        return data
+                    elif res_json.get("error_type") in ("TokenException", "PermissionException") or "token" in str(res_json.get("message", "")).lower():
+                        logger.error(f"Zerodha Kite access token error: {res_json}")
+                        raise PermissionError("BROKER_TOKEN_EXPIRED")
+                elif resp.status_code in (401, 403):
+                    logger.error(f"Zerodha Kite access token expired or invalid (HTTP {resp.status_code}).")
+                    raise PermissionError("BROKER_TOKEN_EXPIRED")
+                else:
+                    logger.error(f"Zerodha Kite fetch_trades HTTP error {resp.status_code}: {resp.text}")
+                    raise RuntimeError(f"Zerodha Kite API HTTP {resp.status_code}: {resp.text}")
+        except PermissionError:
+            raise
+        except Exception as e:
+            logger.error(f"Zerodha Kite fetch_trades error: {e}", exc_info=True)
+            raise
+        return []
+
+
     def _clean_symbol(self, ticker: str) -> str:
         """Strips exchange suffix like .NS, .BO, etc."""
         return ticker.split(".")[0].upper()
