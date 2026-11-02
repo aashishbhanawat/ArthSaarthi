@@ -50,14 +50,14 @@ We will use a **decoupled Client-Server architecture**. The frontend will be a S
 *   **Frontend:** **JavaScript** with **React**. Chosen for its component-based architecture, which is ideal for building complex UIs like our dashboard, and its vast ecosystem of libraries.
 *   **Database:** **PostgreSQL**. Chosen for its reputation for reliability, data integrity (ACID compliance), and ability to handle complex queries, all of which are critical for a financial application.
 
-### 2.3. Deployment Strategy
+### 2.4. Background Task & Job Scheduling Architecture
 
-The entire application will be containerized using **Docker** and orchestrated with **Docker Compose**.
+The backend integrates **APScheduler** (`AsyncIOScheduler`) directly into the FastAPI application lifespan.
 
-*   This creates a portable, self-contained application package that can be run on any machine with Docker installed, from a local development machine to a cloud server or a Raspberry Pi.
-*   The setup will consist of three primary services: `backend`, `frontend`, and `db`.
-*   A reverse proxy will manage incoming traffic, directing API calls to the backend and all other requests to the frontend.
-*   This strategy directly supports the requirement for flexible deployment, including local offline use and self-hosting via services like Cloudflare Tunnels.
+*   **In-Process Execution:** Operates asynchronously inside the FastAPI event loop, removing the need for heavyweight external Celery workers or broker dependencies on resource-constrained devices (e.g. Raspberry Pi, Android Chaquopy, and Desktop SQLite).
+*   **Concurrency & Idempotency:** Jobs use `coalesce=True`, `max_instances=1`, and in-memory execution guards to prevent overlapping task runs.
+*   **Execution Audit Trail:** Lifecycle events (`EVENT_JOB_EXECUTED`, `EVENT_JOB_ERROR`, `EVENT_JOB_MISSED`) are captured via event listeners and logged into the `scheduled_job_logs` table.
+*   **Extensibility:** Modular workers reside in `app/tasks/` (e.g. daily portfolio valuation snapshots, bond corporate action processing, market news scraping). Admin endpoints under `/api/v1/admin/scheduler` and UI in `SchedulerDashboard.tsx` provide live monitoring, pause/resume, and manual triggers.
 
 ### 2.4. Security & Sensitive Data Protection (`EncryptedString` Model)
 

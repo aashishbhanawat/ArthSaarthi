@@ -60,9 +60,10 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 
 ## 🛠️ Technology Stack
 
-*   **Backend:** Python, FastAPI, SQLAlchemy, Alembic (Migrations)
+*   **Backend:** Python, FastAPI, APScheduler, SQLAlchemy, Alembic (Migrations)
 *   **Frontend:** TypeScript, React, Vite, React Query, Tailwind CSS, Chart.js
 *   **Database:** PostgreSQL, SQLite
+*   **Background Jobs:** APScheduler (in-process AsyncIOScheduler with execution audit logs and Admin dashboard)
 *   **Caching:** Redis, DiskCache
 *   **Testing:** Pytest (Backend), Jest & React Testing Library (Frontend), Playwright (E2E)
 *   **Containerization & CI/CD:** Docker, Docker Compose, GitHub Actions

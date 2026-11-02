@@ -170,6 +170,7 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **FR16.4: Structured Tax Summary Report.** The system must generate a structured report for a given financial year that consolidates all logged income sources, TDS, and potential deductions. `✅ Done`
     -   **FR16.4.1:** The report must clearly state that it is for informational purposes only and does not constitute financial or tax advice. `✅ Done`
 -   **FR16.5: Salary Component Breakdown & Section 10(13A) HRA Exemption.** Users must be able to log salary components (Basic Salary, DA, HRA, Flexible Allowance, Other Allowances, Other Benefits, Rent Paid, Metro location) to compute statutory Section 10(13A) HRA exemptions. `✅ Done`
+-   **FR17: Background Task & Job Scheduling Engine.** The system must provide an architectural background job scheduler (APScheduler) for automated tasks (portfolio snapshots, corporate action processing, market news fetcher) with an Admin management UI, manual triggers, pause/resume controls, and execution audit logging. `✅ Done`
 
 ## 3. Non-Functional Requirements
 
@@ -184,4 +185,5 @@ This document outlines the functional and non-functional requirements for the Ar
 -   **NFR9: Pluggable Caching:** The application must support both Redis and a lightweight, file-based cache (`diskcache`) to remove the Redis dependency for non-Docker deployments. `✅ Done`
 -   **NFR12: Pluggable Financial Data Service:** The financial data service must be architected to support multiple, interchangeable data providers for different asset classes and regions. `✅ Done`
 -   **NFR13: API Usage Tracking & Rate Limiting:** The system must provide a mechanism to track and enforce rate limits for external financial data APIs to prevent abuse and manage costs. `✅ Done`
+-   **NFR14: Background Job Scheduling & Task Automation:** The system must run a lightweight, non-blocking, pure-Python scheduler compatible with Chaquopy/Android and desktop environments without requiring external Celery/Redis worker overhead. `✅ Done`
 

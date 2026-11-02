@@ -1,3 +1,39 @@
+## 2026-11-02: Implement Architectural Background Job Scheduler using APScheduler (FR17 / NFR14 / Issue #561)
+
+**Task:** Design and implement an in-process, architectural background job scheduler (APScheduler) for automated tasks with execution audit logging, admin monitoring APIs, and a mobile-friendly frontend dashboard.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Dependency & Scheduler Core (`backend/app/core/scheduler.py`):**
+   - Added pure-Python `apscheduler>=3.10.4,<4.0.0` and `tzlocal` without native C-extension dependencies, fully compatible with Chaquopy/Android and desktop environments.
+   - Built `AsyncIOScheduler` singleton manager with graceful FastAPI lifespan hooks (`startup`/`shutdown`).
+   - Configured `coalesce=True`, `max_instances=1`, and in-memory execution guards to guarantee concurrency safety and idempotency.
+   - Built custom event listeners capturing `EVENT_JOB_EXECUTED`, `EVENT_JOB_ERROR`, and `EVENT_JOB_MISSED` to automatically record execution metrics and error tracebacks.
+2. **Database Logging & Task Registry (`backend/app/models/scheduled_job_log.py`, `backend/app/tasks/`):**
+   - Created `scheduled_job_logs` table via Alembic migration `k11d3e4f5g6h`.
+   - Built `CRUDScheduledJobLog` supporting log creation, pagination, failure count metrics, and log retention pruning.
+   - Created modular task registry (`app/tasks/registry.py`) and migrated the legacy hardcoded snapshot loop into `daily_portfolio_snapshot` background job.
+3. **Admin REST API Endpoints (`backend/app/api/v1/endpoints/scheduler.py`):**
+   - Secured under `get_current_admin_user`:
+     - `GET /api/v1/admin/scheduler/summary`: Live running state, active/paused counts, and failure stats over last 24h.
+     - `GET /api/v1/admin/scheduler/jobs`: List registered jobs and next run timestamps.
+     - `POST /api/v1/admin/scheduler/jobs/{job_id}/run`: Immediate asynchronous execution trigger (returns 409 Conflict if already executing).
+     - `POST /api/v1/admin/scheduler/jobs/{job_id}/pause` & `resume`: Toggle scheduled execution.
+     - `GET /api/v1/admin/scheduler/logs`: Paginated execution history.
+     - `DELETE /api/v1/admin/scheduler/logs`: Prune old execution records.
+4. **Frontend Admin UI (`SchedulerDashboard.tsx`):**
+   - Built responsive dashboard component in `frontend/src/components/Admin/SchedulerDashboard.tsx` embedded in `SystemMaintenancePage.tsx`.
+   - Provides summary KPI cards, desktop table, collapsible touch-friendly mobile cards (`< 768px`), live execution triggers, pause/resume toggles, and execution log inspection modal with formatted stack traces.
+5. **Testing & Quality Assurance:**
+   - Authored backend unit tests in `test_scheduler.py` and API tests in `test_scheduler.py` (12/12 passing).
+   - Ran PostgreSQL test suite (12/12 passing) and SQLite test suite (12/12 passing).
+   - Authored frontend component tests in `SchedulerDashboard.test.tsx` (4/4 passing).
+   - Clean lint passes on Ruff and ESLint (0 errors).
+
+---
+
 ## 2026-10-30: Fix CI Playwright E2E Tests for Broker Import and Data Mapping (Issue #569)
 
 **Task:** Fix CI Playwright E2E failures on `broker-direct-import.spec.ts` (mismatched locators for provider & card heading) and `data-import-mapping.spec.ts` (preserving uploaded CSV symbol in preview rows for user-mapped assets).  

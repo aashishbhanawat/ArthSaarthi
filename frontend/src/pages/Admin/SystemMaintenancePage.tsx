@@ -1,10 +1,11 @@
 import React from 'react';
 import AssetSyncCard from '../../components/Admin/AssetSyncCard';
 import { CacheDiagnostics } from '../../components/Admin/CacheDiagnostics';
+import { SchedulerDashboard } from '../../components/Admin/SchedulerDashboard';
 
 /**
  * SystemMaintenancePage - Admin page for system maintenance operations.
- * FR2.3: Manual Asset Seeding & NFR13: Cache Diagnostics
+ * FR2.3: Manual Asset Seeding & NFR13: Cache Diagnostics & FR17: Background Job Scheduler
  */
 const SystemMaintenancePage: React.FC = () => {
     return (
@@ -14,6 +15,7 @@ const SystemMaintenancePage: React.FC = () => {
             <div className="grid gap-6 md:grid-cols-1">
                 <AssetSyncCard />
                 <CacheDiagnostics />
+                <SchedulerDashboard />
             </div>
         </div>
     );
