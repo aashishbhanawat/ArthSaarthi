@@ -350,10 +350,21 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         )
 
     def get_multi_by_asset(
-        self, db: Session, *, asset_id: uuid.UUID
+        self, db: Session, *, asset_id: uuid.UUID, user_id: Optional[uuid.UUID] = None
     ) -> List[Transaction]:
-        """Retrieves all transactions for a specific asset."""
-        return db.query(self.model).filter(self.model.asset_id == asset_id).all()
+        """Retrieves all transactions for a specific asset.
+
+        WARNING: If user_id is None, returns transactions for ALL tenants (admin/system use only).
+        Always pass user_id for user-facing calls to prevent cross-tenant data leakage (IDOR).
+        """
+        # Deferred import to avoid circular dependency with app.models.portfolio
+        from app.models.portfolio import Portfolio
+
+        query = db.query(self.model).filter(self.model.asset_id == asset_id)
+        if user_id:
+            query = query.join(Portfolio).filter(Portfolio.user_id == user_id)
+
+        return query.all()
 
     def get_multi_by_portfolio_and_asset(
         self, db: Session, *, portfolio_id: uuid.UUID, asset_id: uuid.UUID
