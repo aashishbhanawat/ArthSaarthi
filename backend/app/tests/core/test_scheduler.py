@@ -1,16 +1,13 @@
-import asyncio
 from datetime import datetime, timezone
+
 import pytest
 from apscheduler.events import (
-    EVENT_JOB_ERROR,
-    EVENT_JOB_EXECUTED,
     JobExecutionEvent,
     JobSubmissionEvent,
 )
 from sqlalchemy.orm import Session
 
 from app.core.scheduler import (
-    _apscheduler_listener,
     _handle_job_execution,
     _handle_job_submission,
     _job_start_times,
@@ -24,7 +21,6 @@ from app.core.scheduler import (
     start_scheduler,
 )
 from app.crud.crud_scheduled_job import scheduled_job_log
-from app.tasks.registry import TaskDefinition, get_task_registry
 
 pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
