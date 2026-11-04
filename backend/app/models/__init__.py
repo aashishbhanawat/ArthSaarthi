@@ -18,3 +18,4 @@ from app.models.portfolio_snapshot import DailyPortfolioSnapshot  # noqa
 from app.models.capital_loss_ledger import CapitalLossLedger  # noqa
 from app.models.tax_deduction import TaxDeduction  # noqa
 from app.models.broker_credential import BrokerCredential  # noqa
+from app.models.scheduled_job_log import ScheduledJobLog  # noqa

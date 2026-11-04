@@ -24,6 +24,7 @@ from app.api.v1.endpoints import (
     recurring_deposits,
     risk,
     schedule_fa,
+    scheduler,
     system,
     tax_deductions,
     tax_summary,
@@ -119,6 +120,11 @@ api_router.include_router(
 # Admin Cache Diagnostics & Rate Limiting (NFR13)
 api_router.include_router(
     cache_diagnostics.router, prefix="/admin/cache", tags=["admin-cache"]
+)
+
+# Admin Background Job Scheduler (FR17 / NFR14)
+api_router.include_router(
+    scheduler.router, prefix="/admin/scheduler", tags=["admin-scheduler"]
 )
 
 # Broker Integration (NFR12 / FR558)

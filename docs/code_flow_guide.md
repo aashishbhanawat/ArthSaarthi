@@ -433,3 +433,35 @@ When a user visits the Capital Gains page (`CapitalGainsPage.tsx`), the frontend
    - Detailed tax lot breakdown table with buy date, holding days, quantity, buy price, current price, gain/loss, tax rate badge, and estimated tax.
    - Fully supports global Privacy Mode currency masking (`usePrivacy`).
 
+---
+
+## 9. Background Task & Job Scheduling Flow (FR17 / NFR14)
+
+The background job scheduler orchestrates automated periodic tasks (daily valuation snapshots, corporate actions, market news) without requiring external job queues.
+
+### Step 1: Lifespan & Initialization (`app/core/scheduler.py`)
+1. **FastAPI Lifespan Startup:** During `startup_event()` in `main.py`, `start_scheduler()` is called.
+2. **Singleton Setup:** `get_scheduler()` initializes an `AsyncIOScheduler` with `coalesce=True`, `max_instances=1`, and `misfire_grace_time=300`.
+3. **Event Listeners:** Attaches listeners for `EVENT_JOB_SUBMITTED`, `EVENT_JOB_EXECUTED`, `EVENT_JOB_ERROR`, and `EVENT_JOB_MISSED`.
+4. **Task Registration:** Reads task definitions from `app/tasks/registry.py` and registers default jobs:
+   - `daily_portfolio_snapshot`: Runs daily at `00:05` UTC/local (or every 6 hours in desktop/android mode) to compute daily historical valuation snapshots across all user portfolios.
+
+### Step 2: Execution & Concurrency Protection
+1. **Scheduled Runs:** APScheduler dispatches registered coroutines asynchronously in the event loop.
+2. **Manual Admin Triggers:** Admin users can trigger immediate runs via `POST /api/v1/admin/scheduler/jobs/{job_id}/run`.
+3. **Concurrency Guard:** The module tracks active job IDs in `_running_jobs`. If a job is already in progress, concurrent execution is blocked (`409 Conflict`), preventing duplicate snapshot generation.
+
+### Step 3: Execution Logging & Audit Trail
+1. **Event Capture:** When a task completes or errors out, `_handle_job_execution()` records:
+   - Status (`SUCCESS` or `FAILED`)
+   - Execution duration (`execution_time_seconds`)
+   - Sanitized exception traceback in `error_message`
+2. **Database Persistence:** An isolated `SessionLocal()` writes the record to the `scheduled_job_logs` table and closes immediately.
+
+### Step 4: Admin UI Management (`SchedulerDashboard.tsx`)
+1. Embedded in `SystemMaintenancePage.tsx`.
+2. Displays summary KPI cards (Total Jobs, Active, Paused, Failures in last 24h).
+3. Desktop table & mobile cards allow admins to monitor trigger crons, next run times, pause/resume schedules, or trigger manual runs.
+4. "Execution Logs" modal provides paginated history inspection and log pruning controls.
+
+

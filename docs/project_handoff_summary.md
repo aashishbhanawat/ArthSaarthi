@@ -1,22 +1,30 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-10-31
+**Last Updated:** 2026-11-02
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 Completed — Dependabot Security Audit & Vulnerability Remediation (#604) Resolved.
+*   **Overall Status:** Release v1.5.0 In Progress — Architectural Background Job Scheduler (APScheduler Integration / Issue #561) Implemented & Verified.
 
-**Latest Achievement:** Resolved 1 critical and 8 high-severity CVEs across backend and frontend dependencies (`@capacitor/android`, `undici`, `vite`, `pyasn1`, `dnspython`, `source-map-js`, `postcss-selector-parser`, `fast-uri`, `follow-redirects`, `certifi`). Verified with clean linters (Ruff & ESLint) and 100% test pass rates across both test suites.
+**Latest Achievement:** Integrated pure-Python `apscheduler` singleton into FastAPI lifespan with automated execution audit logging (`scheduled_job_logs` table), task registry (`app/tasks/`), admin REST APIs, and a mobile-friendly frontend dashboard (`SchedulerDashboard.tsx`) embedded in System Maintenance. Verified 100% test pass rate across PostgreSQL (12/12) and SQLite (12/12) as well as frontend Jest unit tests (4/4).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **417/417 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **417/417 Passing**
-*   **Frontend Unit Tests (Vitest):** ✅ **203/203 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **429/429 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **429/429 Passing**
+*   **Frontend Unit Tests (Vitest/Jest):** ✅ **207/207 Passing**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Architectural Background Job Scheduler using APScheduler (Issue #561 / FR17 / NFR14) (Updated 2026-11-02):**
+    - **APScheduler Core:** Added pure-Python `apscheduler>=3.10.4,<4.0.0` and `tzlocal` without native C extensions for Chaquopy/Android and desktop compatibility. Implemented `AsyncIOScheduler` singleton in `app/core/scheduler.py` with FastAPI lifespan hooks (`startup`/`shutdown`), `coalesce=True`, `max_instances=1`, and in-memory execution guards to prevent overlapping task runs.
+    - **Execution Audit Logging:** Implemented event listeners capturing `EVENT_JOB_EXECUTED`, `EVENT_JOB_ERROR`, and `EVENT_JOB_MISSED` into `scheduled_job_logs` table via Alembic migration `k11d3e4f5g6h` and `CRUDScheduledJobLog`.
+    - **Task Registry & Daily Snapshots:** Created `app/tasks/registry.py` and `app/tasks/snapshot_task.py`, migrating the legacy hardcoded snapshot loop into `daily_portfolio_snapshot` background job.
+    - **Admin REST API:** Built `/api/v1/admin/scheduler` endpoints (`/summary`, `/jobs`, `/jobs/{id}/run`, `/jobs/{id}/pause`, `/jobs/{id}/resume`, `/logs`, and `/logs` deletion) guarded by `get_current_admin_user`.
+    - **Frontend Dashboard:** Built `SchedulerDashboard.tsx` component in `frontend/src/components/Admin/` embedded in `SystemMaintenancePage.tsx` with KPI summary cards, desktop data table, responsive mobile cards (`< 768px`), live "Run Now" triggers, pause/resume toggles, and execution log inspection drawer/modal.
+    - **Automated Tests:** Authored backend unit tests in `test_scheduler.py` and API tests in `test_scheduler.py` (12/12 passing across Postgres and SQLite) and frontend tests in `SchedulerDashboard.test.tsx` (4/4 passing).
 
 *   **Dependabot Security Vulnerability Remediation (Issue #604) (Updated 2026-10-31):**
     - **Backend Dependencies:** Bumped `pyasn1>=0.6.5` (mitigating 4 ASN.1 infinite loop GHSAs), `dnspython==2.9.0` (mitigating excessive CPU consumption GHSA-45c3-73f7-pv4m), and `certifi==2026.10.18` (root CA certificate sync).

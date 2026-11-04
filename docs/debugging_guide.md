@@ -38,3 +38,30 @@ The frontend uses a Vite environment variable `VITE_DEBUG_ENABLED` to control lo
     VITE_DEBUG_ENABLED=true
     ```
 3.  The Vite dev server will automatically pick up the change.
+
+## Background Job Scheduler Troubleshooting
+
+The background job scheduler runs tasks asynchronously via APScheduler.
+
+### 1. Checking Scheduler Status & Logs via UI
+1. Navigate to **Admin -> System Maintenance** in the application.
+2. Locate the **Background Job Scheduler** card.
+3. Check the status badge (`APScheduler Active` vs `Stopped`) and next run timestamps.
+4. Click **Execution Logs** to view recent execution records, durations, and any captured error tracebacks.
+
+### 2. Inspecting Logs in the Database
+To view recorded job executions directly from the database:
+```sql
+SELECT job_id, job_name, status, execution_time_seconds, error_message, created_at
+FROM scheduled_job_logs
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+### 3. Common Issues & Solutions
+* **Job Stuck in RUNNING Status:**
+  If a server crash occurs while a job is running, restart the backend container or process. The in-memory execution set will reset, and the scheduler will resume normal operation.
+* **409 Conflict when Triggering Job Manually:**
+  Indicates the requested job is currently executing. Wait for the active execution to complete before triggering another run.
+* **Database Locked (SQLite):**
+  Ensure long-running tasks don't hold open write transactions. Tasks must use isolated scoped sessions (`SessionLocal()`) and commit promptly.

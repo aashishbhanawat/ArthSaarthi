@@ -214,7 +214,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Broker API Integration (NFR12):** Implement pluggable data providers for Zerodha Kite and ICICI Breeze to replace `yfinance`, especially for the Android build. This includes the necessary UI for the daily OAuth user login flow.
 -   **API Rate Limiting & Caching (NFR13):** Implement robust caching, request batching, and rate limiting for the new broker APIs to ensure compliance and performance.
 -   **Desktop Update Notification (FR-Desktop-2):** Check GitHub Releases API and notify users of new versions.
--   **Background Job Scheduler:** Architectural implementation (e.g., APScheduler) to handle asynchronous tasks.
+-   **Background Job Scheduler:** Architectural implementation (e.g., APScheduler) to handle asynchronous tasks. **✅ Complete**
 -   **Automated Corporate Actions:** Use the new scheduler for auto-generation of bond coupons and maturity transactions.
 -   **Market News Feed (FR8.2):** Use the new scheduler for background fetching and linking of relevant financial news to user holdings.
 
