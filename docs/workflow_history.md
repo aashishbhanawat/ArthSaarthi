@@ -25,7 +25,8 @@
      - `DELETE /api/v1/admin/scheduler/logs`: Prune old execution records.
 4. **Frontend Admin UI (`SchedulerDashboard.tsx`):**
    - Built responsive dashboard component in `frontend/src/components/Admin/SchedulerDashboard.tsx` embedded in `SystemMaintenancePage.tsx`.
-   - Provides summary KPI cards, desktop table, collapsible touch-friendly mobile cards (`< 768px`), live execution triggers, pause/resume toggles, and execution log inspection modal with formatted stack traces.
+   - Replaced technical jargon in UI (such as "APScheduler Active", "cron[...]", and "Execution Logs") with intuitive, user-friendly labels ("Automated Tasks", "Active", "Daily at 00:05", "Activity History").
+   - Provides summary KPI cards, desktop table, collapsible touch-friendly mobile cards (`< 768px`), live execution triggers, pause/resume toggles, and activity history modal with formatted details.
 5. **Testing & Quality Assurance:**
    - Authored backend unit tests in `test_scheduler.py` and API tests in `test_scheduler.py` (12/12 passing).
    - Ran PostgreSQL test suite (12/12 passing) and SQLite test suite (12/12 passing).

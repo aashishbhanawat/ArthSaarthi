@@ -15,7 +15,7 @@ export const SchedulerDashboard: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Execution logs modal/drawer state
+  // Activity history modal/drawer state
   const [showLogsModal, setShowLogsModal] = useState<boolean>(false);
   const [logs, setLogs] = useState<ScheduledJobLogItem[]>([]);
   const [logsLoading, setLogsLoading] = useState<boolean>(false);
@@ -27,12 +27,12 @@ export const SchedulerDashboard: React.FC = () => {
       const data = await getSchedulerSummary();
       setSummary(data);
     } catch (err: unknown) {
-      console.error('Failed to fetch scheduler summary:', err);
+      console.error('Failed to fetch task summary:', err);
       const errMsg =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
           : (err as Error).message;
-      setMessage({ text: `Failed to load scheduler data: ${errMsg}`, type: 'error' });
+      setMessage({ text: `Failed to load task data: ${errMsg}`, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -44,7 +44,7 @@ export const SchedulerDashboard: React.FC = () => {
       const res = await getScheduledJobLogs(0, 50);
       setLogs(res.items);
     } catch (err: unknown) {
-      console.error('Failed to fetch logs:', err);
+      console.error('Failed to fetch activity logs:', err);
     } finally {
       setLogsLoading(false);
     }
@@ -55,19 +55,19 @@ export const SchedulerDashboard: React.FC = () => {
     await fetchLogs();
   };
 
-  const handleTriggerJob = async (jobId: string) => {
+  const handleTriggerJob = async (jobId: string, jobName: string) => {
     try {
       setActionLoading((prev) => ({ ...prev, [jobId]: true }));
       setMessage(null);
-      const res = await triggerJobNow(jobId);
-      setMessage({ text: res.message, type: 'success' });
+      await triggerJobNow(jobId);
+      setMessage({ text: `Started task: "${jobName}"`, type: 'success' });
       await fetchSummary();
     } catch (err: unknown) {
       const errMsg =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
           : (err as Error).message;
-      setMessage({ text: errMsg || 'Failed to trigger job execution', type: 'error' });
+      setMessage({ text: errMsg || 'Failed to start task', type: 'error' });
     } finally {
       setActionLoading((prev) => ({ ...prev, [jobId]: false }));
     }
@@ -80,10 +80,10 @@ export const SchedulerDashboard: React.FC = () => {
       setMessage(null);
       if (isPaused) {
         await resumeScheduledJob(job.id);
-        setMessage({ text: `Resumed scheduled job '${job.name}'`, type: 'success' });
+        setMessage({ text: `Resumed task: "${job.name}"`, type: 'success' });
       } else {
         await pauseScheduledJob(job.id);
-        setMessage({ text: `Paused scheduled job '${job.name}'`, type: 'success' });
+        setMessage({ text: `Paused task: "${job.name}"`, type: 'success' });
       }
       await fetchSummary();
     } catch (err: unknown) {
@@ -91,21 +91,21 @@ export const SchedulerDashboard: React.FC = () => {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
           : (err as Error).message;
-      setMessage({ text: errMsg || 'Failed to update job status', type: 'error' });
+      setMessage({ text: errMsg || 'Failed to update task status', type: 'error' });
     } finally {
       setActionLoading((prev) => ({ ...prev, [job.id]: false }));
     }
   };
 
   const handlePruneLogs = async () => {
-    if (!window.confirm('Are you sure you want to prune logs older than 30 days?')) return;
+    if (!window.confirm('Are you sure you want to clear history older than 30 days?')) return;
     try {
       setPruning(true);
       const res = await pruneScheduledJobLogs(30);
-      setMessage({ text: res.message, type: 'success' });
+      setMessage({ text: `Cleared ${res.deleted_count} older records.`, type: 'success' });
       await fetchLogs();
     } catch (err: unknown) {
-      setMessage({ text: 'Failed to prune job logs', type: 'error' });
+      setMessage({ text: 'Failed to clear activity history', type: 'error' });
     } finally {
       setPruning(false);
     }
@@ -115,15 +115,31 @@ export const SchedulerDashboard: React.FC = () => {
     fetchSummary();
   }, []);
 
+  const formatSchedule = (triggerStr: string) => {
+    if (!triggerStr) return 'Manual';
+    if (triggerStr.includes("hour='0'") && triggerStr.includes("minute='5'")) {
+      return 'Daily at 00:05';
+    }
+    if (triggerStr.includes('6:00:00') || triggerStr.includes('hours=6')) {
+      return 'Every 6 hours';
+    }
+    if (triggerStr.startsWith('cron')) {
+      return 'Daily Scheduled';
+    }
+    if (triggerStr.startsWith('interval')) {
+      return 'Periodic Interval';
+    }
+    return triggerStr;
+  };
+
   const formatDateTime = (isoString?: string | null) => {
-    if (!isoString) return 'Not Scheduled';
+    if (!isoString) return 'Paused / Not Scheduled';
     const date = new Date(isoString);
     return date.toLocaleString(undefined, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
     });
   };
 
@@ -132,19 +148,19 @@ export const SchedulerDashboard: React.FC = () => {
       case 'RUNNING':
         return (
           <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 animate-pulse">
-            RUNNING
+            In Progress
           </span>
         );
       case 'ACTIVE':
         return (
           <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-            ACTIVE
+            Active
           </span>
         );
       case 'PAUSED':
         return (
           <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-300">
-            PAUSED
+            Paused
           </span>
         );
       default:
@@ -172,7 +188,7 @@ export const SchedulerDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Background Job Scheduler
+              Automated Tasks
             </h2>
             <span
               className={`px-2 py-0.5 text-xs font-bold rounded ${
@@ -181,11 +197,11 @@ export const SchedulerDashboard: React.FC = () => {
                   : 'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300'
               }`}
             >
-              {summary?.is_running ? 'APScheduler Active' : 'Stopped'}
+              {summary?.is_running ? 'Active' : 'Stopped'}
             </span>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manages automated background jobs, portfolio snapshots, and corporate action schedules.
+            Automated daily portfolio valuation snapshots, corporate action processing, and routine maintenance tasks.
           </p>
         </div>
 
@@ -201,7 +217,7 @@ export const SchedulerDashboard: React.FC = () => {
             onClick={handleOpenLogs}
             className="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded transition font-medium"
           >
-            Execution Logs
+            Activity History
           </button>
         </div>
       </div>
@@ -229,7 +245,7 @@ export const SchedulerDashboard: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
           <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">
-            Total Jobs
+            Total Tasks
           </span>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
             {summary?.total_jobs ?? 0}
@@ -253,7 +269,7 @@ export const SchedulerDashboard: React.FC = () => {
         </div>
         <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
           <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">
-            Failures (24h)
+            Errors (24h)
           </span>
           <p
             className={`text-2xl font-bold mt-1 ${
@@ -267,19 +283,19 @@ export const SchedulerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop Job Table */}
+      {/* Desktop Task Table */}
       <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
               <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Job Name & Details
+                Task
               </th>
               <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Schedule Trigger
+                Frequency
               </th>
               <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Next Scheduled Run
+                Next Run
               </th>
               <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
                 Status
@@ -294,17 +310,14 @@ export const SchedulerDashboard: React.FC = () => {
               <tr key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                 <td className="px-4 py-3">
                   <div className="font-semibold text-gray-900 dark:text-white">{job.name}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">
-                    {job.id}
-                  </div>
                   {job.description && (
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 max-w-sm">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-sm">
                       {job.description}
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs font-mono text-gray-700 dark:text-gray-300">
-                  {job.trigger}
+                <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300">
+                  {formatSchedule(job.trigger)}
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300">
                   {formatDateTime(job.next_run_time)}
@@ -313,11 +326,11 @@ export const SchedulerDashboard: React.FC = () => {
                 <td className="px-4 py-3 text-right">
                   <div className="inline-flex gap-2">
                     <button
-                      onClick={() => handleTriggerJob(job.id)}
+                      onClick={() => handleTriggerJob(job.id, job.name)}
                       disabled={actionLoading[job.id] || job.status === 'RUNNING'}
                       className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded font-medium transition"
                     >
-                      {actionLoading[job.id] ? 'Running...' : 'Run Now'}
+                      {actionLoading[job.id] ? 'Starting...' : 'Run Now'}
                     </button>
                     <button
                       onClick={() => handleTogglePause(job)}
@@ -334,7 +347,7 @@ export const SchedulerDashboard: React.FC = () => {
         </table>
       </div>
 
-      {/* Mobile Job Cards View (< 768px) */}
+      {/* Mobile Task Cards View (< 768px) */}
       <div className="md:hidden space-y-4">
         {summary?.jobs.map((job) => (
           <div
@@ -342,25 +355,20 @@ export const SchedulerDashboard: React.FC = () => {
             className="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-lg border border-gray-200 dark:border-gray-700"
           >
             <div className="flex justify-between items-start gap-2 mb-2">
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white text-base">
-                  {job.name}
-                </h3>
-                <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                  {job.id}
-                </span>
-              </div>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-base">
+                {job.name}
+              </h3>
               <div>{getStatusBadge(job.status)}</div>
             </div>
 
             {job.description && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{job.description}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{job.description}</p>
             )}
 
             <div className="space-y-1 mb-4 text-xs text-gray-700 dark:text-gray-300">
               <div>
-                <span className="font-medium text-gray-500 dark:text-gray-400">Schedule: </span>
-                <span className="font-mono">{job.trigger}</span>
+                <span className="font-medium text-gray-500 dark:text-gray-400">Frequency: </span>
+                <span>{formatSchedule(job.trigger)}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-500 dark:text-gray-400">Next Run: </span>
@@ -370,11 +378,11 @@ export const SchedulerDashboard: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
               <button
-                onClick={() => handleTriggerJob(job.id)}
+                onClick={() => handleTriggerJob(job.id, job.name)}
                 disabled={actionLoading[job.id] || job.status === 'RUNNING'}
                 className="w-full py-2 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-md font-medium transition"
               >
-                {actionLoading[job.id] ? 'Running...' : 'Run Now'}
+                {actionLoading[job.id] ? 'Starting...' : 'Run Now'}
               </button>
               <button
                 onClick={() => handleTogglePause(job)}
@@ -388,7 +396,7 @@ export const SchedulerDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Execution Logs Modal / Drawer */}
+      {/* Activity History Modal */}
       {showLogsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-gray-200 dark:border-gray-700">
@@ -396,10 +404,10 @@ export const SchedulerDashboard: React.FC = () => {
             <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  Job Execution History
+                  Task Activity History
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  Showing last 50 execution records across all scheduled tasks.
+                  Recent automated task runs and system activity.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -408,7 +416,7 @@ export const SchedulerDashboard: React.FC = () => {
                   disabled={pruning}
                   className="px-3 py-1.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded font-medium transition border border-rose-200 dark:border-rose-800"
                 >
-                  {pruning ? 'Pruning...' : 'Prune Old Logs'}
+                  {pruning ? 'Clearing...' : 'Clear Old History'}
                 </button>
                 <button
                   onClick={() => setShowLogsModal(false)}
@@ -423,11 +431,11 @@ export const SchedulerDashboard: React.FC = () => {
             <div className="overflow-y-auto p-5 flex-1 space-y-3">
               {logsLoading ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
-                  Loading execution logs...
+                  Loading activity history...
                 </div>
               ) : logs.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
-                  No execution logs recorded yet.
+                  No task activity recorded yet.
                 </div>
               ) : (
                 logs.map((log) => (
@@ -436,14 +444,9 @@ export const SchedulerDashboard: React.FC = () => {
                     className="p-3.5 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-700 text-xs"
                   >
                     <div className="flex justify-between items-start mb-1.5">
-                      <div>
-                        <span className="font-semibold text-gray-900 dark:text-white text-sm">
-                          {log.job_name}
-                        </span>
-                        <span className="ml-2 font-mono text-gray-500 dark:text-gray-400">
-                          ({log.job_id})
-                        </span>
-                      </div>
+                      <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                        {log.job_name}
+                      </span>
                       <span
                         className={`px-2 py-0.5 font-bold rounded ${
                           log.status === 'SUCCESS'
@@ -451,12 +454,12 @@ export const SchedulerDashboard: React.FC = () => {
                             : 'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300'
                         }`}
                       >
-                        {log.status}
+                        {log.status === 'SUCCESS' ? 'Completed' : 'Failed'}
                       </span>
                     </div>
 
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 dark:text-gray-400 mt-1">
-                      <span>Started: {formatDateTime(log.started_at)}</span>
+                      <span>Ran: {formatDateTime(log.started_at)}</span>
                       {log.execution_time_seconds !== null && (
                         <span>Duration: {log.execution_time_seconds.toFixed(2)}s</span>
                       )}

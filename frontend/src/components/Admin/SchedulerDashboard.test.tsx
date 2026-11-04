@@ -60,10 +60,10 @@ describe('SchedulerDashboard', () => {
   it('renders scheduler dashboard with job list and status', async () => {
     render(<SchedulerDashboard />);
 
-    expect(await screen.findByText('Background Job Scheduler')).toBeInTheDocument();
-    expect(screen.getByText('APScheduler Active')).toBeInTheDocument();
+    expect(await screen.findByText('Automated Tasks')).toBeInTheDocument();
+    expect(screen.getAllByText('Active').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Daily Portfolio Valuation Snapshot').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('ACTIVE').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Daily at 00:05').length).toBeGreaterThan(0);
   });
 
   it('triggers manual job run on button click', async () => {
@@ -73,7 +73,7 @@ describe('SchedulerDashboard', () => {
     fireEvent.click(runButtons[0]);
 
     expect(
-      await screen.findByText("Job 'daily_portfolio_snapshot' triggered successfully.")
+      await screen.findByText('Started task: "Daily Portfolio Valuation Snapshot"')
     ).toBeInTheDocument();
     expect(mockedApi.triggerJobNow).toHaveBeenCalledWith('daily_portfolio_snapshot');
   });
@@ -85,18 +85,18 @@ describe('SchedulerDashboard', () => {
     fireEvent.click(pauseButtons[0]);
 
     expect(
-      await screen.findByText("Paused scheduled job 'Daily Portfolio Valuation Snapshot'")
+      await screen.findByText('Paused task: "Daily Portfolio Valuation Snapshot"')
     ).toBeInTheDocument();
     expect(mockedApi.pauseScheduledJob).toHaveBeenCalledWith('daily_portfolio_snapshot');
   });
 
-  it('opens execution logs modal on click', async () => {
+  it('opens activity history modal on click', async () => {
     render(<SchedulerDashboard />);
 
-    const logsButton = await screen.findByText('Execution Logs');
+    const logsButton = await screen.findByText('Activity History');
     fireEvent.click(logsButton);
 
-    expect(await screen.findByText('Job Execution History')).toBeInTheDocument();
+    expect(await screen.findByText('Task Activity History')).toBeInTheDocument();
     expect(mockedApi.getScheduledJobLogs).toHaveBeenCalled();
     expect(screen.getByText('Duration: 2.15s')).toBeInTheDocument();
   });
