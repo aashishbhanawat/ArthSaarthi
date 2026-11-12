@@ -8,6 +8,7 @@
 
 1. **Bond Calculation Engine (`backend/app/services/corporate_actions/bond_engine.py`):**
    - Implemented deterministic schedule and coupon math for all payment frequencies (`ANNUALLY`, `SEMI_ANNUALLY`, `QUARTERLY`, `MONTHLY`, `ON_MATURITY`).
+   - Built downtime catch-up and historical schedule backfill: if system or desktop app was offline during a coupon or maturity date, it automatically scans and credits missing coupons/redemptions in chronological order upon startup.
    - Handled edge cases: month-ends (e.g. Aug 31 -> Feb 28), leap years (Feb 29), zero holdings, and date bounds.
    - Implemented maturity redemption creating `SELL` transactions at face value upon maturity date, releasing principal back to cash balances.
    - Guaranteed idempotency on duplicate runs (checking `(portfolio_id, asset_id, event_date)` before creating transactions).

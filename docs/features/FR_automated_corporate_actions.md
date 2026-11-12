@@ -86,6 +86,7 @@
 5. **Multiple Portfolios Holding Same Bond:** Both portfolios receive independent coupon credits matching their respective quantities.
 6. **Matured Bonds Already Redeemed:** Once a bond is redeemed, subsequent runs must not create redundant sell transactions.
 7. **Missing Bond Face Value:** Fallback gracefully to default face value (1,000 INR) if `face_value` is `None`.
+8. **Downtime Catch-Up & Backfilling:** If the system, desktop app, or scheduler was offline on a scheduled coupon date (e.g., machine powered off from Nov 12 to Nov 16 while coupon was due on Nov 14), restarting the app automatically scans and backfills any uncredited coupons or maturity redemptions with their historical scheduled transaction dates, maintaining full idempotency.
 
 ### 3.2 Manual Testing Checklist
 - [ ] Add a Bond holding with annual coupon payout matching today's date.

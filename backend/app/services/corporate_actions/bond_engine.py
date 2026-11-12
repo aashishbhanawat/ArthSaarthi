@@ -86,6 +86,71 @@ def is_coupon_due(bond: Bond, check_date: date) -> bool:
     return check_date.day == target_day
 
 
+def get_candidate_coupon_dates(
+    bond: Bond,
+    start_date: date,
+    end_date: date,
+) -> List[date]:
+    """
+    Returns all valid scheduled coupon payment dates for a bond between
+    start_date and end_date (inclusive), respecting payment_frequency,
+    first_payment_date, maturity_date, and month-end day calculations.
+    """
+    if not bond or not bond.coupon_rate or bond.coupon_rate <= 0:
+        return []
+
+    effective_start = (
+        max(start_date, bond.first_payment_date)
+        if bond.first_payment_date
+        else start_date
+    )
+    effective_end = min(end_date, bond.maturity_date)
+
+    if effective_start > effective_end:
+        return []
+
+    freq_val = (
+        bond.payment_frequency.value
+        if hasattr(bond.payment_frequency, "value")
+        else str(bond.payment_frequency)
+    )
+    freq_str = freq_val.upper() if bond.payment_frequency else PaymentFrequency.ANNUALLY.value
+
+    # ON_MATURITY only pays out on maturity date
+    if freq_str == PaymentFrequency.ON_MATURITY.value:
+        if effective_start <= bond.maturity_date <= effective_end:
+            return [bond.maturity_date]
+        return []
+
+    anchor_date = bond.first_payment_date or bond.maturity_date
+    anchor_day = anchor_date.day
+    anchor_month = anchor_date.month
+
+    if freq_str == PaymentFrequency.ANNUALLY.value:
+        allowed_months = [anchor_month]
+    elif freq_str == PaymentFrequency.SEMI_ANNUALLY.value:
+        allowed_months = [anchor_month, (anchor_month + 6 - 1) % 12 + 1]
+    elif freq_str == PaymentFrequency.QUARTERLY.value:
+        allowed_months = [(anchor_month + 3 * i - 1) % 12 + 1 for i in range(4)]
+    elif freq_str == PaymentFrequency.MONTHLY.value:
+        allowed_months = list(range(1, 13))
+    else:
+        allowed_months = [anchor_month]
+
+    candidate_dates: List[date] = []
+    # Loop over years covering the effective range
+    for year in range(effective_start.year - 1, effective_end.year + 1):
+        for month in allowed_months:
+            last_day = calendar.monthrange(year, month)[1]
+            day = min(anchor_day, last_day)
+            cand_date = date(year, month, day)
+            if effective_start <= cand_date <= effective_end:
+                candidate_dates.append(cand_date)
+
+    candidate_dates.sort()
+    return candidate_dates
+
+
 def calculate_coupon_amount(bond: Bond, quantity: Decimal) -> Decimal:
     """
     Calculates coupon payout amount for the given quantity of bond units.
@@ -144,9 +209,9 @@ def process_bond_corporate_actions(
 ) -> List[CorporateActionEvent]:
     """
     Core engine that scans all portfolios with bond holdings and generates:
-    1. Scheduled coupon transactions (DIVIDEND/COUPON)
-    2. Maturity redemption transactions (SELL at face value)
-    Guarantees idempotency on duplicate runs.
+    1. Scheduled coupon transactions (DIVIDEND/COUPON) with chronological catch-up/backfill.
+    2. Maturity redemption transactions (SELL at face value) when check_date >= maturity_date.
+    Guarantees idempotency on duplicate runs and across system downtime.
     """
     if check_date is None:
         check_date = date.today()
@@ -182,13 +247,126 @@ def process_bond_corporate_actions(
         )
 
         for portfolio in portfolios_with_bond:
-            holding_qty = get_bond_holding_quantity(db, str(portfolio.id), str(asset.id), check_date)
-            if holding_qty <= Decimal("0"):
+            # Determine earliest transaction date for this bond in this portfolio
+            first_tx_date = (
+                db.query(func.min(models.Transaction.transaction_date))
+                .filter(
+                    models.Transaction.portfolio_id == portfolio.id,
+                    models.Transaction.asset_id == asset.id,
+                )
+                .scalar()
+            )
+            if not first_tx_date:
                 continue
 
-            # --- 1. Check Maturity Redemption ---
+            start_date = (
+                first_tx_date.date()
+                if isinstance(first_tx_date, datetime)
+                else first_tx_date
+            )
+            end_date = min(check_date, bond.maturity_date)
+
+            # Query existing coupon transactions and corporate action events to guarantee idempotency
+            existing_txs = (
+                db.query(models.Transaction.transaction_date)
+                .filter(
+                    models.Transaction.portfolio_id == portfolio.id,
+                    models.Transaction.asset_id == asset.id,
+                    models.Transaction.transaction_type.in_([
+                        TransactionType.COUPON.value,
+                        TransactionType.DIVIDEND.value,
+                    ]),
+                )
+                .all()
+            )
+            existing_tx_dates = set(
+                tx[0].date() if isinstance(tx[0], datetime) else tx[0]
+                for tx in existing_txs
+                if tx[0] is not None
+            )
+
+            existing_events = (
+                db.query(CorporateActionEvent.event_date)
+                .filter(
+                    CorporateActionEvent.portfolio_id == portfolio.id,
+                    CorporateActionEvent.asset_id == asset.id,
+                    CorporateActionEvent.event_type == "BOND_COUPON",
+                )
+                .all()
+            )
+            existing_event_dates = set(
+                ev[0] for ev in existing_events if ev[0] is not None
+            )
+
+            # --- 1. Process Scheduled / Missed Coupons (Chronological Catch-Up) ---
+            candidate_coupon_dates = get_candidate_coupon_dates(bond, start_date, end_date)
+            for coupon_date in candidate_coupon_dates:
+                if coupon_date in existing_tx_dates or coupon_date in existing_event_dates:
+                    continue
+
+                # Check quantity held on coupon_date
+                holding_qty = get_bond_holding_quantity(
+                    db, str(portfolio.id), str(asset.id), coupon_date
+                )
+                if holding_qty <= Decimal("0"):
+                    continue
+
+                coupon_amount = calculate_coupon_amount(bond, holding_qty)
+                if coupon_amount <= Decimal("0.00"):
+                    continue
+
+                coupon_tx = models.Transaction(
+                    portfolio_id=portfolio.id,
+                    asset_id=asset.id,
+                    user_id=portfolio.user_id,
+                    transaction_type=TransactionType.COUPON.value,
+                    quantity=coupon_amount,
+                    price_per_unit=Decimal("1.0"),
+                    fees=Decimal("0.0"),
+                    transaction_date=datetime.combine(coupon_date, time(0, 0)),
+                    is_automated=True,
+                    details={
+                        "action": "BOND_COUPON",
+                        "coupon_rate": float(bond.coupon_rate or 0),
+                        "payment_frequency": str(bond.payment_frequency),
+                        "units": float(holding_qty),
+                    },
+                )
+                db.add(coupon_tx)
+                db.flush()
+
+                event = CorporateActionEvent(
+                    user_id=portfolio.user_id,
+                    portfolio_id=portfolio.id,
+                    asset_id=asset.id,
+                    transaction_id=coupon_tx.id,
+                    event_type="BOND_COUPON",
+                    event_date=coupon_date,
+                    units=holding_qty,
+                    amount=coupon_amount,
+                    status="NEW",
+                    details={
+                        "bond_name": asset.name,
+                        "isin": bond.isin,
+                        "coupon_rate": float(bond.coupon_rate or 0),
+                        "payment_frequency": str(bond.payment_frequency),
+                    },
+                )
+                db.add(event)
+                db.flush()
+                created_events.append(event)
+                existing_tx_dates.add(coupon_date)
+                existing_event_dates.add(coupon_date)
+                logger.info(
+                    "Created BOND_COUPON payout transaction %s of %s for portfolio %s on date %s",
+                    coupon_tx.id,
+                    coupon_amount,
+                    portfolio.id,
+                    coupon_date,
+                )
+
+            # --- 2. Check Maturity Redemption (Catch-Up if check_date >= maturity_date) ---
             if check_date >= bond.maturity_date:
-                # Check if already redeemed
                 existing_redemption = (
                     db.query(models.Transaction)
                     .filter(
@@ -199,120 +377,79 @@ def process_bond_corporate_actions(
                     )
                     .first()
                 )
-
-                if not existing_redemption:
-                    face_val = bond.face_value if (bond.face_value and bond.face_value > 0) else DEFAULT_BOND_FACE_VALUE
-                    redemption_amount = (holding_qty * face_val).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-                    # Create SELL transaction
-                    sell_tx = models.Transaction(
-                        portfolio_id=portfolio.id,
-                        asset_id=asset.id,
-                        user_id=portfolio.user_id,
-                        transaction_type=TransactionType.SELL.value,
-                        quantity=holding_qty,
-                        price_per_unit=face_val,
-                        fees=Decimal("0.0"),
-                        transaction_date=datetime.combine(bond.maturity_date, time(0, 0)),
-                        is_automated=True,
-                        details={
-                            "action": "BOND_MATURITY",
-                            "face_value": float(face_val),
-                            "units": float(holding_qty),
-                        },
-                    )
-                    db.add(sell_tx)
-                    db.flush()
-
-                    # Record event
-                    event = CorporateActionEvent(
-                        user_id=portfolio.user_id,
-                        portfolio_id=portfolio.id,
-                        asset_id=asset.id,
-                        transaction_id=sell_tx.id,
-                        event_type="BOND_MATURITY",
-                        event_date=bond.maturity_date,
-                        units=holding_qty,
-                        amount=redemption_amount,
-                        status="NEW",
-                        details={
-                            "bond_name": asset.name,
-                            "isin": bond.isin,
-                            "face_value": float(face_val),
-                        },
-                    )
-                    db.add(event)
-                    db.flush()
-                    created_events.append(event)
-                    logger.info(
-                        "Created BOND_MATURITY redemption transaction %s for portfolio %s, asset %s",
-                        sell_tx.id,
-                        portfolio.id,
-                        asset.name,
-                    )
-
-            # --- 2. Check Coupon Payout ---
-            if is_coupon_due(bond, check_date):
-                # Check idempotency: no existing COUPON on check_date
-                existing_coupon = (
-                    db.query(models.Transaction)
+                existing_maturity_event = (
+                    db.query(CorporateActionEvent)
                     .filter(
-                        models.Transaction.portfolio_id == portfolio.id,
-                        models.Transaction.asset_id == asset.id,
-                        models.Transaction.transaction_type == TransactionType.COUPON.value,
-                        func.date(models.Transaction.transaction_date) == check_date,
+                        CorporateActionEvent.portfolio_id == portfolio.id,
+                        CorporateActionEvent.asset_id == asset.id,
+                        CorporateActionEvent.event_type == "BOND_MATURITY",
                     )
                     .first()
                 )
 
-                if not existing_coupon:
-                    coupon_amount = calculate_coupon_amount(bond, holding_qty)
-                    if coupon_amount > Decimal("0.00"):
-                        coupon_tx = models.Transaction(
+                if not existing_redemption and not existing_maturity_event:
+                    # Check holding quantity on bond.maturity_date
+                    maturity_holding_qty = get_bond_holding_quantity(
+                        db, str(portfolio.id), str(asset.id), bond.maturity_date
+                    )
+                    if maturity_holding_qty > Decimal("0"):
+                        face_val = (
+                            bond.face_value
+                            if (bond.face_value and bond.face_value > 0)
+                            else DEFAULT_BOND_FACE_VALUE
+                        )
+                        redemption_amount = (
+                            maturity_holding_qty * face_val
+                        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+                        # Create SELL transaction
+                        sell_tx = models.Transaction(
                             portfolio_id=portfolio.id,
                             asset_id=asset.id,
                             user_id=portfolio.user_id,
-                            transaction_type=TransactionType.COUPON.value,
-                            quantity=coupon_amount,
-                            price_per_unit=Decimal("1.0"),
+                            transaction_type=TransactionType.SELL.value,
+                            quantity=maturity_holding_qty,
+                            price_per_unit=face_val,
                             fees=Decimal("0.0"),
-                            transaction_date=datetime.combine(check_date, time(0, 0)),
+                            transaction_date=datetime.combine(
+                                bond.maturity_date, time(0, 0)
+                            ),
                             is_automated=True,
                             details={
-                                "action": "BOND_COUPON",
-                                "coupon_rate": float(bond.coupon_rate or 0),
-                                "payment_frequency": str(bond.payment_frequency),
-                                "units": float(holding_qty),
+                                "action": "BOND_MATURITY",
+                                "face_value": float(face_val),
+                                "units": float(maturity_holding_qty),
                             },
                         )
-                        db.add(coupon_tx)
+                        db.add(sell_tx)
                         db.flush()
 
+                        # Record event
                         event = CorporateActionEvent(
                             user_id=portfolio.user_id,
                             portfolio_id=portfolio.id,
                             asset_id=asset.id,
-                            transaction_id=coupon_tx.id,
-                            event_type="BOND_COUPON",
-                            event_date=check_date,
-                            units=holding_qty,
-                            amount=coupon_amount,
+                            transaction_id=sell_tx.id,
+                            event_type="BOND_MATURITY",
+                            event_date=bond.maturity_date,
+                            units=maturity_holding_qty,
+                            amount=redemption_amount,
                             status="NEW",
                             details={
                                 "bond_name": asset.name,
                                 "isin": bond.isin,
-                                "coupon_rate": float(bond.coupon_rate or 0),
-                                "payment_frequency": str(bond.payment_frequency),
+                                "face_value": float(face_val),
                             },
                         )
                         db.add(event)
                         db.flush()
                         created_events.append(event)
                         logger.info(
-                            "Created BOND_COUPON payout transaction %s of %s for portfolio %s",
-                            coupon_tx.id,
-                            coupon_amount,
+                            "Created BOND_MATURITY redemption transaction %s for portfolio %s, asset %s on date %s",
+                            sell_tx.id,
                             portfolio.id,
+                            asset.name,
+                            bond.maturity_date,
                         )
 
     db.commit()
