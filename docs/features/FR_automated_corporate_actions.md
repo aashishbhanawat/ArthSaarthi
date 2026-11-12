@@ -1,129 +1,214 @@
-# Functional Requirement Specification: Automated Corporate Actions
+# Functional Requirement Specification: Automated Bond Corporate Actions (Coupons & Maturity Redemptions)
 
-**Feature ID:** FR-CorporateActions-Automation  
-**GitHub Issue:** [#562](https.github.com/aashishbhanawat/ArthSaarthi/issues/562)  
-**Title:** Automated Corporate Action Processing (Bond Coupons & Maturity Auto-Generation)  
+**Feature ID:** FR-CorporateActions-Bond-Automation  
+**GitHub Issue:** [#562](https://github.com/aashishbhanawat/ArthSaarthi/issues/562)  
+**Parent Requirement:** FR4.6 (Corporate Actions) & FR17 (Background Task & Job Scheduling Engine)  
 **Target Release:** v1.5.0  
+**Status:** In Review / Specification  
 
 ---
 
 ## 1. Sub-component Breakdown & Micro-Phases
 
-### Phase 5.1: Bond Coupon Auto-Generation Engine
-* Scheduler task (`process_bond_coupons_job`) checking all user Bond holdings daily at midnight.
-* Calculate expected payout date based on bond coupon rate, payment frequency (Annual, Semi-Annual, Quarterly, Monthly), and issue date.
-* Automatically generate income transaction (`DIVIDEND` / `COUPON`) credited to user's portfolio cash balance on payment date.
+### Phase 1: Bond Coupon & Schedule Calculation Engine
+- Pure Python date math module to calculate expected coupon payout dates based on `payment_frequency` (`ANNUALLY`, `SEMI_ANNUALLY`, `QUARTERLY`, `MONTHLY`, `ON_MATURITY`), `first_payment_date`, and `maturity_date`.
+- Accurately compute per-unit and total holding coupon credit:
+  $$\text{Coupon Payout} = \frac{\text{Face Value} \times \frac{\text{Coupon Rate}}{100}}{\text{Frequency Divisor}} \times \text{Holding Quantity}$$
+  where Frequency Divisor = 1 (Annual), 2 (Semi-Annual), 4 (Quarterly), 12 (Monthly).
+- Strictly idempotent: Before generating any coupon credit, verify no matching `COUPON` transaction exists for the `(portfolio_id, asset_id, payout_date)`.
 
-### Phase 5.2: Bond Maturity Auto-Redemption Engine
-* Scheduler task (`process_bond_maturities_job`) checking bond maturity dates.
-* On maturity date, automatically generate redemption transaction (`SELL`) at face value, closing the active holding lot and releasing principal.
+### Phase 2: Bond Maturity Auto-Redemption Engine
+- Scheduler job checks if the current date matches or exceeds `maturity_date` for bonds held in user portfolios.
+- If the user holds `N > 0` units of the bond on or after `maturity_date`, automatically generate a redemption transaction:
+  - `transaction_type = "SELL"`
+  - `quantity = N`
+  - `price_per_unit = face_value` (defaulting to 1000 if not specified)
+  - `transaction_date = maturity_date`
+  - `is_automated = True`
+- Closes the active holding lot and releases principal back into portfolio cash balance.
+- If `payment_frequency == "ON_MATURITY"`, also generate the final cumulative coupon payment.
 
-### Phase 5.3: User Notification & Approval Workflow
-* Notification banner / toast informing user of auto-generated corporate action transactions.
-* Audit trail allowing user to view, edit, or revert automatically generated corporate action entries.
+### Phase 3: Database Schema & Migration
+- Extend `transactions` table with an indexed `is_automated` boolean column (default `False`).
+- Create `corporate_action_events` table to track auto-generated corporate actions, provide user notification state (`NEW`, `READ`, `DISMISSED`), and link directly to generated transactions.
+
+### Phase 4: Background Task Worker in APScheduler
+- Create `backend/app/tasks/corporate_actions_task.py` and register `process_bond_corporate_actions` job in `app/tasks/registry.py`.
+- Scheduled to run daily at 00:15 UTC (or manually triggered via the Automated Tasks admin dashboard).
+- Wrapped with try/except, logging, execution metrics, and rollback on error.
+
+### Phase 5: REST API Endpoints
+- Endpoints under `/api/v1/corporate-actions`:
+  - `GET /events`: Fetch corporate action events for the authenticated user's portfolios (filterable by status: `NEW`, `READ`, `DISMISSED`).
+  - `POST /events/{event_id}/dismiss`: Mark an event as dismissed.
+  - `POST /events/dismiss-all`: Dismiss all unread events.
+  - `POST /admin/process-bonds`: Admin trigger to execute bond corporate action processing immediately.
+
+### Phase 6: Frontend Notification & Review UI
+- Add a notification indicator in the main navigation bar displaying an alert badge when new automated corporate action events are pending review.
+- Clicking the notification opens `CorporateActionNotificationModal`:
+  - Summarizes newly credited coupon payouts and matured bond redemptions.
+  - Shows Bond Name, Payout Date, Units Held, Amount Credited, and a direct link to the transaction.
+  - "Dismiss All" and individual "Dismiss" actions.
+- Display a subtle `[Automated]` badge in transaction history tables and cards.
 
 ---
 
 ## 2. Technical Specification (Backend & Frontend)
 
 ### 2.1 Backend Implementation Details
-* **Task Worker (`backend/app/tasks/corporate_actions_task.py`):**
-  * `process_daily_bond_corporate_actions(db)` function.
-  * Queries active `Asset` entries of type `BOND` with non-null coupon frequency and maturity date.
-  * Idempotency protection: Checks if transaction already exists for specific asset, user, date, and type before inserting.
+- **Engine (`backend/app/services/corporate_actions/bond_engine.py`):**
+  - `is_coupon_due(bond: Bond, check_date: date) -> bool`: Checks if `check_date` is a valid scheduled coupon date.
+  - `calculate_coupon_amount(bond: Bond, quantity: Decimal) -> Decimal`: Precision decimal arithmetic for coupon payments.
+  - `process_portfolio_bonds(db: Session, check_date: date) -> List[CorporateActionEvent]`: Evaluates all active portfolios with bond holdings, generates `COUPON` and `SELL` (maturity) transactions, and records `CorporateActionEvent` rows.
+- **Worker (`backend/app/tasks/corporate_actions_task.py`):**
+  - Integrated with `AsyncIOScheduler` via `app.core.scheduler`.
+  - Captures execution stats and errors in `scheduled_job_logs`.
 
 ### 2.2 Frontend Implementation Details
-* **Notifications Modal (`src/components/notifications/CorporateActionNotificationModal.tsx`):**
-  * Displays list of newly generated coupon payouts and maturity redemptions with option to confirm or adjust values.
+- **API Client (`frontend/src/services/corporateActionsApi.ts`):**
+  - Methods to fetch events, dismiss events, and trigger manual processing.
+- **Notification Component (`frontend/src/components/Notifications/CorporateActionNotificationModal.tsx`):**
+  - Responsive modal dialog showing automated activity receipts.
+  - Mobile card layout for small screens.
+- **Navbar Integration (`frontend/src/components/Layout/Navbar.tsx`):**
+  - Bell / Notification icon with badge count.
 
 ---
 
 ## 3. Comprehensive Test Plan & Edge Cases
 
 ### 3.1 Edge Cases & Failure Scenarios
-* **Idempotency / Duplicate Run:** Running job multiple times on same day MUST NOT create duplicate coupon transactions.
-* **Leap Year / Weekend Payment Dates:** Payout falling on weekend (e.g. Sunday) credited on next business day or exact coupon date based on standard day-count convention (30/360 or Actual/Actual).
-* **Zero Holdings on Payout Date:** If user sold bond prior to record date, coupon transaction must not be created.
+1. **Idempotency on Multiple Runs:** If the job runs multiple times on the same day (or admin triggers it repeatedly), exactly ONE coupon transaction is generated per holding per scheduled date.
+2. **Weekend & Month-End Alignment:** Handles 30-day months, 31-day months, leap years (Feb 29), and non-leap years (Feb 28). If a semi-annual bond is issued on Aug 31, the second coupon lands on Feb 28 (or Feb 29).
+3. **Zero Holdings on Payout Date:** If a user bought and subsequently sold 100% of their bond before the coupon date, no coupon is created.
+4. **Partial Sells Before Maturity:** If a user bought 100 units, sold 40 units, only the remaining 60 units are redeemed at maturity.
+5. **Multiple Portfolios Holding Same Bond:** Both portfolios receive independent coupon credits matching their respective quantities.
+6. **Matured Bonds Already Redeemed:** Once a bond is redeemed, subsequent runs must not create redundant sell transactions.
+7. **Missing Bond Face Value:** Fallback gracefully to default face value (1,000 INR) if `face_value` is `None`.
+8. **Downtime Catch-Up & Backfilling:** If the system, desktop app, or scheduler was offline on a scheduled coupon date (e.g., machine powered off from Nov 12 to Nov 16 while coupon was due on Nov 14), restarting the app automatically scans and backfills any uncredited coupons or maturity redemptions with their historical scheduled transaction dates, maintaining full idempotency.
 
 ### 3.2 Manual Testing Checklist
-* [ ] Add a Bond holding with semi-annual coupon payout set for today's date.
-* [ ] Trigger background job manually via Admin Scheduler dashboard.
-* [ ] Verify coupon income transaction created in portfolio transaction history.
-* [ ] Verify portfolio cash and total returns updated accordingly.
+- [ ] Add a Bond holding with annual coupon payout matching today's date.
+- [ ] Navigate to Admin > Automated Tasks, click **Run Now** for the corporate actions task.
+- [ ] Verify success notification message.
+- [ ] Verify new `COUPON` transaction in Transaction History with `[Automated]` badge.
+- [ ] Verify notification bell displays badge count "1".
+- [ ] Open notification modal, verify coupon details, and click "Dismiss".
+- [ ] Verify notification count resets to 0.
 
 ---
 
 ## 4. Automated Testing Strategy
 
-### 4.1 Backend Pytest (`backend/app/tests/tasks/test_corporate_actions_task.py`)
-* Test coupon calculation for Annual, Semi-Annual, Quarterly, and Monthly bonds.
-* Test bond maturity redemption logic and holding status update.
-* Test idempotency key checks.
+### 4.1 Backend Pytest
+- `backend/app/tests/services/test_bond_engine.py`: Test date math across Annual, Semi-Annual, Quarterly, Monthly frequencies, leap years, and month-end dates.
+- `backend/app/tests/tasks/test_corporate_actions_task.py`: Test end-to-end task execution, idempotency, transaction creation, cash updates, and event logging.
+- `backend/app/tests/api/v1/test_corporate_actions.py`: Test authentication, event listing, dismiss endpoints, and admin manual trigger.
+- **SQLite + Desktop Compatibility Test:** Verify migration and queries work seamlessly on SQLite.
 
-### 4.2 Frontend Vitest (`src/components/notifications/__tests__/CorporateActionModal.test.tsx`)
-* Test displaying auto-generated transaction alerts and user edit options.
+### 4.2 Frontend Unit Tests
+- `frontend/src/components/Notifications/CorporateActionNotificationModal.test.tsx`: Test rendering event cards, dismiss interactions, and empty states.
+- `frontend/src/components/Layout/Navbar.test.tsx`: Test unread badge rendering when pending events exist.
 
-### 4.3 E2E Playwright (`tests/automated-corporate-actions.spec.ts`)
-* End-to-end simulation of bond maturity trigger and dashboard verification.
+### 4.3 E2E Playwright Tests
+- `e2e/tests/automated-bond-corporate-actions.spec.ts`: End-to-end verification of bond creation, coupon trigger, notification alert, and transaction list verification.
 
 ---
 
 ## 5. UX & UI Specifications
-* Notification badge in navigation header highlighting pending auto-generated corporate action receipts.
-* Visual badge tag in Transaction History marking transactions as `[Auto-Generated]`.
+- **Notification Bell in Navigation:** Subtle bell icon in header with an emerald/indigo badge displaying unread corporate action receipts.
+- **Receipts Modal:** Clean dialog displaying:
+  - Header: *"Automated Activity"*
+  - Cards: Bond name, Action (`Interest/Coupon Payment` or `Bond Maturity Redemption`), Date, Units, and Total Amount Credited.
+  - Actions: *"Dismiss All"* and individual *"Dismiss"*.
+- **Transaction Badging:** Transactions generated by the background scheduler display a subtle pill badge: `[Automated]`.
 
 ---
 
 ## 6. Database Schema & Data Security
 
-### 6.1 Database Schema
-Extend `transactions` table with `is_automated` boolean flag and `automation_rule_id` column:
+### 6.1 Database Schema Changes
+1. **Add column to `transactions`:**
+   ```sql
+   ALTER TABLE transactions ADD COLUMN is_automated BOOLEAN NOT NULL DEFAULT FALSE;
+   CREATE INDEX ix_transactions_is_automated ON transactions(is_automated);
+   ```
 
-```sql
-ALTER TABLE transactions ADD COLUMN is_automated BOOLEAN DEFAULT FALSE;
-ALTER TABLE transactions ADD COLUMN automation_metadata JSONB NULL;
-```
+2. **Create table `corporate_action_events`:**
+   ```sql
+   CREATE TABLE corporate_action_events (
+       id UUID PRIMARY KEY,
+       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+       portfolio_id UUID NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+       transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL,
+       asset_id UUID NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+       event_type VARCHAR(50) NOT NULL, -- 'BOND_COUPON', 'BOND_MATURITY'
+       event_date DATE NOT NULL,
+       units NUMERIC(18, 8) NOT NULL,
+       amount NUMERIC(18, 8) NOT NULL,
+       status VARCHAR(20) NOT NULL DEFAULT 'NEW', -- 'NEW', 'READ', 'DISMISSED'
+       details JSON,
+       created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+   );
+   CREATE INDEX ix_corporate_action_events_user_status ON corporate_action_events(user_id, status);
+   ```
 
-### 6.2 Encryption Requirements
-* Standard financial amounts (INR/USD); no encryption required for transaction rows.
+### 6.2 Data Security & Encryption
+- Standard financial amounts, units, and dates; no personal secret keys or credentials are stored.
+- SQLite encrypted database compatible (no unencrypted raw PII).
 
 ---
 
 ## 7. Required Documentation Updates
-
-* **README.md:** Add documentation on automated bond coupon and maturity tracking.
-* **docs/code_flow_guide.md:** Document corporate action auto-generation lifecycle.
-* **docs/workflow_history.md:** Add entry upon feature completion.
-* **docs/debugging_guide.md:** Document how to audit or revert automated corporate action transactions.
-* **docs/project_handoff_summary.md:** Update corporate actions feature status.
-* **docs/requirements.md:** Mark automated corporate actions as `✅ Implemented`.
+- **README.md:** Add entry for automated bond coupon payments & maturity tracking.
+- **docs/code_flow_guide.md:** Add architectural lifecycle and execution diagram for bond corporate actions.
+- **docs/architecture.md:** Document `bond_engine` and `corporate_action_events` integration.
+- **docs/debugging_guide.md:** Add troubleshooting guide for inspecting automated corporate actions and reverting transactions.
+- **docs/workflow_history.md:** Document implementation steps and verification.
+- **docs/project_handoff_summary.md:** Update feature status.
+- **docs/requirements.md:** Mark automated corporate actions for bonds as implemented.
 
 ---
 
-## 8. External Data Sources & API Specifications
-* Internal calculation using stored Asset master record attributes (ISIN, coupon_rate, coupon_frequency, maturity_date).
+## 8. External Data Sources Required
+- **None:** Purely deterministic calculation using internal stored data in `assets` and `bonds` tables (`coupon_rate`, `payment_frequency`, `maturity_date`, `face_value`, `first_payment_date`) and active portfolio holdings. Zero external third-party API dependencies.
 
 ---
 
 ## 9. File & API Endpoint Inventory
 
-### Files to Create / Modify
-* **Create:** `backend/app/tasks/corporate_actions_task.py`
-* **Create:** `backend/app/services/corporate_action_automation.py`
-* **Create:** `frontend/src/components/notifications/CorporateActionNotificationModal.tsx`
-* **Modify:** `backend/app/models/transaction.py`
-* **Modify:** `backend/app/crud/crud_transaction.py`
+### Backend Files to Create/Modify
+- **Create:** `backend/alembic/versions/l12e4f5g6h7i_add_bond_corporate_actions.py`
+- **Create:** `backend/app/models/corporate_action_event.py`
+- **Create:** `backend/app/schemas/corporate_action.py`
+- **Create:** `backend/app/crud/crud_corporate_action_event.py`
+- **Create:** `backend/app/services/corporate_actions/__init__.py`
+- **Create:** `backend/app/services/corporate_actions/bond_engine.py`
+- **Create:** `backend/app/tasks/corporate_actions_task.py`
+- **Create:** `backend/app/api/v1/endpoints/corporate_actions.py`
+- **Modify:** `backend/app/models/transaction.py` (add `is_automated`)
+- **Modify:** `backend/app/models/__init__.py` (export `CorporateActionEvent`)
+- **Modify:** `backend/app/tasks/registry.py` (register corporate actions task)
+- **Modify:** `backend/app/api/v1/api.py` (mount corporate actions router)
 
-### API Routes
-* `GET /api/v1/corporate-actions/pending` - Fetch auto-generated transactions requiring user review
-* `POST /api/v1/corporate-actions/confirm` - Confirm auto-generated transaction
+### Frontend Files to Create/Modify
+- **Create:** `frontend/src/types/corporateActions.ts`
+- **Create:** `frontend/src/services/corporateActionsApi.ts`
+- **Create:** `frontend/src/components/Notifications/CorporateActionNotificationModal.tsx`
+- **Modify:** `frontend/src/components/Layout/Navbar.tsx` (add notification bell with badge)
+- **Modify:** `frontend/src/components/Transactions/TransactionCard.tsx` (display `[Automated]` badge)
+- **Modify:** `frontend/src/components/Transactions/TransactionTable.tsx` (display `[Automated]` badge)
 
 ---
 
 ## 10. Mobile-Friendly UI & Responsive Design
-* Mobile alert modal listing auto-generated corporate action receipts with swipe-to-dismiss or confirm controls.
+- Notification bell button with touch-friendly 44px hit target.
+- Modal dialog collapses into a full-width bottom sheet / stacked card list on viewports `< 768px`.
+- One-tap "Dismiss All" button easily accessible on mobile.
 
 ---
 
-## 11. Android Compatibility & Python Library Constraints
-* 100% Python standard library date math (`datetime`, `dateutil.relativedelta`); fully compatible with Android Python runtimes.
+## 11. Android Compatibility & Python Runtime Constraints
+- Pure Python implementation using standard libraries: `datetime`, `decimal.Decimal`, `calendar`, `uuid`, and SQLAlchemy.
+- Zero native C-extensions or external binary dependencies; 100% compatible with Chaquopy (Android) and local SQLite desktop builds.

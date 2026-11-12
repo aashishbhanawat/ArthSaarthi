@@ -32,6 +32,12 @@ from .capital_gains import (
     UnrealizedGainsSummary,
     UnrealizedTaxLot,
 )
+from .corporate_action import (
+    CorporateActionEventBase,
+    CorporateActionEventListResponse,
+    CorporateActionEventOut,
+    CorporateActionTriggerResponse,
+)
 from .dashboard import (
     AssetAllocation,
     AssetAllocationResponse,
@@ -251,6 +257,10 @@ __all__ = [
     "IncomeEntryCreate",
     "IncomeEntryUpdate",
     "IncomeFYSummary",
+    "CorporateActionEventBase",
+    "CorporateActionEventListResponse",
+    "CorporateActionEventOut",
+    "CorporateActionTriggerResponse",
 ]
 
 # Manually update forward references to resolve circular dependencies

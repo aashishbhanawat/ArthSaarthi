@@ -19,6 +19,7 @@ export interface Transaction {
   transaction_date: string; // ISO 8601 date string
   asset: Asset;
   is_reinvested: boolean;
+  is_automated?: boolean;
   details?: Record<string, unknown> | null;
   sell_links?: TransactionLink[];
 }
