@@ -1,13 +1,14 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
+import pytest
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.models.bond import Bond
 from app.schemas.asset import AssetType
-from app.schemas.enums import PaymentFrequency
+from app.schemas.enums import PaymentFrequency, TransactionType
 from app.services.corporate_actions.bond_engine import (
     calculate_coupon_amount,
     get_bond_holding_quantity,
@@ -15,6 +16,10 @@ from app.services.corporate_actions.bond_engine import (
     is_coupon_due,
     process_bond_corporate_actions,
 )
+from app.tests.utils.portfolio import create_test_portfolio
+from app.tests.utils.user import create_random_user
+
+pytestmark = pytest.mark.usefixtures("pre_unlocked_key_manager")
 
 
 def test_frequency_divisor():
@@ -100,17 +105,8 @@ def test_calculate_coupon_amount():
 
 def test_process_bond_corporate_actions_end_to_end(db: Session):
     # Setup test user, portfolio, bond asset
-    user_in = schemas.UserCreate(
-        email=f"bond_user_{uuid.uuid4().hex[:6]}@example.com",
-        password="TestPassword123!",
-        full_name="Bond Test User",
-    )
-    user = crud.user.create(db, obj_in=user_in)
-    portfolio = crud.portfolio.create_with_owner(
-        db,
-        obj_in=schemas.PortfolioCreate(name="Bonds Portfolio"),
-        user_id=user.id,
-    )
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Bonds Portfolio")
 
     asset = crud.asset.create(
         db,
@@ -138,17 +134,18 @@ def test_process_bond_corporate_actions_end_to_end(db: Session):
     db.commit()
 
     # Buy 20 units on 2025-11-01
-    buy_tx = models.Transaction(
-        portfolio_id=portfolio.id,
+    buy_tx = schemas.TransactionCreate(
         asset_id=asset.id,
-        user_id=user.id,
-        transaction_type="BUY",
+        portfolio_id=portfolio.id,
+        transaction_type=TransactionType.BUY,
         quantity=Decimal("20"),
         price_per_unit=Decimal("1000.00"),
         fees=Decimal("0.0"),
-        transaction_date=date(2025, 11, 1),
+        transaction_date=datetime(2025, 11, 1, 0, 0),
     )
-    db.add(buy_tx)
+    crud.transaction.create_with_portfolio(
+        db, obj_in=buy_tx, portfolio_id=portfolio.id
+    )
     db.commit()
 
     qty = get_bond_holding_quantity(db, str(portfolio.id), str(asset.id), today)
