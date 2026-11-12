@@ -1,22 +1,31 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-02
+**Last Updated:** 2026-11-12
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Architectural Background Job Scheduler (APScheduler Integration / Issue #561) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Automated Bond Corporate Actions (Issue #562 / FR4.6.3) Implemented & Verified.
 
-**Latest Achievement:** Integrated pure-Python `apscheduler` singleton into FastAPI lifespan with automated execution audit logging (`scheduled_job_logs` table), task registry (`app/tasks/`), admin REST APIs, and a mobile-friendly frontend dashboard (`SchedulerDashboard.tsx`) embedded in System Maintenance. Verified 100% test pass rate across PostgreSQL (12/12) and SQLite (12/12) as well as frontend Jest unit tests (4/4).
+**Latest Achievement:** Implemented automated bond corporate action processing (scheduled coupon payouts and maturity redemptions) powered by the background scheduler. Added `corporate_action_events` table and `is_automated` flag on transactions via Alembic migration `l12e4f5g6h7i`. Built REST APIs, activity receipts notification modal, and notification bells with unread counters in desktop sidebar (`NavBar.tsx`) and `MobileHeader.tsx`. Verified 100% test pass rate across PostgreSQL, SQLite, and Frontend Jest (54 suites, 211 tests).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **429/429 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **429/429 Passing**
-*   **Frontend Unit Tests (Vitest/Jest):** ✅ **207/207 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **436/436 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **436/436 Passing**
+*   **Frontend Unit Tests (Vitest/Jest):** ✅ **211/211 Passing (54 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Automated Bond Corporate Actions (Issue #562 / FR4.6.3) (Updated 2026-11-12):**
+    - **Bond Calculation Engine:** Deterministic date arithmetic and coupon math in `app/services/corporate_actions/bond_engine.py` for all payment frequencies (`ANNUALLY`, `SEMI_ANNUALLY`, `QUARTERLY`, `MONTHLY`, `ON_MATURITY`). Handled month-end dates, leap years, and active holding balances.
+    - **Maturity Redemptions:** Automatic redemption at maturity creating `SELL` transactions at face value and closing holding lots.
+    - **Database Schema:** Alembic migration `l12e4f5g6h7i` creating `corporate_action_events` table and adding indexed `is_automated` boolean to `transactions`.
+    - **Scheduler Worker:** Created `app/tasks/corporate_actions_task.py` registered as `bond_corporate_actions` job in `app/tasks/registry.py`.
+    - **REST APIs:** Added `/api/v1/corporate-actions` endpoints (`/events`, `/events/{id}/dismiss`, `/events/dismiss-all`, `/admin/process-bonds`).
+    - **Frontend Notification UI:** Created `CorporateActionNotificationModal.tsx` and integrated notification bell with unread badge in `NavBar.tsx` and `MobileHeader.tsx`. Added `[Automated]` badge to `TransactionCard.tsx` and `TransactionHistoryTable.tsx`.
+    - **Verification:** Unit and API tests in `test_bond_engine.py` and `test_corporate_actions.py` (7/7 passing across Postgres and SQLite), all 54 frontend test suites (211/211 passing), and 0 linter errors.
 
 *   **Architectural Background Job Scheduler using APScheduler (Issue #561 / FR17 / NFR14) (Updated 2026-11-02):**
     - **APScheduler Core:** Added pure-Python `apscheduler>=3.10.4,<4.0.0` and `tzlocal` without native C extensions for Chaquopy/Android and desktop compatibility. Implemented `AsyncIOScheduler` singleton in `app/core/scheduler.py` with FastAPI lifespan hooks (`startup`/`shutdown`), `coalesce=True`, `max_instances=1`, and in-memory execution guards to prevent overlapping task runs.

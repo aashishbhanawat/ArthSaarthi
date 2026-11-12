@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     broker,
     cache_diagnostics,
     capital_gains,
+    corporate_actions,
     dashboard,
     dividends,
     fixed_deposits,
@@ -129,3 +130,8 @@ api_router.include_router(
 
 # Broker Integration (NFR12 / FR558)
 api_router.include_router(broker.router, prefix="/broker", tags=["broker"])
+
+# Automated Corporate Actions (FR4.6 / FR17 / #562)
+api_router.include_router(
+    corporate_actions.router, prefix="/corporate-actions", tags=["corporate-actions"]
+)

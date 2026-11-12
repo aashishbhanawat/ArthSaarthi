@@ -464,4 +464,14 @@ The background job scheduler orchestrates automated periodic tasks (daily valuat
 3. Desktop table & mobile cards allow admins to monitor trigger crons, next run times, pause/resume schedules, or trigger manual runs.
 4. "Execution Logs" modal provides paginated history inspection and log pruning controls.
 
+### Step 5: Automated Bond Corporate Actions Flow
+1. **Scheduled Trigger (`bond_corporate_actions`):** Registered in `app/tasks/registry.py` running daily at `00:15` UTC (or every 6 hours in desktop/android mode).
+2. **Evaluation Engine (`app/services/corporate_actions/bond_engine.py`):**
+   - Scans all active portfolios holding `BOND` assets.
+   - Computes scheduled coupon payouts based on `payment_frequency`, `coupon_rate`, and `face_value`.
+   - Checks bond `maturity_date`: upon maturity, generates a `SELL` redemption transaction at face value, releasing principal back to portfolio cash.
+3. **Idempotency Guard:** Queries existing `COUPON` and `SELL` transactions for `(portfolio_id, asset_id, check_date)` to prevent duplicate records.
+4. **User Notification & Receipts:** Creates records in `corporate_action_events` table (`NEW` status).
+5. **Frontend Review:** Notification bell in navigation bar alerts the user with unread count; clicking opens `CorporateActionNotificationModal.tsx` allowing one-click acknowledgement or individual dismissal.
+
 

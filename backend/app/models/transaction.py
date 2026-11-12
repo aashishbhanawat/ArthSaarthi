@@ -17,6 +17,7 @@ class Transaction(Base):
     fees = Column(Numeric(18, 8), nullable=False, default=0)
     transaction_date = Column(DateTime, nullable=False)
     is_reinvested = Column(Boolean, default=False, nullable=False)
+    is_automated = Column(Boolean, default=False, nullable=False, index=True)
     details = Column(JSON, nullable=True)
 
     portfolio_id = Column(GUID, ForeignKey("portfolios.id"), nullable=False)
