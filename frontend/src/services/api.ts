@@ -10,8 +10,8 @@ const apiClient = axios.create({
   // In Android, it will be set by Capacitor PythonBackend plugin.
 });
 
-// Only log in development mode
-const isDev = import.meta.env.DEV;
+// Only log in development mode and not test
+const isDev = import.meta.env.DEV && process.env.NODE_ENV !== 'test';
 
 // This interceptor dynamically sets the baseURL when running in Electron or Android.
 // It runs only once and then is ejected.
@@ -158,6 +158,8 @@ export const downloadCsv = async (url: string, filename: string) => {
     }
     /* eslint-enable testing-library/no-node-access */
   } catch (error) {
-    console.error(`Failed to download CSV from ${url}`, error);
+    if (isDev) {
+      console.error(`Failed to download CSV from ${url}`, error);
+    }
   }
 };

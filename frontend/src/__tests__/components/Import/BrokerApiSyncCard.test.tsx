@@ -23,7 +23,16 @@ describe('BrokerApiSyncCard', () => {
     jest.clearAllMocks();
   });
 
+  afterEach(() => {
+      // Clear console mocks
+      jest.restoreAllMocks();
+  });
+
   it('renders card title, provider options, and unconfigured state', async () => {
+    // Suppress console.error and console.log for this test
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
     mockGetBrokerCredentials.mockResolvedValue([]);
 
     render(
@@ -42,9 +51,16 @@ describe('BrokerApiSyncCard', () => {
     const settingsButton = screen.getByRole('button', { name: 'Profile / Settings' });
     fireEvent.click(settingsButton);
     expect(mockNavigate).toHaveBeenCalledWith('/profile');
+
+    consoleErrorSpy.mockRestore();
+    consoleLogSpy.mockRestore();
   });
 
   it('renders connected state when active authenticated credentials exist', async () => {
+    // Suppress console.error and console.log for this test
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
     mockGetBrokerCredentials.mockResolvedValue([
       {
         id: 'c1',
@@ -66,5 +82,8 @@ describe('BrokerApiSyncCard', () => {
     await waitFor(() => {
       expect(screen.getByText('Connected')).toBeInTheDocument();
     });
+
+    consoleErrorSpy.mockRestore();
+    consoleLogSpy.mockRestore();
   });
 });

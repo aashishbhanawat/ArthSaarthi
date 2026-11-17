@@ -36,7 +36,9 @@ export const BrokerApiSyncCard: React.FC<BrokerApiSyncCardProps> = ({
       const data = await getBrokerCredentials();
       setCredentials(data);
     } catch (err) {
-      console.error('Failed to load broker credentials', err);
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Failed to load broker credentials', err);
+      }
     } finally {
       setIsLoadingCreds(false);
     }
