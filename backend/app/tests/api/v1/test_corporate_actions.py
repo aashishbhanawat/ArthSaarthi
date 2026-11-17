@@ -111,3 +111,28 @@ def test_corporate_action_events_api_flow(
         headers=headers,
     )
     assert res_after.json()["unread_count"] == 0
+
+
+def test_admin_trigger_stock_and_bond_corporate_actions(
+    client: TestClient,
+    db: Session,
+) -> None:
+    admin_user, admin_password = create_random_user(db, is_admin=True)
+    admin_token = get_access_token(client, admin_user.email, admin_password)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # Trigger bond processing
+    res_bond = client.post(
+        f"{settings.API_V1_STR}/corporate-actions/admin/process-bonds",
+        headers=admin_headers,
+    )
+    assert res_bond.status_code == 200
+    assert res_bond.json()["status"] == "SUCCESS"
+
+    # Trigger stock processing
+    res_stock = client.post(
+        f"{settings.API_V1_STR}/corporate-actions/admin/process-stocks",
+        headers=admin_headers,
+    )
+    assert res_stock.status_code == 200
+    assert res_stock.json()["status"] == "SUCCESS"

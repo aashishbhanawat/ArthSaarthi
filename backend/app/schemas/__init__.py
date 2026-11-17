@@ -107,6 +107,7 @@ from .risk import (
     UserRiskProfileCreate,
     UserRiskProfileUpdate,
 )
+from .stock_corporate_action import RawStockCorporateAction
 from .tax_deduction import (
     SectionLimitSummary,
     TaxDeductionBase,
@@ -261,6 +262,7 @@ __all__ = [
     "CorporateActionEventListResponse",
     "CorporateActionEventOut",
     "CorporateActionTriggerResponse",
+    "RawStockCorporateAction",
 ]
 
 # Manually update forward references to resolve circular dependencies

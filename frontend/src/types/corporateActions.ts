@@ -4,7 +4,7 @@ export interface CorporateActionEventItem {
   portfolio_id: string;
   asset_id: string;
   transaction_id: string | null;
-  event_type: 'BOND_COUPON' | 'BOND_MATURITY' | string;
+  event_type: 'BOND_COUPON' | 'BOND_MATURITY' | 'DIVIDEND' | 'SPLIT' | 'BONUS' | string;
   event_date: string;
   units: number;
   amount: number;
@@ -12,6 +12,8 @@ export interface CorporateActionEventItem {
   details: Record<string, unknown> | null;
   created_at: string;
   bond_name?: string | null;
+  stock_name?: string | null;
+  symbol?: string | null;
   isin?: string | null;
 }
 

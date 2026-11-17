@@ -14,6 +14,7 @@ from app.schemas.corporate_action import (
     CorporateActionTriggerResponse,
 )
 from app.services.corporate_actions.bond_engine import process_bond_corporate_actions
+from app.services.corporate_actions.stock_engine import process_stock_corporate_actions
 
 router = APIRouter()
 
@@ -96,6 +97,24 @@ def admin_process_bond_corporate_actions(
     events = process_bond_corporate_actions(db)
     return CorporateActionTriggerResponse(
         message=f"Bond corporate action processing completed. {len(events)} event(s) generated.",
+        events_created=len(events),
+        status="SUCCESS",
+    )
+
+
+@router.post(
+    "/admin/process-stocks",
+    response_model=CorporateActionTriggerResponse,
+    summary="Admin trigger for stock corporate action processing",
+)
+def admin_process_stock_corporate_actions(
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin_user),
+) -> CorporateActionTriggerResponse:
+    """Manually triggers evaluation of stock dividends, splits, and bonus issues."""
+    events = process_stock_corporate_actions(db)
+    return CorporateActionTriggerResponse(
+        message=f"Stock corporate action processing completed. {len(events)} event(s) generated.",
         events_created=len(events),
         status="SUCCESS",
     )

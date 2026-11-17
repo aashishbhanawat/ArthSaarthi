@@ -1,3 +1,44 @@
+## 2026-11-17: Implement Automated Stock Corporate Actions (Dividends, Splits & Bonuses) (FR4.6.4 / Issue #607)
+
+**Task:** Design and implement automated corporate action discovery and execution for equities (cash dividends, stock splits, and bonus share issues) via official exchange feeds (NSE, BSE) with fallback to yfinance, background scheduler integration, idempotency, and in-app receipt modal notifications.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Exchange Providers & Regex Parsers (`backend/app/services/corporate_actions/`):**
+   - Implemented `exchange_provider.py` with multi-provider architecture:
+     - `fetch_nse_corporate_actions`: Pre-warms session cookies on `https://www.nseindia.com` and queries `api/corporates-corporateActions?index=equities`.
+     - `fetch_bse_corporate_actions`: Queries BSE API `api/DefaultData/w` for equity corporate actions.
+     - `fetch_yfinance_corporate_actions`: Resilient fallback and global/US equity corporate actions via `yfinance.Ticker.actions`.
+   - Built `parser.py` extracting structured corporate action events:
+     - Cash Dividends: Extract dividend per share value and percentage.
+     - Stock Splits: Regex matching split ratios (e.g., `Face Value Split From Rs 10/- To Rs 2/-` -> 5.0 ratio).
+     - Bonus Issues: Regex matching bonus ratios (e.g., `Bonus 1:1`, `Bonus 2:1` -> multiplier).
+     - Safe date parsing for varying exchange date formats (`DD-Mon-YYYY`, `DD/MM/YYYY`, `YYYY-MM-DD`).
+2. **Stock Engine & Execution Math (`backend/app/services/corporate_actions/stock_engine.py`):**
+   - Implemented `process_stock_corporate_actions` processing all portfolio holdings as of the ex-date.
+   - Dividends: Creates `DIVIDEND` transactions (`is_automated=True`) crediting cash balance = `units_held * amount_per_share`.
+   - Stock Splits: Adjusts historical purchase lots via `crud_corporate_action.handle_stock_split` preserving total invested value.
+   - Bonus Issues: Injects zero-cost acquisition shares via `crud_corporate_action.handle_bonus_issue` preserving cost basis.
+   - Guaranteed idempotency checking `(portfolio_id, asset_id, action_type, ex_date)` against `corporate_action_events` and transactions.
+3. **Background Scheduler Task (`backend/app/tasks/stock_corporate_actions_task.py`):**
+   - Registered `stock_corporate_actions` job in `app/tasks/registry.py` (CronTrigger daily at 00:30 in server mode, IntervalTrigger every 12 hours in desktop/android mode).
+   - Non-blocking execution wrapped with asyncio thread executor and database session cleanup.
+4. **REST API Endpoints (`backend/app/api/v1/endpoints/corporate_actions.py`):**
+   - `POST /api/v1/corporate-actions/admin/process-stocks`: Admin trigger to execute equity corporate actions processing on demand.
+5. **Frontend UI Components (`frontend/src/`):**
+   - Updated `CorporateActionNotificationModal.tsx` to display equity action badges ("Dividend Payout", "Stock Split", "Bonus Shares") alongside existing bond receipts.
+   - Added `adminProcessStockCorporateActions` to `corporateActionsApi.ts`.
+   - Extended `corporateActions.ts` TypeScript types (`stock_name`, `symbol`, `is_automated`, event types).
+6. **Testing & Quality Assurance:**
+   - Authored backend unit and API tests in `test_stock_engine.py` and `test_corporate_actions.py` (9/9 passing across PostgreSQL and SQLite).
+   - Ran scheduler regression tests (12/12 passing).
+   - Ran all 54 frontend test suites (211/211 passing).
+   - Clean passes on Ruff and ESLint (0 errors).
+
+---
+
 ## 2026-11-12: Implement Automated Bond Corporate Actions (Coupons & Maturity Redemptions) (FR4.6.3 / Issue #562)
 
 **Task:** Design and implement automated corporate action processing for bond/fixed-income holdings (scheduled coupon payouts and maturity redemptions) using the background job scheduler with user activity receipts, notification modal, and transaction tagging.  

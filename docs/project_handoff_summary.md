@@ -1,22 +1,29 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-17
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Automated Bond Corporate Actions (Issue #562 / FR4.6.3) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Automated Stock Corporate Actions & Dividends (Issue #607 / FR4.6.4) Implemented & Verified.
 
-**Latest Achievement:** Implemented automated bond corporate action processing (scheduled coupon payouts and maturity redemptions) powered by the background scheduler. Added `corporate_action_events` table and `is_automated` flag on transactions via Alembic migration `l12e4f5g6h7i`. Built REST APIs, activity receipts notification modal, and notification bells with unread counters in desktop sidebar (`NavBar.tsx`) and `MobileHeader.tsx`. Verified 100% test pass rate across PostgreSQL, SQLite, and Frontend Jest (54 suites, 211 tests).
+**Latest Achievement:** Implemented automated stock corporate action discovery and execution for equities (cash dividends, stock splits, bonus share issues) via official exchange feeds (NSE, BSE) with fallback to yfinance. Added regex parser, stock engine with lot adjustment and dividend crediting, background scheduler task `stock_corporate_actions`, admin trigger API, and receipt modal notifications. Verified 100% test pass rate across PostgreSQL, SQLite, and Frontend Jest (54 suites, 211 tests).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **436/436 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **436/436 Passing**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **445/445 Passing**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **445/445 Passing**
 *   **Frontend Unit Tests (Vitest/Jest):** ✅ **211/211 Passing (54 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Automated Stock Corporate Actions & Dividends (Issue #607 / FR4.6.4) (Updated 2026-11-17):**
+    - **Exchange Providers & Regex Parsers:** Implemented `app/services/corporate_actions/exchange_provider.py` querying NSE (with session cookie warming), BSE, and yfinance fallback. Built regex-based extraction in `parser.py` parsing dividend per share, stock split ratios, and bonus share ratios.
+    - **Stock Execution Engine:** Created `app/services/corporate_actions/stock_engine.py` evaluating active holding quantities on ex-date, generating cash dividend transactions, adjusting lot costs for stock splits, and injecting zero-cost lots for bonus shares, with complete idempotency checks.
+    - **Scheduler Task:** Registered `stock_corporate_actions` job in `app/tasks/registry.py` (CronTrigger daily at 00:30 in server mode, IntervalTrigger every 12 hours in desktop/android mode).
+    - **Admin Endpoint & Frontend Modal:** Added `POST /api/v1/corporate-actions/admin/process-stocks` and updated `CorporateActionNotificationModal.tsx` to display non-technical receipts for equity dividends, splits, and bonus issues.
+    - **Verification:** Unit and API tests in `test_stock_engine.py` and `test_corporate_actions.py` (9/9 passing across Postgres and SQLite), all 54 frontend test suites (211/211 passing), and 0 linter errors.
 
 *   **Automated Bond Corporate Actions (Issue #562 / FR4.6.3) (Updated 2026-11-12):**
     - **Bond Calculation Engine:** Deterministic date arithmetic and coupon math in `app/services/corporate_actions/bond_engine.py` for all payment frequencies (`ANNUALLY`, `SEMI_ANNUALLY`, `QUARTERLY`, `MONTHLY`, `ON_MATURITY`). Handled month-end dates, leap years, and active holding balances.
