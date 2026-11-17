@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -18,8 +18,11 @@ import {
     SunIcon,
     MoonIcon,
     ComputerDesktopIcon,
-    ShieldCheckIcon
+    ShieldCheckIcon,
+    BellIcon,
 } from '@heroicons/react/24/outline';
+import { CorporateActionNotificationModal } from './Notifications/CorporateActionNotificationModal';
+import { getCorporateActionEvents } from '../services/corporateActionsApi';
 
 const appVersion = import.meta.env.VITE_APP_VERSION;
 
@@ -27,6 +30,20 @@ const appVersion = import.meta.env.VITE_APP_VERSION;
 const NavBar: React.FC = () => {
     const { user, logout, deploymentMode } = useAuth();
     const { theme, setTheme } = useTheme();
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        const fetchUnread = async () => {
+            try {
+                const res = await getCorporateActionEvents(undefined, 0, 1);
+                setUnreadCount(res.unread_count);
+            } catch (err) {
+                // Silently handle if unauthenticated or error
+            }
+        };
+        fetchUnread();
+    }, []);
 
     const baseLinkClass = "py-2 px-3 rounded-md transition-colors";
     const inactiveLinkClass = "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100";
@@ -36,12 +53,28 @@ const NavBar: React.FC = () => {
         `${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass} flex items-center gap-3`;
 
     return (
-        <aside className="hidden lg:flex bg-white flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-full max-h-full overflow-hidden">
-            {/* Header with Logo */}
-            <div className="flex items-center gap-3 mb-4">
-                <img src="ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-16 w-16" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">ArthSaarthi</h2>
-            </div>
+        <>
+            <aside className="hidden lg:flex bg-white flex-col flex-shrink-0 w-64 p-4 border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-full max-h-full overflow-hidden">
+                {/* Header with Logo & Notification Bell */}
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <img src="ArthSaarthi.png" alt="ArthSaarthi Logo" className="h-14 w-14" />
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">ArthSaarthi</h2>
+                    </div>
+                    <button
+                        onClick={() => setShowNotifications(true)}
+                        className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                        title="Automated Activity Receipts"
+                        aria-label="Automated Activity Receipts"
+                    >
+                        <BellIcon className="h-5 w-5" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white shadow-sm">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                    </button>
+                </div>
 
             {/* Theme Selector */}
             <div className="flex items-center justify-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-700 mb-4">
@@ -191,6 +224,12 @@ const NavBar: React.FC = () => {
                 </div>
             </div>
         </aside>
+        <CorporateActionNotificationModal
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+            onCountChange={setUnreadCount}
+        />
+        </>
     );
 };
 

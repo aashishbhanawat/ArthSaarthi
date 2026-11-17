@@ -63,6 +63,11 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction: tx, onEd
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getTypeBadgeClasses(tx.transaction_type)}`}>
                         {getTypeLabel(tx.transaction_type)}
                     </span>
+                    {tx.is_automated && (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 mt-1">
+                            Automated
+                        </span>
+                    )}
                     {hasUserVisibleDetails(tx.details as Record<string, unknown> | null) && (
                         <button
                             onClick={handleViewDetails}

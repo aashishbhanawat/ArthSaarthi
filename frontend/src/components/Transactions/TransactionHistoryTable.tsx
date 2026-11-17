@@ -65,6 +65,11 @@ const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = ({ trans
                                 <td className="p-3 text-sm">{tx.asset.name}</td>
                                 <td className={`p-3 text-sm font-semibold ${getTypeColor(tx.transaction_type)}`}>
                                     {tx.transaction_type}
+                                    {tx.is_automated && (
+                                        <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-medium rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                            Automated
+                                        </span>
+                                    )}
                                     {tx.details && (
                                         <button
                                             className="ml-1 text-blue-500 hover:text-blue-700 align-middle focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"

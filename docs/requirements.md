@@ -55,6 +55,7 @@ This document outlines the functional and non-functional requirements for the Ar
     -   **FR4.5.1:** Add support for tracking Mutual Fund dividends/payouts. `✅ Done`
     -   **FR4.5.2:** Support for Dividend Reinvestment Plans (DRIP) for Stocks and Foreign Dividends with currency conversion. `✅ Done`
 -   **FR4.6: Corporate Actions.** The system must allow users to manually log corporate actions like dividends, bonuses, and stock splits. `✅ Done`
+    -   **FR4.6.3:** Automated processing of bond coupon payouts and maturity redemptions via the background scheduler with user review receipts. `✅ Done`
 -   **FR4.7: Portfolio Detail Page View (Pilot Feedback).** The portfolio detail page must be redesigned to provide a consolidated, analytical view. `✅ Done`
     -   **FR4.7.1: Portfolio Summary Header.** The top of the page must display a summary card with key metrics for that portfolio: Total Value, Invested Amount, Day's P&L (Absolute & %), Unrealized P&L (Absolute & %), and Realized P&L. `✅ Done`
     -   **FR4.7.2: Consolidated Holdings View.** The primary view must be a table of consolidated current holdings, replacing the raw transaction list. Each row must represent a single asset and display: Asset Name, Quantity, Average Buy Price, Invested Amount, LTP, Day's Change (%), Day's P&L, Current Value, and Unrealized P&L (Absolute & %). `✅ Done`

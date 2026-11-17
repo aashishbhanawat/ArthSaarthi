@@ -1,3 +1,42 @@
+## 2026-11-12: Implement Automated Bond Corporate Actions (Coupons & Maturity Redemptions) (FR4.6.3 / Issue #562)
+
+**Task:** Design and implement automated corporate action processing for bond/fixed-income holdings (scheduled coupon payouts and maturity redemptions) using the background job scheduler with user activity receipts, notification modal, and transaction tagging.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Bond Calculation Engine (`backend/app/services/corporate_actions/bond_engine.py`):**
+   - Implemented deterministic schedule and coupon math for all payment frequencies (`ANNUALLY`, `SEMI_ANNUALLY`, `QUARTERLY`, `MONTHLY`, `ON_MATURITY`).
+   - Built downtime catch-up and historical schedule backfill: if system or desktop app was offline during a coupon or maturity date, it automatically scans and credits missing coupons/redemptions in chronological order upon startup.
+   - Handled edge cases: month-ends (e.g. Aug 31 -> Feb 28), leap years (Feb 29), zero holdings, and date bounds.
+   - Implemented maturity redemption creating `SELL` transactions at face value upon maturity date, releasing principal back to cash balances.
+   - Guaranteed idempotency on duplicate runs (checking `(portfolio_id, asset_id, event_date)` before creating transactions).
+2. **Database Schema & Migration (`backend/alembic/versions/l12e4f5g6h7i_add_bond_corporate_actions.py`):**
+   - Added `is_automated` boolean index flag to `transactions` table.
+   - Created `corporate_action_events` table linking user, portfolio, asset, transaction, event type, date, amount, units, and review status (`NEW`, `READ`, `DISMISSED`).
+   - Verified safe migration cycle: `alembic upgrade head` -> `downgrade base` -> `upgrade head` in Docker.
+3. **Background Scheduler Task (`backend/app/tasks/corporate_actions_task.py`):**
+   - Registered `bond_corporate_actions` job in `app/tasks/registry.py` (CronTrigger daily at 00:15 in server mode, IntervalTrigger in desktop/android mode).
+   - Non-blocking execution wrapped with asyncio thread executor and database session cleanup.
+4. **REST API Endpoints (`backend/app/api/v1/endpoints/corporate_actions.py`):**
+   - `GET /api/v1/corporate-actions/events`: Paginated user activity receipts with unread count.
+   - `POST /api/v1/corporate-actions/events/{id}/dismiss`: Dismiss a single receipt.
+   - `POST /api/v1/corporate-actions/events/dismiss-all`: Dismiss all new receipts for user.
+   - `POST /api/v1/corporate-actions/admin/process-bonds`: Admin trigger to execute processing immediately.
+5. **Frontend UI Components:**
+   - Built `CorporateActionNotificationModal.tsx` showing clear, non-technical receipts ("Coupon Payout", "Maturity Redemption", bond name, date, units, and amount).
+   - Integrated notification bell with unread badge in desktop `NavBar.tsx` and `MobileHeader.tsx`.
+   - Added `[Automated]` badge to `TransactionCard.tsx` and `TransactionHistoryTable.tsx`.
+6. **Testing & Quality Assurance:**
+   - Authored backend unit and API tests in `test_bond_engine.py` and `test_corporate_actions.py` (7/7 passing across PostgreSQL and SQLite).
+   - Ran scheduler regression tests (12/12 passing).
+   - Authored frontend component tests in `CorporateActionNotificationModal.test.tsx` (4/4 passing).
+   - Verified all 54 frontend test suites (211/211 passing).
+   - Clean passes on Ruff and ESLint (0 errors).
+
+---
+
 ## 2026-11-02: Implement Architectural Background Job Scheduler using APScheduler (FR17 / NFR14 / Issue #561)
 
 **Task:** Design and implement an in-process, architectural background job scheduler (APScheduler) for automated tasks with execution audit logging, admin monitoring APIs, and a mobile-friendly frontend dashboard.  
