@@ -1,10 +1,10 @@
 import logging
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict, List, Optional, Set, Tuple
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -120,11 +120,15 @@ def process_stock_corporate_actions(
     db: Session,
     check_date: Optional[date] = None,
     custom_actions: Optional[List[RawStockCorporateAction]] = None,
+    max_lookback_days: Optional[int] = 30,
 ) -> List[CorporateActionEvent]:
     """
     Core engine that scans all portfolios with stock holdings, discovers applicable
     corporate actions (Dividends, Splits, Bonus issues), and executes them.
     Guarantees idempotency on duplicate runs.
+    Restricted to max_lookback_days (default 30 days) to prevent retroactively replaying
+    historical corporate actions over user portfolios whose imported tradebooks already
+    incorporate past bonus shares, splits, or dividends.
     """
     if check_date is None:
         check_date = date.today()
@@ -164,6 +168,16 @@ def process_stock_corporate_actions(
             # Action is scheduled for the future; skip until ex_date arrives
             continue
 
+        if max_lookback_days is not None and action.ex_date < check_date - timedelta(days=max_lookback_days):
+            logger.debug(
+                "Skipping historical %s for %s: ex_date %s is older than lookback %s days",
+                action.action_type,
+                sym,
+                action.ex_date,
+                max_lookback_days,
+            )
+            continue
+
         # Find portfolios holding this asset
         portfolios = (
             db.query(models.Portfolio)
@@ -178,18 +192,6 @@ def process_stock_corporate_actions(
             if holding_qty <= Decimal("0"):
                 continue
 
-            # Query existing transactions on action.ex_date for idempotency
-            existing_tx = (
-                db.query(models.Transaction)
-                .filter(
-                    models.Transaction.portfolio_id == portfolio.id,
-                    models.Transaction.asset_id == asset.id,
-                    models.Transaction.transaction_type == action.action_type.upper(),
-                    func.date(models.Transaction.transaction_date) == action.ex_date,
-                )
-                .first()
-            )
-
             # Query existing corporate action event for idempotency
             existing_event = (
                 db.query(CorporateActionEvent)
@@ -197,14 +199,70 @@ def process_stock_corporate_actions(
                     CorporateActionEvent.portfolio_id == portfolio.id,
                     CorporateActionEvent.asset_id == asset.id,
                     CorporateActionEvent.event_type == action.action_type.upper(),
-                    CorporateActionEvent.event_date == action.ex_date,
+                    CorporateActionEvent.event_date >= action.ex_date - timedelta(days=7),
+                    CorporateActionEvent.event_date <= action.ex_date + timedelta(days=7),
                 )
                 .first()
             )
-
-            if existing_tx or existing_event:
-                # Already processed
+            if existing_event:
                 continue
+
+            # For SPLIT and BONUS: check if an existing transaction already reflects this corporate action
+            # (e.g., an imported broker tradebook often records bonus shares as BUY with price_per_unit = 0,
+            # or records SPLIT/BONUS near the ex_date/credit date)
+            if action.action_type.upper() in ("SPLIT", "BONUS"):
+                window_start = action.ex_date - timedelta(days=15)
+                window_end = action.ex_date + timedelta(days=15)
+                existing_matching_tx = (
+                    db.query(models.Transaction)
+                    .filter(
+                        models.Transaction.portfolio_id == portfolio.id,
+                        models.Transaction.asset_id == asset.id,
+                        func.date(models.Transaction.transaction_date) >= window_start,
+                        func.date(models.Transaction.transaction_date) <= window_end,
+                        or_(
+                            models.Transaction.transaction_type.in_(["SPLIT", "BONUS"]),
+                            and_(
+                                models.Transaction.transaction_type == "BUY",
+                                models.Transaction.price_per_unit <= Decimal("0.0001"),
+                            ),
+                        ),
+                    )
+                    .first()
+                )
+                if existing_matching_tx:
+                    logger.info(
+                        "Skipping automated %s for %s on %s: existing corporate action or zero-cost BUY found (%s)",
+                        action.action_type,
+                        sym,
+                        action.ex_date,
+                        existing_matching_tx.id,
+                    )
+                    continue
+
+            # For DIVIDEND: check if an existing dividend transaction exists within a small window
+            if action.action_type.upper() == "DIVIDEND":
+                window_start = action.ex_date - timedelta(days=3)
+                window_end = action.ex_date + timedelta(days=3)
+                existing_div = (
+                    db.query(models.Transaction)
+                    .filter(
+                        models.Transaction.portfolio_id == portfolio.id,
+                        models.Transaction.asset_id == asset.id,
+                        models.Transaction.transaction_type == "DIVIDEND",
+                        func.date(models.Transaction.transaction_date) >= window_start,
+                        func.date(models.Transaction.transaction_date) <= window_end,
+                    )
+                    .first()
+                )
+                if existing_div:
+                    logger.info(
+                        "Skipping automated DIVIDEND for %s on %s: existing dividend transaction found (%s)",
+                        sym,
+                        action.ex_date,
+                        existing_div.id,
+                    )
+                    continue
 
             # --- Process DIVIDEND ---
             if action.action_type.upper() == "DIVIDEND":

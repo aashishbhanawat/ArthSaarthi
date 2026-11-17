@@ -133,14 +133,21 @@ def fetch_bse_corporate_actions(
 
 
 def fetch_yfinance_corporate_actions(
-    ticker_symbol: str, exchange: Optional[str] = None
+    ticker_symbol: str, exchange: Optional[str] = None, max_days: int = 90
 ) -> List[RawStockCorporateAction]:
     """
     Fetches corporate actions for a specific ticker symbol using yfinance.
     Serves as reliable fallback for Indian equities and primary provider for Global/US stocks.
+    Restricted to max_days lookback (default 90 days) to prevent retroactively re-applying
+    historical splits or dividends that already exist in imported user tradebooks.
     """
     actions: List[RawStockCorporateAction] = []
     upper_ticker = ticker_symbol.upper()
+    is_indian_equity = (
+        upper_ticker.endswith(".NS")
+        or upper_ticker.endswith(".BO")
+        or str(exchange).upper() in ("NSE", "BSE", "NSI")
+    )
 
     # Determine yfinance formatted ticker
     if upper_ticker.endswith(".NS") or upper_ticker.endswith(".BO"):
@@ -152,6 +159,8 @@ def fetch_yfinance_corporate_actions(
     else:
         yf_ticker = upper_ticker
 
+    min_date = date.today() - timedelta(days=max_days)
+
     try:
         ticker = yf.Ticker(yf_ticker)
         actions_df = ticker.actions
@@ -159,6 +168,8 @@ def fetch_yfinance_corporate_actions(
             for idx, row in actions_df.iterrows():
                 # idx is timestamp of the action
                 action_date = idx.date() if hasattr(idx, "date") else date.today()
+                if action_date < min_date:
+                    continue
 
                 # 1. Dividend
                 div = row.get("Dividends", 0.0)
@@ -175,6 +186,12 @@ def fetch_yfinance_corporate_actions(
                     )
 
                 # 2. Stock Split
+                # For Indian equities, yfinance collapses bonus share issues into decimal "Stock Splits"
+                # (e.g. 1.333333 for 1:3 bonus, 2.0 for 1:1 bonus). True splits and bonus issues for
+                # Indian equities must come from official NSE/BSE feeds with explicit corporate action text.
+                if is_indian_equity:
+                    continue
+
                 split = row.get("Stock Splits", 0.0)
                 if split and float(split) > 0:
                     # yfinance represents split ratio as e.g. 5.0 (for 5:1 split) or 0.5 (for reverse split)

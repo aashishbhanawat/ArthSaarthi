@@ -348,3 +348,107 @@ def test_process_stock_corporate_actions_zero_holdings_skipped(db: Session):
         db, check_date=date(2026, 1, 20), custom_actions=custom_actions
     )
     assert len(events) == 0
+
+
+def test_process_stock_corporate_actions_skips_historical_beyond_lookback(db: Session):
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Lookback Test Port")
+
+    ticker = f"HIST_{uuid.uuid4().hex[:6]}"
+    asset = crud.asset.create(
+        db,
+        obj_in=schemas.AssetCreate(
+            name="Historical Stock",
+            ticker_symbol=ticker,
+            asset_type=AssetType.STOCK,
+            currency="INR",
+        ),
+    )
+    buy_tx = schemas.TransactionCreate(
+        asset_id=asset.id,
+        portfolio_id=portfolio.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("100"),
+        price_per_unit=Decimal("50.00"),
+        transaction_date=datetime(2020, 1, 1, 10, 0),
+    )
+    crud.transaction.create_with_portfolio(db, obj_in=buy_tx, portfolio_id=portfolio.id)
+    db.commit()
+
+    # Corporate action from 2 years ago (2024-01-01)
+    old_action = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="SPLIT",
+            ex_date=date(2024, 1, 1),
+            ratio_numerator=Decimal("2"),
+            ratio_denominator=Decimal("1"),
+            source="YFINANCE",
+        )
+    ]
+    # Check date is 2026-11-17 with default 30 days lookback
+    events = process_stock_corporate_actions(
+        db,
+        check_date=date(2026, 11, 17),
+        custom_actions=old_action,
+        max_lookback_days=30,
+    )
+    assert len(events) == 0
+
+
+def test_process_stock_corporate_actions_skips_when_broker_zero_cost_buy_exists(db: Session):
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Broker Imported Port")
+
+    ticker = f"BONUS_{uuid.uuid4().hex[:6]}"
+    asset = crud.asset.create(
+        db,
+        obj_in=schemas.AssetCreate(
+            name="Bonus Stock",
+            ticker_symbol=ticker,
+            asset_type=AssetType.STOCK,
+            currency="INR",
+        ),
+    )
+
+    # Original purchase
+    buy_tx = schemas.TransactionCreate(
+        asset_id=asset.id,
+        portfolio_id=portfolio.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("650"),
+        price_per_unit=Decimal("100.00"),
+        transaction_date=datetime(2026, 10, 1, 10, 0),
+    )
+    crud.transaction.create_with_portfolio(db, obj_in=buy_tx, portfolio_id=portfolio.id)
+
+    # Broker already imported bonus shares as zero-cost BUY 5 days after ex-date
+    ex_date = date(2026, 11, 10)
+    broker_bonus_buy = schemas.TransactionCreate(
+        asset_id=asset.id,
+        portfolio_id=portfolio.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("216"),
+        price_per_unit=Decimal("0.0"),  # Zero cost!
+        transaction_date=datetime(2026, 11, 15, 10, 0),
+    )
+    crud.transaction.create_with_portfolio(db, obj_in=broker_bonus_buy, portfolio_id=portfolio.id)
+    db.commit()
+
+    # Automated action comes in for 1:3 bonus on 2026-11-10
+    actions = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="BONUS",
+            ex_date=ex_date,
+            ratio_numerator=Decimal("1"),
+            ratio_denominator=Decimal("3"),
+            source="NSE",
+        )
+    ]
+
+    # Should detect existing zero-cost BUY in the date window and SKIP
+    events = process_stock_corporate_actions(
+        db, check_date=date(2026, 11, 17), custom_actions=actions, max_lookback_days=30
+    )
+    assert len(events) == 0

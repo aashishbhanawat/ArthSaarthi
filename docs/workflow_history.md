@@ -21,7 +21,10 @@
    - Dividends: Creates `DIVIDEND` transactions (`is_automated=True`) crediting cash balance = `units_held * amount_per_share`.
    - Stock Splits: Adjusts historical purchase lots via `crud_corporate_action.handle_stock_split` preserving total invested value.
    - Bonus Issues: Injects zero-cost acquisition shares via `crud_corporate_action.handle_bonus_issue` preserving cost basis.
-   - Guaranteed idempotency checking `(portfolio_id, asset_id, action_type, ex_date)` against `corporate_action_events` and transactions.
+   - Guaranteed idempotency and duplicate safeguards:
+     - Configured `max_lookback_days` (default 30 days) to prevent retroactively re-applying historical corporate actions over imported tradebooks that already reflect past splits/bonuses.
+     - Added conflict detection checking if matching corporate actions, zero-cost `BUY` entries (broker bonus shares), or dividend entries already exist within a date window near `ex_date`.
+     - Prevented synthetic decimal splits from yfinance on Indian equities where bonus issues are misreported as splits.
 3. **Background Scheduler Task (`backend/app/tasks/stock_corporate_actions_task.py`):**
    - Registered `stock_corporate_actions` job in `app/tasks/registry.py` (CronTrigger daily at 00:30 in server mode, IntervalTrigger every 12 hours in desktop/android mode).
    - Non-blocking execution wrapped with asyncio thread executor and database session cleanup.
