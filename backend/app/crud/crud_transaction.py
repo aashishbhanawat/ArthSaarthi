@@ -24,11 +24,25 @@ logger = logging.getLogger(__name__)
 
 class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate]):
     def get_holdings_on_date(
-        self, db: Session, *, user_id: uuid.UUID, asset_id: uuid.UUID, on_date: datetime
+        self,
+        db: Session,
+        *,
+        user_id: uuid.UUID,
+        asset_id: uuid.UUID,
+        on_date: datetime,
+        portfolio_id: Optional[uuid.UUID] = None,
     ) -> Decimal:
         # Fetch only required fields of relevant transactions sorted by date
         # Optimization: Reduces DB memory footprint and serialization overhead
         # by only querying the specific columns needed for holding calculation
+        filters = [
+            Transaction.user_id == user_id,
+            Transaction.asset_id == asset_id,
+            Transaction.transaction_date <= on_date,
+        ]
+        if portfolio_id is not None:
+            filters.append(Transaction.portfolio_id == portfolio_id)
+
         transactions = (
             db.query(Transaction)
             .options(
@@ -38,11 +52,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
                     Transaction.price_per_unit,
                 )
             )
-            .filter(
-                Transaction.user_id == user_id,
-                Transaction.asset_id == asset_id,
-                Transaction.transaction_date <= on_date,
-            )
+            .filter(*filters)
             .order_by(Transaction.transaction_date)
             .all()
         )

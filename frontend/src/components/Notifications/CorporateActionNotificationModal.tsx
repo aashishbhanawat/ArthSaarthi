@@ -127,7 +127,7 @@ export const CorporateActionNotificationModal: React.FC<CorporateActionNotificat
                 Automated Activity
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Scheduled bond coupon credits and maturity payouts
+                Scheduled bond coupons, dividends, stock splits, and bonus issues
               </p>
             </div>
           </div>
@@ -167,13 +167,77 @@ export const CorporateActionNotificationModal: React.FC<CorporateActionNotificat
                 No automated receipts recorded
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                Upcoming bond coupon payments and maturity redemptions will appear here.
+                Upcoming bond coupon payments, stock dividends, and corporate actions will appear here.
               </p>
             </div>
           ) : (
             events.map((event) => {
-              const isCoupon = event.event_type === 'BOND_COUPON';
               const isUnread = event.status === 'NEW';
+              const assetName =
+                event.stock_name ||
+                event.bond_name ||
+                (event.details?.stock_name as string) ||
+                (event.details?.bond_name as string) ||
+                'Asset';
+
+              const getBadgeConfig = (type: string) => {
+                switch (type) {
+                  case 'BOND_COUPON':
+                    return {
+                      label: 'Coupon Payout',
+                      badgeColor:
+                        'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300',
+                      iconBg:
+                        'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300',
+                    };
+                  case 'DIVIDEND':
+                    return {
+                      label: 'Dividend Payout',
+                      badgeColor:
+                        'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300',
+                      iconBg:
+                        'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300',
+                    };
+                  case 'BOND_MATURITY':
+                    return {
+                      label: 'Maturity Redemption',
+                      badgeColor:
+                        'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+                      iconBg:
+                        'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300',
+                    };
+                  case 'SPLIT':
+                    return {
+                      label: 'Stock Split',
+                      badgeColor:
+                        'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
+                      iconBg:
+                        'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300',
+                    };
+                  case 'BONUS':
+                    return {
+                      label: 'Bonus Shares',
+                      badgeColor:
+                        'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300',
+                      iconBg:
+                        'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300',
+                    };
+                  default:
+                    return {
+                      label: type,
+                      badgeColor:
+                        'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
+                      iconBg:
+                        'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+                    };
+                }
+              };
+
+              const badge = getBadgeConfig(event.event_type);
+              const hasCashAmount = Number(event.amount) > 0;
+              const ratioText =
+                (event.details?.split_ratio as string) ||
+                (event.details?.bonus_ratio as string);
 
               return (
                 <div
@@ -186,41 +250,38 @@ export const CorporateActionNotificationModal: React.FC<CorporateActionNotificat
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <div
-                        className={`p-2 rounded-lg mt-0.5 ${
-                          isCoupon
-                            ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300'
-                            : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300'
-                        }`}
-                      >
+                      <div className={`p-2 rounded-lg mt-0.5 ${badge.iconBg}`}>
                         <BanknotesIcon className="h-5 w-5" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {event.bond_name || event.details?.bond_name || 'Bond Asset'}
+                            {assetName}
                           </h4>
                           <span
-                            className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                              isCoupon
-                                ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
-                                : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
-                            }`}
+                            className={`px-2 py-0.5 text-xs font-semibold rounded-full ${badge.badgeColor}`}
                           >
-                            {isCoupon ? 'Coupon Payout' : 'Maturity Redemption'}
+                            {badge.label}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           Date: {formatDate(event.event_date)} • Units: {Number(event.units).toLocaleString()}
                           {event.isin ? ` • ISIN: ${event.isin}` : ''}
+                          {ratioText ? ` • Ratio: ${ratioText}` : ''}
                         </p>
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                        +{formatCurrency(Number(event.amount))}
-                      </div>
+                      {hasCashAmount ? (
+                        <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                          +{formatCurrency(Number(event.amount))}
+                        </div>
+                      ) : ratioText ? (
+                        <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          {ratioText}
+                        </div>
+                      ) : null}
                       {isUnread && (
                         <button
                           onClick={() => handleDismissOne(event.id)}

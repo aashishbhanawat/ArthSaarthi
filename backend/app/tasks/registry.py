@@ -7,6 +7,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from app.core.config import settings
 from app.tasks.corporate_actions_task import run_bond_corporate_actions_job
 from app.tasks.snapshot_task import run_daily_snapshot_job
+from app.tasks.stock_corporate_actions_task import run_stock_corporate_actions_job
 
 
 class TaskDefinition(NamedTuple):
@@ -26,9 +27,11 @@ def get_task_registry() -> Dict[str, TaskDefinition]:
     if settings.DEPLOYMENT_MODE in ("desktop", "android"):
         snapshot_trigger = IntervalTrigger(hours=6)
         corporate_actions_trigger = IntervalTrigger(hours=6)
+        stock_corporate_actions_trigger = IntervalTrigger(hours=6)
     else:
         snapshot_trigger = CronTrigger(hour=0, minute=5)
         corporate_actions_trigger = CronTrigger(hour=0, minute=15)
+        stock_corporate_actions_trigger = CronTrigger(hour=0, minute=30)
 
     tasks: Dict[str, TaskDefinition] = {
         "daily_portfolio_snapshot": TaskDefinition(
@@ -50,6 +53,16 @@ def get_task_registry() -> Dict[str, TaskDefinition]:
             ),
             func=run_bond_corporate_actions_job,
             trigger=corporate_actions_trigger,
+        ),
+        "stock_corporate_actions": TaskDefinition(
+            job_id="stock_corporate_actions",
+            name="Stock Corporate Actions (Dividends, Splits, Bonus)",
+            description=(
+                "Scans active stock holdings and fetches exchange corporate action "
+                "events to credit dividends, splits, and bonus shares."
+            ),
+            func=run_stock_corporate_actions_job,
+            trigger=stock_corporate_actions_trigger,
         ),
     }
 

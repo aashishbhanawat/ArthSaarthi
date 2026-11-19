@@ -47,3 +47,10 @@ export const adminProcessBondCorporateActions = async (): Promise<CorporateActio
   );
   return response.data;
 };
+
+export const adminProcessStockCorporateActions = async (): Promise<CorporateActionTriggerResponse> => {
+  const response = await apiClient.post<CorporateActionTriggerResponse>(
+    '/api/v1/corporate-actions/admin/process-stocks'
+  );
+  return response.data;
+};
