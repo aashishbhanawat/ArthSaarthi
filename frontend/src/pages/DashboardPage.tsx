@@ -7,6 +7,7 @@ import SummaryCard from '../components/Dashboard/SummaryCard';
 import TopMoversTable from '../components/Dashboard/TopMoversTable';
 import PortfolioHistoryChart from '../components/Dashboard/PortfolioHistoryChart';
 import AssetAllocationChart from '../components/Dashboard/AssetAllocationChart';
+import ResearchIntelligenceFeed from '../components/Dashboard/ResearchIntelligenceFeed';
 import HelpLink from '../components/HelpLink';
 import { usePrivacy } from '../context/PrivacyContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
@@ -96,6 +97,8 @@ const DashboardPage = () => {
         </div>
         <TopMoversTable assets={summary?.top_movers || []} />
       </div>
+
+      <ResearchIntelligenceFeed />
     </div>
   );
 };

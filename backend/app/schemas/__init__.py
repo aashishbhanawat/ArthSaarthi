@@ -93,6 +93,14 @@ from .income import (
     IncomeSourceCreate,
     IncomeSourceUpdate,
 )
+from .market_news import (
+    MarketNewsArticleBase,
+    MarketNewsArticleCreate,
+    MarketNewsArticleOut,
+    NewsRefreshResponse,
+    ResearchFeedResponse,
+    ResearchFeedSummary,
+)
 from .msg import Msg
 from .portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
 from .recurring_deposit import (
@@ -263,6 +271,12 @@ __all__ = [
     "CorporateActionEventOut",
     "CorporateActionTriggerResponse",
     "RawStockCorporateAction",
+    "MarketNewsArticleBase",
+    "MarketNewsArticleCreate",
+    "MarketNewsArticleOut",
+    "ResearchFeedResponse",
+    "ResearchFeedSummary",
+    "NewsRefreshResponse",
 ]
 
 # Manually update forward references to resolve circular dependencies

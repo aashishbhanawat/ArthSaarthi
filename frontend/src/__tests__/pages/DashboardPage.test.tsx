@@ -32,6 +32,13 @@ jest.mock('../../components/Dashboard/AssetAllocationChart', () => {
     return React.createElement('div', { 'data-testid': 'asset-allocation-chart-mock' });
   };
 });
+jest.mock('../../components/Dashboard/ResearchIntelligenceFeed', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react');
+  return function DummyResearchIntelligenceFeed() {
+    return React.createElement('div', { 'data-testid': 'research-intelligence-feed-mock' });
+  };
+});
 jest.mock('../../components/HelpLink', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
