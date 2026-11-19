@@ -6,6 +6,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.core.config import settings
 from app.tasks.corporate_actions_task import run_bond_corporate_actions_job
+from app.tasks.news_task import run_market_news_job
 from app.tasks.snapshot_task import run_daily_snapshot_job
 from app.tasks.stock_corporate_actions_task import run_stock_corporate_actions_job
 
@@ -28,10 +29,12 @@ def get_task_registry() -> Dict[str, TaskDefinition]:
         snapshot_trigger = IntervalTrigger(hours=6)
         corporate_actions_trigger = IntervalTrigger(hours=6)
         stock_corporate_actions_trigger = IntervalTrigger(hours=6)
+        news_trigger = IntervalTrigger(hours=4)
     else:
         snapshot_trigger = CronTrigger(hour=0, minute=5)
         corporate_actions_trigger = CronTrigger(hour=0, minute=15)
         stock_corporate_actions_trigger = CronTrigger(hour=0, minute=30)
+        news_trigger = CronTrigger(hour="*/4", minute=0)
 
     tasks: Dict[str, TaskDefinition] = {
         "daily_portfolio_snapshot": TaskDefinition(
@@ -63,6 +66,16 @@ def get_task_registry() -> Dict[str, TaskDefinition]:
             ),
             func=run_stock_corporate_actions_job,
             trigger=stock_corporate_actions_trigger,
+        ),
+        "fetch_market_news": TaskDefinition(
+            job_id="fetch_market_news",
+            name="Market Research & News Feed Sync",
+            description=(
+                "Synchronizes market news, broker research reports, earnings concalls, "
+                "and company results linked to active holdings and watchlists."
+            ),
+            func=run_market_news_job,
+            trigger=news_trigger,
         ),
     }
 

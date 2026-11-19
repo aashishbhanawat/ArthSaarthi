@@ -20,3 +20,4 @@ from app.models.tax_deduction import TaxDeduction  # noqa
 from app.models.broker_credential import BrokerCredential  # noqa
 from app.models.scheduled_job_log import ScheduledJobLog  # noqa
 from app.models.corporate_action_event import CorporateActionEvent  # noqa
+from app.models.market_news import MarketNewsArticle  # noqa

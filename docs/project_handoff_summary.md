@@ -1,22 +1,30 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-17
+**Last Updated:** 2026-11-19
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Automated Stock Corporate Actions & Dividends (Issue #607 / FR4.6.4) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Portfolio Research & Intelligence Feed (Issue #86 / FR8.2) Implemented & Verified.
 
-**Latest Achievement:** Implemented automated stock corporate action discovery and execution for equities (cash dividends, stock splits, bonus share issues) via official exchange feeds (NSE, BSE) with fallback to yfinance. Added regex parser, stock engine with lot adjustment and dividend crediting, background scheduler task `stock_corporate_actions`, admin trigger API, and receipt modal notifications. Verified 100% test pass rate across PostgreSQL, SQLite, and Frontend Jest (54 suites, 211 tests).
+**Latest Achievement:** Designed and implemented the 3-pillar Portfolio Research & Intelligence Feed inspired by Trendlyne (News & Macro Pulse, Broker Research Recommendations & Target Prices, and Quarterly Results & Earnings Concalls) linked directly to user holdings and watchlists. Implemented pure-Python XML/RSS ingestion engine with ElementTree, financial sentiment scoring, APScheduler background job `fetch_market_news` (every 4 hours), `/api/v1/news` endpoints, and tabbed `ResearchIntelligenceFeed.tsx` dashboard widget with ticker filter chips. Verified 100% test pass rate across PostgreSQL (461 passed), SQLite (461 passed), and Frontend Jest (55 suites, 215 tests).
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **445/445 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **445/445 Passing**
-*   **Frontend Unit Tests (Vitest/Jest):** ✅ **211/211 Passing (54 Suites)**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **461/461 Passing (3 Skipped)**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **461/461 Passing (3 Skipped)**
+*   **Frontend Unit Tests (Vitest/Jest):** ✅ **215/215 Passing (55 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Portfolio Research & Intelligence Feed (Issue #86 / FR8.2) (Updated 2026-11-19):**
+    - **Research Ingestion Engine:** Created `backend/app/services/news_service.py` aggregating Google News Finance RSS (targeted equity queries), Yahoo Finance RSS, Economic Times Markets, Moneycontrol Broker Reports (broker names, target prices, Buy/Hold/Sell calls), Trendlyne Concalls podcast RSS (audio URLs, quarterly periods), and Moneycontrol quarterly results.
+    - **Database & Schemas:** Alembic migration `m13f5g6h7i8j` creating `market_news_articles` table with SHA256 deterministic IDs, JSON symbols and metadata, category indexing, and 30-day retention pruning.
+    - **Scheduler Task:** Registered `fetch_market_news` job in `app/tasks/registry.py` (CronTrigger every 4 hours in server mode, IntervalTrigger every 4 hours in desktop/android mode).
+    - **REST APIs:** Added `/api/v1/news/feed`, `/api/v1/news/summary`, and `/api/v1/news/refresh` endpoints.
+    - **Frontend Dashboard Widget:** Built `ResearchIntelligenceFeed.tsx` component in `frontend/src/components/Dashboard/` with 3-pillar tabs, ticker filter chips, broker recommendation/target price badges, concall audio links, and manual sync action, integrated into `DashboardPage.tsx`.
+    - **Verification:** 7/7 new backend unit/API tests passing on Postgres and SQLite, 4/4 new frontend tests passing, 55/55 frontend suites passing (215 tests), and 0 linter errors.
 
 *   **Automated Stock Corporate Actions & Dividends (Issue #607 / FR4.6.4) (Updated 2026-11-17):**
     - **Exchange Providers & Regex Parsers:** Implemented `app/services/corporate_actions/exchange_provider.py` querying NSE (with session cookie warming), BSE, and yfinance fallback. Built regex-based extraction in `parser.py` parsing dividend per share, stock split ratios, and bonus share ratios.

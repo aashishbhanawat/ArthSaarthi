@@ -1,3 +1,50 @@
+## 2026-11-19: Implement Portfolio Research & Intelligence Feed (Curated News, Broker Targets & Concall Insights) (FR8.2 / Issue #86)
+
+**Task:** Design and implement a multi-pillar portfolio research and intelligence feed aggregating company and market news, broker research recommendations/target prices, quarterly declared earnings, and conference call audio/transcripts linked to active user holdings and watchlists.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Database Models & Alembic Migration (`backend/`):**
+   - Created `MarketNewsArticle` model in `backend/app/models/market_news.py` (`id`, `title`, `summary`, `url`, `source`, `category`, `published_at`, `symbols`, `sentiment`, `metadata_json`, `created_at`).
+   - Generated Alembic migration `m13f5g6h7i8j_add_market_news_articles.py`.
+   - Verified safe migration upgrade/downgrade/upgrade cycle across PostgreSQL and SQLite.
+2. **Research Ingestion Engine (`backend/app/services/news_service.py`):**
+   - Built multi-source RSS/XML parsing engine using Python's standard library `xml.etree.ElementTree` and `httpx` (100% pure Python, avoiding native C-extensions for Chaquopy/Android and Electron/SQLite compatibility).
+   - Handled ElementTree gotchas where childless elements evaluate as `False` in boolean expressions via `_find_elem` helper.
+   - Integrated 3 research pillars:
+     - **Pillar 1 (News & Market Pulse):** Google News Finance RSS (targeted equity queries), Yahoo Finance RSS, Economic Times Markets, and Moneycontrol Top News.
+     - **Pillar 2 (Brokerage Research & Targets):** Moneycontrol Broker Reports feed parsing broker firm names, recommendation actions (`BUY`, `ACCUMULATE`, `HOLD`, `REDUCE`, `SELL`), and target prices.
+     - **Pillar 3 (Concalls & Results):** Trendlyne Concalls podcast RSS feed extracting quarterly period and audio URLs, plus Moneycontrol declared quarterly results.
+   - Built symbol matching engine with word-boundary regex mapping active portfolio/watchlist tickers to incoming articles.
+   - Built lexicon-based financial sentiment tagging (`POSITIVE`, `NEGATIVE`, `NEUTRAL`).
+   - Implemented 30-day retention pruning to keep database storage footprint lightweight.
+3. **APScheduler Background Job (`backend/app/tasks/news_task.py`):**
+   - Implemented `run_market_news_job` executing non-blocking HTTP and database operations in a thread pool executor.
+   - Registered `fetch_market_news` job in `app/tasks/registry.py` (CronTrigger every 4 hours `0 */4 * * *` in server mode, IntervalTrigger every 4 hours in desktop/android mode).
+4. **REST API Endpoints (`backend/app/api/v1/endpoints/news.py`):**
+   - `GET /api/v1/news/feed`: Returns paginated research feed filtered by user holdings/watchlists, category, symbol, or sentiment.
+   - `GET /api/v1/news/summary`: Returns summary counters for news, broker reports, concalls, and results along with top highlights.
+   - `POST /api/v1/news/refresh`: Manual on-demand feed synchronization trigger.
+5. **Frontend UI Components (`frontend/src/`):**
+   - Created `ResearchIntelligenceFeed.tsx` in `frontend/src/components/Dashboard/`:
+     - Three-pillar tabs ("All Insights", "News & Pulse", "Broker Targets", "Earnings Concalls", "Quarterly Results") with live counter badges.
+     - Ticker filter chips ("All Holdings" + chips for each tracked equity ticker).
+     - High-information cards: Broker badges with target price pills and color-coded recommendation badges (`BUY` emerald, `HOLD` amber, `SELL` red), Concall quarter badges with audio player links, and publisher tags.
+     - Manual "Sync Now" action with animated spinner state.
+   - Integrated `ResearchIntelligenceFeed` into `frontend/src/pages/DashboardPage.tsx`.
+   - Created `frontend/src/services/newsApi.ts` and `frontend/src/types/marketNews.ts`.
+6. **Testing & Quality Assurance:**
+   - Authored backend unit and API tests in `test_news_service.py` and `test_news.py` (7/7 passing across PostgreSQL and SQLite).
+   - Full PostgreSQL backend test suite: 461 passing (3 skipped) in 252s.
+   - Full SQLite backend test suite: 461 passing (3 skipped) in 259s.
+   - Authored frontend component tests in `ResearchIntelligenceFeed.test.tsx` (4/4 passing).
+   - Full frontend test suite: 55/55 test suites passing (215/215 tests).
+   - Linters clean: Ruff (0 errors) and ESLint (0 errors). TypeScript `tsc --noEmit` clean (0 errors).
+
+---
+
 ## 2026-11-17: Implement Automated Stock Corporate Actions (Dividends, Splits & Bonuses) (FR4.6.4 / Issue #607)
 
 **Task:** Design and implement automated corporate action discovery and execution for equities (cash dividends, stock splits, and bonus share issues) via official exchange feeds (NSE, BSE) with fallback to yfinance, background scheduler integration, idempotency, and in-app receipt modal notifications.  

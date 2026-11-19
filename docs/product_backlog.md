@@ -217,7 +217,7 @@ The goal of this release was to build a robust and user-friendly system for impo
 -   **Background Job Scheduler:** Architectural implementation (e.g., APScheduler) to handle asynchronous tasks. **✅ Complete**
 -   **Automated Bond Corporate Actions (#562):** Use the new scheduler for auto-generation of bond coupons and maturity transactions. **✅ Complete**
 -   **Automated Stock Corporate Actions & Dividends (#607):** Scheduled fetching of equity dividends, splits, and bonus issues via exchange feeds. **✅ Complete**
--   **Market News Feed (FR8.2):** Use the new scheduler for background fetching and linking of relevant financial news to user holdings.
+-   **Market News Feed (FR8.2):** Use the new scheduler for background fetching and linking of relevant financial news, broker target prices, and earnings concalls to user holdings. **✅ Complete**
 
 ### Release v1.6.0: Security, Admin & Advanced UX
 **Focus: Polishing core user experience and security before introducing AI.**
