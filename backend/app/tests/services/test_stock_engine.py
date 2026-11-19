@@ -15,6 +15,7 @@ from app.services.corporate_actions.parser import (
     parse_nse_corporate_action,
 )
 from app.services.corporate_actions.stock_engine import (
+    get_stock_holding_quantity,
     process_stock_corporate_actions,
 )
 from app.tests.utils.portfolio import create_test_portfolio
@@ -452,3 +453,92 @@ def test_process_stock_corporate_actions_skips_when_broker_zero_cost_buy_exists(
         db, check_date=date(2026, 11, 17), custom_actions=actions, max_lookback_days=30
     )
     assert len(events) == 0
+
+
+def test_process_stock_split_then_subsequent_dividend_scenario(db: Session):
+    """
+    Test scenario:
+    1. User buys 100 shares @ 100 INR of ABC ticker on 2026-10-01.
+    2. Stock split 1:2 on 2026-10-15 (ratio 2:1 -> 200 shares held).
+    3. Dividend of 5 INR per share on 2026-10-25.
+    Verification: Total dividend must be 200 shares * 5 INR = 1000 INR.
+    """
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Split Then Dividend Port")
+
+    ticker = f"SPLITDIV_{uuid.uuid4().hex[:6]}"
+    asset = crud.asset.create(
+        db,
+        obj_in=schemas.AssetCreate(
+            name="Split Dividend Stock",
+            ticker_symbol=ticker,
+            asset_type=AssetType.STOCK,
+            currency="INR",
+        ),
+    )
+
+    # 1. Buy 100 shares @ 100 on 2026-10-01
+    buy_tx = schemas.TransactionCreate(
+        asset_id=asset.id,
+        portfolio_id=portfolio.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("100"),
+        price_per_unit=Decimal("100.00"),
+        transaction_date=datetime(2026, 10, 1, 10, 0),
+    )
+    crud.transaction.create_with_portfolio(db, obj_in=buy_tx, portfolio_id=portfolio.id)
+    db.commit()
+
+    # 2. Stock split 1:2 on 2026-10-15 (2 new for 1 old)
+    split_action = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="SPLIT",
+            ex_date=date(2026, 10, 15),
+            ratio_numerator=Decimal("2"),
+            ratio_denominator=Decimal("1"),
+            source="NSE",
+        )
+    ]
+    split_events = process_stock_corporate_actions(
+        db, check_date=date(2026, 10, 15), custom_actions=split_action
+    )
+    assert len(split_events) == 1
+    assert split_events[0].event_type == "SPLIT"
+
+    # Verify holding quantity after split on 2026-10-16
+    qty_after_split = get_stock_holding_quantity(db, portfolio.id, asset.id, date(2026, 10, 16))
+    assert qty_after_split == Decimal("200")
+
+    # 3. Dividend of 5 INR per share on 2026-10-25
+    div_action = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="DIVIDEND",
+            ex_date=date(2026, 10, 25),
+            dividend_amount=Decimal("5.00"),
+            source="NSE",
+        )
+    ]
+    div_events = process_stock_corporate_actions(
+        db, check_date=date(2026, 10, 25), custom_actions=div_action
+    )
+    assert len(div_events) == 1
+    assert div_events[0].event_type == "DIVIDEND"
+    assert div_events[0].units == Decimal("200")
+    # Total dividend must be 200 * 5 = 1000 INR!
+    assert div_events[0].amount == Decimal("1000.00")
+
+    # Verify dividend transaction in database
+    div_tx = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.portfolio_id == portfolio.id,
+            models.Transaction.asset_id == asset.id,
+            models.Transaction.transaction_type == "DIVIDEND",
+        )
+        .first()
+    )
+    assert div_tx is not None
+    assert div_tx.quantity == Decimal("1000.00")  # Cash amount credited
+    assert div_tx.price_per_unit == Decimal("1.0")

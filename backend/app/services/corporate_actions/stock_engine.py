@@ -1,4 +1,5 @@
 import logging
+import math
 from datetime import date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict, List, Optional, Set, Tuple
@@ -29,7 +30,7 @@ def get_stock_holding_quantity(
 ) -> Decimal:
     """
     Calculates active shares held in a portfolio as of a specific date.
-    Holding = sum(BUY/VEST/BONUS quantities) - sum(SELL quantities).
+    Holding = sum(BUY/VEST/BONUS quantities) - sum(SELL quantities), adjusted for SPLITs.
     """
     cutoff_datetime = datetime.combine(as_of_date, time(23, 59, 59))
 
@@ -40,8 +41,11 @@ def get_stock_holding_quantity(
             models.Transaction.asset_id == asset_id,
             models.Transaction.transaction_date <= cutoff_datetime,
         )
+        .order_by(models.Transaction.transaction_date.asc(), models.Transaction.id.asc())
         .all()
     )
+
+    asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
 
     total_qty = Decimal("0.00000000")
     for tx in txs:
@@ -50,6 +54,16 @@ def get_stock_holding_quantity(
             total_qty += Decimal(str(tx.quantity))
         elif tx_type == "SELL":
             total_qty -= Decimal(str(tx.quantity))
+        elif tx_type == "SPLIT":
+            # Split multiplier: ratio = new_ratio / old_ratio
+            # quantity = new, price_per_unit = old
+            if tx.price_per_unit and tx.price_per_unit > 0:
+                multiplier = Decimal(str(tx.quantity)) / Decimal(str(tx.price_per_unit))
+                total_qty = total_qty * multiplier
+                if asset and asset.currency == "INR":
+                    total_qty = Decimal(math.floor(total_qty))
+        elif tx_type in ("MERGER", "RENAME"):
+            total_qty = Decimal("0.0")
 
     return total_qty
 
