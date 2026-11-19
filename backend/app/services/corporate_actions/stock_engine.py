@@ -213,20 +213,43 @@ def process_stock_corporate_actions(
                     CorporateActionEvent.portfolio_id == portfolio.id,
                     CorporateActionEvent.asset_id == asset.id,
                     CorporateActionEvent.event_type == action.action_type.upper(),
-                    CorporateActionEvent.event_date >= action.ex_date - timedelta(days=7),
-                    CorporateActionEvent.event_date <= action.ex_date + timedelta(days=7),
+                    CorporateActionEvent.event_date >= action.ex_date - timedelta(days=3),
+                    CorporateActionEvent.event_date <= action.ex_date + timedelta(days=3),
                 )
                 .first()
             )
             if existing_event:
                 continue
 
-            # For SPLIT and BONUS: check if an existing transaction already reflects this corporate action
-            # (e.g., an imported broker tradebook often records bonus shares as BUY with price_per_unit = 0,
-            # or records SPLIT/BONUS near the ex_date/credit date)
-            if action.action_type.upper() in ("SPLIT", "BONUS"):
-                window_start = action.ex_date - timedelta(days=15)
-                window_end = action.ex_date + timedelta(days=15)
+            # For SPLIT: check if an existing SPLIT transaction already exists near ex_date
+            if action.action_type.upper() == "SPLIT":
+                window_start = action.ex_date - timedelta(days=3)
+                window_end = action.ex_date + timedelta(days=3)
+                existing_split = (
+                    db.query(models.Transaction)
+                    .filter(
+                        models.Transaction.portfolio_id == portfolio.id,
+                        models.Transaction.asset_id == asset.id,
+                        models.Transaction.transaction_type == "SPLIT",
+                        func.date(models.Transaction.transaction_date) >= window_start,
+                        func.date(models.Transaction.transaction_date) <= window_end,
+                    )
+                    .first()
+                )
+                if existing_split:
+                    logger.info(
+                        "Skipping automated SPLIT for %s on %s: existing SPLIT found (%s)",
+                        sym,
+                        action.ex_date,
+                        existing_split.id,
+                    )
+                    continue
+
+            # For BONUS: check if an existing BONUS transaction OR zero-cost BUY already exists
+            # (e.g. an imported broker tradebook records bonus shares as BUY with price_per_unit = 0)
+            if action.action_type.upper() == "BONUS":
+                window_start = action.ex_date - timedelta(days=10)
+                window_end = action.ex_date + timedelta(days=10)
                 existing_matching_tx = (
                     db.query(models.Transaction)
                     .filter(
@@ -235,7 +258,7 @@ def process_stock_corporate_actions(
                         func.date(models.Transaction.transaction_date) >= window_start,
                         func.date(models.Transaction.transaction_date) <= window_end,
                         or_(
-                            models.Transaction.transaction_type.in_(["SPLIT", "BONUS"]),
+                            models.Transaction.transaction_type == "BONUS",
                             and_(
                                 models.Transaction.transaction_type == "BUY",
                                 models.Transaction.price_per_unit <= Decimal("0.0001"),
@@ -246,8 +269,7 @@ def process_stock_corporate_actions(
                 )
                 if existing_matching_tx:
                     logger.info(
-                        "Skipping automated %s for %s on %s: existing corporate action or zero-cost BUY found (%s)",
-                        action.action_type,
+                        "Skipping automated BONUS for %s on %s: existing BONUS or zero-cost BUY found (%s)",
                         sym,
                         action.ex_date,
                         existing_matching_tx.id,

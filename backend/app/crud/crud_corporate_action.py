@@ -157,6 +157,7 @@ def handle_bonus_issue(
         user_id=portfolio.user_id,
         asset_id=asset_id,
         on_date=transaction_in.transaction_date,
+        portfolio_id=portfolio_id,
     )
 
     if net_holdings <= 0:
@@ -269,6 +270,7 @@ def handle_merger(
         user_id=portfolio.user_id,
         asset_id=asset_id,
         on_date=record_date,
+        portfolio_id=portfolio_id,
     )
 
     if old_holdings <= 0:
@@ -382,6 +384,7 @@ def handle_demerger(
         user_id=portfolio.user_id,
         asset_id=asset_id,
         on_date=record_date,
+        portfolio_id=portfolio_id,
     )
 
     if old_holdings <= 0:
@@ -504,6 +507,7 @@ def handle_rename(
         user_id=portfolio.user_id,
         asset_id=asset_id,
         on_date=record_date,
+        portfolio_id=portfolio_id,
     )
 
     if old_holdings <= 0:

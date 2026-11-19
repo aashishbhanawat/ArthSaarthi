@@ -542,3 +542,163 @@ def test_process_stock_split_then_subsequent_dividend_scenario(db: Session):
     assert div_tx is not None
     assert div_tx.quantity == Decimal("1000.00")  # Cash amount credited
     assert div_tx.price_per_unit == Decimal("1.0")
+
+
+def test_process_bonus_then_subsequent_dividend_scenario(db: Session):
+    """
+    Test scenario:
+    1. User buys 100 shares @ 100 INR on 2026-10-01.
+    2. Bonus 1:1 issued on 2026-10-15 -> 200 shares held.
+    3. Dividend of 5 INR per share on 2026-10-25.
+    Verification: Total dividend must be 200 shares * 5 INR = 1000 INR.
+    """
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Bonus Then Dividend Port")
+
+    ticker = f"BONUSDIV_{uuid.uuid4().hex[:6]}"
+    asset = crud.asset.create(
+        db,
+        obj_in=schemas.AssetCreate(
+            name="Bonus Dividend Stock",
+            ticker_symbol=ticker,
+            asset_type=AssetType.STOCK,
+            currency="INR",
+        ),
+    )
+
+    # 1. Buy 100 shares @ 100
+    buy_tx = schemas.TransactionCreate(
+        asset_id=asset.id,
+        portfolio_id=portfolio.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("100"),
+        price_per_unit=Decimal("100.00"),
+        transaction_date=datetime(2026, 10, 1, 10, 0),
+    )
+    crud.transaction.create_with_portfolio(db, obj_in=buy_tx, portfolio_id=portfolio.id)
+    db.commit()
+
+    # 2. Bonus 1:1 on 2026-10-15
+    bonus_action = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="BONUS",
+            ex_date=date(2026, 10, 15),
+            ratio_numerator=Decimal("1"),
+            ratio_denominator=Decimal("1"),
+            source="NSE",
+        )
+    ]
+    bonus_events = process_stock_corporate_actions(
+        db, check_date=date(2026, 10, 15), custom_actions=bonus_action
+    )
+    assert len(bonus_events) == 1
+    assert bonus_events[0].event_type == "BONUS"
+
+    # Verify holding quantity after bonus is 200
+    qty_after_bonus = get_stock_holding_quantity(db, portfolio.id, asset.id, date(2026, 10, 16))
+    assert qty_after_bonus == Decimal("200")
+
+    # 3. Dividend of 5 INR on 2026-10-25
+    div_action = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="DIVIDEND",
+            ex_date=date(2026, 10, 25),
+            dividend_amount=Decimal("5.00"),
+            source="NSE",
+        )
+    ]
+    div_events = process_stock_corporate_actions(
+        db, check_date=date(2026, 10, 25), custom_actions=div_action
+    )
+    assert len(div_events) == 1
+    assert div_events[0].event_type == "DIVIDEND"
+    assert div_events[0].units == Decimal("200")
+    assert div_events[0].amount == Decimal("1000.00")
+
+
+def test_process_split_then_bonus_then_dividend_scenario(db: Session):
+    """
+    Test scenario:
+    1. User buys 100 shares @ 100 INR on 2026-10-01.
+    2. Split 1:2 on 2026-10-10 -> 200 shares held.
+    3. Bonus 1:1 on 2026-10-20 (calculated on 200 post-split shares) -> 200 bonus shares -> 400 total.
+    4. Dividend of 5 INR per share on 2026-10-30.
+    Verification: Total dividend must be 400 shares * 5 INR = 2000 INR.
+    """
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Split Bonus Div Port")
+
+    ticker = f"SPLBON_{uuid.uuid4().hex[:6]}"
+    asset = crud.asset.create(
+        db,
+        obj_in=schemas.AssetCreate(
+            name="Split Bonus Div Stock",
+            ticker_symbol=ticker,
+            asset_type=AssetType.STOCK,
+            currency="INR",
+        ),
+    )
+
+    # 1. Buy 100 shares @ 100
+    buy_tx = schemas.TransactionCreate(
+        asset_id=asset.id,
+        portfolio_id=portfolio.id,
+        transaction_type=TransactionType.BUY,
+        quantity=Decimal("100"),
+        price_per_unit=Decimal("100.00"),
+        transaction_date=datetime(2026, 10, 1, 10, 0),
+    )
+    crud.transaction.create_with_portfolio(db, obj_in=buy_tx, portfolio_id=portfolio.id)
+    db.commit()
+
+    # 2. Split 1:2 on 2026-10-10 (2 new for 1 old)
+    split_action = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="SPLIT",
+            ex_date=date(2026, 10, 10),
+            ratio_numerator=Decimal("2"),
+            ratio_denominator=Decimal("1"),
+            source="NSE",
+        )
+    ]
+    process_stock_corporate_actions(db, check_date=date(2026, 10, 10), custom_actions=split_action)
+    assert get_stock_holding_quantity(db, portfolio.id, asset.id, date(2026, 10, 11)) == Decimal("200")
+
+    # 3. Bonus 1:1 on 2026-10-20
+    bonus_action = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="BONUS",
+            ex_date=date(2026, 10, 20),
+            ratio_numerator=Decimal("1"),
+            ratio_denominator=Decimal("1"),
+            source="NSE",
+        )
+    ]
+    bonus_events = process_stock_corporate_actions(
+        db, check_date=date(2026, 10, 20), custom_actions=bonus_action
+    )
+    assert len(bonus_events) == 1
+    # Holding after bonus should be 200 (post-split) + 200 (bonus) = 400 shares
+    assert get_stock_holding_quantity(db, portfolio.id, asset.id, date(2026, 10, 21)) == Decimal("400")
+
+    # 4. Dividend of 5 INR on 2026-10-30
+    div_action = [
+        RawStockCorporateAction(
+            symbol=ticker,
+            action_type="DIVIDEND",
+            ex_date=date(2026, 10, 30),
+            dividend_amount=Decimal("5.00"),
+            source="NSE",
+        )
+    ]
+    div_events = process_stock_corporate_actions(
+        db, check_date=date(2026, 10, 30), custom_actions=div_action
+    )
+    assert len(div_events) == 1
+    assert div_events[0].units == Decimal("400")
+    # 400 * 5 = 2000 INR!
+    assert div_events[0].amount == Decimal("2000.00")
