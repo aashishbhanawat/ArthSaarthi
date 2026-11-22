@@ -174,7 +174,10 @@ export const AIIntelligenceTab: React.FC = () => {
                     </span>
                   )}
                   {model.status === 'FAILED' && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300">
+                    <span
+                      title={model.error_message || undefined}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+                    >
                       Download Failed
                     </span>
                   )}
@@ -185,6 +188,13 @@ export const AIIntelligenceTab: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Error message if failed */}
+              {model.status === 'FAILED' && model.error_message && (
+                <div className="p-2.5 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300">
+                  {model.error_message}
+                </div>
+              )}
 
               {/* Progress Bar when downloading */}
               {model.status === 'DOWNLOADING' && (
@@ -211,7 +221,7 @@ export const AIIntelligenceTab: React.FC = () => {
                     className="btn btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3"
                   >
                     <ArrowDownTrayIcon className="h-4 w-4" />
-                    Download Model ({model.size_mb} MB)
+                    {model.status === 'FAILED' ? 'Retry Download' : `Download Model (${model.size_mb} MB)`}
                   </button>
                 )}
 

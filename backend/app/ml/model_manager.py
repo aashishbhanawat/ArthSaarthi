@@ -37,10 +37,12 @@ class ModelManager:
             "id": "finbert_int8",
             "name": "FinBERT INT8 Quantized",
             "description": "State-of-the-art financial sentiment transformer fine-tuned on corporate earnings calls and financial news.",
-            "size_mb": 82.5,
-            # Reliable HuggingFace ONNX quantized release mirror
-            "download_url": "https://huggingface.co/ProsusAI/finbert/resolve/main/onnx/model_quantized.onnx",
+            "size_mb": 105.2,
+            # Verified HuggingFace ONNX quantized release mirror
+            "download_url": "https://huggingface.co/nicechester/finbert-sentiment-onnx-quantized/resolve/main/onnx/model_quantized.onnx",
+            "vocab_url": "https://huggingface.co/nicechester/finbert-sentiment-onnx-quantized/resolve/main/vocab.txt",
             "filename": "finbert_int8.onnx",
+            "vocab_filename": "vocab.txt",
             "engine_type": "finbert_onnx",
         }
     }
@@ -159,10 +161,17 @@ class ModelManager:
         url = meta["download_url"]
         target_path = self.models_dir / meta["filename"]
         temp_path = self.models_dir / f"{meta['filename']}.part"
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        }
 
         logger.info("Starting background download of model %s from %s", model_id, url)
         try:
-            with requests.get(url, stream=True, timeout=30) as resp:
+            with requests.get(url, headers=headers, stream=True, timeout=60) as resp:
                 resp.raise_for_status()
                 total_size = int(resp.headers.get("content-length", meta["size_mb"] * 1024 * 1024))
 
@@ -172,7 +181,7 @@ class ModelManager:
 
                 downloaded = 0
                 with open(temp_path, "wb") as f:
-                    for chunk in resp.iter_content(chunk_size=65536):
+                    for chunk in resp.iter_content(chunk_size=131072):
                         if chunk:
                             f.write(chunk)
                             downloaded += len(chunk)
@@ -185,6 +194,18 @@ class ModelManager:
             # Atomically replace part file
             if temp_path.exists():
                 temp_path.replace(target_path)
+
+            # Also download vocab.txt if specified
+            vocab_url = meta.get("vocab_url")
+            vocab_filename = meta.get("vocab_filename")
+            if vocab_url and vocab_filename:
+                vocab_path = self.models_dir / vocab_filename
+                try:
+                    with requests.get(vocab_url, headers=headers, timeout=30) as v_resp:
+                        if v_resp.status_code == 200:
+                            vocab_path.write_bytes(v_resp.content)
+                except Exception as ve:
+                    logger.warning("Could not download vocab.txt: %s", ve)
 
             with self._lock:
                 if model_id in self._active_downloads:
