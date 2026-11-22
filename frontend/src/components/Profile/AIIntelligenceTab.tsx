@@ -33,7 +33,7 @@ export const AIIntelligenceTab: React.FC = () => {
           <SparklesIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">AI & Intelligence Settings</h2>
           <span className="ml-2 text-xs font-semibold px-2.5 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-            Roadmap & LLM Hub
+            Coming Soon
           </span>
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

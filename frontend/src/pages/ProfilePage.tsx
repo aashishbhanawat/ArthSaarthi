@@ -29,7 +29,7 @@ const TABS: TabItem[] = [
   { id: 'risk', label: 'Risk Profile', icon: ShieldCheckIcon },
   { id: 'brokers', label: 'Broker Integrations', icon: ArrowsRightLeftIcon },
   { id: 'data', label: 'Data & System', icon: CircleStackIcon },
-  { id: 'ai', label: 'AI & Intelligence', icon: SparklesIcon, badge: 'New' },
+  { id: 'ai', label: 'AI & Intelligence', icon: SparklesIcon, badge: 'Coming Soon' },
 ];
 
 const ProfilePage: React.FC = () => {
