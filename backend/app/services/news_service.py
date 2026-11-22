@@ -4,8 +4,8 @@ import html
 import logging
 import re
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set, Tuple
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import httpx
 from sqlalchemy.orm import Session
@@ -32,8 +32,9 @@ BROWSER_HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-# General RSS feeds
+# General & Exchange RSS feeds
 FEED_CONFIGS = [
+    # --- Macro & Financial Market News ---
     {
         "url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
         "source": "The Economic Times",
@@ -45,19 +46,58 @@ FEED_CONFIGS = [
         "category": "NEWS",
     },
     {
+        "url": "https://www.livemint.com/rss/markets",
+        "source": "Livemint Markets",
+        "category": "NEWS",
+    },
+    {
+        "url": "https://www.livemint.com/rss/companies",
+        "source": "Livemint Companies",
+        "category": "NEWS",
+    },
+    # --- Institutional Broker Reports & Target Prices ---
+    {
         "url": "https://www.moneycontrol.com/rss/brokeragereports.xml",
         "source": "Moneycontrol Research",
         "category": "BROKER_REPORT",
     },
+    # --- Concalls & Earnings Podcasts ---
     {
         "url": "https://trendlyne.com/feeds/earning-calls-podcast-rss/",
         "source": "Trendlyne Concalls",
         "category": "CONCALL",
     },
+    # --- Quarterly Results & Financial Disclosures ---
     {
         "url": "https://www.moneycontrol.com/rss/results.xml",
         "source": "Moneycontrol Results",
         "category": "RESULT",
+    },
+    {
+        "url": "https://nsearchives.nseindia.com/content/RSS/Financial_Results.xml",
+        "source": "NSE Results",
+        "category": "RESULT",
+    },
+    # --- Official Exchange Corporate Disclosures & Actions (NSE & BSE) ---
+    {
+        "url": "https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml",
+        "source": "NSE Announcements",
+        "category": "NEWS",
+    },
+    {
+        "url": "https://nsearchives.nseindia.com/content/RSS/Corporate_action.xml",
+        "source": "NSE Corporate Actions",
+        "category": "NEWS",
+    },
+    {
+        "url": "https://www.bseindia.com/data/xml/announcements.aspx",
+        "source": "BSE Announcements",
+        "category": "NEWS",
+    },
+    {
+        "url": "https://www.bseindia.com/data/XML/CorpActionFeed.aspx",
+        "source": "BSE Corporate Actions",
+        "category": "NEWS",
     },
 ]
 
@@ -91,7 +131,7 @@ def calculate_sentiment(text: str) -> str:
 
 
 def parse_rfc2822_date(date_str: Optional[str]) -> datetime:
-    """Parses RFC-2822 or ISO date string into timezone-aware UTC datetime."""
+    """Parses RFC-2822, ISO, or Indian Exchange date string into timezone-aware UTC datetime."""
     if not date_str:
         return datetime.now(timezone.utc)
     try:
@@ -99,6 +139,13 @@ def parse_rfc2822_date(date_str: Optional[str]) -> datetime:
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed.astimezone(timezone.utc)
+    except Exception:
+        pass
+    try:
+        # NSE & BSE timestamp format: "22-Nov-2026 14:39:18" (IST / Asia/Kolkata UTC+05:30)
+        dt = datetime.strptime(date_str.strip(), "%d-%b-%Y %H:%M:%S")
+        ist = timezone(timedelta(hours=5, minutes=30))
+        return dt.replace(tzinfo=ist).astimezone(timezone.utc)
     except Exception:
         pass
     try:
@@ -281,17 +328,71 @@ class MarketNewsService:
 
         return symbols
 
-    def match_symbols(self, text: str, active_symbols: Set[str]) -> List[str]:
+    def get_symbol_keyword_mappings(self, db: Session) -> Dict[str, str]:
         """
-        Matches active portfolio symbols against title and summary text
+        Gathers search keywords (ticker symbols and clean company names)
+        mapped to their canonical ticker symbol for all active holdings and watchlists.
+        """
+        mappings: Dict[str, str] = {}
+
+        # 1. From transactions & assets
+        holdings = (
+            db.query(Asset.ticker_symbol, Asset.name)
+            .join(Transaction, Transaction.asset_id == Asset.id)
+            .filter(Asset.asset_type.in_(["STOCK", "ETF", "FOREIGN_STOCK"]))
+            .distinct()
+            .all()
+        )
+        # 2. From watchlists
+        watchlists = (
+            db.query(Asset.ticker_symbol, Asset.name)
+            .join(WatchlistItem, WatchlistItem.asset_id == Asset.id)
+            .filter(Asset.asset_type.in_(["STOCK", "ETF", "FOREIGN_STOCK"]))
+            .distinct()
+            .all()
+        )
+
+        for row in list(holdings) + list(watchlists):
+            ticker_raw, name_raw = row[0], row[1]
+            if not ticker_raw:
+                continue
+            clean_ticker = ticker_raw.split(".")[0].upper().strip()
+            if not clean_ticker:
+                continue
+            mappings[clean_ticker] = clean_ticker
+
+            if name_raw:
+                clean_name = name_raw.strip()
+                if len(clean_name) >= 4:
+                    mappings[clean_name] = clean_ticker
+                stripped = re.sub(
+                    r"\s+(Limited|Ltd\.?|Corporation|Corp\.?|India)\b.*",
+                    "",
+                    clean_name,
+                    flags=re.IGNORECASE,
+                ).strip()
+                if len(stripped) >= 4 and stripped.lower() not in ["stock", "equity", "share", "shares"]:
+                    mappings[stripped] = clean_ticker
+
+        return mappings
+
+    def match_symbols(
+        self, text: str, symbols_or_mappings: Union[Set[str], Dict[str, str]]
+    ) -> List[str]:
+        """
+        Matches active portfolio symbols and company names against title and summary text
         using pure-Python trie entity matcher for deterministic, fast matching.
         Disambiguates short tickers against false collisions.
         """
-        if not text or not active_symbols:
+        if not text or not symbols_or_mappings:
             return []
         matcher = FastEntityMatcher(case_sensitive=False)
-        for sym in active_symbols:
-            matcher.add_keyword(sym, clean_name=sym)
+        if isinstance(symbols_or_mappings, dict):
+            for kw, sym in symbols_or_mappings.items():
+                matcher.add_keyword(kw, clean_name=sym)
+        else:
+            for sym in symbols_or_mappings:
+                matcher.add_keyword(sym, clean_name=sym)
         candidates = matcher.extract_keywords(text)
         return [sym for sym in candidates if relevance_filter.validate_ticker(sym, text)]
 
@@ -320,6 +421,7 @@ class MarketNewsService:
         Returns (articles_fetched, articles_inserted_or_updated).
         """
         active_symbols = self.get_active_portfolio_symbols(db)
+        symbol_mappings = self.get_symbol_keyword_mappings(db)
         raw_items: List[Dict[str, Any]] = []
 
         # 1. Fetch from standard RSS feeds (Macro, Broker Reports, Concalls, Results)
@@ -368,7 +470,7 @@ class MarketNewsService:
 
             # Match symbols
             full_text = f"{title} {summary}"
-            matched_syms = self.match_symbols(full_text, active_symbols)
+            matched_syms = self.match_symbols(full_text, symbol_mappings)
 
             # Extra metadata extraction
             meta: Dict[str, Any] = {}

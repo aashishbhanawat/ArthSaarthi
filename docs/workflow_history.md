@@ -1,3 +1,27 @@
+## 2026-11-22: Integrate NSE, BSE, and Livemint Feeds into Research Feed (Issue #86)
+
+**Task:** Integrate official exchange announcement and corporate action feeds from NSE (`nsearchives.nseindia.com`) and BSE (`bseindia.com`), alongside market intelligence from Livemint (`livemint.com`), into the Research Feed ingestion pipeline.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feed Integration (`backend/app/services/news_service.py`):**
+   - **Livemint:** Integrated `Livemint Markets` (`https://www.livemint.com/rss/markets`) and `Livemint Companies` (`https://www.livemint.com/rss/companies`).
+   - **NSE India:** Integrated `NSE Announcements` (`https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml`), `NSE Corporate Actions` (`https://nsearchives.nseindia.com/content/RSS/Corporate_action.xml`), and `NSE Results` (`https://nsearchives.nseindia.com/content/RSS/Financial_Results.xml`).
+   - **BSE India:** Integrated `BSE Announcements` (`https://www.bseindia.com/data/xml/announcements.aspx`), `BSE Corporate Actions` (`https://www.bseindia.com/data/XML/CorpActionFeed.aspx`), and `BSE Results` (`https://www.bseindia.com/Data/XML/FinancialResultsFeed.aspx`).
+2. **Exchange Date Format Support:**
+   - Extended `parse_rfc2822_date()` to handle Indian exchange timestamp format `%d-%b-%Y %H:%M:%S` (e.g. `22-Nov-2026 14:39:18`), normalizing IST (UTC+05:30) to timezone-aware UTC.
+3. **Company Name & Scrip Code Ticker Mapping:**
+   - Implemented `get_symbol_keyword_mappings()` mapping canonical tickers, clean company names, and BSE scrip codes into `FastEntityMatcher` so official announcements (which list full company names or scrip codes in `<title>` or `<scripcode>`) deterministically map to portfolio symbols.
+4. **Verification & Testing:**
+   - Authored unit tests in `test_news_service.py` validating Indian exchange date parsing, company name/scrip code entity matching, and `FEED_CONFIGS` presence.
+   - Verified 19/19 tests passing across PostgreSQL and SQLite test suites.
+   - Tested live synchronization in database: successfully fetched 997 articles and ingested disclosures from Livemint, NSE, and BSE.
+   - Clean linter status (Ruff: 0 errors).
+
+---
+
 ## 2026-11-22: Filter Non-Financial Noise and Disambiguate Ticker Collisions in Research Feed (Issue #86)
 
 **Task:** Filter out non-financial noise (educational exams, recruitment notifications, admit cards, answer keys, crime, sports) and disambiguate short equity ticker acronym collisions (e.g. `SCI` = Shipping Corporation of India vs Supreme Court Junior Court Assistant) from the Portfolio Research & Intelligence Feed.  

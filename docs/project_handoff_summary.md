@@ -18,6 +18,13 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Research Feed Expansion with NSE, BSE & Livemint (Issue #86) (Updated 2026-11-22):**
+    - **Livemint Integration:** Added `Livemint Markets` and `Livemint Companies` RSS feeds for high-density market news, broker targets, and quarterly corporate coverage.
+    - **NSE Exchange Disclosures:** Added `NSE Announcements` (`Online_announcements.xml`), `NSE Corporate Actions` (`Corporate_action.xml`), and `NSE Results` (`Financial_Results.xml`) from official `nsearchives.nseindia.com`.
+    - **BSE Exchange Disclosures:** Added `BSE Announcements` (`announcements.aspx`), `BSE Corporate Actions` (`CorpActionFeed.aspx`), and `BSE Results` (`FinancialResultsFeed.aspx`) from official `bseindia.com`.
+    - **Date Parsing & Scrip Mapping:** Extended `parse_rfc2822_date` to handle `%d-%b-%Y %H:%M:%S` (IST) exchange timestamps. Added `get_symbol_keyword_mappings()` to match portfolio assets via canonical tickers, company names, and scrip codes.
+    - **Verification:** 19/19 backend tests passing on Postgres and SQLite. Live sync validated with 997 fetched articles. Ruff clean.
+
 *   **Research Feed Noise Filtering & Ticker Disambiguation (Issue #86) (Updated 2026-11-22):**
     - **Relevance Filter (`backend/app/ml/relevance_filter.py`):** Added regular-expression based noise filtering for exam/recruitment spam (`EXAM_PATTERNS`) and non-business news (`GENERAL_NOISE_PATTERNS`). Added positive corporate and financial density checking (`is_financial_relevant()`).
     - **Ticker Disambiguation:** Added `TICKER_COLLISIONS` rules ensuring ambiguous tickers like `SCI` reject Supreme Court / High Court / Science news and require shipping/equity markers, protecting `SCI`, `IT`, `IDEA`, `CARE`, `FACT`, `OIL`, `REC`, and `LT`.

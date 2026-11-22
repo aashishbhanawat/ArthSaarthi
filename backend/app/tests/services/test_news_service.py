@@ -84,3 +84,58 @@ def test_match_symbols():
     assert "INFY" not in matched
     # "IT" should not match unless whole word "IT" appears
     assert "IT" not in matched
+
+
+def test_parse_indian_exchange_dates():
+    from app.services.news_service import parse_rfc2822_date
+
+    # NSE & BSE date string in IST: "22-Nov-2026 14:39:18"
+    dt = parse_rfc2822_date("22-Nov-2026 14:39:18")
+    # 14:39:18 IST = 09:09:18 UTC
+    assert dt.year == 2026
+    assert dt.month == 11
+    assert dt.day == 22
+    assert dt.hour == 9
+    assert dt.minute == 9
+    assert dt.second == 18
+
+
+def test_match_symbols_with_mappings():
+    svc = MarketNewsService()
+    mappings = {
+        "RECLTD": "RECLTD",
+        "REC Limited": "RECLTD",
+        "532955": "RECLTD",
+        "TCS": "TCS",
+        "Tata Consultancy Services": "TCS",
+    }
+    # Test NSE headline format with company name
+    nse_text = "REC Limited has informed the Exchange regarding outcome of Board Meeting"
+    matched_nse = svc.match_symbols(nse_text, mappings)
+    assert "RECLTD" in matched_nse
+
+    # Test BSE headline format with scrip code
+    bse_text = "Adani Energy Solutions Ltd (539254) has acquired transmission assets"
+    # Not in mappings, should not match
+    assert "RECLTD" not in svc.match_symbols(bse_text, mappings)
+
+    bse_rec = "REC Ltd (532955) Board approves dividend payout"
+    matched_bse = svc.match_symbols(bse_rec, mappings)
+    assert "RECLTD" in matched_bse
+
+
+def test_feed_configs_include_nse_bse_livemint():
+    from app.services.news_service import FEED_CONFIGS
+
+    sources = [cfg["source"] for cfg in FEED_CONFIGS]
+    urls = [cfg["url"] for cfg in FEED_CONFIGS]
+
+    assert "Livemint Markets" in sources
+    assert "Livemint Companies" in sources
+    assert "NSE Announcements" in sources
+    assert "BSE Announcements" in sources
+
+    assert "https://www.livemint.com/rss/markets" in urls
+    assert "https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml" in urls
+    assert "https://www.bseindia.com/data/xml/announcements.aspx" in urls
+
