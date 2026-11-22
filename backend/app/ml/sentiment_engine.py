@@ -105,6 +105,59 @@ class SentimentEngine:
         self.lexicon = FinancialLexicon()
         self._onnx_session = None
         self._onnx_path = None
+        self._vocab = None
+
+    def _load_vocab(self):
+        if self._vocab is not None:
+            return self._vocab
+        vocab_path = model_manager.models_dir / "vocab.txt"
+        if vocab_path.exists():
+            vocab = {}
+            try:
+                with open(vocab_path, "r", encoding="utf-8") as f:
+                    for idx, line in enumerate(f):
+                        vocab[line.strip()] = idx
+                self._vocab = vocab
+                return self._vocab
+            except Exception as e:
+                logger.warning("Failed to parse vocab.txt: %s", e)
+        return None
+
+    def _tokenize(self, text: str, max_len: int = 64):
+        vocab = self._load_vocab()
+        words = re.findall(r"[a-zA-Z0-9]+|[^\s\w]", text.lower())
+        subwords = ["[CLS]"]
+        for word in words:
+            if vocab and word in vocab:
+                subwords.append(word)
+            elif vocab:
+                cur = ""
+                matched = False
+                for i in range(len(word)):
+                    prefix = word[:i + 1]
+                    if prefix in vocab:
+                        cur = prefix
+                        matched = True
+                if matched:
+                    subwords.append(cur)
+                else:
+                    subwords.append("[UNK]")
+            else:
+                subwords.append(word)
+
+        subwords.append("[SEP]")
+
+        if vocab:
+            unk_id = vocab.get("[UNK]", 100)
+            ids = [vocab.get(sw, unk_id) for sw in subwords][:max_len]
+        else:
+            ids = [101] + [1000 + (abs(hash(w)) % 27000) for w in subwords[1:-1]][:max_len - 2] + [102]
+
+        pad_len = max_len - len(ids)
+        input_ids = ids + [0] * pad_len
+        attention_mask = [1] * len(ids) + [0] * pad_len
+        token_type_ids = [0] * max_len
+        return input_ids, attention_mask, token_type_ids
 
     def _get_onnx_session(self):
         """Lazy-loads ONNX runtime session if model is downloaded."""
@@ -153,28 +206,14 @@ class SentimentEngine:
         """
         import numpy as np
 
-        # Lightweight character/word tokenizer for ONNX model input
-        # Map words to hashed input IDs padded to 64 tokens
-        tokens = re.findall(r"\b\w+\b", text.lower())[:62]
-        # Standard BERT tokens: [CLS] = 101, [SEP] = 102, PAD = 0
-        input_ids = [101]
-        for token in tokens:
-            # Deterministic hash to token ID range [1000, 28000]
-            input_ids.append(1000 + (abs(hash(token)) % 27000))
-        input_ids.append(102)
-
-        seq_len = 64
-        padded_ids = input_ids + [0] * (seq_len - len(input_ids))
-        attention_mask = [1] * len(input_ids) + [0] * (seq_len - len(input_ids))
+        input_ids, attention_mask, token_type_ids = self._tokenize(text)
 
         inputs = {
-            session.get_inputs()[0].name: np.array([padded_ids], dtype=np.int64),
+            session.get_inputs()[0].name: np.array([input_ids], dtype=np.int64),
             session.get_inputs()[1].name: np.array([attention_mask], dtype=np.int64),
         }
 
-        # Check if model expects token_type_ids
         if len(session.get_inputs()) > 2:
-            token_type_ids = [0] * seq_len
             inputs[session.get_inputs()[2].name] = np.array([token_type_ids], dtype=np.int64)
 
         outputs = session.run(None, inputs)

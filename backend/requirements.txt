@@ -63,6 +63,8 @@ et-xmlfile==2.0.0
     # via openpyxl
 fastapi==0.129.0
     # via -r requirements.in
+flatbuffers==25.12.19
+    # via onnxruntime
 frozendict==2.4.7
     # via yfinance
 greenlet==3.3.1
@@ -100,6 +102,8 @@ numpy==1.26.4
     #   -r requirements.in
     #   pandas
     #   yfinance
+onnxruntime==1.20.1
+    # via -r requirements.in
 openpyxl==3.1.5
     # via -r requirements.in
 packaging==26.0
