@@ -1,12 +1,11 @@
-import re
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 
 class FastEntityMatcher:
     """
     High-performance, pure-Python keyword and entity matching engine
     inspired by FlashText / Aho-Corasick algorithm.
-    
+
     Operates in O(N) time with respect to document length, avoiding catastrophic
     backtracking of large regex unions. Zero third-party C++ dependencies,
     making it 100% portable across Linux, Docker, Desktop, and Android (Chaquopy).

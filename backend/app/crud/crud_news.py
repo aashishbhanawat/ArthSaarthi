@@ -152,5 +152,44 @@ class CRUDMarketNews:
         db.commit()
         return deleted
 
+    def purge_noise_and_disambiguate(
+        self, db: Session, *, filter_instance=None
+    ) -> Tuple[int, int]:
+        """
+        Retroactively scans all market news articles:
+        1. Deletes articles that fail financial relevance / match noise filters.
+        2. Disambiguates ticker symbols (e.g. removes false SCI tags).
+        Returns (deleted_articles_count, updated_articles_count).
+        """
+        if filter_instance is None:
+            from app.ml.relevance_filter import relevance_filter
+            filter_instance = relevance_filter
+
+        articles = db.query(MarketNewsArticle).all()
+        deleted_count = 0
+        updated_count = 0
+
+        for a in articles:
+            full_text = f"{a.title} {a.summary or ''}"
+            # Check if article is noise or non-financial
+            if not filter_instance.is_financial_relevant(a.title, a.summary, a.category):
+                db.delete(a)
+                deleted_count += 1
+                continue
+
+            # Validate attached symbols
+            if a.symbols:
+                valid_syms = [
+                    sym for sym in a.symbols
+                    if filter_instance.validate_ticker(sym, full_text)
+                ]
+                if set(valid_syms) != set(a.symbols):
+                    a.symbols = valid_syms
+                    db.add(a)
+                    updated_count += 1
+
+        db.commit()
+        return deleted_count, updated_count
+
 
 market_news = CRUDMarketNews()

@@ -1,7 +1,7 @@
 import logging
 import re
 from dataclasses import dataclass
-from typing import Optional, Set
+from typing import Set
 
 from app.ml.model_manager import model_manager
 

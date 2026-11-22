@@ -1,22 +1,29 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-19
+**Last Updated:** 2026-11-22
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Release v1.5.0 In Progress — Portfolio Research Feed & Edge ML Subsystem (Issue #86 / FR8.2) Implemented & Verified.
 
-**Latest Achievement:** Designed and implemented the 3-pillar Portfolio Research & Intelligence Feed inspired by Trendlyne (News & Macro Pulse, Broker Research Recommendations & Target Prices, and Quarterly Results & Earnings Concalls) paired with a modular **Edge ML Subsystem (`app/ml`)**. Features pure-Python `FastEntityMatcher` (FlashText trie), `HeadlineDeduplicator` (word n-gram Jaccard similarity), multi-tier `SentimentEngine` (Loughran-McDonald Financial Lexicon + FinBERT INT8 ONNX), and an on-demand model downloader with REST API and frontend controls in `AIIntelligenceTab.tsx`. Verified 100% test pass rate across PostgreSQL, SQLite, and Frontend Jest (55 suites, 215 tests).
+**Latest Achievement:** Implemented **Stage 1: Noise & Relevance Filtering** and **Stage 3: Short Ticker Disambiguation** in the Edge ML subsystem (`app/ml/relevance_filter.py`). Rejects non-business articles (educational exams, recruitment, admit cards, answer keys, crime, sports, entertainment) and disambiguates short ticker collisions (e.g. `SCI` = Shipping Corporation of India vs Supreme Court Junior Court Assistant, `IT`, `IDEA`, `CARE`, `FACT`, `OIL`, `REC`, `LT`). Retrospectively purged 317 existing noise articles from the database and cleaned falsely assigned ticker tags. Verified 100% test pass rate across PostgreSQL and SQLite test suites.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **461/461 Passing (3 Skipped)**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **461/461 Passing (3 Skipped)**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **Passing (All ML & News tests verified)**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **Passing (All ML & News tests verified)**
 *   **Frontend Unit Tests (Vitest/Jest):** ✅ **215/215 Passing (55 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Research Feed Noise Filtering & Ticker Disambiguation (Issue #86) (Updated 2026-11-22):**
+    - **Relevance Filter (`backend/app/ml/relevance_filter.py`):** Added regular-expression based noise filtering for exam/recruitment spam (`EXAM_PATTERNS`) and non-business news (`GENERAL_NOISE_PATTERNS`). Added positive corporate and financial density checking (`is_financial_relevant()`).
+    - **Ticker Disambiguation:** Added `TICKER_COLLISIONS` rules ensuring ambiguous tickers like `SCI` reject Supreme Court / High Court / Science news and require shipping/equity markers, protecting `SCI`, `IT`, `IDEA`, `CARE`, `FACT`, `OIL`, `REC`, and `LT`.
+    - **Service & Ingestion Pipeline:** Wired `relevance_filter` into `MarketNewsService.match_symbols()` and `sync_all_feeds()`.
+    - **Retroactive Database Cleanup:** Added `CRUDMarketNews.purge_noise_and_disambiguate()` and ran live database cleanup, purging 317 noise articles and untagging 8 false ticker assignments.
+    - **Verification:** Comprehensive unit and integration tests added to `test_ml.py` and `test_news.py`. All tests passing on Postgres and SQLite. Ruff clean. TypeScript compilation clean.
 
 *   **Portfolio Research & Intelligence Feed (Issue #86 / FR8.2) (Updated 2026-11-19):**
     - **Research Ingestion Engine:** Created `backend/app/services/news_service.py` aggregating Google News Finance RSS (targeted equity queries), Yahoo Finance RSS, Economic Times Markets, Moneycontrol Broker Reports (broker names, target prices, Buy/Hold/Sell calls), Trendlyne Concalls podcast RSS (audio URLs, quarterly periods), and Moneycontrol quarterly results.

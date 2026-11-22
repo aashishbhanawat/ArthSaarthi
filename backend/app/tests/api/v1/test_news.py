@@ -100,3 +100,48 @@ def test_news_feed_and_summary_api(
         assert ref_data["status"] == "success"
         assert ref_data["articles_fetched"] == 15
         assert ref_data["articles_inserted"] == 10
+
+
+def test_purge_noise_and_disambiguate_db(db: Session) -> None:
+    # 1. Insert a noise article (e.g. the exact user-reported SCI exam spam)
+    noise_article = MarketNewsArticleCreate(
+        id=f"noise-{uuid.uuid4().hex[:8]}",
+        title="SCI JCA answer key 2026 released at sci.gov.in: Supreme Court Junior Court Assistant provisional answer k",
+        summary="Supreme Court has released the junior court assistant answer key.",
+        url=f"https://example.com/sci-exam-{uuid.uuid4().hex[:6]}",
+        source="The Times of India",
+        category="NEWS",
+        published_at=datetime.now(timezone.utc),
+        symbols=["SCI"],
+        sentiment="NEUTRAL",
+    )
+    crud.market_news.create_or_update(db, obj_in=noise_article)
+
+    # 2. Insert a valid article that had a falsely tagged SCI ticker among valid ones
+    mixed_article = MarketNewsArticleCreate(
+        id=f"mixed-{uuid.uuid4().hex[:8]}",
+        title="Supreme Court bench directs auto firms on EV guidelines; Tata Motors shares rise",
+        summary="Supreme Court issued guidelines. Tata Motors shares gained 2% on NSE.",
+        url=f"https://example.com/sc-tata-{uuid.uuid4().hex[:6]}",
+        source="Economic Times",
+        category="NEWS",
+        published_at=datetime.now(timezone.utc),
+        symbols=["SCI", "TATAMOTORS"],
+        sentiment="POSITIVE",
+    )
+    crud.market_news.create_or_update(db, obj_in=mixed_article)
+
+    # Execute purge
+    deleted, updated = crud.market_news.purge_noise_and_disambiguate(db)
+    assert deleted >= 1
+
+    # Check noise article is gone
+    purged = crud.market_news.get(db, noise_article.id)
+    assert purged is None
+
+    # Check mixed article had SCI stripped, retaining TATAMOTORS
+    retained = crud.market_news.get(db, mixed_article.id)
+    assert retained is not None
+    assert "SCI" not in retained.symbols
+    assert "TATAMOTORS" in retained.symbols
+

@@ -24,6 +24,24 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-11-22-01
+**Title:** Non-financial exam spam matching short equity tickers and polluting Research Feed (e.g. SCI matching Supreme Court Junior Court Assistant)
+**Module:** Research Feed & ML Subsystem (`app/ml/relevance_filter.py`, `app/services/news_service.py`)
+**Reported By:** User
+**Date Reported:** 2026-11-22
+**Classification:** Implementation (Backend / ML)
+**Severity:** Medium
+**Description:** Google News RSS queries for short equity symbols (e.g. `SCI stock OR share price india`) returned non-business news such as "SCI JCA answer key 2026 released at sci.gov.in: Supreme Court Junior Court Assistant provisional answer k - The Times of India". The keyword entity matcher tagged the article with ticker `SCI` (Shipping Corporation of India) due to the acronym collision with Supreme Court of India, and non-financial exam spam was inserted into `market_news_articles`.
+**Steps to Reproduce:**
+1. Have `SCI` in active holdings or watchlists.
+2. Ingest Google News RSS feed for `SCI`.
+3. Observe exam answer key articles appearing in the Research Feed tagged under `SCI`.
+**Expected Behavior:** Stage 1 noise filtering rejects exam/recruitment spam and non-financial articles. Ticker disambiguation ensures acronym collisions (such as `SCI` with Supreme Court, `IT` with Income Tax, `IDEA` with colloquial idioms) are rejected unless co-occurring with genuine business/corporate equity markers.
+**Actual Behavior:** Non-financial educational exam news was tagged with `SCI` and displayed in the user's Research Feed.
+**Resolution:** Created `RelevanceFilter` in `app/ml/relevance_filter.py` with `EXAM_PATTERNS`, `GENERAL_NOISE_PATTERNS`, and ticker-specific disambiguation rules (`TICKER_COLLISIONS` for `SCI`, `IT`, `IDEA`, `CARE`, `FACT`, `OIL`, `REC`, `LT`). Integrated into `MarketNewsService.match_symbols()` and `sync_all_feeds()`. Added `CRUDMarketNews.purge_noise_and_disambiguate()` to retroactively purge non-financial articles and clean falsely tagged tickers. Purged 317 existing noise articles and cleaned 8 ticker tags from the live database.
+
+---
+
 **Bug ID:** 2026-10-07-02
 **Title:** ICICI Breeze authentication HTTP 405 Method Not Allowed on customerdetails & un-exchanged raw session token saved to DB
 **Module:** Import Sessions / ICICI Breeze Provider & Broker Router

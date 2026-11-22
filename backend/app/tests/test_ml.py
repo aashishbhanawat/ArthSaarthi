@@ -81,3 +81,78 @@ def test_model_manager_status(tmp_path):
     deleted = mgr.delete_model("finbert_int8")
     assert deleted
     assert not mgr.is_model_available("finbert_int8")
+
+
+def test_relevance_filter_noise_detection():
+    from app.ml.relevance_filter import relevance_filter
+
+    # The exact noise article reported by the user
+    user_noise = (
+        "SCI JCA answer key 2026 released at sci.gov.in: "
+        "Supreme Court Junior Court Assistant provisional answer k - The Times of India"
+    )
+    assert relevance_filter.is_noise(user_noise)
+    assert not relevance_filter.is_financial_relevant(user_noise)
+
+    # Other exam/recruitment spam
+    assert relevance_filter.is_noise("SSC CGL Tier 1 Admit Card 2026 released, download hall ticket now")
+    assert relevance_filter.is_noise("Civil judge recruitment preliminary exam result declared on highcourt.gov.in")
+    assert not relevance_filter.is_financial_relevant("UPSC Civil Services vacancy 2026 apply online")
+
+    # General noise (crime, sports, entertainment)
+    assert relevance_filter.is_noise("Celebrity dating rumors spark controversy at Bollywood box office")
+    assert relevance_filter.is_noise("India vs Australia 3rd test match live cricket score and highlights")
+    assert not relevance_filter.is_financial_relevant("Horoscope today: Astrological predictions for all zodiac signs")
+
+
+def test_relevance_filter_financial_positive():
+    from app.ml.relevance_filter import relevance_filter
+
+    valid_1 = "Tata Motors reports 45% surge in Q3 consolidated profit, declares special dividend"
+    assert not relevance_filter.is_noise(valid_1)
+    assert relevance_filter.is_financial_relevant(valid_1)
+
+    valid_2 = "Shipping Corp of India (SCI) Q3 profit jumps 30% YoY with strong fleet charter rates"
+    assert not relevance_filter.is_noise(valid_2)
+    assert relevance_filter.is_financial_relevant(valid_2)
+
+    valid_3 = "Motilal Oswal maintains buy on RECLTD with target of Rs 600 as loan book expands"
+    assert not relevance_filter.is_noise(valid_3)
+    assert relevance_filter.is_financial_relevant(valid_3)
+
+
+def test_ticker_disambiguation():
+    from app.ml.relevance_filter import relevance_filter
+
+    # SCI: Reject Supreme Court and exam noise
+    sci_noise = (
+        "SCI JCA answer key 2026 released at sci.gov.in: "
+        "Supreme Court Junior Court Assistant provisional answer k - The Times of India"
+    )
+    assert not relevance_filter.validate_ticker("SCI", sci_noise)
+
+    sci_court = "Supreme Court of India (SCI) bench issues notice to government on Delhi air quality"
+    assert not relevance_filter.validate_ticker("SCI", sci_court)
+
+    # SCI: Accept genuine Shipping Corporation of India news
+    sci_valid_1 = "Shipping Corporation of India (SCI) approves interim dividend of Rs 5 per share"
+    assert relevance_filter.validate_ticker("SCI", sci_valid_1)
+
+    sci_valid_2 = "SCI Q3 net profit rises 15%, fleet expansion capex on track"
+    assert relevance_filter.validate_ticker("SCI", sci_valid_2)
+
+    # IT: Reject Income Tax / Info Tech phrases without stock markers
+    assert not relevance_filter.validate_ticker("IT", "Government extends deadline for Income Tax return filing")
+    assert relevance_filter.validate_ticker("IT", "Top IT sector stocks rally on NSE as margins expand")
+
+    # IDEA: Reject general idiom
+    assert not relevance_filter.validate_ticker("IDEA", "Here is a good idea to spend your weekend")
+    assert relevance_filter.validate_ticker("IDEA", "Vodafone Idea (IDEA) shares jump as telecom ARPU improves")
+
+    # CARE: Reject healthcare idiom
+    assert not relevance_filter.validate_ticker("CARE", "Essential tips on child care and infant nutrition")
+    assert relevance_filter.validate_ticker("CARE", "CARE Ratings upgrades long-term debt rating of Tata Power")
+
+    # Long ticker symbols pass cleanly
+    assert relevance_filter.validate_ticker("RELIANCE", "Reliance expands retail presence across tier 2 cities")
+

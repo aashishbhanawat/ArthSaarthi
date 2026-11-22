@@ -1,3 +1,34 @@
+## 2026-11-22: Filter Non-Financial Noise and Disambiguate Ticker Collisions in Research Feed (Issue #86)
+
+**Task:** Filter out non-financial noise (educational exams, recruitment notifications, admit cards, answer keys, crime, sports) and disambiguate short equity ticker acronym collisions (e.g. `SCI` = Shipping Corporation of India vs Supreme Court Junior Court Assistant) from the Portfolio Research & Intelligence Feed.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & ML Engineer
+
+### Summary
+
+1. **Noise & Relevance Filtering (`backend/app/ml/relevance_filter.py`):**
+   - Implemented `RelevanceFilter` with regular expressions catching educational and government recruitment spam (`EXAM_PATTERNS`: answer keys, admit cards, hall tickets, provisional answers, court assistants, jca, `gov.in`, `nic.in`, syllabus, vacancies) and non-business chatter (`GENERAL_NOISE_PATTERNS`: crime, sports, entertainment, horoscope).
+   - Enforced positive corporate and financial density validation (`is_financial_relevant()`), requiring at least one verified market/equity/financial marker before ingestion into the database.
+2. **Short Ticker Disambiguation (`TICKER_COLLISIONS`):**
+   - Configured deterministic rejection and co-occurrence rules for collision-prone tickers:
+     - `SCI`: Rejects Supreme Court (`supreme court`, `junior court`, `sci.gov.in`, `court assistant`, `jca`, `judge`, `lawyer`, `science`) and requires shipping/equity signals (`shipping`, `vessel`, `fleet`, `psu`, `dividend`, `shares`, `stock`, `profit`, `results`).
+     - `IT`: Disambiguates from Income Tax and general info tech idioms.
+     - `IDEA`: Disambiguates Vodafone Idea from colloquial English phrases.
+     - `CARE`: Disambiguates CARE Ratings from healthcare/childcare idioms.
+     - `FACT`: Disambiguates Fertilisers & Chemicals Travancore from common English idioms.
+     - `OIL`, `REC`, `LT`: Protected against non-equity collisions.
+3. **Pipeline Ingestion & Retrospective Purge:**
+   - Wired `RelevanceFilter.validate_ticker()` into `MarketNewsService.match_symbols()` to prevent false ticker tagging.
+   - Wired `RelevanceFilter.is_financial_relevant()` into `MarketNewsService.sync_all_feeds()` to reject noise at the gateway.
+   - Implemented `CRUDMarketNews.purge_noise_and_disambiguate()` and executed it against the live database: successfully purged 317 noise articles and disambiguated 8 false ticker assignments.
+4. **Testing & Validation:**
+   - Added unit tests in `app/tests/test_ml.py` verifying noise detection against the user's exact SCI JCA headline and ticker disambiguation across multiple short symbols.
+   - Added integration test `test_purge_noise_and_disambiguate_db` in `app/tests/api/v1/test_news.py`.
+   - Verified 100% test pass rate across PostgreSQL (10 passed) and SQLite (10 passed).
+   - Linters clean: Ruff (0 errors), TypeScript `tsc --noEmit` (0 errors).
+
+---
+
 ## 2026-11-19: Implement Portfolio Research & Intelligence Feed (Curated News, Broker Targets & Concall Insights) (FR8.2 / Issue #86)
 
 **Task:** Design and implement a multi-pillar portfolio research and intelligence feed aggregating company and market news, broker research recommendations/target prices, quarterly declared earnings, and conference call audio/transcripts linked to active user holdings and watchlists.  

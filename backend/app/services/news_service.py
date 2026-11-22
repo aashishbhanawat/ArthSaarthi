@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.crud.crud_news import market_news
 from app.ml.deduplicator import headline_deduplicator
 from app.ml.entity_matcher import FastEntityMatcher
+from app.ml.relevance_filter import relevance_filter
 from app.ml.sentiment_engine import sentiment_engine
 from app.models.asset import Asset
 from app.models.transaction import Transaction
@@ -284,13 +285,15 @@ class MarketNewsService:
         """
         Matches active portfolio symbols against title and summary text
         using pure-Python trie entity matcher for deterministic, fast matching.
+        Disambiguates short tickers against false collisions.
         """
         if not text or not active_symbols:
             return []
         matcher = FastEntityMatcher(case_sensitive=False)
         for sym in active_symbols:
             matcher.add_keyword(sym, clean_name=sym)
-        return matcher.extract_keywords(text)
+        candidates = matcher.extract_keywords(text)
+        return [sym for sym in candidates if relevance_filter.validate_ticker(sym, text)]
 
     def fetch_feed_items(self, feed_url: str, source: str, category: str) -> List[Dict[str, Any]]:
         """Fetches and parses a single RSS feed endpoint."""
@@ -359,6 +362,10 @@ class MarketNewsService:
             source = item["source"]
             pub_date = item["published_at"]
 
+            # Filter non-financial noise & exam/recruitment/crime spam
+            if not relevance_filter.is_financial_relevant(title, summary, category=category):
+                continue
+
             # Match symbols
             full_text = f"{title} {summary}"
             matched_syms = self.match_symbols(full_text, active_symbols)
@@ -404,6 +411,14 @@ class MarketNewsService:
                 logger.info("Pruned %d market news articles older than 30 days", pruned)
         except Exception as e:
             logger.warning("Error pruning old news articles: %s", e)
+
+        # Purge existing noise articles and disambiguate tickers
+        try:
+            del_noise, upd_syms = market_news.purge_noise_and_disambiguate(db, filter_instance=relevance_filter)
+            if del_noise > 0 or upd_syms > 0:
+                logger.info("Purged %d noise articles and cleaned %d ticker tags", del_noise, upd_syms)
+        except Exception as e:
+            logger.warning("Error cleaning noise articles: %s", e)
 
         return len(raw_items), inserted_count
 
