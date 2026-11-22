@@ -1,3 +1,21 @@
+## 2026-11-22: Resolve CI/CD Linting and CodeQL Security Review on PR #613 (Issue #86)
+
+**Task:** Resolve CI/CD pipeline failure on `Lint Backend` (Ruff `I001`) and address GitHub Advanced Security CodeQL review comment regarding cleartext API key storage.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Backend Lint Fix (`backend/app/api/v1/endpoints/ml.py`):**
+   - Corrected import ordering and PEP 8 section spacing in `ml.py` to satisfy Ruff rule `I001`.
+   - Verified clean execution across the entire backend: `ruff check .` passes with 0 errors.
+2. **CodeQL Review & Security Remediation (`frontend/src/components/Profile/AIIntelligenceTab.tsx`):**
+   - Addressed CodeQL PR review comment on PR #613 (`Clear text storage of sensitive information` / CWE-312).
+   - Removed plain `localStorage.setItem('ai_${provider}_key', apiKey)` from client preferences; cloud LLM keys will be stored and managed securely via backend vault upon feature release in v1.6.
+   - Verified `npx tsc --noEmit` and `npx eslint` pass cleanly with 0 errors.
+
+---
+
 ## 2026-11-22: Fix Dark Mode Contrast & Card Theming in Research Feed (Issue #86)
 
 **Task:** Fix unreadable text and lack of contrast in Holding Intelligence & Research feed cards under Dark Mode.  

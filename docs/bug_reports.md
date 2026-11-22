@@ -24,6 +24,27 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-11-22-03
+**Title:** Backend lint CI failure due to unsorted imports in `app/api/v1/endpoints/ml.py` and CodeQL cleartext storage alert
+**Module:** Backend Endpoints & Frontend AI Tab (`backend/app/api/v1/endpoints/ml.py`, `frontend/src/components/Profile/AIIntelligenceTab.tsx`)
+**Reported By:** GitHub Actions CI/CD & CodeQL Bot
+**Date Reported:** 2026-11-22
+**Classification:** Implementation (Full-Stack / Security & Lint)
+**Severity:** High (Blocked CI/CD Pipeline on PR #613)
+**Description:** 
+1. In `backend/app/api/v1/endpoints/ml.py`, imports were unsorted (`from fastapi import APIRouter, HTTPException, Depends` instead of alphabetical order with standard blank line separation), causing Ruff check `I001` to fail during the CI/CD `Lint Backend` workflow step.
+2. In `frontend/src/components/Profile/AIIntelligenceTab.tsx`, CodeQL scanning flagged `localStorage.setItem('ai_${provider}_key', apiKey)` for Clear Text Storage of Sensitive Information (CWE-312).
+**Steps to Reproduce:**
+1. Run `docker compose run --rm backend sh -c "pip install -r requirements-dev.in && ruff check ."` in CI.
+2. Run CodeQL security scan action on PR #613.
+**Expected Behavior:** All imports pass Ruff `I001` formatting, and no sensitive credentials or API keys are stored unencrypted in `localStorage`.
+**Actual Behavior:** CI `Test and Lint` failed on `Lint Backend`, and CodeQL scan check reported failure.
+**Resolution:** 
+1. Organized imports in `backend/app/api/v1/endpoints/ml.py` to satisfy Ruff. Verified entire backend passes `ruff check .` with 0 errors.
+2. Removed cleartext `localStorage` storage of `apiKey` from `AIIntelligenceTab.tsx`. Cloud LLM API key management will be backed by encrypted server-side vault in v1.6. Verified TypeScript and ESLint clean.
+
+---
+
 **Bug ID:** 2026-11-22-02
 **Title:** Research feed cards rendered with light background and white text in dark mode due to invalid Tailwind color class
 **Module:** UI/Styling (`frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx`)

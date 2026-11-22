@@ -107,9 +107,7 @@ export const AIIntelligenceTab: React.FC = () => {
     localStorage.setItem('ai_provider', provider);
     localStorage.setItem('ai_ollama_url', ollamaUrl);
     localStorage.setItem('ai_ollama_model', ollamaModel);
-    if (apiKey) {
-      localStorage.setItem(`ai_${provider}_key`, apiKey);
-    }
+    // Cloud LLM API keys will be managed via backend vault encryption in v1.6
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -404,7 +402,7 @@ export const AIIntelligenceTab: React.FC = () => {
                 placeholder="Enter your API secret key"
                 className="form-input font-mono"
               />
-              <span className="text-xs text-gray-500 mt-1 block">Stored securely in client local preferences</span>
+              <span className="text-xs text-gray-500 mt-1 block">Cloud API key storage will be managed securely via backend vault upon LLM launch</span>
             </div>
           )}
 

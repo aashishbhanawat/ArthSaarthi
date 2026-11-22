@@ -18,6 +18,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **CI/CD Pipeline & CodeQL Review Fixes (PR #613 / Issue #86) (Updated 2026-11-22):**
+    - **Backend Linting:** Resolved Ruff import sorting (`I001`) in `app/api/v1/endpoints/ml.py`. Entire backend verified clean under `ruff check .`.
+    - **CodeQL Security Fix:** Remediated CodeQL alert CWE-312 (Clear text storage of sensitive information) in `AIIntelligenceTab.tsx` by eliminating unencrypted `localStorage` writes for `apiKey`.
+    - **Verification:** Full backend lint clean (0 errors), frontend TypeScript `tsc --noEmit` (0 errors), ESLint (0 errors).
+
 *   **Research Feed Dark Mode Contrast Fix (Issue #86) (Updated 2026-11-22):**
     - **Contrast & Styling:** Replaced non-existent Tailwind class `dark:bg-gray-750/50` in `ResearchIntelligenceFeed.tsx` with `dark:bg-gray-900/60` and `dark:border-gray-700/80`.
     - **Typography & Badges:** Fixed white-on-light-gray text bug; updated headlines to `dark:text-white`, summaries to `dark:text-gray-300`, and added high-contrast borders to sentiment/ticker pills.

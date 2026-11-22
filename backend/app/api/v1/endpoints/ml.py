@@ -1,5 +1,6 @@
 from typing import Any, List
-from fastapi import APIRouter, HTTPException, Depends
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.core.dependencies import get_current_active_user
