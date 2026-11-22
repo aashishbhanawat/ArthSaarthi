@@ -20,6 +20,7 @@ from app.api.v1.endpoints import (
     import_sessions,
     income,
     me,
+    ml,
     news,
     portfolios,
     ppf_accounts,
@@ -139,3 +140,6 @@ api_router.include_router(
 
 # Portfolio Research & Market News Feed (FR8.2 / #86)
 api_router.include_router(news.router, prefix="/news", tags=["news"])
+
+# Edge Machine Learning & NLP Models
+api_router.include_router(ml.router, prefix="/ml", tags=["ml"])

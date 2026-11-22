@@ -4,9 +4,9 @@
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Portfolio Research & Intelligence Feed (Issue #86 / FR8.2) Implemented & Verified. UX Navigation & Profile Hub Streamlined.
+*   **Overall Status:** Release v1.5.0 In Progress — Portfolio Research Feed & Edge ML Subsystem (Issue #86 / FR8.2) Implemented & Verified.
 
-**Latest Achievement:** Designed and implemented the 3-pillar Portfolio Research & Intelligence Feed inspired by Trendlyne (News & Macro Pulse, Broker Research Recommendations & Target Prices, and Quarterly Results & Earnings Concalls) linked directly to user holdings and watchlists. Implemented pure-Python XML/RSS ingestion engine with ElementTree, financial sentiment scoring, APScheduler background job `fetch_market_news` (every 4 hours), `/api/v1/news` endpoints, dedicated `/research` page, consolidated left-hand navigation accordions, and a 5-tab Profile & Settings Hub with Risk Profiling and LLM configuration. Verified 100% test pass rate across PostgreSQL (461 passed), SQLite (461 passed), and Frontend Jest (55 suites, 215 tests).
+**Latest Achievement:** Designed and implemented the 3-pillar Portfolio Research & Intelligence Feed inspired by Trendlyne (News & Macro Pulse, Broker Research Recommendations & Target Prices, and Quarterly Results & Earnings Concalls) paired with a modular **Edge ML Subsystem (`app/ml`)**. Features pure-Python `FastEntityMatcher` (FlashText trie), `HeadlineDeduplicator` (word n-gram Jaccard similarity), multi-tier `SentimentEngine` (Loughran-McDonald Financial Lexicon + FinBERT INT8 ONNX), and an on-demand model downloader with REST API and frontend controls in `AIIntelligenceTab.tsx`. Verified 100% test pass rate across PostgreSQL, SQLite, and Frontend Jest (55 suites, 215 tests).
 
 ## 2. Test Suite Status
 

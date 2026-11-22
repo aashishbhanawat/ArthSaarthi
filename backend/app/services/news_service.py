@@ -11,6 +11,9 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.crud.crud_news import market_news
+from app.ml.deduplicator import headline_deduplicator
+from app.ml.entity_matcher import FastEntityMatcher
+from app.ml.sentiment_engine import sentiment_engine
 from app.models.asset import Asset
 from app.models.transaction import Transaction
 from app.models.watchlist import WatchlistItem
@@ -82,15 +85,8 @@ def clean_html_text(text: Optional[str]) -> str:
 
 
 def calculate_sentiment(text: str) -> str:
-    """Computes basic financial sentiment based on keyword occurrence."""
-    words = set(re.findall(r"\b[a-zA-Z]+\b", text.lower()))
-    pos = len(words.intersection(POSITIVE_KEYWORDS))
-    neg = len(words.intersection(NEGATIVE_KEYWORDS))
-    if pos > neg:
-        return "POSITIVE"
-    if neg > pos:
-        return "NEGATIVE"
-    return "NEUTRAL"
+    """Computes financial sentiment using the centralized sentiment engine (FinBERT or Lexicon)."""
+    return sentiment_engine.analyze(text).label
 
 
 def parse_rfc2822_date(date_str: Optional[str]) -> datetime:
@@ -286,16 +282,15 @@ class MarketNewsService:
 
     def match_symbols(self, text: str, active_symbols: Set[str]) -> List[str]:
         """
-        Matches active portfolio symbols against title and summary text.
-        Uses word boundaries to prevent false positives (e.g. 'IT' in 'with').
+        Matches active portfolio symbols against title and summary text
+        using pure-Python trie entity matcher for deterministic, fast matching.
         """
-        matched: List[str] = []
-        upper_text = text.upper()
+        if not text or not active_symbols:
+            return []
+        matcher = FastEntityMatcher(case_sensitive=False)
         for sym in active_symbols:
-            pattern = rf"\b{re.escape(sym)}\b"
-            if re.search(pattern, upper_text):
-                matched.append(sym)
-        return matched
+            matcher.add_keyword(sym, clean_name=sym)
+        return matcher.extract_keywords(text)
 
     def fetch_feed_items(self, feed_url: str, source: str, category: str) -> List[Dict[str, Any]]:
         """Fetches and parses a single RSS feed endpoint."""
@@ -354,6 +349,11 @@ class MarketNewsService:
             # Generate SHA256 deterministic ID from URL
             article_id = hashlib.sha256(url.encode("utf-8")).hexdigest()
             title = item["title"][:500]
+
+            # Filter syndicated duplicate headlines across sources
+            if headline_deduplicator.is_duplicate(title):
+                continue
+
             summary = item["summary"]
             category = item["category"]
             source = item["source"]

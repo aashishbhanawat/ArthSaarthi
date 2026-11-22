@@ -3128,6 +3128,49 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 ### Outcome
 **Success.** TypeScript compilation: 0 errors; ESLint: 0 errors; Unit test suite: 55/55 passed (215 tests). Clean dashboard, organized navigation sidebar, and zero excessive scrolling or side gaps on the profile page.
 
+---
+
+## Date: 2026-11-22
+**Issue Reference:** #86 / PR #613
+
+**Task:** Modular Edge ML Subsystem & On-Demand FinBERT Model Downloader.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Universal ML Subsystem (`app/ml`):** Created a standalone, decoupled machine learning module accessible across all services (News, Statement Import, Corporate Actions):
+   - **`FastEntityMatcher` (`entity_matcher.py`):** Pure-Python trie keyword matcher based on Aho-Corasick / FlashText algorithm. Operates in $O(N)$ document time with strict word boundary enforcement, preventing regex false positives.
+   - **`HeadlineDeduplicator` (`deduplicator.py`):** Word n-gram Jaccard similarity matcher to automatically drop syndicated duplicate news stories across multiple RSS sources.
+   - **`SentimentEngine` (`sentiment_engine.py`):** Multi-tier sentiment engine featuring the **Loughran-McDonald Financial Lexicon** (pure Python, instant < 1ms, financial negations aware) and an optional ONNX inference runner for **FinBERT INT8 Quantized**.
+   - **`ModelManager` (`model_manager.py`):** Manages on-demand model downloads with chunked background streaming, progress tracking, and file deletion.
+2. **REST Endpoints (`/api/v1/ml`):**
+   - Added `GET /models`, `POST /models/{id}/download`, `GET /models/{id}/progress`, `DELETE /models/{id}`, and `POST /sentiment/test`.
+3. **News Service Integration:** Upgraded `news_service.py` to use `FastEntityMatcher` for ticker extraction, `HeadlineDeduplicator` to drop duplicated syndicated articles, and `sentiment_engine` for sentiment scoring.
+4. **UI Integration (`AIIntelligenceTab.tsx`):**
+   - Added **Edge Financial Models (On-Demand & 100% Private)** card with model status, download button with real-time progress bar, delete button, and an interactive headline sentiment playground.
+
+### File Changes
+
+**Backend:**
+*   **Created:** `backend/app/ml/__init__.py` — Package exports.
+*   **Created:** `backend/app/ml/entity_matcher.py` — Pure-Python FlashText trie ticker matcher.
+*   **Created:** `backend/app/ml/deduplicator.py` — Near-duplicate headline detector.
+*   **Created:** `backend/app/ml/sentiment_engine.py` — Financial lexicon and ONNX engine.
+*   **Created:** `backend/app/ml/model_manager.py` — Edge model catalog and download manager.
+*   **Created:** `backend/app/api/v1/endpoints/ml.py` — ML REST endpoints.
+*   **Created:** `backend/app/tests/test_ml.py` — Comprehensive unit test suite.
+*   **Modified:** `backend/app/api/v1/api.py` — Registered `/ml` router.
+*   **Modified:** `backend/app/services/news_service.py` — Integrated ML pipeline.
+*   **Modified:** `.gitignore` — Ignored downloaded model weights and artifacts.
+
+**Frontend:**
+*   **Created:** `frontend/src/services/mlApi.ts` — API client for ML endpoints.
+*   **Modified:** `frontend/src/components/Profile/AIIntelligenceTab.tsx` — Added Edge ML Model card, progress bar, and live sentiment playground.
+
+### Outcome
+**Success.** Backend pytest passed on PostgreSQL (6/6) and SQLite (6/6). Frontend TypeScript compilation and ESLint: 0 errors; Unit test suite: 55/55 passed (215 tests). Model download is completely optional and non-blocking, preserving universal compatibility across Android, Desktop, and Server.
+
 
 
 
