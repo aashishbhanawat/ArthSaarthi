@@ -18,6 +18,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Research Feed Dark Mode Contrast Fix (Issue #86) (Updated 2026-11-22):**
+    - **Contrast & Styling:** Replaced non-existent Tailwind class `dark:bg-gray-750/50` in `ResearchIntelligenceFeed.tsx` with `dark:bg-gray-900/60` and `dark:border-gray-700/80`.
+    - **Typography & Badges:** Fixed white-on-light-gray text bug; updated headlines to `dark:text-white`, summaries to `dark:text-gray-300`, and added high-contrast borders to sentiment/ticker pills.
+    - **Verification:** TypeScript clean, ESLint clean, and Jest component tests 4/4 passed.
+
 *   **Research Feed Expansion with NSE, BSE & Livemint (Issue #86) (Updated 2026-11-22):**
     - **Livemint Integration:** Added `Livemint Markets` and `Livemint Companies` RSS feeds for high-density market news, broker targets, and quarterly corporate coverage.
     - **NSE Exchange Disclosures:** Added `NSE Announcements` (`Online_announcements.xml`), `NSE Corporate Actions` (`Corporate_action.xml`), and `NSE Results` (`Financial_Results.xml`) from official `nsearchives.nseindia.com`.

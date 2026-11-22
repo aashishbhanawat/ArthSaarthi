@@ -1,3 +1,29 @@
+## 2026-11-22: Fix Dark Mode Contrast & Card Theming in Research Feed (Issue #86)
+
+**Task:** Fix unreadable text and lack of contrast in Holding Intelligence & Research feed cards under Dark Mode.  
+**AI Assistant:** Antigravity  
+**Role:** Frontend Developer & UI/UX Specialist
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - In `frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx`, line 292 contained `dark:bg-gray-750/50`.
+   - `gray-750` is not a valid Tailwind CSS color shade, so the class was discarded at build time.
+   - Consequently, in dark mode the cards fell back to `bg-gray-50/60` (chalky light gray), while child text elements rendered in `dark:text-white` and `dark:text-gray-100`, resulting in white-on-light-gray text with near-zero contrast (< 1.5:1).
+2. **Styling & Contrast Fixes:**
+   - Replaced invalid background with `dark:bg-gray-900/60` (hover: `dark:hover:bg-gray-900/90`) on light mode `bg-gray-50/80` (hover: `hover:bg-white`).
+   - Reinforced borders with `border-gray-200 dark:border-gray-700/80` and subtle elevation shadows.
+   - Enhanced headline contrast: `text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400`.
+   - Enhanced summary contrast: `text-gray-600 dark:text-gray-300`.
+   - Enhanced sentiment badges with clear borders: Bullish (`dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/60`), Bearish (`dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/60`), and Neutral (`dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700`).
+   - Enhanced ticker badge contrast: `bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700`.
+3. **Verification:**
+   - `npx tsc --noEmit`: 0 errors.
+   - `npx eslint`: 0 errors.
+   - Jest component test suite `ResearchIntelligenceFeed.test.tsx`: 4/4 passed.
+
+---
+
 ## 2026-11-22: Integrate NSE, BSE, and Livemint Feeds into Research Feed (Issue #86)
 
 **Task:** Integrate official exchange announcement and corporate action feeds from NSE (`nsearchives.nseindia.com`) and BSE (`bseindia.com`), alongside market intelligence from Livemint (`livemint.com`), into the Research Feed ingestion pipeline.  

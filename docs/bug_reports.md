@@ -24,6 +24,24 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-11-22-02
+**Title:** Research feed cards rendered with light background and white text in dark mode due to invalid Tailwind color class
+**Module:** UI/Styling (`frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx`)
+**Reported By:** User
+**Date Reported:** 2026-11-22
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:** In dark mode, intelligence research feed cards were rendered with near-zero text contrast. An invalid Tailwind class `dark:bg-gray-750/50` failed to compile and caused the cards to fall back to the light-mode `bg-gray-50/60` (chalky light gray). Because text inside the card used `dark:text-white` and `dark:text-gray-100`, white text was placed against a light gray tile background, making headlines and summaries unreadable.
+**Steps to Reproduce:**
+1. Switch application to Dark Mode.
+2. Open Dashboard and scroll to "Holding Intelligence & Research" feed.
+3. Observe article cards rendered with light gray background and white/light text.
+**Expected Behavior:** Cards should render with a deep dark background (e.g. `dark:bg-gray-900/60`) and prominent high-contrast text (`dark:text-white`, `dark:text-gray-300`).
+**Actual Behavior:** Cards fell back to light gray background with white text, resulting in severe contrast failure.
+**Resolution:** Replaced the invalid `dark:bg-gray-750/50` with `dark:bg-gray-900/60` (`hover:dark:bg-gray-900/90`), paired with `dark:border-gray-700/80`. Enhanced typography contrast (`dark:text-white` for titles, `dark:text-gray-300` for summaries), sentiment badge borders, and ticker badge contrast.
+
+---
+
 **Bug ID:** 2026-11-22-01
 **Title:** Non-financial exam spam matching short equity tickers and polluting Research Feed (e.g. SCI matching Supreme Court Junior Court Assistant)
 **Module:** Research Feed & ML Subsystem (`app/ml/relevance_filter.py`, `app/services/news_service.py`)

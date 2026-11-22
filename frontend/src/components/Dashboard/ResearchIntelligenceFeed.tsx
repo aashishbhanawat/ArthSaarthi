@@ -102,19 +102,19 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
     switch (sentiment) {
       case 'POSITIVE':
         return (
-          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
             Bullish
           </span>
         );
       case 'NEGATIVE':
         return (
-          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">
+          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60">
             Bearish
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
             Neutral
           </span>
         );
@@ -289,16 +289,16 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
           articles.map((item) => (
             <div
               key={item.id}
-              className="group p-3.5 rounded-lg border border-gray-100 dark:border-gray-700/80 bg-gray-50/60 dark:bg-gray-750/50 hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-all"
+              className="group p-4 rounded-xl border border-gray-200 dark:border-gray-700/80 bg-gray-50/80 dark:bg-gray-900/60 hover:bg-white dark:hover:bg-gray-900/90 shadow-sm hover:shadow transition-all"
             >
               {/* Meta row */}
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                     {item.source}
                   </span>
                   <span className="text-gray-300 dark:text-gray-600">•</span>
-                  <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {formatRelativeTime(item.published_at)}
                   </span>
                 </div>
@@ -308,14 +308,14 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
                     <>
                       {getRecommendationBadge(item.metadata_json.recommendation)}
                       {item.metadata_json.target_price && (
-                        <span className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                        <span className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
                           Target: ₹{Number(item.metadata_json.target_price).toFixed(2)}
                         </span>
                       )}
                     </>
                   )}
                   {item.category === 'CONCALL' && item.metadata_json?.quarter && (
-                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
                       {item.metadata_json.quarter}
                     </span>
                   )}
@@ -327,24 +327,24 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 group-hover:underline flex items-start gap-1.5 transition-colors"
+                className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 group-hover:underline flex items-start gap-1.5 transition-colors leading-snug"
               >
                 <span>{item.title}</span>
-                <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 flex-shrink-0 mt-0.5" />
+                <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 flex-shrink-0 mt-1" />
               </a>
 
               {/* Summary */}
               {item.summary && (
-                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 line-clamp-2 leading-relaxed">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1.5 line-clamp-2 leading-relaxed">
                   {item.summary}
                 </p>
               )}
 
               {/* Bottom footer: Broker name or Concall audio link & Symbol tags */}
-              <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5 pt-2 border-t border-gray-200/60 dark:border-gray-700/60">
+              <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2.5 border-t border-gray-200/80 dark:border-gray-700/70">
                 <div className="flex items-center gap-2">
                   {item.metadata_json?.broker && (
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                       Broker: <strong className="text-gray-700 dark:text-gray-200">{item.metadata_json.broker}</strong>
                     </span>
                   )}
@@ -353,7 +353,7 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
                       href={item.metadata_json.audio_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:underline"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline"
                     >
                       <SpeakerWaveIcon className="w-3.5 h-3.5" />
                       Listen Concall Audio
@@ -363,11 +363,11 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
 
                 {/* Symbols */}
                 {item.symbols && item.symbols.length > 0 && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     {item.symbols.map((sym) => (
                       <span
                         key={sym}
-                        className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                        className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700"
                       >
                         {sym}
                       </span>
