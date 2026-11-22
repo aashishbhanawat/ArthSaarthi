@@ -42,7 +42,7 @@ const ChangePasswordForm = () => {
   };
 
   return (
-    <div className="card mt-8">
+    <div className="card">
       <div className="card-body">
         <h2 className="text-2xl font-bold mb-4">Change Password</h2>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>

@@ -167,9 +167,6 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               Holding Intelligence & Research
             </h2>
-            <span className="px-2 py-0.5 text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-md">
-              FR8.2
-            </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Curated holding news, broker target prices, and earnings concall insights

@@ -41,6 +41,7 @@ const MobileHeader: React.FC = () => {
         if (path.startsWith('/capital-gains')) return 'Capital Gains';
         if (path.startsWith('/import')) return 'Import';
         if (path.startsWith('/watchlists')) return 'Watchlists';
+        if (path.startsWith('/research')) return 'Research & News';
         if (path.startsWith('/goals')) return 'Goals';
         if (path.startsWith('/risk-profile')) return 'Risk Profiling';
         if (path.startsWith('/profile')) return 'Profile';

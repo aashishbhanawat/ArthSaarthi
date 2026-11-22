@@ -14,7 +14,8 @@ import {
     StarIcon,
     ChatBubbleLeftRightIcon,
     BookOpenIcon,
-    ShieldCheckIcon
+    ShieldCheckIcon,
+    NewspaperIcon
 } from '@heroicons/react/24/outline';
 
 const MenuItem = ({ to, href, icon: Icon, label, external }: { to?: string, href?: string, icon: React.ElementType, label: string, external?: boolean }) => {
@@ -56,14 +57,19 @@ const MorePage: React.FC = () => {
 
             <div className="space-y-6">
                 <section>
-                    <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">Features</h2>
+                    <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">Markets & Intelligence</h2>
                     <div className="space-y-2">
-                        <MenuItem to="/capital-gains" icon={ScaleIcon} label="Capital Gains" />
-                        <MenuItem to="/income" icon={ScaleIcon} label="Income & Tax Hub" />
+                        <MenuItem to="/research" icon={NewspaperIcon} label="Research & News" />
                         <MenuItem to="/watchlists" icon={EyeIcon} label="Watchlists" />
-
                         <MenuItem to="/goals" icon={TrophyIcon} label="Goals" />
-                        <MenuItem to="/risk-profile" icon={ShieldCheckIcon} label="Risk Profile" />
+                    </div>
+                </section>
+
+                <section>
+                    <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">Tax Center</h2>
+                    <div className="space-y-2">
+                        <MenuItem to="/income" icon={ScaleIcon} label="Income & Tax Hub" />
+                        <MenuItem to="/capital-gains" icon={ScaleIcon} label="Capital Gains" />
                     </div>
                 </section>
 
@@ -71,6 +77,7 @@ const MorePage: React.FC = () => {
                     <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">Account & Settings</h2>
                     <div className="space-y-2">
                         <MenuItem to="/profile" icon={UserCircleIcon} label="Profile & Settings" />
+                        <MenuItem to="/profile?tab=risk" icon={ShieldCheckIcon} label="Risk Profile" />
                     </div>
                 </section>
 

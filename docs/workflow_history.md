@@ -3080,6 +3080,54 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 ### Outcome
 **Success.** Verified against ICICI Breeze API: request object is successfully received and parsed by the server.
 
+---
+
+## Date: 2026-11-22
+**Issue Reference:** #86 / PR #613
+
+**Task:** UX Refinement - Dedicated Research Page, Sidebar Menu Consolidation, and Profile Tabbed Hub.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Header Cleanup:** Removed "FR8.2" badge from `ResearchIntelligenceFeed.tsx` header.
+2. **Dedicated Research Page:** Created `ResearchPage.tsx` wired to route `/research`. Extracted feed out of `DashboardPage.tsx` to restore a clean, focused dashboard.
+3. **Left Navigation Menu Consolidation:**
+   - Consolidated 15 flat navigation items in `NavBar.tsx` into 5 core items (`Dashboard`, `Portfolios`, `Transactions`, `Import`, `Goals`) and 3 collapsible accordion sections:
+     - **Markets & Research:** `Research & News` (`/research`) and `Watchlists` (`/watchlists`).
+     - **Tax & Income:** `Income & Tax Hub` (`/income`) and `Capital Gains` (`/capital-gains`).
+     - **Administration:** Collapsible group for admin users (`User Management`, `Interest Rates`, `System Maintenance`, `FMV Management`, `Symbol Aliases`).
+   - Accordions automatically expand when active child routes are visited and can be toggled by the user.
+4. **Profile Tabbed Hub:**
+   - Overhauled `ProfilePage.tsx` from a single narrow column (`max-w-2xl`) with endless scrolling into a responsive `max-w-6xl` Tabbed Hub with 5 tabs:
+     - **Account & Security:** Personal info and password change in a balanced 2-column responsive grid.
+     - **Risk Profile:** Integrated `RiskProfileTab.tsx` embedding tolerance scores, target asset allocation, and questionnaire wizard.
+     - **Broker Integrations:** Zerodha Kite and ICICI Breeze API configurations.
+     - **Data & System:** Backup/restore and Android background synchronization.
+     - **AI & Intelligence:** LLM hub supporting local Ollama (`http://localhost:11434`) and cloud providers (Google Gemini, OpenAI).
+   - Routed `/risk-profile` to redirect to `/profile?tab=risk`.
+5. **Mobile Navigation:** Updated `MorePage.tsx` and `MobileHeader.tsx` to align with the consolidated groupings.
+
+### File Changes
+
+**Frontend:**
+*   **Created:** `frontend/src/pages/ResearchPage.tsx` — Dedicated route `/research` for market news and broker research.
+*   **Created:** `frontend/src/components/Profile/RiskProfileTab.tsx` — Risk profiling tab component.
+*   **Created:** `frontend/src/components/Profile/AIIntelligenceTab.tsx` — LLM provider settings tab component.
+*   **Modified:** `frontend/src/pages/ProfilePage.tsx` — Redesigned into a wide tabbed hub.
+*   **Modified:** `frontend/src/components/NavBar.tsx` — Consolidated left menu with collapsible accordions.
+*   **Modified:** `frontend/src/pages/DashboardPage.tsx` — Removed intelligence feed and redirected risk onboarding to `/profile?tab=risk`.
+*   **Modified:** `frontend/src/__tests__/pages/DashboardPage.test.tsx` — Updated dashboard mock assertions.
+*   **Modified:** `frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx` — Cleaned header title.
+*   **Modified:** `frontend/src/pages/MorePage.tsx` — Reorganized mobile navigation sections.
+*   **Modified:** `frontend/src/components/MobileHeader.tsx` — Added `/research` title mapping.
+*   **Modified:** `frontend/src/components/Profile/ChangePasswordForm.tsx` — Removed hardcoded top margin for clean grid layout.
+*   **Modified:** `frontend/src/App.tsx` — Registered `/research` route and redirected `/risk-profile` to `/profile?tab=risk`.
+
+### Outcome
+**Success.** TypeScript compilation: 0 errors; ESLint: 0 errors; Unit test suite: 55/55 passed (215 tests). Clean dashboard, organized navigation sidebar, and zero excessive scrolling or side gaps on the profile page.
+
 
 
 
