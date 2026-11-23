@@ -152,6 +152,43 @@ class CRUDMarketNews:
         db.commit()
         return deleted
 
+    def retroactively_tag_symbols(
+        self,
+        db: Session,
+        *,
+        matcher_callback,
+        days: int = 30,
+    ) -> int:
+        """
+        Retroactively scans articles from the last N days that have empty symbols:
+        invokes matcher_callback(full_text) to tag newly tracked symbols.
+        Returns the count of updated articles.
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        untagged = (
+            db.query(MarketNewsArticle)
+            .filter(
+                MarketNewsArticle.published_at >= cutoff,
+                sa.or_(
+                    sa.cast(MarketNewsArticle.symbols, sa.String).in_(["[]", "null", ""]),
+                    MarketNewsArticle.symbols.is_(None),
+                ),
+            )
+            .all()
+        )
+        updated_count = 0
+        for art in untagged:
+            full_text = f"{art.title} {art.summary or ''}"
+            matched = matcher_callback(full_text)
+            if matched:
+                art.symbols = matched
+                db.add(art)
+                updated_count += 1
+
+        if updated_count > 0:
+            db.commit()
+        return updated_count
+
     def purge_noise_and_disambiguate(
         self, db: Session, *, filter_instance=None
     ) -> Tuple[int, int]:

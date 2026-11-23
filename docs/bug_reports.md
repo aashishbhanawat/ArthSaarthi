@@ -24,6 +24,28 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-11-23-02
+**Title:** Headline deduplication erroneously dropping earnings concalls and quarterly results due to boilerplate template similarity
+**Module:** Market News & Ingestion Engine (`backend/app/services/news_service.py`, `backend/app/ml/deduplicator.py`, `backend/app/crud/crud_news.py`)
+**Reported By:** User
+**Date Reported:** 2026-11-23
+**Classification:** Implementation (Backend / Ingestion Engine)
+**Severity:** High (Missing Corporate Earnings Concalls & Results in Research Feed)
+**Description:** 
+1. Earnings concalls from Trendlyne and quarterly results follow standard corporate templates (e.g., `"{Company Name} Results Earnings Call for Q2FY27"`). Because they share identical word-shingles (`results earnings`, `earnings call`, `call q2fy27`), `HeadlineDeduplicator.is_duplicate()` calculated Jaccard similarity $\ge 0.60$ across distinct companies and discarded 180 out of 500 concalls as duplicates of each other.
+2. Synchronous ingestion of BSE Announcements (9,398 raw items) during `POST /api/v1/news/refresh` took $>70$ seconds, leading to connection timeouts.
+3. Newly tracked symbols added to watchlists/portfolios were not retroactively matched against existing articles stored within the 30-day retention window.
+**Steps to Reproduce:**
+1. Ingest Trendlyne concalls feed containing multiple companies' Q2 earnings calls.
+2. Observe 180+ concall items dropped by `headline_deduplicator.is_duplicate()`.
+3. Add a stock like Exide to a watchlist and click "Sync Now".
+4. Check the "Earnings Concalls" tab; observe the concall is absent.
+**Expected Behavior:** Structured corporate events (`CONCALL`, `RESULT`, `BROKER_REPORT`) must never be dropped by headline similarity. Untagged articles within the 30-day window must be retroactively tagged for active holdings during sync, and high-volume feeds must be capped to prevent timeouts.
+**Actual Behavior:** Concalls and results were dropped by the headline deduplicator; syncs timed out.
+**Resolution:** Restricted `headline_deduplicator.is_duplicate()` strictly to `category == "NEWS"`. Capped BSE Announcements feed to 100 items per sync run. Implemented `CRUDMarketNews.retroactively_tag_symbols()` in `sync_all_feeds()` to tag untagged articles within the 30-day window against active symbols.
+
+---
+
 **Bug ID:** 2026-11-23-01
 **Title:** E2E Playwright test timeouts due to collapsed navbar accordion sections on Dashboard
 **Module:** E2E Test Suite (`e2e/tests/admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, `tax-readiness-workflow.spec.ts`, `watchlists.spec.ts`, `user-guide-screenshots.spec.ts`)
