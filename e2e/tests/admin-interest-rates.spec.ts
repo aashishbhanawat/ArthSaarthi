@@ -25,7 +25,11 @@ test.describe.serial('Admin Interest Rate Management', () => {
     const updatedRate = '5.75';
 
     // Navigate to Interest Rate Management
-    await page.getByRole('link', { name: 'Interest Rates' }).click();
+    const interestRatesLink = page.getByRole('link', { name: 'Interest Rates' });
+    if (!(await interestRatesLink.isVisible())) {
+      await page.getByRole('button', { name: 'Administration' }).click();
+    }
+    await interestRatesLink.click();
     await expect(page.getByRole('heading', { name: 'Interest Rate Management' })).toBeVisible();
 
     // CREATE Rate

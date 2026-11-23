@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-22
+**Last Updated:** 2026-11-23
 
 ## 1. Current Project Status
 
 *   **Overall Status:** Release v1.5.0 In Progress — Portfolio Research Feed & Edge ML Subsystem (Issue #86 / FR8.2) Implemented & Verified.
 
-**Latest Achievement:** Implemented **Stage 1: Noise & Relevance Filtering** and **Stage 3: Short Ticker Disambiguation** in the Edge ML subsystem (`app/ml/relevance_filter.py`). Rejects non-business articles (educational exams, recruitment, admit cards, answer keys, crime, sports, entertainment) and disambiguates short ticker collisions (e.g. `SCI` = Shipping Corporation of India vs Supreme Court Junior Court Assistant, `IT`, `IDEA`, `CARE`, `FACT`, `OIL`, `REC`, `LT`). Retrospectively purged 317 existing noise articles from the database and cleaned falsely assigned ticker tags. Verified 100% test pass rate across PostgreSQL and SQLite test suites.
+**Latest Achievement:** Resolved E2E Playwright test locator timeouts caused by the sidebar navigation reorganization into collapsible accordion groups (`Markets & Research`, `Tax & Income`, `Administration`). Updated navigation locators across `watchlists.spec.ts`, `tax-readiness-workflow.spec.ts`, `admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, and `user-guide-screenshots.spec.ts` with resilient visibility checks and section expansions.
 
 ## 2. Test Suite Status
 
@@ -15,8 +15,14 @@
 *   **Frontend Unit Tests (Vitest/Jest):** ✅ **215/215 Passing (55 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
+*   **E2E Tests (Playwright):** ✅ **Locators updated and verified**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **E2E Navigation & Accordion Fixes (Issue #86 / PR #613) (Updated 2026-11-23):**
+    - **Sidebar Accordion Support:** Enhanced Playwright E2E tests to conditionally open collapsible groups (`Markets & Research`, `Tax & Income`, `Administration`) on `/dashboard` prior to clicking sublinks (`Watchlists`, `Income & Tax Hub`, `User Management`, `Interest Rates`).
+    - **Files Updated:** `e2e/tests/watchlists.spec.ts`, `e2e/tests/tax-readiness-workflow.spec.ts`, `e2e/tests/admin-interest-rates.spec.ts`, `e2e/tests/admin-user-management.spec.ts`, and `e2e/tests/user-guide-screenshots.spec.ts`.
+    - **Verification:** Verified clean execution under Docker Playwright test harness.
 
 *   **CI/CD Pipeline & CodeQL Review Fixes (PR #613 / Issue #86) (Updated 2026-11-22):**
     - **Backend Linting:** Resolved Ruff import sorting (`I001`) in `app/api/v1/endpoints/ml.py`. Entire backend verified clean under `ruff check .`.

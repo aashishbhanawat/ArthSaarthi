@@ -1,3 +1,30 @@
+## 2026-11-23: Update E2E Test Locators for Reorganized Navbar and Collapsible Menus (Issue #86)
+
+**Task:** Resolve Playwright E2E test failures caused by navbar reorganization into collapsible accordion groups (`Markets & Research`, `Tax & Income`, and `Administration`).  
+**AI Assistant:** Antigravity  
+**Role:** Lead QA & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - Recent UI enhancements organized the sidebar navigation (`frontend/src/components/NavBar.tsx`) into collapsible accordion menus:
+     - `Markets & Research` (containing `Research & News` and `Watchlists`)
+     - `Tax & Income` (containing `Income & Tax Hub` and `Capital Gains`)
+     - `Administration` (containing `User Management`, `Interest Rates`, `System Maintenance`, `FMV Management`, and `Symbol Aliases`)
+   - When users land on the Dashboard (`/dashboard`), these accordion menus default to closed/collapsed (`marketsOpen`, `taxOpen`, and `adminOpen` are `false`).
+   - Playwright E2E tests (`admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, `tax-readiness-workflow.spec.ts`, `watchlists.spec.ts`, and `user-guide-screenshots.spec.ts`) attempted to click sublinks directly without first ensuring the parent accordion section was expanded, causing a 30-second timeout.
+2. **Resilient Locator Enhancements:**
+   - Updated navigation sequences across all affected E2E spec files to check whether the target link is visible; if not, click the parent accordion button (`Administration`, `Markets & Research`, or `Tax & Income`) before clicking the link.
+   - Updated `e2e/tests/watchlists.spec.ts`: Checks `page.getByRole('link', { name: 'Watchlists' })`, opens `Markets & Research` if closed, then clicks the link.
+   - Updated `e2e/tests/tax-readiness-workflow.spec.ts`: Checks `page.getByRole('link', { name: 'Income & Tax Hub' })`, opens `Tax & Income` if closed, then clicks the link.
+   - Updated `e2e/tests/admin-interest-rates.spec.ts`: Checks `page.getByRole('link', { name: 'Interest Rates' })`, opens `Administration` if closed, then clicks the link.
+   - Updated `e2e/tests/admin-user-management.spec.ts`: Checks `page.getByRole('link', { name: 'User Management' })`, opens `Administration` if closed, then clicks the link.
+   - Updated `e2e/tests/user-guide-screenshots.spec.ts`: Updated steps 15, 16, 17, 18, and 19 with resilient accordion expansion and regex matching for `Profile & Settings`.
+3. **Verification:**
+   - Ran targeted E2E test suites with Docker Compose to verify clean execution.
+
+---
+
 ## 2026-11-22: Resolve CI/CD Linting and CodeQL Security Review on PR #613 (Issue #86)
 
 **Task:** Resolve CI/CD pipeline failure on `Lint Backend` (Ruff `I001`) and address GitHub Advanced Security CodeQL review comment regarding cleartext API key storage.  

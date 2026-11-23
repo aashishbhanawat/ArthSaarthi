@@ -24,6 +24,23 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-11-23-01
+**Title:** E2E Playwright test timeouts due to collapsed navbar accordion sections on Dashboard
+**Module:** E2E Test Suite (`e2e/tests/admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, `tax-readiness-workflow.spec.ts`, `watchlists.spec.ts`, `user-guide-screenshots.spec.ts`)
+**Reported By:** GitHub Actions CI/CD (E2E Test Step)
+**Date Reported:** 2026-11-23
+**Classification:** Test Suite
+**Severity:** High (Blocked CI/CD Pipeline on PR #613)
+**Description:** In recent UI redesigns, sidebar navigation links were grouped into collapsible accordion menus (`Markets & Research`, `Tax & Income`, `Administration`). When starting from `/dashboard`, accordions remain collapsed by default. The Playwright tests expected links like `Watchlists`, `Income & Tax Hub`, `User Management`, and `Interest Rates` to be immediately visible at the top level, causing 30000ms locator click timeouts.
+**Steps to Reproduce:**
+1. Run Playwright E2E tests: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --abort-on-container-exit`.
+2. Observe timeout failures on `admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, `tax-readiness-workflow.spec.ts`, and `watchlists.spec.ts`.
+**Expected Behavior:** Navigation steps should expand collapsible sections when collapsed before attempting to interact with child sublinks.
+**Actual Behavior:** Tests timed out waiting for child links that were hidden within collapsed accordion sections.
+**Resolution:** Updated navigation locators across all affected E2E spec files to conditionally expand the parent accordion if the target sublink is not visible before clicking.
+
+---
+
 **Bug ID:** 2026-11-22-03
 **Title:** Backend lint CI failure due to unsorted imports in `app/api/v1/endpoints/ml.py` and CodeQL cleartext storage alert
 **Module:** Backend Endpoints & Frontend AI Tab (`backend/app/api/v1/endpoints/ml.py`, `frontend/src/components/Profile/AIIntelligenceTab.tsx`)

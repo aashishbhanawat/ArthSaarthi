@@ -24,7 +24,11 @@ test.describe.serial('Admin User Management Flow', () => {
     const updatedName = `${testUser.fullName} (Updated)`;
 
     // Navigate to User Management
-    await page.getByRole('link', { name: 'User Management' }).click();
+    const userManagementLink = page.getByRole('link', { name: 'User Management' });
+    if (!(await userManagementLink.isVisible())) {
+      await page.getByRole('button', { name: 'Administration' }).click();
+    }
+    await userManagementLink.click();
     await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible();
 
     // CREATE User
