@@ -1,7 +1,14 @@
+import uuid
+from unittest.mock import patch
+
+from app.core.config import settings
+from app.core.dependencies import get_current_active_user
+from app.main import app
 from app.ml.deduplicator import HeadlineDeduplicator
 from app.ml.entity_matcher import FastEntityMatcher
-from app.ml.model_manager import ModelManager
+from app.ml.model_manager import EdgeModelInfo, ModelManager
 from app.ml.sentiment_engine import FinancialLexicon, SentimentEngine
+from app.models.user import User
 
 
 def test_fast_entity_matcher():
@@ -155,4 +162,79 @@ def test_ticker_disambiguation():
 
     # Long ticker symbols pass cleanly
     assert relevance_filter.validate_ticker("RELIANCE", "Reliance expands retail presence across tier 2 cities")
+
+
+def test_ml_api_authorization(client):
+    normal_user = User(
+        id=uuid.uuid4(),
+        email="normal@example.com",
+        is_admin=False,
+        is_active=True,
+    )
+    admin_user = User(
+        id=uuid.uuid4(),
+        email="admin@example.com",
+        is_admin=True,
+        is_active=True,
+    )
+
+    app.dependency_overrides[get_current_active_user] = lambda: normal_user
+    try:
+        # Test GET /models (accessible to normal users)
+        res_list = client.get("/api/v1/ml/models")
+        assert res_list.status_code == 200
+        assert isinstance(res_list.json(), list)
+
+        # Test POST /sentiment/test (accessible to normal users)
+        res_test = client.post(
+            "/api/v1/ml/sentiment/test",
+            json={"text": "Tata Motors Q3 profit up 45%"},
+        )
+        assert res_test.status_code == 200
+        assert "label" in res_test.json()
+
+        # In server mode: Normal user should get 403 on download and delete
+        with patch.object(settings, "DEPLOYMENT_MODE", "server"):
+            res_down_fail = client.post(
+                "/api/v1/ml/models/finbert_int8/download",
+            )
+            assert res_down_fail.status_code == 403
+            assert "restricted to administrators" in res_down_fail.json()["detail"]
+
+            res_del_fail = client.delete(
+                "/api/v1/ml/models/finbert_int8",
+            )
+            assert res_del_fail.status_code == 403
+            assert "restricted to administrators" in res_del_fail.json()["detail"]
+
+        # Admin user should succeed (mock start_download to avoid real network call)
+        app.dependency_overrides[get_current_active_user] = lambda: admin_user
+        with patch.object(settings, "DEPLOYMENT_MODE", "server"):
+            with patch("app.api.v1.endpoints.ml.model_manager.start_download") as mock_start:
+                mock_start.return_value = EdgeModelInfo(
+                    id="finbert_int8",
+                    name="FinBERT INT8 Quantized",
+                    description="desc",
+                    size_mb=105.2,
+                    download_url="https://example.com",
+                    filename="finbert_int8.onnx",
+                    engine_type="finbert_onnx",
+                    status="DOWNLOADING",
+                    progress_percentage=0,
+                    downloaded_bytes=0,
+                    total_bytes=1000,
+                )
+                res_down_admin = client.post(
+                    "/api/v1/ml/models/finbert_int8/download",
+                )
+                assert res_down_admin.status_code == 200
+
+            with patch("app.api.v1.endpoints.ml.model_manager.delete_model", return_value=True):
+                res_del_admin = client.delete(
+                    "/api/v1/ml/models/finbert_int8",
+                )
+                assert res_del_admin.status_code == 200
+                assert res_del_admin.json()["deleted"] is True
+    finally:
+        app.dependency_overrides.pop(get_current_active_user, None)
 
