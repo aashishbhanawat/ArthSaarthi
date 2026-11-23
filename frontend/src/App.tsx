@@ -16,6 +16,7 @@ import ImportPreviewPage from './pages/Import/ImportPreviewPage';
 import FDImportPreviewPage from './pages/Import/FDImportPreviewPage';
 import TransactionsPage from './pages/TransactionsPage';
 import WatchlistsPage from './pages/WatchlistsPage';
+import ResearchPage from './pages/ResearchPage';
 import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
 import CapitalGainsPage from './pages/CapitalGainsPage';
@@ -24,7 +25,6 @@ import ProfilePage from './pages/ProfilePage';
 import MorePage from './pages/MorePage';
 import LogsPage from './pages/LogsPage';
 import UserGuidePage from './pages/UserGuidePage';
-import RiskProfilePage from './pages/RiskProfilePage';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
@@ -74,9 +74,10 @@ function AppRoutes() {
           <Route path="/deductions" element={<IncomePage initialTab="deductions" />} />
           <Route path="/tax-summary" element={<IncomePage initialTab="summary" />} />
           <Route path="/watchlists" element={<WatchlistsPage />} />
+          <Route path="/research" element={<ResearchPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/goals/:goalId" element={<GoalDetailPage />} />
-          <Route path="/risk-profile" element={<RiskProfilePage />} />
+          <Route path="/risk-profile" element={<Navigate to="/profile?tab=risk" replace />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
             <Route path="/admin/interest-rates" element={<InterestRateManagementPage />} />

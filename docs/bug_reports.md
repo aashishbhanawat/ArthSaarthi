@@ -24,6 +24,80 @@ Copy and paste the template below to file a new bug report.
 **Actual Behavior:**
 **Resolution:** (To be filled in when fixed)
 
+**Bug ID:** 2026-11-23-01
+**Title:** E2E Playwright test timeouts due to collapsed navbar accordion sections on Dashboard
+**Module:** E2E Test Suite (`e2e/tests/admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, `tax-readiness-workflow.spec.ts`, `watchlists.spec.ts`, `user-guide-screenshots.spec.ts`)
+**Reported By:** GitHub Actions CI/CD (E2E Test Step)
+**Date Reported:** 2026-11-23
+**Classification:** Test Suite
+**Severity:** High (Blocked CI/CD Pipeline on PR #613)
+**Description:** In recent UI redesigns, sidebar navigation links were grouped into collapsible accordion menus (`Markets & Research`, `Tax & Income`, `Administration`). When starting from `/dashboard`, accordions remain collapsed by default. The Playwright tests expected links like `Watchlists`, `Income & Tax Hub`, `User Management`, and `Interest Rates` to be immediately visible at the top level, causing 30000ms locator click timeouts.
+**Steps to Reproduce:**
+1. Run Playwright E2E tests: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up --abort-on-container-exit`.
+2. Observe timeout failures on `admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, `tax-readiness-workflow.spec.ts`, and `watchlists.spec.ts`.
+**Expected Behavior:** Navigation steps should expand collapsible sections when collapsed before attempting to interact with child sublinks.
+**Actual Behavior:** Tests timed out waiting for child links that were hidden within collapsed accordion sections.
+**Resolution:** Updated navigation locators across all affected E2E spec files to conditionally expand the parent accordion if the target sublink is not visible before clicking.
+
+---
+
+**Bug ID:** 2026-11-22-03
+**Title:** Backend lint CI failure due to unsorted imports in `app/api/v1/endpoints/ml.py` and CodeQL cleartext storage alert
+**Module:** Backend Endpoints & Frontend AI Tab (`backend/app/api/v1/endpoints/ml.py`, `frontend/src/components/Profile/AIIntelligenceTab.tsx`)
+**Reported By:** GitHub Actions CI/CD & CodeQL Bot
+**Date Reported:** 2026-11-22
+**Classification:** Implementation (Full-Stack / Security & Lint)
+**Severity:** High (Blocked CI/CD Pipeline on PR #613)
+**Description:** 
+1. In `backend/app/api/v1/endpoints/ml.py`, imports were unsorted (`from fastapi import APIRouter, HTTPException, Depends` instead of alphabetical order with standard blank line separation), causing Ruff check `I001` to fail during the CI/CD `Lint Backend` workflow step.
+2. In `frontend/src/components/Profile/AIIntelligenceTab.tsx`, CodeQL scanning flagged `localStorage.setItem('ai_${provider}_key', apiKey)` for Clear Text Storage of Sensitive Information (CWE-312).
+**Steps to Reproduce:**
+1. Run `docker compose run --rm backend sh -c "pip install -r requirements-dev.in && ruff check ."` in CI.
+2. Run CodeQL security scan action on PR #613.
+**Expected Behavior:** All imports pass Ruff `I001` formatting, and no sensitive credentials or API keys are stored unencrypted in `localStorage`.
+**Actual Behavior:** CI `Test and Lint` failed on `Lint Backend`, and CodeQL scan check reported failure.
+**Resolution:** 
+1. Organized imports in `backend/app/api/v1/endpoints/ml.py` to satisfy Ruff. Verified entire backend passes `ruff check .` with 0 errors.
+2. Removed cleartext `localStorage` storage of `apiKey` from `AIIntelligenceTab.tsx`. Cloud LLM API key management will be backed by encrypted server-side vault in v1.6. Verified TypeScript and ESLint clean.
+
+---
+
+**Bug ID:** 2026-11-22-02
+**Title:** Research feed cards rendered with light background and white text in dark mode due to invalid Tailwind color class
+**Module:** UI/Styling (`frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx`)
+**Reported By:** User
+**Date Reported:** 2026-11-22
+**Classification:** Implementation (Frontend)
+**Severity:** Medium
+**Description:** In dark mode, intelligence research feed cards were rendered with near-zero text contrast. An invalid Tailwind class `dark:bg-gray-750/50` failed to compile and caused the cards to fall back to the light-mode `bg-gray-50/60` (chalky light gray). Because text inside the card used `dark:text-white` and `dark:text-gray-100`, white text was placed against a light gray tile background, making headlines and summaries unreadable.
+**Steps to Reproduce:**
+1. Switch application to Dark Mode.
+2. Open Dashboard and scroll to "Holding Intelligence & Research" feed.
+3. Observe article cards rendered with light gray background and white/light text.
+**Expected Behavior:** Cards should render with a deep dark background (e.g. `dark:bg-gray-900/60`) and prominent high-contrast text (`dark:text-white`, `dark:text-gray-300`).
+**Actual Behavior:** Cards fell back to light gray background with white text, resulting in severe contrast failure.
+**Resolution:** Replaced the invalid `dark:bg-gray-750/50` with `dark:bg-gray-900/60` (`hover:dark:bg-gray-900/90`), paired with `dark:border-gray-700/80`. Enhanced typography contrast (`dark:text-white` for titles, `dark:text-gray-300` for summaries), sentiment badge borders, and ticker badge contrast.
+
+---
+
+**Bug ID:** 2026-11-22-01
+**Title:** Non-financial exam spam matching short equity tickers and polluting Research Feed (e.g. SCI matching Supreme Court Junior Court Assistant)
+**Module:** Research Feed & ML Subsystem (`app/ml/relevance_filter.py`, `app/services/news_service.py`)
+**Reported By:** User
+**Date Reported:** 2026-11-22
+**Classification:** Implementation (Backend / ML)
+**Severity:** Medium
+**Description:** Google News RSS queries for short equity symbols (e.g. `SCI stock OR share price india`) returned non-business news such as "SCI JCA answer key 2026 released at sci.gov.in: Supreme Court Junior Court Assistant provisional answer k - The Times of India". The keyword entity matcher tagged the article with ticker `SCI` (Shipping Corporation of India) due to the acronym collision with Supreme Court of India, and non-financial exam spam was inserted into `market_news_articles`.
+**Steps to Reproduce:**
+1. Have `SCI` in active holdings or watchlists.
+2. Ingest Google News RSS feed for `SCI`.
+3. Observe exam answer key articles appearing in the Research Feed tagged under `SCI`.
+**Expected Behavior:** Stage 1 noise filtering rejects exam/recruitment spam and non-financial articles. Ticker disambiguation ensures acronym collisions (such as `SCI` with Supreme Court, `IT` with Income Tax, `IDEA` with colloquial idioms) are rejected unless co-occurring with genuine business/corporate equity markers.
+**Actual Behavior:** Non-financial educational exam news was tagged with `SCI` and displayed in the user's Research Feed.
+**Resolution:** Created `RelevanceFilter` in `app/ml/relevance_filter.py` with `EXAM_PATTERNS`, `GENERAL_NOISE_PATTERNS`, and ticker-specific disambiguation rules (`TICKER_COLLISIONS` for `SCI`, `IT`, `IDEA`, `CARE`, `FACT`, `OIL`, `REC`, `LT`). Integrated into `MarketNewsService.match_symbols()` and `sync_all_feeds()`. Added `CRUDMarketNews.purge_noise_and_disambiguate()` to retroactively purge non-financial articles and clean falsely tagged tickers. Purged 317 existing noise articles and cleaned 8 ticker tags from the live database.
+
+---
+
 **Bug ID:** 2026-10-07-02
 **Title:** ICICI Breeze authentication HTTP 405 Method Not Allowed on customerdetails & un-exchanged raw session token saved to DB
 **Module:** Import Sessions / ICICI Breeze Provider & Broker Router

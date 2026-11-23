@@ -296,7 +296,11 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'Watchlists' }).click();
+        const watchlistsLink = page.getByRole('link', { name: 'Watchlists' });
+        if (!(await watchlistsLink.isVisible())) {
+            await page.getByRole('button', { name: 'Markets & Research' }).click();
+        }
+        await watchlistsLink.click();
         await page.waitForTimeout(500);
         await screenshot(page, '15_watchlists_page');
     });
@@ -307,7 +311,7 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'Profile', exact: true }).click();
+        await page.getByRole('link', { name: /Profile/ }).click();
         await page.waitForTimeout(500);
         await screenshot(page, '16_profile_page');
     });
@@ -318,7 +322,11 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'User Management' }).click();
+        const userMgmtLink = page.getByRole('link', { name: 'User Management' });
+        if (!(await userMgmtLink.isVisible())) {
+            await page.getByRole('button', { name: 'Administration' }).click();
+        }
+        await userMgmtLink.click();
         await page.waitForTimeout(500);
         await screenshot(page, '17_admin_users');
     });
@@ -329,7 +337,11 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'Interest Rates' }).click();
+        const interestRatesLink = page.getByRole('link', { name: 'Interest Rates' });
+        if (!(await interestRatesLink.isVisible())) {
+            await page.getByRole('button', { name: 'Administration' }).click();
+        }
+        await interestRatesLink.click();
         await page.waitForTimeout(500);
         await screenshot(page, '18_admin_interest_rates');
     });
@@ -340,7 +352,11 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'System Maintenance' }).click();
+        const maintenanceLink = page.getByRole('link', { name: 'System Maintenance' });
+        if (!(await maintenanceLink.isVisible())) {
+            await page.getByRole('button', { name: 'Administration' }).click();
+        }
+        await maintenanceLink.click();
         await page.waitForTimeout(500);
         await screenshot(page, '19_admin_maintenance');
     });

@@ -1,22 +1,60 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-17
+**Last Updated:** 2026-11-23
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Automated Stock Corporate Actions & Dividends (Issue #607 / FR4.6.4) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Portfolio Research Feed & Edge ML Subsystem (Issue #86 / FR8.2) Implemented & Verified.
 
-**Latest Achievement:** Implemented automated stock corporate action discovery and execution for equities (cash dividends, stock splits, bonus share issues) via official exchange feeds (NSE, BSE) with fallback to yfinance. Added regex parser, stock engine with lot adjustment and dividend crediting, background scheduler task `stock_corporate_actions`, admin trigger API, and receipt modal notifications. Verified 100% test pass rate across PostgreSQL, SQLite, and Frontend Jest (54 suites, 211 tests).
+**Latest Achievement:** Resolved E2E Playwright test locator timeouts caused by the sidebar navigation reorganization into collapsible accordion groups (`Markets & Research`, `Tax & Income`, `Administration`). Updated navigation locators across `watchlists.spec.ts`, `tax-readiness-workflow.spec.ts`, `admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, and `user-guide-screenshots.spec.ts` with resilient visibility checks and section expansions.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **445/445 Passing**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **445/445 Passing**
-*   **Frontend Unit Tests (Vitest/Jest):** ✅ **211/211 Passing (54 Suites)**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **Passing (All ML & News tests verified)**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **Passing (All ML & News tests verified)**
+*   **Frontend Unit Tests (Vitest/Jest):** ✅ **215/215 Passing (55 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
+*   **E2E Tests (Playwright):** ✅ **Locators updated and verified**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **E2E Navigation & Accordion Fixes (Issue #86 / PR #613) (Updated 2026-11-23):**
+    - **Sidebar Accordion Support:** Enhanced Playwright E2E tests to conditionally open collapsible groups (`Markets & Research`, `Tax & Income`, `Administration`) on `/dashboard` prior to clicking sublinks (`Watchlists`, `Income & Tax Hub`, `User Management`, `Interest Rates`).
+    - **Files Updated:** `e2e/tests/watchlists.spec.ts`, `e2e/tests/tax-readiness-workflow.spec.ts`, `e2e/tests/admin-interest-rates.spec.ts`, `e2e/tests/admin-user-management.spec.ts`, and `e2e/tests/user-guide-screenshots.spec.ts`.
+    - **Verification:** Verified clean execution under Docker Playwright test harness.
+
+*   **CI/CD Pipeline & CodeQL Review Fixes (PR #613 / Issue #86) (Updated 2026-11-22):**
+    - **Backend Linting:** Resolved Ruff import sorting (`I001`) in `app/api/v1/endpoints/ml.py`. Entire backend verified clean under `ruff check .`.
+    - **CodeQL Security Fix:** Remediated CodeQL alert CWE-312 (Clear text storage of sensitive information) in `AIIntelligenceTab.tsx` by eliminating unencrypted `localStorage` writes for `apiKey`.
+    - **Verification:** Full backend lint clean (0 errors), frontend TypeScript `tsc --noEmit` (0 errors), ESLint (0 errors).
+
+*   **Research Feed Dark Mode Contrast Fix (Issue #86) (Updated 2026-11-22):**
+    - **Contrast & Styling:** Replaced non-existent Tailwind class `dark:bg-gray-750/50` in `ResearchIntelligenceFeed.tsx` with `dark:bg-gray-900/60` and `dark:border-gray-700/80`.
+    - **Typography & Badges:** Fixed white-on-light-gray text bug; updated headlines to `dark:text-white`, summaries to `dark:text-gray-300`, and added high-contrast borders to sentiment/ticker pills.
+    - **Verification:** TypeScript clean, ESLint clean, and Jest component tests 4/4 passed.
+
+*   **Research Feed Expansion with NSE, BSE & Livemint (Issue #86) (Updated 2026-11-22):**
+    - **Livemint Integration:** Added `Livemint Markets` and `Livemint Companies` RSS feeds for high-density market news, broker targets, and quarterly corporate coverage.
+    - **NSE Exchange Disclosures:** Added `NSE Announcements` (`Online_announcements.xml`), `NSE Corporate Actions` (`Corporate_action.xml`), and `NSE Results` (`Financial_Results.xml`) from official `nsearchives.nseindia.com`.
+    - **BSE Exchange Disclosures:** Added `BSE Announcements` (`announcements.aspx`), `BSE Corporate Actions` (`CorpActionFeed.aspx`), and `BSE Results` (`FinancialResultsFeed.aspx`) from official `bseindia.com`.
+    - **Date Parsing & Scrip Mapping:** Extended `parse_rfc2822_date` to handle `%d-%b-%Y %H:%M:%S` (IST) exchange timestamps. Added `get_symbol_keyword_mappings()` to match portfolio assets via canonical tickers, company names, and scrip codes.
+    - **Verification:** 19/19 backend tests passing on Postgres and SQLite. Live sync validated with 997 fetched articles. Ruff clean.
+
+*   **Research Feed Noise Filtering & Ticker Disambiguation (Issue #86) (Updated 2026-11-22):**
+    - **Relevance Filter (`backend/app/ml/relevance_filter.py`):** Added regular-expression based noise filtering for exam/recruitment spam (`EXAM_PATTERNS`) and non-business news (`GENERAL_NOISE_PATTERNS`). Added positive corporate and financial density checking (`is_financial_relevant()`).
+    - **Ticker Disambiguation:** Added `TICKER_COLLISIONS` rules ensuring ambiguous tickers like `SCI` reject Supreme Court / High Court / Science news and require shipping/equity markers, protecting `SCI`, `IT`, `IDEA`, `CARE`, `FACT`, `OIL`, `REC`, and `LT`.
+    - **Service & Ingestion Pipeline:** Wired `relevance_filter` into `MarketNewsService.match_symbols()` and `sync_all_feeds()`.
+    - **Retroactive Database Cleanup:** Added `CRUDMarketNews.purge_noise_and_disambiguate()` and ran live database cleanup, purging 317 noise articles and untagging 8 false ticker assignments.
+    - **Verification:** Comprehensive unit and integration tests added to `test_ml.py` and `test_news.py`. All tests passing on Postgres and SQLite. Ruff clean. TypeScript compilation clean.
+
+*   **Portfolio Research & Intelligence Feed (Issue #86 / FR8.2) (Updated 2026-11-19):**
+    - **Research Ingestion Engine:** Created `backend/app/services/news_service.py` aggregating Google News Finance RSS (targeted equity queries), Yahoo Finance RSS, Economic Times Markets, Moneycontrol Broker Reports (broker names, target prices, Buy/Hold/Sell calls), Trendlyne Concalls podcast RSS (audio URLs, quarterly periods), and Moneycontrol quarterly results.
+    - **Database & Schemas:** Alembic migration `m13f5g6h7i8j` creating `market_news_articles` table with SHA256 deterministic IDs, JSON symbols and metadata, category indexing, and 30-day retention pruning.
+    - **Scheduler Task:** Registered `fetch_market_news` job in `app/tasks/registry.py` (CronTrigger every 4 hours in server mode, IntervalTrigger every 4 hours in desktop/android mode).
+    - **REST APIs:** Added `/api/v1/news/feed`, `/api/v1/news/summary`, and `/api/v1/news/refresh` endpoints.
+    - **Frontend Dashboard Widget:** Built `ResearchIntelligenceFeed.tsx` component in `frontend/src/components/Dashboard/` with 3-pillar tabs, ticker filter chips, broker recommendation/target price badges, concall audio links, and manual sync action, integrated into `DashboardPage.tsx`.
+    - **Verification:** 7/7 new backend unit/API tests passing on Postgres and SQLite, 4/4 new frontend tests passing, 55/55 frontend suites passing (215 tests), and 0 linter errors.
 
 *   **Automated Stock Corporate Actions & Dividends (Issue #607 / FR4.6.4) (Updated 2026-11-17):**
     - **Exchange Providers & Regex Parsers:** Implemented `app/services/corporate_actions/exchange_provider.py` querying NSE (with session cookie warming), BSE, and yfinance fallback. Built regex-based extraction in `parser.py` parsing dividend per share, stock split ratios, and bonus share ratios.

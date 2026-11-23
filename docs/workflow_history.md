@@ -1,3 +1,176 @@
+## 2026-11-23: Update E2E Test Locators for Reorganized Navbar and Collapsible Menus (Issue #86)
+
+**Task:** Resolve Playwright E2E test failures caused by navbar reorganization into collapsible accordion groups (`Markets & Research`, `Tax & Income`, and `Administration`).  
+**AI Assistant:** Antigravity  
+**Role:** Lead QA & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - Recent UI enhancements organized the sidebar navigation (`frontend/src/components/NavBar.tsx`) into collapsible accordion menus:
+     - `Markets & Research` (containing `Research & News` and `Watchlists`)
+     - `Tax & Income` (containing `Income & Tax Hub` and `Capital Gains`)
+     - `Administration` (containing `User Management`, `Interest Rates`, `System Maintenance`, `FMV Management`, and `Symbol Aliases`)
+   - When users land on the Dashboard (`/dashboard`), these accordion menus default to closed/collapsed (`marketsOpen`, `taxOpen`, and `adminOpen` are `false`).
+   - Playwright E2E tests (`admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, `tax-readiness-workflow.spec.ts`, `watchlists.spec.ts`, and `user-guide-screenshots.spec.ts`) attempted to click sublinks directly without first ensuring the parent accordion section was expanded, causing a 30-second timeout.
+2. **Resilient Locator Enhancements:**
+   - Updated navigation sequences across all affected E2E spec files to check whether the target link is visible; if not, click the parent accordion button (`Administration`, `Markets & Research`, or `Tax & Income`) before clicking the link.
+   - Updated `e2e/tests/watchlists.spec.ts`: Checks `page.getByRole('link', { name: 'Watchlists' })`, opens `Markets & Research` if closed, then clicks the link.
+   - Updated `e2e/tests/tax-readiness-workflow.spec.ts`: Checks `page.getByRole('link', { name: 'Income & Tax Hub' })`, opens `Tax & Income` if closed, then clicks the link.
+   - Updated `e2e/tests/admin-interest-rates.spec.ts`: Checks `page.getByRole('link', { name: 'Interest Rates' })`, opens `Administration` if closed, then clicks the link.
+   - Updated `e2e/tests/admin-user-management.spec.ts`: Checks `page.getByRole('link', { name: 'User Management' })`, opens `Administration` if closed, then clicks the link.
+   - Updated `e2e/tests/user-guide-screenshots.spec.ts`: Updated steps 15, 16, 17, 18, and 19 with resilient accordion expansion and regex matching for `Profile & Settings`.
+3. **Verification:**
+   - Ran targeted E2E test suites with Docker Compose to verify clean execution.
+
+---
+
+## 2026-11-22: Resolve CI/CD Linting and CodeQL Security Review on PR #613 (Issue #86)
+
+**Task:** Resolve CI/CD pipeline failure on `Lint Backend` (Ruff `I001`) and address GitHub Advanced Security CodeQL review comment regarding cleartext API key storage.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Backend Lint Fix (`backend/app/api/v1/endpoints/ml.py`):**
+   - Corrected import ordering and PEP 8 section spacing in `ml.py` to satisfy Ruff rule `I001`.
+   - Verified clean execution across the entire backend: `ruff check .` passes with 0 errors.
+2. **CodeQL Review & Security Remediation (`frontend/src/components/Profile/AIIntelligenceTab.tsx`):**
+   - Addressed CodeQL PR review comment on PR #613 (`Clear text storage of sensitive information` / CWE-312).
+   - Removed plain `localStorage.setItem('ai_${provider}_key', apiKey)` from client preferences; cloud LLM keys will be stored and managed securely via backend vault upon feature release in v1.6.
+   - Verified `npx tsc --noEmit` and `npx eslint` pass cleanly with 0 errors.
+
+---
+
+## 2026-11-22: Fix Dark Mode Contrast & Card Theming in Research Feed (Issue #86)
+
+**Task:** Fix unreadable text and lack of contrast in Holding Intelligence & Research feed cards under Dark Mode.  
+**AI Assistant:** Antigravity  
+**Role:** Frontend Developer & UI/UX Specialist
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - In `frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx`, line 292 contained `dark:bg-gray-750/50`.
+   - `gray-750` is not a valid Tailwind CSS color shade, so the class was discarded at build time.
+   - Consequently, in dark mode the cards fell back to `bg-gray-50/60` (chalky light gray), while child text elements rendered in `dark:text-white` and `dark:text-gray-100`, resulting in white-on-light-gray text with near-zero contrast (< 1.5:1).
+2. **Styling & Contrast Fixes:**
+   - Replaced invalid background with `dark:bg-gray-900/60` (hover: `dark:hover:bg-gray-900/90`) on light mode `bg-gray-50/80` (hover: `hover:bg-white`).
+   - Reinforced borders with `border-gray-200 dark:border-gray-700/80` and subtle elevation shadows.
+   - Enhanced headline contrast: `text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400`.
+   - Enhanced summary contrast: `text-gray-600 dark:text-gray-300`.
+   - Enhanced sentiment badges with clear borders: Bullish (`dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/60`), Bearish (`dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/60`), and Neutral (`dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700`).
+   - Enhanced ticker badge contrast: `bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700`.
+3. **Verification:**
+   - `npx tsc --noEmit`: 0 errors.
+   - `npx eslint`: 0 errors.
+   - Jest component test suite `ResearchIntelligenceFeed.test.tsx`: 4/4 passed.
+
+---
+
+## 2026-11-22: Integrate NSE, BSE, and Livemint Feeds into Research Feed (Issue #86)
+
+**Task:** Integrate official exchange announcement and corporate action feeds from NSE (`nsearchives.nseindia.com`) and BSE (`bseindia.com`), alongside market intelligence from Livemint (`livemint.com`), into the Research Feed ingestion pipeline.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Feed Integration (`backend/app/services/news_service.py`):**
+   - **Livemint:** Integrated `Livemint Markets` (`https://www.livemint.com/rss/markets`) and `Livemint Companies` (`https://www.livemint.com/rss/companies`).
+   - **NSE India:** Integrated `NSE Announcements` (`https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml`), `NSE Corporate Actions` (`https://nsearchives.nseindia.com/content/RSS/Corporate_action.xml`), and `NSE Results` (`https://nsearchives.nseindia.com/content/RSS/Financial_Results.xml`).
+   - **BSE India:** Integrated `BSE Announcements` (`https://www.bseindia.com/data/xml/announcements.aspx`), `BSE Corporate Actions` (`https://www.bseindia.com/data/XML/CorpActionFeed.aspx`), and `BSE Results` (`https://www.bseindia.com/Data/XML/FinancialResultsFeed.aspx`).
+2. **Exchange Date Format Support:**
+   - Extended `parse_rfc2822_date()` to handle Indian exchange timestamp format `%d-%b-%Y %H:%M:%S` (e.g. `22-Nov-2026 14:39:18`), normalizing IST (UTC+05:30) to timezone-aware UTC.
+3. **Company Name & Scrip Code Ticker Mapping:**
+   - Implemented `get_symbol_keyword_mappings()` mapping canonical tickers, clean company names, and BSE scrip codes into `FastEntityMatcher` so official announcements (which list full company names or scrip codes in `<title>` or `<scripcode>`) deterministically map to portfolio symbols.
+4. **Verification & Testing:**
+   - Authored unit tests in `test_news_service.py` validating Indian exchange date parsing, company name/scrip code entity matching, and `FEED_CONFIGS` presence.
+   - Verified 19/19 tests passing across PostgreSQL and SQLite test suites.
+   - Tested live synchronization in database: successfully fetched 997 articles and ingested disclosures from Livemint, NSE, and BSE.
+   - Clean linter status (Ruff: 0 errors).
+
+---
+
+## 2026-11-22: Filter Non-Financial Noise and Disambiguate Ticker Collisions in Research Feed (Issue #86)
+
+**Task:** Filter out non-financial noise (educational exams, recruitment notifications, admit cards, answer keys, crime, sports) and disambiguate short equity ticker acronym collisions (e.g. `SCI` = Shipping Corporation of India vs Supreme Court Junior Court Assistant) from the Portfolio Research & Intelligence Feed.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & ML Engineer
+
+### Summary
+
+1. **Noise & Relevance Filtering (`backend/app/ml/relevance_filter.py`):**
+   - Implemented `RelevanceFilter` with regular expressions catching educational and government recruitment spam (`EXAM_PATTERNS`: answer keys, admit cards, hall tickets, provisional answers, court assistants, jca, `gov.in`, `nic.in`, syllabus, vacancies) and non-business chatter (`GENERAL_NOISE_PATTERNS`: crime, sports, entertainment, horoscope).
+   - Enforced positive corporate and financial density validation (`is_financial_relevant()`), requiring at least one verified market/equity/financial marker before ingestion into the database.
+2. **Short Ticker Disambiguation (`TICKER_COLLISIONS`):**
+   - Configured deterministic rejection and co-occurrence rules for collision-prone tickers:
+     - `SCI`: Rejects Supreme Court (`supreme court`, `junior court`, `sci.gov.in`, `court assistant`, `jca`, `judge`, `lawyer`, `science`) and requires shipping/equity signals (`shipping`, `vessel`, `fleet`, `psu`, `dividend`, `shares`, `stock`, `profit`, `results`).
+     - `IT`: Disambiguates from Income Tax and general info tech idioms.
+     - `IDEA`: Disambiguates Vodafone Idea from colloquial English phrases.
+     - `CARE`: Disambiguates CARE Ratings from healthcare/childcare idioms.
+     - `FACT`: Disambiguates Fertilisers & Chemicals Travancore from common English idioms.
+     - `OIL`, `REC`, `LT`: Protected against non-equity collisions.
+3. **Pipeline Ingestion & Retrospective Purge:**
+   - Wired `RelevanceFilter.validate_ticker()` into `MarketNewsService.match_symbols()` to prevent false ticker tagging.
+   - Wired `RelevanceFilter.is_financial_relevant()` into `MarketNewsService.sync_all_feeds()` to reject noise at the gateway.
+   - Implemented `CRUDMarketNews.purge_noise_and_disambiguate()` and executed it against the live database: successfully purged 317 noise articles and disambiguated 8 false ticker assignments.
+4. **Testing & Validation:**
+   - Added unit tests in `app/tests/test_ml.py` verifying noise detection against the user's exact SCI JCA headline and ticker disambiguation across multiple short symbols.
+   - Added integration test `test_purge_noise_and_disambiguate_db` in `app/tests/api/v1/test_news.py`.
+   - Verified 100% test pass rate across PostgreSQL (10 passed) and SQLite (10 passed).
+   - Linters clean: Ruff (0 errors), TypeScript `tsc --noEmit` (0 errors).
+
+---
+
+## 2026-11-19: Implement Portfolio Research & Intelligence Feed (Curated News, Broker Targets & Concall Insights) (FR8.2 / Issue #86)
+
+**Task:** Design and implement a multi-pillar portfolio research and intelligence feed aggregating company and market news, broker research recommendations/target prices, quarterly declared earnings, and conference call audio/transcripts linked to active user holdings and watchlists.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Database Models & Alembic Migration (`backend/`):**
+   - Created `MarketNewsArticle` model in `backend/app/models/market_news.py` (`id`, `title`, `summary`, `url`, `source`, `category`, `published_at`, `symbols`, `sentiment`, `metadata_json`, `created_at`).
+   - Generated Alembic migration `m13f5g6h7i8j_add_market_news_articles.py`.
+   - Verified safe migration upgrade/downgrade/upgrade cycle across PostgreSQL and SQLite.
+2. **Research Ingestion Engine (`backend/app/services/news_service.py`):**
+   - Built multi-source RSS/XML parsing engine using Python's standard library `xml.etree.ElementTree` and `httpx` (100% pure Python, avoiding native C-extensions for Chaquopy/Android and Electron/SQLite compatibility).
+   - Handled ElementTree gotchas where childless elements evaluate as `False` in boolean expressions via `_find_elem` helper.
+   - Integrated 3 research pillars:
+     - **Pillar 1 (News & Market Pulse):** Google News Finance RSS (targeted equity queries), Yahoo Finance RSS, Economic Times Markets, and Moneycontrol Top News.
+     - **Pillar 2 (Brokerage Research & Targets):** Moneycontrol Broker Reports feed parsing broker firm names, recommendation actions (`BUY`, `ACCUMULATE`, `HOLD`, `REDUCE`, `SELL`), and target prices.
+     - **Pillar 3 (Concalls & Results):** Trendlyne Concalls podcast RSS feed extracting quarterly period and audio URLs, plus Moneycontrol declared quarterly results.
+   - Built symbol matching engine with word-boundary regex mapping active portfolio/watchlist tickers to incoming articles.
+   - Built lexicon-based financial sentiment tagging (`POSITIVE`, `NEGATIVE`, `NEUTRAL`).
+   - Implemented 30-day retention pruning to keep database storage footprint lightweight.
+3. **APScheduler Background Job (`backend/app/tasks/news_task.py`):**
+   - Implemented `run_market_news_job` executing non-blocking HTTP and database operations in a thread pool executor.
+   - Registered `fetch_market_news` job in `app/tasks/registry.py` (CronTrigger every 4 hours `0 */4 * * *` in server mode, IntervalTrigger every 4 hours in desktop/android mode).
+4. **REST API Endpoints (`backend/app/api/v1/endpoints/news.py`):**
+   - `GET /api/v1/news/feed`: Returns paginated research feed filtered by user holdings/watchlists, category, symbol, or sentiment.
+   - `GET /api/v1/news/summary`: Returns summary counters for news, broker reports, concalls, and results along with top highlights.
+   - `POST /api/v1/news/refresh`: Manual on-demand feed synchronization trigger.
+5. **Frontend UI Components (`frontend/src/`):**
+   - Created `ResearchIntelligenceFeed.tsx` in `frontend/src/components/Dashboard/`:
+     - Three-pillar tabs ("All Insights", "News & Pulse", "Broker Targets", "Earnings Concalls", "Quarterly Results") with live counter badges.
+     - Ticker filter chips ("All Holdings" + chips for each tracked equity ticker).
+     - High-information cards: Broker badges with target price pills and color-coded recommendation badges (`BUY` emerald, `HOLD` amber, `SELL` red), Concall quarter badges with audio player links, and publisher tags.
+     - Manual "Sync Now" action with animated spinner state.
+   - Integrated `ResearchIntelligenceFeed` into `frontend/src/pages/DashboardPage.tsx`.
+   - Created `frontend/src/services/newsApi.ts` and `frontend/src/types/marketNews.ts`.
+6. **Testing & Quality Assurance:**
+   - Authored backend unit and API tests in `test_news_service.py` and `test_news.py` (7/7 passing across PostgreSQL and SQLite).
+   - Full PostgreSQL backend test suite: 461 passing (3 skipped) in 252s.
+   - Full SQLite backend test suite: 461 passing (3 skipped) in 259s.
+   - Authored frontend component tests in `ResearchIntelligenceFeed.test.tsx` (4/4 passing).
+   - Full frontend test suite: 55/55 test suites passing (215/215 tests).
+   - Linters clean: Ruff (0 errors) and ESLint (0 errors). TypeScript `tsc --noEmit` clean (0 errors).
+
+---
+
 ## 2026-11-17: Implement Automated Stock Corporate Actions (Dividends, Splits & Bonuses) (FR4.6.4 / Issue #607)
 
 **Task:** Design and implement automated corporate action discovery and execution for equities (cash dividends, stock splits, and bonus share issues) via official exchange feeds (NSE, BSE) with fallback to yfinance, background scheduler integration, idempotency, and in-app receipt modal notifications.  
@@ -3032,6 +3205,97 @@ Resolved all security vulnerabilities related to `tar`, `minimatch`, `rollup`, a
 
 ### Outcome
 **Success.** Verified against ICICI Breeze API: request object is successfully received and parsed by the server.
+
+---
+
+## Date: 2026-11-22
+**Issue Reference:** #86 / PR #613
+
+**Task:** UX Refinement - Dedicated Research Page, Sidebar Menu Consolidation, and Profile Tabbed Hub.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Header Cleanup:** Removed "FR8.2" badge from `ResearchIntelligenceFeed.tsx` header.
+2. **Dedicated Research Page:** Created `ResearchPage.tsx` wired to route `/research`. Extracted feed out of `DashboardPage.tsx` to restore a clean, focused dashboard.
+3. **Left Navigation Menu Consolidation:**
+   - Consolidated 15 flat navigation items in `NavBar.tsx` into 5 core items (`Dashboard`, `Portfolios`, `Transactions`, `Import`, `Goals`) and 3 collapsible accordion sections:
+     - **Markets & Research:** `Research & News` (`/research`) and `Watchlists` (`/watchlists`).
+     - **Tax & Income:** `Income & Tax Hub` (`/income`) and `Capital Gains` (`/capital-gains`).
+     - **Administration:** Collapsible group for admin users (`User Management`, `Interest Rates`, `System Maintenance`, `FMV Management`, `Symbol Aliases`).
+   - Accordions automatically expand when active child routes are visited and can be toggled by the user.
+4. **Profile Tabbed Hub:**
+   - Overhauled `ProfilePage.tsx` from a single narrow column (`max-w-2xl`) with endless scrolling into a responsive `max-w-6xl` Tabbed Hub with 5 tabs:
+     - **Account & Security:** Personal info and password change in a balanced 2-column responsive grid.
+     - **Risk Profile:** Integrated `RiskProfileTab.tsx` embedding tolerance scores, target asset allocation, and questionnaire wizard.
+     - **Broker Integrations:** Zerodha Kite and ICICI Breeze API configurations.
+     - **Data & System:** Backup/restore and Android background synchronization.
+     - **AI & Intelligence:** LLM hub supporting local Ollama (`http://localhost:11434`) and cloud providers (Google Gemini, OpenAI).
+   - Routed `/risk-profile` to redirect to `/profile?tab=risk`.
+5. **Mobile Navigation:** Updated `MorePage.tsx` and `MobileHeader.tsx` to align with the consolidated groupings.
+
+### File Changes
+
+**Frontend:**
+*   **Created:** `frontend/src/pages/ResearchPage.tsx` — Dedicated route `/research` for market news and broker research.
+*   **Created:** `frontend/src/components/Profile/RiskProfileTab.tsx` — Risk profiling tab component.
+*   **Created:** `frontend/src/components/Profile/AIIntelligenceTab.tsx` — LLM provider settings tab component.
+*   **Modified:** `frontend/src/pages/ProfilePage.tsx` — Redesigned into a wide tabbed hub.
+*   **Modified:** `frontend/src/components/NavBar.tsx` — Consolidated left menu with collapsible accordions.
+*   **Modified:** `frontend/src/pages/DashboardPage.tsx` — Removed intelligence feed and redirected risk onboarding to `/profile?tab=risk`.
+*   **Modified:** `frontend/src/__tests__/pages/DashboardPage.test.tsx` — Updated dashboard mock assertions.
+*   **Modified:** `frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx` — Cleaned header title.
+*   **Modified:** `frontend/src/pages/MorePage.tsx` — Reorganized mobile navigation sections.
+*   **Modified:** `frontend/src/components/MobileHeader.tsx` — Added `/research` title mapping.
+*   **Modified:** `frontend/src/components/Profile/ChangePasswordForm.tsx` — Removed hardcoded top margin for clean grid layout.
+*   **Modified:** `frontend/src/App.tsx` — Registered `/research` route and redirected `/risk-profile` to `/profile?tab=risk`.
+
+### Outcome
+**Success.** TypeScript compilation: 0 errors; ESLint: 0 errors; Unit test suite: 55/55 passed (215 tests). Clean dashboard, organized navigation sidebar, and zero excessive scrolling or side gaps on the profile page.
+
+---
+
+## Date: 2026-11-22
+**Issue Reference:** #86 / PR #613
+
+**Task:** Modular Edge ML Subsystem & On-Demand FinBERT Model Downloader.
+
+**AI Assistant:** Antigravity
+**Role:** Full-Stack Developer
+
+### Summary
+1. **Universal ML Subsystem (`app/ml`):** Created a standalone, decoupled machine learning module accessible across all services (News, Statement Import, Corporate Actions):
+   - **`FastEntityMatcher` (`entity_matcher.py`):** Pure-Python trie keyword matcher based on Aho-Corasick / FlashText algorithm. Operates in $O(N)$ document time with strict word boundary enforcement, preventing regex false positives.
+   - **`HeadlineDeduplicator` (`deduplicator.py`):** Word n-gram Jaccard similarity matcher to automatically drop syndicated duplicate news stories across multiple RSS sources.
+   - **`SentimentEngine` (`sentiment_engine.py`):** Multi-tier sentiment engine featuring the **Loughran-McDonald Financial Lexicon** (pure Python, instant < 1ms, financial negations aware) and an optional ONNX inference runner for **FinBERT INT8 Quantized**.
+   - **`ModelManager` (`model_manager.py`):** Manages on-demand model downloads with chunked background streaming, progress tracking, and file deletion.
+2. **REST Endpoints (`/api/v1/ml`):**
+   - Added `GET /models`, `POST /models/{id}/download`, `GET /models/{id}/progress`, `DELETE /models/{id}`, and `POST /sentiment/test`.
+3. **News Service Integration:** Upgraded `news_service.py` to use `FastEntityMatcher` for ticker extraction, `HeadlineDeduplicator` to drop duplicated syndicated articles, and `sentiment_engine` for sentiment scoring.
+4. **UI Integration (`AIIntelligenceTab.tsx`):**
+   - Added **Edge Financial Models (On-Demand & 100% Private)** card with model status, download button with real-time progress bar, delete button, and an interactive headline sentiment playground.
+
+### File Changes
+
+**Backend:**
+*   **Created:** `backend/app/ml/__init__.py` — Package exports.
+*   **Created:** `backend/app/ml/entity_matcher.py` — Pure-Python FlashText trie ticker matcher.
+*   **Created:** `backend/app/ml/deduplicator.py` — Near-duplicate headline detector.
+*   **Created:** `backend/app/ml/sentiment_engine.py` — Financial lexicon and ONNX engine.
+*   **Created:** `backend/app/ml/model_manager.py` — Edge model catalog and download manager.
+*   **Created:** `backend/app/api/v1/endpoints/ml.py` — ML REST endpoints.
+*   **Created:** `backend/app/tests/test_ml.py` — Comprehensive unit test suite.
+*   **Modified:** `backend/app/api/v1/api.py` — Registered `/ml` router.
+*   **Modified:** `backend/app/services/news_service.py` — Integrated ML pipeline.
+*   **Modified:** `.gitignore` — Ignored downloaded model weights and artifacts.
+
+**Frontend:**
+*   **Created:** `frontend/src/services/mlApi.ts` — API client for ML endpoints.
+*   **Modified:** `frontend/src/components/Profile/AIIntelligenceTab.tsx` — Added Edge ML Model card, progress bar, and live sentiment playground.
+
+### Outcome
+**Success.** Backend pytest passed on PostgreSQL (6/6) and SQLite (6/6). Frontend TypeScript compilation and ESLint: 0 errors; Unit test suite: 55/55 passed (215 tests). Model download is completely optional and non-blocking, preserving universal compatibility across Android, Desktop, and Server.
 
 
 

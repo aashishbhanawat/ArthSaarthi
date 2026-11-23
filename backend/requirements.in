@@ -23,6 +23,7 @@ pyxirr
 numpy
 pyarrow
 requests
+onnxruntime
 openpyxl
 xlrd
 pdfplumber

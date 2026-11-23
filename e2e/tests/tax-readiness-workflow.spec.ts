@@ -21,7 +21,11 @@ test.describe("Tax Readiness & Financial Picture Workflow (Release v1.4.0)", () 
     page,
   }) => {
     // 1. Navigate to Income & Tax Hub via navbar link
-    await page.getByRole("link", { name: "Income & Tax Hub" }).click();
+    const incomeLink = page.getByRole("link", { name: "Income & Tax Hub" });
+    if (!(await incomeLink.isVisible())) {
+      await page.getByRole("button", { name: "Tax & Income" }).click();
+    }
+    await incomeLink.click();
     await expect(page).toHaveURL(/.*\/income/);
 
     // Verify heading on Income Tab

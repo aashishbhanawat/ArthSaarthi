@@ -91,6 +91,8 @@ setup.txt
 todo.txt
 abc.txt
 local/*
+models/
+*.onnx
 
 .gemini/
 gha-creds-*.json

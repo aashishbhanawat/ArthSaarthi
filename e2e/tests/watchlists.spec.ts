@@ -15,7 +15,11 @@ test.describe('Watchlists Feature', () => {
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
     // Navigate to watchlists page by clicking the link in the nav bar
-    await page.getByRole('link', { name: 'Watchlists' }).click();
+    const watchlistsLink = page.getByRole('link', { name: 'Watchlists' });
+    if (!(await watchlistsLink.isVisible())) {
+      await page.getByRole('button', { name: 'Markets & Research' }).click();
+    }
+    await watchlistsLink.click();
     await expect(page).toHaveURL(/.*\/watchlists/);
   });
 
