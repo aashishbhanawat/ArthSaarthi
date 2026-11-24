@@ -1,17 +1,22 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import models
 from app.core.dependencies import get_current_active_user
 from app.crud.crud_news import market_news
 from app.db.session import get_db
+from app.ml.concall_analyzer import concall_analyzer
+from app.ml.whisper_engine import whisper_engine
 from app.models.asset import Asset
+from app.models.market_news import MarketNewsArticle
 from app.models.portfolio import Portfolio
 from app.models.transaction import Transaction
 from app.models.watchlist import Watchlist, WatchlistItem
 from app.schemas.market_news import (
+    ConcallAnalysisRequest,
+    ConcallAnalysisResponse,
     NewsRefreshResponse,
     ResearchFeedResponse,
     ResearchFeedSummary,
@@ -143,3 +148,90 @@ def trigger_news_refresh(
         articles_inserted=saved,
         status="success",
     )
+
+
+@router.post(
+    "/{article_id}/analyze-concall",
+    response_model=ConcallAnalysisResponse,
+    summary="Analyze earnings concall transcript and audio using edge ML models",
+)
+def analyze_concall(
+    article_id: str,
+    payload: Optional[ConcallAnalysisRequest] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
+) -> ConcallAnalysisResponse:
+    """
+    Runs non-LLM extractive concall analysis (FinBERT tone profiling, guidance mining,
+    extractive TextRank summarization, topic extraction).
+    Falls back to Whisper speech-to-text if audio is available and model is active.
+    """
+    article = db.query(MarketNewsArticle).filter(MarketNewsArticle.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    meta = dict(article.metadata_json or {})
+
+    # 1. Check if custom transcript was provided in request
+    transcript = payload.transcript_text.strip() if (payload and payload.transcript_text) else None
+    source = "USER_INPUT"
+
+    # 2. Check if already analyzed and no override text is provided
+    if not transcript and "concall_analysis" in meta:
+        return ConcallAnalysisResponse(**meta["concall_analysis"])
+
+    # 3. Check for pre-existing transcript in metadata
+    if not transcript:
+        if meta.get("transcript_text"):
+            transcript = meta["transcript_text"]
+            source = "TRANSCRIPT"
+
+    # 4. Check for audio URL and Whisper fallback
+    if not transcript and meta.get("audio_url"):
+        if whisper_engine.is_available:
+            try:
+                transcript = whisper_engine.transcribe_audio_file(meta["audio_url"])
+                source = "WHISPER_AUDIO"
+                meta["transcript_text"] = transcript
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Whisper audio transcription failed: {str(e)}",
+                )
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "No transcript text available and Whisper speech-to-text model is not downloaded. "
+                    "Please download the Whisper model from Admin > System Maintenance or paste the transcript text."
+                ),
+            )
+
+    # 5. Last fallback: analyze title and summary
+    if not transcript:
+        transcript = f"{article.title}. {article.summary or ''}"
+        source = "SUMMARY"
+
+    # Run extractive intelligence pipeline
+    analysis = concall_analyzer.analyze(transcript)
+
+    analysis_data = {
+        "article_id": article.id,
+        "title": article.title,
+        "quarter": meta.get("quarter"),
+        "management_tone": analysis["management_tone"],
+        "qa_tone": analysis["qa_tone"],
+        "guidance_metrics": analysis["guidance_metrics"],
+        "top_takeaways": analysis["top_takeaways"],
+        "key_themes": analysis["key_themes"],
+        "transcription_source": source,
+    }
+
+    # Cache result in metadata_json
+    meta["concall_analysis"] = analysis_data
+    article.metadata_json = meta
+    db.add(article)
+    db.commit()
+
+    return ConcallAnalysisResponse(**analysis_data)
+

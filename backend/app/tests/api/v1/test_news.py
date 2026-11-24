@@ -145,3 +145,61 @@ def test_purge_noise_and_disambiguate_db(db: Session) -> None:
     assert "SCI" not in retained.symbols
     assert "TATAMOTORS" in retained.symbols
 
+
+def test_analyze_concall_api(client, db):
+    user, password = create_random_user(db)
+    token = get_access_token(client, user.email, password)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    concall_id = f"test-concall-{uuid.uuid4().hex[:8]}"
+    article = MarketNewsArticleCreate(
+        id=concall_id,
+        title="Exide Industries Results Earnings Call for Q2FY27",
+        summary="Conference call discussing Q2 results, margin outlook, and capex.",
+        url=f"https://example.com/exide-call-{concall_id}",
+        source="Trendlyne Concalls",
+        category="CONCALL",
+        published_at=datetime.now(timezone.utc),
+        symbols=["EXIDEIND"],
+        sentiment="NEUTRAL",
+        metadata_json={
+            "quarter": "Q2FY27",
+            "audio_url": "https://example.com/exide.mp3",
+        },
+    )
+    crud.market_news.create_or_update(db, obj_in=article)
+
+    # 1. Analyze with custom transcript text
+    custom_text = (
+        "Opening Remarks: We are pleased to report strong performance for Q2. "
+        "Revenue grew 16% YoY with EBITDA margins at 12.5%. "
+        "Planned capex for the lithium gigafactory is ₹1,200 crore. "
+        "Question-and-Answer Session: "
+        "Analyst: What is your outlook on margins? "
+        "Management: We maintain positive outlook on margins."
+    )
+    res = client.post(
+        f"/api/v1/news/{concall_id}/analyze-concall",
+        headers=headers,
+        json={"transcript_text": custom_text},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["article_id"] == concall_id
+    assert "management_tone" in data
+    assert "qa_tone" in data
+    assert "guidance_metrics" in data
+    assert len(data["guidance_metrics"]) > 0
+    assert any(g["category"] == "Capex" for g in data["guidance_metrics"])
+    assert data["transcription_source"] == "USER_INPUT"
+
+    # 2. Subsequent call without payload should return cached analysis
+    res_cached = client.post(
+        f"/api/v1/news/{concall_id}/analyze-concall",
+        headers=headers,
+        json={},
+    )
+    assert res_cached.status_code == 200
+    assert res_cached.json()["article_id"] == concall_id
+
+

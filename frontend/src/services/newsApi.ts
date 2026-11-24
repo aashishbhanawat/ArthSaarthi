@@ -1,5 +1,6 @@
 import apiClient from './api';
 import {
+  ConcallAnalysis,
   NewsRefreshResponse,
   ResearchFeedResponse,
   ResearchFeedSummary,
@@ -32,6 +33,17 @@ export const getResearchSummary = async (
 export const refreshMarketNews = async (): Promise<NewsRefreshResponse> => {
   const response = await apiClient.post<NewsRefreshResponse>(
     '/api/v1/news/refresh'
+  );
+  return response.data;
+};
+
+export const analyzeConcall = async (
+  articleId: string,
+  transcriptText?: string
+): Promise<ConcallAnalysis> => {
+  const response = await apiClient.post<ConcallAnalysis>(
+    `/api/v1/news/${articleId}/analyze-concall`,
+    transcriptText ? { transcript_text: transcriptText } : {}
   );
   return response.data;
 };

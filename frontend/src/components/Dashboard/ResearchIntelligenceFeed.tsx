@@ -4,6 +4,7 @@ import {
   ArrowTopRightOnSquareIcon,
   DocumentChartBarIcon,
   NewspaperIcon,
+  SparklesIcon,
   SpeakerWaveIcon,
   TagIcon,
 } from '@heroicons/react/24/outline';
@@ -13,9 +14,11 @@ import {
   refreshMarketNews,
 } from '../../services/newsApi';
 import {
+  ConcallAnalysis,
   MarketNewsArticle,
   ResearchFeedSummary,
 } from '../../types/marketNews';
+import { ConcallAnalysisModal } from './ConcallAnalysisModal';
 
 interface ResearchIntelligenceFeedProps {
   initialSymbol?: string;
@@ -33,6 +36,24 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeConcallArticle, setActiveConcallArticle] = useState<MarketNewsArticle | null>(null);
+
+  const handleConcallAnalysisUpdated = (updated: ConcallAnalysis) => {
+    setArticles((prev) =>
+      prev.map((art) => {
+        if (art.id === updated.article_id) {
+          return {
+            ...art,
+            metadata_json: {
+              ...(art.metadata_json || {}),
+              concall_analysis: updated,
+            },
+          };
+        }
+        return art;
+      })
+    );
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -359,6 +380,15 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
                       Listen Concall Audio
                     </a>
                   )}
+                  {item.category === 'CONCALL' && (
+                    <button
+                      onClick={() => setActiveConcallArticle(item)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-950/80 dark:hover:bg-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-700 transition-colors shadow-sm"
+                    >
+                      <SparklesIcon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      {item.metadata_json?.concall_analysis ? 'View AI Insights' : 'Analyze Concall'}
+                    </button>
+                  )}
                 </div>
 
                 {/* Symbols */}
@@ -379,6 +409,15 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
           ))
         )}
       </div>
+
+      {activeConcallArticle && (
+        <ConcallAnalysisModal
+          article={activeConcallArticle}
+          isOpen={!!activeConcallArticle}
+          onClose={() => setActiveConcallArticle(null)}
+          onAnalysisUpdated={handleConcallAnalysisUpdated}
+        />
+      )}
     </div>
   );
 };

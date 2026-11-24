@@ -1,3 +1,33 @@
+## 2026-11-24: Concall Transcript & Whisper Audio Analysis with Edge ML (Issue #618 / FR8.2.2)
+
+**Task:** Implement non-LLM earnings conference call intelligence and extractive analysis for fundamental equity research. Provide automated FinBERT tone profiling, guidance & capex pattern mining, extractive TextRank summarization, and edge Whisper speech-to-text fallback when transcripts are unavailable.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Non-LLM Concall Intelligence Engine (`backend/app/ml/concall_analyzer.py`):**
+   - **Transcript Segmentation:** Automatically splits transcripts into *Management Opening Remarks* and *Analyst Q&A Session*.
+   - **FinBERT Tone Profiling:** Evaluates sentence-by-sentence polarity using the local `finbert_int8` ONNX engine (with `FinancialLexicon` fallback), outputting Positive/Neutral/Negative percentage distributions and sentiment classifications (Bullish/Bearish/Neutral/Balanced) for management and analysts independently.
+   - **Guidance & Capex Pattern Mining:** Extracts forward-looking financial disclosures (Capex amounts in ₹ Cr, Margin outlook in % or bps, Revenue/Volume growth guidance, and Debt reduction metrics).
+   - **Extractive TextRank Summarization:** Uses TF-IDF sentence centrality graph ranking to pick the top 5 most salient verbatim sentences directly from the call, completely eliminating generative hallucination risk.
+   - **Topic Keyword Extraction:** Discards conversational fillers and corporate pleasantries to rank 5–8 dominant operational discussion themes.
+2. **Edge Whisper Audio Model Integration (`backend/app/ml/whisper_engine.py`, `model_manager.py`):**
+   - Registered `whisper_tiny_en` (39 MB quantized edge model) in `ModelManager.CATALOG` for on-demand download/delete under Admin System Maintenance.
+   - Fallback workflow: When an audio URL (`.m4a` / `.mp3`) is present without a text transcript, transcribes the call audio locally using Whisper before feeding into the analyzer.
+3. **API & Caching (`backend/app/api/v1/endpoints/news.py`):**
+   - Created endpoint `POST /api/v1/news/{article_id}/analyze-concall` accepting optional user transcript text overrides.
+   - Persists structured analysis in `MarketNewsArticle.metadata_json["concall_analysis"]` so subsequent loads are instantaneous.
+4. **Research Feed UI (`frontend/src/components/Dashboard/ConcallAnalysisModal.tsx`, `ResearchIntelligenceFeed.tsx`):**
+   - Added an **"Analyze Concall"** / **"View AI Insights"** button on each concall card in the Research Feed.
+   - Built responsive modal displaying Tone Meters, Capex/Guidance highlight cards, Top 5 Key Takeaways, Discussion Topic chips, and a Custom Transcript paste tab.
+5. **Testing & Verification:**
+   - 11 unit tests in `test_concall_analyzer.py` and `test_news.py` passed across PostgreSQL, Desktop SQLite, and standard SQLite.
+   - Frontend Jest tests for `ConcallAnalysisModal` passed (100%).
+   - Linters: Ruff (0 errors) and ESLint (0 errors).
+
+---
+
 ## 2026-11-23: Prevent Concall & Result Deduplication Drop and Optimize Feed Ingestion (Issue #616 / FR8.2.1)
 
 **Task:** Resolve issue where earnings concalls and quarterly financial results within the 30-day retention window were omitted from feed ingestion due to boilerplate headline template deduplication collisions. Optimize feed sync duration by capping high-volume raw exchange feeds (BSE Announcements) and enable retroactive symbol tagging for newly tracked assets.  

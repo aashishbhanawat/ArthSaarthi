@@ -44,7 +44,16 @@ class ModelManager:
             "filename": "finbert_int8.onnx",
             "vocab_filename": "vocab.txt",
             "engine_type": "finbert_onnx",
-        }
+        },
+        "whisper_tiny_en": {
+            "id": "whisper_tiny_en",
+            "name": "Whisper Tiny INT8 (Speech-to-Text)",
+            "description": "Edge speech-to-text model for transcribing corporate earnings calls and investor podcasts when official transcripts are not provided.",
+            "size_mb": 39.0,
+            "download_url": "https://huggingface.co/onnx-community/whisper-tiny.en/resolve/main/onnx/encoder_model_quantized.onnx",
+            "filename": "whisper_tiny_en_quantized.onnx",
+            "engine_type": "whisper_onnx",
+        },
     }
 
     def __init__(self, models_dir: Optional[Path] = None):

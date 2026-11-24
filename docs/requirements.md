@@ -115,7 +115,7 @@ This document outlines the functional and non-functional requirements for the Ar
 
 ### FR8: Market Insights & Research
 -   **FR8.1: Watchlists.** Users must be able to create and manage lists of assets to monitor without owning them, displaying key metrics for each. `✅ Done`
--   **FR8.2: Market News Feed.** The system will provide an aggregated feed of financial news relevant to the user's portfolio and watchlist. `✅ Done` (See [FR8.2.1](FR8.2.1_concall_result_dedup_and_feed_optimization.md))
+-   **FR8.2: Market News Feed.** The system will provide an aggregated feed of financial news relevant to the user's portfolio and watchlist. `✅ Done` (See [FR8.2.1](FR8.2.1_concall_result_dedup_and_feed_optimization.md), [FR8.2.2](FR8.2.2_concall_transcript_and_whisper_analysis.md))
 -   **FR8.3: Asset Detail Pages.** A detailed view for individual assets must be available, showing historical price charts, key financial metrics (Market Cap, Volume, P/E), company descriptions, and related news. `📝 Planned`
 
 ### FR9: Notifications & Alerts

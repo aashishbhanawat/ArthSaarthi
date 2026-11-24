@@ -1,23 +1,30 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-23
+**Last Updated:** 2026-11-24
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Concall & Result Ingestion Reliability & Feed Sync Optimization (Issue #616 / FR8.2.1) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Concall Transcript & Whisper Audio Analysis with Edge ML (Issue #618 / FR8.2.2) Implemented & Verified.
 
-**Latest Achievement:** Resolved boilerplate false-positive headline deduplication that previously discarded 180+ earnings concalls and quarterly results. Restricted headline deduplication strictly to `category == 'NEWS'`, capped high-volume exchange feeds to 100 items per run, and added retroactive 30-day symbol tagging during feed sync so newly tracked assets immediately show historical concalls and results in their respective tabs.
+**Latest Achievement:** Implemented pure non-LLM concall intelligence and extractive fundamental equity analysis. Added FinBERT tone profiling for management remarks vs. analyst Q&A, deterministic financial guidance & capex pattern mining, extractive TextRank graph-centrality summarization, topic clustering, and edge Whisper speech-to-text fallback when transcripts are not provided.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **Passing (All ML & News tests verified, 14/14 passing)**
-*   **Backend Integration Tests (Android/SQLite):** ✅ **Passing (All ML & News tests verified)**
-*   **Frontend Unit Tests (Vitest/Jest):** ✅ **220/220 Passing (57 Suites)**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **Passing (All Concall & News tests verified, 11/11 passing)**
+*   **Backend Integration Tests (Android/SQLite):** ✅ **Passing (All Concall & News tests verified)**
+*   **Frontend Unit Tests (Vitest/Jest):** ✅ **222/222 Passing (58 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 *   **E2E Tests (Playwright):** ✅ **Locators updated and verified**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Concall Transcript & Whisper Audio Analysis (Issue #618 / FR8.2.2) (Updated 2026-11-24):**
+    - **Non-LLM Extractive Intelligence (`app/ml/concall_analyzer.py`):** Automatically segments call transcripts into Management Remarks and Analyst Q&A. Evaluates sentence-by-sentence polarity via local FinBERT INT8 ONNX (with lexicon fallback), mines forward capex/margin/growth/debt targets, and ranks verbatim sentences using TF-IDF sentence centrality (zero hallucination).
+    - **Whisper Edge Model Integration (`app/ml/whisper_engine.py`, `model_manager.py`):** Registered `whisper_tiny_en` (39 MB) in the Edge ML catalog for speech-to-text transcription of concall audio podcasts (`.m4a` / `.mp3`) when text transcripts are absent.
+    - **API Endpoint:** Added `POST /api/v1/news/{article_id}/analyze-concall` with database caching in `metadata_json["concall_analysis"]`.
+    - **Interactive Frontend UI:** Added `ConcallAnalysisModal.tsx` and an "Analyze Concall" action on concall cards in `ResearchIntelligenceFeed.tsx`.
+    - **Verification:** 11/11 backend tests passing across PostgreSQL, Desktop SQLite, and standard SQLite. Jest tests passing. Ruff and ESLint clean with 0 errors.
 
 *   **Concall & Result Deduplication Fix and Feed Optimization (Issue #616 / FR8.2.1) (Updated 2026-11-23):**
     - **Boilerplate Deduplication Guard:** Restricted `HeadlineDeduplicator.is_duplicate()` strictly to `category == 'NEWS'`, preventing structured corporate items (`CONCALL`, `RESULT`, `BROKER_REPORT`) sharing templated titles like `"{Company} Results Earnings Call for Q2FY27"` from being discarded.
